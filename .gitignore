@@ -1,0 +1,5 @@
+build/
+CMakeFiles/
+CMakeCache.txt
+gtests/googletest-build/
+gtests/googletest-download/
