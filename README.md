@@ -1,2 +1,2 @@
-# shumi-chess
+# 趣味
 we're back
