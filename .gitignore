@@ -3,3 +3,11 @@ CMakeFiles/
 CMakeCache.txt
 gtests/googletest-build/
 gtests/googletest-download/
+gtests/googletest-src/
+bin/
+cmake_install.cmake
+CTestTestfile.cmake
+libShumiChess.a
+Makefile
+lib/
+gtests/GTests.exe
