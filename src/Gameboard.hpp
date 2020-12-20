@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "typedef.hpp"
 
 // TODO think about copy and move constructors.
@@ -31,4 +33,4 @@ class GameBoard {
 
     //Member methods
     const std::string to_fen();
-}
+};

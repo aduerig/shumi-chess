@@ -11,6 +11,7 @@ libShumiChess.a
 Makefile
 lib/
 gtests/GTests.exe
+.vscode/settings.json
 gtests/GTests
 install_manifest.txt
 ok

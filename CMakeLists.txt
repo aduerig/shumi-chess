@@ -16,13 +16,13 @@ enable_testing()
 add_subdirectory(gtests)
 
 set(Headers
-    src/Board.hpp
+    src/Gameboard.hpp
     src/engine.hpp
     src/typedef.hpp
 )
 
 set(Sources
-    src/Board.hpp
+    src/Gameboard.hpp
     src/engine.cpp
 )
 
