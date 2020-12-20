@@ -11,3 +11,7 @@ libShumiChess.a
 Makefile
 lib/
 gtests/GTests.exe
+driver
+gtests/GTests
+install_manifest.txt
+ok
