@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "typedef.hpp"
 
 // TODO think about copy and move constructors.
