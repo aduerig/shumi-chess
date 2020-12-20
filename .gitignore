@@ -12,3 +12,7 @@ Makefile
 lib/
 gtests/GTests.exe
 .vscode/settings.json
+driver
+gtests/GTests
+install_manifest.txt
+ok

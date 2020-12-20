@@ -33,4 +33,4 @@ class GameBoard {
 
     //Member methods
     const std::string to_fen();
-}
+};
