@@ -16,5 +16,7 @@ white_king{0b0000000000000000000000000000000000000000000000000000000000001000} {
 
 //TODO
 GameBoard::GameBoard(const std::string& fen_notation) {
-    
+    for(const auto& c : fen_notation) {
+        
+    }
 }
