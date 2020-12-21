@@ -2,11 +2,14 @@
 #include <ostream>
 #include <iostream>
 
-#include <engine.hpp>
+#include <utility.hpp>
 
 int main()
 {
     printf("ok\n");
-    std::cout << return_28() << std::endl;
+    auto val = utility::string::split("fishorbanana", "or");
+    for (auto x : val) {
+        std::cout << x << std::endl;
+    }
     return 0;
 }

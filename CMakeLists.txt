@@ -19,11 +19,13 @@ set(Headers
     src/Gameboard.hpp
     src/engine.hpp
     src/typedef.hpp
+    src/utility.hpp
 )
 
 set(Sources
     src/Gameboard.hpp
     src/engine.cpp
+    src/utility.cpp
 )
 
 # makes the libShumiChess.a file
