@@ -34,6 +34,20 @@ TEST(StringSplit, endDelim) {
     ASSERT_EQ(sol, utility::string::split(query, del));
 }
 
+TEST(StringSplit, doubleDelim) {
+    string query = "a->b->->c->";
+    string del = "->";
+    const vector<string> sol = {"a", "b", "c"};
+    ASSERT_EQ(sol, utility::string::split(query, del));
+}
+
+TEST(StringSplit, doubleEndDelim) {
+    string query = "a->b->c->->";
+    string del = "->";
+    const vector<string> sol = {"a", "b", "c"};
+    ASSERT_EQ(sol, utility::string::split(query, del));
+}
+
 TEST(StringSplit, delimNoAppear) {
     string query = "abc";
     string del = "->";
