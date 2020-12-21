@@ -7,6 +7,10 @@
 using std::string;
 using std::vector; 
 
+TEST(SanityTests, TrueIsTrue) {
+    ASSERT_EQ(true, true);
+}
+
 TEST(StringSplit, basicDelim) {
     string query = "a/b/c";
     string del = "/";
