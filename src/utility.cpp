@@ -1,43 +1,32 @@
 #include <algorithm>
 #include <sstream>
 
+#include <iostream>
+
 #include "utility.hpp"
 
 namespace utility {
 namespace string {
 
-const std::vector<std::string> split(const std::string& str) {
-    std::stringstream spaced_str(str);
-
-    std::vector<std::string> split_str_sol;
-    std::string temp;
-    while (spaced_str >> temp) {
-        split_str_sol.push_back(temp);
-    }
-
-    return split_str_sol;
-}
-
 const std::vector<std::string> split(const std::string& str, const std::string& delimiter) {
-    const std::string space = " ";
-    if (delimiter == " ") {
-        return utility::string::split(str);
-    }
-
-    const std::string space_replacement = "DHIHKH_NO_COLLISION";
+    std::string::size_type curr_pos = 0;
+    std::string::size_type next_del = str.find(delimiter);
     
-    std::replace(str.begin(), str.end(), space, space_replacement);
-    std::replace(str.begin(), str.end(), delimiter, space);
-    std::stringstream spaced_str(str);
+    const std::string::size_type del_len = delimiter.length();
+    std::vector<std::string> split_str;
+    while (next_del != std::string::npos)
+    {
+        split_str.emplace_back(str.begin()+curr_pos, str.begin()+next_del);
 
-    std::vector<std::string> split_str_sol;
-    std::string temp;
-    while (spaced_str >> temp) {
-        std::replace(temp.begin(), temp.end(), space_replacement, space);
-        split_str_sol.push_back(temp);
+        curr_pos = next_del + del_len;
+        next_del = str.find(delimiter, curr_pos);
     }
 
-    return split_str_sol;
+    if (curr_pos != str.length()) {
+        split_str.emplace_back(str, curr_pos);
+    }
+    
+    return split_str;
 }
 
 } // string
