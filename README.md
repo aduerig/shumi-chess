@@ -20,7 +20,7 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 ## testing
 This project uses GTest for its unittests, after building the unit_test binary will be in the bin/ folder
 
-## in-depth technical notes
+## in depth technical notes
 ### using this as CMAKE + gtest template
 https://github.com/bast/gtest-demo
 

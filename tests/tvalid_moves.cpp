@@ -4,7 +4,7 @@
 
 TEST(Setup, WhiteGoesFirst) {
     ShumiChess::Engine test_engine;
-    test_engine.game_board.turn == ShumiChess::color::white;
+    test_engine.game_board.turn == ShumiChess::Color::WHITE;
 }
 
 // using qperft to determine number of legal moves by depth
