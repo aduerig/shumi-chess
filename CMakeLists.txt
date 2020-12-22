@@ -37,7 +37,7 @@ add_subdirectory(tests)
 set(Headers
     src/gameboard.hpp
     src/engine.hpp
-    src/typedef.hpp
+    src/globals.hpp
     src/utility.hpp
 )
 
