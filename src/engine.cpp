@@ -37,6 +37,7 @@ namespace ShumiChess {
     std::vector<std::string> Engine::get_pawn_moves(color player_color)
     {
         std::vector<std::string> pawn_moves;
+        pawn_moves.push_back("fake_move");
         return pawn_moves;
     }
 

@@ -2,4 +2,7 @@
 we're back
 
 ## build, execute tests, run driver
-`make; ./gtests/GTests; ./ok`
+`cmake CMakeLists.txt; cmake --build .; ./bin/unit_tests; echo "STARTING DRIVER"; ./bin/ok`
+
+## using this as CMAKE + gtest template
+https://github.com/bast/gtest-demo

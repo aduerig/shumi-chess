@@ -2,12 +2,13 @@
 
 #include <vector>
 
-#include <Gameboard.hpp>
+#include "gameboard.hpp"
 
 namespace ShumiChess {
     class Engine {
         public:
             // Members
+            // color lol;
             GameBoard game_board;
         
             // Constructors

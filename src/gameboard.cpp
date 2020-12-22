@@ -1,4 +1,4 @@
-#include "Gameboard.hpp"
+#include "gameboard.hpp"
 
 namespace ShumiChess {
     GameBoard::GameBoard() : 
@@ -15,9 +15,9 @@ namespace ShumiChess {
         black_king(0b0000100000000000000000000000000000000000000000000000000000000000),
         white_king(0b0000000000000000000000000000000000000000000000000000000000001000),
         turn(white) {
-        }
+    }
 
-    //TODO
+    // //TODO
     GameBoard::GameBoard(const std::string& fen_notation) {
         for(const auto& c : fen_notation) {
             
