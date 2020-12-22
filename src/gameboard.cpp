@@ -23,7 +23,7 @@ namespace ShumiChess {
 
     //TODO
     GameBoard::GameBoard(const std::string& fen_notation) {
-        const std::vector fen_components = utility::string::split(fen_notation);
+        const std::vector<std::string> fen_components = utility::string::split(fen_notation);
         assert(fen_components.size() == 6);
 
         for (const auto token : fen_components[0]) {

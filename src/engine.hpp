@@ -8,7 +8,7 @@ namespace ShumiChess {
     class Engine {
         public:
             // Members
-            // color lol;
+            // Color lol;
             GameBoard game_board;
         
             // Constructors
@@ -19,11 +19,11 @@ namespace ShumiChess {
             void reset_engine();
 
             std::vector<std::string> get_legal_moves();
-            std::vector<std::string> get_pawn_moves(color player_color);
-            std::vector<std::string> get_knight_moves(color player_color);
-            std::vector<std::string> get_bishop_moves(color player_color);
-            std::vector<std::string> get_queen_moves(color player_color);
-            std::vector<std::string> get_king_moves(color player_color);
-            std::vector<std::string> get_rook_moves(color player_color);
+            std::vector<std::string> get_pawn_moves(Color player_Color);
+            std::vector<std::string> get_knight_moves(Color player_Color);
+            std::vector<std::string> get_bishop_moves(Color player_Color);
+            std::vector<std::string> get_queen_moves(Color player_Color);
+            std::vector<std::string> get_king_moves(Color player_Color);
+            std::vector<std::string> get_rook_moves(Color player_Color);
     };
 }

@@ -2,7 +2,9 @@
 
 typedef unsigned long long ull;
 
-const enum Color {   
-    WHITE, 
-    BLACK
-};
+namespace ShumiChess {
+    enum Color {
+        WHITE,
+        BLACK
+    };
+}
