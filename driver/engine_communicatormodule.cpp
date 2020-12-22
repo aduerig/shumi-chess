@@ -4,7 +4,7 @@
 #include <ostream>
 #include <iostream>
 
-// #include <engine.hpp>
+#include <engine.hpp>
 
 static PyObject *
 engine_communicator_systemcall(PyObject *self, PyObject *args)
