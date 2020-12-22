@@ -17,6 +17,5 @@ install_manifest.txt
 ok
 ok.exe
 googletest/
-cmake/
 Testing/
 driver/build/
