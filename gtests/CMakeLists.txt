@@ -27,6 +27,7 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
                  EXCLUDE_FROM_ALL)
 
 set(Sources
+    tGameboard.cpp
     tutils.cpp
     tvalid_moves.cpp
 )

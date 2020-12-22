@@ -1,4 +1,8 @@
+#include <assert.h>
+#include <vector>
+
 #include "Gameboard.hpp"
+#include "utility.hpp"
 
 GameBoard::GameBoard() : 
 black_pawns(0b0000000011111111000000000000000000000000000000000000000000000000),
@@ -16,7 +20,10 @@ white_king{0b0000000000000000000000000000000000000000000000000000000000001000} {
 
 //TODO
 GameBoard::GameBoard(const std::string& fen_notation) {
-    for(const auto& c : fen_notation) {
+    const std::vector fen_components = utility::string::split(fen_notation);
+    assert(fen_components.size() == 6);
+
+    for (const auto token : fen_components[0]) {
         
     }
 }
