@@ -10,6 +10,8 @@ project(${project_name} CXX)
 # set(LIBRARY_NAME ${project_name})   # [optional] generated automatically (in lowercase)
 # set(LIBRARY_FOLDER src) # [optional] generated automatically (in lowercase)
 
+# cmake thing
+# set(CMAKE_BUILD_TYPE Debug)
 
 # place binaries and libraries according to GNU standards
 include(GNUInstallDirs)
