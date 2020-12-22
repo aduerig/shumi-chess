@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "Gameboard.hpp"
+#include "gameboard.hpp"
 
 using std::string;
 

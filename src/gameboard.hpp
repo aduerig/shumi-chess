@@ -2,16 +2,9 @@
 
 #include <string>
 
-#include "typedef.hpp"
+#include "globals.hpp"
 
 namespace ShumiChess {
-    // TODO think about best place to put color enum 
-    enum color
-    {   
-        white, 
-        black
-    };
-
     // TODO think about copy and move constructors.
     class GameBoard {
         public:
@@ -35,7 +28,7 @@ namespace ShumiChess {
             ull white_king;
 
             // other information about the board state
-            color turn;
+            Color turn;
 
             // Constructors
             explicit GameBoard();

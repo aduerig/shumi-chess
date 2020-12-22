@@ -1,6 +1,6 @@
 add_executable(
     unit_tests
-    tGameboard.cpp
+    tgameboard.cpp
     tutils.cpp
     tvalid_moves.cpp
 )
