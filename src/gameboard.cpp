@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <vector>
 
-#include "Gameboard.hpp"
+#include "gameboard.hpp"
 #include "utility.hpp"
 
 namespace ShumiChess {
