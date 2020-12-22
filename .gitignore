@@ -19,3 +19,4 @@ ok.exe
 googletest/
 cmake/
 Testing/
+driver/build/
