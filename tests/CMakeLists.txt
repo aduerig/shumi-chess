@@ -7,7 +7,7 @@ add_executable(
 
 target_include_directories(unit_tests 
     PUBLIC 
-    /home/andrew/programming/shumi-chess/src
+    ../src
     # src
 )
 
