@@ -3,15 +3,13 @@
 
 # variable set of the whole library/project
 set(project_name ShumiChess)
+set(CMAKE_BUILD_TYPE Debug)
 
 project(${project_name} CXX)
 
 # these are if we dont call project(), it can seperate the library name and folder
 # set(LIBRARY_NAME ${project_name})   # [optional] generated automatically (in lowercase)
 # set(LIBRARY_FOLDER src) # [optional] generated automatically (in lowercase)
-
-# cmake thing
-# set(CMAKE_BUILD_TYPE Debug)
 
 # place binaries and libraries according to GNU standards
 include(GNUInstallDirs)

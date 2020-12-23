@@ -19,3 +19,4 @@ ok.exe
 googletest/
 Testing/
 driver/build/
+.vscode/

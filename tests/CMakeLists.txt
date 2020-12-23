@@ -1,3 +1,5 @@
+set(CMAKE_BUILD_TYPE Debug)
+
 add_executable(
     unit_tests
     tgameboard.cpp

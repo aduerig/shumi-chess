@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <vector>
 
 #include "gameboard.hpp"
@@ -24,10 +25,44 @@ namespace ShumiChess {
     //TODO
     GameBoard::GameBoard(const std::string& fen_notation) {
         const std::vector<std::string> fen_components = utility::string::split(fen_notation);
+        
         assert(fen_components.size() == 6);
+        assert(fen_components[1].size() == 1);
 
-        for (const auto token : fen_components[0]) {
-            
+        int square_counter = 64;
+        for (const char token : fen_components[0]) {
+            if (token != '/') { --square_counter; }
+            if (token >= 49 && token <= 56) {
+                //Token is 1-8
+                square_counter -= token-49; //Purposely subtract 1 too few as we always sub 1 to start.
+            } else if (token == 'p') {
+                this->black_pawns |= 1ULL << square_counter;
+            } else if (token == 'P') {
+                this->white_pawns |= 1ULL << square_counter;
+            } else if (token == 'r') {
+                this->black_rooks |= 1ULL << square_counter;
+            } else if (token == 'R') {
+                this->white_rooks |= 1ULL << square_counter;
+            } else if (token == 'n') {
+                this->black_knights |= 1ULL << square_counter;
+            } else if (token == 'N') {
+                this->white_knights |= 1ULL << square_counter;
+            } else if (token == 'b') {
+                this->black_bishops |= 1ULL << square_counter;
+            } else if (token == 'B') {
+                this->white_bishops |= 1ULL << square_counter;
+            } else if (token == 'q') {
+                this->black_queens |= 1ULL << square_counter;
+            } else if (token == 'Q') {
+                this->white_queens |= 1ULL << square_counter;
+            } else if (token == 'k') {
+                this->black_king |= 1ULL << square_counter;
+            } else if (token == 'K') {
+                this->white_king |= 1ULL << square_counter;
+            }
         }
+        assert(square_counter == 0);
+        
+        this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
     }
 }
