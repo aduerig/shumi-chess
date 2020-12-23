@@ -28,12 +28,14 @@ namespace ShumiChess {
 }
 
 class BadFenConstructor : public testing::TestWithParam<string> {};
+void create_gameboard(string fen) {
+    const ShumiChess::GameBoard test_board {fen};
+}
 vector<string> bad_fen_list = { "banana",
                                 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
                                 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR white - - -" };
 TEST_P(BadFenConstructor, AssertBadFenFails) {
-    const string fen_notation = GetParam();
-    ASSERT_DEATH(ShumiChess::GameBoard(fen_notation), "Assertion.*failed");
+    ASSERT_DEATH(create_gameboard(GetParam()), "Assertion.*failed");
 }
 INSTANTIATE_TEST_CASE_P(BadFenConstructorParam, BadFenConstructor, testing::ValuesIn(bad_fen_list));
 
