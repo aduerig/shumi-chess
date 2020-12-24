@@ -8,7 +8,6 @@ namespace ShumiChess {
     class Engine {
         public:
             // Members
-            // Color lol;
             GameBoard game_board;
         
             // Constructors
