@@ -6,6 +6,19 @@
 #include "utility.hpp"
 
 namespace utility {
+
+namespace representation {
+
+// ? whats our policy on error handling
+// Likely depends on engine vs auxilary
+ull acn_to_bit_conversion(const std::string& anc) {
+    int square_number = 0;
+    square_number += ('h'-anc.at(0)) + 8*(anc.at(1)-'1');
+    return 1ULL << square_number;
+}
+
+} // representation
+
 namespace string {
 
 const std::vector<std::string> split(const std::string& str, const std::string& delimiter) {
