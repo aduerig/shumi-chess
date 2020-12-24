@@ -4,7 +4,16 @@
 #include <string>
 #include <vector>
 
+#include "globals.hpp"
+
 namespace utility {
+
+namespace representation {
+
+ull acn_to_bit_conversion(const std::string&);
+
+} // representation
+
 namespace string {
 
 /* 

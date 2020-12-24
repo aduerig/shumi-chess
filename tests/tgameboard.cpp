@@ -23,7 +23,12 @@ namespace ShumiChess {
                a.white_queens  == b.white_queens &&
                a.black_king    == b.black_king &&
                a.white_king    == b.white_king &&
-               a.turn          == b.turn;
+               a.turn          == b.turn &&
+               a.black_castle  == b.black_castle &&
+               a.white_castle  == b.white_castle &&
+               a.en_passant    == b.en_passant &&
+               a.halfmove      == b.halfmove &&
+               a.fullmove      == b.fullmove;
     }
 }
 
@@ -41,7 +46,7 @@ INSTANTIATE_TEST_CASE_P(BadFenConstructorParam, BadFenConstructor, testing::Valu
 
 typedef tuple<ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ShumiChess::Color> board_tuple;
 class tGameboardFenNotation : public testing::TestWithParam<pair<board_tuple, string>> {};
-TEST_P(tGameboardFenNotation, DefaultMatchesFenStart) {
+TEST_P(tGameboardFenNotation, FenMatchesBitBoard) {
     const auto test_pair = GetParam();
 
     ShumiChess::GameBoard fen_board {test_pair.second};
@@ -65,8 +70,4 @@ TEST_P(tGameboardFenNotation, DefaultMatchesFenStart) {
 INSTANTIATE_TEST_CASE_P(tGameboardFenNotationParams,  
                         tGameboardFenNotation,  
                         testing::Values( make_pair(make_tuple(71776119061217280ULL, 65280ULL, 9295429630892703744ULL, 129ULL, 4755801206503243776ULL, 66ULL, 2594073385365405696ULL, 36ULL, 1152921504606846976ULL, 16ULL, 576460752303423488ULL, 8ULL, ShumiChess::Color::WHITE),
-                                                   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") ));  
-
-// TEST(Constructors, FenRepresentationCorrect) {
-//     ASSERT_EQ(ShumiChess::GameBoard(), ShumiChess::GameBoard("r3k2r/pp1n2pp/2p2q2/b2p1n2/BP1Pp3/P1N2P2/2PB2PP/R2Q1RK1 w kq b3 0 13"));
-// }
+                                                   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") ));
