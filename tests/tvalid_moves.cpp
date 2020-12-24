@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-
 #include <engine.hpp>
 
 TEST(Setup, WhiteGoesFirst) {

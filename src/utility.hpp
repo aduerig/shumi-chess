@@ -11,5 +11,5 @@ namespace string {
 // Uses space by default.
 const std::vector<std::string> split(const std::string&, const std::string& = " ");
 
-} // string
-} // utility
+} // end namespace string
+} // end namespace utility
