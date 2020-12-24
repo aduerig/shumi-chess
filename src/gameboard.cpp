@@ -1,8 +1,9 @@
+#include "gameboard.hpp"
+
 #include <assert.h>
 #include <math.h>
 #include <vector>
 
-#include "gameboard.hpp"
 #include "utility.hpp"
 
 namespace ShumiChess {
@@ -36,38 +37,39 @@ namespace ShumiChess {
         assert(fen_components[3].size() <= 2);
 
 
-        int square_counter = 64;
-        for (const char token : fen_components[0]) {
-            if (token != '/') { --square_counter; }
-            if (token >= 49 && token <= 56) {
-                //Token is 1-8
-                square_counter -= token-49; //Purposely subtract 1 too few as we always sub 1 to start.
-            } else if (token == 'p') {
-                this->black_pawns |= 1ULL << square_counter;
-            } else if (token == 'P') {
-                this->white_pawns |= 1ULL << square_counter;
-            } else if (token == 'r') {
-                this->black_rooks |= 1ULL << square_counter;
-            } else if (token == 'R') {
-                this->white_rooks |= 1ULL << square_counter;
-            } else if (token == 'n') {
-                this->black_knights |= 1ULL << square_counter;
-            } else if (token == 'N') {
-                this->white_knights |= 1ULL << square_counter;
-            } else if (token == 'b') {
-                this->black_bishops |= 1ULL << square_counter;
-            } else if (token == 'B') {
-                this->white_bishops |= 1ULL << square_counter;
-            } else if (token == 'q') {
-                this->black_queens |= 1ULL << square_counter;
-            } else if (token == 'Q') {
-                this->white_queens |= 1ULL << square_counter;
-            } else if (token == 'k') {
-                this->black_king |= 1ULL << square_counter;
-            } else if (token == 'K') {
-                this->white_king |= 1ULL << square_counter;
-            }
+    int square_counter = 64;
+    for (const char token : fen_components[0]) {
+        if (token != '/') { --square_counter; }
+        if (token >= 49 && token <= 56) {
+            //Token is 1-8
+            square_counter -= token-49; //Purposely subtract 1 too few as we always sub 1 to start.
+        } else if (token == 'p') {
+            this->black_pawns |= 1ULL << square_counter;
+        } else if (token == 'P') {
+            this->white_pawns |= 1ULL << square_counter;
+        } else if (token == 'r') {
+            this->black_rooks |= 1ULL << square_counter;
+        } else if (token == 'R') {
+            this->white_rooks |= 1ULL << square_counter;
+        } else if (token == 'n') {
+            this->black_knights |= 1ULL << square_counter;
+        } else if (token == 'N') {
+            this->white_knights |= 1ULL << square_counter;
+        } else if (token == 'b') {
+            this->black_bishops |= 1ULL << square_counter;
+        } else if (token == 'B') {
+            this->white_bishops |= 1ULL << square_counter;
+        } else if (token == 'q') {
+            this->black_queens |= 1ULL << square_counter;
+        } else if (token == 'Q') {
+            this->white_queens |= 1ULL << square_counter;
+        } else if (token == 'k') {
+            this->black_king |= 1ULL << square_counter;
+        } else if (token == 'K') {
+            this->white_king |= 1ULL << square_counter;
         }
+<<<<<<< HEAD
+=======
         assert(square_counter == 0);
 
         this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
@@ -96,5 +98,10 @@ namespace ShumiChess {
 
         this->halfmove = std::stoi(fen_components[4]);
         this->fullmove = std::stoi(fen_components[5]);
+>>>>>>> b95f05b9b16f7d3595004198e4f1ebe63c4ca828
     }
+    assert(square_counter == 0);
+    
+    this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
 }
+} // end namespace ShumiChess

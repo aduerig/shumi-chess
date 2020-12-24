@@ -1,9 +1,9 @@
+#include "utility.hpp"
+
 #include <algorithm>
 #include <sstream>
 
 #include <iostream>
-
-#include "utility.hpp"
 
 namespace utility {
 
