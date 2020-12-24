@@ -46,7 +46,7 @@ INSTANTIATE_TEST_CASE_P(BadFenConstructorParam, BadFenConstructor, testing::Valu
 
 typedef tuple<ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ShumiChess::Color> board_tuple;
 class tGameboardFenNotation : public testing::TestWithParam<pair<board_tuple, string>> {};
-TEST_P(tGameboardFenNotation, DefaultMatchesFenStart) {
+TEST_P(tGameboardFenNotation, FenMatchesBitBoard) {
     const auto test_pair = GetParam();
 
     ShumiChess::GameBoard fen_board {test_pair.second};

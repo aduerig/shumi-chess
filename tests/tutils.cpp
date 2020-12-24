@@ -1,67 +1,34 @@
 #include <gtest/gtest.h>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <utility.hpp>
 
-using std::string;
-using std::vector; 
+using namespace std;
 
-TEST(SanityTests, TrueIsTrue) {
-    ASSERT_EQ(true, true);
+typedef tuple<string, string, vector<string>> string_split_test_param;
+class tStringSplit : public testing::TestWithParam<string_split_test_param> {};
+TEST_P(tStringSplit, StringSplitMultipleDelim) {
+    const auto query = get<0>(GetParam());
+    const auto delim = get<1>(GetParam());
+    const auto sol = get<2>(GetParam());
+
+    ASSERT_EQ(sol, utility::string::split(query, delim));
 }
+vector<string_split_test_param> string_split_test_data = { make_tuple("a/b/c", "/", {"a", "b", "c"}),
+                                                           make_tuple("a->b->c", "->", {"a", "b", "c"}), 
+                                                           make_tuple("a->b->c->", "->", {"a", "b", "c"}),
+                                                           make_tuple("a->b->->c->", "->", {"a", "b", "c"}),
+                                                           make_tuple("a->b->c->->", "->", {"a", "b", "c"}),
+                                                           make_tuple("abc", "->", {"abc"}),
+                                                           make_tuple("This is | a test | with spaces.", "|", {"This is ", " a test ", " with spaces."}) };
+INSTANTIATE_TEST_CASE_P(tStringSplitParam,  
+                        tStringSplit,  
+                        testing::ValuesIn( string_split_test_data ));
 
-TEST(StringSplit, BasicDelim) {
-    string query = "a/b/c";
-    string del = "/";
-    const vector<string> sol = {"a", "b", "c"};
-    ASSERT_EQ(sol, utility::string::split(query, del));
-}
-
-TEST(StringSplit, DefaultDelim) {
+TEST(tStringSplit, DefaultDelim) {
     string query = "a b c";
     const vector<string> sol = {"a", "b", "c"};
     ASSERT_EQ(sol, utility::string::split(query));
-}
-
-TEST(StringSplit, MultiDelim) {
-    string query = "a->b->c";
-    string del = "->";
-    const vector<string> sol = {"a", "b", "c"};
-    ASSERT_EQ(sol, utility::string::split(query, del));
-}
-
-TEST(StringSplit, EndDelim) {
-    string query = "a->b->c->";
-    string del = "->";
-    const vector<string> sol = {"a", "b", "c"};
-    ASSERT_EQ(sol, utility::string::split(query, del));
-}
-
-TEST(StringSplit, DoubleDelim) {
-    string query = "a->b->->c->";
-    string del = "->";
-    const vector<string> sol = {"a", "b", "c"};
-    ASSERT_EQ(sol, utility::string::split(query, del));
-}
-
-TEST(StringSplit, DoubleEndDelim) {
-    string query = "a->b->c->->";
-    string del = "->";
-    const vector<string> sol = {"a", "b", "c"};
-    ASSERT_EQ(sol, utility::string::split(query, del));
-}
-
-TEST(StringSplit, DelimNoAppear) {
-    string query = "abc";
-    string del = "->";
-    const vector<string> sol = {"abc"};
-    ASSERT_EQ(sol, utility::string::split(query, del));
-}
-
-TEST(StringSplit, SpacesWNonSpaceDelim) {
-    string query = "This is | a test | with spaces.";
-    string del = "|";
-    const vector<string> sol = {"This is ", " a test ", " with spaces."};
-    ASSERT_EQ(sol, utility::string::split(query, del));
 }
