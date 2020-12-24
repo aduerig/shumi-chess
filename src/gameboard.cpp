@@ -68,38 +68,37 @@ namespace ShumiChess {
         } else if (token == 'K') {
             this->white_king |= 1ULL << square_counter;
         }
-<<<<<<< HEAD
-=======
-        assert(square_counter == 0);
-
-        this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
-
-        for (const char token : fen_components[2]) {
-            switch (token)
-            {
-            case 'k':
-                this->black_castle |= 1;
-                break;
-            case 'q':
-                this->black_castle |= 2;
-                break;
-            case 'K':
-                this->white_castle |= 1;
-                break;
-            case 'Q':
-                this->white_castle |= 2; 
-                break;
-            }
-        }
-
-        if (fen_components[3] != "-") { 
-            this->en_passant = utility::representation::acn_to_bit_conversion(fen_components[3]);
-        }
-
-        this->halfmove = std::stoi(fen_components[4]);
-        this->fullmove = std::stoi(fen_components[5]);
->>>>>>> b95f05b9b16f7d3595004198e4f1ebe63c4ca828
     }
+    
+    assert(square_counter == 0);
+
+    this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
+
+    for (const char token : fen_components[2]) {
+        switch (token)
+        {
+        case 'k':
+            this->black_castle |= 1;
+            break;
+        case 'q':
+            this->black_castle |= 2;
+            break;
+        case 'K':
+            this->white_castle |= 1;
+            break;
+        case 'Q':
+            this->white_castle |= 2; 
+            break;
+        }
+    }
+
+    if (fen_components[3] != "-") { 
+        this->en_passant = utility::representation::acn_to_bit_conversion(fen_components[3]);
+    }
+
+    this->halfmove = std::stoi(fen_components[4]);
+    this->fullmove = std::stoi(fen_components[5]);
+
     assert(square_counter == 0);
     
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
