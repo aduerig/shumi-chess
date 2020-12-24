@@ -31,6 +31,18 @@ namespace ShumiChess {
             // other information about the board state
             Color turn;
 
+            //1<<1 for queenside, 1<<0 for kingside
+            uint8_t black_castle = 0b00000000;
+            uint8_t white_castle = 0b00000000;
+
+            //square behind pawn after moving 2
+            //0 is impossible state in conventional game
+            ull en_passant; 
+
+            // move clock
+            uint halfmove;
+            uint fullmove;
+
             // Constructors
             explicit GameBoard();
             explicit GameBoard(const std::string&);

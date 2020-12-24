@@ -19,7 +19,12 @@ namespace ShumiChess {
         white_queens(0b0000000000000000000000000000000000000000000000000000000000010000),
         black_king(0b0000100000000000000000000000000000000000000000000000000000000000),
         white_king(0b0000000000000000000000000000000000000000000000000000000000001000),
-        turn(WHITE) {
+        turn(WHITE),
+        black_castle(0b00000011),
+        white_castle(0b00000011),
+        en_passant(0),
+        halfmove(0),
+        fullmove(1) {
     }
 
     //TODO
@@ -28,6 +33,7 @@ namespace ShumiChess {
         
         assert(fen_components.size() == 6);
         assert(fen_components[1].size() == 1);
+        assert(fen_components[2].size() <= 4);
 
         int square_counter = 64;
         for (const char token : fen_components[0]) {
@@ -62,7 +68,30 @@ namespace ShumiChess {
             }
         }
         assert(square_counter == 0);
-        
+
         this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
+
+        for (const char token : fen_components[2]) {
+            switch (token)
+            {
+            case 'k':
+                this->black_castle |= 1;
+                break;
+            case 'q':
+                this->black_castle |= 2;
+                break;
+            case 'K':
+                this->white_castle |= 1;
+                break;
+            case 'Q':
+                this->white_castle |= 2; 
+                break;
+            }
+        }
+
+        // fen_components[3] //en passant
+
+        this->halfmove = std::stoi(fen_components[4]);
+        this->fullmove = std::stoi(fen_components[5]);
     }
 }
