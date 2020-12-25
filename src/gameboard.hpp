@@ -44,8 +44,8 @@ class GameBoard {
             ull en_passant {}; 
 
         // move clock
-        uint halfmove;
-        uint fullmove;
+        uint8_t halfmove;
+        uint8_t fullmove;
 
         // Constructors
         explicit GameBoard();
