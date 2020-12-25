@@ -21,7 +21,7 @@ ull acn_to_bit_conversion(const std::string& anc) {
 
 namespace string {
 
-const std::vector<std::string> split(const std::string& str, const std::string& delimiter) {
+std::vector<std::string> split(const std::string& str, const std::string& delimiter) {
     std::string::size_type curr_pos = 0;
     std::string::size_type next_del = str.find(delimiter);
     
@@ -42,6 +42,10 @@ const std::vector<std::string> split(const std::string& str, const std::string& 
     }
     
     return split_str;
+}
+
+bool starts_with(const std::string& main_str, const std::string& smaller_str) {
+    return main_str.rfind(smaller_str, 0) == 0;
 }
 
 } // string

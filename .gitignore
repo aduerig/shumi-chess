@@ -6,6 +6,7 @@ gtests/googletest-download/
 gtests/googletest-src/
 bin/
 tests/test_data/legal_positions_by_depth.dat
+tests/test_data/legal_positions_by_depth_saved.dat
 cmake_install.cmake
 CTestTestfile.cmake
 libShumiChess.a

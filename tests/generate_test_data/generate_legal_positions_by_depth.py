@@ -3,6 +3,8 @@
 # to generate correct paths and legal moves
 import chess
 
+
+# diff tests/test_data/legal_positions_by_depth.dat tests/test_data/legal_positions_by_depth_saved.dat
 def fix_thing(board, popper, depth):
     stop = False
     while not stop:
@@ -29,7 +31,6 @@ def fix_thing(board, popper, depth):
 def get_all_boards_at_depth(board, depth):
     if depth <= 0:
         yield 1
-        return
     else:
         popper = [iter(list(board.legal_moves))]
 
