@@ -35,9 +35,13 @@ class GameBoard {
         uint8_t black_castle = 0b00000000;
         uint8_t white_castle = 0b00000000;
 
-        //square behind pawn after moving 2
-        //0 is impossible state in conventional game
-        ull en_passant; 
+            //square behind enpassantable pawn after moving
+            //0 is impossible state in conventional game
+            // ? is this right way to represent this
+            // ? do we care about non standard gameboards / moves
+            // ? would one consider an extra bit for if we should look at this val
+            // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
+            ull en_passant {}; 
 
         // move clock
         uint halfmove;

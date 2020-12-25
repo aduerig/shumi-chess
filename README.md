@@ -8,9 +8,13 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 `cmake CMakeLists.txt`
 
 #### 1-liner to build, execute tests, and run driver
+<<<<<<< HEAD
 `cmake CMakeLists.txt && cmake --build . && ./bin/unit_tests && echo "STARTING DRIVER" && ./bin/ok`
+=======
+`cmake CMakeLists.txt && cmake --build . && ./bin/unit_tests && echo "STARTING DRIVER"; ./bin/ok`
+>>>>>>> 0617fc8480bf99402aed5dacd92b9a0d2450b516
 #### 1-liner if using mingw (https://github.com/google/googletest/issues/1051)
-`cmake CMakeLists.txt -Dgtest_disable_pthreads=ON; cmake --build .; .\bin\unit_tests.exe`
+`cmake CMakeLists.txt -Dgtest_disable_pthreads=ON && cmake --build . && .\bin\unit_tests.exe`
 
 ### building the C++ python module
 `cd driver`
