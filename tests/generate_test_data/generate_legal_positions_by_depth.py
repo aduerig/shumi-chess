@@ -61,7 +61,7 @@ if get_num_dups:
     boards_set = set()
     all_boards = []
 
-file_name = 'legal_positions_by_depth.dat'
+file_name = '../test_data/legal_positions_by_depth.dat'
 with open(file_name, 'w') as file:
     for depth in range(1, levels_to_search):
         depth_counter = 0

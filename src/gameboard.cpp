@@ -7,34 +7,34 @@
 #include "utility.hpp"
 
 namespace ShumiChess {
-    GameBoard::GameBoard() : 
-        black_pawns(0b0000000011111111000000000000000000000000000000000000000000000000),
-        white_pawns(0b0000000000000000000000000000000000000000000000001111111100000000),
-        black_rooks(0b1000000100000000000000000000000000000000000000000000000000000000),
-        white_rooks(0b0000000000000000000000000000000000000000000000000000000010000001),
-        black_knights(0b0100001000000000000000000000000000000000000000000000000000000000),
-        white_knights(0b0000000000000000000000000000000000000000000000000000000001000010),
-        black_bishops(0b0010010000000000000000000000000000000000000000000000000000000000),
-        white_bishops(0b0000000000000000000000000000000000000000000000000000000000100100),
-        black_queens(0b0001000000000000000000000000000000000000000000000000000000000000),
-        white_queens(0b0000000000000000000000000000000000000000000000000000000000010000),
-        black_king(0b0000100000000000000000000000000000000000000000000000000000000000),
-        white_king(0b0000000000000000000000000000000000000000000000000000000000001000),
-        turn(WHITE),
-        black_castle(0b00000011),
-        white_castle(0b00000011),
-        en_passant(0),
-        halfmove(0),
-        fullmove(1) {
-    }
+GameBoard::GameBoard() : 
+    black_pawns(0b0000000011111111000000000000000000000000000000000000000000000000),
+    white_pawns(0b0000000000000000000000000000000000000000000000001111111100000000),
+    black_rooks(0b1000000100000000000000000000000000000000000000000000000000000000),
+    white_rooks(0b0000000000000000000000000000000000000000000000000000000010000001),
+    black_knights(0b0100001000000000000000000000000000000000000000000000000000000000),
+    white_knights(0b0000000000000000000000000000000000000000000000000000000001000010),
+    black_bishops(0b0010010000000000000000000000000000000000000000000000000000000000),
+    white_bishops(0b0000000000000000000000000000000000000000000000000000000000100100),
+    black_queens(0b0001000000000000000000000000000000000000000000000000000000000000),
+    white_queens(0b0000000000000000000000000000000000000000000000000000000000010000),
+    black_king(0b0000100000000000000000000000000000000000000000000000000000000000),
+    white_king(0b0000000000000000000000000000000000000000000000000000000000001000),
+    turn(WHITE),
+    black_castle(0b00000011),
+    white_castle(0b00000011),
+    en_passant(0),
+    halfmove(0),
+    fullmove(1) {
+}
 
-    //TODO
-    GameBoard::GameBoard(const std::string& fen_notation) {
-        const std::vector<std::string> fen_components = utility::string::split(fen_notation);
-        
-        assert(fen_components.size() == 6);
-        assert(fen_components[1].size() == 1);
-        assert(fen_components[2].size() <= 4);
+//TODO
+GameBoard::GameBoard(const std::string& fen_notation) {
+    const std::vector<std::string> fen_components = utility::string::split(fen_notation);
+    
+    assert(fen_components.size() == 6);
+    assert(fen_components[1].size() == 1);
+    assert(fen_components[2].size() <= 4);
 
     int square_counter = 64;
     for (const char token : fen_components[0]) {
@@ -67,8 +67,6 @@ namespace ShumiChess {
         } else if (token == 'K') {
             this->white_king |= 1ULL << square_counter;
         }
-<<<<<<< HEAD
-=======
         assert(square_counter == 0);
 
         this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
@@ -95,7 +93,6 @@ namespace ShumiChess {
 
         this->halfmove = std::stoi(fen_components[4]);
         this->fullmove = std::stoi(fen_components[5]);
->>>>>>> b95f05b9b16f7d3595004198e4f1ebe63c4ca828
     }
     assert(square_counter == 0);
     

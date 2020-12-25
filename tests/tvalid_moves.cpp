@@ -1,3 +1,6 @@
+#include <iostream>
+#include <fstream>
+
 #include <gtest/gtest.h>
 #include <engine.hpp>
 
@@ -21,33 +24,44 @@ TEST(ValidMoves, LengthOfValidMovesDepth1) {
     ASSERT_EQ(20, total_legal_moves);
 }
 
-TEST(ValidMoves, LengthOfValidMovesDepth2) {
-    ShumiChess::Engine test_engine;
-    int total_legal_moves = test_engine.get_legal_moves().size();
-    ASSERT_EQ(400, total_legal_moves);
-}
+// TODO need to calculate length of total legal moves by depth 
+// TEST(ValidMoves, LengthOfValidMovesDepth2) {
+//     ShumiChess::Engine test_engine;
+//     int total_legal_moves = test_engine.get_legal_moves().size();
+//     ASSERT_EQ(400, total_legal_moves);
+// }
 
-TEST(ValidMoves, LengthOfValidMovesDepth3) {
-    ShumiChess::Engine test_engine;
-    int total_legal_moves = test_engine.get_legal_moves().size();
-    ASSERT_EQ(8902, total_legal_moves);
-}
+// TEST(ValidMoves, LengthOfValidMovesDepth3) {
+//     ShumiChess::Engine test_engine;
+//     int total_legal_moves = test_engine.get_legal_moves().size();
+//     ASSERT_EQ(8902, total_legal_moves);
+// }
 
-TEST(ValidMoves, LengthOfValidMovesDepth4) {
-    ShumiChess::Engine test_engine;
-    int total_legal_moves = test_engine.get_legal_moves().size();
-    ASSERT_EQ(197281, total_legal_moves);
-}
+// TEST(ValidMoves, LengthOfValidMovesDepth4) {
+//     ShumiChess::Engine test_engine;
+//     int total_legal_moves = test_engine.get_legal_moves().size();
+//     ASSERT_EQ(197281, total_legal_moves);
+// }
 
-TEST(ValidMoves, LengthOfValidMovesDepth5) {
-    ShumiChess::Engine test_engine;
-    int total_legal_moves = test_engine.get_legal_moves().size();
-    ASSERT_EQ(4865609, total_legal_moves);
-}
+// TEST(ValidMoves, LengthOfValidMovesDepth5) {
+//     ShumiChess::Engine test_engine;
+//     int total_legal_moves = test_engine.get_legal_moves().size();
+//     ASSERT_EQ(4865609, total_legal_moves);
+// }
 
-TEST(ValidMoves, LengthOfValidMovesDepth6) {
-    ShumiChess::Engine test_engine;
-    int total_legal_moves = test_engine.get_legal_moves().size();
-    ASSERT_EQ(119060324, total_legal_moves);
-}
+// TEST(ValidMoves, LengthOfValidMovesDepth6) {
+//     ShumiChess::Engine test_engine;
+//     int total_legal_moves = test_engine.get_legal_moves().size();
+//     ASSERT_EQ(119060324, total_legal_moves);
+// }
 
+TEST(ValidMoves, LegalFensDepth1) {
+    std::string line;
+    std::ifstream myfile ("test_data/legal_positions_by_depth.dat");
+    if (myfile.is_open()) {
+        while ( getline (myfile,line) ) {
+            std::cout << line << std::endl;
+        }
+        myfile.close();
+    }
+}
