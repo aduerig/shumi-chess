@@ -65,5 +65,3 @@ INSTANTIATE_TEST_CASE_P(tGameboardFenNotationParams,
                                                    "rnb1kb1r/pppp1p1p/5qp1/8/2P5/1P3P2/P2PPP1P/RN1QKB1R w KQkq - 0 7"),
                                          make_pair(make_tuple(20134256927834112ULL, 34363958016ULL, 9511602413006487552ULL, 129ULL, 4503599627370496ULL, 270532608ULL, 2308094809027379200ULL, 1099511627776ULL, 1152921504606846976ULL, 33554432ULL, 144115188075855872ULL, 8ULL, ShumiChess::Color::BLACK, 0, 3, 0, 4, 14),
                                                    "r1bq1rk1/1p1nbppp/p3p2B/4P3/3N2Q1/1PN5/1PP3PP/R3K2R b KQ - 4 14") ));
-                                                    
-                                                    ull test_val = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
