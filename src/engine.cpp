@@ -34,6 +34,18 @@ std::vector<std::string> Engine::get_legal_moves()
     return all_moves;
 }
 
+// takes a move, but tracks it so pop() can undo
+// TODO implement
+void Engine::push(Move move)
+{
+}
+
+// undos last move, errors if no move was made before
+// TODO implement
+void Engine::pop()
+{
+}
+
 std::vector<std::string> Engine::get_pawn_moves(Color player_Color)
 {
     std::vector<std::string> pawn_moves;
