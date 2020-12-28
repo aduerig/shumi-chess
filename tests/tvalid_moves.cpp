@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 #include <engine.hpp>
 #include <utility.hpp>
+#include <globals.hpp>
 
 using namespace std;
 
@@ -13,6 +14,20 @@ typedef unordered_map<int, vector<string>> fen_map;
 TEST(Setup, WhiteGoesFirst) {
     ShumiChess::Engine test_engine;
     test_engine.game_board.turn == ShumiChess::Color::WHITE;
+}
+
+TEST(MoveStringConversion, MoveToString1) {
+    // squares 1 (h1), and 2 (g1)
+    ShumiChess::Move test_move = {1ULL, 1ULL << 1, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    string converted = utility::representation::move_to_string(test_move);
+    ASSERT_EQ("h1g1", converted);
+}
+
+TEST(MoveStringConversion, MoveToString2) {
+    // squares 9 (h2), and 64 (a8)
+    ShumiChess::Move test_move = {1ULL << 8, 1ULL << 63, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    string converted = utility::representation::move_to_string(test_move);
+    ASSERT_EQ("h2a8", converted);
 }
 
 // using qperft to determine number of legal moves by depth

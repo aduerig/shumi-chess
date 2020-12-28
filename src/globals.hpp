@@ -19,9 +19,9 @@ enum Piece {
 
 // TODO think about if this is the right way to represent
 struct Move {
-    int from; // square
-    int to; // square
-    Color color; 
+    ull from; // square
+    ull to; // square
     Piece piece_type;
+    Color color; 
 };
 } // end namespace ShumiChess

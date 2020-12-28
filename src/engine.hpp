@@ -24,12 +24,12 @@ class Engine {
         void push(Move move);
         void pop();
 
-        vector<string> get_legal_moves();
-        vector<string> get_pawn_moves(Color player_Color);
-        vector<string> get_knight_moves(Color player_Color);
-        vector<string> get_bishop_moves(Color player_Color);
-        vector<string> get_queen_moves(Color player_Color);
-        vector<string> get_king_moves(Color player_Color);
-        vector<string> get_rook_moves(Color player_Color);
+        vector<Move> get_legal_moves();
+        vector<Move> get_pawn_moves(Color player_Color);
+        vector<Move> get_knight_moves(Color player_Color);
+        vector<Move> get_bishop_moves(Color player_Color);
+        vector<Move> get_queen_moves(Color player_Color);
+        vector<Move> get_king_moves(Color player_Color);
+        vector<Move> get_rook_moves(Color player_Color);
 };
 } // end namespace ShumiChess

@@ -3,17 +3,23 @@
 //TODO shares a name with builtin lib
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "globals.hpp"
+
+using namespace std;
 
 namespace utility {
 
 namespace representation {
 
 ull acn_to_bit_conversion(const std::string&);
+std::string square_to_position_string(ull square);
+std::string move_to_string(ShumiChess::Move);
 
 } // representation
 
+// ? should we really clash in namespace name here
 namespace string {
 
 /* 
