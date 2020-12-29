@@ -7,9 +7,9 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 ### building the C++ engine
 `cmake CMakeLists.txt`
 
-#### build, execute tests, and run driver
+#### build, execute tests, and run driver (Linux)
 Run `build_unittests_driver.sh`
-#### 1-liner if using mingw (https://github.com/google/googletest/issues/1051)
+#### build, execute tests, and run driver if using mingw (probably windows) (https://github.com/google/googletest/issues/1051)
 `cmake CMakeLists.txt -Dgtest_disable_pthreads=ON && cmake --build . && .\bin\unit_tests.exe`
 
 ### building the C++ python module
