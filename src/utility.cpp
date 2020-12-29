@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
 #include "globals.hpp"
 
@@ -18,35 +19,54 @@ ull acn_to_bit_conversion(const std::string& anc) {
     return 1ULL << square_number;
 }
 
+// TODO probably will want to use __builtin_ctz
+// ? probably want his and function below in its own namespace
+ull lsb_and_pop(ull& board) {
+    // simple linear search, slow
+    ull lsb;
+    for (int i = 0; i < 64; i++) {
+        if ((1ULL << i) & board) {
+            lsb = 1ULL << i;
+            board = board & (~lsb);
+            break;
+        }
+    }
+    return lsb;
+}
+
+ull bitshift_by_color(ull board, ShumiChess::Color color, int amount) {
+    if (color == ShumiChess::WHITE) {
+        return board << amount;
+    }
+    return board >> amount;
+}
+
 // assumes layout is:
-// lower right is 1
-// lower left is 8
-// upper right is 56
-// upper left is 63
+// lower right is 2^0
+// lower left is 2^7
+// upper right is 2^56
+// upper left is 2^63
 std::string square_to_position_string(ull square) {
-    std::unordered_map<ull, std::string> row_to_letter = {
-        {1ULL, "a"},
-        {2ULL, "b"},
-        {3ULL, "c"},
-        {4ULL, "d"},
-        {5ULL,"e"},
-        {6ULL, "f"},
-        {7ULL, "g"},
-        {8ULL, "h"}
+    std::unordered_map<int, std::string> row_to_letter = {
+        {1, "a"},
+        {2, "b"},
+        {3, "c"},
+        {4, "d"},
+        {5, "e"},
+        {6, "f"},
+        {7, "g"},
+        {8, "h"}
     };
 
     for (int i = 1; i <= 8; i++) {
         for (int j = 1; j <= 8; j++) {
-            std::cout << "square: " << square << ", i: " << i << ", j: " << j << std::endl;
-            std::cout << "anded: " << (1ULL & square) << std::endl;
             if (1ULL & square) {
-                std::cout << "done" << std::endl;
                 return row_to_letter[9 - j] + std::to_string(i);
             }
             square = square >> 1;
         }
     }
-    throw 1;
+    assert(false);
 }
 
 std::string move_to_string(ShumiChess::Move move) {

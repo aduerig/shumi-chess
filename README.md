@@ -7,9 +7,9 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 ### building the C++ engine
 `cmake CMakeLists.txt`
 
-#### build, execute tests, and run driver
+#### build, execute tests, and run driver (Linux)
 Run `build_unittests_driver.sh`
-#### 1-liner if using mingw (https://github.com/google/googletest/issues/1051)
+#### build, execute tests, and run driver if using mingw (probably windows) (https://github.com/google/googletest/issues/1051)
 `cmake CMakeLists.txt -Dgtest_disable_pthreads=ON && cmake --build . && .\bin\unit_tests.exe`
 
 ### building the C++ python module
@@ -22,9 +22,12 @@ Run `build_unittests_driver.sh`
 ## testing
 This project uses GTest for its unittests, after building the unit_test binary will be in the bin/ folder
 
-## in depth technical notes
+## technical notes
 ### using this as CMAKE + gtest template
 https://github.com/bast/gtest-demo
 
 ### using cpython to compile C extensions to communicate to c++ engine for gui
 https://docs.python.org/3/extending/
+
+### bit twiddling hacks
+http://graphics.stanford.edu/%7Eseander/bithacks.html

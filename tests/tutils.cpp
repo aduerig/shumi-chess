@@ -9,6 +9,34 @@
 
 using namespace std;
 
+
+
+TEST(MoveStringConversion, MoveToString1) {
+    // squares 0 (h1), and 1 (g1)
+    ShumiChess::Move test_move = {1ULL << 0, 1ULL << 1, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    string converted = utility::representation::move_to_string(test_move);
+    ASSERT_EQ("h1g1", converted);
+}
+
+TEST(MoveStringConversion, MoveToString2) {
+    // squares 8 (h2), and 63 (a8)
+    ShumiChess::Move test_move = {1ULL << 8, 1ULL << 63, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    string converted = utility::representation::move_to_string(test_move);
+    ASSERT_EQ("h2a8", converted);
+}
+
+
+TEST(BitTests, LsbAndPop) {
+    ull test_board        = 0b00000000'11101101'00000000'00000000'00000001'00000000'00000000'00000010;
+    ull expected_board    = 0b00000000'11101101'00000000'00000000'00000001'00000000'00000000'00000000;
+    ull expected_popped   = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010;
+    ull popped_square = utility::representation::lsb_and_pop(test_board);
+    ASSERT_EQ(expected_popped, popped_square);
+    ASSERT_EQ(expected_board, test_board);
+}
+
+
+
 typedef pair<string, ull> acn_to_bit_test_type;
 class tAncBitConversion : public testing::TestWithParam<acn_to_bit_test_type> {};
 TEST_P(tAncBitConversion, AncToBitboardConversion) {

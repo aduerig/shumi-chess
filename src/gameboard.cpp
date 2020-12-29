@@ -7,34 +7,34 @@
 #include "utility.hpp"
 
 namespace ShumiChess {
-    GameBoard::GameBoard() : 
-        black_pawns(0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
-        white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
-        black_rooks(0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-        white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000001),
-        black_knights(0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-        white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01000010),
-        black_bishops(0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-        white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00100100),
-        black_queens(0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-        white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00010000),
-        black_king(0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-        white_king(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
-        turn(WHITE),
-        black_castle(0b00000011),
-        white_castle(0b00000011),
-        en_passant(0),
-        halfmove(0),
-        fullmove(1) {
-    }
+GameBoard::GameBoard() : 
+    black_pawns(0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
+    black_rooks(0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000001),
+    black_knights(0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01000010),
+    black_bishops(0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00100100),
+    black_queens(0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00010000),
+    black_king(0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_king(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
+    turn(WHITE),
+    black_castle(0b00000011),
+    white_castle(0b00000011),
+    en_passant(0),
+    halfmove(0),
+    fullmove(1) {
+}
 
-    GameBoard::GameBoard(const std::string& fen_notation) {
-        const std::vector<std::string> fen_components = utility::string::split(fen_notation);
-        
-        assert(fen_components.size() == 6);
-        assert(fen_components[1].size() == 1);
-        assert(fen_components[2].size() <= 4);
-        assert(fen_components[3].size() <= 2);
+GameBoard::GameBoard(const std::string& fen_notation) {
+    const std::vector<std::string> fen_components = utility::string::split(fen_notation);
+    
+    assert(fen_components.size() == 6);
+    assert(fen_components[1].size() == 1);
+    assert(fen_components[2].size() <= 4);
+    assert(fen_components[3].size() <= 2);
 
 
     int square_counter = 64;
@@ -102,5 +102,52 @@ namespace ShumiChess {
     assert(square_counter == 0);
     
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
+}
+
+const std::string GameBoard::to_fen() {
+    std::string nothing;
+    return nothing;
+}
+
+ull GameBoard::get_pieces(Color color) {
+    if (color == Color::WHITE) {
+        return white_pawns | white_rooks | white_knights | 
+               white_bishops | white_queens | white_king;
+    }
+    else if (color == Color::BLACK) {
+        return black_pawns | black_rooks | black_knights | 
+               black_bishops | black_queens | black_king;
+    }
+    assert(false);
+}
+
+ull GameBoard::get_pieces(Piece piece_type) {
+    if (piece_type == Piece::PAWN) {
+        return black_pawns | white_pawns;
+    }
+    else if (piece_type == Piece::ROOK) {
+        return black_rooks | white_rooks;
+    }
+    else if (piece_type == Piece::KNIGHT) {
+        return black_knights | white_knights;
+    }
+    else if (piece_type == Piece::BISHOP) {
+        return black_bishops | white_bishops;
+    }
+    else if (piece_type == Piece::QUEEN) {
+        return black_queens | white_queens;
+    }
+    else if (piece_type == Piece::KING) {
+        return black_king | white_king;
+    }
+    assert(false);
+}
+
+ull GameBoard::get_pieces(Color color, Piece piece_type) {
+    return get_pieces(piece_type) & get_pieces(color);
+}
+
+ull GameBoard::get_pieces() {
+    return get_pieces(Color::WHITE) & get_pieces(Color::BLACK);
 }
 } // end namespace ShumiChess
