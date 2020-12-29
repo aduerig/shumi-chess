@@ -16,19 +16,19 @@ void Engine::reset_engine() {
 vector<Move> Engine::get_legal_moves()
 {
     vector<Move> all_moves;
-    Color player_Color = game_board.turn;
+    Color color = game_board.turn;
 
-    for(Move move : get_pawn_moves(player_Color)) 
+    for(Move move : get_pawn_moves(color)) 
         all_moves.push_back(move);
-    for(Move move : get_rook_moves(player_Color)) 
+    for(Move move : get_rook_moves(color)) 
         all_moves.push_back(move);
-    for(Move move : get_bishop_moves(player_Color)) 
+    for(Move move : get_bishop_moves(color)) 
         all_moves.push_back(move);
-    for(Move move : get_queen_moves(player_Color)) 
+    for(Move move : get_queen_moves(color)) 
         all_moves.push_back(move);
-    for(Move move : get_king_moves(player_Color)) 
+    for(Move move : get_king_moves(color)) 
         all_moves.push_back(move);
-    for(Move move : get_knight_moves(player_Color)) 
+    for(Move move : get_knight_moves(color)) 
         all_moves.push_back(move);
 
     return all_moves;
@@ -46,39 +46,50 @@ void Engine::pop()
 {
 }
 
-vector<Move> Engine::get_pawn_moves(Color player_Color)
+vector<Move> Engine::get_pawn_moves(Color color)
 {
     vector<Move> pawn_moves;
-    Move new_move = {0, 1, Piece::PAWN, player_Color};
-    pawn_moves.push_back(new_move);
+    // Move new_move;
+    // new_move.from = 0;
+    // new_move.to = 0;
+    // new_move.piece_type = Piece::PAWN;
+    // new_move.color = color;
+    
+    // single
+    ull pawns = game_board.get_piece(color, Piece::PAWN);
+    
+    // double
+    // ull rank_masks[2];
+
+    // pawn_moves.push_back(new_move);
     return pawn_moves;
 }
 
-vector<Move> Engine::get_knight_moves(Color player_Color)
+vector<Move> Engine::get_knight_moves(Color color)
 {
     vector<Move> knight_moves;
     return knight_moves;
 }
 
-vector<Move> Engine::get_rook_moves(Color player_Color)
+vector<Move> Engine::get_rook_moves(Color color)
 {
     vector<Move> rook_moves;
     return rook_moves;
 }
 
-vector<Move> Engine::get_bishop_moves(Color player_Color)
+vector<Move> Engine::get_bishop_moves(Color color)
 {
     vector<Move> bishop_moves;
     return bishop_moves;
 }
 
-vector<Move> Engine::get_queen_moves(Color player_Color)
+vector<Move> Engine::get_queen_moves(Color color)
 {
     vector<Move> queen_moves;
     return queen_moves;
 }
 
-vector<Move> Engine::get_king_moves(Color player_Color)
+vector<Move> Engine::get_king_moves(Color color)
 {
     vector<Move> king_moves;
     return king_moves;

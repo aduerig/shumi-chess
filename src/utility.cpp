@@ -20,31 +20,30 @@ ull acn_to_bit_conversion(const std::string& anc) {
 }
 
 // assumes layout is:
-// lower right is 0
-// lower left is 7
-// upper right is 56
-// upper left is 63
+// lower right is 2^0
+// lower left is 2^7
+// upper right is 2^56
+// upper left is 2^63
 std::string square_to_position_string(ull square) {
-    std::unordered_map<ull, std::string> row_to_letter = {
-        {0ULL, "a"},
-        {1ULL, "b"},
-        {2ULL, "c"},
-        {3ULL, "d"},
-        {4ULL,"e"},
-        {5ULL, "f"},
-        {6ULL, "g"},
-        {7ULL, "h"}
+    std::unordered_map<int, std::string> row_to_letter = {
+        {1, "a"},
+        {2, "b"},
+        {3, "c"},
+        {4, "d"},
+        {5, "e"},
+        {6, "f"},
+        {7, "g"},
+        {8, "h"}
     };
 
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            if (!square) {
-                return row_to_letter[7 - j] + std::to_string(i+1);
+    for (int i = 1; i <= 8; i++) {
+        for (int j = 1; j <= 8; j++) {
+            if (1ULL & square) {
+                return row_to_letter[9 - j] + std::to_string(i);
             }
             square = square >> 1;
         }
     }
-    // ? better way to quit, this crashes test driver, maybe make exception?
     assert(false);
 }
 

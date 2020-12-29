@@ -6,6 +6,7 @@ set(project_name ShumiChess)
 set(CMAKE_BUILD_TYPE Debug)
 
 project(${project_name} CXX)
+set (CMAKE_CXX_STANDARD 17)
 
 # these are if we dont call project(), it can seperate the library name and folder
 # set(LIBRARY_NAME ${project_name})   # [optional] generated automatically (in lowercase)
