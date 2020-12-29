@@ -38,10 +38,7 @@ std::string square_to_position_string(ull square) {
 
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            std::cout << "square: " << square << ", i: " << i << ", j: " << j << std::endl;
-            std::cout << "anded: " << (1ULL & square) << std::endl;
             if (!square) {
-                std::cout << "done" << std::endl;
                 return row_to_letter[7 - j] + std::to_string(i+1);
             }
             square = square >> 1;
