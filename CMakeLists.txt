@@ -38,12 +38,14 @@ set(Headers
     src/gameboard.hpp
     src/engine.hpp
     src/globals.hpp
+    src/move_tables.hpp
     src/utility.hpp
 )
 
 set(Sources
     src/gameboard.cpp
     src/engine.cpp
+    src/move_tables.cpp
     src/utility.cpp
 )
 

@@ -13,8 +13,8 @@ class Engine {
         GameBoard game_board;
     
         // Constructors
-        //TODO Should the engine be tied to a single boardstate
-        //Should engine functions act independently and take board objects?
+        //? Should the engine be tied to a single boardstate
+        //? Should engine functions act independently and take board objects?
         explicit Engine();
         explicit Engine(const string&);
 
