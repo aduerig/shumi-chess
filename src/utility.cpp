@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
 #include "globals.hpp"
 
@@ -19,34 +20,35 @@ ull acn_to_bit_conversion(const std::string& anc) {
 }
 
 // assumes layout is:
-// lower right is 1
-// lower left is 8
+// lower right is 0
+// lower left is 7
 // upper right is 56
 // upper left is 63
 std::string square_to_position_string(ull square) {
     std::unordered_map<ull, std::string> row_to_letter = {
-        {1ULL, "a"},
-        {2ULL, "b"},
-        {3ULL, "c"},
-        {4ULL, "d"},
-        {5ULL,"e"},
-        {6ULL, "f"},
-        {7ULL, "g"},
-        {8ULL, "h"}
+        {0ULL, "a"},
+        {1ULL, "b"},
+        {2ULL, "c"},
+        {3ULL, "d"},
+        {4ULL,"e"},
+        {5ULL, "f"},
+        {6ULL, "g"},
+        {7ULL, "h"}
     };
 
-    for (int i = 1; i <= 8; i++) {
-        for (int j = 1; j <= 8; j++) {
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
             std::cout << "square: " << square << ", i: " << i << ", j: " << j << std::endl;
             std::cout << "anded: " << (1ULL & square) << std::endl;
-            if (1ULL & square) {
+            if (!square) {
                 std::cout << "done" << std::endl;
-                return row_to_letter[9 - j] + std::to_string(i);
+                return row_to_letter[7 - j] + std::to_string(i+1);
             }
             square = square >> 1;
         }
     }
-    throw 1;
+    // ? better way to quit, this crashes test driver, maybe make exception?
+    assert(false);
 }
 
 std::string move_to_string(ShumiChess::Move move) {
