@@ -16,20 +16,6 @@ TEST(Setup, WhiteGoesFirst) {
     test_engine.game_board.turn == ShumiChess::Color::WHITE;
 }
 
-TEST(MoveStringConversion, MoveToString1) {
-    // squares 0 (h1), and 1 (g1)
-    ShumiChess::Move test_move = {1ULL << 0, 1ULL << 1, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
-    string converted = utility::representation::move_to_string(test_move);
-    ASSERT_EQ("h1g1", converted);
-}
-
-TEST(MoveStringConversion, MoveToString2) {
-    // squares 8 (h2), and 63 (a8)
-    ShumiChess::Move test_move = {1ULL << 8, 1ULL << 63, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
-    string converted = utility::representation::move_to_string(test_move);
-    ASSERT_EQ("h2a8", converted);
-}
-
 // using qperft to determine number of legal moves by depth
 // https://home.hccnet.nl/h.g.muller/dwnldpage.html
 // perft( 1)=           20
@@ -80,11 +66,25 @@ TEST(ValidMoves, LengthOfValidMovesDepth1) {
 // FENS BY DEPTH
 /////////////////////////////////
 
+void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, ShumiChess::Engine& engine) {
+    if (depth <= 0) {
+        return;
+    }
+
+    vector<ShumiChess::Move> legal_moves = engine.get_legal_moves();
+    for (auto move : legal_moves) {
+        engine.push(move);
+        recurse_moves_and_fill_fens(fen_holder, depth - 1, engine);
+        fen_holder[depth].push_back(engine.game_board.to_fen());
+        engine.pop();
+    }
+}
+
 fen_map get_fens_by_depth_from_engine() {
     fen_map fen_holder;
     ShumiChess::Engine test_engine;
     
-    // TODO adapt generate_legal_positions_by_depth.py to c++ for this function
+    // recurse_moves_and_fill_fens(fen_holder, 3, test_engine);
 
     return fen_holder;
 }

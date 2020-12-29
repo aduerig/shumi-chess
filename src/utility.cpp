@@ -19,6 +19,28 @@ ull acn_to_bit_conversion(const std::string& anc) {
     return 1ULL << square_number;
 }
 
+// TODO probably will want to use __builtin_ctz
+// ? probably want his and function below in its own namespace
+ull lsb_and_pop(ull& board) {
+    // simple linear search, slow
+    ull lsb;
+    for (int i = 0; i < 64; i++) {
+        if ((1ULL << i) & board) {
+            lsb = 1ULL << i;
+            board = board & (~lsb);
+            break;
+        }
+    }
+    return lsb;
+}
+
+ull bitshift_by_color(ull board, ShumiChess::Color color, int amount) {
+    if (color == ShumiChess::WHITE) {
+        return board << amount;
+    }
+    return board >> amount;
+}
+
 // assumes layout is:
 // lower right is 2^0
 // lower left is 2^7

@@ -14,6 +14,8 @@ namespace utility {
 namespace representation {
 
 ull acn_to_bit_conversion(const std::string&);
+ull bitshift_by_color(ull, ShumiChess::Color, int);
+ull lsb_and_pop(ull&);
 std::string square_to_position_string(ull square);
 std::string move_to_string(ShumiChess::Move);
 

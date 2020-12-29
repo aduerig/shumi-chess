@@ -22,9 +22,12 @@ Run `build_unittests_driver.sh`
 ## testing
 This project uses GTest for its unittests, after building the unit_test binary will be in the bin/ folder
 
-## in depth technical notes
+## technical notes
 ### using this as CMAKE + gtest template
 https://github.com/bast/gtest-demo
 
 ### using cpython to compile C extensions to communicate to c++ engine for gui
 https://docs.python.org/3/extending/
+
+### bit twiddling hacks
+http://graphics.stanford.edu/%7Eseander/bithacks.html

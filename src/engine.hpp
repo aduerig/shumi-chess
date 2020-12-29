@@ -1,8 +1,10 @@
 #pragma once
 
+#include <iostream>
 #include <vector>
 
 #include "gameboard.hpp"
+#include "utility.hpp"
 
 using namespace std;
 

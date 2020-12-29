@@ -54,8 +54,9 @@ class GameBoard {
         // Member methods
         const std::string to_fen();
         
-        ull get_piece(Color);
-        ull get_piece(Piece);
-        ull get_piece(Color, Piece);
+        ull get_pieces();
+        ull get_pieces(Color);
+        ull get_pieces(Piece);
+        ull get_pieces(Color, Piece);
 };
 } // end namespace ShumiChess

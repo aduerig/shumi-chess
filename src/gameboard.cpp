@@ -104,11 +104,12 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
 }
 
-const std::string to_fen() {
-    return "";
+const std::string GameBoard::to_fen() {
+    std::string nothing;
+    return nothing;
 }
 
-ull GameBoard::get_piece(Color color) {
+ull GameBoard::get_pieces(Color color) {
     if (color == Color::WHITE) {
         return white_pawns | white_rooks | white_knights | 
                white_bishops | white_queens | white_king;
@@ -120,7 +121,7 @@ ull GameBoard::get_piece(Color color) {
     assert(false);
 }
 
-ull GameBoard::get_piece(Piece piece_type) {
+ull GameBoard::get_pieces(Piece piece_type) {
     if (piece_type == Piece::PAWN) {
         return black_pawns | white_pawns;
     }
@@ -142,7 +143,11 @@ ull GameBoard::get_piece(Piece piece_type) {
     assert(false);
 }
 
-ull GameBoard::get_piece(Color color, Piece piece_type) {
-    return get_piece(piece_type) & get_piece(color);
+ull GameBoard::get_pieces(Color color, Piece piece_type) {
+    return get_pieces(piece_type) & get_pieces(color);
+}
+
+ull GameBoard::get_pieces() {
+    return get_pieces(Color::WHITE) & get_pieces(Color::BLACK);
 }
 } // end namespace ShumiChess
