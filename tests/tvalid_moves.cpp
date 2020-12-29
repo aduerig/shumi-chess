@@ -84,7 +84,7 @@ fen_map get_fens_by_depth_from_engine() {
     fen_map fen_holder;
     ShumiChess::Engine test_engine;
     
-    // recurse_moves_and_fill_fens(fen_holder, 3, test_engine);
+    recurse_moves_and_fill_fens(fen_holder, 3, test_engine);
 
     return fen_holder;
 }
