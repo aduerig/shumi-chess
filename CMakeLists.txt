@@ -58,14 +58,15 @@ set(Sources
     src/utility.cpp
 )
 
-add_library(${project_name} SHARED ${Sources} ${Headers})
+add_library(${project_name} STATIC ${Sources} ${Headers})
+# add_library(${project_name} SHARED ${Sources} ${Headers})
+
+# equivelent of '-fPIC' as a compiler flag in gcc. only looks needed if not compiling for shared
+set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 
 # # makes it so others can reference the source files for #include statements
 target_include_directories(${project_name} PUBLIC src)
-
-# equivelent of '-fPIC' as a compiler flag in gcc. only looks needed if not compiling for shared
-# set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
-
 
 
 # dont think we need, was a strange error when adding a minimum version  

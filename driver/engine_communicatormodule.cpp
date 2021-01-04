@@ -2,13 +2,14 @@
 // these lines must come first
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+
+#include <algorithm>
 #include <ostream>
 #include <iostream>
 
 #include <engine.hpp>
 
-
-
+// testing functions
 static PyObject *
 engine_communicator_systemcall(PyObject *self, PyObject *args)
 {
@@ -25,8 +26,32 @@ static PyObject *
 engine_communicator_print_from_c(PyObject *self, PyObject *args)
 {
     std::cout << "this is from C" << std::endl;
-    ShumiChess::Engine python_engine;
     return Py_BuildValue(""); // this is None in Python
+}
+
+
+// ! actual chess functionality
+ShumiChess::Engine python_engine;
+
+static PyObject *
+engine_communicator_get_legal_moves(PyObject *self, PyObject *args)
+{
+    vector<ShumiChess::Move> moves = python_engine.get_legal_moves();
+    vector<std::string> moves_readable;
+    // map function that loads into moves_string
+    transform(
+        moves.begin(), 
+        moves.end(), 
+        back_inserter(moves_readable), 
+        utility::representation::move_to_string
+    );
+
+    PyObject* python_move_list = PyList_New(0);
+    for (string move : moves_readable)
+    {
+        PyList_Append(python_move_list, Py_BuildValue("s", move.c_str()));
+    }
+    return python_move_list;
 }
 
 
@@ -35,8 +60,8 @@ static PyMethodDef engine_communicator_methods[] = {
      "Execute a shell command."},
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS,
      "just prints"},
-    {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS,
-     "just prints"},
+    {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS,
+     "gets all legal moves"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
