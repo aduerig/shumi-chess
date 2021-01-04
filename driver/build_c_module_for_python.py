@@ -5,7 +5,9 @@ the_module = Extension(
     sources = ['engine_communicatormodule.cpp'],
     include_dirs = ['../src'],
     library_dirs = ['../lib'],
+    libraries = ['ShumiChess'],
     extra_compile_args=['-std=c++17']
+    # extra_compile_args=['-std=c++17', '-fPIC', '-lgcov', '--coverage', '-fprofile-arcs', '-ftest-coverage']
 )
 
 setup(

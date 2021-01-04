@@ -1,3 +1,4 @@
+// using https://docs.python.org/3/extending/extending.html as template
 // these lines must come first
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -5,6 +6,8 @@
 #include <iostream>
 
 #include <engine.hpp>
+
+
 
 static PyObject *
 engine_communicator_systemcall(PyObject *self, PyObject *args)
@@ -22,12 +25,16 @@ static PyObject *
 engine_communicator_print_from_c(PyObject *self, PyObject *args)
 {
     std::cout << "this is from C" << std::endl;
+    ShumiChess::Engine python_engine;
     return Py_BuildValue(""); // this is None in Python
 }
+
 
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS,
      "Execute a shell command."},
+    {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS,
+     "just prints"},
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS,
      "just prints"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
