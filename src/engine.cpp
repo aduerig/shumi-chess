@@ -48,8 +48,18 @@ void Engine::pop() {
 vector<Move> Engine::get_pawn_moves(Color color) {
     vector<Move> pawn_moves;
     
-    // single
+    // get just pawns of correct color
     ull pawns = game_board.get_pieces(color, Piece::PAWN);
+
+    // grab variables that will be used several times
+    ull pawn_starting_rank_mask = rank_masks[2];
+    ull pawn_enpassant_rank_mask = rank_masks[3];
+    if (color == Color::BLACK) {
+        pawn_enpassant_rank_mask = rank_masks[5];
+        pawn_starting_rank_mask = rank_masks[6];
+    }
+    ull all_pieces = game_board.get_pieces();
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
 
     while (pawns) {
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
@@ -57,29 +67,30 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         
         // single moves forward
         ull move_forward = utility::bit::bitshift_by_color(single_pawn, color, 8); 
-        ull move_forward_blocked = move_forward & (~game_board.get_pieces());
+        ull move_forward_blocked = move_forward & ~all_pieces;
         spaces_to_move |= move_forward_blocked;
 
-        // attacks
-        
+        // attacks forward left and forward right
+        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn, color, 9);
+        ull attack_fright = utility::bit::bitshift_by_color(single_pawn, color, 7);
+        spaces_to_move |= attack_fleft & all_enemy_pieces;
+        spaces_to_move |= attack_fright & all_enemy_pieces;
 
+        // enpassant attacks
+        // TODO need to return to this with push() and pop() to see if they coorperate 
+        spaces_to_move |= (attack_fleft | attack_fright) & game_board.en_passant;
+        
         // move up two ranks
-        ull starting_rank_mask = rank_masks[2];
-        if (color == Color::BLACK) {
-            starting_rank_mask = rank_masks[6];
-        }
-        ull is_doulbable = single_pawn & starting_rank_mask;
-        if (is_doulbable) {
+        ull is_doublable = single_pawn & pawn_starting_rank_mask;
+        if (is_doublable) {
             ull move_forward_two = utility::bit::bitshift_by_color(single_pawn, color, 8);
-            ull move_forward_blocked = move_forward_two & (~game_board.get_pieces());
+            ull move_forward_blocked = move_forward_two & ~all_pieces;
             move_forward_two = utility::bit::bitshift_by_color(move_forward_blocked, color, 8);
-            move_forward_blocked = move_forward_two & (~game_board.get_pieces());
+            move_forward_blocked = move_forward_two & ~all_pieces;
             spaces_to_move |= move_forward_blocked;
         }
 
-        // enpassant
-        // TODO do later, i don't feel like it right now
-
+        // code to actually pop all the potential squares and add them as moves
         while (spaces_to_move) {
             ull single_place_to_move = utility::bit::lsb_and_pop(spaces_to_move);
             Move new_move;

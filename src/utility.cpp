@@ -36,6 +36,13 @@ ull bitshift_by_color(ull board, ShumiChess::Color color, int amount) {
 
 namespace representation {
 
+ShumiChess::Color get_opposite_color(ShumiChess::Color color) {
+    if (color == ShumiChess::Color::WHITE) {
+        return ShumiChess::Color::BLACK;
+    }
+    return ShumiChess::Color::WHITE;
+}
+
 // ? whats our policy on error handling
 // Likely depends on engine vs auxilary
 ull acn_to_bit_conversion(const std::string& anc) {

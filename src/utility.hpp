@@ -22,6 +22,7 @@ namespace representation {
 
 ull acn_to_bit_conversion(const std::string&);
 std::string square_to_position_string(ull square);
+ShumiChess::Color get_opposite_color(ShumiChess::Color);
 std::string move_to_string(ShumiChess::Move);
 
 } // end namespace representation
