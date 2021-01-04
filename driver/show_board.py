@@ -1,6 +1,19 @@
-# TODO change this up when adding build scripts
 import sys
-sys.path.append('build/lib.linux-x86_64-3.9')
+import os
+
+# code to just find the non-temp build folder
+############################################################
+abs_real_filepath = os.path.realpath(__file__)
+just_dir, _ = os.path.split(abs_real_filepath)
+module_build_dir = os.path.join(just_dir, 'build')
+
+for filepath in os.listdir(module_build_dir):
+    first = os.path.join(module_build_dir, filepath)
+    if 'temp' not in filepath:
+        final = os.path.join(module_build_dir, filepath)
+        sys.path.append(final)
+        break
+############################################################
 
 import engine_communicator
 
