@@ -52,16 +52,16 @@ vector<Move> Engine::get_pawn_moves(Color color) {
     ull pawns = game_board.get_pieces(color, Piece::PAWN);
 
     while (pawns) {
-        ull single_pawn = utility::representation::lsb_and_pop(pawns);
+        ull single_pawn = utility::bit::lsb_and_pop(pawns);
         ull spaces_to_move = 0ULL;
         
         // single moves forward
-        ull move_forward = utility::representation::bitshift_by_color(single_pawn, color, 8); 
+        ull move_forward = utility::bit::bitshift_by_color(single_pawn, color, 8); 
         ull move_forward_blocked = move_forward & (~game_board.get_pieces());
         spaces_to_move |= move_forward_blocked;
 
         // attacks
-        // TODO do later, i don't feel like it right now
+        
 
         // move up two ranks
         ull starting_rank_mask = rank_masks[2];
@@ -70,15 +70,18 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         }
         ull is_doulbable = single_pawn & starting_rank_mask;
         if (is_doulbable) {
-            ull move_forward_two = utility::representation::bitshift_by_color(single_pawn, color, 8);
+            ull move_forward_two = utility::bit::bitshift_by_color(single_pawn, color, 8);
             ull move_forward_blocked = move_forward_two & (~game_board.get_pieces());
-            move_forward_two = utility::representation::bitshift_by_color(move_forward_blocked, color, 8);
+            move_forward_two = utility::bit::bitshift_by_color(move_forward_blocked, color, 8);
             move_forward_blocked = move_forward_two & (~game_board.get_pieces());
             spaces_to_move |= move_forward_blocked;
         }
 
+        // enpassant
+        // TODO do later, i don't feel like it right now
+
         while (spaces_to_move) {
-            ull single_place_to_move = utility::representation::lsb_and_pop(spaces_to_move);
+            ull single_place_to_move = utility::bit::lsb_and_pop(spaces_to_move);
             Move new_move;
             new_move.from = single_pawn;
             new_move.to = single_place_to_move;

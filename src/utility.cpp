@@ -9,18 +9,9 @@
 
 namespace utility {
 
-namespace representation {
+namespace bit {
 
-// ? whats our policy on error handling
-// Likely depends on engine vs auxilary
-ull acn_to_bit_conversion(const std::string& anc) {
-    int square_number = 0;
-    square_number += ('h'-anc.at(0)) + 8*(anc.at(1)-'1');
-    return 1ULL << square_number;
-}
-
-// TODO probably will want to use __builtin_ctz
-// ? probably want his and function below in its own namespace
+// TODO probably will want to use __builtin_ctz once we need speed
 ull lsb_and_pop(ull& board) {
     // simple linear search, slow
     ull lsb;
@@ -39,6 +30,18 @@ ull bitshift_by_color(ull board, ShumiChess::Color color, int amount) {
         return board << amount;
     }
     return board >> amount;
+}
+
+} // end namespace bit
+
+namespace representation {
+
+// ? whats our policy on error handling
+// Likely depends on engine vs auxilary
+ull acn_to_bit_conversion(const std::string& anc) {
+    int square_number = 0;
+    square_number += ('h'-anc.at(0)) + 8*(anc.at(1)-'1');
+    return 1ULL << square_number;
 }
 
 // assumes layout is:
@@ -73,7 +76,7 @@ std::string move_to_string(ShumiChess::Move move) {
     return square_to_position_string(move.from) + square_to_position_string(move.to);
 }
 
-} // representation
+} // end namespace representation
 
 namespace string {
 
@@ -104,5 +107,5 @@ bool starts_with(const std::string& main_str, const std::string& smaller_str) {
     return main_str.rfind(smaller_str, 0) == 0;
 }
 
-} // string
-} // utility
+} // end namespace string
+} // end namespace utility
