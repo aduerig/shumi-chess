@@ -5,8 +5,8 @@ from graphics import *
 # code to just find the non-temp build folder for the C extension
 ############################################################
 abs_real_filepath = os.path.realpath(__file__)
-just_dir, _ = os.path.split(abs_real_filepath)
-module_build_dir = os.path.join(just_dir, 'build')
+actual_file_dir, _ = os.path.split(abs_real_filepath)
+module_build_dir = os.path.join(actual_file_dir, 'build')
 
 for filepath in os.listdir(module_build_dir):
     first = os.path.join(module_build_dir, filepath)
@@ -16,11 +16,6 @@ for filepath in os.listdir(module_build_dir):
         break
 ############################################################
 
-# includes the shared object library (libShumiChess.so)
-sys.path.append('lib')
-sys.path.append('../lib')
-
-
 
 import engine_communicator
 
@@ -28,5 +23,60 @@ import engine_communicator
 # engine_communicator.systemcall('echo "this is from the shell"')
 # engine_communicator.print_from_c()
 
-legal_moves = engine_communicator.get_legal_moves()
-print(legal_moves)
+
+# ! drawing chess board
+win = GraphWin(width = 800, height = 800)
+
+# set the coordinates of the window; bottom left is (0, 0) and top right is (1, 1)
+win.setCoords(0, 0, 1, 1)
+square_size = 1.0 / 8
+
+# draws the other 32 squares of other colors
+every_other = 1
+for y in range(8):
+    for x in range(8):
+        location_x = square_size * x
+        location_y = square_size * y
+        square_to_draw = Rectangle(
+            Point(location_x, location_y),
+            Point(location_x + square_size, location_y + square_size)
+        )
+        if every_other:
+            square_to_draw.setFill(color_rgb(65, 65, 65))
+        else:
+            square_to_draw.setFill(color_rgb(125, 125, 125))
+        square_to_draw.draw(win)
+        every_other = 1 - every_other
+    every_other = 1 - every_other
+
+# getting chess_image_filepaths of chess images
+chess_image_filepaths = {}
+for file in os.listdir(os.path.join(actual_file_dir, 'images')):
+    filepath = os.path.join(actual_file_dir, 'images', file)
+    if os.path.isfile(filepath):
+        just_piece = os.path.splitext(file)[0]
+        chess_image_filepaths[just_piece] = filepath
+print(chess_image_filepaths)
+
+# rendering pieces on board
+positions = engine_communicator.get_piece_positions()
+for piece_name, piece_coords in positions.items():
+    for coord in piece_coords:
+        location_of_image = Point(
+            .5, .5
+        )
+        print(piece_name, coord)
+        Image(location_of_image, chess_image_filepaths[piece_name])
+
+
+# ! chess logic
+# positions = engine_communicator.get_piece_positions()
+# print(positions)
+# legal_moves = engine_communicator.get_legal_moves()
+
+# print(legal_moves)
+
+is_focused = False
+while True:
+    # detect click
+    win.getMouse()
