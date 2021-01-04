@@ -1,5 +1,6 @@
 import sys
 import os
+from graphics import *
 
 # code to just find the non-temp build folder for the C extension
 ############################################################

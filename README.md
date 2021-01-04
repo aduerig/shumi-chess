@@ -8,13 +8,13 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 `cmake CMakeLists.txt`
 
 #### build, execute tests, and run driver (Linux)
-Run `build_unittests_driver.sh`
+Run `./build_unittests_driver.sh`
 #### build, execute tests, and run driver if using mingw (probably windows) (https://github.com/google/googletest/issues/1051)
 `cmake CMakeLists.txt -Dgtest_disable_pthreads=ON && cmake --build . && .\bin\unit_tests.exe`
 
 ### building the C++ python module
-`cd driver`
-`python build_c_module_for_python.py build`
+Tkinter must be installed on your system. For arch linux: `sudo pacman -S tk`
+`./build_python_module_run.sh`
 
 #### 1-liner to build python module and run it
 `python build_c_module_for_python.py build; python show_board.py`
