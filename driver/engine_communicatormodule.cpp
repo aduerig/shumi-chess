@@ -59,13 +59,13 @@ static PyObject *
 engine_communicator_get_piece_positions(PyObject *self, PyObject *args)
 {
     vector<pair<string, ull>> pieces = {
-        make_pair("black_bishop", python_engine.game_board.black_pawns),
+        make_pair("black_pawn", python_engine.game_board.black_pawns),
         make_pair("black_rook", python_engine.game_board.black_rooks),
         make_pair("black_knight", python_engine.game_board.black_knights),
         make_pair("black_bishop", python_engine.game_board.black_bishops),
         make_pair("black_queen", python_engine.game_board.black_queens),
         make_pair("black_king", python_engine.game_board.black_king),
-        make_pair("white_bishop", python_engine.game_board.white_pawns),
+        make_pair("white_pawn", python_engine.game_board.white_pawns),
         make_pair("white_rook", python_engine.game_board.white_rooks),
         make_pair("white_knight", python_engine.game_board.white_knights),
         make_pair("white_bishop", python_engine.game_board.white_bishops),

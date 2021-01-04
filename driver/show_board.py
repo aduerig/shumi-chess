@@ -58,15 +58,23 @@ for file in os.listdir(os.path.join(actual_file_dir, 'images')):
         chess_image_filepaths[just_piece] = filepath
 print(chess_image_filepaths)
 
+# precompute chess coordinate notation to x, y values
+coord_to_x_y = {
+    (str(chr(ord('a') + x)) + str(y+1)): (x, y) for y in range(8) for x in range(8)
+}
+
 # rendering pieces on board
 positions = engine_communicator.get_piece_positions()
+print(positions)
 for piece_name, piece_coords in positions.items():
     for coord in piece_coords:
+        x, y = coord_to_x_y[coord]
         location_of_image = Point(
-            .5, .5
+            (x / 8) + (square_size / 2), 
+            (y / 8) + (square_size / 2)
         )
-        print(piece_name, coord)
-        Image(location_of_image, chess_image_filepaths[piece_name])
+        image_to_draw = Image(location_of_image, chess_image_filepaths[piece_name])
+        image_to_draw.draw(win)
 
 
 # ! chess logic
@@ -78,5 +86,6 @@ for piece_name, piece_coords in positions.items():
 
 is_focused = False
 while True:
-    # detect click
     win.getMouse()
+
+    # square_clicked_on
