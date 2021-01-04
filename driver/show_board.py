@@ -30,6 +30,7 @@ win = GraphWin(width = 800, height = 800)
 # set the coordinates of the window; bottom left is (0, 0) and top right is (1, 1)
 win.setCoords(0, 0, 1, 1)
 square_size = 1.0 / 8
+potential_move_circle_radius = square_size / 6
 
 # draws the other 32 squares of other colors
 every_other = 1
@@ -56,16 +57,23 @@ for file in os.listdir(os.path.join(actual_file_dir, 'images')):
     if os.path.isfile(filepath):
         just_piece = os.path.splitext(file)[0]
         chess_image_filepaths[just_piece] = filepath
-print(chess_image_filepaths)
 
 # precompute chess coordinate notation to x, y values
 coord_to_x_y = {
     (str(chr(ord('a') + x)) + str(y+1)): (x, y) for y in range(8) for x in range(8)
 }
 
-# rendering pieces on board
+x_y_to_coord = {
+    (x, y): (str(chr(ord('a') + x)) + str(y+1)) for y in range(8) for x in range(8)
+}
+
+# pythons representation of the board
+board = {
+    (str(chr(ord('a') + x)) + str(y+1)):None for y in range(8) for x in range(8)
+}
+
+# rendering pieces on boards
 positions = engine_communicator.get_piece_positions()
-print(positions)
 for piece_name, piece_coords in positions.items():
     for coord in piece_coords:
         x, y = coord_to_x_y[coord]
@@ -75,6 +83,7 @@ for piece_name, piece_coords in positions.items():
         )
         image_to_draw = Image(location_of_image, chess_image_filepaths[piece_name])
         image_to_draw.draw(win)
+        board[coord] = image_to_draw
 
 
 # ! chess logic
@@ -84,8 +93,38 @@ for piece_name, piece_coords in positions.items():
 
 # print(legal_moves)
 
-is_focused = False
+
+legal_moves = engine_communicator.get_legal_moves() # needs to be called when board changes
+coord_focused = None
+drawn_potential = []
 while True:
-    win.getMouse()
+    raw_position = win.getMouse()
+    raw_x, raw_y = raw_position.x, raw_position.y
 
     # square_clicked_on
+    x, y = int(raw_x * 8), int(raw_y * 8)
+    coord_clicked = x_y_to_coord[(x, y)]
+
+    for i in drawn_potential:
+        i.undraw()
+    drawn_potential = []
+    if not board[coord_clicked]:
+        coord_focused = None
+    elif coord_clicked == coord_focused:
+        coord_focused = None
+    else:
+        coord_focused = coord_clicked
+    
+    for move in legal_moves:
+        from_square, to_square = move[:2], move[2:]
+        if coord_focused == from_square:
+            focused_x, focused_y = coord_to_x_y[to_square]
+            render_x = (focused_x * square_size) + square_size / 2
+            render_y = (focused_y * square_size) + square_size / 2
+            potential_move = Circle(
+                Point(render_x, render_y),
+                potential_move_circle_radius
+            )
+            potential_move.setFill(color_rgb(170, 170, 170))
+            potential_move.draw(win)
+            drawn_potential.append(potential_move)

@@ -3,7 +3,7 @@
 
 # variable set of the whole library/project
 set(project_name ShumiChess)
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 
 project(${project_name} CXX)
 set (CMAKE_CXX_STANDARD 17)
