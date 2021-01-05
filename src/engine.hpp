@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 
+#include "globals.hpp"
 #include "gameboard.hpp"
 #include "utility.hpp"
 

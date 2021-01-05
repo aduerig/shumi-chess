@@ -41,7 +41,7 @@ class GameBoard {
         // ? do we care about non standard gameboards / moves
         // ? would one consider an extra bit for if we should look at this val
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
-        ull en_passant {}; 
+        ull en_passant {0}; 
 
         // move clock
         uint8_t halfmove;
