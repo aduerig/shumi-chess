@@ -1,3 +1,5 @@
+#include <functional>
+
 #include "engine.hpp"
 
 using namespace std;
@@ -38,6 +40,59 @@ vector<Move> Engine::get_legal_moves() {
 // takes a move, but tracks it so pop() can undo
 // TODO implement
 void Engine::push(Move move) {
+    move_history.push(move);
+
+    this->game_board.turn = ShumiChess::Color::BLACK - move.color;
+
+    ++this->game_board.fullmove;
+    ++this->game_board.halfmove;
+    if(move.piece_type == ShumiChess::Piece::PAWN) {this->game_board.halfmove = 0;}
+    
+    ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
+    moving_piece &= ~move.from;
+
+    if (!move.promotion) {moving_piece |= move.to;}
+    else
+    {
+        access_piece_of_color(*move.promotion, move.color) |= move.to;
+    }
+    if (move.capture) {
+        this->game_board.halfmove = 0;
+        access_piece_of_color(*move.capture, ShumiChess::Color::BLACK - move.color) &= ~move.to;
+    }
+
+    //castling
+    //en_passant
+}
+
+ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color color) {
+    switch (piece)
+    {
+    case ShumiChess::Piece::PAWN:
+        if (color) {return std::ref(this->game_board.black_pawns);}
+        else {return std::ref(this->game_board.white_pawns);}
+        break;
+    case ShumiChess::Piece::ROOK:
+        if (color) {return std::ref(this->game_board.black_rooks);}
+        else {return std::ref(this->game_board.white_rooks);}
+        break;
+    case ShumiChess::Piece::KNIGHT:
+        if (color) {return std::ref(this->game_board.black_knights);}
+        else {return std::ref(this->game_board.white_knights);}
+        break;
+    case ShumiChess::Piece::BISHOP:
+        if (color) {return std::ref(this->game_board.black_bishops);}
+        else {return std::ref(this->game_board.white_bishops);}
+        break;
+    case ShumiChess::Piece::QUEEN:
+        if (color) {return std::ref(this->game_board.black_queens);}
+        else {return std::ref(this->game_board.white_queens);}
+        break;
+    case ShumiChess::Piece::KING:
+        if (color) {return std::ref(this->game_board.black_king);}
+        else {return std::ref(this->game_board.white_king);}
+        break;
+    }
 }
 
 // undos last move, errors if no move was made before

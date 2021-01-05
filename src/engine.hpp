@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <stack>
 #include <vector>
 
 #include "gameboard.hpp"
@@ -13,6 +14,8 @@ class Engine {
     public:
         // Members
         GameBoard game_board;
+
+        std::stack<Move> move_history;
     
         // Constructors
         //? Should the engine be tied to a single boardstate
@@ -25,6 +28,8 @@ class Engine {
 
         void push(Move move);
         void pop();
+
+        ull& access_piece_of_color(ShumiChess::Piece, ShumiChess::Color);
 
         vector<Move> get_legal_moves();
         vector<Move> get_pawn_moves(Color player_Color);

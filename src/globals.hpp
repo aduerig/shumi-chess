@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <unordered_map>
 
 typedef unsigned long long ull;
@@ -16,15 +17,20 @@ enum Piece {
     KNIGHT,
     BISHOP,
     QUEEN,
-    KING
+    KING,
+    NONE
 };
 
 // TODO think about if this is the right way to represent
 struct Move {
+    Color color;
+    Piece piece_type;
     ull from; // square
     ull to; // square
-    Piece piece_type;
-    Color color; 
+    std::optional<Piece> capture;
+    std::optional<Piece> promotion;
+    //castling info
+    ull en_passent {};
 };
 
 inline ull a_row = 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 |
