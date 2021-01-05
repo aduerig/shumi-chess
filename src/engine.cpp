@@ -15,6 +15,7 @@ void Engine::reset_engine() {
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
 // https://stackoverflow.com/questions/15704565/efficient-way-to-return-a-stdvector-in-c
+// TODO ignoring check atm
 vector<Move> Engine::get_legal_moves() {
     vector<Move> all_moves;
     Color color = game_board.turn;
