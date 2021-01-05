@@ -30,7 +30,7 @@ TEST(BitTests, LsbAndPop) {
     ull test_board        = 0b00000000'11101101'00000000'00000000'00000001'00000000'00000000'00000010;
     ull expected_board    = 0b00000000'11101101'00000000'00000000'00000001'00000000'00000000'00000000;
     ull expected_popped   = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010;
-    ull popped_square = utility::representation::lsb_and_pop(test_board);
+    ull popped_square = utility::bit::lsb_and_pop(test_board);
     ASSERT_EQ(expected_popped, popped_square);
     ASSERT_EQ(expected_board, test_board);
 }
