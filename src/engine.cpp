@@ -132,7 +132,7 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         spaces_to_move |= attack_fright & all_enemy_pieces;
 
         // enpassant attacks
-        // TODO need to return to this with push() and pop() to see if they coorperate 
+        // TODO need to return to this with push() and pop() to see if they cooperate 
         spaces_to_move |= (attack_fleft | attack_fright) & game_board.en_passant;
         
         // move up two ranks
