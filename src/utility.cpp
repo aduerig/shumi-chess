@@ -114,5 +114,16 @@ bool starts_with(const std::string& main_str, const std::string& smaller_str) {
     return main_str.rfind(smaller_str, 0) == 0;
 }
 
+std::string join(const vector<std::string>& the_vect, const char* delim) {
+   std::string new_string;
+   for (std::vector<std::string>::const_iterator p = the_vect.begin(); p != the_vect.end(); p++) {
+        new_string += *p;
+        if (p != the_vect.end() - 1) {
+        new_string += delim;
+        }
+   }
+   return new_string;
+}
+
 } // end namespace string
 } // end namespace utility
