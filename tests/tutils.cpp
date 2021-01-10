@@ -9,18 +9,23 @@
 
 using namespace std;
 
-
+TEST(InverseColor, GetOpposingColorTest) {
+    EXPECT_EQ(utility::representation::get_opposite_color(ShumiChess::Color::WHITE),
+              ShumiChess::Color::BLACK);
+    ASSERT_EQ(utility::representation::get_opposite_color(ShumiChess::Color::BLACK),
+              ShumiChess::Color::WHITE);
+}
 
 TEST(MoveStringConversion, MoveToString1) {
     // squares 0 (h1), and 1 (g1)
-    ShumiChess::Move test_move = {1ULL << 0, 1ULL << 1, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    ShumiChess::Move test_move = {ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 0, 1ULL << 1};
     string converted = utility::representation::move_to_string(test_move);
     ASSERT_EQ("h1g1", converted);
 }
 
 TEST(MoveStringConversion, MoveToString2) {
     // squares 8 (h2), and 63 (a8)
-    ShumiChess::Move test_move = {1ULL << 8, 1ULL << 63, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    ShumiChess::Move test_move = {ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 8, 1ULL << 63};
     string converted = utility::representation::move_to_string(test_move);
     ASSERT_EQ("h2a8", converted);
 }
@@ -31,7 +36,7 @@ TEST(BitTests, LsbAndPop) {
     ull expected_board    = 0b00000000'11101101'00000000'00000000'00000001'00000000'00000000'00000000;
     ull expected_popped   = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010;
     ull popped_square = utility::bit::lsb_and_pop(test_board);
-    ASSERT_EQ(expected_popped, popped_square);
+    EXPECT_EQ(expected_popped, popped_square);
     ASSERT_EQ(expected_board, test_board);
 }
 

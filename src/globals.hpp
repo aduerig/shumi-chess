@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cinttypes>
+#include <optional>
 #include <unordered_map>
 
 typedef unsigned long long ull;
@@ -16,19 +18,25 @@ enum Piece {
     KNIGHT,
     BISHOP,
     QUEEN,
-    KING
+    KING,
+    NONE
 };
 
 // TODO think about if this is the right way to represent
 struct Move {
+    Color color;
+    Piece piece_type;
     ull from; // square
     ull to; // square
-    Piece piece_type;
-    Color color; 
+    std::optional<Piece> capture;
+    std::optional<Piece> promotion;
+    uint8_t black_castle = 0b00000011;
+    uint8_t white_castle = 0b00000011;
+    ull en_passent = 0;
 };
 
 
-// ? can use inline here, but it complicates the build. defining in gloabls.cpp
+// ? can use inline here, but it complicates the build. defining in globals.cpp
 extern ull a_row;
 extern std::unordered_map<int, ull> rank_masks;
 

@@ -11,11 +11,6 @@ using namespace std;
 
 typedef unordered_map<int, vector<string>> fen_map;
 
-TEST(Setup, WhiteGoesFirst) {
-    ShumiChess::Engine test_engine;
-    test_engine.game_board.turn == ShumiChess::Color::WHITE;
-}
-
 // using qperft to determine number of legal moves by depth
 // https://home.hccnet.nl/h.g.muller/dwnldpage.html
 // perft( 1)=           20
@@ -73,10 +68,10 @@ void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, ShumiChess::Eng
 
     vector<ShumiChess::Move> legal_moves = engine.get_legal_moves();
     for (auto move : legal_moves) {
-        engine.push(move);
+        // engine.push(move);
         recurse_moves_and_fill_fens(fen_holder, depth - 1, engine);
         fen_holder[depth].push_back(engine.game_board.to_fen());
-        engine.pop();
+        // engine.pop();
     }
 }
 

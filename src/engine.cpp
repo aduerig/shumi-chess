@@ -1,4 +1,7 @@
+#include <functional>
+
 #include "engine.hpp"
+#include "utility"
 
 using namespace std;
 
@@ -38,7 +41,66 @@ vector<Move> Engine::get_legal_moves() {
 
 // takes a move, but tracks it so pop() can undo
 // TODO implement
-void Engine::push(Move move) {
+void Engine::push(const Move& move) {
+    move_history.push(move);
+
+    this->game_board.turn = utility::representation::get_opposite_color(move.color);
+
+    ++this->game_board.fullmove;
+    ++this->game_board.halfmove;
+    if(move.piece_type == ShumiChess::Piece::PAWN) {
+        this->game_board.halfmove = 0;
+    }
+    
+    ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
+    moving_piece &= ~move.from;
+
+    if (!move.promotion) {moving_piece |= move.to;}
+    else
+    {
+        access_piece_of_color(*move.promotion, move.color) |= move.to;
+    }
+    if (move.capture) {
+        this->game_board.halfmove = 0;
+        access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
+    }
+    this->game_board.en_passant = move.en_passent;
+
+    this->halfway_move_history.push(this->game_board.halfmove);
+    ull castle_opp = castle_opportunity_history.top() && 
+                     this->game_board.black_castle << 2 &&
+                     this->game_board.white_castle;
+    this->castle_opportunity_history.push(castle_opp);
+}
+
+ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color color) {
+    switch (piece)
+    {
+    case ShumiChess::Piece::PAWN:
+        if (color) {return std::ref(this->game_board.black_pawns);}
+        else {return std::ref(this->game_board.white_pawns);}
+        break;
+    case ShumiChess::Piece::ROOK:
+        if (color) {return std::ref(this->game_board.black_rooks);}
+        else {return std::ref(this->game_board.white_rooks);}
+        break;
+    case ShumiChess::Piece::KNIGHT:
+        if (color) {return std::ref(this->game_board.black_knights);}
+        else {return std::ref(this->game_board.white_knights);}
+        break;
+    case ShumiChess::Piece::BISHOP:
+        if (color) {return std::ref(this->game_board.black_bishops);}
+        else {return std::ref(this->game_board.white_bishops);}
+        break;
+    case ShumiChess::Piece::QUEEN:
+        if (color) {return std::ref(this->game_board.black_queens);}
+        else {return std::ref(this->game_board.white_queens);}
+        break;
+    case ShumiChess::Piece::KING:
+        if (color) {return std::ref(this->game_board.black_king);}
+        else {return std::ref(this->game_board.white_king);}
+        break;
+    }
 }
 
 // undos last move, errors if no move was made before
@@ -78,7 +140,7 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         spaces_to_move |= attack_fright & all_enemy_pieces;
 
         // enpassant attacks
-        // TODO need to return to this with push() and pop() to see if they coorperate 
+        // TODO need to return to this with push() and pop() to see if they cooperate 
         spaces_to_move |= (attack_fleft | attack_fright) & game_board.en_passant;
         
         // move up two ranks

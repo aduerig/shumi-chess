@@ -36,13 +36,6 @@ ull bitshift_by_color(ull board, ShumiChess::Color color, int amount) {
 
 namespace representation {
 
-ShumiChess::Color get_opposite_color(ShumiChess::Color color) {
-    if (color == ShumiChess::Color::WHITE) {
-        return ShumiChess::Color::BLACK;
-    }
-    return ShumiChess::Color::WHITE;
-}
-
 char nth_letter(int n)
 {
     assert(n >= 0 && n <= 25);
