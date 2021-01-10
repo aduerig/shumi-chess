@@ -93,7 +93,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     }
 
     if (fen_components[3] != "-") { 
-        this->en_passant = utility::representation::acn_to_bit_conversion(fen_components[3]);
+        this->en_passant = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
     }
 
     this->halfmove = std::stoi(fen_components[4]);
