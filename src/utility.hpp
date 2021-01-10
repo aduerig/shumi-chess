@@ -1,6 +1,7 @@
 #pragma once
 
 //TODO shares a name with builtin lib
+#include <iterator>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -39,6 +40,7 @@ namespace string {
 // Split an input string according to some string delimiter.
 // Uses space by default. 
 std::vector<std::string> split(const std::string&, const std::string& = " ");
+std::string join(const vector<std::string>&, const char*);
 bool starts_with(const std::string& main_str, const std::string& smaller_str);
 
 } // end namespace string

@@ -104,9 +104,35 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
 }
 
+// fields for fen are:
+// piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
 const std::string GameBoard::to_fen() {
-    std::string nothing;
-    return nothing;
+    vector<string> fen_components;
+
+    // TODO: piece placement
+    fen_components.push_back("");
+
+    // current turn
+    string color_rep = "w";
+    if (turn == Color::BLACK) {
+        color_rep = "b";
+    }
+    fen_components.push_back(color_rep);
+
+    // TODO: castling
+    fen_components.push_back("");
+
+    // TODO: enpassant
+    fen_components.push_back("");
+    
+    // TODO: halfmove number (fifty move rule)
+    fen_components.push_back("");
+
+    // TODO: total moves
+    fen_components.push_back("");
+
+    // returns string joined by spaces
+    return utility::string::join(fen_components, " ");
 }
 
 ull GameBoard::get_pieces(Color color) {
