@@ -3,6 +3,7 @@
 #include "engine.hpp"
 #include "gameboard.hpp"
 #include "globals.hpp"
+#include "test_helper_fcns.hpp"
 
 TEST(Setup, WhiteGoesFirst) {
     ShumiChess::Engine test_engine;
@@ -13,7 +14,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     using namespace ShumiChess;
 
     Engine test_engine;
-    EXPECT_EQ(GameBoard(), test_engine.game_board,);
+    EXPECT_EQ(GameBoard(), test_engine.game_board);
 
     test_engine.push(Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
     EXPECT_EQ(GameBoard("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"), test_engine.game_board);

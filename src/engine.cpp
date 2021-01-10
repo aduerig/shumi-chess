@@ -66,8 +66,9 @@ void Engine::push(const Move& move) {
     this->game_board.en_passant = move.en_passent;
 
     this->halfway_move_history.push(this->game_board.halfmove);
-    ull castle_opp = castle_opportunity_history.top() && 
+    ull castle_opp = move.black_castle << 2 && 
                      this->game_board.black_castle << 2 &&
+                     move.white_castle &&
                      this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
 }
