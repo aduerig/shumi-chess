@@ -22,8 +22,14 @@ namespace representation {
 
 ull acn_to_bit_conversion(const std::string&);
 std::string square_to_position_string(ull square);
-ShumiChess::Color get_opposite_color(ShumiChess::Color);
 std::string move_to_string(ShumiChess::Move);
+inline const ShumiChess::Color get_opposite_color(const ShumiChess::Color color) {
+    //OPTIMIZATION_TEST can use the 1 - color trick here?
+    if (color == ShumiChess::Color::WHITE) {
+        return ShumiChess::Color::BLACK;
+    }
+    return ShumiChess::Color::WHITE;
+}
 
 } // end namespace representation
 

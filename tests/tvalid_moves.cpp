@@ -11,11 +11,6 @@ using namespace std;
 
 typedef unordered_map<int, vector<string>> fen_map;
 
-TEST(Setup, WhiteGoesFirst) {
-    ShumiChess::Engine test_engine;
-    test_engine.game_board.turn == ShumiChess::Color::WHITE;
-}
-
 // using qperft to determine number of legal moves by depth
 // https://home.hccnet.nl/h.g.muller/dwnldpage.html
 // perft( 1)=           20

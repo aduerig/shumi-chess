@@ -1,6 +1,7 @@
 #include <functional>
 
 #include "engine.hpp"
+#include "utility"
 
 using namespace std;
 
@@ -40,14 +41,16 @@ vector<Move> Engine::get_legal_moves() {
 
 // takes a move, but tracks it so pop() can undo
 // TODO implement
-void Engine::push(Move move) {
+void Engine::push(const Move& move) {
     move_history.push(move);
 
-    this->game_board.turn = ShumiChess::Color::BLACK - move.color;
+    this->game_board.turn = utility::representation::get_opposite_color(move.color);
 
     ++this->game_board.fullmove;
     ++this->game_board.halfmove;
-    if(move.piece_type == ShumiChess::Piece::PAWN) {this->game_board.halfmove = 0;}
+    if(move.piece_type == ShumiChess::Piece::PAWN) {
+        this->game_board.halfmove = 0;
+    }
     
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.from;
@@ -59,11 +62,15 @@ void Engine::push(Move move) {
     }
     if (move.capture) {
         this->game_board.halfmove = 0;
-        access_piece_of_color(*move.capture, ShumiChess::Color::BLACK - move.color) &= ~move.to;
+        access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
     }
+    this->game_board.en_passant = move.en_passent;
 
-    //castling
-    //en_passant
+    this->halfway_move_history.push(this->game_board.halfmove);
+    ull castle_opp = castle_opportunity_history.top() && 
+                     this->game_board.black_castle << 2 &&
+                     this->game_board.white_castle;
+    this->castle_opportunity_history.push(castle_opp);
 }
 
 ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color color) {

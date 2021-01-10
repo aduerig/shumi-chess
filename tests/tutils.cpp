@@ -9,18 +9,23 @@
 
 using namespace std;
 
-
+TEST(InverseColor, GetOpposingColorTest) {
+    EXPECT_EQ(utility::representation::get_opposite_color(ShumiChess::Color::WHITE),
+              ShumiChess::Color::BLACK);
+    ASSERT_EQ(utility::representation::get_opposite_color(ShumiChess::Color::BLACK),
+              ShumiChess::Color::WHITE);
+}
 
 TEST(MoveStringConversion, MoveToString1) {
     // squares 0 (h1), and 1 (g1)
-    ShumiChess::Move test_move = {1ULL << 0, 1ULL << 1, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    ShumiChess::Move test_move = {ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 0, 1ULL << 1};
     string converted = utility::representation::move_to_string(test_move);
     ASSERT_EQ("h1g1", converted);
 }
 
 TEST(MoveStringConversion, MoveToString2) {
     // squares 8 (h2), and 63 (a8)
-    ShumiChess::Move test_move = {1ULL << 8, 1ULL << 63, ShumiChess::Piece::PAWN, ShumiChess::Color::WHITE};
+    ShumiChess::Move test_move = {ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 8, 1ULL << 63};
     string converted = utility::representation::move_to_string(test_move);
     ASSERT_EQ("h2a8", converted);
 }
@@ -31,15 +36,15 @@ TEST(BitTests, LsbAndPop) {
     ull expected_board    = 0b00000000'11101101'00000000'00000000'00000001'00000000'00000000'00000000;
     ull expected_popped   = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010;
     ull popped_square = utility::bit::lsb_and_pop(test_board);
-    ASSERT_EQ(expected_popped, popped_square);
+    EXPECT_EQ(expected_popped, popped_square);
     ASSERT_EQ(expected_board, test_board);
 }
 
 
 
 typedef pair<string, ull> acn_to_bit_test_type;
-class tAncBitConversion : public testing::TestWithParam<acn_to_bit_test_type> {};
-TEST_P(tAncBitConversion, AncToBitboardConversion) {
+class tAcnBitConversion : public testing::TestWithParam<acn_to_bit_test_type> {};
+TEST_P(tAcnBitConversion, AcnToBitboardConversion) {
     const auto anc_notation = get<0>(GetParam());
     const auto expected_numeric = get<1>(GetParam());
 
@@ -66,8 +71,8 @@ vector<acn_to_bit_test_type> anc_to_bit_test_data = { make_pair("a1", 1ull << 7)
                                                       make_pair("f5", 1ull << 34),
                                                       make_pair("g5", 1ull << 33),
                                                       make_pair("h5", 1ull << 32) };
-INSTANTIATE_TEST_CASE_P(tAncBitConversionParam,  
-                        tAncBitConversion,  
+INSTANTIATE_TEST_CASE_P(tAcnBitConversionParam,  
+                        tAcnBitConversion,  
                         testing::ValuesIn( anc_to_bit_test_data ));
 
 TEST(tStringSplit, DefaultDelim) {

@@ -29,12 +29,13 @@ struct Move {
     ull to; // square
     std::optional<Piece> capture;
     std::optional<Piece> promotion;
-    //castling info
-    ull en_passent {};
+    uint8_t black_castle = 0b00000011;
+    uint8_t white_castle = 0b00000011;
+    ull en_passent = 0;
 };
 
 
-// ? can use inline here, but it complicates the build. defining in gloabls.cpp
+// ? can use inline here, but it complicates the build. defining in globals.cpp
 extern ull a_row;
 extern std::unordered_map<int, ull> rank_masks;
 
