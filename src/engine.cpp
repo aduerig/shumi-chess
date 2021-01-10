@@ -40,7 +40,6 @@ vector<Move> Engine::get_legal_moves() {
 }
 
 // takes a move, but tracks it so pop() can undo
-// TODO implement
 void Engine::push(const Move& move) {
     move_history.push(move);
 
@@ -104,8 +103,11 @@ ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color co
 }
 
 // undos last move, errors if no move was made before
-// TODO implement
 void Engine::pop() {
+    this->move_history.pop();
+    const Move move = this->move_history.top();
+
+
 }
 
 vector<Move> Engine::get_pawn_moves(Color color) {
