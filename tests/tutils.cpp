@@ -37,38 +37,72 @@ TEST(BitTests, LsbAndPop) {
 
 
 
-typedef pair<string, ull> acn_to_bit_test_type;
-class tAncBitConversion : public testing::TestWithParam<acn_to_bit_test_type> {};
-TEST_P(tAncBitConversion, AncToBitboardConversion) {
-    const auto anc_notation = get<0>(GetParam());
+typedef pair<string, ull> acn_to_bitboard_test_type;
+class tAcnBitboardConversion : public testing::TestWithParam<acn_to_bitboard_test_type> {};
+TEST_P(tAcnBitboardConversion, AcnToBitboardConversion) {
+    const auto acn_notation = get<0>(GetParam());
     const auto expected_numeric = get<1>(GetParam());
 
-    ASSERT_EQ(utility::representation::acn_to_bit_conversion(anc_notation), expected_numeric);
+    ASSERT_EQ(utility::representation::acn_to_bitboard_conversion(acn_notation), expected_numeric);
 }
-vector<acn_to_bit_test_type> anc_to_bit_test_data = { make_pair("a1", 1ull << 7),
-                                                      make_pair("b2", 1ull << 14),
-                                                      make_pair("c3", 1ull << 21),
-                                                      make_pair("d4", 1ull << 28),
-                                                      make_pair("e5", 1ull << 35),
-                                                      make_pair("f6", 1ull << 42),
-                                                      make_pair("g7", 1ull << 49),
-                                                      make_pair("h8", 1ull << 56),
-                                                      make_pair("c1", 1ull << 5),
-                                                      make_pair("c2", 1ull << 13),
-                                                      make_pair("c4", 1ull << 29),
-                                                      make_pair("c5", 1ull << 37),
-                                                      make_pair("c6", 1ull << 45),
-                                                      make_pair("c7", 1ull << 53),
-                                                      make_pair("c8", 1ull << 61),
-                                                      make_pair("a5", 1ull << 39),
-                                                      make_pair("b5", 1ull << 38),
-                                                      make_pair("d5", 1ull << 36),
-                                                      make_pair("f5", 1ull << 34),
-                                                      make_pair("g5", 1ull << 33),
-                                                      make_pair("h5", 1ull << 32) };
-INSTANTIATE_TEST_CASE_P(tAncBitConversionParam,  
-                        tAncBitConversion,  
-                        testing::ValuesIn( anc_to_bit_test_data ));
+vector<acn_to_bitboard_test_type> acn_to_bitboard_test_data = { make_pair("a1", 1ull << 7),
+                                                                make_pair("b2", 1ull << 14),
+                                                                make_pair("c3", 1ull << 21),
+                                                                make_pair("d4", 1ull << 28),
+                                                                make_pair("e5", 1ull << 35),
+                                                                make_pair("f6", 1ull << 42),
+                                                                make_pair("g7", 1ull << 49),
+                                                                make_pair("h8", 1ull << 56),
+                                                                make_pair("c1", 1ull << 5),
+                                                                make_pair("c2", 1ull << 13),
+                                                                make_pair("c4", 1ull << 29),
+                                                                make_pair("c5", 1ull << 37),
+                                                                make_pair("c6", 1ull << 45),
+                                                                make_pair("c7", 1ull << 53),
+                                                                make_pair("c8", 1ull << 61),
+                                                                make_pair("a5", 1ull << 39),
+                                                                make_pair("b5", 1ull << 38),
+                                                                make_pair("d5", 1ull << 36),
+                                                                make_pair("f5", 1ull << 34),
+                                                                make_pair("g5", 1ull << 33),
+                                                                make_pair("h5", 1ull << 32) };
+INSTANTIATE_TEST_CASE_P(tAcnBitboardConversionParam,  
+                        tAcnBitboardConversion,  
+                        testing::ValuesIn( acn_to_bitboard_test_data ));
+
+// opposite of above
+typedef pair<ull, string> bitboard_to_acn_test_type;
+class tAcnBitboardConversion2 : public testing::TestWithParam<bitboard_to_acn_test_type> {};
+TEST_P(tAcnBitboardConversion2, BitboardToAcnConversion) {
+    const auto bitboard = get<0>(GetParam());
+    const auto expected_acn = get<1>(GetParam());
+
+    ASSERT_EQ(expected_acn, utility::representation::bitboard_to_acn_conversion(bitboard));
+}
+vector<bitboard_to_acn_test_type> bitboard_to_acn_test_data = { make_pair(1ull << 7, "a1"),
+                                                                make_pair(1ull << 14, "b2"),
+                                                                make_pair(1ull << 21, "c3"),
+                                                                make_pair(1ull << 28, "d4"),
+                                                                make_pair(1ull << 35, "e5"),
+                                                                make_pair(1ull << 42, "f6"),
+                                                                make_pair(1ull << 49, "g7"),
+                                                                make_pair(1ull << 56, "h8"),
+                                                                make_pair(1ull << 5, "c1"),
+                                                                make_pair(1ull << 13, "c2"),
+                                                                make_pair(1ull << 29, "c4"),
+                                                                make_pair(1ull << 37, "c5"),
+                                                                make_pair(1ull << 45, "c6"),
+                                                                make_pair(1ull << 53, "c7"),
+                                                                make_pair(1ull << 61, "c8"),
+                                                                make_pair(1ull << 39, "a5"),
+                                                                make_pair(1ull << 38, "b5"),
+                                                                make_pair(1ull << 36, "d5"),
+                                                                make_pair(1ull << 34, "f5"),
+                                                                make_pair(1ull << 33, "g5"),
+                                                                make_pair(1ull << 32, "h5") };
+INSTANTIATE_TEST_CASE_P(tAcnBitboardConversionParam2,  
+                        tAcnBitboardConversion2,  
+                        testing::ValuesIn( bitboard_to_acn_test_data ));
 
 TEST(tStringSplit, DefaultDelim) {
     string query = "a b c";
