@@ -10,9 +10,11 @@
 
 #include <engine.hpp>
 
+using namespace std;
+
 // testing functions
-static PyObject *
-engine_communicator_systemcall(PyObject *self, PyObject *args)
+static PyObject*
+engine_communicator_systemcall(PyObject* self, PyObject* args)
 {
     const char *command;
     int sts;
@@ -23,27 +25,29 @@ engine_communicator_systemcall(PyObject *self, PyObject *args)
     return PyLong_FromLong(sts);
 }
 
-static PyObject *
-engine_communicator_print_from_c(PyObject *self, PyObject *args)
+static PyObject*
+engine_communicator_print_from_c(PyObject* self, PyObject* args)
 {
-    std::cout << "this is from C" << std::endl;
+    cout << "this is from C" << endl;
     return Py_BuildValue(""); // this is None in Python
 }
 
 
 // ! actual chess functionality
 ShumiChess::Engine python_engine;
+vector<ShumiChess::Move> last_moves;
 
-static PyObject *
-engine_communicator_get_legal_moves(PyObject *self, PyObject *args)
+static PyObject*
+engine_communicator_get_legal_moves(PyObject* self, PyObject* args)
 {
     vector<ShumiChess::Move> moves = python_engine.get_legal_moves();
-    vector<std::string> moves_readable;
+    last_moves = moves;
+    vector<string> moves_readable;
     // map function that loads into moves_string
     transform(
-        moves.begin(), 
-        moves.end(), 
-        back_inserter(moves_readable), 
+        moves.begin(),
+        moves.end(),
+        back_inserter(moves_readable),
         utility::representation::move_to_string
     );
 
@@ -55,8 +59,8 @@ engine_communicator_get_legal_moves(PyObject *self, PyObject *args)
     return python_move_list;
 }
 
-static PyObject *
-engine_communicator_get_piece_positions(PyObject *self, PyObject *args)
+static PyObject*
+engine_communicator_get_piece_positions(PyObject* self, PyObject* args)
 {
     vector<pair<string, ull>> pieces = {
         make_pair("black_pawn", python_engine.game_board.black_pawns),
@@ -81,7 +85,7 @@ engine_communicator_get_piece_positions(PyObject *self, PyObject *args)
         PyObject* python_piece_list = PyList_New(0);
         while (piece_bitboard) {
             ull single_piece = utility::bit::lsb_and_pop(piece_bitboard);
-            string pos_string = utility::bit::square_to_position_string(single_piece);
+            string pos_string = utility::representation::square_to_position_string(single_piece);
             PyList_Append(python_piece_list, Py_BuildValue("s", pos_string.c_str()));
         }
         auto python_string_name = Py_BuildValue("s", piece_name.c_str());
@@ -90,6 +94,36 @@ engine_communicator_get_piece_positions(PyObject *self, PyObject *args)
     return python_all_pieces_dict;
 }
 
+static PyObject*
+engine_communicator_make_move(PyObject* self, PyObject* args)
+{
+    char* from_square_c_str;
+    char* to_square_c_str;
+
+    if(!PyArg_ParseTuple(args, "ss", &from_square_c_str, &to_square_c_str)) {
+        return NULL;
+    }
+
+    string from_square_acn(from_square_c_str);
+    string to_square_acn(to_square_c_str);
+
+    ShumiChess::Move found_move;
+    for (const auto move : last_moves) {
+        if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
+                to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
+            found_move = move;
+        }
+    }
+    python_engine.push(found_move);
+    return Py_BuildValue("");
+}
+
+static PyObject*
+engine_communicator_pop(PyObject* self, PyObject* args)
+{
+    python_engine.pop();
+    return Py_BuildValue("");
+}
 
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS,
@@ -100,6 +134,10 @@ static PyMethodDef engine_communicator_methods[] = {
         "gets all legal moves"},    
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS,
         "gets all piece positions"},
+    {"make_move",  engine_communicator_make_move, METH_VARARGS,
+        "takes two acn coordinates and makes the move on the board"},
+    {"pop",  engine_communicator_pop, METH_VARARGS,
+        "undoes the last move"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
