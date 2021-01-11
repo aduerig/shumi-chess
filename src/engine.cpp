@@ -101,6 +101,8 @@ ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color co
         else {return std::ref(this->game_board.white_king);}
         break;
     }
+    // TODO remove this, i'm just putting it here because it prevents a warning
+    return this->game_board.white_king;
 }
 
 // undos last move, errors if no move was made before
@@ -120,10 +122,15 @@ vector<Move> Engine::get_pawn_moves(Color color) {
     // grab variables that will be used several times
     ull pawn_starting_rank_mask = rank_masks[2];
     ull pawn_enpassant_rank_mask = rank_masks[3];
+    ull far_right_row = col_masks['h'];
+    ull far_left_row = col_masks['a'];
     if (color == Color::BLACK) {
-        pawn_enpassant_rank_mask = rank_masks[5];
-        pawn_starting_rank_mask = rank_masks[6];
+        pawn_enpassant_rank_mask = rank_masks[6];
+        pawn_starting_rank_mask = rank_masks[7];
+        far_right_row = col_masks['a'];
+        far_left_row = col_masks['h'];
     }
+
     ull all_pieces = game_board.get_pieces();
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
 
@@ -137,8 +144,8 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         spaces_to_move |= move_forward_blocked;
 
         // attacks forward left and forward right
-        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn, color, 9);
-        ull attack_fright = utility::bit::bitshift_by_color(single_pawn, color, 7);
+        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
+        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row, color, 7);
         spaces_to_move |= attack_fleft & all_enemy_pieces;
         spaces_to_move |= attack_fright & all_enemy_pieces;
 

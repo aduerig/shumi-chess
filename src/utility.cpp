@@ -12,24 +12,41 @@ namespace utility {
 namespace bit {
 
 // TODO probably will want to use __builtin_ctz once we need speed
-ull lsb_and_pop(ull& board) {
+ull lsb_and_pop(ull& bitboard) {
     // simple linear search, slow
     ull lsb;
     for (int i = 0; i < 64; i++) {
-        if ((1ULL << i) & board) {
+        if ((1ULL << i) & bitboard) {
             lsb = 1ULL << i;
-            board = board & (~lsb);
+            bitboard = bitboard & (~lsb);
             break;
         }
     }
     return lsb;
 }
 
-ull bitshift_by_color(ull board, ShumiChess::Color color, int amount) {
+ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) {
     if (color == ShumiChess::WHITE) {
-        return board << amount;
+        return bitboard << amount;
     }
-    return board >> amount;
+    return bitboard >> amount;
+}
+
+void print_bitboard(ull bitboard) {
+    std::string builder;
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            ull curr_single_bitboard = (1ULL << ((i * 8) + j));
+            if (bitboard & curr_single_bitboard) {
+                builder = "1" + builder;
+            }
+            else {
+                builder = "0" + builder;
+            }
+        }
+        builder = "\n" + builder;
+    }
+    cout << builder << endl;
 }
 
 } // end namespace bit

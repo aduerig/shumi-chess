@@ -16,6 +16,7 @@ namespace bit {
 
 ull bitshift_by_color(ull, ShumiChess::Color, int);
 ull lsb_and_pop(ull&);
+void print_bitboard(ull bitboard);
 
 } // end namespace bit
 
@@ -26,7 +27,7 @@ std::string bitboard_to_acn_conversion(ull);
 std::string square_to_position_string(ull);
 std::string move_to_string(ShumiChess::Move);
 inline const ShumiChess::Color get_opposite_color(const ShumiChess::Color color) {
-    //OPTIMIZATION_TEST can use the 1 - color trick here?
+    // ? OPTIMIZATION_TEST can use the 1 - color trick here?
     if (color == ShumiChess::Color::WHITE) {
         return ShumiChess::Color::BLACK;
     }

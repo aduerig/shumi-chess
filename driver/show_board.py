@@ -45,7 +45,6 @@ pop_button = Rectangle(
     Point(square_size * 8, square_size * 8),
     Point(1, square_size * 7)
 )
-pop_button.setFill(color_rgb(80, 80, 80))
 pop_button.setFill(color_rgb(59, 48, 32))
 pop_button.draw(win)
 
@@ -99,8 +98,11 @@ board = {
 # rendering pieces on boards
 
 def undraw_pieces():
-    for graphic in board.items:
-        board.undraw()
+    for graphic in board.values():
+        if graphic:
+            graphic.undraw()
+    for i in range(len(board)):
+        board[i] = None
 
 def render_pieces():
     positions = engine_communicator.get_piece_positions()
@@ -117,7 +119,6 @@ def render_pieces():
 render_pieces()
 
 # ! playing logic
-legal_moves = engine_communicator.get_legal_moves() # needs to be called when board changes
 coord_focused = None
 drawn_potential = []
 avail_moves = []
@@ -135,8 +136,17 @@ while True:
     x, y = int(raw_x * 10), int(raw_y * 10)
     if (x, y) not in x_y_to_coord:
         coord_focused = None
+
+        # if click the pop button
+        if raw_x > square_size * 8 and raw_x < 1 and raw_y < square_size * 8 and raw_y > square_size * 7:
+            engine_communicator.pop()
+            undraw_pieces()
+            render_pieces()
+            coord_focused = None
+            avail_moves = []
         continue
     coord_clicked = x_y_to_coord[(x, y)]
+    legal_moves = engine_communicator.get_legal_moves()
     
     # diferent actions
     if coord_clicked in avail_moves: # if user inputs a valid move
@@ -144,6 +154,7 @@ while True:
         undraw_pieces()
         render_pieces()
         coord_focused = None
+        avail_moves = []
         continue
     elif not board[coord_clicked]:
         coord_focused = None
