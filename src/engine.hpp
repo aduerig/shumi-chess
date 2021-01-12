@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <iostream>
 #include <stack>
 #include <vector>
@@ -37,6 +38,10 @@ class Engine {
 
         void apply_en_passant_checks(const Move&);
         void apply_castling_changes(const Move&);
+
+        void add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent);
+        // ? maybe shouldn't be here?
+        Piece get_piece_on_bitboard(ull);
 
         vector<Move> get_legal_moves();
         vector<Move> get_pawn_moves(Color player_Color);

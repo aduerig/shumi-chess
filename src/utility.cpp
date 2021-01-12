@@ -53,6 +53,18 @@ void print_bitboard(ull bitboard) {
 
 namespace representation {
 
+std::string stringify(ShumiChess::Piece piece) {
+    std::unordered_map<ShumiChess::Piece, std::string> piece_strings = {
+        {ShumiChess::Piece::PAWN, "pawn"}, 
+        {ShumiChess::Piece::ROOK, "rook"}, 
+        {ShumiChess::Piece::KNIGHT, "knight"}, 
+        {ShumiChess::Piece::BISHOP, "bishop"}, 
+        {ShumiChess::Piece::QUEEN, "queen"}, 
+        {ShumiChess::Piece::KING, "king"} 
+    };
+    return piece_strings[piece];
+}
+
 char nth_letter(int n)
 {
     assert(n >= 0 && n <= 25);

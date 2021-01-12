@@ -22,6 +22,7 @@ void print_bitboard(ull bitboard);
 
 namespace representation {
 
+std::string stringify(ShumiChess::Piece);
 ull acn_to_bitboard_conversion(const std::string&);
 std::string bitboard_to_acn_conversion(ull);
 std::string square_to_position_string(ull);

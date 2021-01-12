@@ -173,6 +173,6 @@ ull GameBoard::get_pieces(Color color, Piece piece_type) {
 }
 
 ull GameBoard::get_pieces() {
-    return get_pieces(Color::WHITE) & get_pieces(Color::BLACK);
+    return get_pieces(Color::WHITE) | get_pieces(Color::BLACK);
 }
 } // end namespace ShumiChess
