@@ -142,7 +142,6 @@ void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bit
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
         std::optional<Piece> piece_captured = nullopt;
         if (capture) {
-            utility::bit::print_bitboard(single_bitboard_to);
             if (is_en_passent_capture) {
                 piece_captured = Piece::PAWN;
             }
@@ -242,20 +241,51 @@ vector<Move> Engine::get_knight_moves(Color color) {
 
 vector<Move> Engine::get_rook_moves(Color color) {
     vector<Move> rook_moves;
+    ull rooks = game_board.get_pieces(color, Piece::ROOK);
+
+    while (rooks) {
+        ull single_rook = utility::bit::lsb_and_pop(rooks);
+        ull avail_attacks = get_straight_attacks(single_rook);
+        add_as_moves(rook_moves, single_rook, avail_attacks, Piece::ROOK, color, false, false, 0ULL, false);
+    }
     return rook_moves;
 }
 
 vector<Move> Engine::get_bishop_moves(Color color) {
     vector<Move> bishop_moves;
+    ull bishops = game_board.get_pieces(color, Piece::BISHOP);
+
+    while (bishops) {
+        ull single_bishop = utility::bit::lsb_and_pop(bishops);
+        ull avail_attacks = get_diagonal_attacks(single_bishop);
+        add_as_moves(bishop_moves, single_bishop, avail_attacks, Piece::BISHOP, color, false, false, 0ULL, false);
+    }
     return bishop_moves;
 }
 
 vector<Move> Engine::get_queen_moves(Color color) {
     vector<Move> queen_moves;
-    return queen_moves; }
+    ull queens = game_board.get_pieces(color, Piece::QUEEN);
+
+    while (queens) {
+        ull single_queen = utility::bit::lsb_and_pop(queens);
+        ull avail_attacks = get_diagonal_attacks(single_queen) | get_straight_attacks(single_queen);
+        add_as_moves(queen_moves, single_queen, avail_attacks, Piece::QUEEN, color, false, false, 0ULL, false);
+    }
+    return queen_moves;
+}
 
 vector<Move> Engine::get_king_moves(Color color) {
     vector<Move> king_moves;
     return king_moves;
 }
+
+ull Engine::get_diagonal_attacks(ull) {
+    return 0ULL;
+}
+
+ull Engine::get_straight_attacks(ull) {
+    return 0ULL;
+}
+
 } // end namespace ShumiChess

@@ -50,5 +50,9 @@ class Engine {
         vector<Move> get_queen_moves(Color);
         vector<Move> get_king_moves(Color);
         vector<Move> get_rook_moves(Color);
+
+        // helpers for move generation
+        ull get_diagonal_attacks(ull);
+        ull get_straight_attacks(ull);
 };
 } // end namespace ShumiChess
