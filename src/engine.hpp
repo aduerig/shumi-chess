@@ -39,16 +39,16 @@ class Engine {
         void apply_en_passant_checks(const Move&);
         void apply_castling_changes(const Move&);
 
-        void add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent);
+        void add_as_moves(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool);
         // ? maybe shouldn't be here?
         Piece get_piece_on_bitboard(ull);
 
         vector<Move> get_legal_moves();
-        vector<Move> get_pawn_moves(Color player_Color);
-        vector<Move> get_knight_moves(Color player_Color);
-        vector<Move> get_bishop_moves(Color player_Color);
-        vector<Move> get_queen_moves(Color player_Color);
-        vector<Move> get_king_moves(Color player_Color);
-        vector<Move> get_rook_moves(Color player_Color);
+        vector<Move> get_pawn_moves(Color);
+        vector<Move> get_knight_moves(Color);
+        vector<Move> get_bishop_moves(Color);
+        vector<Move> get_queen_moves(Color);
+        vector<Move> get_king_moves(Color);
+        vector<Move> get_rook_moves(Color);
 };
 } // end namespace ShumiChess

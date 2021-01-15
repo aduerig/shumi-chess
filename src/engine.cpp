@@ -125,7 +125,7 @@ Piece Engine::get_piece_on_bitboard(ull bitboard) {
     return Piece::KING;
 }
 
-void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent) {
+void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent, bool is_en_passent_capture) {
     // code to actually pop all the potential squares and add them as moves
     vector<std::optional<Piece>> promotion_values;
     if (promotion) {
@@ -142,7 +142,13 @@ void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bit
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
         std::optional<Piece> piece_captured = nullopt;
         if (capture) {
-            piece_captured = { get_piece_on_bitboard(single_bitboard_to) };
+            utility::bit::print_bitboard(single_bitboard_to);
+            if (is_en_passent_capture) {
+                piece_captured = Piece::PAWN;
+            }
+            else {
+                piece_captured = { get_piece_on_bitboard(single_bitboard_to) };
+            }
         }
 
         for (auto promo_piece : promotion_values) {
@@ -190,26 +196,26 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         ull move_forward = utility::bit::bitshift_by_color(single_pawn & ~pawn_enemy_starting_rank_mask, color, 8); 
         ull move_forward_not_blocked = move_forward & ~all_pieces;
         ull spaces_to_move = move_forward_not_blocked;
+        add_as_moves(pawn_moves, single_pawn, spaces_to_move, Piece::PAWN, color, false, false, 0ULL, false);
 
         // move up two ranks
         ull is_doublable = single_pawn & pawn_starting_rank_mask;
         if (is_doublable) {
-            ull move_forward_two = utility::bit::bitshift_by_color(single_pawn, color, 8);
-            ull move_forward_blocked = move_forward_two & ~all_pieces;
-            move_forward_two = utility::bit::bitshift_by_color(move_forward_blocked, color, 8);
-            move_forward_blocked = move_forward_two & ~all_pieces;
-            spaces_to_move |= move_forward_blocked;
+            // TODO share more code with single pushes above
+            ull move_forward_one = utility::bit::bitshift_by_color(single_pawn, color, 8);
+            ull move_forward_one_blocked = move_forward_one & ~all_pieces;
+            ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
+            ull move_forward_two_blocked = move_forward_two & ~all_pieces;
+            add_as_moves(pawn_moves, single_pawn, move_forward_two_blocked, Piece::PAWN, color, false, false, move_forward_one_blocked, false);
         }
 
-        // adds non captures, and non promotions
-        add_as_moves(pawn_moves, single_pawn, spaces_to_move, Piece::PAWN, color, false, false, 0ULL);
 
         // promotions
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
         ull promo_squares = promotion_not_blocked;
         add_as_moves(pawn_moves, single_pawn, promo_squares, Piece::PAWN, color, 
-                     false, true, 0ULL);
+                     false, true, 0ULL, false);
 
         // attacks forward left and forward right, also includes promotions like this
         ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
@@ -217,13 +223,13 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         ull normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
         add_as_moves(pawn_moves, single_pawn, normal_attacks, Piece::PAWN, color, 
-                     true, (bool) normal_attacks & pawn_enemy_starting_rank_mask, 0ULL);
+                     true, (bool) normal_attacks & pawn_enemy_starting_rank_mask, 0ULL, false);
 
         // enpassant attacks
         // TODO improvement here, because we KNOW that enpassant results in the capture of a pawn, but it adds a lot of code here to get the speed upgrade. Words fine as is
         ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
         add_as_moves(pawn_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
-                     true, false, enpassant_end_location);
+                     true, false, 0ULL, true);
     }
 
     return pawn_moves;
