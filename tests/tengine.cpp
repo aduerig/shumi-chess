@@ -14,9 +14,12 @@ TEST(EngineMoveStorage, PushingMoves) {
     using namespace ShumiChess;
 
     Engine test_engine;
+    GameBoard expected_board;
     EXPECT_EQ(GameBoard(), test_engine.game_board);
 
-    test_engine.push(Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27}); //19 empass
+    auto temp_move_0 = (Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
+    temp_move_0.en_passent = 1ULL<<19;
+    test_engine.push(temp_move_0);
     EXPECT_EQ(GameBoard("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"), test_engine.game_board);
 
     test_engine.push(Move{BLACK, KNIGHT, 1ULL<<57, 1ULL<<42});
@@ -31,7 +34,8 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard("rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"), test_engine.game_board);
     
     test_engine.push(Move{WHITE, PAWN, 1ULL<<35, 1ULL<<44, PAWN});
-    EXPECT_EQ(GameBoard("rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3"), test_engine.game_board);
+    expected_board = GameBoard("rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3");
+    EXPECT_EQ(expected_board, test_engine.game_board); //!Black pawns wrong
 
     test_engine.push(Move{BLACK, PAWN, 1ULL<<48, 1ULL<<40});
     EXPECT_EQ(GameBoard("rnbqkb1r/ppp1pp1p/3P1np1/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 4"), test_engine.game_board);

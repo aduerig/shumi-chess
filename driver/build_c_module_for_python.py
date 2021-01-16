@@ -1,5 +1,9 @@
+import distutils.cygwinccompiler
 import setuptools
+
 from distutils.core import setup, Extension
+
+distutils.cygwinccompiler.get_msvcr = lambda: []
 
 the_module = Extension(
     'engine_communicator',

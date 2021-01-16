@@ -60,10 +60,14 @@ void Engine::push(const Move& move) {
     else {
         access_piece_of_color(*move.promotion, move.color) |= move.to;
     }
-    //!This prob fails for enpassant
     if (move.capture) {
         this->game_board.halfmove = 0;
-        access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
+        if (move.to != move.en_passent) {
+            access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
+        } else {
+            ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.en_passent >> 8 : move.en_passent << 8;
+            access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
+        }
     }
     this->game_board.en_passant = move.en_passent;
 
