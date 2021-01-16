@@ -16,7 +16,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     Engine test_engine;
     EXPECT_EQ(GameBoard(), test_engine.game_board);
 
-    test_engine.push(Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
+    test_engine.push(Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27}); //19 empass
     EXPECT_EQ(GameBoard("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"), test_engine.game_board);
 
     test_engine.push(Move{BLACK, KNIGHT, 1ULL<<57, 1ULL<<42});

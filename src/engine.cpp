@@ -45,7 +45,7 @@ void Engine::push(const Move& move) {
 
     this->game_board.turn = utility::representation::get_opposite_color(move.color);
 
-    ++this->game_board.fullmove;
+    this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
     ++this->game_board.halfmove;
     if(move.piece_type == ShumiChess::Piece::PAWN) {
         this->game_board.halfmove = 0;
@@ -59,6 +59,7 @@ void Engine::push(const Move& move) {
     {
         access_piece_of_color(*move.promotion, move.color) |= move.to;
     }
+    //!This prob fails for enpassant
     if (move.capture) {
         this->game_board.halfmove = 0;
         access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
@@ -107,8 +108,6 @@ ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color co
 void Engine::pop() {
     this->move_history.pop();
     const Move move = this->move_history.top();
-
-
 }
 
 vector<Move> Engine::get_pawn_moves(Color color) {
