@@ -1,5 +1,5 @@
 cd driver
-python build_c_module_for_python.py build
+python build_c_module_for_python.py build --force
 ret_code=$?
 cd ..
 if [ $ret_code -eq 0 ]; then

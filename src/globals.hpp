@@ -38,6 +38,7 @@ struct Move {
 
 // ? can use inline here, but it complicates the build. defining in globals.cpp
 extern ull a_row;
+extern ull a_col;
 extern std::unordered_map<int, ull> rank_masks;
-
+extern std::unordered_map<char, ull> col_masks;
 } // end namespace ShumiChess
