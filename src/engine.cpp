@@ -159,6 +159,7 @@ void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bit
             new_move.capture = piece_captured;
             new_move.promotion = promo_piece;
             new_move.en_passent = en_passent;
+            new_move.is_en_passent_capture = is_en_passent_capture;
             moves.push_back(new_move);
         }
     }
