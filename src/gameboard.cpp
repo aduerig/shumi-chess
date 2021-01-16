@@ -122,7 +122,7 @@ const std::string GameBoard::to_fen() {
     fen_components.push_back("");
 
     // TODO: enpassant
-    fen_components.push_back("");
+    fen_components.push_back(utility::representation::bitboard_to_acn_conversion(en_passant));
     
     // TODO: halfmove number (fifty move rule)
     fen_components.push_back("");
