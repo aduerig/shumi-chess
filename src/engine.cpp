@@ -251,11 +251,20 @@ vector<Move> Engine::get_knight_moves(Color color) {
 vector<Move> Engine::get_rook_moves(Color color) {
     vector<Move> rook_moves;
     ull rooks = game_board.get_pieces(color, Piece::ROOK);
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull own_pieces = game_board.get_pieces(color);
 
     while (rooks) {
         ull single_rook = utility::bit::lsb_and_pop(rooks);
         ull avail_attacks = get_straight_attacks(single_rook);
-        add_as_moves(rook_moves, single_rook, avail_attacks, Piece::ROOK, color, false, false, 0ULL, false);
+
+        // captures
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_as_moves(rook_moves, single_rook, enemy_piece_attacks, Piece::ROOK, color, true, false, 0ULL, false);
+    
+        // all else
+        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+        add_as_moves(rook_moves, single_rook, non_attack_moves, Piece::ROOK, color, false, false, 0ULL, false);
     }
     return rook_moves;
 }
@@ -289,12 +298,38 @@ vector<Move> Engine::get_king_moves(Color color) {
     return king_moves;
 }
 
-ull Engine::get_diagonal_attacks(ull) {
+ull Engine::get_diagonal_attacks(ull bitboard) {
     return 0ULL;
 }
 
-ull Engine::get_straight_attacks(ull) {
-    return 0ULL;
+ull Engine::get_straight_attacks(ull bitboard) {
+    ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+    ull attacks = 0;
+
+    ull curr = bitboard;
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~col_masks['a'] & ~all_pieces_but_self) << 1;
+        attacks |= curr;
+    }
+
+    curr = bitboard;
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~col_masks['h'] & ~all_pieces_but_self) >> 1;
+        attacks |= curr;
+    }
+
+    curr = bitboard;
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~rank_masks[8] & ~all_pieces_but_self) << 8;
+        attacks |= curr;
+    }
+
+    curr = bitboard;
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~rank_masks[1] & ~all_pieces_but_self) >> 8;
+        attacks |= curr;
+    }
+    return attacks;
 }
 
 } // end namespace ShumiChess
