@@ -30,6 +30,15 @@ std::unordered_map<char, ull> col_masks = {
 };
 
 // both start at bottom
+// e.g.
+// 10000000
+// 01000000
+// 00100000
+// 00010000
+// 00001000
+// 00000100
+// 00000010
+// 00000001
 std::unordered_map<int, ull> down_right_diagonals = {
     {1, 1ULL << 7},
     {2, 1ULL << 6 | 1ULL << 15},
