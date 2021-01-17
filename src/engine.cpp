@@ -219,7 +219,6 @@ vector<Move> Engine::get_pawn_moves(Color color) {
 
         // promotions
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
-        utility::bit::print_bitboard(potential_promotion);
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
         ull promo_squares = promotion_not_blocked;
         add_as_moves(pawn_moves, single_pawn, promo_squares, Piece::PAWN, color, 
