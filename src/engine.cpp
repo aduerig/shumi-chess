@@ -284,11 +284,21 @@ vector<Move> Engine::get_bishop_moves(Color color) {
 vector<Move> Engine::get_queen_moves(Color color) {
     vector<Move> queen_moves;
     ull queens = game_board.get_pieces(color, Piece::QUEEN);
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull own_pieces = game_board.get_pieces(color);
 
     while (queens) {
         ull single_queen = utility::bit::lsb_and_pop(queens);
         ull avail_attacks = get_diagonal_attacks(single_queen) | get_straight_attacks(single_queen);
-        add_as_moves(queen_moves, single_queen, avail_attacks, Piece::QUEEN, color, false, false, 0ULL, false);
+
+        // captures
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_as_moves(queen_moves, single_queen, enemy_piece_attacks, Piece::QUEEN, color, true, false, 0ULL, false);
+    
+        // all else
+        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+        add_as_moves(queen_moves, single_queen, non_attack_moves, Piece::QUEEN, color, false, false, 0ULL, false);
+
     }
     return queen_moves;
 }
