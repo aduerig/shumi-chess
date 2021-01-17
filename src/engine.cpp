@@ -177,12 +177,14 @@ vector<Move> Engine::get_pawn_moves(Color color) {
     ull pawns = game_board.get_pieces(color, Piece::PAWN);
 
     // grab variables that will be used several times
+    ull enemy_starting_rank_mask = rank_masks[8];
     ull pawn_enemy_starting_rank_mask = rank_masks[7];
     ull pawn_starting_rank_mask = rank_masks[2];
     ull pawn_enpassant_rank_mask = rank_masks[3];
     ull far_right_row = col_masks['h'];
     ull far_left_row = col_masks['a'];
     if (color == Color::BLACK) {
+        enemy_starting_rank_mask = rank_masks[1];
         pawn_enemy_starting_rank_mask = rank_masks[2];
         pawn_enpassant_rank_mask = rank_masks[6];
         pawn_starting_rank_mask = rank_masks[7];
@@ -217,10 +219,11 @@ vector<Move> Engine::get_pawn_moves(Color color) {
 
         // promotions
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
+        utility::bit::print_bitboard(potential_promotion);
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
         ull promo_squares = promotion_not_blocked;
         add_as_moves(pawn_moves, single_pawn, promo_squares, Piece::PAWN, color, 
-                     false, true, 0ULL, false);
+                false, true, 0ULL, false);
 
         // attacks forward left and forward right, also includes promotions like this
         ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
@@ -228,7 +231,7 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         ull normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
         add_as_moves(pawn_moves, single_pawn, normal_attacks, Piece::PAWN, color, 
-                     true, (bool) normal_attacks & pawn_enemy_starting_rank_mask, 0ULL, false);
+                     true, (bool) (normal_attacks & enemy_starting_rank_mask), 0ULL, false);
 
         // enpassant attacks
         // TODO improvement here, because we KNOW that enpassant results in the capture of a pawn, but it adds a lot of code here to get the speed upgrade. Words fine as is
