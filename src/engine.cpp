@@ -177,17 +177,17 @@ vector<Move> Engine::get_pawn_moves(Color color) {
     ull pawns = game_board.get_pieces(color, Piece::PAWN);
 
     // grab variables that will be used several times
-    ull enemy_starting_rank_mask = rank_masks[8];
-    ull pawn_enemy_starting_rank_mask = rank_masks[7];
-    ull pawn_starting_rank_mask = rank_masks[2];
-    ull pawn_enpassant_rank_mask = rank_masks[3];
+    ull enemy_starting_rank_mask = row_masks[8];
+    ull pawn_enemy_starting_rank_mask = row_masks[7];
+    ull pawn_starting_rank_mask = row_masks[2];
+    ull pawn_enpassant_rank_mask = row_masks[3];
     ull far_right_row = col_masks['h'];
     ull far_left_row = col_masks['a'];
     if (color == Color::BLACK) {
-        enemy_starting_rank_mask = rank_masks[1];
-        pawn_enemy_starting_rank_mask = rank_masks[2];
-        pawn_enpassant_rank_mask = rank_masks[6];
-        pawn_starting_rank_mask = rank_masks[7];
+        enemy_starting_rank_mask = row_masks[1];
+        pawn_enemy_starting_rank_mask = row_masks[2];
+        pawn_enpassant_rank_mask = row_masks[6];
+        pawn_starting_rank_mask = row_masks[7];
         far_right_row = col_masks['a'];
         far_left_row = col_masks['h'];
     }
@@ -329,13 +329,13 @@ ull Engine::get_straight_attacks(ull bitboard) {
 
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~rank_masks[8] & ~all_pieces_but_self) << 8;
+        curr = (curr & ~row_masks[8] & ~all_pieces_but_self) << 8;
         attacks |= curr;
     }
 
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~rank_masks[1] & ~all_pieces_but_self) >> 8;
+        curr = (curr & ~row_masks[1] & ~all_pieces_but_self) >> 8;
         attacks |= curr;
     }
     return attacks;
