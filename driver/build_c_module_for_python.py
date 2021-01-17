@@ -1,6 +1,5 @@
-import distutils.cygwinccompiler
 import setuptools
-
+import distutils.cygwinccompiler
 from distutils.core import setup, Extension
 
 distutils.cygwinccompiler.get_msvcr = lambda: []

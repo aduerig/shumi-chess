@@ -62,10 +62,13 @@ void Engine::push(const Move& move) {
     }
     if (move.capture) {
         this->game_board.halfmove = 0;
-        if (move.to != move.en_passent) {
+        if (!move.is_en_passent_capture) {
             access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
         } else {
-            ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.en_passent >> 8 : move.en_passent << 8;
+            ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
+            utility::bit::print_bitboard(target_pawn_bitboard);
+            utility::bit::print_bitboard(access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)));
+            utility::bit::print_bitboard(~target_pawn_bitboard);
             access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
         }
     }

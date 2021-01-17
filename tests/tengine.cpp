@@ -33,7 +33,9 @@ TEST(EngineMoveStorage, PushingMoves) {
     test_engine.push(temp_move_1);
     EXPECT_EQ(GameBoard("rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"), test_engine.game_board);
     
-    test_engine.push(Move{WHITE, PAWN, 1ULL<<35, 1ULL<<44, PAWN});
+    auto temp_move_20 = Move{WHITE, PAWN, 1ULL<<35, 1ULL<<44, PAWN};
+    temp_move_20.is_en_passent_capture = 1;
+    test_engine.push(temp_move_20);
     expected_board = GameBoard("rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3");
     EXPECT_EQ(expected_board, test_engine.game_board); //!Black pawns wrong
 
