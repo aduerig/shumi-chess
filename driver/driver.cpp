@@ -2,6 +2,7 @@
 #include <ostream>
 #include <iostream>
 
+#include <globals.hpp>
 #include <engine.hpp>
 #include <utility.hpp>
 
@@ -18,5 +19,11 @@ int main()
 
     int num_legal_moves = test_engine.get_legal_moves().size(); 
     cout << "number of legal moves turn one: " << num_legal_moves << endl;
+
+    for (auto pair : ShumiChess::down_right_diagonals) {
+        cout << pair.first << endl;
+        utility::bit::print_bitboard(pair.second);
+    }
+
     return 0;
 }
