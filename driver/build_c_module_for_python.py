@@ -12,7 +12,9 @@ the_module = Extension(
     # tries to do a .so (dynamic) build with this
     # libraries = ['ShumiChess'],
     extra_compile_args=['-std=c++17'],
-    extra_link_args=['../lib/libShumiChess.a', '-static', '-static-libgcc', '-static-libstdc++']
+    extra_link_args=['../lib/libShumiChess.a']
+    # needed for windows, doesnt work on linux:
+    # extra_link_args=['../lib/libShumiChess.a', '-static', '-static-libgcc', '-static-libstdc++']
 )
 
 setup(
