@@ -36,11 +36,11 @@ TEST(EngineMoveStorage, PushingMoves) {
     auto temp_move_20 = Move{WHITE, PAWN, 1ULL<<35, 1ULL<<44, PAWN};
     temp_move_20.is_en_passent_capture = 1;
     test_engine.push(temp_move_20);
-    expected_board = GameBoard("rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3");
-    EXPECT_EQ(expected_board, test_engine.game_board); //!Black pawns wrong
+    EXPECT_EQ(GameBoard("rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3"), test_engine.game_board); //!Black pawns wrong
 
-    test_engine.push(Move{BLACK, PAWN, 1ULL<<48, 1ULL<<40});
-    EXPECT_EQ(GameBoard("rnbqkb1r/ppp1pp1p/3P1np1/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 4"), test_engine.game_board);
+    test_engine.push(Move{BLACK, PAWN, 1ULL<<49, 1ULL<<41});
+    expected_board = GameBoard("rnbqkb1r/ppp1pp1p/3P1np1/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 4");
+    EXPECT_EQ(expected_board, test_engine.game_board);
 
     test_engine.push(Move{WHITE, PAWN, 1ULL<<44, 1ULL<<53, PAWN});
     EXPECT_EQ(GameBoard("rnbqkb1r/ppP1pp1p/5np1/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 4"), test_engine.game_board);
@@ -53,8 +53,10 @@ TEST(EngineMoveStorage, PushingMoves) {
 
     auto temp_move_2 = Move{BLACK, KING, 1ULL<<59, 1ULL<<57};
     temp_move_2.black_castle = 0;
+    temp_move_2.is_castle_move = true;
     test_engine.push(temp_move_2);
-    EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR w KQ - 1 6"), test_engine.game_board);
+    expected_board = GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR w KQ - 1 6");
+    EXPECT_EQ(expected_board, test_engine.game_board);
 
     test_engine.push(Move{WHITE, PAWN, 1ULL<<15, 1ULL<<23});
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/P7/1PPP1PPP/RNBQKBNR b KQ - 0 6"), test_engine.game_board);

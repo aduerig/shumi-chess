@@ -34,6 +34,7 @@ struct Move {
     uint8_t white_castle = 0b00000011;
     ull en_passent = 0;
     bool is_en_passent_capture = false;
+    bool is_castle_move = false;
 };
 
 

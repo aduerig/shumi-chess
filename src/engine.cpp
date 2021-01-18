@@ -68,13 +68,35 @@ void Engine::push(const Move& move) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
         }
+    } else if (move.is_castle_move) {  
+        ull friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
+        //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
+        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+            //Queenside Castle
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1<<7);
+                friendly_rooks |= (1<<4);
+            } else {
+                friendly_rooks &= ~(1<<63);
+                friendly_rooks |= (1<<60);
+            }
+        } else {
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1<<0);
+                friendly_rooks |= (1<<2);
+            } else {
+                friendly_rooks &= ~(1<<56);
+                friendly_rooks |= (1<<58);
+            }
+        }
     }
     this->game_board.en_passant = move.en_passent;
 
     this->halfway_move_history.push(this->game_board.halfmove);
-    ull castle_opp = move.black_castle << 2 && 
-                     this->game_board.black_castle << 2 &&
-                     move.white_castle &&
+    
+    this->game_board.black_castle &= move.black_castle;
+    this->game_board.white_castle &= move.white_castle;
+    ull castle_opp = this->game_board.black_castle << 2 &&
                      this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
 }
