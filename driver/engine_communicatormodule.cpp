@@ -95,7 +95,7 @@ engine_communicator_get_piece_positions(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-engine_communicator_make_move(PyObject* self, PyObject* args)
+engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 {
     char* from_square_c_str;
     char* to_square_c_str;
@@ -134,7 +134,7 @@ static PyMethodDef engine_communicator_methods[] = {
         "gets all legal moves"},    
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS,
         "gets all piece positions"},
-    {"make_move",  engine_communicator_make_move, METH_VARARGS,
+    {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS,
         "takes two acn coordinates and makes the move on the board"},
     {"pop",  engine_communicator_pop, METH_VARARGS,
         "undoes the last move"},

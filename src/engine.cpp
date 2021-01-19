@@ -294,11 +294,20 @@ vector<Move> Engine::get_rook_moves(Color color) {
 vector<Move> Engine::get_bishop_moves(Color color) {
     vector<Move> bishop_moves;
     ull bishops = game_board.get_pieces(color, Piece::BISHOP);
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull own_pieces = game_board.get_pieces(color);
 
     while (bishops) {
         ull single_bishop = utility::bit::lsb_and_pop(bishops);
         ull avail_attacks = get_diagonal_attacks(single_bishop);
-        add_as_moves(bishop_moves, single_bishop, avail_attacks, Piece::BISHOP, color, false, false, 0ULL, false);
+
+        // captures
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_as_moves(bishop_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP, color, true, false, 0ULL, false);
+    
+        // all else
+        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+        add_as_moves(bishop_moves, single_bishop, non_attack_moves, Piece::BISHOP, color, false, false, 0ULL, false);
     }
     return bishop_moves;
 }
@@ -331,7 +340,37 @@ vector<Move> Engine::get_king_moves(Color color) {
 }
 
 ull Engine::get_diagonal_attacks(ull bitboard) {
-    return 0ULL;
+    ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+    ull attacks = 0;
+
+    ull curr = bitboard;
+    // up left
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~row_masks[8] & ~col_masks['a'] & ~all_pieces_but_self) << 9;
+        attacks |= curr;
+    }
+
+    // down left
+    curr = bitboard;
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~row_masks[1] & ~col_masks['a'] & ~all_pieces_but_self) >> 7;
+        attacks |= curr;
+    }
+
+    // up right
+    curr = bitboard;
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~row_masks[8] & ~col_masks['h'] & ~all_pieces_but_self) << 7;
+        attacks |= curr;
+    }
+
+    // down right
+    curr = bitboard;
+    for (int i = 0; i < 8; i++) {
+        curr = (curr & ~row_masks[1] & ~col_masks['h'] & ~all_pieces_but_self) >> 9;
+        attacks |= curr;
+    }
+    return attacks;
 }
 
 ull Engine::get_straight_attacks(ull bitboard) {
@@ -339,23 +378,27 @@ ull Engine::get_straight_attacks(ull bitboard) {
     ull attacks = 0;
 
     ull curr = bitboard;
+    // left
     for (int i = 0; i < 8; i++) {
         curr = (curr & ~col_masks['a'] & ~all_pieces_but_self) << 1;
         attacks |= curr;
     }
 
+    // right
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
         curr = (curr & ~col_masks['h'] & ~all_pieces_but_self) >> 1;
         attacks |= curr;
     }
 
+    // up
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
         curr = (curr & ~row_masks[8] & ~all_pieces_but_self) << 8;
         attacks |= curr;
     }
 
+    // down
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
         curr = (curr & ~row_masks[1] & ~all_pieces_but_self) >> 8;
