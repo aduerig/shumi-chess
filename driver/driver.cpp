@@ -22,7 +22,7 @@ int main()
 
     for (auto pair : ShumiChess::down_right_diagonals) {
         cout << pair.first << endl;
-        utility::bit::print_bitboard(pair.second);
+        utility::representation::print_bitboard(pair.second);
     }
 
     return 0;

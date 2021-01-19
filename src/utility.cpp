@@ -31,6 +31,40 @@ ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) {
     }
     return bitboard >> amount;
 }
+} // end namespace bit
+
+namespace representation {
+
+// ? whats our policy on error handling
+// Likely depends on engine vs auxilary
+ull acn_to_bitboard_conversion(const std::string& anc) {
+    int square_number = 0;
+    square_number += ('h'-anc.at(0)) + 8*(anc.at(1)-'1');
+    return 1ULL << square_number;
+}
+
+char nth_letter(int n)
+{
+    assert(n >= 0 && n <= 25);
+    return "abcdefghijklmnopqrstuvwxyz"[n];
+}
+std::string bitboard_to_acn_conversion(ull bitboard) {
+    // TODO move this somewhere else to precompute
+    std::unordered_map<ull, std::string> bitboard_to_acn_map;
+    ull iterate_bitboard = 1ULL;
+    for (int i = 1; i < 9; i++) {
+        for (int j = 0; j < 8; j++) {
+            std::string value = nth_letter(7 - j) + std::to_string(i);
+            bitboard_to_acn_map[iterate_bitboard] = value;
+            iterate_bitboard = iterate_bitboard << 1;
+        }
+    }
+    return bitboard_to_acn_map[bitboard];
+}
+
+std::string move_to_string(ShumiChess::Move move) {
+    return square_to_position_string(move.from) + square_to_position_string(move.to);
+}
 
 void print_bitboard(ull bitboard) {
     std::string builder;
@@ -49,10 +83,6 @@ void print_bitboard(ull bitboard) {
     cout << builder << endl;
 }
 
-} // end namespace bit
-
-namespace representation {
-
 std::string stringify(ShumiChess::Piece piece) {
     std::unordered_map<ShumiChess::Piece, std::string> piece_strings = {
         {ShumiChess::Piece::PAWN, "pawn"}, 
@@ -64,35 +94,6 @@ std::string stringify(ShumiChess::Piece piece) {
     };
     return piece_strings[piece];
 }
-
-char nth_letter(int n)
-{
-    assert(n >= 0 && n <= 25);
-    return "abcdefghijklmnopqrstuvwxyz"[n];
-}
-
-// ? whats our policy on error handling
-// Likely depends on engine vs auxilary
-ull acn_to_bitboard_conversion(const std::string& anc) {
-    int square_number = 0;
-    square_number += ('h'-anc.at(0)) + 8*(anc.at(1)-'1');
-    return 1ULL << square_number;
-}
-
-std::string bitboard_to_acn_conversion(ull bitboard) {
-    // TODO move this somewhere else to precompute
-    std::unordered_map<ull, std::string> bitboard_to_acn_map;
-    ull iterate_bitboard = 1ULL;
-    for (int i = 1; i < 9; i++) {
-        for (int j = 0; j < 8; j++) {
-            std::string value = nth_letter(7 - j) + std::to_string(i);
-            bitboard_to_acn_map[iterate_bitboard] = value;
-            iterate_bitboard = iterate_bitboard << 1;
-        }
-    }
-    return bitboard_to_acn_map[bitboard];
-}
-
 
 // assumes layout is:
 // lower right is 2^0
@@ -120,10 +121,6 @@ std::string square_to_position_string(ull square) {
         }
     }
     assert(false);
-}
-
-std::string move_to_string(ShumiChess::Move move) {
-    return square_to_position_string(move.from) + square_to_position_string(move.to);
 }
 
 } // end namespace representation
