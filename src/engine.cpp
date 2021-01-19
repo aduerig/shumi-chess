@@ -69,24 +69,25 @@ void Engine::push(const Move& move) {
             access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
         }
     } else if (move.is_castle_move) {  
-        ull friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
+        ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
+        std::cout << "castle" << std::endl;
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1<<7);
-                friendly_rooks |= (1<<4);
+                friendly_rooks &= ~(1ULL<<7);
+                friendly_rooks |= (1ULL<<4);
             } else {
-                friendly_rooks &= ~(1<<63);
-                friendly_rooks |= (1<<60);
+                friendly_rooks &= ~(1ULL<<63);
+                friendly_rooks |= (1ULL<<60);
             }
         } else {
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1<<0);
-                friendly_rooks |= (1<<2);
+                friendly_rooks &= ~(1ULL<<0);
+                friendly_rooks |= (1ULL<<2);
             } else {
-                friendly_rooks &= ~(1<<56);
-                friendly_rooks |= (1<<58);
+                friendly_rooks &= ~(1ULL<<56);
+                friendly_rooks |= (1ULL<<58);
             }
         }
     }

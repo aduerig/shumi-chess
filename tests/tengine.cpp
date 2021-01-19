@@ -74,6 +74,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     temp_move_3.white_castle = 1;
     test_engine.push(temp_move_3);
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/P2P4/RPP2PPP/1NBQKBNR b K - 2 8"), test_engine.game_board);
+    utility::representation::highlight_board_differences(expected_board, test_engine.game_board);
 
     test_engine.push(Move{BLACK, KNIGHT, 1ULL<<42, 1ULL<<36});
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/6pb/3n4/8/P2P4/RPP2PPP/1NBQKBNR w K - 3 9"), test_engine.game_board);
