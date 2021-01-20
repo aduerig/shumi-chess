@@ -125,6 +125,19 @@ engine_communicator_pop(PyObject* self, PyObject* args)
     return Py_BuildValue("");
 }
 
+static PyObject*
+engine_communicator_game_over(PyObject* self, PyObject* args)
+{
+    return Py_BuildValue("i", (int) python_engine.game_over());
+}
+
+static PyObject*
+engine_communicator_reset_engine(PyObject* self, PyObject* args)
+{
+    python_engine.reset_engine();
+    return Py_BuildValue("");
+}
+
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS,
         "Execute a shell command."},
@@ -132,10 +145,14 @@ static PyMethodDef engine_communicator_methods[] = {
         "just prints"},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS,
         "gets all legal moves"},    
+    {"game_over",  engine_communicator_game_over, METH_VARARGS,
+        "reports the state of the game"},
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS,
         "gets all piece positions"},
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS,
         "takes two acn coordinates and makes the move on the board"},
+    {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS,
+        "resets the engine to the begining"},
     {"pop",  engine_communicator_pop, METH_VARARGS,
         "undoes the last move"},
     {NULL, NULL, 0, NULL}        /* Sentinel */

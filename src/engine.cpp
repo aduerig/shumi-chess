@@ -14,6 +14,9 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 
 void Engine::reset_engine() {
     game_board = GameBoard();
+    move_history = stack<Move>();
+    halfway_move_history = stack<int>();
+    castle_opportunity_history = stack<uint8_t>();
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
@@ -100,6 +103,16 @@ void Engine::push(const Move& move) {
     ull castle_opp = this->game_board.black_castle << 2 &&
                      this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
+}
+
+GameState Engine::game_over() {
+    if (!game_board.white_king) {
+        return GameState::BLACKWIN;
+    }
+    else if (!game_board.black_king) {
+        return GameState::WHITEWIN;
+    }
+    return GameState::INPROGRESS;
 }
 
 ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color color) {

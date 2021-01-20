@@ -38,6 +38,14 @@ struct Move {
 };
 
 
+enum GameState {
+    INPROGRESS = -1,
+    WHITEWIN = 0,
+    DRAW = 1,
+    BLACKWIN = 2
+};
+
+
 // ? can use inline here, but it complicates the build. defining in globals.cpp
 extern ull a_row;
 extern ull a_col;

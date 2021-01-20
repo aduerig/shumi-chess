@@ -33,6 +33,7 @@ class Engine {
 
         void push(const Move&);
         void pop();
+        GameState game_over();
 
         ull& access_piece_of_color(ShumiChess::Piece, ShumiChess::Color);
 
