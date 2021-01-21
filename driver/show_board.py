@@ -64,9 +64,12 @@ def clicked_black_button(button_obj):
     button_obj.update_text()
 
 def reset_board():
+    global curr_game, curr_move
     engine_communicator.reset_engine();
     undraw_pieces()
     render_all_pieces_and_assign(board)
+    curr_game += 1
+    curr_move = 1
 
 def clicked_reset_button(button_obj):
     reset_board()
@@ -111,10 +114,9 @@ class AI(PlayerType):
 
 
 class Random(AI):
-    def get_move(self):
-        moves = engine_communicator.get_legal_moves()
+    def get_move(self, legal_moves):
         # ! if this line errors it is because random.choice(moves) returns 0, which shouldn't really be possible in a completed engine
-        choice = random.choice(moves)
+        choice = random.choice(legal_moves)
         return choice[0:2], choice[2:4]
 
 # variables for holding types
@@ -174,6 +176,23 @@ current_turn_text = Text(
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
 current_turn_text.draw(win)
+
+# curr game text
+global curr_game; curr_game = 1
+curr_game_text = Text(
+    Point(square_size * 2.5, square_size * 9), 
+    'Game {}'.format(curr_game)
+)
+curr_game_text.setFill(color_rgb(200, 200, 200))
+curr_game_text.draw(win)
+
+global curr_move; curr_move = 1
+curr_move_text = Text(
+    Point(square_size * 4.5, square_size * 9), 
+    'Move {}'.format(curr_move)
+)
+curr_move_text.setFill(color_rgb(200, 200, 200))
+curr_move_text.draw(win)
 
 # draws the squares of colors
 every_other = 1
@@ -288,16 +307,23 @@ avail_moves = []
 while True:
     # 1 game iteration
     while engine_communicator.game_over() == -1:
-        # sets turn text
-        current_turn_text.setText(turn_text_values[player_index])
+        legal_moves = engine_communicator.get_legal_moves()
+        if len(legal_moves) == 0:
+            # TODO: manually breaking for ties for stalemates now
+            break
 
+        # sets text
+        current_turn_text.setText(turn_text_values[player_index])
+        curr_game_text.setText('Game {}'.format(curr_game))
+        curr_move_text.setText('Move {}'.format(curr_move))
 
         # diferent chess board actions if players turn
         curr_player = both_players[player_index]
         curr_player_type = type(curr_player)
         if isinstance(curr_player, AI):
-            from_acn, to_acn = curr_player.get_move()
+            from_acn, to_acn = curr_player.get_move(legal_moves)
             engine_communicator.make_move_two_acn(from_acn, to_acn)
+            curr_move += 1
             graphics_update_only_moved_pieces()
             player_index = 1 - player_index
             continue
@@ -321,6 +347,7 @@ while True:
         if curr_player_type == Human:
             if coord_clicked in avail_moves: # if user inputs a valid move
                 engine_communicator.make_move_two_acn(coord_focused, coord_clicked)
+                curr_move += 1
                 graphics_update_only_moved_pieces()
                 coord_focused = None
                 avail_moves = []
@@ -337,7 +364,6 @@ while True:
                 coord_focused = coord_clicked
             
             # refresh and draw draw potential moves
-            legal_moves = engine_communicator.get_legal_moves()
             avail_moves = []
             for move in legal_moves:
                 from_square, to_square = move[:2], move[2:]
@@ -353,9 +379,8 @@ while True:
                     potential_move.setFill(color_rgb(170, 170, 170))
                     potential_move.draw(win)
                     drawn_potential.append(potential_move)
-    
+
     if autoreset_toggle:
-        print("automatically resetting board")
         reset_board()
         continue
 
