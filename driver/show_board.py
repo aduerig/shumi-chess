@@ -396,7 +396,6 @@ while True:
 
     if autoreset_toggle:
         reset_board()
-        print('resetting...')
         continue
 
     # get raw positions
