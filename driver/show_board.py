@@ -302,27 +302,26 @@ def graphics_update_only_moved_pieces():
 render_all_pieces_and_assign(board)
 
 
-def unfocus_and_stop_dragging(from_raw_x, from_raw_y):
+def unfocus_and_stop_dragging():
     global acn_focused, is_dragging, drawn_potential
     # if we didn't just click and release on the same square
-    if (from_raw_x, from_raw_y) != acn_to_x_y[acn_focused]:
-        for i in drawn_potential:
-            i.undraw()
-        drawn_potential = []
+    for i in drawn_potential:
+        i.undraw()
+    drawn_potential = []
 
-        # move dragged piece back to starting square
-        dragged_piece = board[acn_focused][2]
-        dragged_piece.anchor.x
-        dragged_piece.anchor.y
+    # move dragged piece back to starting square
+    dragged_piece = board[acn_focused][2]
+    dragged_piece.anchor.x
+    dragged_piece.anchor.y
 
-        x_coord_to_move_to, y_coord_to_move_to = acn_to_x_y[acn_focused]
+    x_coord_to_move_to, y_coord_to_move_to = acn_to_x_y[acn_focused]
 
-        x_pos_to_move_to = (x_coord_to_move_to / 10) + (square_size / 2)
-        y_pos_to_move_to = (y_coord_to_move_to / 10) + (square_size / 2)
+    x_pos_to_move_to = (x_coord_to_move_to / 10) + (square_size / 2)
+    y_pos_to_move_to = (y_coord_to_move_to / 10) + (square_size / 2)
 
-        dragged_piece.move(x_pos_to_move_to - dragged_piece.anchor.x, y_pos_to_move_to - dragged_piece.anchor.y)
-        acn_focused = None
-        is_dragging = False
+    dragged_piece.move(x_pos_to_move_to - dragged_piece.anchor.x, y_pos_to_move_to - dragged_piece.anchor.y)
+    acn_focused = None
+    is_dragging = False
 
 
 def make_move(from_acn, to_acn):
@@ -382,12 +381,18 @@ while True:
             if acn_focused and raw_position_left_release:
                 raw_left_released_x, raw_left_released_y = raw_position_left_release.x, raw_position_left_release.y
                 left_released_x, left_released_y = int(raw_left_released_x * 10), int(raw_left_released_y * 10)
-                unfocus_and_stop_dragging(left_released_x, left_released_y)
+                # mouse was released on an avaliable square, make move there
+                if (left_released_x, left_released_y) in list(map(lambda x: acn_to_x_y[x], avail_moves)):
+                    temp = acn_focused
+                    unfocus_and_stop_dragging()
+                    make_move(temp, x_y_to_acn[(left_released_x, left_released_y)])
+                    avail_moves = []
+                # mouse was released on the same square as it was clicked on
+                elif (left_released_x, left_released_y) != acn_to_x_y[acn_focused]:
+                    unfocus_and_stop_dragging()
 
-            # print(is_dragging, acn_focused)
             # code for dragging
             elif is_dragging or acn_focused:
-                print(is_dragging, acn_focused)
                 dragged_piece = board[acn_focused][2]
                 scaledMouseX, scaledMouseY = win.toWorld(win.newmouseX, win.newmouseY)
 
@@ -411,16 +416,16 @@ while True:
             if isinstance(curr_player, Human):
                 if acn_clicked in avail_moves: # if user inputs a valid move
                     temp = acn_focused
-                    unfocus_and_stop_dragging(10000, 10000)
+                    unfocus_and_stop_dragging()
                     make_move(temp, acn_clicked)
                     avail_moves = []
                     continue
                 # if clicking on a piece that cannot be moved to
                 elif not board[acn_clicked]:
-                    unfocus_and_stop_dragging(10000, 10000)
+                    unfocus_and_stop_dragging()
                 # if clicking on the same square, defocus
                 elif acn_clicked == acn_focused:
-                    unfocus_and_stop_dragging(10000, 10000)
+                    unfocus_and_stop_dragging()
                 # else, it focuses in on the square clicked
                 else:
                     is_dragging = True
