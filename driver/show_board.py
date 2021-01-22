@@ -1,6 +1,6 @@
 import sys
 import os
-from graphics import *
+from modified_graphics import *
 import threading
 import random
 
@@ -88,7 +88,7 @@ def clicked_autoreset(button_obj):
 def gui_click_choices():
     curr_y_cell = 8
     for button in button_holder:
-        if raw_x > square_size * 8 and raw_x < 1 and raw_y < square_size * curr_y_cell and raw_y > square_size * (curr_y_cell - 1):
+        if raw_left_clicked_x > square_size * 8 and raw_left_clicked_x < 1 and raw_left_clicked_y < square_size * curr_y_cell and raw_left_clicked_y > square_size * (curr_y_cell - 1):
             button.clicked()
         curr_y_cell -= 1
 
@@ -124,7 +124,9 @@ class Random(AI):
 both_players = [Human(), Random()]
 
 # ! drawing GUI elements
-win = GraphWin(width = 800, height = 800)
+screen_width = 800
+screen_height = 800
+win = GraphWin(width = screen_width, height = screen_height)
 
 # set the coordinates of the window; bottom left is (0, 0) and top right is (1, 1)
 win.setCoords(0, 0, 1, 1)
@@ -300,6 +302,28 @@ def graphics_update_only_moved_pieces():
 render_all_pieces_and_assign(board)
 
 
+def unfocus_and_stop_dragging(from_raw_x, from_raw_y):
+    global acn_focused, is_dragging, drawn_potential
+    # if we didn't just click and release on the same square
+    if (from_raw_x, from_raw_y) != acn_to_x_y[acn_focused]:
+        for i in drawn_potential:
+            i.undraw()
+        drawn_potential = []
+
+        # move dragged piece back to starting square
+        dragged_piece = board[acn_focused][2]
+        dragged_piece.anchor.x
+        dragged_piece.anchor.y
+
+        x_coord_to_move_to, y_coord_to_move_to = acn_to_x_y[acn_focused]
+
+        x_pos_to_move_to = (x_coord_to_move_to / 10) + (square_size / 2)
+        y_pos_to_move_to = (y_coord_to_move_to / 10) + (square_size / 2)
+
+        dragged_piece.move(x_pos_to_move_to - dragged_piece.anchor.x, y_pos_to_move_to - dragged_piece.anchor.y)
+        acn_focused = None
+        is_dragging = False
+
 
 def make_move(from_acn, to_acn):
     global legal_moves, curr_move, player_index
@@ -310,7 +334,7 @@ def make_move(from_acn, to_acn):
     player_index = 1 - player_index
 
 # ! playing loop for players
-global legal_moves, player_index
+global legal_moves, player_index, acn_focused, is_dragging, drawn_potential
 player_index = 0
 acn_focused = None
 drawn_potential = []
@@ -318,6 +342,7 @@ avail_moves = []
 fps = 60.0
 last_frame = 0
 legal_moves = engine_communicator.get_legal_moves()
+is_dragging = False
 while True:
     # 1 game iteration
     while engine_communicator.game_over() == -1:
@@ -331,76 +356,102 @@ while True:
         curr_game_text.setText('Game {}'.format(curr_game))
         curr_move_text.setText('Move {}'.format(curr_move))
 
-        raw_position = win.checkMouse()
-        user_clicked = False
-        if raw_position:
-            user_clicked = True
-            raw_x, raw_y = raw_position.x, raw_position.y
-            x, y = int(raw_x * 10), int(raw_y * 10)
+        raw_position_left_click = win.checkMouse()
+        user_left_clicked = False
+        if raw_position_left_click:
+            user_left_clicked = True
+            raw_left_clicked_x, raw_left_clicked_y = raw_position_left_click.x, raw_position_left_click.y
+            left_clicked_x, left_clicked_y = int(raw_left_clicked_x * 10), int(raw_left_clicked_y * 10)
 
         # if is AIs turn and the user hasn't clicked
-        if not user_clicked:
+        if not user_left_clicked:
             curr_player = both_players[player_index]
             if isinstance(curr_player, AI):
                 from_acn, to_acn = curr_player.get_move(legal_moves)
                 make_move(from_acn, to_acn)
                 continue
         
-        if user_clicked:
+
+        if isinstance(curr_player, Human):
+            if time.time() < (last_frame + 1/fps):
+                time.sleep(time.time() - (last_frame + 1/fps))
+                last_frame = time.time()
+
+            # code for releasing dragging
+            raw_position_left_release = win.checkLeftRelease() 
+            if acn_focused and raw_position_left_release:
+                raw_left_released_x, raw_left_released_y = raw_position_left_release.x, raw_position_left_release.y
+                left_released_x, left_released_y = int(raw_left_released_x * 10), int(raw_left_released_y * 10)
+                unfocus_and_stop_dragging(left_released_x, left_released_y)
+
+            # print(is_dragging, acn_focused)
+            # code for dragging
+            elif is_dragging or acn_focused:
+                print(is_dragging, acn_focused)
+                dragged_piece = board[acn_focused][2]
+                scaledMouseX, scaledMouseY = win.toWorld(win.newmouseX, win.newmouseY)
+
+                deltX = scaledMouseX - dragged_piece.anchor.x
+                deltY = scaledMouseY - dragged_piece.anchor.y
+                dragged_piece.move(deltX, deltY)
+
+
+        if user_left_clicked:
             # undraw potentials no matter what
             for i in drawn_potential:
                 i.undraw()
             drawn_potential = []
 
             # get square_clicked_on in the gui
-            if (x, y) not in x_y_to_acn:
+            if (left_clicked_x, left_clicked_y) not in x_y_to_acn:
                 gui_click_choices()
                 continue
-            acn_clicked = x_y_to_acn[(x, y)]
-
+            acn_clicked = x_y_to_acn[(left_clicked_x, left_clicked_y)]
+            
             if isinstance(curr_player, Human):
-                if time.time() < (last_frame + 1/fps):
-                    time.sleep(time.time() - (last_frame + 1/fps))
-                    last_frame = time.time()
                 if acn_clicked in avail_moves: # if user inputs a valid move
-                    make_move(acn_focused, acn_clicked)
-                    acn_focused = None
+                    temp = acn_focused
+                    unfocus_and_stop_dragging(10000, 10000)
+                    make_move(temp, acn_clicked)
                     avail_moves = []
                     continue
                 # if clicking on a piece that cannot be moved to
                 elif not board[acn_clicked]:
-                    acn_focused = None
+                    unfocus_and_stop_dragging(10000, 10000)
                 # if clicking on the same square, defocus
                 elif acn_clicked == acn_focused:
-                    acn_focused = None
+                    unfocus_and_stop_dragging(10000, 10000)
                 # else, it focuses in on the square clicked
                 else:
+                    is_dragging = True
                     acn_focused = acn_clicked
                 
-                # refresh and draw draw potential moves
-                avail_moves = []
-                for move in legal_moves:
-                    from_square, to_square = move[:2], move[2:]
-                    if acn_focused == from_square:
-                        focused_x, focused_y = acn_to_x_y[to_square]
-                        avail_moves.append(to_square)
-                        render_x = (focused_x * square_size) + square_size / 2
-                        render_y = (focused_y * square_size) + square_size / 2
-                        potential_move = Circle(
-                            Point(render_x, render_y),
-                            potential_move_circle_radius
-                        )
-                        potential_move.setFill(color_rgb(170, 170, 170))
-                        potential_move.draw(win)
-                        drawn_potential.append(potential_move)
+                # draw draw potential moves
+                if acn_focused:
+                    avail_moves = []
+                    for move in legal_moves:
+                        from_square, to_square = move[:2], move[2:]
+                        if acn_focused == from_square:
+                            focused_x, focused_y = acn_to_x_y[to_square]
+                            avail_moves.append(to_square)
+                            render_x = (focused_x * square_size) + square_size / 2
+                            render_y = (focused_y * square_size) + square_size / 2
+                            potential_move = Circle(
+                                Point(render_x, render_y),
+                                potential_move_circle_radius
+                            )
+                            potential_move.setFill(color_rgb(170, 170, 170))
+                            potential_move.draw(win)
+                            drawn_potential.append(potential_move)
+    
 
     if autoreset_toggle:
         reset_board()
         continue
 
     # get raw positions
-    raw_position = win.getMouse()
-    raw_x, raw_y = raw_position.x, raw_position.y
-    x, y = int(raw_x * 10), int(raw_y * 10)
+    raw_position_left_click = win.getMouse()
+    raw_left_clicked_x, raw_left_clicked_y = raw_position_left_click.x, raw_position_left_click.y
+    left_clicked_x, left_clicked_y = int(raw_left_clicked_x * 10), int(raw_left_clicked_y * 10)
 
     gui_click_choices()
