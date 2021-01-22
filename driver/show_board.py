@@ -385,7 +385,12 @@ while True:
                 time.sleep(time.time() - (last_frame + 1/fps))
                 last_frame = time.time()
 
-            # code for releasing dragging
+            # code for releasing dragging if right click
+            raw_position_right_click = win.checkRightClick()
+            if acn_focused and raw_position_right_click:
+                unfocus_and_stop_dragging()
+
+            # code for releasing dragging if left click release
             raw_position_left_release = win.checkLeftRelease() 
             if acn_focused and raw_position_left_release:
                 raw_left_released_x, raw_left_released_y = raw_position_left_release.x, raw_position_left_release.y

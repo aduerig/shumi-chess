@@ -241,6 +241,8 @@ class GraphWin(tk.Canvas):
         self.newmouseX = 0
         self.leftreleaseX = 0
         self.leftreleaseY = 0
+        self.rightclickX = 0
+        self.rightclickY = 0
         self.right_click_down = False
         self.left_click_down = False
         self.autoflush = autoflush
@@ -346,6 +348,19 @@ class GraphWin(tk.Canvas):
         self.mouseY = None
         return Point(x,y)
 
+    def checkRightClick(self):
+        """Return if right click has been released or None if it hasn't happened since last call or if its been released"""
+        if self.isClosed():
+            raise GraphicsError("checkMouse in closed window")
+        self.update()
+        if self.rightclickX != None and self.rightclickY != None:
+            x,y = self.toWorld(self.rightclickX, self.rightclickY)
+            self.rightclickX = None
+            self.rightclickY = None
+            return Point(x,y)
+        else:
+            return None
+
 
     def checkLeftRelease(self):
         """Return if left click has been released or None if it hasn't happened since last call"""
@@ -445,9 +460,13 @@ class GraphWin(tk.Canvas):
 
     def _onRightClick(self, e):
         self.right_click_down = True
+        self.rightclickX = e.x
+        self.rightclickY = e.y
 
     def _onRightClickRelease(self, e):
         self.right_click_down = False
+        self.rightclickX = None
+        self.rightclickY = None
 
     def addItem(self, item):
         self.items.append(item)
