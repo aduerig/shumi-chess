@@ -197,6 +197,14 @@ curr_move_text = Text(
 curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
 
+
+winner_text = 'GAME OVER: {} wins'
+game_over_text = Text(
+    Point(square_size * 4.5, square_size * 9.5), 
+    winner_text
+)
+game_over_text.setFill(color_rgb(255,160,122))
+
 # draws the squares of colors
 every_other = 1
 for y in range(8):
@@ -344,6 +352,7 @@ legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
 while True:
     # 1 game iteration
+    game_over_text.undraw()
     while engine_communicator.game_over() == -1:
         # stuff to do every frame no matter what
         if len(legal_moves) == 0:
@@ -449,7 +458,15 @@ while True:
                             potential_move.draw(win)
                             drawn_potential.append(potential_move)
     
-
+    # winner determinations
+    winner = 'draw'
+    if engine_communicator.game_over() == 0:
+        winner = 'white'
+    elif engine_communicator.game_over() == 2:
+        winner = 'black'
+    game_over_text.setText(winner_text.format(winner))
+    game_over_text.draw(win)
+    
     if autoreset_toggle:
         reset_board()
         continue
