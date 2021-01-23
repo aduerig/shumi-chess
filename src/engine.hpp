@@ -35,7 +35,7 @@ class Engine {
         void pop();
         GameState game_over();
 
-        ull& access_piece_of_color(ShumiChess::Piece, ShumiChess::Color);
+        ull& access_piece_of_color(Piece, Color);
 
         void apply_en_passant_checks(const Move&);
         void apply_castling_changes(const Move&);
@@ -45,6 +45,7 @@ class Engine {
         Piece get_piece_on_bitboard(ull);
 
         vector<Move> get_legal_moves();
+        vector<Move> get_psuedo_legal_moves(Color);
         vector<Move> get_pawn_moves(Color);
         vector<Move> get_knight_moves(Color);
         vector<Move> get_bishop_moves(Color);

@@ -21,25 +21,55 @@ void Engine::reset_engine() {
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
 // https://stackoverflow.com/questions/15704565/efficient-way-to-return-a-stdvector-in-c
-// TODO ignoring check atm
 vector<Move> Engine::get_legal_moves() {
-    vector<Move> all_moves;
+    vector<Move> all_legal_moves;
     Color color = game_board.turn;
+    Color opposite_color = utility::representation::get_opposite_color(color);
 
+    for(Move move : get_psuedo_legal_moves(color)) {
+        // !
+        // TODO once pop is done, uncomment this, and comment out the push_back() below 
+        // push(move);
+        // ull friendly_king = game_board.get_pieces(color, Piece::KING);
+        
+        // // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
+        // ull straight_attacks_from_king = get_straight_attacks(friendly_king);
+        // ull diagonal_attacks_from_king = get_diagonal_attacks(friendly_king);
+        
+        // ull deadly_straight = game_board.get_pieces(opposite_color, Piece::QUEEN) | game_board.get_pieces(opposite_color, Piece::BISHOP);
+        // ull deadly_diags = game_board.get_pieces(opposite_color, Piece::QUEEN) | game_board.get_pieces(opposite_color, Piece::ROOK);
+        
+        // // is NOT in check after making the move
+        // if (!(deadly_straight & straight_attacks_from_king) &&
+        //     !(deadly_diags & diagonal_attacks_from_king)) {
+        //         all_legal_moves.push_back(move);
+        //     }
+        // pop();
+        // !
+     
+        all_legal_moves.push_back(move);
+    }
+    return all_legal_moves;
+}
+
+// Doesn't factor in check
+vector<Move> Engine::get_psuedo_legal_moves(Color color) {
+    vector<Move> all_psuedo_legal_moves;
+    
     for(Move move : get_pawn_moves(color)) 
-        all_moves.push_back(move);
+        all_psuedo_legal_moves.push_back(move);
     for(Move move : get_rook_moves(color)) 
-        all_moves.push_back(move);
+        all_psuedo_legal_moves.push_back(move);
     for(Move move : get_bishop_moves(color)) 
-        all_moves.push_back(move);
+        all_psuedo_legal_moves.push_back(move);
     for(Move move : get_queen_moves(color)) 
-        all_moves.push_back(move);
+        all_psuedo_legal_moves.push_back(move);
     for(Move move : get_king_moves(color)) 
-        all_moves.push_back(move);
+        all_psuedo_legal_moves.push_back(move);
     for(Move move : get_knight_moves(color)) 
-        all_moves.push_back(move);
+        all_psuedo_legal_moves.push_back(move);
 
-    return all_moves;
+    return all_psuedo_legal_moves;
 }
 
 // takes a move, but tracks it so pop() can undo
@@ -120,30 +150,30 @@ GameState Engine::game_over() {
     return GameState::INPROGRESS;
 }
 
-ull& Engine::access_piece_of_color(ShumiChess::Piece piece, ShumiChess::Color color) {
+ull& Engine::access_piece_of_color(Piece piece, Color color) {
     switch (piece)
     {
-    case ShumiChess::Piece::PAWN:
+    case Piece::PAWN:
         if (color) {return std::ref(this->game_board.black_pawns);}
         else {return std::ref(this->game_board.white_pawns);}
         break;
-    case ShumiChess::Piece::ROOK:
+    case Piece::ROOK:
         if (color) {return std::ref(this->game_board.black_rooks);}
         else {return std::ref(this->game_board.white_rooks);}
         break;
-    case ShumiChess::Piece::KNIGHT:
+    case Piece::KNIGHT:
         if (color) {return std::ref(this->game_board.black_knights);}
         else {return std::ref(this->game_board.white_knights);}
         break;
-    case ShumiChess::Piece::BISHOP:
+    case Piece::BISHOP:
         if (color) {return std::ref(this->game_board.black_bishops);}
         else {return std::ref(this->game_board.white_bishops);}
         break;
-    case ShumiChess::Piece::QUEEN:
+    case Piece::QUEEN:
         if (color) {return std::ref(this->game_board.black_queens);}
         else {return std::ref(this->game_board.white_queens);}
         break;
-    case ShumiChess::Piece::KING:
+    case Piece::KING:
         if (color) {return std::ref(this->game_board.black_king);}
         else {return std::ref(this->game_board.white_king);}
         break;
