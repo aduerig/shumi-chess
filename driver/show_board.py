@@ -64,12 +64,11 @@ def clicked_black_button(button_obj):
     button_obj.update_text()
 
 def reset_board():
-    global curr_game, curr_move, legal_moves
+    global curr_game, legal_moves
     engine_communicator.reset_engine();
     undraw_pieces()
     render_all_pieces_and_assign(board)
     curr_game += 1
-    curr_move = 1
     legal_moves = engine_communicator.get_legal_moves()
 
 def clicked_reset_button(button_obj):
@@ -189,10 +188,9 @@ curr_game_text = Text(
 curr_game_text.setFill(color_rgb(200, 200, 200))
 curr_game_text.draw(win)
 
-global curr_move; curr_move = 1
 curr_move_text = Text(
     Point(square_size * 4.5, square_size * 9), 
-    'Move {}'.format(curr_move)
+    'Move {}'.format(engine_communicator.get_move_number())
 )
 curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
@@ -311,11 +309,15 @@ render_all_pieces_and_assign(board)
 
 
 def unfocus_and_stop_dragging():
-    global acn_focused, is_dragging, drawn_potential
+    global acn_focused, is_dragging, drawn_potential, avail_moves
+    if not acn_focused and not is_dragging:
+        return
+    
     # if we didn't just click and release on the same square
     for i in drawn_potential:
         i.undraw()
     drawn_potential = []
+    avail_moves = []
 
     # move dragged piece back to starting square
     dragged_piece = board[acn_focused][2]
@@ -333,10 +335,9 @@ def unfocus_and_stop_dragging():
 
 
 def make_move(from_acn, to_acn):
-    global legal_moves, curr_move, player_index
+    global legal_moves, player_index
     engine_communicator.make_move_two_acn(from_acn, to_acn)
     legal_moves = engine_communicator.get_legal_moves()
-    curr_move += 1
     graphics_update_only_moved_pieces()
     player_index = 1 - player_index
 
@@ -351,8 +352,8 @@ last_frame = 0
 legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
 while True:
-    # 1 game iteration
     game_over_text.undraw()
+    # 1 game iteration
     while engine_communicator.game_over() == -1:
         # stuff to do every frame no matter what
         if len(legal_moves) == 0:
@@ -362,7 +363,7 @@ while True:
         # sets text
         current_turn_text.setText(turn_text_values[player_index])
         curr_game_text.setText('Game {}'.format(curr_game))
-        curr_move_text.setText('Move {}'.format(curr_move))
+        curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
 
         raw_position_left_click = win.checkMouse()
         user_left_clicked = False

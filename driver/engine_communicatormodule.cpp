@@ -138,6 +138,12 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args)
     return Py_BuildValue("");
 }
 
+static PyObject*
+engine_communicator_get_move_number(PyObject* self, PyObject* args)
+{
+    return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
+}
+
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS,
         "Execute a shell command."},
@@ -153,6 +159,8 @@ static PyMethodDef engine_communicator_methods[] = {
         "takes two acn coordinates and makes the move on the board"},
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS,
         "resets the engine to the begining"},
+    {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS,
+        "gets the current move number"},
     {"pop",  engine_communicator_pop, METH_VARARGS,
         "undoes the last move"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
