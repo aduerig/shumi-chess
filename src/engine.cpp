@@ -105,12 +105,17 @@ void Engine::push(const Move& move) {
     this->castle_opportunity_history.push(castle_opp);
 }
 
+// ? should this check for draws by internally calling get legal moves and caching that and returning on the actual call?
 GameState Engine::game_over() {
     if (!game_board.white_king) {
         return GameState::BLACKWIN;
     }
     else if (!game_board.black_king) {
         return GameState::WHITEWIN;
+    }
+    // TODO check if this is off by one or something
+    else if (game_board.halfmove >= 50) {
+        return GameState::DRAW;
     }
     return GameState::INPROGRESS;
 }
