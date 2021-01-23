@@ -443,6 +443,7 @@ while True:
                     unfocus_and_stop_dragging()
                 # else, it focuses in on the square clicked
                 else:
+                    unfocus_and_stop_dragging()
                     is_dragging = True
                     acn_focused = acn_clicked
                 
