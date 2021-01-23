@@ -3,6 +3,7 @@ import os
 from modified_graphics import *
 import threading
 import random
+from tkinter import filedialog
 
 # code to just find the non-temp build folder for the C extension
 ############################################################
@@ -22,47 +23,6 @@ for filepath in os.listdir(module_build_dir):
 import engine_communicator
 
 
-# ! button stuff
-class Button:
-    rectangle_graphics_object = None
-    text_graphics_object = None
-
-    def __init__(self, function_to_call, function_to_get_text, button_color, text_color):
-        self.function_to_call = function_to_call
-        self.function_to_get_text = function_to_get_text
-        self.button_color = button_color
-        self.text_color = text_color
-
-    def get_text(self):
-        return self.function_to_get_text()
-
-    def clicked(self):
-        return self.function_to_call(self)
-
-    def update_text(self):
-        self.text_graphics_object.setText(self.get_text())
-
-def clicked_pop_button(button_obj):
-    engine_communicator.pop()
-    undraw_pieces()
-    render_all_pieces_and_assign(board)
-    acn_focused = None
-    avail_moves = []
-
-def clicked_white_button(button_obj):
-    if type(both_players[0]) == Human:
-        both_players[0] = Random()
-    elif type(both_players[0]) == Random:
-        both_players[0] = Human()
-    button_obj.update_text()
-
-def clicked_black_button(button_obj):
-    if type(both_players[1]) == Human:
-        both_players[1] = Random()
-    elif type(both_players[1]) == Random:
-        both_players[1] = Human()
-    button_obj.update_text()
-
 def reset_board():
     global curr_game, legal_moves
     engine_communicator.reset_engine();
@@ -70,26 +30,6 @@ def reset_board():
     render_all_pieces_and_assign(board)
     curr_game += 1
     legal_moves = engine_communicator.get_legal_moves()
-
-def clicked_reset_button(button_obj):
-    reset_board()
-
-global autoreset_toggle; autoreset_toggle = False
-def clicked_autoreset(button_obj):
-    global autoreset_toggle
-    if autoreset_toggle == False:
-        autoreset_toggle = True
-    else:
-        autoreset_toggle = False
-    button_obj.update_text()
-
-
-def gui_click_choices():
-    curr_y_cell = 8
-    for button in button_holder:
-        if raw_left_clicked_x > square_size * 8 and raw_left_clicked_x < 1 and raw_left_clicked_y < square_size * curr_y_cell and raw_left_clicked_y > square_size * (curr_y_cell - 1):
-            button.clicked()
-        curr_y_cell -= 1
 
 
 # ! some object types
@@ -141,14 +81,83 @@ background.setFill(color_rgb(50, 50, 50))
 background.draw(win)
 
 
+
+# ! button stuff
+class Button:
+    rectangle_graphics_object = None
+    text_graphics_object = None
+
+    def __init__(self, function_to_call, function_to_get_text, button_color, text_color):
+        self.function_to_call = function_to_call
+        self.function_to_get_text = function_to_get_text
+        self.button_color = button_color
+        self.text_color = text_color
+
+    def get_text(self):
+        return self.function_to_get_text()
+
+    def clicked(self):
+        return self.function_to_call(self)
+
+    def update_text(self):
+        self.text_graphics_object.setText(self.get_text())
+
+def clicked_pop_button(button_obj):
+    engine_communicator.pop()
+    undraw_pieces()
+    render_all_pieces_and_assign(board)
+    acn_focused = None
+    avail_moves = []
+
+def clicked_white_button(button_obj):
+    if type(both_players[0]) == Human:
+        both_players[0] = Random()
+    elif type(both_players[0]) == Random:
+        both_players[0] = Human()
+    button_obj.update_text()
+
+def clicked_black_button(button_obj):
+    if type(both_players[1]) == Human:
+        both_players[1] = Random()
+    elif type(both_players[1]) == Random:
+        both_players[1] = Human()
+    button_obj.update_text()
+
+global autoreset_toggle; autoreset_toggle = False
+def clicked_autoreset(button_obj):
+    global autoreset_toggle
+    if autoreset_toggle == False:
+        autoreset_toggle = True
+    else:
+        autoreset_toggle = False
+    button_obj.update_text()
+
+
+def clicked_reset_button(button_obj):
+    reset_board()
+
+
+def load_game(button_obj):
+    file_path = filedialog.askopenfilename()
+    print('you selected this path:', file_path)
+
+
 # argument list: function to run on click, text, button_color, text color
 button_holder = [
     Button(clicked_pop_button, lambda: "pop!", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_white_button, lambda: "Black\n{}".format(both_players[0].get_name()), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
     Button(clicked_black_button, lambda: "White\n{}".format(both_players[1].get_name()), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
     Button(clicked_reset_button, lambda: "Reset", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(clicked_autoreset, lambda: "autoreset: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200))
+    Button(clicked_autoreset, lambda: "Autoreset on game\nend: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
+
+def gui_click_choices():
+    curr_y_cell = 8
+    for button in button_holder:
+        if raw_left_clicked_x > square_size * 8 and raw_left_clicked_x < 1 and raw_left_clicked_y < square_size * curr_y_cell and raw_left_clicked_y > square_size * (curr_y_cell - 1):
+            button.clicked()
+        curr_y_cell -= 1
 
 curr_y_cell = 8
 for button_obj in button_holder:
@@ -340,6 +349,7 @@ def make_move(from_acn, to_acn):
     legal_moves = engine_communicator.get_legal_moves()
     graphics_update_only_moved_pieces()
     player_index = 1 - player_index
+
 
 # ! playing loop for players
 global legal_moves, player_index, acn_focused, is_dragging, drawn_potential
