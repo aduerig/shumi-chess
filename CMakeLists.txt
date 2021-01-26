@@ -88,10 +88,5 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 # dont think we need, was a strange error when adding a minimum version  
 # target_link_libraries(${project_name} PUBLIC pthread)
 
-# # makes the driver executable
-add_executable(ok driver/driver.cpp)
-target_link_libraries(ok PUBLIC ${project_name})
-
-
 # unsets the variable to clear it from the cache
 unset(BUILD_TESTS CACHE)
