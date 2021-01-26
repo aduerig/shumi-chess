@@ -8,6 +8,13 @@ set(CMAKE_BUILD_TYPE Debug)
 project(${project_name} CXX)
 set (CMAKE_CXX_STANDARD 17)
 
+
+# cmdline to not build tests
+# -DBUILD_TESTS=ON       or       -DBUILD_TESTS=OFF
+option(BUILD_TESTS "This is settable from the command line" OFF)
+message("BUILDING TESTS ${BUILD_TESTS}")
+
+
 # these are if we dont call project(), it can seperate the library name and folder
 # set(LIBRARY_NAME ${project_name})   # [optional] generated automatically (in lowercase)
 # set(LIBRARY_FOLDER src) # [optional] generated automatically (in lowercase)
@@ -32,15 +39,19 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
 add_subdirectory(src)
 
-include(cmake/googletest.cmake)
-fetch_googletest(
-    ${PROJECT_SOURCE_DIR}/cmake
-    ${PROJECT_BINARY_DIR}/googletest
-    )
+if(BUILD_TESTS)
+    include(cmake/googletest.cmake)
+    fetch_googletest(
+        ${PROJECT_SOURCE_DIR}/cmake
+        ${PROJECT_BINARY_DIR}/googletest
+        )
 
-# creates Testing directory, commenting out
-# enable_testing()
-add_subdirectory(tests)
+    # creates Testing directory, commenting out
+    # enable_testing()
+    add_subdirectory(tests)
+endif(BUILD_TESTS)
+
+
 
 set(Headers
     src/gameboard.hpp
@@ -75,3 +86,8 @@ target_include_directories(${project_name} PUBLIC src)
 # # makes the driver executable
 add_executable(ok driver/driver.cpp)
 target_link_libraries(ok PUBLIC ${project_name})
+
+
+
+# unsets the variable to clear it from the cache
+unset(BUILD_TESTS CACHE)

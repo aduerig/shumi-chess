@@ -1,4 +1,4 @@
-cmake CMakeLists.txt
+cmake CMakeLists.txt -Wno-dev
 ret_code=$?
 if [ $ret_code -ne 0 ]; then
     echo "cmake CMakeLists.txt FAILED"

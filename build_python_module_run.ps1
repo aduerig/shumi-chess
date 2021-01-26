@@ -1,4 +1,4 @@
-cmake CMakeLists.txt
+cmake CMakeLists.txt -Wno-dev
 if ( $LASTEXITCODE -ne 0 ) {
     echo "cmake CMakeLists.txt FAILED"
     exit
