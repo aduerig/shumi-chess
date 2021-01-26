@@ -1,9 +1,12 @@
 # causes errors, should probaly figure out why
 # cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE DEBUG)
+endif()
+
 # variable set of the whole library/project
 set(project_name ShumiChess)
-set(CMAKE_BUILD_TYPE Debug)
 
 project(${project_name} CXX)
 set (CMAKE_CXX_STANDARD 17)
@@ -79,6 +82,8 @@ set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 # # makes it so others can reference the source files for #include statements
 target_include_directories(${project_name} PUBLIC src)
 
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # dont think we need, was a strange error when adding a minimum version  
 # target_link_libraries(${project_name} PUBLIC pthread)
@@ -86,7 +91,6 @@ target_include_directories(${project_name} PUBLIC src)
 # # makes the driver executable
 add_executable(ok driver/driver.cpp)
 target_link_libraries(ok PUBLIC ${project_name})
-
 
 
 # unsets the variable to clear it from the cache
