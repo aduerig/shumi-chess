@@ -203,17 +203,6 @@ Piece Engine::get_piece_on_bitboard(ull bitboard) {
 
 void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent, bool is_en_passent_capture) {
     // code to actually pop all the potential squares and add them as moves
-    vector<std::optional<Piece>> promotion_values;
-    if (promotion) {
-        promotion_values.push_back(std::optional<Piece> {Piece::BISHOP});
-        promotion_values.push_back(std::optional<Piece> {Piece::KNIGHT});
-        promotion_values.push_back(std::optional<Piece> {Piece::QUEEN});
-        promotion_values.push_back(std::optional<Piece> {Piece::ROOK});
-    }
-    else {
-        promotion_values.push_back(std::nullopt);
-    }
-
     while (bitboard_to) {
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
         std::optional<Piece> piece_captured = nullopt;
@@ -226,17 +215,25 @@ void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bit
             }
         }
 
-        for (auto promo_piece : promotion_values) {
-            Move new_move;
-            new_move.from = single_bitboard_from;
-            new_move.to = single_bitboard_to;
-            new_move.piece_type = piece;
-            new_move.color = color;
-            new_move.capture = piece_captured;
-            new_move.promotion = promo_piece;
-            new_move.en_passent = en_passent;
-            new_move.is_en_passent_capture = is_en_passent_capture;
+        Move new_move;
+        new_move.from = single_bitboard_from;
+        new_move.to = single_bitboard_to;
+        new_move.piece_type = piece;
+        new_move.color = color;
+        new_move.capture = piece_captured;
+        new_move.en_passent = en_passent;
+        new_move.is_en_passent_capture = is_en_passent_capture;
+
+        if (!promotion) {
+            new_move.promotion = std::nullopt;
             moves.push_back(new_move);
+        }
+        else {
+            for (auto& promo_piece : promotion_values) {
+                Move promo_move = new_move;
+                new_move.promotion = promo_piece;
+                moves.push_back(new_move);
+            }
         }
     }
 }
@@ -248,19 +245,19 @@ vector<Move> Engine::get_pawn_moves(Color color) {
     ull pawns = game_board.get_pieces(color, Piece::PAWN);
 
     // grab variables that will be used several times
-    ull enemy_starting_rank_mask = row_masks[8];
-    ull pawn_enemy_starting_rank_mask = row_masks[7];
-    ull pawn_starting_rank_mask = row_masks[2];
-    ull pawn_enpassant_rank_mask = row_masks[3];
-    ull far_right_row = col_masks['h'];
-    ull far_left_row = col_masks['a'];
+    ull enemy_starting_rank_mask = row_masks[Row::ROW_8];
+    ull pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
+    ull pawn_starting_rank_mask = row_masks[Row::ROW_2];
+    ull pawn_enpassant_rank_mask = row_masks[Row::ROW_3];
+    ull far_right_row = col_masks[Col::COL_H];
+    ull far_left_row = col_masks[Col::COL_A];
     if (color == Color::BLACK) {
-        enemy_starting_rank_mask = row_masks[1];
-        pawn_enemy_starting_rank_mask = row_masks[2];
-        pawn_enpassant_rank_mask = row_masks[6];
-        pawn_starting_rank_mask = row_masks[7];
-        far_right_row = col_masks['a'];
-        far_left_row = col_masks['h'];
+        enemy_starting_rank_mask = row_masks[Row::ROW_1];
+        pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
+        pawn_enpassant_rank_mask = row_masks[Row::ROW_6];
+        pawn_starting_rank_mask = row_masks[Row::ROW_7];
+        far_right_row = col_masks[Col::COL_A];
+        far_left_row = col_masks[Col::COL_H];
     }
 
     ull all_pieces = game_board.get_pieces();
@@ -394,28 +391,28 @@ ull Engine::get_diagonal_attacks(ull bitboard) {
     ull curr = bitboard;
     // up left
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~row_masks[8] & ~col_masks['a'] & ~all_pieces_but_self) << 9;
+        curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 9;
         attacks |= curr;
     }
 
     // down left
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~row_masks[1] & ~col_masks['a'] & ~all_pieces_but_self) >> 7;
+        curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) >> 7;
         attacks |= curr;
     }
 
     // up right
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~row_masks[8] & ~col_masks['h'] & ~all_pieces_but_self) << 7;
+        curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) << 7;
         attacks |= curr;
     }
 
     // down right
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~row_masks[1] & ~col_masks['h'] & ~all_pieces_but_self) >> 9;
+        curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 9;
         attacks |= curr;
     }
     return attacks;
@@ -428,28 +425,28 @@ ull Engine::get_straight_attacks(ull bitboard) {
     ull curr = bitboard;
     // left
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~col_masks['a'] & ~all_pieces_but_self) << 1;
+        curr = (curr & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 1;
         attacks |= curr;
     }
 
     // right
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~col_masks['h'] & ~all_pieces_but_self) >> 1;
+        curr = (curr & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 1;
         attacks |= curr;
     }
 
     // up
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~row_masks[8] & ~all_pieces_but_self) << 8;
+        curr = (curr & ~row_masks[Row::ROW_8] & ~all_pieces_but_self) << 8;
         attacks |= curr;
     }
 
     // down
     curr = bitboard;
     for (int i = 0; i < 8; i++) {
-        curr = (curr & ~row_masks[1] & ~all_pieces_but_self) >> 8;
+        curr = (curr & ~row_masks[Row::ROW_1] & ~all_pieces_but_self) >> 8;
         attacks |= curr;
     }
     return attacks;

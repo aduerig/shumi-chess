@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <optional>
 #include <unordered_map>
+#include <vector>
 
 typedef unsigned long long ull;
 
@@ -46,14 +47,41 @@ enum GameState {
 };
 
 
-// ? can use inline here, but it complicates the build. defining in globals.cpp
+
+
+// ? maybe can use inline here for externs? but it complicates the build. defining in globals.cpp
+
+enum Row {
+    ROW_1 = 0,
+    ROW_2 = 1,
+    ROW_3 = 2,
+    ROW_4 = 3,
+    ROW_5 = 4,
+    ROW_6 = 5,
+    ROW_7 = 6,
+    ROW_8 = 7
+};
+
+enum Col {
+    COL_A = 0,
+    COL_B = 1,
+    COL_C = 2,
+    COL_D = 3,
+    COL_E = 4,
+    COL_F = 5,
+    COL_G = 6,
+    COL_H = 7
+};
+
 extern ull a_row;
 extern ull a_col;
-extern std::unordered_map<int, ull> row_masks;
-extern std::unordered_map<char, ull> col_masks;
+extern std::vector<ull> row_masks;
+extern std::vector<ull> col_masks;
 
-// extern ull a_down_right_diagonal;
-// extern ull a_down_left_diagonal;
 extern std::unordered_map<int, ull> down_right_diagonals;
 extern std::unordered_map<int, ull> down_left_diagonals;
+
+
+extern std::vector<std::optional<Piece>> promotion_values;
+
 } // end namespace ShumiChess

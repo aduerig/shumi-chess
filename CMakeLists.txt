@@ -82,7 +82,12 @@ set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(${project_name} PUBLIC src)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+# -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
+# set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+# all the fast flags (Ofast helps but hardly)!
+# set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
 
 # dont think we need, was a strange error when adding a minimum version  
 # target_link_libraries(${project_name} PUBLIC pthread)

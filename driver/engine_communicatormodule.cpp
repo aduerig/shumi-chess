@@ -84,7 +84,7 @@ engine_communicator_get_piece_positions(PyObject* self, PyObject* args)
         ull piece_bitboard = piece_pair.second;
         PyObject* python_piece_list = PyList_New(0);
         while (piece_bitboard) {
-            ull single_piece = utility::bit::lsb_and_pop(piece_bitboard);
+            ull single_piece /*  */= utility::bit::lsb_and_pop(piece_bitboard);
             string pos_string = utility::representation::square_to_position_string(single_piece);
             PyList_Append(python_piece_list, Py_BuildValue("s", pos_string.c_str()));
         }
