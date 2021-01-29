@@ -17,9 +17,8 @@ gtests/GTests.exe
 .vscode/settings.json
 gtests/GTests
 install_manifest.txt
-ok
-ok.exe
 googletest/
 Testing/
 driver/build/
 .vscode/
+perf.data

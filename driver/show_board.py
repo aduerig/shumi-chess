@@ -145,8 +145,8 @@ def load_game(button_obj):
 # argument list: function to run on click, text, button_color, text color
 button_holder = [
     Button(clicked_pop_button, lambda: "pop!", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(clicked_white_button, lambda: "Black\n{}".format(both_players[0].get_name()), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
-    Button(clicked_black_button, lambda: "White\n{}".format(both_players[1].get_name()), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
+    Button(clicked_white_button, lambda: "Black\n{}".format(both_players[0].get_name()), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
+    Button(clicked_black_button, lambda: "White\n{}".format(both_players[1].get_name()), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
     Button(clicked_reset_button, lambda: "Reset", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_autoreset, lambda: "Autoreset on game\nend: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
@@ -210,7 +210,7 @@ game_over_text = Text(
     Point(square_size * 4.5, square_size * 9.5), 
     winner_text
 )
-game_over_text.setFill(color_rgb(255,160,122))
+game_over_text.setFill(color_rgb(255, 160, 122))
 
 # draws the squares of colors
 every_other = 1
