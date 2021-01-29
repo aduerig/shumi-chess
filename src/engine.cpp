@@ -56,19 +56,13 @@ vector<Move> Engine::get_legal_moves() {
 vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     vector<Move> all_psuedo_legal_moves;
     
-    for(Move move : get_pawn_moves(color)) 
-        all_psuedo_legal_moves.push_back(move);
-    for(Move move : get_rook_moves(color)) 
-        all_psuedo_legal_moves.push_back(move);
-    for(Move move : get_bishop_moves(color)) 
-        all_psuedo_legal_moves.push_back(move);
-    for(Move move : get_queen_moves(color)) 
-        all_psuedo_legal_moves.push_back(move);
-    for(Move move : get_king_moves(color)) 
-        all_psuedo_legal_moves.push_back(move);
-    for(Move move : get_knight_moves(color)) 
-        all_psuedo_legal_moves.push_back(move);
-
+    add_pawn_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_queen_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_king_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
+    
     return all_psuedo_legal_moves;
 }
 
@@ -201,7 +195,7 @@ Piece Engine::get_piece_on_bitboard(ull bitboard) {
     return Piece::KING;
 }
 
-void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent, bool is_en_passent_capture) {
+void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent, bool is_en_passent_capture) {
     // code to actually pop all the potential squares and add them as moves
     while (bitboard_to) {
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
@@ -238,9 +232,7 @@ void Engine::add_as_moves(vector<Move>& moves, ull single_bitboard_from, ull bit
     }
 }
 
-vector<Move> Engine::get_pawn_moves(Color color) {
-    vector<Move> pawn_moves;
-    
+void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
     // get just pawns of correct color
     ull pawns = game_board.get_pieces(color, Piece::PAWN);
 
@@ -271,7 +263,7 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         ull move_forward = utility::bit::bitshift_by_color(single_pawn & ~pawn_enemy_starting_rank_mask, color, 8); 
         ull move_forward_not_blocked = move_forward & ~all_pieces;
         ull spaces_to_move = move_forward_not_blocked;
-        add_as_moves(pawn_moves, single_pawn, spaces_to_move, Piece::PAWN, color, false, false, 0ULL, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_pawn, spaces_to_move, Piece::PAWN, color, false, false, 0ULL, false);
 
         // move up two ranks
         ull is_doublable = single_pawn & pawn_starting_rank_mask;
@@ -281,7 +273,7 @@ vector<Move> Engine::get_pawn_moves(Color color) {
             ull move_forward_one_blocked = move_forward_one & ~all_pieces;
             ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
             ull move_forward_two_blocked = move_forward_two & ~all_pieces;
-            add_as_moves(pawn_moves, single_pawn, move_forward_two_blocked, Piece::PAWN, color, false, false, move_forward_one_blocked, false);
+            add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN, color, false, false, move_forward_one_blocked, false);
         }
 
 
@@ -289,7 +281,7 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
         ull promo_squares = promotion_not_blocked;
-        add_as_moves(pawn_moves, single_pawn, promo_squares, Piece::PAWN, color, 
+        add_move_to_vector(all_psuedo_legal_moves, single_pawn, promo_squares, Piece::PAWN, color, 
                 false, true, 0ULL, false);
 
         // attacks forward left and forward right, also includes promotions like this
@@ -297,26 +289,21 @@ vector<Move> Engine::get_pawn_moves(Color color) {
         ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row, color, 7);
         ull normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
-        add_as_moves(pawn_moves, single_pawn, normal_attacks, Piece::PAWN, color, 
+        add_move_to_vector(all_psuedo_legal_moves, single_pawn, normal_attacks, Piece::PAWN, color, 
                      true, (bool) (normal_attacks & enemy_starting_rank_mask), 0ULL, false);
 
         // enpassant attacks
         // TODO improvement here, because we KNOW that enpassant results in the capture of a pawn, but it adds a lot of code here to get the speed upgrade. Words fine as is
         ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
-        add_as_moves(pawn_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
+        add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
                      true, false, 0ULL, true);
     }
-
-    return pawn_moves;
 }
 
-vector<Move> Engine::get_knight_moves(Color color) {
-    vector<Move> knight_moves;
-    return knight_moves;
+void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
 }
 
-vector<Move> Engine::get_rook_moves(Color color) {
-    vector<Move> rook_moves;
+void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull rooks = game_board.get_pieces(color, Piece::ROOK);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
@@ -327,17 +314,15 @@ vector<Move> Engine::get_rook_moves(Color color) {
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_as_moves(rook_moves, single_rook, enemy_piece_attacks, Piece::ROOK, color, true, false, 0ULL, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK, color, true, false, 0ULL, false);
     
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_as_moves(rook_moves, single_rook, non_attack_moves, Piece::ROOK, color, false, false, 0ULL, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK, color, false, false, 0ULL, false);
     }
-    return rook_moves;
 }
 
-vector<Move> Engine::get_bishop_moves(Color color) {
-    vector<Move> bishop_moves;
+void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull bishops = game_board.get_pieces(color, Piece::BISHOP);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
@@ -348,16 +333,15 @@ vector<Move> Engine::get_bishop_moves(Color color) {
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_as_moves(bishop_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP, color, true, false, 0ULL, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP, color, true, false, 0ULL, false);
     
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_as_moves(bishop_moves, single_bishop, non_attack_moves, Piece::BISHOP, color, false, false, 0ULL, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP, color, false, false, 0ULL, false);
     }
-    return bishop_moves;
 }
 
-vector<Move> Engine::get_queen_moves(Color color) {
+void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     vector<Move> queen_moves;
     ull queens = game_board.get_pieces(color, Piece::QUEEN);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
@@ -369,19 +353,16 @@ vector<Move> Engine::get_queen_moves(Color color) {
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_as_moves(queen_moves, single_queen, enemy_piece_attacks, Piece::QUEEN, color, true, false, 0ULL, false);
+        add_move_to_vector(queen_moves, single_queen, enemy_piece_attacks, Piece::QUEEN, color, true, false, 0ULL, false);
     
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_as_moves(queen_moves, single_queen, non_attack_moves, Piece::QUEEN, color, false, false, 0ULL, false);
+        add_move_to_vector(queen_moves, single_queen, non_attack_moves, Piece::QUEEN, color, false, false, 0ULL, false);
 
     }
-    return queen_moves;
 }
 
-vector<Move> Engine::get_king_moves(Color color) {
-    vector<Move> king_moves;
-    return king_moves;
+void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
 }
 
 ull Engine::get_diagonal_attacks(ull bitboard) {
@@ -390,28 +371,28 @@ ull Engine::get_diagonal_attacks(ull bitboard) {
 
     ull curr = bitboard;
     // up left
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 9;
         attacks |= curr;
     }
 
     // down left
     curr = bitboard;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) >> 7;
         attacks |= curr;
     }
 
     // up right
     curr = bitboard;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) << 7;
         attacks |= curr;
     }
 
     // down right
     curr = bitboard;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 9;
         attacks |= curr;
     }
@@ -424,28 +405,28 @@ ull Engine::get_straight_attacks(ull bitboard) {
 
     ull curr = bitboard;
     // left
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 1;
         attacks |= curr;
     }
 
     // right
     curr = bitboard;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 1;
         attacks |= curr;
     }
 
     // up
     curr = bitboard;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~row_masks[Row::ROW_8] & ~all_pieces_but_self) << 8;
         attacks |= curr;
     }
 
     // down
     curr = bitboard;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         curr = (curr & ~row_masks[Row::ROW_1] & ~all_pieces_but_self) >> 8;
         attacks |= curr;
     }

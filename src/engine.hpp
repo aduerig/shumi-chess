@@ -40,18 +40,18 @@ class Engine {
         void apply_en_passant_checks(const Move&);
         void apply_castling_changes(const Move&);
 
-        void add_as_moves(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool);
+        void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool);
         // ? maybe shouldn't be here?
         Piece get_piece_on_bitboard(ull);
 
         vector<Move> get_legal_moves();
         vector<Move> get_psuedo_legal_moves(Color);
-        vector<Move> get_pawn_moves(Color);
-        vector<Move> get_knight_moves(Color);
-        vector<Move> get_bishop_moves(Color);
-        vector<Move> get_queen_moves(Color);
-        vector<Move> get_king_moves(Color);
-        vector<Move> get_rook_moves(Color);
+        void add_pawn_moves_to_vector(vector<Move>&, Color);
+        void add_knight_moves_to_vector(vector<Move>&, Color);
+        void add_bishop_moves_to_vector(vector<Move>&, Color);
+        void add_queen_moves_to_vector(vector<Move>&, Color);
+        void add_king_moves_to_vector(vector<Move>&, Color);
+        void add_rook_moves_to_vector(vector<Move>&, Color);
 
         // helpers for move generation
         ull get_diagonal_attacks(ull);
