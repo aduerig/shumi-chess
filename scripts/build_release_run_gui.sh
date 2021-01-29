@@ -1,4 +1,4 @@
-cmake CMakeLists.txt -Wno-dev
+cmake CMakeLists.txt -Wno-dev -DCMAKE_BUILD_TYPE=Release
 ret_code=$?
 if [ $ret_code -ne 0 ]; then
     echo "cmake CMakeLists.txt FAILED"

@@ -5,7 +5,7 @@ if ( $LASTEXITCODE -ne 0 ) {
 }
 cmake --build .
 if ( $LASTEXITCODE -ne 0 ) {
-    echo "cmake CMakeLists.txt FAILED"
+    echo "cmake --build ."
     exit
 }
 cd driver
