@@ -27,8 +27,8 @@ enum Piece {
 struct Move {
     Color color;
     Piece piece_type;
-    ull from; // square
-    ull to; // square
+    ull from; // bitboard
+    ull to; // bitboard
     std::optional<Piece> capture;
     std::optional<Piece> promotion;
     uint8_t black_castle = 0b00000011;

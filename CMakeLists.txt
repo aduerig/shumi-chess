@@ -83,7 +83,7 @@ target_include_directories(${project_name} PUBLIC src)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 # -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -fno-omit-frame-pointer")
 # set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # all the fast flags (Ofast helps but hardly)!

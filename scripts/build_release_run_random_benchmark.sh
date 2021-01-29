@@ -17,4 +17,10 @@ if [ $ret_code -ne 0 ]; then
     echo "perf record ./bin/measure_speed_random_games FAILED"
     exit
 fi
-perf report -g
+
+# perf report -g
+
+# 32 minutes into https://www.youtube.com/watch?v=nXaxk27zwlk
+# .5 is a filter
+# caller inverts the graph
+perf report -g 'graph,0.5,caller'
