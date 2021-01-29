@@ -55,7 +55,6 @@ if(BUILD_TESTS)
 endif(BUILD_TESTS)
 
 
-
 set(Headers
     src/gameboard.hpp
     src/engine.hpp
@@ -87,6 +86,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # dont think we need, was a strange error when adding a minimum version  
 # target_link_libraries(${project_name} PUBLIC pthread)
+
+add_executable(measure_speed_random_games driver/measure_speed_random_games.cpp)
+target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 # unsets the variable to clear it from the cache
 unset(BUILD_TESTS CACHE)
