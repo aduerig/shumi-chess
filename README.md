@@ -28,6 +28,13 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 * 1-liner to build python module and run it
   * `python build_c_module_for_python.py build; python show_board.py`
 
+run to compile with clang (might be faster) 
+```
+export CXX=/usr/bin/clang++
+export CC=/usr/bin/clang
+```
+
+
 ## testing
 This project uses GTest for its unittests, after building with `cmake --build .` the unit_test binary will be in the bin/ folder
 
