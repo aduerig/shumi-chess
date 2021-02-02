@@ -20,14 +20,14 @@ std::vector<ull> row_masks = {
 };
 
 std::vector<ull> col_masks = {
-    a_col,
-    a_col << 1,
-    a_col << 2,
-    a_col << 3,
-    a_col << 4,
-    a_col << 5,
+    a_col << 7,
     a_col << 6,
-    a_col << 7
+    a_col << 5,
+    a_col << 4,
+    a_col << 3,
+    a_col << 2,
+    a_col << 1,
+    a_col
 };
 
 // both start at bottom
