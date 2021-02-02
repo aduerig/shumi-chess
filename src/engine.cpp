@@ -28,7 +28,7 @@ vector<Move> Engine::get_legal_moves() {
     vector<Move> psuedo_legal_moves = get_psuedo_legal_moves(color);
     all_legal_moves.reserve(psuedo_legal_moves.size());
 
-    for(Move move : psuedo_legal_moves) {
+    for (Move move : psuedo_legal_moves) {
         // !
         // TODO once pop is done, uncomment this, and comment out the push_back() below 
         // push(move);
