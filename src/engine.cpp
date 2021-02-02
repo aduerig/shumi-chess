@@ -25,8 +25,10 @@ vector<Move> Engine::get_legal_moves() {
     vector<Move> all_legal_moves;
     Color color = game_board.turn;
     Color opposite_color = utility::representation::get_opposite_color(color);
+    vector<Move> psuedo_legal_moves = get_psuedo_legal_moves(color);
+    all_legal_moves.reserve(psuedo_legal_moves.size());
 
-    for(Move move : get_psuedo_legal_moves(color)) {
+    for(Move move : psuedo_legal_moves) {
         // !
         // TODO once pop is done, uncomment this, and comment out the push_back() below 
         // push(move);
