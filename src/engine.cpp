@@ -25,7 +25,11 @@ vector<Move> Engine::get_legal_moves() {
     vector<Move> all_legal_moves;
     Color color = game_board.turn;
     Color opposite_color = utility::representation::get_opposite_color(color);
-    vector<Move> psuedo_legal_moves = get_psuedo_legal_moves(color);
+    
+    vector<Move> psuedo_legal_moves; 
+    // psuedo_legal_moves.reserve(5);
+    psuedo_legal_moves = get_psuedo_legal_moves(color);
+
     all_legal_moves.reserve(psuedo_legal_moves.size());
 
     for (Move move : psuedo_legal_moves) {
@@ -44,12 +48,12 @@ vector<Move> Engine::get_legal_moves() {
         // // is NOT in check after making the move
         // if (!(deadly_straight & straight_attacks_from_king) &&
         //     !(deadly_diags & diagonal_attacks_from_king)) {
-        //         all_legal_moves.push_back(move);
+        //         all_legal_moves.emplace_back(move);
         //     }
         // pop();
         // !
      
-        all_legal_moves.push_back(move);
+        all_legal_moves.emplace_back(move);
     }
     return all_legal_moves;
 }
@@ -83,19 +87,19 @@ void Engine::push(const Move& move) {
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.from;
 
-    if (!move.promotion) {
+    if (move.promotion == Piece::NONE) {
         moving_piece |= move.to;
     }
     else {
-        access_piece_of_color(*move.promotion, move.color) |= move.to;
+        access_piece_of_color(move.promotion, move.color) |= move.to;
     }
-    if (move.capture) {
+    if (move.capture != Piece::NONE) {
         this->game_board.halfmove = 0;
         if (!move.is_en_passent_capture) {
-            access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
+            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
         } else {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
-            access_piece_of_color(*move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
+            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
         }
     } else if (move.is_castle_move) {  
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
@@ -201,7 +205,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
     // code to actually pop all the potential squares and add them as moves
     while (bitboard_to) {
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
-        std::optional<Piece> piece_captured = nullopt;
+        Piece piece_captured = Piece::NONE;
         if (capture) {
             if (is_en_passent_capture) {
                 piece_captured = Piece::PAWN;
@@ -221,14 +225,14 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         new_move.is_en_passent_capture = is_en_passent_capture;
 
         if (!promotion) {
-            new_move.promotion = std::nullopt;
-            moves.push_back(new_move);
+            new_move.promotion = Piece::NONE;
+            moves.emplace_back(new_move);
         }
         else {
             for (auto& promo_piece : promotion_values) {
                 Move promo_move = new_move;
                 new_move.promotion = promo_piece;
-                moves.push_back(new_move);
+                moves.emplace_back(new_move);
             }
         }
     }

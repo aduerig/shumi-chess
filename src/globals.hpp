@@ -29,8 +29,8 @@ struct Move {
     Piece piece_type;
     ull from; // bitboard
     ull to; // bitboard
-    std::optional<Piece> capture;
-    std::optional<Piece> promotion;
+    Piece capture;
+    Piece promotion;
     uint8_t black_castle = 0b00000011;
     uint8_t white_castle = 0b00000011;
     ull en_passent = 0;
@@ -84,6 +84,6 @@ extern std::unordered_map<int, ull> down_right_diagonals;
 extern std::unordered_map<int, ull> down_left_diagonals;
 
 
-extern std::vector<std::optional<Piece>> promotion_values;
+extern std::vector<Piece> promotion_values;
 
 } // end namespace ShumiChess

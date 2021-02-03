@@ -85,11 +85,11 @@ std::unordered_map<int, ull> down_left_diagonals = {
     {15, 1ULL << 63}
 };
 
-std::vector<std::optional<Piece>> promotion_values = {
-    std::optional<Piece> {Piece::BISHOP},
-    std::optional<Piece> {Piece::KNIGHT},
-    std::optional<Piece> {Piece::QUEEN},
-    std::optional<Piece> {Piece::ROOK}
+std::vector<Piece> promotion_values = {
+    Piece::BISHOP,
+    Piece::KNIGHT,
+    Piece::QUEEN,
+    Piece::ROOK
 };
 
 } // end namespace ShumiChess

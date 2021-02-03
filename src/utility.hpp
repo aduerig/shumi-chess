@@ -25,7 +25,7 @@ namespace representation {
 ull acn_to_bitboard_conversion(const std::string&);
 std::string bitboard_to_acn_conversion(ull);
 inline const ShumiChess::Color get_opposite_color(const ShumiChess::Color color) {
-    // ? OPTIMIZATION_TEST can use the 1 - color trick here?
+    // ? OPTIMIZATION_TEST can use the 1 - color trick here? andrew: yooooooooooo
     if (color == ShumiChess::Color::WHITE) {
         return ShumiChess::Color::BLACK;
     }
