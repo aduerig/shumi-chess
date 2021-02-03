@@ -7,6 +7,7 @@
 
 #include "globals.hpp"
 #include "gameboard.hpp"
+#include "move_tables.hpp"
 #include "utility.hpp"
 
 using namespace std;

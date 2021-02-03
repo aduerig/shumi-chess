@@ -16,6 +16,7 @@ namespace bit {
 
 ull bitshift_by_color(ull, ShumiChess::Color, int);
 ull lsb_and_pop(ull&);
+int bitboard_to_square(ull);
 
 } // end namespace bit
 

@@ -360,11 +360,24 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
         add_move_to_vector(queen_moves, single_queen, non_attack_moves, Piece::QUEEN, color, false, false, 0ULL, false);
-
     }
 }
 
+// assumes 1 king exists per color
 void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
+    ull king = game_board.get_pieces(color, Piece::KING);
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull own_pieces = game_board.get_pieces(color);
+
+    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(king)];
+    
+    // captures
+    ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+    add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING, color, true, false, 0ULL, false);
+
+    // all else
+    ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+    add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false);
 }
 
 ull Engine::get_diagonal_attacks(ull bitboard) {

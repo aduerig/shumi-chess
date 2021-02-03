@@ -73,6 +73,8 @@ enum Col {
     COL_H = 7
 };
 
+// TODO move all this to movegen
+
 extern ull a_row;
 extern ull a_col;
 extern std::vector<ull> row_masks;
