@@ -303,6 +303,22 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 }
 
 void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
+    ull knights = game_board.get_pieces(color, Piece::KNIGHT);
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull own_pieces = game_board.get_pieces(color);
+
+    while (knights) {
+        ull single_knight = utility::bit::lsb_and_pop(knights);
+        ull avail_attacks = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(single_knight)];
+        
+        // captures
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT, color, true, false, 0ULL, false);
+
+        // all else
+        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+        add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT, color, false, false, 0ULL, false);
+    }
 }
 
 void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
@@ -370,7 +386,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull own_pieces = game_board.get_pieces(color);
 
     ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(king)];
-    
+
     // captures
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
     add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING, color, true, false, 0ULL, false);
