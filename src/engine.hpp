@@ -41,7 +41,7 @@ class Engine {
         void apply_en_passant_checks(const Move&);
         void apply_castling_changes(const Move&);
 
-        void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool);
+        void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
         // ? maybe shouldn't be here?
         Piece get_piece_on_bitboard(ull);
 
