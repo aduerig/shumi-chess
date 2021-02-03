@@ -18,9 +18,9 @@ if [ $ret_code -ne 0 ]; then
     exit
 fi
 
-# perf report -g
+perf report -g
 
 # 32 minutes into https://www.youtube.com/watch?v=nXaxk27zwlk
 # .5 is a filter
 # caller inverts the graph
-perf report -g 'graph,0.5,caller'
+# perf report -g 'graph,0.5,caller'

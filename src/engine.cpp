@@ -212,10 +212,10 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         }
 
         Move new_move;
+        new_move.color = color;
+        new_move.piece_type = piece;
         new_move.from = single_bitboard_from;
         new_move.to = single_bitboard_to;
-        new_move.piece_type = piece;
-        new_move.color = color;
         new_move.capture = piece_captured;
         new_move.en_passent = en_passent;
         new_move.is_en_passent_capture = is_en_passent_capture;
