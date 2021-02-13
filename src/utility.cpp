@@ -11,6 +11,10 @@ namespace utility {
 
 namespace bit {
 
+int bitboard_to_square(ull bitboard) {
+    return __builtin_ctzll(bitboard);
+}
+
 ull lsb_and_pop(ull& bitboard) {
     ull lsb_fast;
     

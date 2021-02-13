@@ -48,7 +48,7 @@ int main() {
     Engine engine;
 
 
-    int total = 10000;
+    int total = 30000;
     int black_wins = 0;
     int white_wins = 0;
     int draws = 0;

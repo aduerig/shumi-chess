@@ -38,6 +38,9 @@ export CC=/usr/bin/clang
 ## testing
 This project uses GTest for its unittests, after building with `cmake --build .` the unit_test binary will be in the bin/ folder
 
+## benchmarking
+`perf stat -e L1-icache-loads,L1-icache-load-misses,L1-dcache-loads,L1-dcache-load-misses ./bin/measure_speed_random_games`
+
 ## technical notes
 ### using this as CMAKE + gtest template
 https://github.com/bast/gtest-demo

@@ -20,14 +20,14 @@ std::vector<ull> row_masks = {
 };
 
 std::vector<ull> col_masks = {
-    a_col,
-    a_col << 1,
-    a_col << 2,
-    a_col << 3,
-    a_col << 4,
-    a_col << 5,
+    a_col << 7,
     a_col << 6,
-    a_col << 7
+    a_col << 5,
+    a_col << 4,
+    a_col << 3,
+    a_col << 2,
+    a_col << 1,
+    a_col
 };
 
 // both start at bottom
@@ -85,11 +85,11 @@ std::unordered_map<int, ull> down_left_diagonals = {
     {15, 1ULL << 63}
 };
 
-std::vector<std::optional<Piece>> promotion_values = {
-    std::optional<Piece> {Piece::BISHOP},
-    std::optional<Piece> {Piece::KNIGHT},
-    std::optional<Piece> {Piece::QUEEN},
-    std::optional<Piece> {Piece::ROOK}
+std::vector<Piece> promotion_values = {
+    Piece::BISHOP,
+    Piece::KNIGHT,
+    Piece::QUEEN,
+    Piece::ROOK
 };
 
 } // end namespace ShumiChess
