@@ -364,7 +364,6 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 }
 
 void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    vector<Move> queen_moves;
     ull queens = game_board.get_pieces(color, Piece::QUEEN);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
@@ -375,11 +374,11 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(queen_moves, single_queen, enemy_piece_attacks, Piece::QUEEN, color, true, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN, color, true, false, 0ULL, false, false);
     
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(queen_moves, single_queen, non_attack_moves, Piece::QUEEN, color, false, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN, color, false, false, 0ULL, false, false);
     }
 }
 

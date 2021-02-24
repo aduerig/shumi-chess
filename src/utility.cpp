@@ -16,28 +16,7 @@ int bitboard_to_square(ull bitboard) {
 }
 
 ull lsb_and_pop(ull& bitboard) {
-    ull lsb_fast;
-    
-    // fast using x86 instruction
-    lsb_fast = 1ULL << __builtin_ctzll(bitboard);
-
-    // simple linear search, slow, legacy in case we need to have platforms that don't have __builtin_ctzll
-    // ull lsb_slow;
-    // for (int i = 0; i < 64; i++) {
-    //     if ((1ULL << i) & bitboard) {
-    //         lsb_slow = 1ULL << i;
-    //         break;
-    //     }
-    // }
-
-    // if (lsb_fast != lsb_slow) {
-    //     cout << "fast: " << lsb_fast << endl;
-    //     cout << "slow: " << lsb_slow << endl;
-    //     utility::representation::print_bitboard(lsb_slow);
-    //     utility::representation::print_bitboard(lsb_fast);
-    //     exit(0);
-    // }
-
+    ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
     bitboard = bitboard & (~lsb_fast);
     return lsb_fast;
 }
