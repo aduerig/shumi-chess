@@ -14,13 +14,13 @@ enum Color {
 };
 
 enum Piece {
+    NONE,
     PAWN,
     ROOK,
     KNIGHT,
     BISHOP,
     QUEEN,
-    KING,
-    NONE
+    KING
 };
 
 // TODO think about if this is the right way to represent
@@ -29,8 +29,8 @@ struct Move {
     Piece piece_type;
     ull from; // bitboard
     ull to; // bitboard
-    Piece capture;
-    Piece promotion;
+    Piece capture = Piece::NONE;
+    Piece promotion = Piece::NONE;
     uint8_t black_castle = 0b00000011;
     uint8_t white_castle = 0b00000011;
     ull en_passent = 0;
@@ -38,7 +38,8 @@ struct Move {
     bool is_castle_move = false;
 };
 
-
+// ? is this best way to number
+// ? Should we try to make most checked things = 0 for magical compiler iszero optimixations? (applies to piece enum as well)
 enum GameState {
     INPROGRESS = -1,
     WHITEWIN = 0,
