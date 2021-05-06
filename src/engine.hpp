@@ -19,7 +19,8 @@ class Engine {
         GameBoard game_board;
 
         std::stack<Move> move_history;
-        std::stack<int> halfway_move_history;
+        std::stack<int> halfway_move_state;
+        std::stack<ull> en_passant_history;
         //TODO This way of tracking is inconsistent with gameboard, think over. Requires splitting and merging oof
         std::stack<uint8_t> castle_opportunity_history; //Bits right to left: white kingside, white queenside, black kingside, black queenside
     

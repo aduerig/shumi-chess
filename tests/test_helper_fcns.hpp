@@ -129,24 +129,24 @@ void highlight_board_differences(const ShumiChess::GameBoard& a, const ShumiChes
         cout << "Board 2 Turn: " << b.turn << endl;
     }
     if (a.black_castle != b.black_castle) {
-        cout << "Board 1 Black Castle: " << a.black_castle << endl;
-        cout << "Board 2 Black Castle: " << b.black_castle << endl;
+        cout << "Board 1 Black Castle: " << static_cast<int>(a.black_castle) << endl;
+        cout << "Board 2 Black Castle: " << static_cast<int>(b.black_castle) << endl;
     }
     if (a.white_castle != b.white_castle) {
-        cout << "Board 1 White Castle: " << a.white_castle << endl;
-        cout << "Board 2 White Castle: " << b.white_castle << endl;
+        cout << "Board 1 White Castle: " << static_cast<int>(a.white_castle) << endl;
+        cout << "Board 2 White Castle: " << static_cast<int>(b.white_castle) << endl;
     }
     if (a.en_passant != b.en_passant) {
         cout << "Board 1 EnPassant: " << a.en_passant << endl;
         cout << "Board 2 EnPassant: " << b.en_passant << endl;
     }
     if (a.halfmove != b.halfmove) {
-        cout << "Board 1 Halfmove: " << a.halfmove << endl;
-        cout << "Board 2 Halfmove: " << b.halfmove << endl;
+        cout << "Board 1 Halfmove: " << static_cast<int>(a.halfmove) << endl;
+        cout << "Board 2 Halfmove: " << static_cast<int>(b.halfmove) << endl;
     }
     if (a.fullmove != b.fullmove) {
-        cout << "Board 1 FullMove: " << a.fullmove << endl;
-        cout << "Board 2 FullMove: " << b.fullmove << endl;
+        cout << "Board 1 FullMove: " << static_cast<int>(a.fullmove) << endl;
+        cout << "Board 2 FullMove: " << static_cast<int>(b.fullmove) << endl;
     }
 }
 }

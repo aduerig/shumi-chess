@@ -24,6 +24,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"), test_engine.game_board);
 
     test_engine.push(Move{BLACK, KNIGHT, 1ULL<<57, 1ULL<<42});
+    utility::representation::highlight_board_differences(GameBoard("rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2"), test_engine.game_board);
     EXPECT_EQ(GameBoard("rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2"), test_engine.game_board);
 
     test_engine.push(Move{WHITE, PAWN, 1ULL<<27, 1ULL<<35});
@@ -119,15 +120,50 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard("rQbq1rkQ/pp2pp1p/6pb/3n4/8/P1BP3P/RPP1KPP1/1N3BNR b - - 4 15"), test_engine.game_board);
 }
 
-//TODO use a different game to test pop, more variety
-//? ^ maybe just a second pop test kinda also asserts push
+TEST(EngineMoveStorage, PushPopMini) {
+    using namespace ShumiChess;
+
+    Engine test_engine;
+    std::stack<GameBoard> expected_game_history;
+
+    auto temp_move_0 = (Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
+    temp_move_0.en_passent = 1ULL<<19;
+    test_engine.push(temp_move_0);
+    expected_game_history.emplace("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+    EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
+
+    test_engine.push(Move{BLACK, KNIGHT, 1ULL<<57, 1ULL<<42});
+    expected_game_history.emplace("rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2");
+    EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
+
+    auto temp_move_1 = Move{WHITE, KING, 1ULL<<3, 1ULL<<11};
+    temp_move_1.white_castle = 0;
+    test_engine.push(temp_move_1);
+    expected_game_history.emplace("rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 2 2");
+    EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
+
+    test_engine.push(Move{BLACK, KNIGHT, 1ULL<<42, 1ULL<<57});
+    expected_game_history.emplace("rnbqkbnr/pppppppp/8/8/4P3/8/PPPPKPPP/RNBQ1BNR w kq - 3 3");
+    EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
+
+    while (!expected_game_history.empty())
+    {
+        std::cout << expected_game_history.size() << std::endl;
+        EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
+        utility::representation::highlight_board_differences(expected_game_history.top(), test_engine.game_board);
+        test_engine.pop();
+        expected_game_history.pop();
+    }
+}
+
+//TODO use a different game to test pop (this one is same game as push), more variety
+//? ^ Test different castling rook
+//? Maybe just more mini tests
 TEST(EngineMoveStorage, PoppingMoves) {
     using namespace ShumiChess;
 
-    std::stack<GameBoard> expected_game_history;
-
     Engine test_engine;
-    expected_game_history.emplace();
+    std::stack<GameBoard> expected_game_history;
 
     auto temp_move_0 = (Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
     temp_move_0.en_passent = 1ULL<<19;
@@ -232,7 +268,7 @@ TEST(EngineMoveStorage, PoppingMoves) {
     while (!expected_game_history.empty())
     {
         EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
-        // utility::representation::highlight_board_differences(expected_game_history.top(), test_engine.game_board);
+        utility::representation::highlight_board_differences(expected_game_history.top(), test_engine.game_board);
         test_engine.pop();
         expected_game_history.pop();
     }

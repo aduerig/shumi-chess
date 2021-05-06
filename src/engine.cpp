@@ -6,17 +6,24 @@
 using namespace std;
 
 namespace ShumiChess {
-Engine::Engine() : game_board() {
+Engine::Engine() {
+    reset_engine();
 }
 
+//TODO what is right way to handle popping past default state here?
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 }
 
 void Engine::reset_engine() {
     game_board = GameBoard();
+    // ! is reinitalize these stacks the right way to clear the previous entries?
     move_history = stack<Move>();
-    halfway_move_history = stack<int>();
+    halfway_move_state = stack<int>();
+    halfway_move_state.push(0);
+    std::stack<ull> en_passant_history;
+    en_passant_history.push(0);
     castle_opportunity_history = stack<uint8_t>();
+    castle_opportunity_history.push(0b1111);
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
@@ -94,6 +101,7 @@ void Engine::push(const Move& move) {
     this->game_board.turn = utility::representation::get_opposite_color(move.color);
 
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
+    this->halfway_move_state.push(this->game_board.halfmove);
     ++this->game_board.halfmove;
     if(move.piece_type == ShumiChess::Piece::PAWN) {
         this->game_board.halfmove = 0;
@@ -119,7 +127,6 @@ void Engine::push(const Move& move) {
     } else if (move.is_castle_move) {  
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
-        std::cout << "castle" << std::endl;
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
@@ -139,15 +146,74 @@ void Engine::push(const Move& move) {
             }
         }
     }
-    this->game_board.en_passant = move.en_passent;
 
-    this->halfway_move_history.push(this->game_board.halfmove);
+    this->en_passant_history.push(this->game_board.en_passant);
+    this->game_board.en_passant = move.en_passent;
     
-    this->game_board.black_castle &= move.black_castle;
-    this->game_board.white_castle &= move.white_castle;
-    ull castle_opp = this->game_board.black_castle << 2 &&
+    ull castle_opp =(this->game_board.black_castle << 2) |
                      this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
+    this->game_board.black_castle &= move.black_castle;
+    this->game_board.white_castle &= move.white_castle;
+}
+
+// undos last move, errors if no move was made before
+// TODO not completed
+void Engine::pop() {
+    const Move move = this->move_history.top();
+    this->move_history.pop();
+
+    this->game_board.turn = move.color;
+
+    this->game_board.fullmove -= static_cast<int>(move.color == ShumiChess::Color::BLACK);
+    this->game_board.halfmove = this->halfway_move_state.top();
+    this->halfway_move_state.pop();
+
+    ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
+    moving_piece &= ~move.to;
+    moving_piece |= move.from;
+    if (move.promotion != Piece::NONE) {
+        access_piece_of_color(move.promotion, move.color) &= ~move.to;
+    }
+    if (move.capture != Piece::NONE) {
+        if (!move.is_en_passent_capture) {
+            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= move.to;
+        } else {
+            ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
+            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= target_pawn_bitboard;
+        }
+    } else if (move.is_castle_move) {
+        ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
+        // ! Bet we can make this part of push a func and do something fancy with to and from
+        // TODO at least keep standard with push implimentation.
+        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+            //Queenside Castle
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1ULL<<4);
+                friendly_rooks |= (1ULL<<7);
+            } else {
+                friendly_rooks &= ~(1ULL<<60);
+                friendly_rooks |= (1ULL<<63);
+            }
+        } else {
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1ULL<<2);
+                friendly_rooks |= (1ULL<<0);
+            } else {
+                friendly_rooks &= ~(1ULL<<58);
+                friendly_rooks |= (1ULL<<56);
+            }
+        }
+    }
+
+    this->game_board.en_passant = this->en_passant_history.top();
+    this->en_passant_history.pop();
+    
+    this->game_board.black_castle = this->castle_opportunity_history.top() >> 2;
+    this->game_board.white_castle = this->castle_opportunity_history.top() & 0b0011;
+    this->castle_opportunity_history.pop();
+
+    // ! how are castles stored, need to 
 }
 
 ull& Engine::access_piece_of_color(Piece piece, Color color) {
@@ -180,13 +246,6 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
     }
     // TODO remove this, i'm just putting it here because it prevents a warning
     return this->game_board.white_king;
-}
-
-// undos last move, errors if no move was made before
-// TODO not completed
-void Engine::pop() {
-    this->move_history.pop();
-    const Move move = this->move_history.top();
 }
 
 Piece Engine::get_piece_on_bitboard(ull bitboard) {
