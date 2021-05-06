@@ -148,7 +148,6 @@ TEST(EngineMoveStorage, PushPopMini) {
 
     while (!expected_game_history.empty())
     {
-        std::cout << expected_game_history.size() << std::endl;
         EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
         utility::representation::highlight_board_differences(expected_game_history.top(), test_engine.game_board);
         test_engine.pop();
