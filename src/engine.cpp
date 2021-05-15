@@ -31,7 +31,6 @@ void Engine::reset_engine() {
 vector<Move> Engine::get_legal_moves() {
     vector<Move> all_legal_moves;
     Color color = game_board.turn;
-    Color opposite_color = utility::representation::get_opposite_color(color);
     
     vector<Move> psuedo_legal_moves; 
     // psuedo_legal_moves.reserve(5);
@@ -41,26 +40,13 @@ vector<Move> Engine::get_legal_moves() {
 
     for (Move move : psuedo_legal_moves) {
         // !
-        // TODO once pop is done, uncomment this, and comment out the push_back() below 
-        // push(move);
-        // ull friendly_king = game_board.get_pieces(color, Piece::KING);
+        push(move);
         
-        // // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
-        // ull straight_attacks_from_king = get_straight_attacks(friendly_king);
-        // ull diagonal_attacks_from_king = get_diagonal_attacks(friendly_king);
-        
-        // ull deadly_straight = game_board.get_pieces(opposite_color, Piece::QUEEN) | game_board.get_pieces(opposite_color, Piece::BISHOP);
-        // ull deadly_diags = game_board.get_pieces(opposite_color, Piece::QUEEN) | game_board.get_pieces(opposite_color, Piece::ROOK);
-        
-        // // is NOT in check after making the move
-        // if (!(deadly_straight & straight_attacks_from_king) &&
-        //     !(deadly_diags & diagonal_attacks_from_king)) {
-        //         all_legal_moves.emplace_back(move);
-        //     }
-        // pop();
-        // !
-     
-        all_legal_moves.emplace_back(move);
+        // is NOT in check after making the move
+        if (!is_king_in_check(color)) {
+            all_legal_moves.emplace_back(move);
+        }
+        pop();
     }
     return all_legal_moves;
 }
@@ -77,6 +63,21 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
     
     return all_psuedo_legal_moves;
+}
+
+bool Engine::is_king_in_check(ShumiChess::Color color) {
+    ull friendly_king = this->game_board.get_pieces(color, Piece::KING);
+    Color enemy_color = utility::representation::get_opposite_color(color);
+
+    // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
+    ull straight_attacks_from_king = get_straight_attacks(friendly_king);
+    ull diagonal_attacks_from_king = get_diagonal_attacks(friendly_king);
+    
+    ull deadly_straight = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::BISHOP);
+    ull deadly_diags = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::ROOK);
+
+    return ((deadly_straight & straight_attacks_from_king) ||
+            (deadly_diags & diagonal_attacks_from_king));
 }
 
 // ? should this check for draws by internally calling get legal moves and caching that and returning on the actual call?
@@ -158,7 +159,6 @@ void Engine::push(const Move& move) {
 }
 
 // undos last move, errors if no move was made before
-// TODO not completed
 void Engine::pop() {
     const Move move = this->move_history.top();
     this->move_history.pop();
@@ -212,8 +212,6 @@ void Engine::pop() {
     this->game_board.black_castle = this->castle_opportunity_history.top() >> 2;
     this->game_board.white_castle = this->castle_opportunity_history.top() & 0b0011;
     this->castle_opportunity_history.pop();
-
-    // ! how are castles stored, need to 
 }
 
 ull& Engine::access_piece_of_color(Piece piece, Color color) {

@@ -48,6 +48,7 @@ class Engine {
 
         vector<Move> get_legal_moves();
         vector<Move> get_psuedo_legal_moves(Color);
+        bool is_king_in_check(Color);
         void add_pawn_moves_to_vector(vector<Move>&, Color);
         void add_knight_moves_to_vector(vector<Move>&, Color);
         void add_bishop_moves_to_vector(vector<Move>&, Color);
