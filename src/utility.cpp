@@ -105,11 +105,11 @@ void print_gameboard(ShumiChess::GameBoard gameboard) {
             for (int j = 0; j < 8; j++) {
                 ull curr_single_bitboard = (1ULL << ((i*8) + j));
                 if (bitboard & curr_single_bitboard) {
-                    builder[(i*9) + j] = letter;
+                    builder[70 - ((i*9) + j)] = letter;
                 }
             }
             if (i != 7) {
-                builder[(i*9) + 8] = '\n';
+                builder[70 - ((i*9) + 8)] = '\n';
             }
         }
     }
