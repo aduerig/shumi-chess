@@ -65,14 +65,18 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     return all_psuedo_legal_moves;
 }
 
-bool Engine::is_king_in_check(ShumiChess::Color color) {
+bool Engine::is_king_in_check(const ShumiChess::Color& color) {
     ull friendly_king = this->game_board.get_pieces(color, Piece::KING);
+    return is_square_in_check(color, friendly_king);
+}
+
+bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square) {
+    ull friendly_square = this->game_board.get_pieces(color, Piece::KING);
     Color enemy_color = utility::representation::get_opposite_color(color);
 
-    // sliders
-    // ? probably don't need knights for pins cannot happen with knights, but we don't check if king is in check yet
-    ull straight_attacks_from_king = get_straight_attacks(friendly_king);
-    ull diagonal_attacks_from_king = get_diagonal_attacks(friendly_king);
+    // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
+    ull straight_attacks_from_king = get_straight_attacks(friendly_square);
+    ull diagonal_attacks_from_king = get_diagonal_attacks(friendly_square);
     
     ull deadly_straight = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::BISHOP);
     ull deadly_diags = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::ROOK);
@@ -80,18 +84,18 @@ bool Engine::is_king_in_check(ShumiChess::Color color) {
     // pawns
     ull temp;
     if (color == Color::WHITE) {
-        temp = friendly_king & !row_masks[7] << 8;
+        temp = friendly_square & !row_masks[7] << 8;
     }
     else {
-        temp = friendly_king & !row_masks[0] >> 8;
+        temp = friendly_square & !row_masks[0] >> 8;
     }
     ull reachable_pawns = (temp & !col_masks[0] << 1 | temp & !col_masks[0] >> 1);
 
     // knights
-    ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(friendly_king)];
+    ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(friendly_square)];
 
     // kings
-    ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(friendly_king)];
+    ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(friendly_square)];
 
     return ((deadly_straight & straight_attacks_from_king) ||
             (deadly_diags & diagonal_attacks_from_king) ||
@@ -466,15 +470,29 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     
     // castling
     // TODO worry about check
-    // if (color == Color::WHITE) {
-    //     if (game_board.white_castle & (0b00000000 << 0) && 
-    //             0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces) {
-    //         add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, true);
-    //     }
-    // }
-    // else {
-
-    // }
+    if (color == Color::WHITE) {
+        if (game_board.white_castle & (0b00000001) && 
+            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces &&
+            !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
+            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
+        }
+        if (game_board.white_castle & (0b00000010) && 
+            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces &&
+            !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
+            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
+        }
+    } else {
+        if (game_board.black_castle & (0b00000001) && 
+            0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces &&
+            !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
+            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
+        }
+        if (game_board.black_castle & (0b00000010) && 
+            0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces &&
+            !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
+            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
+        }
+    }
 }
 
 ull Engine::get_diagonal_attacks(ull bitboard) {
