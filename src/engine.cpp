@@ -90,10 +90,14 @@ bool Engine::is_king_in_check(ShumiChess::Color color) {
     // knights
     ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(friendly_king)];
 
+    // kings
+    ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(friendly_king)];
+
     return ((deadly_straight & straight_attacks_from_king) ||
             (deadly_diags & diagonal_attacks_from_king) ||
             (reachable_knights & game_board.get_pieces(enemy_color, Piece::KNIGHT)) ||
-            (reachable_pawns & game_board.get_pieces(enemy_color, Piece::PAWN)));
+            (reachable_pawns & game_board.get_pieces(enemy_color, Piece::PAWN)) ||
+            (reachable_kings & game_board.get_pieces(enemy_color, Piece::KING)));
 }
 
 // ? should this check for draws by internally calling get legal moves and caching that and returning on the actual call?
