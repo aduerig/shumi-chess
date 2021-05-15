@@ -74,7 +74,44 @@ void print_bitboard(ull bitboard) {
                 builder = "0" + builder;
             }
         }
-        builder = "\n" + builder;
+        if (i != 7) {
+            builder = "\n" + builder;
+        }
+    }
+    cout << builder << endl;
+}
+
+void print_gameboard(ShumiChess::GameBoard gameboard) {
+    std::unordered_map<ull, char> bitboard_to_letter = {
+        {gameboard.white_bishops, 'b'},
+        {gameboard.white_knights, 'n'},
+        {gameboard.white_king, 'k'},
+        {gameboard.white_pawns, 'p'},
+        {gameboard.white_rooks, 'r'},
+        {gameboard.white_queens, 'q'},
+        {gameboard.black_bishops, 'B'},
+        {gameboard.black_knights, 'N'},
+        {gameboard.black_king, 'K'},
+        {gameboard.black_pawns, 'P'},
+        {gameboard.black_rooks, 'R'},
+        {gameboard.black_queens, 'Q'},
+    };
+
+    std::string builder(71, '-');
+    for (const auto& pair : bitboard_to_letter) {
+        ull bitboard = pair.first;
+        char letter = pair.second;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                ull curr_single_bitboard = (1ULL << ((i*8) + j));
+                if (bitboard & curr_single_bitboard) {
+                    builder[(i*9) + j] = letter;
+                }
+            }
+            if (i != 7) {
+                builder[(i*9) + 8] = '\n';
+            }
+        }
     }
     cout << builder << endl;
 }

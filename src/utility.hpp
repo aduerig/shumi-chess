@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "globals.hpp"
+#include "gameboard.hpp"
 
 using namespace std;
 
@@ -32,7 +33,8 @@ inline const ShumiChess::Color get_opposite_color(const ShumiChess::Color color)
     return ShumiChess::Color::WHITE;
 }
 std::string move_to_string(ShumiChess::Move);
-void print_bitboard(ull bitboard);
+void print_bitboard(ull);
+void print_gameboard(ShumiChess::GameBoard);
 std::string stringify(ShumiChess::Piece);
 std::string square_to_position_string(ull);
 
