@@ -11,8 +11,7 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.
 
-* building the C++ engine
-  * `cmake CMakeLists.txt`
+* use the files in the `scripts/` folder
 
 * building the C++ python module
   * **IMPORTANT: Tkinter must be installed on your system!** 
@@ -22,18 +21,15 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 * build, execute tests, and run driver (Linux)
   * `./build_unittests_driver.sh`
 
-* build, execute tests, and run driver if using mingw (you are probably on windows) (https://github.com/google/googletest/issues/1051)
-  * `cmake CMakeLists.txt -Dgtest_disable_pthreads=ON && cmake --build . && .\bin\unit_tests.exe`
-
-* 1-liner to build python module and run it
-  * `python build_c_module_for_python.py build; python show_board.py`
-
-run to compile with clang (might be faster) 
+* Run before compilation to compile with clang
 ```
 export CXX=/usr/bin/clang++
 export CC=/usr/bin/clang
 ```
 
+* build, execute tests, and run driver if using mingw (you are probably on windows) (https://github.com/google/googletest/issues/1051)
+  * `cmake CMakeLists.txt -Dgtest_disable_pthreads=ON && cmake --build . && .\bin\unit_tests.exe`
+  
 
 ## testing
 This project uses GTest for its unittests, after building with `cmake --build .` the unit_test binary will be in the bin/ folder
