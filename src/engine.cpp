@@ -69,15 +69,31 @@ bool Engine::is_king_in_check(ShumiChess::Color color) {
     ull friendly_king = this->game_board.get_pieces(color, Piece::KING);
     Color enemy_color = utility::representation::get_opposite_color(color);
 
-    // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
+    // sliders
+    // ? probably don't need knights for pins cannot happen with knights, but we don't check if king is in check yet
     ull straight_attacks_from_king = get_straight_attacks(friendly_king);
     ull diagonal_attacks_from_king = get_diagonal_attacks(friendly_king);
     
     ull deadly_straight = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::BISHOP);
     ull deadly_diags = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::ROOK);
 
+    // pawns
+    ull temp;
+    if (color == Color::WHITE) {
+        temp = friendly_king & !row_masks[7] << 8;
+    }
+    else {
+        temp = friendly_king & !row_masks[0] >> 8;
+    }
+    ull reachable_pawns = (temp & !col_masks[0] << 1 | temp & !col_masks[0] >> 1);
+
+    // knights
+    ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(friendly_king)];
+
     return ((deadly_straight & straight_attacks_from_king) ||
-            (deadly_diags & diagonal_attacks_from_king));
+            (deadly_diags & diagonal_attacks_from_king) ||
+            (reachable_knights & game_board.get_pieces(enemy_color, Piece::KNIGHT)) ||
+            (reachable_pawns & game_board.get_pieces(enemy_color, Piece::PAWN)));
 }
 
 // ? should this check for draws by internally calling get legal moves and caching that and returning on the actual call?
