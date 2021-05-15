@@ -81,8 +81,27 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     ull deadly_straight = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::BISHOP);
     ull deadly_diags = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::ROOK);
 
+    // pawns
+    ull temp;
+    if (color == Color::WHITE) {
+        temp = friendly_square & !row_masks[7] << 8;
+    }
+    else {
+        temp = friendly_square & !row_masks[0] >> 8;
+    }
+    ull reachable_pawns = (temp & !col_masks[0] << 1 | temp & !col_masks[0] >> 1);
+
+    // knights
+    ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(friendly_square)];
+
+    // kings
+    ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(friendly_square)];
+
     return ((deadly_straight & straight_attacks_from_king) ||
-            (deadly_diags & diagonal_attacks_from_king));
+            (deadly_diags & diagonal_attacks_from_king) ||
+            (reachable_knights & game_board.get_pieces(enemy_color, Piece::KNIGHT)) ||
+            (reachable_pawns & game_board.get_pieces(enemy_color, Piece::PAWN)) ||
+            (reachable_kings & game_board.get_pieces(enemy_color, Piece::KING)));
 }
 
 // ? should this check for draws by internally calling get legal moves and caching that and returning on the actual call?
