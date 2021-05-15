@@ -266,18 +266,6 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
     return this->game_board.white_king;
 }
 
-Piece Engine::get_piece_on_bitboard(ull bitboard) {
-    vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
-    for (auto piece_type : all_piece_types) {
-        if (game_board.get_pieces(piece_type) & bitboard) {
-            return piece_type;
-        }
-    }
-    assert(false);
-    // TODO remove this, i'm just putting it here because it prevents a warning
-    return Piece::KING;
-}
-
 void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent, bool is_en_passent_capture, bool is_castle) {
     // code to actually pop all the potential squares and add them as moves
     while (bitboard_to) {
@@ -288,7 +276,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
                 piece_captured = Piece::PAWN;
             }
             else {
-                piece_captured = { get_piece_on_bitboard(single_bitboard_to) };
+                piece_captured = { game_board.get_piece_on_bitboard(single_bitboard_to) };
             }
         }
 

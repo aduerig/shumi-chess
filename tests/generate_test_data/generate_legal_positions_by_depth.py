@@ -55,7 +55,7 @@ def get_all_boards_at_depth(board, depth):
 board = chess.Board()
 total_move_counter = 0
 tracker = {}
-levels_to_search = 4
+levels_to_search = 2
 
 get_num_dups = False
 if get_num_dups:
@@ -72,9 +72,10 @@ with open(file_name, 'w') as file:
             for move in all_legals:
                 board.push(move)
                 if get_num_dups:
-                    all_boards.append(board.board_fen())
+                    all_boards.append(board.fen())
                     boards_set.add(all_boards[-1])
                 file.write(board.fen() + '\n')
+                print(board.shredder_fen())
                 board.pop()
                 total_move_counter += 1
                 depth_counter += 1
