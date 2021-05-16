@@ -74,8 +74,8 @@ with open(file_name, 'w') as file:
                 if get_num_dups:
                     all_boards.append(board.fen())
                     boards_set.add(all_boards[-1])
-                file.write(board.fen() + '\n')
-                print(board.shredder_fen())
+                file.write(board.fen(en_passant="fen") + '\n')
+                print(board.fen(en_passant="fen"))
                 board.pop()
                 total_move_counter += 1
                 depth_counter += 1

@@ -132,9 +132,11 @@ const std::string GameBoard::to_fen() {
                     poses += to_string(compressed);
                     compressed = 0;
                 }
-                poses += piece_to_letter[piece_found];
                 if (get_color_on_bitboard(bitboard_of_square) == Color::WHITE) {
-                    poses[j] = toupper(poses[j]);
+                    poses += toupper(piece_to_letter[piece_found]);
+                }
+                else {
+                    poses += piece_to_letter[piece_found];
                 }
             }
         }
@@ -241,17 +243,21 @@ ull GameBoard::get_pieces() {
 }
 
 Color GameBoard::get_color_on_bitboard(ull bitboard) {
-    vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
-    vector<Color> all_colors = {Color::WHITE, Color::BLACK};
-    for (auto piece_type : all_piece_types) {
-        for (auto color : all_colors) {
-            if (get_pieces(color, piece_type) & bitboard) {
-                return color;
-            }
-        }
+    if (get_pieces(Color::WHITE) & bitboard) {
+        return Color::WHITE;
     }
-    assert(false);
-    // TODO remove this, i'm just putting it here because it prevents a warning
-    return Color::WHITE;
+    return Color::BLACK;
+    // vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
+    // vector<Color> all_colors = {Color::WHITE, Color::BLACK};
+    // for (auto piece_type : all_piece_types) {
+    //     for (auto color : all_colors) {
+    //         if (get_pieces(color, piece_type) & bitboard) {
+    //             return color;
+    //         }
+    //     }
+    // }
+    // assert(false);
+    // // TODO remove this, i'm just putting it here because it prevents a warning
+    // return Color::WHITE;
 }
 } // end namespace ShumiChess
