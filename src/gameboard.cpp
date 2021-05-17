@@ -156,16 +156,16 @@ const std::string GameBoard::to_fen() {
 
     // TODO: castling
     string castlestuff;
-    if (1ULL & white_castle) {
+    if (0b00000001 & white_castle) {
         castlestuff += 'K';
     }
-    if (2ULL & white_castle) {
+    if (0b00000010 & white_castle) {
         castlestuff += 'Q';
     }
-    if (1ULL & black_castle) {
+    if (0b00000001 & black_castle) {
         castlestuff += 'k';
     }
-    if (2ULL & black_castle) {
+    if (0b00000010 & black_castle) {
         castlestuff += 'q';
     }
     if (castlestuff.empty()) {
