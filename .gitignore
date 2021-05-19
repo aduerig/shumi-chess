@@ -23,3 +23,4 @@ driver/build/
 .vscode/
 perf.data
 perf.data.old
+out/src/class_diagram/class_diagram.png

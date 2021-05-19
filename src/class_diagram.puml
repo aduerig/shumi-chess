@@ -1,0 +1,189 @@
+@startuml
+legend bottom
+  |= Iconography |= Meaning |= |
+  |= +           |= Public     |
+  |= -           |= Private    |
+  |= ..>         |= Depends On |
+end legend
+
+namespace ShumiChess {
+    class Engine {
+        game_board : Gameboard
+        .. History Info ..
+        move_history : stack<Move>
+        halfway_move_state : stack<int>
+        en_passant_history : stack<ull>
+        castle_opportunity_history : stack<uint8_t>
+        --
+        Engine()
+        reset_engine()
+        push()
+        pop()
+        game_over()
+        access_piece_of_color()
+        apply_en_passant_checks()
+        apply_castling_changes()
+        add_move_to_vector()
+        get_piece_on_bitboard()
+        get_legal_moves()
+        get_psuedo_legal_moves()
+        is_king_in_check()
+        is_square_in_check()
+        add_pawn_moves_to_vector()
+        add_knight_moves_to_vector()
+        add_bishop_moves_to_vector()
+        add_queen_moves_to_vector()
+        add_king_moves_to_vector()
+        add_rook_moves_to_vector()
+        get_diagonal_attacks()
+        get_straight_attacks()
+    }
+
+    class Gameboard {
+        .. Piece Representations ..
+        black_pawns : ull
+        black_rooks : ull
+        black_knights : ull
+        black_bishops : ull
+        black_queens : ull
+        black_king : ull
+        white_pawns : ull
+        white_rooks : ull
+        white_knights : ull
+        white_bishops : ull
+        white_queens : ull
+        white_king : ull
+
+        .. Game State Info ..
+        turn : Color
+        black_castle : uint8_t
+        white_castle : uint8_t
+        en_passant : ull
+        halfmove : uint8_t
+        fullmove : uint8_t
+
+        --
+        Gameboard()
+        to_fen() : string
+        get_pieces() : ull
+    }
+
+    enum Color {
+        WHITE
+        BLACK
+    }
+
+    enum Piece {
+        NONE
+        PAWN
+        ROOK
+        KNIGHT
+        BISHOP
+        QUEEN
+        KING
+    }
+
+    class Move <<(S, #4287f5)>> {
+        color : Color
+        piece_type : Piece
+        from : ull
+        to : ull
+        capture : Piece
+        promotion : Piece
+        black_castle : uint8_t
+        white_castle : uint8_t
+        en_passant : ull
+        is_en_passent_capture : bool
+        is_castle_move : bool
+    }
+
+    enum GameState {
+        INPROGRESS
+        WHITEWIN
+        DRAW
+        BLACKWIN
+    }
+
+    enum Row {
+        ROW_1
+        ROW_2
+        ROW_3
+        ROW_4
+        ROW_5
+        ROW_6
+        ROW_7
+        ROW_8
+    }
+
+    enum Col {
+        Col_A
+        Col_B
+        Col_C
+        Col_D
+        Col_E
+        Col_F
+        Col_G
+        Col_H
+    }
+
+    class global <<(G, #ffffff)>> {
+        a_row : ull
+        a_col : ull
+        row_masks : vector<ull>
+        col_masks : vector<ull>
+        down_right_diagonals : map<int, ull> 
+        down_left_diagonals : map<int, ull> 
+    }
+}
+
+namespace tables {
+    namespace movegen {
+        class global <<(G, #ffffff)>> {
+            king_attack_table : array<ull>
+            knight_attack_table : array<ull>
+
+            init_king_attack_table() : array<ull>
+            init_knight_attack_table() : array<ull>
+        }
+    }
+}
+
+namespace utility {
+    namespace bit {
+        class global <<(G, #ffffff)>> {
+            bitshift_by_color() : ull
+            lsb_and_pop() : ull
+            bitboard_to_square() : ull
+        }
+    }
+
+    namespace representation {
+        class global <<(G, #ffffff)>> {
+            acn_to_bitboard_conversion() : ull
+            bitboard_to_acn_conversion() : string
+            bitboard_to_square() : ull
+            get_opposite_color() : Color
+            move_to_string() : string
+            print_bitboard() : void 
+            print_gameboard() : void
+            stringify() : string
+            square_to_position_string() : string
+        }
+    }
+
+    namespace string {
+        class global <<(G, #ffffff)>> {
+            split() : vector<string>
+            join() : string
+            starts_with() : bool
+        }
+    }
+}
+
+ShumiChess.Engine .> ShumiChess.Gameboard
+ShumiChess.Gameboard .> ShumiChess.Color
+ShumiChess.Move .> ShumiChess.Color
+ShumiChess.Move .> ShumiChess.Piece
+utility.representation.global .> ShumiChess.Color
+
+@enduml
