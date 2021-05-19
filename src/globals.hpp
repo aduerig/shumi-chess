@@ -33,7 +33,7 @@ struct Move {
     Piece promotion = Piece::NONE;
     uint8_t black_castle = 0b00000011;
     uint8_t white_castle = 0b00000011;
-    ull en_passent = 0;
+    ull en_passant = 0;
     bool is_en_passent_capture = false;
     bool is_castle_move = false;
 };

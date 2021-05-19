@@ -173,7 +173,7 @@ void Engine::push(const Move& move) {
     }
 
     this->en_passant_history.push(this->game_board.en_passant);
-    this->game_board.en_passant = move.en_passent;
+    this->game_board.en_passant = move.en_passant;
     
     ull castle_opp =(this->game_board.black_castle << 2) |
                      this->game_board.white_castle;
@@ -270,7 +270,7 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
     return this->game_board.white_king;
 }
 
-void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent, bool is_en_passent_capture, bool is_castle) {
+void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passant, bool is_en_passent_capture, bool is_castle) {
     // code to actually pop all the potential squares and add them as moves
     while (bitboard_to) {
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
@@ -290,7 +290,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         new_move.from = single_bitboard_from;
         new_move.to = single_bitboard_to;
         new_move.capture = piece_captured;
-        new_move.en_passent = en_passent;
+        new_move.en_passant = en_passant;
         new_move.is_en_passent_capture = is_en_passent_capture;
 
         // castling rights

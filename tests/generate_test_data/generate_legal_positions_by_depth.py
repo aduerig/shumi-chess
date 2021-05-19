@@ -55,7 +55,7 @@ def get_all_boards_at_depth(board, depth):
 board = chess.Board()
 total_move_counter = 0
 tracker = {}
-levels_to_search = 4
+levels_to_search = 4 #Goes to depth levels_to_search - 1
 
 get_num_dups = False
 if get_num_dups:
