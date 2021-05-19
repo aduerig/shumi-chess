@@ -270,18 +270,6 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
     return this->game_board.white_king;
 }
 
-Piece Engine::get_piece_on_bitboard(ull bitboard) {
-    vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
-    for (auto piece_type : all_piece_types) {
-        if (game_board.get_pieces(piece_type) & bitboard) {
-            return piece_type;
-        }
-    }
-    assert(false);
-    // TODO remove this, i'm just putting it here because it prevents a warning
-    return Piece::KING;
-}
-
 void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passent, bool is_en_passent_capture, bool is_castle) {
     // code to actually pop all the potential squares and add them as moves
     while (bitboard_to) {
@@ -292,7 +280,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
                 piece_captured = Piece::PAWN;
             }
             else {
-                piece_captured = { get_piece_on_bitboard(single_bitboard_to) };
+                piece_captured = { game_board.get_piece_on_bitboard(single_bitboard_to) };
             }
         }
 
@@ -304,6 +292,21 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         new_move.capture = piece_captured;
         new_move.en_passent = en_passent;
         new_move.is_en_passent_capture = is_en_passent_capture;
+
+        // castling rights
+        ull from_and_to = single_bitboard_from | single_bitboard_to;
+        if (from_and_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000) {
+            new_move.white_castle &= 0b00000001;
+        }
+        if (from_and_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001) {
+            new_move.white_castle &= 0b00000010;
+        }
+        if (from_and_to & 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
+            new_move.black_castle &= 0b00000001;
+        }
+        if (from_and_to & 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
+            new_move.black_castle &= 0b00000010;
+        }
 
         if (!promotion) {
             new_move.promotion = Piece::NONE;
@@ -484,23 +487,23 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     // TODO worry about check
     if (color == Color::WHITE) {
         if (game_board.white_castle & (0b00000001) && 
-            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces &&
+            (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 &  ~all_pieces == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
             !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
         }
         if (game_board.white_castle & (0b00000010) && 
-            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces &&
+            (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
             !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
         }
     } else {
         if (game_board.black_castle & (0b00000001) && 
-            0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces &&
+            (0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
             !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
         }
         if (game_board.black_castle & (0b00000010) && 
-            0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces &&
+            (0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
             !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
         }

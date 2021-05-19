@@ -1,3 +1,4 @@
+#include <bits/stdc++.h>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <fstream>
@@ -11,75 +12,41 @@ using namespace std;
 
 typedef unordered_map<int, vector<string>> fen_map;
 
-// using qperft to determine number of legal moves by depth
-// https://home.hccnet.nl/h.g.muller/dwnldpage.html
-// perft( 1)=           20
-// perft( 2)=          400
-// perft( 3)=         8902
-// perft( 4)=       197281
-// perft( 5)=      4865609
-// perft( 6)=    119060324
-
-TEST(ValidMoves, LengthOfValidMovesDepth1) {
-    ShumiChess::Engine test_engine;
-    int total_legal_moves = test_engine.get_legal_moves().size();
-    ASSERT_EQ(20, total_legal_moves);
-}
-
-// TODO need to calculate length of total legal moves by depth, refactor using matts method
-// TEST(ValidMoves, LengthOfValidMovesDepth2) {
-//     ShumiChess::Engine test_engine;
-//     int total_legal_moves = test_engine.get_legal_moves().size();
-//     ASSERT_EQ(400, total_legal_moves);
-// }
-
-// TEST(ValidMoves, LengthOfValidMovesDepth3) {
-//     ShumiChess::Engine test_engine;
-//     int total_legal_moves = test_engine.get_legal_moves().size();
-//     ASSERT_EQ(8902, total_legal_moves);
-// }
-
-// TEST(ValidMoves, LengthOfValidMovesDepth4) {
-//     ShumiChess::Engine test_engine;
-//     int total_legal_moves = test_engine.get_legal_moves().size();
-//     ASSERT_EQ(197281, total_legal_moves);
-// }
-
-// TEST(ValidMoves, LengthOfValidMovesDepth5) {
-//     ShumiChess::Engine test_engine;
-//     int total_legal_moves = test_engine.get_legal_moves().size();
-//     ASSERT_EQ(4865609, total_legal_moves);
-// }
-
-// TEST(ValidMoves, LengthOfValidMovesDepth6) {
-//     ShumiChess::Engine test_engine;
-//     int total_legal_moves = test_engine.get_legal_moves().size();
-//     ASSERT_EQ(119060324, total_legal_moves);
-// }
-
-/////////////////////////////////
-// FENS BY DEPTH
-/////////////////////////////////
-
-void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, ShumiChess::Engine& engine) {
-    if (depth <= 0) {
+void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, int max_depth, ShumiChess::Engine& engine) {
+    if (depth > max_depth) {
         return;
     }
 
     vector<ShumiChess::Move> legal_moves = engine.get_legal_moves();
-    for (auto move : legal_moves) {
-        // engine.push(move);
-        recurse_moves_and_fill_fens(fen_holder, depth - 1, engine);
+    for (ShumiChess::Move move : legal_moves) {
+        engine.push(move);
+        // if (depth == 3) {
+        //     cout << "REP BELOW, FEN IS: " << engine.game_board.to_fen() << endl;
+        //     utility::representation::print_gameboard(engine.game_board);
+        //     cout << "=========" << endl;
+        // }
+        recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
         fen_holder[depth].push_back(engine.game_board.to_fen());
-        // engine.pop();
+        // if (engine.game_board.to_fen() == "rnbqkbnr/1ppppppp/8/p7/8/N7/PPPPPPPP/R1BQ1BNR b kq - 1 2") {
+        //     cout << "after making move, move from: " << endl;
+        //     utility::representation::print_bitboard(move.from);
+        //     cout << "move to: " << endl;
+        //     utility::representation::print_bitboard(move.to);
+
+        //     utility::representation::print_gameboard(engine.game_board);
+        //     engine.pop();
+        //     cout << "after" << endl;
+        //     utility::representation::print_gameboard(engine.game_board);
+        // }
+        engine.pop();
     }
 }
 
-fen_map get_fens_by_depth_from_engine() {
+fen_map get_fens_by_depth_from_engine(int depth) {
     fen_map fen_holder;
     ShumiChess::Engine test_engine;
     
-    recurse_moves_and_fill_fens(fen_holder, 3, test_engine);
+    recurse_moves_and_fill_fens(fen_holder, 1, depth, test_engine);
 
     return fen_holder;
 }
@@ -111,22 +78,14 @@ vector<int> get_keys_from_map(fen_map map) {
     for (const auto& key_and_value : map) {
         keys.push_back(key_and_value.first);
     }
+    sort(keys.begin(), keys.end());
     return keys;
 }
-
-// TODO delete once not used 
-// vector<pair<int, fen_map>> generate_data_pairs(fen_map map) {
-//     vector<pair<int, fen_map>> data_pairs;
-//     for (const auto& key_and_value : map) {
-//         auto data_pair = make_pair(key_and_value.first, map);
-//         data_pairs.push_back(data_pair);
-//     }
-//     return data_pairs;
-// }
 
 string test_filename = "tests/test_data/legal_positions_by_depth.dat";
 fen_map fens_by_depth = get_fens_by_depth_from_file(test_filename);
 vector<int> depths = get_keys_from_map(fens_by_depth);
+
 
 class LegalPositionsByDepth : public testing::TestWithParam<int> {}; 
 TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
@@ -140,10 +99,10 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
             baseline_fens[i] = 0;
         }
         baseline_fens[i]++;
-    } 
+    }
 
     // construct map based on ShumiChess engine
-    vector<string> fen_data_engine = get_fens_by_depth_from_engine()[depth];
+    vector<string> fen_data_engine = get_fens_by_depth_from_engine(depth)[depth];
     unordered_map<string, int> shumi_fens;
     for (string i : fen_data_engine) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
@@ -158,7 +117,13 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
         int baseline_times_appear = pair.second;
         
         if (shumi_fens.find(baseline_fen) == shumi_fens.end()) {
-            // cout << baseline_fen << endl;
+            cout << "somehow didnt find fen: " << baseline_fen << ", looping" << endl;
+            // cout << "finding... " << shumi_fens.find("rnbqkbnr/p1pppppp/8/1p6/P7/8/RPPPPPPP/1NBQKBNR b KQkq - 1 2")->first << ", " << shumi_fens.find("rnbqkbnr/p1pppppp/8/1p6/P7/8/RPPPPPPP/1NBQKBNR b KQkq - 1 2")->second << endl;
+            // for (const auto& pair2 : shumi_fens) {
+            //     string fenner = pair2.first;
+            //     int nothingmatters = pair2.second;
+            //     cout << "fen 1: " << baseline_fen << "\nfen 2: " << fenner << "\nequality: " << (baseline_fen == fenner) << endl;
+            // }
             ShumiChess::Engine test_engine1(baseline_fen);
             utility::representation::print_gameboard(test_engine1.game_board);
             FAIL() << "At depth " << depth << " fen '" << baseline_fen <<
@@ -188,3 +153,38 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     }
 }
 INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(depths));
+
+
+
+// using qperft to determine number of legal moves by depth
+// https://home.hccnet.nl/h.g.muller/dwnldpage.html
+// perft( 1)=           20
+// perft( 2)=          400
+// perft( 3)=         8902
+// perft( 4)=       197281
+// perft( 5)=      4865609
+// perft( 6)=    119060324
+
+class NumberOfLegalPositionsByDepth : public testing::TestWithParam<int> {}; 
+TEST_P(NumberOfLegalPositionsByDepth, NumberOfLegalPositionsByDepth) {
+    int depth = GetParam(); 
+    int correct = 0; 
+    if (depth == 1) {
+        correct = 20;
+    }
+    else if (depth == 2) {
+        correct = 400;
+    }
+    else if (depth == 3) {
+        correct = 8902;
+    }
+    else if (depth == 4) {
+        correct = 197281;
+    }
+    else if (depth == 5) {
+        correct = 4865609;
+    }
+    vector<string> fen_data_baseline = get_fens_by_depth_from_file(test_filename)[depth];
+    ASSERT_EQ(correct, fen_data_baseline.size());
+}
+INSTANTIATE_TEST_CASE_P(NumberOfLegalPositionsByDepthParam, NumberOfLegalPositionsByDepth, testing::ValuesIn(depths));

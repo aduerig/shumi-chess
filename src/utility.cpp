@@ -83,18 +83,18 @@ void print_bitboard(ull bitboard) {
 
 void print_gameboard(ShumiChess::GameBoard gameboard) {
     std::unordered_map<ull, char> bitboard_to_letter = {
-        {gameboard.white_bishops, 'b'},
-        {gameboard.white_knights, 'n'},
-        {gameboard.white_king, 'k'},
-        {gameboard.white_pawns, 'p'},
-        {gameboard.white_rooks, 'r'},
-        {gameboard.white_queens, 'q'},
-        {gameboard.black_bishops, 'B'},
-        {gameboard.black_knights, 'N'},
-        {gameboard.black_king, 'K'},
-        {gameboard.black_pawns, 'P'},
-        {gameboard.black_rooks, 'R'},
-        {gameboard.black_queens, 'Q'},
+        {gameboard.white_bishops, 'B'},
+        {gameboard.white_knights, 'N'},
+        {gameboard.white_king, 'K'},
+        {gameboard.white_pawns, 'P'},
+        {gameboard.white_rooks, 'R'},
+        {gameboard.white_queens, 'Q'},
+        {gameboard.black_bishops, 'b'},
+        {gameboard.black_knights, 'n'},
+        {gameboard.black_king, 'k'},
+        {gameboard.black_pawns, 'p'},
+        {gameboard.black_rooks, 'r'},
+        {gameboard.black_queens, 'q'},
     };
 
     std::string builder(71, '-');

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 #include "globals.hpp"
 
@@ -58,5 +59,9 @@ class GameBoard {
         ull get_pieces(Color);
         ull get_pieces(Piece);
         ull get_pieces(Color, Piece);
+
+
+        Piece get_piece_on_bitboard(ull);
+        Color get_color_on_bitboard(ull);
 };
 } // end namespace ShumiChess

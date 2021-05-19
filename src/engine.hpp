@@ -43,8 +43,6 @@ class Engine {
         void apply_castling_changes(const Move&);
 
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
-        // ? maybe shouldn't be here?
-        Piece get_piece_on_bitboard(ull);
 
         vector<Move> get_legal_moves();
         vector<Move> get_psuedo_legal_moves(Color);

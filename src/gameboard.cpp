@@ -108,8 +108,44 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 const std::string GameBoard::to_fen() {
     vector<string> fen_components;
 
-    // TODO: piece placement
-    fen_components.push_back("");
+    unordered_map<ull, char> piece_to_letter = {
+        {Piece::BISHOP, 'b'},
+        {Piece::KING, 'k'},
+        {Piece::KNIGHT, 'n'},
+        {Piece::PAWN, 'p'},
+        {Piece::ROOK, 'r'},
+        {Piece::QUEEN, 'q'},
+    };
+
+    vector<string> piece_positions;
+    for (int i = 7; i > -1; i--) {
+        string poses;
+        int compressed = 0;
+        for (int j = 0; j < 8; j++) {
+            ull bitboard_of_square = 1ULL << (i * 8) + (7 - j);
+            Piece piece_found = get_piece_on_bitboard(bitboard_of_square);
+            if (piece_found == Piece::NONE) {
+                compressed += 1;
+            }
+            else {
+                if (compressed) {
+                    poses += to_string(compressed);
+                    compressed = 0;
+                }
+                if (get_color_on_bitboard(bitboard_of_square) == Color::WHITE) {
+                    poses += toupper(piece_to_letter[piece_found]);
+                }
+                else {
+                    poses += piece_to_letter[piece_found];
+                }
+            }
+        }
+        if (compressed) {
+            poses += to_string(compressed);
+        }
+        piece_positions.push_back(poses);
+    }
+    fen_components.push_back(utility::string::join(piece_positions, "/"));
 
     // current turn
     string color_rep = "w";
@@ -119,16 +155,36 @@ const std::string GameBoard::to_fen() {
     fen_components.push_back(color_rep);
 
     // TODO: castling
-    fen_components.push_back("");
+    string castlestuff;
+    if (0b00000001 & white_castle) {
+        castlestuff += 'K';
+    }
+    if (0b00000010 & white_castle) {
+        castlestuff += 'Q';
+    }
+    if (0b00000001 & black_castle) {
+        castlestuff += 'k';
+    }
+    if (0b00000010 & black_castle) {
+        castlestuff += 'q';
+    }
+    if (castlestuff.empty()) {
+        castlestuff = "-";
+    }
+    fen_components.push_back(castlestuff);
 
     // TODO: enpassant
-    fen_components.push_back(utility::representation::bitboard_to_acn_conversion(en_passant));
+    string enpassant_info = "-";
+    if (en_passant != 0) {
+        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant);
+    }
+    fen_components.push_back(enpassant_info);
     
     // TODO: halfmove number (fifty move rule)
-    fen_components.push_back("");
+    fen_components.push_back(to_string(halfmove));
 
     // TODO: total moves
-    fen_components.push_back("");
+    fen_components.push_back(to_string(fullmove));
 
     // returns string joined by spaces
     return utility::string::join(fen_components, " ");
@@ -168,11 +224,40 @@ ull GameBoard::get_pieces(Piece piece_type) {
     assert(false);
 }
 
+Piece GameBoard::get_piece_on_bitboard(ull bitboard) {
+    vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
+    for (auto piece_type : all_piece_types) {
+        if (get_pieces(piece_type) & bitboard) {
+            return piece_type;
+        }
+    }
+    return Piece::NONE;
+}
+
 ull GameBoard::get_pieces(Color color, Piece piece_type) {
     return get_pieces(piece_type) & get_pieces(color);
 }
 
 ull GameBoard::get_pieces() {
     return get_pieces(Color::WHITE) | get_pieces(Color::BLACK);
+}
+
+Color GameBoard::get_color_on_bitboard(ull bitboard) {
+    if (get_pieces(Color::WHITE) & bitboard) {
+        return Color::WHITE;
+    }
+    return Color::BLACK;
+    // vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
+    // vector<Color> all_colors = {Color::WHITE, Color::BLACK};
+    // for (auto piece_type : all_piece_types) {
+    //     for (auto color : all_colors) {
+    //         if (get_pieces(color, piece_type) & bitboard) {
+    //             return color;
+    //         }
+    //     }
+    // }
+    // assert(false);
+    // // TODO remove this, i'm just putting it here because it prevents a warning
+    // return Color::WHITE;
 }
 } // end namespace ShumiChess
