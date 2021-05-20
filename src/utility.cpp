@@ -33,9 +33,9 @@ namespace representation {
 
 // ? whats our policy on error handling
 // Likely depends on engine vs auxilary
-ull acn_to_bitboard_conversion(const std::string& anc) {
+ull acn_to_bitboard_conversion(const std::string& acn) {
     int square_number = 0;
-    square_number += ('h'-anc.at(0)) + 8*(anc.at(1)-'1');
+    square_number += ('h' - acn.at(0)) + 8 * (acn.at(1) - '1');
     return 1ULL << square_number;
 }
 

@@ -78,18 +78,19 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     ull straight_attacks_from_king = get_straight_attacks(friendly_square);
     ull diagonal_attacks_from_king = get_diagonal_attacks(friendly_square);
     
-    ull deadly_straight = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::BISHOP);
-    ull deadly_diags = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::ROOK);
+    ull deadly_diags = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::BISHOP);
+    ull deadly_straight = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::ROOK);
 
     // pawns
     ull temp;
     if (color == Color::WHITE) {
-        temp = friendly_square & !row_masks[7] << 8;
+        temp = (friendly_square & ~row_masks[7]) << 8;
     }
     else {
-        temp = friendly_square & !row_masks[0] >> 8;
+        temp = (friendly_square & ~row_masks[0]) >> 8;
     }
-    ull reachable_pawns = (temp & !col_masks[0] << 1 | temp & !col_masks[0] >> 1);
+    ull reachable_pawns = (((temp & ~col_masks[7]) << 1) | 
+                           ((temp & ~col_masks[0]) >> 1));
 
     // knights
     ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(friendly_square)];
@@ -103,6 +104,15 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
             (reachable_pawns & game_board.get_pieces(enemy_color, Piece::PAWN)) ||
             (reachable_kings & game_board.get_pieces(enemy_color, Piece::KING)));
 }
+
+// rnbqkbnr
+// ppp-pppp
+// --------
+// --------
+// ---p-P--
+// ----K---
+// PPPPP-PP
+// RNBQ-BNR
 
 // ? should this check for draws by internally calling get legal moves and caching that and returning on the actual call?
 GameState Engine::game_over() {
@@ -294,17 +304,17 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         new_move.is_en_passent_capture = is_en_passent_capture;
 
         // castling rights
-        ull from_and_to = single_bitboard_from | single_bitboard_to;
-        if (from_and_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000) {
+        ull from_or_to = single_bitboard_from | single_bitboard_to;
+        if (from_or_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000) {
             new_move.white_castle &= 0b00000001;
         }
-        if (from_and_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001) {
+        if (from_or_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001) {
             new_move.white_castle &= 0b00000010;
         }
-        if (from_and_to & 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
+        if (from_or_to & 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
             new_move.black_castle &= 0b00000001;
         }
-        if (from_and_to & 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
+        if (from_or_to & 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
             new_move.black_castle &= 0b00000010;
         }
 
@@ -481,6 +491,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
     // non-capture moves
     ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+    
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
     // castling
