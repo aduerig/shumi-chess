@@ -1,8 +1,6 @@
-
 # uses https://python-chess.readthedocs.io/en/latest/_modules/chess.html 
 # to generate correct paths and legal moves
 import chess
-
 
 # diff tests/test_data/legal_positions_by_depth.dat tests/test_data/legal_positions_by_depth_saved.dat
 def fix_thing(board, popper, depth):
@@ -52,36 +50,39 @@ def get_all_boards_at_depth(board, depth):
             yield 1
             board.pop()
 
-board = chess.Board()
-total_move_counter = 0
-tracker = {}
-levels_to_search = 4 #Goes to depth levels_to_search - 1
+def create_data_file(board, levels_to_search, file_name)
 
-get_num_dups = False
-if get_num_dups:
-    boards_set = set()
-    all_boards = []
+if __name__ == "__main__":
+    board = chess.Board()
+    total_move_counter = 0
+    tracker = {}
+    levels_to_search = 5 #Goes to depth levels_to_search - 1
 
-file_name = '../test_data/legal_positions_by_depth.dat'
-with open(file_name, 'w') as file:
-    for depth in range(1, levels_to_search):
-        depth_counter = 0
-        file.write('DEPTH: ' + str(depth) + '\n')
-        for _ in get_all_boards_at_depth(board, depth - 1):
-            all_legals = list(board.legal_moves)
-            for move in all_legals:
-                board.push(move)
-                if get_num_dups:
-                    all_boards.append(board.fen())
-                    boards_set.add(all_boards[-1])
-                file.write(board.fen(en_passant="fen") + '\n')
-                print(board.fen(en_passant="fen"))
-                board.pop()
-                total_move_counter += 1
-                depth_counter += 1
-        tracker[depth] = depth_counter
+    get_num_dups = False
+    if get_num_dups:
+        boards_set = set()
+        all_boards = []
 
-print(tracker)
-if get_num_dups:
-    print('total duplicates: {0:,}'.format(len(all_boards) - len(boards_set)))
-print('printed board fens out to', file_name)
+    file_name = '../test_data/legal_positions_by_depth.dat'
+    with open(file_name, 'w') as file:
+        for depth in range(1, levels_to_search):
+            depth_counter = 0
+            file.write('DEPTH: ' + str(depth) + '\n')
+            for _ in get_all_boards_at_depth(board, depth - 1):
+                all_legals = list(board.legal_moves)
+                for move in all_legals:
+                    board.push(move)
+                    if get_num_dups:
+                        all_boards.append(board.fen())
+                        boards_set.add(all_boards[-1])
+                    file.write(board.fen(en_passant="fen") + '\n')
+                    print(board.fen(en_passant="fen"))
+                    board.pop()
+                    total_move_counter += 1
+                    depth_counter += 1
+            tracker[depth] = depth_counter
+
+    print(tracker)
+    if get_num_dups:
+        print('total duplicates: {0:,}'.format(len(all_boards) - len(boards_set)))
+    print('printed board fens out to', file_name)
