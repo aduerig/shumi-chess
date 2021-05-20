@@ -1,8 +1,7 @@
-
 # uses https://python-chess.readthedocs.io/en/latest/_modules/chess.html 
 # to generate correct paths and legal moves
 import chess
-
+import time
 
 # diff tests/test_data/legal_positions_by_depth.dat tests/test_data/legal_positions_by_depth_saved.dat
 def fix_thing(board, popper, depth):
@@ -66,12 +65,6 @@ level_mapping_total = {
     6: 119060324,
 }
 
-get_num_dups = False
-if get_num_dups:
-    boards_set = set()
-    all_boards = []
-
-
 # make folder if not exists
 # folder = '../test_data/'
 # with 
@@ -83,13 +76,11 @@ with open(file_name, 'w') as file:
         depth_counter = 0
         file.write('DEPTH: ' + str(depth) + '\n')
         print('generating depth {}'.format(str(depth)))
+        tic = time.perf_counter()
         for _ in get_all_boards_at_depth(board, depth - 1):
             all_legals = list(board.legal_moves)
             for move in all_legals:
                 board.push(move)
-                if get_num_dups:
-                    all_boards.append(board.fen())
-                    boards_set.add(all_boards[-1])
                 file.write(board.fen(en_passant="fen") + '\n')
                 # print(board.fen(en_passant="fen"))
                 board.pop()
@@ -98,9 +89,9 @@ with open(file_name, 'w') as file:
                 if depth > 3:
                     if total_move_counter % something == 0:
                         print('{}% is completed'.format(5 * (total_move_counter // something)))
+        toc = time.perf_counter()
+        print(f"Completed depth {depth}. Total time: {toc-tic:0.3f}")
         tracker[depth] = depth_counter
 
-print(tracker)
-if get_num_dups:
-    print('total duplicates: {0:,}'.format(len(all_boards) - len(boards_set)))
-print('printed board fens out to', file_name)
+    print(tracker)
+    print('printed board fens out to', file_name)

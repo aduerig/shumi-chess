@@ -5,8 +5,8 @@
 #include <unordered_map>
 
 #include "engine.hpp"
-#include "utility.hpp"
 #include "globals.hpp"
+#include "utility.hpp"
 
 using namespace std;
 
