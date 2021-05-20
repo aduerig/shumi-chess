@@ -50,11 +50,19 @@ def get_all_boards_at_depth(board, depth):
             yield 1
             board.pop()
 
-if __name__ == "__main__":
-    board = chess.Board()
-    total_move_counter = 0
-    tracker = {}
-    levels_to_search = 3
+board = chess.Board()
+total_move_counter = 0
+tracker = {}
+levels_to_search = 5
+
+level_mapping_total = {
+    1: 20,
+    2: 400,
+    3: 8902,
+    4: 197281,
+    5: 4865609,
+    6: 119060324,
+}
 
     level_mapping_total = {
         1: 20,
@@ -64,24 +72,34 @@ if __name__ == "__main__":
         5: 4865609,
     }
 
-    file_name = '../test_data/legal_positions_by_depth_TEST.dat'
-    with open(file_name, 'w+') as file:
-        for depth in range(1, levels_to_search + 1):
-            something = (level_mapping_total[depth] // 20)
-            depth_counter = 0
-            file.write('DEPTH: ' + str(depth) + '\n')
-            for _ in get_all_boards_at_depth(board, depth - 1):
-                all_legals = list(board.legal_moves)
-                for move in all_legals:
-                    board.push(move)
-                    file.write(board.fen(en_passant="fen") + '\n')
-                    board.pop()
-                    total_move_counter += 1
-                    depth_counter += 1
-                    if depth > 3:
-                        if total_move_counter % something == 0:
-                            print('{}% is completed'.format(5 * (total_move_counter // something)))
-            tracker[depth] = depth_counter
+
+# make folder if not exists
+# folder = '../test_data/'
+# with 
+
+file_name = '../test_data/legal_positions_by_depth.dat'
+with open(file_name, 'w') as file:
+    for depth in range(1, levels_to_search + 1):
+        something = (level_mapping_total[depth] // 20)
+        depth_counter = 0
+        file.write('DEPTH: ' + str(depth) + '\n')
+        print('generating depth {}'.format(str(depth)))
+        for _ in get_all_boards_at_depth(board, depth - 1):
+            all_legals = list(board.legal_moves)
+            for move in all_legals:
+                board.push(move)
+                if get_num_dups:
+                    all_boards.append(board.fen())
+                    boards_set.add(all_boards[-1])
+                file.write(board.fen(en_passant="fen") + '\n')
+                # print(board.fen(en_passant="fen"))
+                board.pop()
+                total_move_counter += 1
+                depth_counter += 1
+                if depth > 3:
+                    if total_move_counter % something == 0:
+                        print('{}% is completed'.format(5 * (total_move_counter // something)))
+        tracker[depth] = depth_counter
 
     print(tracker)
     print('printed board fens out to', file_name)

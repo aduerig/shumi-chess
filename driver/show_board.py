@@ -148,7 +148,7 @@ button_holder = [
     Button(clicked_white_button, lambda: "White\n{}".format(both_players[0].get_name()), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
     Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1].get_name()), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
     Button(clicked_reset_button, lambda: "Reset", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(clicked_autoreset, lambda: "Autoreset on game\nend: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(clicked_autoreset, lambda: "Autoreset board on\ndraw: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
 
@@ -484,7 +484,7 @@ while True:
     game_over_text.setText(winner_text.format(winner))
     game_over_text.draw(win)
     
-    if autoreset_toggle:
+    if winner == 'draw' and autoreset_toggle:
         reset_board()
         continue
 
