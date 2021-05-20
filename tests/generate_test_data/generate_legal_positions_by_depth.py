@@ -63,6 +63,7 @@ level_mapping_total = {
     3: 8902,
     4: 197281,
     5: 4865609,
+    6: 119060324,
 }
 
 get_num_dups = False
@@ -70,12 +71,18 @@ if get_num_dups:
     boards_set = set()
     all_boards = []
 
+
+# make folder if not exists
+# folder = '../test_data/'
+# with 
+
 file_name = '../test_data/legal_positions_by_depth.dat'
 with open(file_name, 'w') as file:
     for depth in range(1, levels_to_search + 1):
         something = (level_mapping_total[depth] // 20)
         depth_counter = 0
         file.write('DEPTH: ' + str(depth) + '\n')
+        print('generating depth {}'.format(str(depth)))
         for _ in get_all_boards_at_depth(board, depth - 1):
             all_legals = list(board.legal_moves)
             for move in all_legals:

@@ -12,7 +12,7 @@ using namespace std;
 
 typedef unordered_map<int, vector<string>> fen_map;
 
-void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, int max_depth, ShumiChess::Engine& engine) {
+void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_depth, ShumiChess::Engine& engine) {
     if (depth > max_depth) {
         return;
     }
@@ -20,28 +20,29 @@ void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, int max_depth, 
     for (ShumiChess::Move move : legal_moves) {
         engine.push(move);
         recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
-        fen_holder[depth].push_back(engine.game_board.to_fen());
+        if (depth == max_depth) {
+            fen_holder.push_back(engine.game_board.to_fen());
+        }
         engine.pop();
     }
 }
 
-fen_map get_fens_by_depth_from_engine(int depth) {
-    fen_map fen_holder;
+vector<string> get_certain_depth_fens_from_engine(int depth) {
+    vector<string> fen_holder;
     ShumiChess::Engine test_engine;
-    
     recurse_moves_and_fill_fens(fen_holder, 1, depth, test_engine);
-
     return fen_holder;
 }
 
-fen_map get_fens_by_depth_from_file(string test_filename) {
-    fen_map fen_holder;
+int get_fens_by_depth_from_file(fen_map& fen_holder, string test_filename) {
     ifstream myfile(test_filename);
     if (!myfile.is_open()) {
         // TODO find better way to have this function fail
         cout << "ERROR: could not open file: " << test_filename << endl;
         assert(0 == 1);
     }
+    
+    cout << "running get_fens_by_depth_from_file" << endl;
     
     int depth = 0;
     string line;
@@ -54,10 +55,11 @@ fen_map get_fens_by_depth_from_file(string test_filename) {
         fen_holder[depth].push_back(line);
     }
     myfile.close();
-    return fen_holder;
+    cout << "finished running get_fens_by_depth_from_file" << endl;
+    return 0;
 }
 
-vector<int> get_keys_from_map(fen_map map) {
+vector<int> get_keys_from_map(fen_map& map) {
     vector<int> keys;
     for (const auto& key_and_value : map) {
         keys.push_back(key_and_value.first);
@@ -67,7 +69,8 @@ vector<int> get_keys_from_map(fen_map map) {
 }
 
 string test_filename = "tests/test_data/legal_positions_by_depth.dat";
-fen_map fens_by_depth = get_fens_by_depth_from_file(test_filename);
+fen_map fens_by_depth;
+int _ = get_fens_by_depth_from_file(fens_by_depth, test_filename);
 vector<int> depths = get_keys_from_map(fens_by_depth);
 
 
@@ -76,9 +79,8 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     int depth = GetParam(); 
 
     // construct baseline map from the known fens by depth
-    vector<string> fen_data_baseline = get_fens_by_depth_from_file(test_filename)[depth];
     unordered_map<string, int> baseline_fens;
-    for (string i : fen_data_baseline) {
+    for (string i : fens_by_depth[depth]) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
             baseline_fens[i] = 0;
         }
@@ -86,15 +88,13 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     }
 
     // construct map based on ShumiChess engine
-    vector<string> fen_data_engine = get_fens_by_depth_from_engine(depth)[depth];
+    vector<string> fen_data_engine = get_certain_depth_fens_from_engine(depth);
     unordered_map<string, int> shumi_fens;
-    int total_fens = 0;
     for (string i : fen_data_engine) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
             shumi_fens[i] = 0;
         }
         shumi_fens[i]++;
-        total_fens++;
     }
 
     // compare baseline and shumichess
@@ -160,7 +160,7 @@ INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testi
 class NumberOfLegalPositionsByDepth : public testing::TestWithParam<int> {}; 
 TEST_P(NumberOfLegalPositionsByDepth, NumberOfLegalPositionsByDepth) {
     int depth = GetParam(); 
-    vector<string> fen_data_baseline = get_fens_by_depth_from_engine(depth)[depth];
+    vector<string> fen_data_baseline = get_certain_depth_fens_from_engine(depth);
     int correct = 0; 
     if (depth == 1) {
         correct = 20;

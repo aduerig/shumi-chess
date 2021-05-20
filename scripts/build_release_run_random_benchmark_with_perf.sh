@@ -11,13 +11,12 @@ if [ $ret_code -ne 0 ]; then
     exit
 fi
 # -g measures callgraphs
-./bin/measure_speed_random_games
-# perf record -g ./bin/measure_speed_random_games
-# ret_code=$?
-# if [ $ret_code -ne 0 ]; then
-    # echo "perf record ./bin/measure_speed_random_games FAILED"
-    # exit
-# fi
+perf record -g ./bin/measure_speed_random_games
+ret_code=$?
+if [ $ret_code -ne 0 ]; then
+    echo "perf record ./bin/measure_speed_random_games FAILED"
+    exit
+fi
 
 perf report -g
 
