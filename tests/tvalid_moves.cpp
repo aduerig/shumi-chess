@@ -1,7 +1,8 @@
 #include <bits/stdc++.h>
 #include <gtest/gtest.h>
-#include <iostream>
+#include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <unordered_map>
 
 #include "engine.hpp"
@@ -9,6 +10,7 @@
 #include "utility.hpp"
 
 using namespace std;
+namespace fs = std::filesystem;
 
 typedef unordered_map<int, vector<string>> fen_map;
 
@@ -27,60 +29,74 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
     }
 }
 
-vector<string> get_certain_depth_fens_from_engine(int depth) {
+vector<string> get_certain_depth_fens_from_engine(string starting_fen, int depth) {
     vector<string> fen_holder;
-    ShumiChess::Engine test_engine;
+    ShumiChess::Engine test_engine(starting_fen);
     recurse_moves_and_fill_fens(fen_holder, 1, depth, test_engine);
     return fen_holder;
 }
 
-int get_fens_by_depth_from_file(fen_map& fen_holder, string test_filename) {
-    ifstream myfile(test_filename);
+pair<string, vector<string>> get_fens_from_file(fs::path filepath) {
+    vector<string> fen_holder;
+    ifstream myfile(filepath);
     if (!myfile.is_open()) {
         // TODO find better way to have this function fail
-        cout << "ERROR: could not open file: " << test_filename << endl;
+        cout << "ERROR: could not open file: " << filepath << endl;
         assert(0 == 1);
     }
-    
-    cout << "running get_fens_by_depth_from_file" << endl;
-    
+        
     int depth = 0;
     string line;
-    while (getline (myfile, line)) {
-        if (utility::string::starts_with(line, "DEPTH")) {
+    string starting_fen;
+    if (getline (myfile, line)) {
+        if (utility::string::starts_with(line, "Starting Fen:")) {
             vector<string> splitted = utility::string::split(line, ":");
-            depth = stoi(splitted.back());
-            continue;
+            starting_fen = splitted.back();
+            utility::string::trim(starting_fen); // in place
         }
-        fen_holder[depth].push_back(line);
     }
+    
+    // all other fens in the file
+    while (getline (myfile, line)) {
+        if (line != "") {
+            fen_holder.push_back(line);
+        }
+    }
+
     myfile.close();
-    cout << "finished running get_fens_by_depth_from_file" << endl;
-    return 0;
+    return make_pair(starting_fen, fen_holder);
 }
 
-vector<int> get_keys_from_map(fen_map& map) {
-    vector<int> keys;
-    for (const auto& key_and_value : map) {
-        keys.push_back(key_and_value.first);
+vector<string> get_filenames_to_test_positions(fs::path folder_to_search) {
+    vector<string>  all_filenames;
+    for(auto& p: fs::directory_iterator(folder_to_search)) {
+        cout << "found path and adding: " << p.path() << endl;
+        all_filenames.push_back(p.path());
     }
-    sort(keys.begin(), keys.end());
-    return keys;
+    return all_filenames;
 }
 
-string test_filename = "tests/test_data/legal_positions_by_depth.dat";
-fen_map fens_by_depth;
-int _ = get_fens_by_depth_from_file(fens_by_depth, test_filename);
-vector<int> depths = get_keys_from_map(fens_by_depth);
+// string test_filename = "tests/test_data/legal_positions_by_depth.dat";
+fs::path test_data_path = "tests/test_data/";
+vector<string>  test_filenames = get_filenames_to_test_positions(test_data_path);
 
-
-class LegalPositionsByDepth : public testing::TestWithParam<int> {}; 
+class LegalPositionsByDepth : public testing::TestWithParam<string> {}; 
 TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
-    int depth = GetParam(); 
+    // ? seg faults when i pass a fs::path into here, idk why
+    fs::path local_filepath = fs::path(GetParam());
+    string filename = local_filepath.stem();
+    string string_depth = utility::string::split(filename, "_").back();
+
+    // cout << "depth of file: " << local_filepath.filename() << ", is: " << string_depth << endl;
+    int depth = stoi(string_depth);
+    
+    pair<string, vector<string>> fen_info_pair = get_fens_from_file(local_filepath);
+    string starting_fen = fen_info_pair.first;
+    vector<string> fens_from_file = fen_info_pair.second;
 
     // construct baseline map from the known fens by depth
     unordered_map<string, int> baseline_fens;
-    for (string i : fens_by_depth[depth]) {
+    for (string i : fens_from_file) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
             baseline_fens[i] = 0;
         }
@@ -88,7 +104,7 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     }
 
     // construct map based on ShumiChess engine
-    vector<string> fen_data_engine = get_certain_depth_fens_from_engine(depth);
+    vector<string> fen_data_engine = get_certain_depth_fens_from_engine(starting_fen, depth);
     unordered_map<string, int> shumi_fens;
     for (string i : fen_data_engine) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
@@ -144,4 +160,4 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
         }
     }
 }
-INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(depths));
+INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(test_filenames));

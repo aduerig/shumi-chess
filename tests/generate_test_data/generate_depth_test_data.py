@@ -7,17 +7,19 @@ import time
 # Treat as BFS problem
 def generateMoveTestDataFileSpeedEfficient(base_board, depth, out_file):
     with open(out_file, 'w+') as file:
+        file.write('Starting Fen: {}\n'.format(base_board.fen(en_passant="fen")))
+
         curr_depth = 0
         curr_board_queue = [base_board]
         while curr_depth < depth:
-            file.write('DEPTH: ' + str(curr_depth+1) + '\n')
-
+            # new depth here
             child_board_queue = []
             for curr_board in curr_board_queue:
                 for move in curr_board.legal_moves:
                     curr_board.push(move)
-                    file.write(curr_board.fen(en_passant="fen") + '\n')
-                    if curr_depth+1 < depth:
+                    if curr_depth == depth - 1:
+                        file.write(curr_board.fen(en_passant="fen") + '\n')
+                    if curr_depth + 1 < depth:
                         child_board_queue.append(curr_board.copy(stack=0))
                     curr_board.pop()
             curr_board_queue = child_board_queue
@@ -56,27 +58,30 @@ def generateMoveTestDataFileMemEfficient(board, depth, out_file):
             curr_depth+=1
 
 
-if __name__ == "__main__":
-    test_data_out_dir = os.path.relpath("../test_data/")
+def generate_all_files_in_depth(start_fen: str, depth: int, board_name: str = 'unknown') -> None:
+    global test_data_out_dir;
+    for curr_depth in range(1, depth + 1):
+        tic = time.perf_counter()
+        out_path = os.path.join(test_data_out_dir, "{}_depth_{}.dat".format(board_name, curr_depth))
+        generateMoveTestDataFileSpeedEfficient(chess.Board(start_fen), curr_depth, out_path)
+    # ? is this seconds?
+    print(f"{board_name} to depth {depth} generation complete. Seconds taken: {time.perf_counter() - tic:0.2f}")
 
-    tic = time.perf_counter()
-    generateMoveTestDataFileSpeedEfficient(chess.Board(), 5, os.path.join(test_data_out_dir, "legal_positions_by_depth.dat"))
-    print(f"Initial Board complete. Generation Time: {time.perf_counter() - tic:0.2f}")
-    tic = time.perf_counter()
-    generateMoveTestDataFileSpeedEfficient(chess.Board("4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1"), 5, os.path.join(test_data_out_dir, "legal_positions_by_depth_pawns.dat"))
-    print(f"Pawn Board complete. Generation Time: {time.perf_counter() - tic:0.2f}")
-    tic = time.perf_counter()
-    generateMoveTestDataFileSpeedEfficient(chess.Board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"), 5, os.path.join(test_data_out_dir, "legal_positions_by_depth_rooks.dat"))
-    print(f"Rook Board complete. Generation Time: {time.perf_counter() - tic:0.2f}")
-    tic = time.perf_counter()
-    generateMoveTestDataFileSpeedEfficient(chess.Board("1n2k1n1/8/8/8/8/8/8/1N2K1N1 w - - 0 1"), 6, os.path.join(test_data_out_dir, "legal_positions_by_depth_knights.dat"))
-    print(f"Knight Board complete. Generation Time: {time.perf_counter() - tic:0.2f}")
-    tic = time.perf_counter()
-    generateMoveTestDataFileSpeedEfficient(chess.Board("2b1kb2/8/8/8/8/8/8/2B1KB2 w - - 0 1"), 5, os.path.join(test_data_out_dir, "legal_positions_by_depth_bishops.dat"))
-    print(f"Bishop Board complete. Generation Time: {time.perf_counter() - tic:0.2f}")
-    tic = time.perf_counter()
-    generateMoveTestDataFileSpeedEfficient(chess.Board("3qk3/8/8/8/8/8/8/3QK3 w - - 0 1"), 5, os.path.join(test_data_out_dir, "legal_positions_by_depth_queens.dat"))
-    print(f"Queen Board complete. Generation Time: {time.perf_counter() - tic:0.2f}")
-    tic = time.perf_counter()
-    generateMoveTestDataFileSpeedEfficient(chess.Board("4k3/8/8/8/8/8/8/4K3 w - - 0 1"), 8, os.path.join(test_data_out_dir, "legal_positions_by_depth_kings.dat"))
-    print(f"Kings Board complete. Generation Time: {time.perf_counter() - tic:0.2f}")
+
+if __name__ == "__main__":
+    test_data_path = os.path.join('..', 'test_data')
+    if not os.path.exists(test_data_path):
+        print('Did not find directory at {}, creating it'.format(test_data_path))
+        os.mkdir(test_data_path)
+
+    global test_data_out_dir;
+    test_data_out_dir = os.path.relpath(test_data_path)
+
+    generate_all_files_in_depth('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 4, 'normal')
+    generate_all_files_in_depth('4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1', 4, 'pawns')
+    # TODO: something is wrong with rooks
+    # generate_all_files_in_depth('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 3, 'rooks')
+    generate_all_files_in_depth('1n2k1n1/8/8/8/8/8/8/1N2K1N1 w - - 0 1', 5, 'knights')
+    generate_all_files_in_depth('2b1kb2/8/8/8/8/8/8/2B1KB2 w - - 0 1', 4, 'bishops')
+    generate_all_files_in_depth('3qk3/8/8/8/8/8/8/3QK3 w - - 0 1', 4, 'queens')
+    generate_all_files_in_depth('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 5, 'kings')
