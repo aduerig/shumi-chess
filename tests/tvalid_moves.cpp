@@ -145,38 +145,3 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     }
 }
 INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(depths));
-
-
-
-// using qperft to determine number of legal moves by depth
-// https://home.hccnet.nl/h.g.muller/dwnldpage.html
-// perft( 1)=           20
-// perft( 2)=          400
-// perft( 3)=         8902
-// perft( 4)=       197281
-// perft( 5)=      4865609
-// perft( 6)=    119060324
-
-class NumberOfLegalPositionsByDepth : public testing::TestWithParam<int> {}; 
-TEST_P(NumberOfLegalPositionsByDepth, NumberOfLegalPositionsByDepth) {
-    int depth = GetParam(); 
-    vector<string> fen_data_baseline = get_certain_depth_fens_from_engine(depth);
-    int correct = 0; 
-    if (depth == 1) {
-        correct = 20;
-    }
-    else if (depth == 2) {
-        correct = 400;
-    }
-    else if (depth == 3) {
-        correct = 8902;
-    }
-    else if (depth == 4) {
-        correct = 197281;
-    }
-    else if (depth == 5) {
-        correct = 4865609;
-    }
-    ASSERT_EQ(correct, fen_data_baseline.size());
-}
-INSTANTIATE_TEST_CASE_P(NumberOfLegalPositionsByDepthParam, NumberOfLegalPositionsByDepth, testing::ValuesIn(depths));
