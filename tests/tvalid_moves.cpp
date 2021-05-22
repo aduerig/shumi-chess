@@ -23,6 +23,8 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
         engine.push(move);
         recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
         if (depth == max_depth) {
+            // cout << "next board state found:" << endl;
+            // utility::representation::print_gameboard(engine.game_board);
             fen_holder.push_back(engine.game_board.to_fen());
         }
         engine.pop();
@@ -41,8 +43,8 @@ pair<string, vector<string>> get_fens_from_file(fs::path filepath) {
     ifstream myfile(filepath);
     if (!myfile.is_open()) {
         // TODO find better way to have this function fail
-        cout << "ERROR: could not open file: " << filepath << endl;
-        assert(0 == 1);
+        cout << "ERROR: Could not open file: " << filepath << ", exiting..." << endl;
+        exit(1);
     }
         
     int depth = 0;
@@ -79,6 +81,8 @@ vector<string> get_filenames_to_test_positions(fs::path folder_to_search) {
 
 fs::path test_data_path = "tests/test_data/";
 vector<string>  test_filenames = get_filenames_to_test_positions(test_data_path);
+
+// uncomment if need just one file
 // vector<string>  test_filenames = vector<string>{"tests/test_data/rooks_depth_1.dat"};
 
 class LegalPositionsByDepth : public testing::TestWithParam<string> {}; 
