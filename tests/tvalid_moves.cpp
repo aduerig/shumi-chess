@@ -1,18 +1,20 @@
 #include <bits/stdc++.h>
 #include <gtest/gtest.h>
-#include <iostream>
+#include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <unordered_map>
 
 #include "engine.hpp"
-#include "utility.hpp"
 #include "globals.hpp"
+#include "utility.hpp"
 
 using namespace std;
+namespace fs = std::filesystem;
 
 typedef unordered_map<int, vector<string>> fen_map;
 
-void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, int max_depth, ShumiChess::Engine& engine) {
+void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_depth, ShumiChess::Engine& engine) {
     if (depth > max_depth) {
         return;
     }
@@ -20,65 +22,86 @@ void recurse_moves_and_fill_fens(fen_map& fen_holder, int depth, int max_depth, 
     for (ShumiChess::Move move : legal_moves) {
         engine.push(move);
         recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
-        fen_holder[depth].push_back(engine.game_board.to_fen());
+        if (depth == max_depth) {
+            // cout << "next board state found:" << endl;
+            // utility::representation::print_gameboard(engine.game_board);
+            fen_holder.push_back(engine.game_board.to_fen());
+        }
         engine.pop();
     }
 }
 
-fen_map get_fens_by_depth_from_engine(int depth) {
-    fen_map fen_holder;
-    ShumiChess::Engine test_engine;
-    
+vector<string> get_certain_depth_fens_from_engine(string starting_fen, int depth) {
+    vector<string> fen_holder;
+    ShumiChess::Engine test_engine(starting_fen);
     recurse_moves_and_fill_fens(fen_holder, 1, depth, test_engine);
-
     return fen_holder;
 }
 
-fen_map get_fens_by_depth_from_file(string test_filename) {
-    fen_map fen_holder;
-    ifstream myfile(test_filename);
+pair<string, vector<string>> get_fens_from_file(fs::path filepath) {
+    vector<string> fen_holder;
+    ifstream myfile(filepath);
     if (!myfile.is_open()) {
         // TODO find better way to have this function fail
-        cout << "ERROR: could not open file: " << test_filename << endl;
-        assert(0 == 1);
+        cout << "ERROR: Could not open file: " << filepath << ", exiting..." << endl;
+        exit(1);
     }
-    
+        
     int depth = 0;
     string line;
-    while (getline (myfile, line)) {
-        if (utility::string::starts_with(line, "DEPTH")) {
+    string starting_fen;
+    if (getline (myfile, line)) {
+        if (utility::string::starts_with(line, "Starting Fen:")) {
             vector<string> splitted = utility::string::split(line, ":");
-            depth = stoi(splitted.back());
-            continue;
+            starting_fen = splitted.back();
+            utility::string::trim(starting_fen); // in place
         }
-        fen_holder[depth].push_back(line);
     }
+    
+    // all other fens in the file
+    while (getline (myfile, line)) {
+        if (line != "") {
+            fen_holder.push_back(line);
+        }
+    }
+
     myfile.close();
-    return fen_holder;
+    return make_pair(starting_fen, fen_holder);
 }
 
-vector<int> get_keys_from_map(fen_map map) {
-    vector<int> keys;
-    for (const auto& key_and_value : map) {
-        keys.push_back(key_and_value.first);
+vector<string> get_filenames_to_test_positions(fs::path folder_to_search) {
+    vector<string>  all_filenames;
+    for(auto& p: fs::directory_iterator(folder_to_search)) {
+        cout << "found path and adding: " << p.path() << endl;
+        all_filenames.push_back(p.path());
     }
-    sort(keys.begin(), keys.end());
-    return keys;
+    sort(all_filenames.begin(), all_filenames.end());
+    return all_filenames;
 }
 
-string test_filename = "tests/test_data/legal_positions_by_depth.dat";
-fen_map fens_by_depth = get_fens_by_depth_from_file(test_filename);
-vector<int> depths = get_keys_from_map(fens_by_depth);
+fs::path test_data_path = "tests/test_data/";
+vector<string>  test_filenames = get_filenames_to_test_positions(test_data_path);
 
+// uncomment if need just one file
+// vector<string>  test_filenames = vector<string>{"tests/test_data/rooks_depth_1.dat"};
 
-class LegalPositionsByDepth : public testing::TestWithParam<int> {}; 
+class LegalPositionsByDepth : public testing::TestWithParam<string> {}; 
 TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
-    int depth = GetParam(); 
+    // ? seg faults when i pass a fs::path into here, idk why
+    fs::path local_filepath = fs::path(GetParam());
+    string filename = local_filepath.stem();
+    string string_depth = utility::string::split(filename, "_").back();
+
+    // cout << "depth of file: " << local_filepath.filename() << ", is: " << string_depth << endl;
+    int depth = stoi(string_depth);
+    
+    pair<string, vector<string>> fen_info_pair = get_fens_from_file(local_filepath);
+    string starting_fen = fen_info_pair.first;
+    vector<string> fens_from_file = fen_info_pair.second;
 
     // construct baseline map from the known fens by depth
-    vector<string> fen_data_baseline = get_fens_by_depth_from_file(test_filename)[depth];
     unordered_map<string, int> baseline_fens;
-    for (string i : fen_data_baseline) {
+    for (string i : fens_from_file) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
             baseline_fens[i] = 0;
         }
@@ -86,15 +109,13 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     }
 
     // construct map based on ShumiChess engine
-    vector<string> fen_data_engine = get_fens_by_depth_from_engine(depth)[depth];
+    vector<string> fen_data_engine = get_certain_depth_fens_from_engine(starting_fen, depth);
     unordered_map<string, int> shumi_fens;
-    int total_fens = 0;
     for (string i : fen_data_engine) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
             shumi_fens[i] = 0;
         }
         shumi_fens[i]++;
-        total_fens++;
     }
 
     // compare baseline and shumichess
@@ -144,39 +165,4 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
         }
     }
 }
-INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(depths));
-
-
-
-// using qperft to determine number of legal moves by depth
-// https://home.hccnet.nl/h.g.muller/dwnldpage.html
-// perft( 1)=           20
-// perft( 2)=          400
-// perft( 3)=         8902
-// perft( 4)=       197281
-// perft( 5)=      4865609
-// perft( 6)=    119060324
-
-class NumberOfLegalPositionsByDepth : public testing::TestWithParam<int> {}; 
-TEST_P(NumberOfLegalPositionsByDepth, NumberOfLegalPositionsByDepth) {
-    int depth = GetParam(); 
-    vector<string> fen_data_baseline = get_fens_by_depth_from_engine(depth)[depth];
-    int correct = 0; 
-    if (depth == 1) {
-        correct = 20;
-    }
-    else if (depth == 2) {
-        correct = 400;
-    }
-    else if (depth == 3) {
-        correct = 8902;
-    }
-    else if (depth == 4) {
-        correct = 197281;
-    }
-    else if (depth == 5) {
-        correct = 4865609;
-    }
-    ASSERT_EQ(correct, fen_data_baseline.size());
-}
-INSTANTIATE_TEST_CASE_P(NumberOfLegalPositionsByDepthParam, NumberOfLegalPositionsByDepth, testing::ValuesIn(depths));
+INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(test_filenames));

@@ -6,6 +6,8 @@ gtests/googletest-build/
 gtests/googletest-download/
 gtests/googletest-src/
 bin/
+tests/test_data_older_format/
+tests/test_data_older_format/*
 tests/test_data/
 tests/test_data/*
 tests/test_data/legal_positions_by_depth.dat

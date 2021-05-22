@@ -46,3 +46,6 @@ https://docs.python.org/3/extending/
 
 ### bit twiddling hacks
 http://graphics.stanford.edu/%7Eseander/bithacks.html
+
+### for gtest, maybe want to use this
+https://gist.github.com/elliotchance/8215283

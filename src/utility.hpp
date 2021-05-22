@@ -1,10 +1,14 @@
 #pragma once
 
 //TODO shares a name with builtin lib
+#include <algorithm> 
+#include <cctype>
 #include <iterator>
+#include <locale>
 #include <string>
 #include <vector>
 #include <unordered_map>
+
 
 #include "globals.hpp"
 #include "gameboard.hpp"
@@ -48,6 +52,26 @@ namespace string {
 std::vector<std::string> split(const std::string&, const std::string& = " ");
 std::string join(const vector<std::string>&, const char*);
 bool starts_with(const std::string& main_str, const std::string& smaller_str);
+
+// trim from start (in place)
+static inline void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
+// trim from both ends (in place)
+static inline void trim(std::string &s) {
+    ltrim(s);
+    rtrim(s);
+}
 
 } // end namespace string
 } // end namespace utility

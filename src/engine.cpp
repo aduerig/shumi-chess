@@ -39,9 +39,7 @@ vector<Move> Engine::get_legal_moves() {
     all_legal_moves.reserve(psuedo_legal_moves.size());
 
     for (Move move : psuedo_legal_moves) {
-        // !
-        push(move);
-        
+        push(move);        
         // is NOT in check after making the move
         if (!is_king_in_check(color)) {
             all_legal_moves.emplace_back(move);
@@ -105,22 +103,17 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
             (reachable_kings & game_board.get_pieces(enemy_color, Piece::KING)));
 }
 
-// rnbqkbnr
-// ppp-pppp
-// --------
-// --------
-// ---p-P--
-// ----K---
-// PPPPP-PP
-// RNBQ-BNR
-
-// ? should this check for draws by internally calling get legal moves and caching that and returning on the actual call?
+// TODO should this check for draws by internally calling get legal moves and caching that and returning on the actual call?, very slow calling get_legal_moves again
 GameState Engine::game_over() {
-    if (!game_board.white_king) {
-        return GameState::BLACKWIN;
-    }
-    else if (!game_board.black_king) {
-        return GameState::WHITEWIN;
+    vector<Move> moves = get_legal_moves();
+    if (moves.size() == 0) {
+        if (is_square_in_check(Color::WHITE, game_board.white_king)) {
+            return GameState::BLACKWIN;
+        }
+        else if (is_square_in_check(Color::BLACK, game_board.black_king)) {
+            return GameState::WHITEWIN;
+        }
+        return GameState::DRAW;
     }
     // TODO check if this is off by one or something
     else if (game_board.halfmove >= 50) {
@@ -498,23 +491,23 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     // TODO worry about check
     if (color == Color::WHITE) {
         if (game_board.white_castle & (0b00000001) && 
-            (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 &  ~all_pieces == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
+            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
             !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
         }
         if (game_board.white_castle & (0b00000010) && 
-            (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
+            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
             !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
         }
     } else {
         if (game_board.black_castle & (0b00000001) && 
-            (0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
+            ((0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
             !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
         }
         if (game_board.black_castle & (0b00000010) && 
-            (0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
+            ((0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
             !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
             add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
         }
