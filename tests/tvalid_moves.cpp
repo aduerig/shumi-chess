@@ -73,12 +73,13 @@ vector<string> get_filenames_to_test_positions(fs::path folder_to_search) {
         cout << "found path and adding: " << p.path() << endl;
         all_filenames.push_back(p.path());
     }
+    sort(all_filenames.begin(), all_filenames.end());
     return all_filenames;
 }
 
-// string test_filename = "tests/test_data/legal_positions_by_depth.dat";
 fs::path test_data_path = "tests/test_data/";
 vector<string>  test_filenames = get_filenames_to_test_positions(test_data_path);
+// vector<string>  test_filenames = vector<string>{"tests/test_data/rooks_depth_1.dat"};
 
 class LegalPositionsByDepth : public testing::TestWithParam<string> {}; 
 TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {

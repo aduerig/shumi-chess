@@ -63,7 +63,8 @@ def generate_all_files_in_depth(start_fen: str, depth: int, board_name: str = 'u
     for curr_depth in range(1, depth + 1):
         tic = time.perf_counter()
         out_path = os.path.join(test_data_out_dir, "{}_depth_{}.dat".format(board_name, curr_depth))
-        generateMoveTestDataFileSpeedEfficient(chess.Board(start_fen), curr_depth, out_path)
+        if not os.path.exists(out_path):
+            generateMoveTestDataFileSpeedEfficient(chess.Board(start_fen), curr_depth, out_path)
     # ? is this seconds?
     print(f"{board_name} to depth {depth} generation complete. Seconds taken: {time.perf_counter() - tic:0.2f}")
 
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     generate_all_files_in_depth('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 4, 'normal')
     generate_all_files_in_depth('4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1', 4, 'pawns')
     # TODO: something is wrong with rooks
-    # generate_all_files_in_depth('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 3, 'rooks')
+    generate_all_files_in_depth('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', 4, 'rooks')
     generate_all_files_in_depth('1n2k1n1/8/8/8/8/8/8/1N2K1N1 w - - 0 1', 5, 'knights')
     generate_all_files_in_depth('2b1kb2/8/8/8/8/8/8/2B1KB2 w - - 0 1', 4, 'bishops')
     generate_all_files_in_depth('3qk3/8/8/8/8/8/8/3QK3 w - - 0 1', 4, 'queens')
