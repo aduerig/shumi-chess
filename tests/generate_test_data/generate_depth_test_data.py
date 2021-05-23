@@ -1,5 +1,4 @@
 import chess
-import cProfile
 import itertools
 import os
 import time
@@ -86,3 +85,4 @@ if __name__ == "__main__":
     generate_all_files_in_depth('2b1kb2/8/8/8/8/8/8/2B1KB2 w - - 0 1', 4, 'bishops')
     generate_all_files_in_depth('3qk3/8/8/8/8/8/8/3QK3 w - - 0 1', 4, 'queens')
     generate_all_files_in_depth('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 5, 'kings')
+    generate_all_files_in_depth('kn6/5P2/8/8/8/8/5p2/KN6 w - - 0 1', 5, 'promotion')
