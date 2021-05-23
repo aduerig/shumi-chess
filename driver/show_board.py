@@ -4,6 +4,7 @@ from modified_graphics import *
 import threading
 import random
 from tkinter import filedialog
+import time
 
 # code to just find the non-temp build folder for the C extension
 ############################################################
@@ -366,10 +367,6 @@ while True:
     # 1 game iteration
     while engine_communicator.game_over() == -1:
         # stuff to do every frame no matter what
-        if len(legal_moves) == 0:
-            # TODO: manually breaking for ties for stalemates now
-            break
-
         # sets text
         current_turn_text.setText(turn_text_values[player_index])
         curr_game_text.setText('Game {}'.format(curr_game))
@@ -390,7 +387,7 @@ while True:
                 make_move(from_acn, to_acn)
                 continue
         
-
+        # if human
         if isinstance(curr_player, Human):
             if time.time() < (last_frame + 1/fps):
                 time.sleep(time.time() - (last_frame + 1/fps))

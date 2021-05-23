@@ -69,7 +69,8 @@ def generate_all_files_in_depth(start_fen: str, depth: int, board_name: str = 'u
 
 
 if __name__ == "__main__":
-    test_data_path = os.path.join('..', 'test_data')
+    this_file_path = os.path.dirname(os.path.realpath(__file__))
+    test_data_path = os.path.join(this_file_path, '..', 'test_data')
     if not os.path.exists(test_data_path):
         print('Did not find directory at {}, creating it'.format(test_data_path))
         os.mkdir(test_data_path)
