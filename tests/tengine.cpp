@@ -12,6 +12,33 @@ TEST(Setup, WhiteGoesFirst) {
     ASSERT_EQ(test_engine.game_board.turn, ShumiChess::Color::WHITE);
 }
 
+vector<string> white_in_check_black_is_safe_fens = {"7k/8/8/3p4/4K3/8/8/8 w - - 0 1",
+                                                    "8/5k2/5P2/3p4/4K3/8/8/8 w - - 0 1",
+                                                    "8/8/3kr3/8/4K3/8/8/8 w - - 0 1",
+                                                    "8/R7/3kr3/R7/3rK3/R7/3R4/2R1R3 w - - 0 1",
+                                                    "8/8/2k5/8/6n1/4K3/8/8 w - - 0 1",
+                                                    "8/8/2k5/5n2/8/4K3/8/8 w - - 0 1",
+                                                    "8/8/2k5/3n4/8/4K3/8/8 w - - 0 1",
+                                                    "8/8/2k5/8/2n5/4K3/8/8 w - - 0 1",
+                                                    "8/8/2k5/8/8/4K3/2n5/8 w - - 0 1",
+                                                    "8/8/2k5/8/8/4K3/8/3n4 w - - 0 1",
+                                                    "8/8/2k5/8/8/4K3/8/5n2 w - - 0 1",
+                                                    "8/8/2k5/8/8/4K3/6n1/8 w - - 0 1",
+                                                    "8/1NNN4/1NkN4/1NNN4/3n4/4K3/6n1/8 w - - 0 1",
+                                                    "8/8/2k5/8/8/4K3/5b2/8 w - - 0 1",
+                                                    "8/8/B1k5/4B3/2BB4/4K3/5b2/8 w - - 0 1",
+                                                    "8/8/2k5/4q3/8/4K3/8/8 w - - 0 1",
+                                                    "8/7Q/2k5/Q4Q2/1Q6/3QK3/8/6q1 w - - 0 1"};
+class IsKingInCheck : public testing::TestWithParam<string> {}; 
+TEST_P(IsKingInCheck, IsKingInCheck) {
+    using namespace ShumiChess;
+    Engine black_safe_white_check_engine{GetParam()};
+
+    ASSERT_TRUE(black_safe_white_check_engine.is_king_in_check(Color::WHITE));
+    ASSERT_FALSE(black_safe_white_check_engine.is_king_in_check(Color::BLACK));
+}
+INSTANTIATE_TEST_CASE_P(IsKingInCheck, IsKingInCheck, testing::ValuesIn(white_in_check_black_is_safe_fens));
+
 TEST(EngineMoveStorage, PushingMoves) {
     using namespace ShumiChess;
 
