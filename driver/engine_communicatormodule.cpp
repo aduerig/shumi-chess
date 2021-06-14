@@ -22,7 +22,7 @@ engine_communicator_systemcall(PyObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "s", &command)) {
         return NULL;
     }
-    
+
     sts = system(command);
     return PyLong_FromLong(sts);
 }
@@ -146,6 +146,16 @@ engine_communicator_get_move_number(PyObject* self, PyObject* args)
     return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
 }
 
+
+static PyObject*
+engine_communicator_get_engine(PyObject* self, PyObject* args)
+{
+    // Create Python capsule with a pointer to the Engine object
+    PyObject* engine_capsule = PyCapsule_New((void * ) &python_engine, "engineptr", NULL);
+    return engine_capsule;
+}
+
+
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS,
         "Execute a shell command."},
@@ -165,6 +175,8 @@ static PyMethodDef engine_communicator_methods[] = {
         "gets the current move number"},
     {"pop",  engine_communicator_pop, METH_VARARGS,
         "undoes the last move"},
+    {"get_engine",  engine_communicator_get_engine, METH_VARARGS,
+        "just returns the raw engine pointer"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
