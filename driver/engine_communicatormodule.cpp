@@ -152,6 +152,7 @@ engine_communicator_get_engine(PyObject* self, PyObject* args)
 {
     // Create Python capsule with a pointer to the Engine object
     PyObject* engine_capsule = PyCapsule_New((void * ) &python_engine, "engineptr", NULL);
+    std::cout << "get_engine called in engine_communicator, returning pointer: " << static_cast<void*>(&python_engine) << endl;
     return engine_capsule;
 }
 
