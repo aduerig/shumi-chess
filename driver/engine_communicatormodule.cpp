@@ -118,9 +118,6 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     }
     python_engine.push(found_move);
 
-    cout << "engine_communicator pushed a move, board state after:" << endl;
-    utility::representation::print_gameboard(python_engine.game_board);
-
     return Py_BuildValue("");
 }
 
@@ -156,7 +153,6 @@ engine_communicator_get_engine(PyObject* self, PyObject* args)
 {
     // Create Python capsule with a pointer to the Engine object
     PyObject* engine_capsule = PyCapsule_New((void * ) &python_engine, "engineptr", NULL);
-    std::cout << "get_engine called in engine_communicator, returning pointer: " << static_cast<void*>(&python_engine) << endl;
     return engine_capsule;
 }
 
