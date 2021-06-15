@@ -18,7 +18,9 @@ libShumiChess.a
 Makefile
 lib/
 gtests/GTests.exe
+driver/build_temp/*
 .vscode/settings.json
+driver/engine_communicator.cpython-39-x86_64-linux-gnu.so
 gtests/GTests
 install_manifest.txt
 googletest/

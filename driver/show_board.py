@@ -1,43 +1,11 @@
-import sys
 import os
 from modified_graphics import *
 import random
 from tkinter import filedialog
 import time
-
-# code to just find the non-temp build folder for the C extension
-############################################################
-abs_real_filepath = os.path.realpath(__file__)
-actual_file_dir, _ = os.path.split(abs_real_filepath)
-
-# old code, now output needed module to same directory
-# module_build_dir = os.path.join(actual_file_dir, 'build')
-
-# for filepath in os.listdir(module_build_dir):
-#     first = os.path.join(module_build_dir, filepath)
-#     if 'temp' not in filepath:
-#         final = os.path.join(module_build_dir, filepath)
-#         sys.path.append(final)
-#         break
-############################################################
-
-
-# code to try to import any AIs
-############################################################
-# abs_real_filepath = os.path.realpath(__file__)
-# actual_file_dir, _ = os.path.split(abs_real_filepath)
-# module_build_dir = os.path.join(actual_file_dir, 'build')
-
-# for filepath in os.listdir(module_build_dir):
-#     first = os.path.join(module_build_dir, filepath)
-#     if 'temp' not in filepath:
-#         final = os.path.join(module_build_dir, filepath)
-#         sys.path.append(final)
-#         break
-############################################################
-
-
 import engine_communicator
+
+script_file_dir, _ = os.path.split(os.path.realpath(__file__))
 
 
 def reset_board():
@@ -249,8 +217,8 @@ for y in range(8):
 
 # getting chess_image_filepaths of chess images
 chess_image_filepaths = {}
-for file in os.listdir(os.path.join(actual_file_dir, 'images')):
-    filepath = os.path.join(actual_file_dir, 'images', file)
+for file in os.listdir(os.path.join(script_file_dir, 'images')):
+    filepath = os.path.join(script_file_dir, 'images', file)
     if os.path.isfile(filepath):
         just_piece = os.path.splitext(file)[0]
         chess_image_filepaths[just_piece] = filepath
