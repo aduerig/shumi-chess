@@ -117,6 +117,10 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
         }
     }
     python_engine.push(found_move);
+
+    cout << "engine_communicator pushed a move, board state after:" << endl;
+    utility::representation::print_gameboard(python_engine.game_board);
+
     return Py_BuildValue("");
 }
 
