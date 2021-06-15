@@ -21,12 +21,16 @@ for i in range(steps_to_root):
     root_dir = path.join(root_dir, os.pardir)
 root_dir = path.normpath(root_dir)
 
+one_above = path.normpath(path.join(script_dir, os.pardir))
+
+print('thinking the one_above is {}'.format(script_dir))
+print('thinking the script_dir is {}'.format(script_dir))
 print('thinking root directory of project is {}'.format(root_dir))
 
 the_module = Extension(
     'engine_communicator',
     sources = [path.join(script_dir, 'engine_communicatormodule.cpp')],
-    include_dirs = [path.join(root_dir, 'src')],
+    include_dirs = [path.join(one_above, 'src')],
     library_dirs = [path.join(root_dir, 'lib')],
     # tries to do a .so (dynamic) build with this
     # libraries = ['ShumiChess'],
