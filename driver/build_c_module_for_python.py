@@ -16,10 +16,10 @@ if '--steps_to_root' in sys.argv:
     del sys.argv[index]
 
 script_dir, _ = path.split(path.abspath(__file__))
-print(script_dir)
 root_dir = script_dir
 for i in range(steps_to_root):
-    root_dir = path.join(root_dir, '..')
+    root_dir = path.join(root_dir, os.pardir)
+root_dir = path.normpath(root_dir)
 
 print('thinking root directory of project is {}'.format(root_dir))
 
