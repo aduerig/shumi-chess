@@ -1,7 +1,6 @@
 import sys
 import os
 from modified_graphics import *
-import threading
 import random
 from tkinter import filedialog
 import time
@@ -10,14 +9,31 @@ import time
 ############################################################
 abs_real_filepath = os.path.realpath(__file__)
 actual_file_dir, _ = os.path.split(abs_real_filepath)
-module_build_dir = os.path.join(actual_file_dir, 'build')
 
-for filepath in os.listdir(module_build_dir):
-    first = os.path.join(module_build_dir, filepath)
-    if 'temp' not in filepath:
-        final = os.path.join(module_build_dir, filepath)
-        sys.path.append(final)
-        break
+# old code, now output needed module to same directory
+# module_build_dir = os.path.join(actual_file_dir, 'build')
+
+# for filepath in os.listdir(module_build_dir):
+#     first = os.path.join(module_build_dir, filepath)
+#     if 'temp' not in filepath:
+#         final = os.path.join(module_build_dir, filepath)
+#         sys.path.append(final)
+#         break
+############################################################
+
+
+# code to try to import any AIs
+############################################################
+# abs_real_filepath = os.path.realpath(__file__)
+# actual_file_dir, _ = os.path.split(abs_real_filepath)
+# module_build_dir = os.path.join(actual_file_dir, 'build')
+
+# for filepath in os.listdir(module_build_dir):
+#     first = os.path.join(module_build_dir, filepath)
+#     if 'temp' not in filepath:
+#         final = os.path.join(module_build_dir, filepath)
+#         sys.path.append(final)
+#         break
 ############################################################
 
 

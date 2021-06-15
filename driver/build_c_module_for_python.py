@@ -23,7 +23,7 @@ root_dir = path.normpath(root_dir)
 
 one_above = path.normpath(path.join(script_dir, os.pardir))
 
-print('thinking the one_above is {}'.format(script_dir))
+print('thinking the one_above is {}'.format(one_above))
 print('thinking the script_dir is {}'.format(script_dir))
 print('thinking root directory of project is {}'.format(root_dir))
 

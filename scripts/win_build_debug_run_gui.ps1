@@ -1,3 +1,5 @@
+# probably really broken, check out .sh files for argument changes
+
 cmake CMakeLists.txt -Wno-dev
 if ( $LASTEXITCODE -ne 0 ) {
     echo "cmake CMakeLists.txt FAILED"
