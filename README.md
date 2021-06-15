@@ -29,13 +29,16 @@ export CC=/usr/bin/clang
 
 * build, execute tests, and run driver if using mingw (you are probably on windows) (https://github.com/google/googletest/issues/1051)
   * `cmake CMakeLists.txt -Dgtest_disable_pthreads=ON && cmake --build . && .\bin\unit_tests.exe`
-  
 
 ## testing
 This project uses GTest for its unittests, after building with `cmake --build .` the unit_test binary will be in the bin/ folder
 
 ## benchmarking
 `perf stat -e L1-icache-loads,L1-icache-load-misses,L1-dcache-loads,L1-dcache-load-misses ./bin/measure_speed_random_games`
+
+## developing
+* if you are facing "unresolved imports" on vscode in the `show_board.py` python file, you can create the file `.env` and add as the contents
+** `PYTHONPATH=driver`
 
 ## technical notes
 ### using this as CMAKE + gtest template

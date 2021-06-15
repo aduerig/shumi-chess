@@ -1,6 +1,7 @@
 driver/__pycache__/
 build/
 CMakeFiles/
+.env
 CMakeCache.txt
 gtests/googletest-build/
 gtests/googletest-download/
