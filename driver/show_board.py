@@ -1,11 +1,26 @@
+import importlib
 import os
-from modified_graphics import *
 import random
 from tkinter import filedialog
 import time
+
+# same directory
+from modified_graphics import *
 import engine_communicator
 
 script_file_dir, _ = os.path.split(os.path.realpath(__file__))
+
+
+# trying to import any avaliable AIs
+imported_ais = {}
+for filepath in os.listdir(script_file_dir):
+    if filepath.endswith('.so') and 'ai' in filepath.lower():
+        ai_friendly_module_name = filepath.split('.')[0]
+        print('trying to import', ai_friendly_module_name)
+        i = importlib.import_module(ai_friendly_module_name)
+        imported_ais[ai_friendly_module_name] = i
+for key, val in imported_ais.items():
+    print('AI: {} imported, module is: {}'.format(key, val))
 
 
 def reset_board():
@@ -17,35 +32,23 @@ def reset_board():
     legal_moves = engine_communicator.get_legal_moves()
 
 
-# ! some object types
-class PlayerType:
-    name = ""
-    
-    def __init__(self):
-        pass
-
-    def get_name(self):
-        return self.__class__.__name__
 
 
-class Human(PlayerType):
-    def get_move(self):
-        raise Exception('not handled here, move code to here')
+def get_random_move(legal_moves):
+    # ! if this line errors it is because random.choice(moves) returns 0, which shouldn't really be possible in a completed engine
+    choice = random.choice(legal_moves)
+    return choice[0:2], choice[2:4]
 
 
-class AI(PlayerType):
-    def get_move(self):
-        raise Exception('cant call AI class directly')
+def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
+    if name_of_ai.lower() == 'random_ai':
+        return get_random_move(legal_moves)
+    if name_of_ai.lower() in imported_ais:
+        return imported_ais[name_of_ai.lower()].get_move()
 
 
-class Random(AI):
-    def get_move(self, legal_moves):
-        # ! if this line errors it is because random.choice(moves) returns 0, which shouldn't really be possible in a completed engine
-        choice = random.choice(legal_moves)
-        return choice[0:2], choice[2:4]
-
-# variables for holding types
-both_players = [Human(), Random()]
+# variables for holding players
+both_players = ['human', 'random_ai']
 
 # ! drawing GUI elements
 screen_width = 800
@@ -94,18 +97,22 @@ def clicked_pop_button(button_obj):
     acn_focused = None
     avail_moves = []
 
+def get_next_player(player_name: str) -> str:
+    if player_name == 'human':
+        return 'random_ai'
+    elif player_name == 'random_ai':
+        if 'minimax_ai' in imported_ais:
+            return 'minimax_ai'
+        return 'human'
+    elif player_name == 'minimax_ai':
+        return 'human'
+
 def clicked_white_button(button_obj):
-    if type(both_players[0]) == Human:
-        both_players[0] = Random()
-    elif type(both_players[0]) == Random:
-        both_players[0] = Human()
+    both_players[0] = get_next_player(both_players[0])
     button_obj.update_text()
 
 def clicked_black_button(button_obj):
-    if type(both_players[1]) == Human:
-        both_players[1] = Random()
-    elif type(both_players[1]) == Random:
-        both_players[1] = Human()
+    both_players[1] = get_next_player(both_players[1])
     button_obj.update_text()
 
 global autoreset_toggle; autoreset_toggle = False
@@ -130,8 +137,8 @@ def load_game(button_obj):
 # argument list: function to run on click, text, button_color, text color
 button_holder = [
     Button(clicked_pop_button, lambda: "pop!", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(clicked_white_button, lambda: "White\n{}".format(both_players[0].get_name()), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
-    Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1].get_name()), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
+    Button(clicked_white_button, lambda: "White\n{}".format(both_players[0]), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
+    Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1]), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
     Button(clicked_reset_button, lambda: "Reset", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_autoreset, lambda: "Autoreset board on\ndraw: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
@@ -366,13 +373,14 @@ while True:
         # if is AIs turn and the user hasn't clicked
         if not user_left_clicked:
             curr_player = both_players[player_index]
-            if isinstance(curr_player, AI):
-                from_acn, to_acn = curr_player.get_move(legal_moves)
+            if 'ai' in curr_player:
+                # from_acn, to_acn = curr_player.get_move(legal_moves)
+                from_acn, to_acn = get_ai_move(legal_moves, curr_player)
                 make_move(from_acn, to_acn)
                 continue
         
         # if human
-        if isinstance(curr_player, Human):
+        if curr_player == 'human':
             if time.time() < (last_frame + 1/fps):
                 time.sleep(time.time() - (last_frame + 1/fps))
                 last_frame = time.time()
@@ -419,7 +427,7 @@ while True:
                 continue
             acn_clicked = x_y_to_acn[(left_clicked_x, left_clicked_y)]
             
-            if isinstance(curr_player, Human):
+            if curr_player == 'human':
                 if acn_clicked in avail_moves: # if user inputs a valid move
                     temp = acn_focused
                     unfocus_and_stop_dragging()
