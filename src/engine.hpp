@@ -36,6 +36,7 @@ class Engine {
         void push(const Move&);
         void pop();
         GameState game_over();
+        GameState game_over(vector<Move>&);
 
         ull& access_piece_of_color(Piece, Color);
 

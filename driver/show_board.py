@@ -43,12 +43,17 @@ def get_random_move(legal_moves):
 def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
     if name_of_ai.lower() == 'random_ai':
         return get_random_move(legal_moves)
-    if name_of_ai.lower() in imported_ais:
-        return imported_ais[name_of_ai.lower()].get_move()
-
+    elif name_of_ai.lower() in imported_ais:
+        acn_string = imported_ais[name_of_ai.lower()].get_move(engine_communicator.get_engine())
+        return acn_string[0:2], acn_string[2:4]
+    raise Exception('AI named: "{}" not found'.format(name_of_ai))
 
 # variables for holding players
-both_players = ['human', 'random_ai']
+
+ai_default = 'random_ai'
+if 'minimax_ai' in imported_ais:
+    ai_default = 'minimax_ai';
+both_players = ['human', ai_default]
 
 # ! drawing GUI elements
 screen_width = 800
@@ -374,8 +379,8 @@ while True:
         if not user_left_clicked:
             curr_player = both_players[player_index]
             if 'ai' in curr_player:
-                # from_acn, to_acn = curr_player.get_move(legal_moves)
                 from_acn, to_acn = get_ai_move(legal_moves, curr_player)
+                # print('AI has come up with move: {} to {}'.format(from_acn, to_acn))
                 make_move(from_acn, to_acn)
                 continue
         
