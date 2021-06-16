@@ -256,7 +256,8 @@ ull GameBoard::get_pieces(Color color, Piece piece_type) {
 }
 
 ull GameBoard::get_pieces() {
-    return get_pieces_template<Color::WHITE>() | get_pieces_template<Color::BLACK>();
+    return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king | 
+           black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king;
 }
 
 Color GameBoard::get_color_on_bitboard(ull bitboard) {
