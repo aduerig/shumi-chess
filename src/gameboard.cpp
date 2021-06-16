@@ -123,7 +123,7 @@ const std::string GameBoard::to_fen() {
         int compressed = 0;
         for (int j = 0; j < 8; j++) {
             ull bitboard_of_square = 1ULL << (i * 8) + (7 - j);
-            Piece piece_found = get_piece_on_bitboard(bitboard_of_square);
+            Piece piece_found = get_piece_type_on_bitboard(bitboard_of_square);
             if (piece_found == Piece::NONE) {
                 compressed += 1;
             }
@@ -224,7 +224,24 @@ ull GameBoard::get_pieces(Piece piece_type) {
     assert(false);
 }
 
-Piece GameBoard::get_piece_on_bitboard(ull bitboard) {
+// Piece GameBoard::get_piece_type_on_bitboard_using_templates(ull bitboard) {
+//     vector<void()> all_piece_funcs = { 
+//                                     &get_pieces_template<Piece::PAWN>, 
+//                                     &get_pieces_template<Piece::ROOK>, 
+//                                     &get_pieces_template<Piece::KNIGHT>, 
+//                                     &get_pieces_template<Piece::BISHOP>, 
+//                                     &get_pieces_template<Piece::QUEEN>, 
+//                                     &get_pieces_template<Piece::KING> 
+//                                     };
+//     for (auto get_piece_function : all_piece_funcs) {
+//         if (get_piece_function() & bitboard) {
+//             return piece_type;
+//         }
+//     }
+//     return Piece::NONE;
+// }
+
+Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
     vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
     for (auto piece_type : all_piece_types) {
         if (get_pieces(piece_type) & bitboard) {

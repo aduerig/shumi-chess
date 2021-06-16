@@ -54,14 +54,50 @@ class GameBoard {
 
         // Member methods
         const std::string to_fen();
-        
+
+        template <Piece p>  
+        ull get_pieces_template() {
+            if constexpr (p == Piece::PAWN) { return black_pawns | white_pawns; }
+            if constexpr (p == Piece::ROOK) { return black_rooks | white_rooks; }
+            if constexpr (p == Piece::KNIGHT) { return black_knights | white_knights; }
+            if constexpr (p == Piece::BISHOP) { return black_bishops | white_bishops; }
+            if constexpr (p == Piece::QUEEN) { return black_queens | white_queens; }
+            if constexpr (p == Piece::KING) { return black_king | white_king; }
+        };
+
+        template <Piece p, Color c>  
+        ull get_pieces_template() {
+            if constexpr (p == Piece::PAWN && c == Color::BLACK) { return black_pawns; }
+            if constexpr (p == Piece::PAWN && c == Color::WHITE) { return white_pawns; }   
+            if constexpr (p == Piece::ROOK && c == Color::BLACK) { return black_rooks; }
+            if constexpr (p == Piece::ROOK && c == Color::WHITE) { return white_rooks; }
+            if constexpr (p == Piece::KNIGHT && c == Color::BLACK) { return black_knights; }
+            if constexpr (p == Piece::KNIGHT && c == Color::WHITE) { return white_knights; }     
+            if constexpr (p == Piece::BISHOP && c == Color::BLACK) { return black_bishops; }
+            if constexpr (p == Piece::BISHOP && c == Color::WHITE) { return white_bishops; }    
+            if constexpr (p == Piece::QUEEN && c == Color::BLACK) { return black_queens; }
+            if constexpr (p == Piece::QUEEN && c == Color::WHITE) { return white_queens; } 
+            if constexpr (p == Piece::KING && c == Color::BLACK) { return black_king; }
+            if constexpr (p == Piece::KING && c == Color::WHITE) { return white_king; }
+        }; 
+
+        template <Piece p>
+        ull get_pieces_template(Color c) {
+            if (c == Color::BLACK) { 
+                return get_pieces_template<p, Color::BLACK>(); 
+            }
+            return get_pieces_template<p, Color::WHITE>(); 
+        };
+
+
         ull get_pieces();
         ull get_pieces(Color);
         ull get_pieces(Piece);
         ull get_pieces(Color, Piece);
 
 
-        Piece get_piece_on_bitboard(ull);
+        // Piece get_piece_type_on_bitboard_using_templates(ull bitboard);
+        Piece get_piece_type_on_bitboard(ull);
         Color get_color_on_bitboard(ull);
 };
 } // end namespace ShumiChess

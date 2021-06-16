@@ -24,7 +24,7 @@ namespace ShumiChess {
         apply_en_passant_checks()
         apply_castling_changes()
         add_move_to_vector()
-        get_piece_on_bitboard()
+        get_piece_type_on_bitboard()
         get_legal_moves()
         get_psuedo_legal_moves()
         is_king_in_check()

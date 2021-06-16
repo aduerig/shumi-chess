@@ -64,7 +64,7 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
 }
 
 bool Engine::is_king_in_check(const ShumiChess::Color& color) {
-    ull friendly_king = this->game_board.get_pieces(color, Piece::KING);
+    ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
     return is_square_in_check(color, friendly_king);
 }
 
@@ -75,8 +75,8 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     ull straight_attacks_from_king = get_straight_attacks(square);
     ull diagonal_attacks_from_king = get_diagonal_attacks(square);
     
-    ull deadly_diags = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::BISHOP);
-    ull deadly_straight = game_board.get_pieces(enemy_color, Piece::QUEEN) | game_board.get_pieces(enemy_color, Piece::ROOK);
+    ull deadly_diags = game_board.get_pieces_template<Piece::QUEEN>(enemy_color) | game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
+    ull deadly_straight = game_board.get_pieces_template<Piece::QUEEN>(enemy_color) | game_board.get_pieces_template<Piece::ROOK>(enemy_color);
 
     // pawns
     ull temp;
@@ -97,9 +97,9 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 
     return ((deadly_straight & straight_attacks_from_king) ||
             (deadly_diags & diagonal_attacks_from_king) ||
-            (reachable_knights & game_board.get_pieces(enemy_color, Piece::KNIGHT)) ||
-            (reachable_pawns & game_board.get_pieces(enemy_color, Piece::PAWN)) ||
-            (reachable_kings & game_board.get_pieces(enemy_color, Piece::KING)));
+            (reachable_knights & game_board.get_pieces_template<Piece::KNIGHT>(enemy_color)) ||
+            (reachable_pawns & game_board.get_pieces_template<Piece::PAWN>(enemy_color)) ||
+            (reachable_kings & game_board.get_pieces_template<Piece::KING>(enemy_color)));
 }
 
 // TODO should this check for draws by internally calling get legal moves and caching that and returning on the actual call?, very slow calling get_legal_moves again
@@ -283,7 +283,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         Piece piece_captured = Piece::NONE;
         if (capture) {
             if (!is_en_passent_capture) {
-                piece_captured = { game_board.get_piece_on_bitboard(single_bitboard_to) };
+                piece_captured = { game_board.get_piece_type_on_bitboard(single_bitboard_to) };
             }
             else {
                 piece_captured = Piece::PAWN;
@@ -331,7 +331,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
 
 void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
     // get just pawns of correct color
-    ull pawns = game_board.get_pieces(color, Piece::PAWN);
+    ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
 
     // grab variables that will be used several times
     ull enemy_starting_rank_mask = row_masks[Row::ROW_8];
@@ -398,7 +398,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 }
 
 void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull knights = game_board.get_pieces(color, Piece::KNIGHT);
+    ull knights = game_board.get_pieces_template<Piece::KNIGHT>(color);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -417,7 +417,7 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 }
 
 void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull rooks = game_board.get_pieces(color, Piece::ROOK);
+    ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -436,7 +436,7 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 }
 
 void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull bishops = game_board.get_pieces(color, Piece::BISHOP);
+    ull bishops = game_board.get_pieces_template<Piece::BISHOP>(color);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -455,7 +455,7 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 }
 
 void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull queens = game_board.get_pieces(color, Piece::QUEEN);
+    ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -475,7 +475,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 
 // assumes 1 king exists per color
 void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull king = game_board.get_pieces(color, Piece::KING);
+    ull king = game_board.get_pieces_template<Piece::KING>(color);
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
     ull all_pieces = game_board.get_pieces();
     ull own_pieces = game_board.get_pieces(color);
