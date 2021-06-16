@@ -105,7 +105,7 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 // TODO should this check for draws by internally calling get legal moves and caching that and returning on the actual call?, very slow calling get_legal_moves again
 GameState Engine::game_over() {
     vector<Move> legal_moves = get_legal_moves();
-    game_over(legal_moves);
+    return game_over(legal_moves);
 }
 
 GameState Engine::game_over(vector<Move>& legal_moves) {
