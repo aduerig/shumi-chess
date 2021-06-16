@@ -1,20 +1,21 @@
 cmake CMakeLists.txt -Wno-dev -DCMAKE_BUILD_TYPE=Release
 ret_code=$?
 if [ $ret_code -ne 0 ]; then
-    echo "cmake CMakeLists.txt FAILED"
+    echo "FAILED: 'cmake CMakeLists.txt'"
     exit
 fi
 cmake --build .
 ret_code=$?
 if [ $ret_code -ne 0 ]; then
-    echo "cmake --build . FAILED"
+    echo "FAILED: 'cmake --build .'"
     exit
 fi
+
 # -g measures callgraphs
 perf record -g ./bin/measure_speed_random_games
 ret_code=$?
 if [ $ret_code -ne 0 ]; then
-    echo "perf record ./bin/measure_speed_random_games FAILED"
+    echo "FAILED: 'perf record ./bin/measure_speed_random_games'"
     exit
 fi
 
