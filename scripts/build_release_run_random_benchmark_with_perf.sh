@@ -12,14 +12,14 @@ if [ $ret_code -ne 0 ]; then
 fi
 
 # -g measures callgraphs
-perf record -g ./bin/measure_speed_random_games
+perf record -g -o ./bin/perf.data ./bin/measure_speed_random_games
 ret_code=$?
 if [ $ret_code -ne 0 ]; then
     echo "FAILED: 'perf record ./bin/measure_speed_random_games'"
     exit
 fi
 
-perf report -g
+perf report -g -i ./bin/perf.data
 
 # 32 minutes into https://www.youtube.com/watch?v=nXaxk27zwlk
 # .5 is a filter
