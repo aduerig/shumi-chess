@@ -256,7 +256,7 @@ ull GameBoard::get_pieces(Color color, Piece piece_type) {
 }
 
 ull GameBoard::get_pieces() {
-    return get_pieces(Color::WHITE) | get_pieces(Color::BLACK);
+    return get_pieces_template<Color::WHITE>() | get_pieces_template<Color::BLACK>();
 }
 
 Color GameBoard::get_color_on_bitboard(ull bitboard) {

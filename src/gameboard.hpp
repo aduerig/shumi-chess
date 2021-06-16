@@ -89,6 +89,11 @@ class GameBoard {
             return get_pieces_template<p, Color::WHITE>(); 
         };
 
+        template <Color c>
+        ull get_pieces_template() {
+            if constexpr (c == Color::WHITE) { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }   
+            if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king; }
+        }
 
         ull get_pieces();
         ull get_pieces(Color);
