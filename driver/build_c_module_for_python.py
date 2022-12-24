@@ -4,6 +4,7 @@ from distutils.core import setup, Extension
 import os
 from os import path
 import sys
+import time
 
 distutils.cygwinccompiler.get_msvcr = lambda: []
 
@@ -27,6 +28,11 @@ print('thinking the one_above is {}'.format(one_above))
 print('thinking the script_dir is {}'.format(script_dir))
 print('thinking root directory of project is {}'.format(root_dir))
 
+link_args = [path.join(root_dir, 'lib', 'libShumiChess.a')]
+is_windows = os.name == 'nt'
+if is_windows:
+    link_args += ['-static', '-static-libgcc', '-static-libstdc++']
+
 the_module = Extension(
     'engine_communicator',
     sources = [path.join(script_dir, 'engine_communicatormodule.cpp')],
@@ -35,9 +41,7 @@ the_module = Extension(
     # tries to do a .so (dynamic) build with this
     # libraries = ['ShumiChess'],
     extra_compile_args=['-std=c++17'],
-    extra_link_args=[path.join(root_dir, 'lib', 'libShumiChess.a')]
-    # needed for windows, doesnt work on linux:
-    # extra_link_args=['../lib/libShumiChess.a', '-static', '-static-libgcc', '-static-libstdc++']
+    extra_link_args=link_args,
 )
 
 setup(
@@ -46,3 +50,15 @@ setup(
     description = 'To communicate with ShumiChess C++ backend',
     ext_modules = [the_module]
 )
+
+
+if is_windows:
+    name_of_output = 'engine_communicator.cp310-win_amd64.pyd'
+    output_path = os.path.join(root_dir, 'driver', 'build', 'lib.win-amd64-3.10', name_of_output)
+    wanted_path = os.path.join(root_dir, 'driver', name_of_output)
+
+    if os.path.exists(output_path):
+        if os.path.exists(wanted_path):
+            os.remove(wanted_path)
+            time.sleep(.05)
+        os.rename(output_path, wanted_path)

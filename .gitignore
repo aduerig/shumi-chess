@@ -1,3 +1,6 @@
+*.pyd
+*.o
+*.def
 driver/__pycache__/
 build/
 CMakeFiles/

@@ -1,6 +1,14 @@
 # 趣味
 we're back
 
+## TLDR (too long didn't read)
+* Linux
+  * `.\scripts\build_debug_run_gui.sh`
+* Windows
+  * `.\scripts\win_build_debug_run_gui.ps1`
+
+
+
 ## intro
 This project is a hobby C++ engine written by OhMesch and I. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
 
