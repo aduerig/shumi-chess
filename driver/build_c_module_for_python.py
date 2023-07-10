@@ -5,6 +5,11 @@ import os
 from os import path
 import sys
 import time
+import pathlib
+
+from helpers import *
+
+this_file_directory = pathlib.Path(__file__).parent.resolve()
 
 distutils.cygwinccompiler.get_msvcr = lambda: []
 
@@ -24,9 +29,9 @@ root_dir = path.normpath(root_dir)
 
 one_above = path.normpath(path.join(script_dir, os.pardir))
 
-print('thinking the one_above is {}'.format(one_above))
-print('thinking the script_dir is {}'.format(script_dir))
-print('thinking root directory of project is {}'.format(root_dir))
+print_cyan('thinking the one_above is {}'.format(one_above))
+print_cyan('thinking the script_dir is {}'.format(script_dir))
+print_cyan('thinking root directory of project is {}'.format(root_dir))
 
 link_args = [path.join(root_dir, 'lib', 'libShumiChess.a')]
 is_windows = os.name == 'nt'

@@ -368,7 +368,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             // TODO share more code with single pushes above
             ull move_forward_one = utility::bit::bitshift_by_color(single_pawn, color, 8);
             ull move_forward_one_blocked = move_forward_one & ~all_pieces;
-            ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 16);
+            ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
             ull move_forward_two_blocked = move_forward_two & ~all_pieces;
             add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN, color, false, false, move_forward_one_blocked, false, false);
         }

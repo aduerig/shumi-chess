@@ -61,6 +61,7 @@ set(Headers
     src/globals.hpp
     src/move_tables.hpp
     src/utility.hpp
+    src/minimax.hpp
 )
 
 set(Sources
@@ -69,6 +70,7 @@ set(Sources
     src/engine.cpp
     src/move_tables.cpp
     src/utility.cpp
+    src/minimax.cpp
 )
 
 add_library(${project_name} STATIC ${Sources} ${Headers})
@@ -93,6 +95,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -fno-omit-frame-pointer")
 # target_link_libraries(${project_name} PUBLIC pthread)
 
 add_executable(measure_speed_random_games driver/measure_speed_random_games.cpp)
+add_executable(run_minimax_depth src/run_minimax_depth.cpp)
+target_link_libraries(run_minimax_depth PUBLIC ${project_name})
 target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 # unsets the variable to clear it from the cache
