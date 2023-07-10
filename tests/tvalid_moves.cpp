@@ -73,7 +73,7 @@ vector<string> get_filenames_to_test_positions(fs::path folder_to_search) {
     vector<string>  all_filenames;
     for(auto& p: fs::directory_iterator(folder_to_search)) {
         cout << "found path and adding: " << p.path() << endl;
-        all_filenames.push_back(p.path());
+        all_filenames.push_back(p.path().string());
     }
     sort(all_filenames.begin(), all_filenames.end());
     return all_filenames;
@@ -89,7 +89,7 @@ class LegalPositionsByDepth : public testing::TestWithParam<string> {};
 TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     // ? seg faults when i pass a fs::path into here, idk why
     fs::path local_filepath = fs::path(GetParam());
-    string filename = local_filepath.stem();
+    string filename = local_filepath.stem().string();
     string string_depth = utility::string::split(filename, "_").back();
 
     // cout << "depth of file: " << local_filepath.filename() << ", is: " << string_depth << endl;
