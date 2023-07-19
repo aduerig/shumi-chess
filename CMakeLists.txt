@@ -15,7 +15,9 @@ set (CMAKE_CXX_STANDARD 17)
 # cmdline to not build tests
 # -DBUILD_TESTS=ON       or       -DBUILD_TESTS=OFF
 option(BUILD_TESTS "This is settable from the command line" OFF)
+option(GPERF "This is settable from the command line" OFF)
 message("BUILDING TESTS ${BUILD_TESTS}")
+message("GPERF ${GPERF}")
 
 
 # these are if we dont call project(), it can seperate the library name and folder
@@ -83,10 +85,18 @@ set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 # # makes it so others can reference the source files for #include statements
 target_include_directories(${project_name} PUBLIC src)
 
+
+
+
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 # -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -fno-omit-frame-pointer")
 # set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+# if we add a command line arguennt we add -pg 
+if(GPERF)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -g")
+endif(GPERF)
 
 # all the fast flags (Ofast helps but hardly)!
 # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")

@@ -60,3 +60,15 @@ http://graphics.stanford.edu/%7Eseander/bithacks.html
 
 ### for gtest, maybe want to use this
 https://gist.github.com/elliotchance/8215283
+
+
+## profiling
+* perf (by function)
+  * perf record -o ./bin/perf.data -g ./bin/run_minimax_depth $1
+  * perf report -g  -i ./bin/perf.data
+* valgrind (line by line hopefully)
+  * valgrind --tool=callgrind ./bin/run_minimax_depth 5
+  * kcachegrind callgrind.out.pid
+* gprof (line by line)
+  * add `-pg` to complilation, and -l
+  * `gprof -l ./my_program > analysis.txt`
