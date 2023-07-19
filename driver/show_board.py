@@ -43,16 +43,11 @@ def get_random_move(legal_moves):
 def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
     if name_of_ai.lower() == 'random_ai':
         return get_random_move(legal_moves)
-    elif name_of_ai.lower() in imported_ais:
-        acn_string = imported_ais[name_of_ai.lower()].get_move(engine_communicator.get_engine())
-        return acn_string[0:2], acn_string[2:4]
-    raise Exception('AI named: "{}" not found'.format(name_of_ai))
+    move = engine_communicator.minimax_ai_get_move()
+    return move[0:2], move[2:4]
 
-# variables for holding players
 
-ai_default = 'random_ai'
-if 'minimax_ai' in imported_ais:
-    ai_default = 'minimax_ai';
+ai_default = 'minimax_ai'
 both_players = ['human', ai_default]
 
 # ! drawing GUI elements
@@ -106,9 +101,7 @@ def get_next_player(player_name: str) -> str:
     if player_name == 'human':
         return 'random_ai'
     elif player_name == 'random_ai':
-        if 'minimax_ai' in imported_ais:
-            return 'minimax_ai'
-        return 'human'
+        return 'minimax_ai'
     elif player_name == 'minimax_ai':
         return 'human'
 

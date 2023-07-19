@@ -9,6 +9,7 @@
 #include <utility>
 
 #include <engine.hpp>
+#include <minimax.hpp>
 
 using namespace std;
 
@@ -157,9 +158,27 @@ engine_communicator_get_engine(PyObject* self, PyObject* args)
 }
 
 
+MinimaxAI* minimax_ai = NULL;
+
+// ! actual chess functionality
+static PyObject*
+minimax_ai_get_move(PyObject* self, PyObject* args)
+{
+    // Get the pointer to Engine object
+    if (minimax_ai == NULL) {
+        minimax_ai = new MinimaxAI(python_engine);
+    }
+
+    ShumiChess::Move gotten_move = minimax_ai->get_move();
+    string move_in_acn_notation = utility::representation::move_to_string(gotten_move);
+    return Py_BuildValue("s", move_in_acn_notation.c_str());
+}
+
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS,
         "Execute a shell command."},
+    {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS,
+        "gets a move minimax"},
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS,
         "just prints"},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS,

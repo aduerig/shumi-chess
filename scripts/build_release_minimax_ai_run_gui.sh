@@ -16,16 +16,7 @@ python3 driver/build_c_module_for_python.py build --build-lib="driver" --build-t
 ret_code=$?
 if [ $ret_code -eq 0 ]; then    
     echo "successfully built engine_communicator module"
-    python3 driver/build_c_module_for_minimax.py build --build-lib="driver" --build-temp="driver/build_temp" --force
-
-    ret_code=$?
-    if [ $ret_code -eq 0 ]; then
-        echo "successfully built minimax module"
-        python driver/show_board.py    
-    else
-        echo "FAILED running: 'python3 driver/build_c_module_for_minimax.py'"
-    fi
-
+    python driver/show_board.py    
 else
     echo "FAILED running: 'python3 driver/build_c_module_for_python.py'"
 fi

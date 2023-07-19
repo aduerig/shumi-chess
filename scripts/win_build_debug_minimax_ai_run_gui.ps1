@@ -13,14 +13,4 @@ if ( $LASTEXITCODE -ne 0 ) {
     echo "FAILED running: 'python driver/build_c_module_for_python.py'"
     exit
 }
-
-python driver/build_c_module_for_minimax.py build -c mingw32 --build-lib="driver" --build-temp="driver/build_temp" --force
-if ( $LASTEXITCODE -ne 0 ) {
-    echo "FAILED running: 'python driver/build_c_module_for_minimax.py'"
-    exit
-}
-
-echo "successfully built minimax module"
-if ( $LASTEXITCODE -eq 0 ) {
-    python driver/show_board.py
-}
+python driver/show_board.py

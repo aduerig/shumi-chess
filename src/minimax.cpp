@@ -4,11 +4,13 @@
 #include <locale>
 
 #include "minimax.hpp"
+#include "utility.hpp"
 
 using namespace std;
 using namespace ShumiChess;
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { }
+
 
 int MinimaxAI::evaluate_board() {
     return evaluate_board(engine.game_board.turn);
@@ -41,21 +43,22 @@ int MinimaxAI::evaluate_board(Color color) {
     for (const auto& i : piece_and_values) {
         total_board_val += i.second * bits_in(i.first);
         // while (piece_bitboard) {
-        //     utility::bit::lsb_and_pop(piece_bitboard);
+        //     bit::lsb_and_pop(piece_bitboard);
         //     total_board_val += piece_value;
         // }
     }
     return total_board_val;
 }
 
-double MinimaxAI::get_value(int depth, int color_multiplier, double white_highest_val, double black_highest_val) {
-    // if the gamestate is over
+
+// chatgpt 4
+double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, double beta) {
     nodes_visited++;
     vector<ShumiChess::Move> moves = engine.get_legal_moves();
     ShumiChess::GameState state = engine.game_over(moves);
-
+    
     if (state == ShumiChess::GameState::BLACKWIN) {
-        return ((-DBL_MAX) + 1) * (color_multiplier);
+        return (-DBL_MAX + 1) * (color_multiplier);
     }
     else if (state == ShumiChess::GameState::WHITEWIN) {
         return (DBL_MAX - 1) * (color_multiplier);
@@ -64,7 +67,6 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double white_highes
         return 0;
     }
     
-    // if we are at max depth
     if (depth == 0) {
         Color color_perspective = Color::BLACK;
         if (color_multiplier) {
@@ -73,35 +75,33 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double white_highes
         return evaluate_board(color_perspective) * color_multiplier;
     }
 
-    // calculate leaf nodes
-    double max_move_value = -DBL_MAX;
-    for (Move& m : moves) {
-        engine.push(m);
-        double score_value = -1 * get_value(depth - 1, color_multiplier * -1, white_highest_val, black_highest_val);
-        if (score_value > max_move_value) {
-            max_move_value = score_value;
-        }
-        if (color_multiplier) {
-            if (max_move_value > white_highest_val) {
-                white_highest_val = max_move_value;
+    if (color_multiplier == 1) {  // Maximizing player
+        double max_move_value = -DBL_MAX;
+        for (Move& m : moves) {
+            engine.push(m);
+            double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
+            engine.pop();
+            max_move_value = std::max(max_move_value, score_value);
+            alpha = std::max(alpha, max_move_value);
+            if (beta <= alpha) {
+                break; // beta cut-off
             }
-            // if (-black_highest_val < white_highest_val) {
-            //     engine.pop();
-            //     break;
-            // }
         }
-        else {
-            if (max_move_value > black_highest_val) {
-                black_highest_val = max_move_value;
+        return max_move_value;
+    } else {  // Minimizing player
+        double min_move_value = DBL_MAX;
+        for (Move& m : moves) {
+            engine.push(m);
+            double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
+            engine.pop();
+            min_move_value = std::min(min_move_value, score_value);
+            beta = std::min(beta, min_move_value);
+            if (beta <= alpha) {
+                break; // alpha cut-off
             }
-            // if (-black_highest_val < white_highest_val) {
-            //     engine.pop();
-            //     break;
-            // }
         }
-        engine.pop();
+        return min_move_value;
     }
-    return max_move_value;
 }
 
 template<class T>
@@ -114,8 +114,10 @@ std::string format_with_commas(T value)
 }
 
 Move MinimaxAI::get_move(int depth) {
+    auto start = std::chrono::high_resolution_clock::now();
+
     if (depth < 1) {
-        cout << "Cannot have depth be lower than 1 for minimax_ai" << endl;
+        cout << utility::colorize(utility::AnsiColor::BRIGHT_RED, "Error: Cannot have depth be lower than 1 for minimax_ai") << endl;
         assert(false);
     }
 
@@ -131,7 +133,7 @@ Move MinimaxAI::get_move(int depth) {
     vector<ShumiChess::Move> moves = engine.get_legal_moves();
     for (Move& m : moves) {
         engine.push(m);
-        double score_value = get_value(depth - 1, color_multiplier * -1, -DBL_MAX, -DBL_MAX);
+        double score_value = get_value(depth - 1, color_multiplier * -1, -DBL_MAX, DBL_MAX);
         if (score_value * -1 > max_move_value) {
             max_move_value = score_value * -1;
             move_chosen = m;
@@ -139,37 +141,77 @@ Move MinimaxAI::get_move(int depth) {
         engine.pop();
     }
     
-    cout << "visited: " << format_with_commas(nodes_visited) << " nodes total" << endl;
+    std::string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_CYAN, "Minimax AI chose move: for " + color + " player") << endl;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> total_time = end - start;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Total time taken for get_move(): " + std::to_string(total_time.count()) + " ms") << endl;
+
     return move_chosen;
 }
 
 Move MinimaxAI::get_move() {
-    return get_move(4);
+    int default_depth = 7;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Called MinimaxAI::get_move() with no arguments, using default depth: " + std::to_string(default_depth)) << endl;
+    return get_move(default_depth);
 }
 
 
 
+// double MinimaxAI::get_value(int depth, int color_multiplier, double white_highest_val, double black_highest_val) {
+//     // if the gamestate is over
+//     nodes_visited++;
+//     vector<ShumiChess::Move> moves = engine.get_legal_moves();
+//     ShumiChess::GameState state = engine.game_over(moves);
 
+//     if (state == ShumiChess::GameState::BLACKWIN) {
+//         return ((-DBL_MAX) + 1) * (color_multiplier);
+//     }
+//     else if (state == ShumiChess::GameState::WHITEWIN) {
+//         return (DBL_MAX - 1) * (color_multiplier);
+//     }
+//     else if (state == ShumiChess::GameState::DRAW) {
+//         return 0;
+//     }
+    
+//     // if we are at max depth
+//     if (depth == 0) {
+//         Color color_perspective = Color::BLACK;
+//         if (color_multiplier) {
+//             color_perspective = Color::WHITE;
+//         }
+//         return evaluate_board(color_perspective) * color_multiplier;
+//     }
 
-
-
-/// random isn't really used here ///
-RandomAI::RandomAI(Engine& e) {
-    engine = e;
-    piece_and_values = {
-        {engine.game_board.get_pieces(engine.game_board.turn, Piece::PAWN), 1},
-        {engine.game_board.get_pieces(engine.game_board.turn, Piece::ROOK), 5},
-        {engine.game_board.get_pieces(engine.game_board.turn, Piece::KNIGHT), 3},
-        {engine.game_board.get_pieces(engine.game_board.turn, Piece::BISHOP), 3},
-        {engine.game_board.get_pieces(engine.game_board.turn, Piece::QUEEN), 8},
-    };
-}
-
-int RandomAI::rand_int(int min, int max) {
-    return min + (rand() % static_cast<int>(max - min + 1));
-}
-
-Move& RandomAI::get_move(vector<Move>& moves) {
-    int index = rand_int(0, moves.size() - 1);
-    return moves[index];
-}
+//     // calculate leaf nodes
+//     double max_move_value = -DBL_MAX;
+//     for (Move& m : moves) {
+//         engine.push(m);
+//         double score_value = -1 * get_value(depth - 1, color_multiplier * -1, white_highest_val, black_highest_val);
+//         if (score_value > max_move_value) {
+//             max_move_value = score_value;
+//         }
+//         if (color_multiplier) {
+//             if (max_move_value > white_highest_val) {
+//                 white_highest_val = max_move_value;
+//             }
+//             // if (-black_highest_val < white_highest_val) {
+//             //     engine.pop();
+//             //     break;d
+//             // }
+//         }
+//         else {
+//             if (max_move_value > black_highest_val) {
+//                 black_highest_val = max_move_value;
+//             }
+//             // if (-black_highest_val < white_highest_val) {
+//             //     engine.pop();
+//             //     break;
+//             // }
+//         }
+//         engine.pop();
+//     }
+//     return max_move_value;
+// }

@@ -37,3 +37,4 @@ out/src/class_diagram/class_diagram.png
 tests/generate_test_data/generate_legal_positions_by_depth.py
 *.so
 *.exe
+old/
