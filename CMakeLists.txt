@@ -14,14 +14,13 @@
 #     message("NOT BUILDING WITH MSVC")
 # endif()
 
+option(BUILD_TESTS "This is settable from the command line" OFF)
+option(GPERF "This is settable from the command line" OFF)
+message("BUILDING TESTS ${BUILD_TESTS}")
+message("GPERF ${GPERF}")
 
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE DEBUG)
-  if(MSVC)
-    target_link_options(foo PUBLIC /DEBUG)
-  endif()
-endif()
+
 
 # variable set of the whole library/project
 set(project_name ShumiChess)
@@ -29,14 +28,24 @@ set(project_name ShumiChess)
 project(${project_name} CXX)
 set (CMAKE_CXX_STANDARD 17)
 
+if(WIN32)
+    message("windows detected on debug, doing something")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # set_target_properties(${project_name} PROPERTIES
+    #     MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    # )
+endif()
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE DEBUG)
+endif()
+
+
 
 
 # cmdline to not build tests
 # -DBUILD_TESTS=ON       or       -DBUILD_TESTS=OFF
-option(BUILD_TESTS "This is settable from the command line" OFF)
-option(GPERF "This is settable from the command line" OFF)
-message("BUILDING TESTS ${BUILD_TESTS}")
-message("GPERF ${GPERF}")
+
 
 
 # these are if we dont call project(), it can seperate the library name and folder
@@ -83,10 +92,8 @@ if(BUILD_TESTS)
     fetch_googletest(
         ${PROJECT_SOURCE_DIR}/googletest_cmake
         ${PROJECT_BINARY_DIR}/googletest
-        )
-
-    # creates Testing directory, commenting out
-    # enable_testing()
+    )
+    set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)
     add_subdirectory(tests)
 endif(BUILD_TESTS)
 

@@ -9,6 +9,10 @@ add_executable(
     tvalid_moves.cpp
 )
 
+set_target_properties(unit_tests PROPERTIES
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+)
+
 target_include_directories(unit_tests 
     PUBLIC 
     ../src

@@ -27,6 +27,7 @@ cmake_install.cmake
 CTestTestfile.cmake
 libShumiChess.a
 Makefile
+tests/unit_tests.dir/
 lib/
 gtests/GTests.exe
 driver/build_temp/

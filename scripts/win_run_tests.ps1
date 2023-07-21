@@ -3,7 +3,7 @@ if ( $LASTEXITCODE -ne 0 ) {
     echo "cmake CMakeLists.txt FAILED"
     exit
 }
-cmake --build .
+cmake --build . --config Debug
 if ( $LASTEXITCODE -ne 0 ) {
     echo "cmake --build . FAILED"
     exit
