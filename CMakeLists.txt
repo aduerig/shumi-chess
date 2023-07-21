@@ -1,8 +1,26 @@
 # causes errors, should probaly figure out why
 # cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
+
+# if (WIN32)
+#     message("WINDOWS DETECTED")
+# endif()
+
+
+# if(MSVC)
+#     message("BUILDING WITH MSVC DETECTED")
+#     set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR})
+# else()
+#     message("NOT BUILDING WITH MSVC")
+# endif()
+
+
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE DEBUG)
+  if(MSVC)
+    target_link_options(foo PUBLIC /DEBUG)
+  endif()
 endif()
 
 # variable set of the whole library/project
@@ -10,6 +28,7 @@ set(project_name ShumiChess)
 
 project(${project_name} CXX)
 set (CMAKE_CXX_STANDARD 17)
+
 
 
 # cmdline to not build tests
@@ -26,9 +45,19 @@ message("GPERF ${GPERF}")
 
 # place binaries and libraries according to GNU standards
 include(GNUInstallDirs)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib/)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin/)
+
+# maybe eventually put this above
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG $(CMAKE_RUNTIME_OUTPUT_DIRECTORY))
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG $(CMAKE_LIBRARY_OUTPUT_DIRECTORY))
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG $(CMAKE_ARCHIVE_OUTPUT_DIRECTORY))
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE $(CMAKE_RUNTIME_OUTPUT_DIRECTORY))
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE $(CMAKE_LIBRARY_OUTPUT_DIRECTORY))
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE $(CMAKE_ARCHIVE_OUTPUT_DIRECTORY))
+
 
 # we use this to get code coverage
 # if(CMAKE_CXX_COMPILER_ID MATCHES GNU)

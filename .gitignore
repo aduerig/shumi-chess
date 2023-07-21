@@ -1,3 +1,10 @@
+*vcxproj*
+ShumiChess.lib
+ShumiChess.dir/
+run_minimax_depth.dir/
+measure_speed_random_games.dir/
+x64/
+*.sln
 *.pyd
 *.o
 *.def

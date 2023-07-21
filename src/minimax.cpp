@@ -1,6 +1,7 @@
 #include <float.h>
 #include <bitset>
 #include <iomanip>
+#include <sstream>
 #include <locale>
 
 #include "minimax.hpp"
@@ -19,7 +20,7 @@ int MinimaxAI::evaluate_board() {
 int MinimaxAI::bits_in(ull bitboard)
 {
     auto bs = std::bitset<64>(bitboard);
-    return bs.count();
+    return (int) bs.count();
 }
 
 int MinimaxAI::evaluate_board(Color color) {
@@ -105,8 +106,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
 }
 
 template<class T>
-std::string format_with_commas(T value)
-{
+std::string format_with_commas(T value) {
     std::stringstream ss;
     ss.imbue(std::locale(""));
     ss << std::fixed << value;
