@@ -181,8 +181,7 @@ void Engine::push(const Move& move) {
     this->en_passant_history.push(this->game_board.en_passant);
     this->game_board.en_passant = move.en_passant;
     
-    ull castle_opp =(this->game_board.black_castle << 2) |
-                     this->game_board.white_castle;
+    uint8_t castle_opp = (this->game_board.black_castle << 2) | this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
     this->game_board.black_castle &= move.black_castle;
     this->game_board.white_castle &= move.white_castle;

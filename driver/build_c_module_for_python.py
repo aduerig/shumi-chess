@@ -4,6 +4,7 @@ from distutils.core import setup, Extension
 import sys
 import time
 import pathlib
+import subprocess
 
 from helpers import *
 
@@ -12,14 +13,20 @@ root_of_project_directory = this_file_directory.parent
 
 distutils.cygwinccompiler.get_msvcr = lambda: []
 
-steps_to_root = 1
 
-if '--steps_to_root' in sys.argv:
-    index = sys.argv.index('--steps_to_root')
-    steps_to_root = int(sys.argv[index + 1])
-    del sys.argv[index + 1]
-    del sys.argv[index]
+def is_gcc_installed():
+    try:
+        subprocess.check_output(["gcc", "--version"])
+        return True
+    except FileNotFoundError:
+        return False
 
+if is_windows() and '-c' in sys.argv:
+    index = sys.argv.index('-c')
+    curr_val = sys.argv[index + 1]
+    if curr_val == 'mingw32' and not is_gcc_installed():
+        print_yellow('gcc not installed, switching to msvc')
+        sys.argv[index + 1] = 'msvc'
 
 print_cyan(f'{root_of_project_directory=}, {this_file_directory=}')
 

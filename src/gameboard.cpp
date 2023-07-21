@@ -123,7 +123,8 @@ const std::string GameBoard::to_fen() {
         string poses;
         int compressed = 0;
         for (int j = 0; j < 8; j++) {
-            ull bitboard_of_square = 1ULL << (i * 8) + (7 - j);
+            // ull bitboard_of_square = 1ULL << (i * 8) + (7 - j);
+            ull bitboard_of_square = (1ULL << (i * 8)) + (7 - j);
             Piece piece_found = get_piece_type_on_bitboard(bitboard_of_square);
             if (piece_found == Piece::NONE) {
                 compressed += 1;
@@ -196,11 +197,10 @@ ull GameBoard::get_pieces(Color color) {
         return white_pawns | white_rooks | white_knights | 
                white_bishops | white_queens | white_king;
     }
-    else if (color == Color::BLACK) {
+    else {
         return black_pawns | black_rooks | black_knights | 
                black_bishops | black_queens | black_king;
     }
-    assert(false);
 }
 
 ull GameBoard::get_pieces(Piece piece_type) {
@@ -219,10 +219,7 @@ ull GameBoard::get_pieces(Piece piece_type) {
     else if (piece_type == Piece::QUEEN) {
         return black_queens | white_queens;
     }
-    else if (piece_type == Piece::KING) {
-        return black_king | white_king;
-    }
-    assert(false);
+    return black_king | white_king;
 }
 
 // Piece GameBoard::get_piece_type_on_bitboard_using_templates(ull bitboard) {
