@@ -10,7 +10,7 @@ if [ $ret_code -ne 0 ]; then
     echo "cmake --build . FAILED"
     exit
 fi
-python3 driver/build_c_module_for_python.py build --force --build-lib="driver" --build-temp="driver/build_temp"
+python3 driver/build_c_module_for_python.py build --force --build-lib="driver" --build-temp="driver/build"
 ret_code=$?
 if [ $ret_code -eq 0 ]; then
     python3 driver/show_board.py

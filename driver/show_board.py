@@ -32,8 +32,6 @@ def reset_board():
     legal_moves = engine_communicator.get_legal_moves()
 
 
-
-
 def get_random_move(legal_moves):
     # ! if this line errors it is because random.choice(moves) returns 0, which shouldn't really be possible in a completed engine
     choice = random.choice(legal_moves)
@@ -69,8 +67,6 @@ background.setFill(color_rgb(50, 50, 50))
 background.draw(win)
 
 
-
-# ! button stuff
 class Button:
     rectangle_graphics_object = None
     text_graphics_object = None
@@ -90,12 +86,14 @@ class Button:
     def update_text(self):
         self.text_graphics_object.setText(self.get_text())
 
+
 def clicked_pop_button(button_obj):
     engine_communicator.pop()
     undraw_pieces()
     render_all_pieces_and_assign(board)
     acn_focused = None
     avail_moves = []
+
 
 def get_next_player(player_name: str) -> str:
     if player_name == 'human':

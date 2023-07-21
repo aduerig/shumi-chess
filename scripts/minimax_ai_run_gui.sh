@@ -11,7 +11,7 @@ cmake CMakeLists.txt -Wno-dev -DCMAKE_BUILD_TYPE=Release && cmake --build .
 #     exit
 # fi
 
-python3 driver/build_c_module_for_python.py build --build-lib="driver" --build-temp="driver/build_temp" --force
+python3 driver/build_c_module_for_python.py build --build-lib="driver" --build-temp="driver/build" --force
 
 ret_code=$?
 if [ $ret_code -eq 0 ]; then    

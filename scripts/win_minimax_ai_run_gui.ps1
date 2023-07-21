@@ -8,9 +8,9 @@ if ( $LASTEXITCODE -ne 0 ) {
     echo "FAILED running: cmake --build ."
     exit
 }
-python driver/build_c_module_for_python.py build -c mingw32 --build-lib="driver" --build-temp="driver/build_temp" --force
+python driver/build_c_module_for_python.py build -c mingw32 --build-lib="driver" --build-temp="driver/build" --force
 if ( $LASTEXITCODE -ne 0 ) {
-    echo 'FAILED running: "python driver/build_c_module_for_python.py build -c mingw32 --build-lib="driver" --build-temp="driver/build_temp""'
+    echo 'FAILED running: "python driver/build_c_module_for_python.py build -c mingw32 --build-lib="driver" --build-temp="driver/build""'
     exit
 }
 python driver/show_board.py

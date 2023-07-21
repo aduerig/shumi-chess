@@ -21,24 +21,28 @@ def is_gcc_installed():
     except FileNotFoundError:
         return False
 
-if is_windows() and '-c' in sys.argv:
-    index = sys.argv.index('-c')
-    curr_val = sys.argv[index + 1]
-    if curr_val == 'mingw32' and not is_gcc_installed():
-        print_yellow('gcc not installed, switching to msvc')
-        sys.argv[index + 1] = 'msvc'
+compiler = 'gcc'
+if is_windows(): 
+    if '-c' in sys.argv:
+        index = sys.argv.index('-c')
+        curr_val = sys.argv[index + 1]
+        if curr_val == 'mingw32' and not is_gcc_installed():
+            print_yellow('gcc not installed, switching to msvc')
+            sys.argv[index + 1] = 'msvc'
+        compiler = sys.argv[index + 1]
+    else:
+        compiler = 'msvc'
+
 
 print_cyan(f'{root_of_project_directory=}, {this_file_directory=}')
 
 extra_link_args = [str(root_of_project_directory.joinpath('lib', 'libShumiChess.a'))]
 extra_compile_args=['-std=c++17']
 
-# if is_MVCC():
-if True:
-    extra_compile_args=['/std:c++17']
-    extra_link_args = [str(root_of_project_directory.joinpath('lib', 'ShumiChess.lib'))]
-
 if is_windows():
+    if compiler == 'msvc':
+        extra_compile_args=['/std:c++17']
+        extra_link_args = [str(root_of_project_directory.joinpath('lib', 'ShumiChess.lib'))]
     extra_link_args += ['-static', '-static-libgcc', '-static-libstdc++']
 
 
@@ -60,14 +64,18 @@ setup(
     ext_modules = [the_module]
 )
 
-
 if is_windows():
-    name_of_output = 'engine_communicator.cp310-win_amd64.pyd'
-    output_path = os.path.join(root_of_project_directory, 'driver', 'build', 'lib.win-amd64-3.10', name_of_output)
-    wanted_path = os.path.join(root_of_project_directory, 'driver', name_of_output)
+    last_modified = float('-inf')
+    output_path = None
+    for filename, filepath in get_all_paths(this_file_directory.joinpath('build'), recursive=True, allowed_extensions=set(['.pyd'])):
+        if filepath.stat().st_mtime > last_modified:
+            last_modified = filepath.stat().st_mtime
+            output_path = filepath
+    wanted_path = root_of_project_directory.joinpath('driver', filename)
 
-    if os.path.exists(output_path):
-        if os.path.exists(wanted_path):
-            os.remove(wanted_path)
-            time.sleep(.05)
-        os.rename(output_path, wanted_path)
+    if output_path is None:
+        print_red(f'Could not find {output_path}')
+        sys.exit(1)
+    print_green(f'Copying {output_path} to {wanted_path}')
+    wanted_path.unlink(missing_ok=True)
+    os.rename(output_path, wanted_path)
