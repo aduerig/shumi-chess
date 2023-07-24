@@ -38,6 +38,7 @@ return_code, stdout, stderr = run_command_blocking([
     'python',
     str(build_c_module_for_python_path),
     'build',
+    '--compiler=mingw32',
     '--force',
     '--build-lib=driver', 
     '--build-temp=driver/build',
