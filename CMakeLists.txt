@@ -23,21 +23,13 @@ message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 # all the fast flags (Ofast helps but hardly)!
 # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
 if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
-    if(WIN32)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
-        add_compile_options(/MTd) # release is /MD
-    else()
-        add_compile_options("-g")
-    endif()
+    add_compile_options("-g")
 else()
     if(WIN32)
-        # add_compile_options("/Ox /RTCu")
     else()
         add_compile_options("-O3 -fno-omit-frame-pointer")
     endif()
 endif()
-
-
 
 
 include(GNUInstallDirs)
@@ -130,3 +122,26 @@ unset(CMAKE_BUILD_TYPE)
 # SET(GCC_COVERAGE_LINK_FLAGS    "-lgcov --coverage")
 # SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 # SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+
+
+
+# stuff for msvc
+# if(WIN32)
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
+# add_compile_options(/MTd) # release is /MD
+# else()
+# # add_compile_options("/Ox /RTCu")
+
+
+# if(WIN32)
+#     # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+#     if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
+#         message("IN TEST CMAKE DEBUG DETECTED")
+#         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
+#         add_compile_options(/MTd) # release is /MD
+#     endif()
+# endif()
+
+
+# # set(CMAKE_BUILD_TYPE Debug)
+# # set (CMAKE_CXX_STANDARD 17)

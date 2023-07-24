@@ -5,21 +5,16 @@ import sys
 import time
 import pathlib
 import subprocess
-
-from helpers import *
+import os
 
 this_file_directory = pathlib.Path(__file__).parent.resolve()
 root_of_project_directory = this_file_directory.parent
 
+sys.path.insert(0, str(root_of_project_directory))
+from helpers import *
+
+
 distutils.cygwinccompiler.get_msvcr = lambda: []
-
-
-def is_gcc_installed():
-    try:
-        subprocess.check_output(["gcc", "--version"])
-        return True
-    except FileNotFoundError:
-        return False
 
 release_mode = 'release'
 if '--release' in sys.argv:
@@ -29,35 +24,16 @@ if '--debug' in sys.argv:
     del sys.argv[sys.argv.index('--debug')]
 
 
-compiler = 'gcc'
-if is_windows(): 
-    if '-c' in sys.argv:
-        index = sys.argv.index('-c')
-        curr_val = sys.argv[index + 1]
-        if curr_val == 'mingw32' and not is_gcc_installed():
-            print_yellow('gcc not installed, switching to msvc')
-            sys.argv[index + 1] = 'msvc'
-        compiler = sys.argv[index + 1]
-    else:
-        compiler = 'msvc'
-
-
 print_cyan(f'{root_of_project_directory=}, {this_file_directory=}')
 
 extra_link_args = [str(root_of_project_directory.joinpath('lib', 'libShumiChess.a'))]
 extra_compile_args=['-std=c++17']
-
-if compiler == 'msvc':
-    extra_compile_args = ['/std:c++17']
-    extra_link_args = [str(root_of_project_directory.joinpath('lib', 'ShumiChess.lib'))]
 
 if is_windows():
     extra_link_args += ['-static', '-static-libgcc', '-static-libstdc++']
 
 if release_mode == 'debug':
     extra_compile_args += ['-g', '-O0']
-    if compiler == 'msvc':
-        extra_compile_args += ['/MTd']
 
 
 the_module = Extension(
