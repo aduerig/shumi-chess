@@ -14,6 +14,7 @@ print_cyan(f'{show_board_path=}, {build_c_module_for_python_path=}')
 
 build_type = 'Debug'
 
+print_cyan('==== STEP 1 =====')
 return_code, stdout, stderr = run_command_blocking([
     'cmake',
     str(root_of_project_directory.joinpath('CMakeLists.txt')),
@@ -26,23 +27,29 @@ if return_code:
 
 print_green(f'cmake CMakeLists.txt SUCCEEDED, {return_code=}, stdout:')
 print(stdout)
-print_yellow('stderr:', stderr)
+print_yellow('stderr (probably warnings) was:')
+print(stderr)
 
+print_cyan('==== STEP 2 =====')
 return_code, stdout, stderr = run_command_blocking([
     'cmake',
-    'build',
+    '--build',
     str(root_of_project_directory.joinpath('.')),
-], debug=True)
+])
 if return_code:
     print_red('cmake build . FAILED')
-    print_red(f'stdout:\n{stdout}')
+    print(f'stdout was:')
+    print_blue(stdout)
+    print(f'stderr was:')
+    print_red(stderr)
     sys.exit(1)
+
 
 print_green(f'cmake build . SUCCEEDED, {return_code=}, stdout:')
 print(stdout)
 print_yellow('stderr:', stderr)
-exit()
 
+print_cyan('==== STEP 3 =====')
 return_code, stdout, stderr = run_command_blocking([
     'python',
     str(build_c_module_for_python_path),
