@@ -27,6 +27,7 @@ cmake_install.cmake
 CTestTestfile.cmake
 libShumiChess.a
 Makefile
+__pycache__/
 tests/unit_tests.dir/
 lib/
 gtests/GTests.exe
