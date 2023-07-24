@@ -123,8 +123,7 @@ const std::string GameBoard::to_fen() {
         string poses;
         int compressed = 0;
         for (int j = 0; j < 8; j++) {
-            // ull bitboard_of_square = 1ULL << (i * 8) + (7 - j);
-            ull bitboard_of_square = (1ULL << (i * 8)) + (7 - j);
+            ull bitboard_of_square = 1ULL << ((i * 8) + (7 - j));
             Piece piece_found = get_piece_type_on_bitboard(bitboard_of_square);
             if (piece_found == Piece::NONE) {
                 compressed += 1;

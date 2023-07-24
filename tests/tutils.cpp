@@ -71,7 +71,7 @@ vector<acn_to_bitboard_test_type> acn_to_bitboard_test_data = { make_pair("a1", 
                                                                 make_pair("f5", 1ull << 34),
                                                                 make_pair("g5", 1ull << 33),
                                                                 make_pair("h5", 1ull << 32) };
-INSTANTIATE_TEST_CASE_P(tAcnBitboardConversionParam,  
+INSTANTIATE_TEST_SUITE_P(tAcnBitboardConversionParam,  
                         tAcnBitboardConversion,  
                         testing::ValuesIn( acn_to_bitboard_test_data ));
 
@@ -105,7 +105,7 @@ vector<bitboard_to_acn_test_type> bitboard_to_acn_test_data = { make_pair(1ull <
                                                                 make_pair(1ull << 34, "f5"),
                                                                 make_pair(1ull << 33, "g5"),
                                                                 make_pair(1ull << 32, "h5") };
-INSTANTIATE_TEST_CASE_P(tAcnBitboardConversionParam2,  
+INSTANTIATE_TEST_SUITE_P(tAcnBitboardConversionParam2,  
                         tAcnBitboardConversion2,  
                         testing::ValuesIn( bitboard_to_acn_test_data ));
 
@@ -131,6 +131,6 @@ vector<string_split_test_type> string_split_test_data = { make_tuple("a/b/c", "/
                                                           make_tuple("a->b->c->->", "->", vector<string>{"a", "b", "c"}),
                                                           make_tuple("abc", "->", vector<string>{"abc"}),
                                                           make_tuple("This is | a test | with spaces.", "|", vector<string>{"This is ", " a test ", " with spaces."}) };
-INSTANTIATE_TEST_CASE_P(tStringSplitParam,  
+INSTANTIATE_TEST_SUITE_P(tStringSplitParam,  
                         tStringSplit,  
                         testing::ValuesIn( string_split_test_data ));

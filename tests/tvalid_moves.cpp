@@ -21,10 +21,9 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
     vector<ShumiChess::Move> legal_moves = engine.get_legal_moves();
     for (ShumiChess::Move move : legal_moves) {
         engine.push(move);
+
         recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
         if (depth == max_depth) {
-            // cout << "next board state found:" << endl;
-            // utility::representation::print_gameboard(engine.game_board);
             fen_holder.push_back(engine.game_board.to_fen());
         }
         engine.pop();
@@ -72,7 +71,7 @@ pair<string, vector<string>> get_fens_from_file(fs::path filepath) {
 vector<string> get_filenames_to_test_positions(fs::path folder_to_search) {
     vector<string>  all_filenames;
     for(auto& p: fs::directory_iterator(folder_to_search)) {
-        cout << "found path and adding: " << p.path() << endl;
+        // cout << "found path and adding: " << p.path() << endl;
         all_filenames.push_back(p.path().string());
     }
     sort(all_filenames.begin(), all_filenames.end());
@@ -105,6 +104,8 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
             baseline_fens[i] = 0;
         }
+        // cout << "Baseline fen: " << i << endl;
+        // utility::representation::print_gameboard(ShumiChess::GameBoard(i));
         baseline_fens[i]++;
     }
 
@@ -115,8 +116,13 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
         if (baseline_fens.find(i) == baseline_fens.end()) {
             shumi_fens[i] = 0;
         }
+        // cout << "Shumi fen: " << i << endl;
+        // utility::representation::print_gameboard(ShumiChess::GameBoard(i));
         shumi_fens[i]++;
     }
+
+    // std::cout << "Size of shumi_fens: " << shumi_fens.size() << std::endl;
+    // std::cout << "Size of baseline_fens: " << baseline_fens.size() << std::endl;
 
     // compare baseline and shumichess
     for (const auto& pair : baseline_fens) {
@@ -157,7 +163,7 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
         string shumi_fen = pair.first;
         int shumi_times_appear = pair.second;
         
-        if (baseline_fens.find(shumi_fen) == shumi_fens.end()) {
+        if (baseline_fens.find(shumi_fen) == baseline_fens.end()) {
             ShumiChess::Engine test_engine3(shumi_fen);
             utility::representation::print_gameboard(test_engine3.game_board);
             FAIL() << "At depth " << depth << " fen '" << shumi_fen <<
@@ -165,4 +171,4 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
         }
     }
 }
-INSTANTIATE_TEST_CASE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(test_filenames));
+INSTANTIATE_TEST_SUITE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(test_filenames));

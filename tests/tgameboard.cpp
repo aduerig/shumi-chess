@@ -20,7 +20,7 @@ vector<string> bad_fen_list = { "banana",
 TEST_P(BadFenConstructor, AssertBadFenFails) {
     ASSERT_DEATH(create_gameboard(GetParam()), "Assertion.*failed");
 }
-INSTANTIATE_TEST_CASE_P(BadFenConstructorParam, BadFenConstructor, testing::ValuesIn(bad_fen_list));
+INSTANTIATE_TEST_SUITE_P(BadFenConstructorParam, BadFenConstructor, testing::ValuesIn(bad_fen_list));
 
 typedef tuple<ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ull, ShumiChess::Color, uint8_t, uint8_t, ull, int, int> board_tuple;
 class tGameboardFenNotation : public testing::TestWithParam<pair<board_tuple, string>> {};
@@ -49,7 +49,7 @@ TEST_P(tGameboardFenNotation, FenBoardMatchesExpected) {
     EXPECT_EQ(fen_board.fullmove, get<17>(test_pair.first));
 }
 
-INSTANTIATE_TEST_CASE_P(tGameboardFenNotationParams,  
+INSTANTIATE_TEST_SUITE_P(tGameboardFenNotationParams,  
                         tGameboardFenNotation,  
                         testing::Values( make_pair(make_tuple(71776119061217280ULL, 65280ULL, 9295429630892703744ULL, 129ULL, 4755801206503243776ULL, 66ULL, 2594073385365405696ULL, 36ULL, 1152921504606846976ULL, 16ULL, 576460752303423488ULL, 8ULL, ShumiChess::Color::WHITE, 3, 3, 0ULL, 0, 1),
                                                    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
@@ -97,7 +97,7 @@ TEST_P(tGameboardToFenNotation, ToFenBoardMatchesExpected) {
     // EXPECT_EQ(fen_board.fullmove, get<17>(test_pair.second));
 }
 
-INSTANTIATE_TEST_CASE_P(tGameboardToFenNotationParams,  
+INSTANTIATE_TEST_SUITE_P(tGameboardToFenNotationParams,  
                         tGameboardToFenNotation,  
                         testing::Values(
                                         make_pair(

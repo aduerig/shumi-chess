@@ -372,7 +372,6 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN, color, false, false, move_forward_one_blocked, false, false);
         }
 
-
         // promotions
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
@@ -555,8 +554,8 @@ ull Engine::get_straight_attacks(ull bitboard) {
     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
     ull attacks = 0;
 
-    ull curr = bitboard;
     // left
+    ull curr = bitboard;
     for (int i = 0; i < 7; i++) {
         curr = (curr & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 1;
         attacks |= curr;
