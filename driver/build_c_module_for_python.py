@@ -1,10 +1,8 @@
-import setuptools
-import distutils.cygwinccompiler
-from distutils.core import setup, Extension
+# try: python .\driver\build_c_module_for_python.py build --compiler=mingw32
+
+from setuptools import setup, Extension
 import sys
-import time
 import pathlib
-import subprocess
 import os
 
 this_file_directory = pathlib.Path(__file__).parent.resolve()
@@ -12,11 +10,6 @@ root_of_project_directory = this_file_directory.parent
 
 sys.path.insert(0, str(root_of_project_directory))
 from helpers import *
-
-
-
-os.environ['CC'] = 'gcc'
-distutils.cygwinccompiler.get_msvcr = lambda: []
 
 release_mode = 'release'
 if '--release' in sys.argv:

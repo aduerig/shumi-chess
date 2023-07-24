@@ -1,12 +1,16 @@
 # 趣味
 we're back
 
-## TLDR (too long didn't read)
+## Quickstart
+### Dependancies
+* Python
+* IF WINDOWS: [mingw](https://github.com/niXman/mingw-builds-binaries)
+
+### How to run gui
 * Linux
   * `.\scripts\build_debug_run_gui.sh`
 * Windows
   * `.\scripts\win_build_debug_run_gui.ps1`
-
 
 
 ## intro
