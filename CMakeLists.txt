@@ -23,12 +23,9 @@ message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 # all the fast flags (Ofast helps but hardly)!
 # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
 if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
-    add_compile_options("-g")
+    add_compile_options(-g)
 else()
-    if(WIN32)
-    else()
-        add_compile_options("-O3 -fno-omit-frame-pointer")
-    endif()
+    add_compile_options(-O3 -fno-omit-frame-pointer)
 endif()
 
 
