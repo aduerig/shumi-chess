@@ -47,16 +47,16 @@ print_cyan(f'{root_of_project_directory=}, {this_file_directory=}')
 extra_link_args = [str(root_of_project_directory.joinpath('lib', 'libShumiChess.a'))]
 extra_compile_args=['-std=c++17']
 
-if is_windows():
-    if compiler == 'msvc':
-        extra_compile_args = ['/std:c++17']
-        extra_link_args = [str(root_of_project_directory.joinpath('lib', 'ShumiChess.lib'))]
-    extra_link_args += ['-static', '-static-libgcc', '-static-libstdc++']
+if compiler == 'msvc':
+    extra_compile_args = ['/std:c++17']
+    extra_link_args = [str(root_of_project_directory.joinpath('lib', 'ShumiChess.lib'))]
 
+if is_windows():
+    extra_link_args += ['-static', '-static-libgcc', '-static-libstdc++']
 
 if release_mode == 'debug':
     extra_compile_args += ['-g', '-O0']
-    if is_windows():
+    if compiler == 'msvc':
         extra_compile_args += ['/MTd']
 
 
