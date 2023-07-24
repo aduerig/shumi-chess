@@ -14,6 +14,8 @@ sys.path.insert(0, str(root_of_project_directory))
 from helpers import *
 
 
+
+os.environ['CC'] = 'gcc'
 distutils.cygwinccompiler.get_msvcr = lambda: []
 
 release_mode = 'release'
