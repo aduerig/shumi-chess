@@ -12,27 +12,36 @@ build_c_module_for_python_path = root_of_project_directory.joinpath('driver', 'b
 show_board_path = root_of_project_directory.joinpath('driver', 'show_board.py')
 print_cyan(f'{show_board_path=}, {build_c_module_for_python_path=}')
 
-build_type = 'debug'
+build_type = 'Debug'
 
 return_code, stdout, stderr = run_command_blocking([
     'cmake',
-    'CMakeLists.txt',
+    str(root_of_project_directory.joinpath('CMakeLists.txt')),
     '-Wno-dev',
-    f'DCMAKE_BUILD_TYPE={build_type}',
+    f'-DCMAKE_BUILD_TYPE={build_type}',
 ])
 if return_code:
     print_red('cmake CMakeLists.txt FAILED, exiting')
     sys.exit(1)
 
+print_green(f'cmake CMakeLists.txt SUCCEEDED, {return_code=}, stdout:')
+print(stdout)
+print_yellow('stderr:', stderr)
+
 return_code, stdout, stderr = run_command_blocking([
     'cmake',
-    '--build',
-    '.',
-])
+    'build',
+    str(root_of_project_directory.joinpath('.')),
+], debug=True)
 if return_code:
-    print_red('cmake --build . FAILED, exiting')
+    print_red('cmake build . FAILED')
+    print_red(f'stdout:\n{stdout}')
     sys.exit(1)
 
+print_green(f'cmake build . SUCCEEDED, {return_code=}, stdout:')
+print(stdout)
+print_yellow('stderr:', stderr)
+exit()
 
 return_code, stdout, stderr = run_command_blocking([
     'python',
