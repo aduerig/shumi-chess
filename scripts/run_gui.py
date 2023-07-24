@@ -34,65 +34,44 @@ return_code, stdout, stderr = run_command_blocking([
     '-Wno-dev',
     f'-DCMAKE_BUILD_TYPE={build_type}',
     f'-DBUILD_TESTS={build_tests}',
-])
+], stdout_pipe=None, stderr_pipe=None)
 if return_code:
     print_red('cmake CMakeLists.txt FAILED, exiting')
     sys.exit(1)
-
-print_green(f'cmake CMakeLists.txt SUCCEEDED, {return_code=}, stdout:')
-print(stdout)
-if stderr:
-    print_yellow('stderr (probably warnings) was:')
-    print_yellow(stderr)
-
+print_green(f'cmake CMakeLists.txt SUCCEEDED, {return_code=}')
 
 print_cyan('==== STEP 2 =====')
 return_code, stdout, stderr = run_command_blocking([
     'cmake',
     '--build',
     str(root_of_project_directory.joinpath('.')),
-])
+], stdout_pipe=None, stderr_pipe=None)
 if return_code:
     print_red('cmake build . FAILED')
-    print(f'stdout was:')
-    print_blue(stdout)
-    print(f'stderr was:')
-    print_red(stderr)
     sys.exit(1)
 
-
-print_green(f'cmake build . SUCCEEDED, {return_code=}, stdout:')
-print(stdout)
-if stderr:
-    print_yellow('stderr (probably warnings) was:')
-    print_yellow(stderr)
+print_green(f'cmake build . SUCCEEDED, {return_code=}')
 
 print_cyan('==== STEP 3 =====')
-
 cmd_options = [
     'python',
     str(build_c_module_for_python_path),
     'build',
     '--force',
-    '--build-lib="driver"', 
-    '--build-temp="driver/build"',
+    '--build-lib=driver', 
+    '--build-temp=driver/build',
 ]
 if is_windows():
     cmd_options.append('--compiler=mingw32')
-return_code, stdout, stderr = run_command_blocking(cmd_options)
+return_code, stdout, stderr = run_command_blocking(cmd_options, stdout_pipe=None, stderr_pipe=None)
 if return_code:
     print_red('driver/build_c_module_for_python.py FAILED, exiting')
     sys.exit(1)
 
-print_green(f'python build_c_module_for_python.py SUCCEEDED, {return_code=}, stdout:')
-print(stdout)
-if stderr:
-    print_yellow('stderr (probably warnings) was:')
-    print_yellow(stderr)
+print_green(f'python build_c_module_for_python.py SUCCEEDED, {return_code=}')
 
-# !TODO need to not capture stdout here somehow
 return_code, stdout, stderr = run_command_blocking([
     'python',
     str(show_board_path),
-])
+], stdout_pipe=None, stderr_pipe=None)
 
