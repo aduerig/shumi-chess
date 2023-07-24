@@ -153,7 +153,7 @@ std::string square_to_position_string(ull square) {
             square = square >> 1;
         }
     }
-    assert(false);
+    return "error";
 }
 
 } // end namespace representation

@@ -21,6 +21,14 @@ def is_gcc_installed():
     except FileNotFoundError:
         return False
 
+release_mode = 'release'
+if '--release' in sys.argv:
+    del sys.argv[sys.argv.index('--debug')]
+if '--debug' in sys.argv:
+    release_mode = 'debug'
+    del sys.argv[sys.argv.index('--debug')]
+
+
 compiler = 'gcc'
 if is_windows(): 
     if '-c' in sys.argv:
@@ -41,9 +49,15 @@ extra_compile_args=['-std=c++17']
 
 if is_windows():
     if compiler == 'msvc':
-        extra_compile_args=['/std:c++17']
+        extra_compile_args = ['/std:c++17']
         extra_link_args = [str(root_of_project_directory.joinpath('lib', 'ShumiChess.lib'))]
     extra_link_args += ['-static', '-static-libgcc', '-static-libstdc++']
+
+
+if release_mode == 'debug':
+    extra_compile_args += ['-g', '-O0']
+    if is_windows():
+        extra_compile_args += ['/MTd']
 
 
 the_module = Extension(

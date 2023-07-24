@@ -1,4 +1,4 @@
-cmake CMakeLists.txt -Wno-dev -DBUILD_TESTS=ON -Dgtest_disable_pthreads=ON
+cmake CMakeLists.txt -Wno-dev -DBUILD_TESTS=ON -Dgtest_disable_pthreads=ON -DCMAKE_BUILD_TYPE=Release
 if ( $LASTEXITCODE -ne 0 ) {
     echo "cmake CMakeLists.txt FAILED"
     exit

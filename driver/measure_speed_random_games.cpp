@@ -20,7 +20,7 @@ int rand_int(int min, int max) {
 
 
 Move& get_random_move(vector<Move>& moves) {
-    int index = rand_int(0, moves.size() - 1);
+    int index = rand_int(0, (int) moves.size() - 1);
     return moves[index];
 }
 

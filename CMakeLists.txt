@@ -1,21 +1,43 @@
 # -DBUILD_TESTS=ON       or       -DBUILD_TESTS=OFF
-option(BUILD_TESTS "This is settable from the command line" OFF)
+# set(BUILD_TESTS OFF)
+# option(BUILD_TESTS "This is settable from the command line" OFF CACHE BOOL "idk" FORCE)
+
+# !TODO THIS DOESNT WORK DUE TO CACHE STUFF
+option(BUILD_TESTS "blank" OFF)
 message("BUILDING TESTS ${BUILD_TESTS}")
 
 set(project_name ShumiChess)
 project(${project_name} CXX)
 set (CMAKE_CXX_STANDARD 17)
 
-if(WIN32)
-    message("windows detected on debug, adding options for MSVC")
-    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
-    add_compile_options(/MTd)
-endif()
 
 if(NOT CMAKE_BUILD_TYPE)
+    message("NO BUILD TYPE DETECTED, DEFAULTING TO DEBUG")
     set(CMAKE_BUILD_TYPE DEBUG)
 endif()
+
+message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+
+
+# -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
+# all the fast flags (Ofast helps but hardly)!
+# set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
+if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
+    if(WIN32)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
+        add_compile_options(/MTd) # release is /MD
+    else()
+        add_compile_options("-g")
+    endif()
+else()
+    if(WIN32)
+        # add_compile_options("/Ox /RTCu")
+    else()
+        add_compile_options("-O3 -fno-omit-frame-pointer")
+    endif()
+endif()
+
+
 
 
 include(GNUInstallDirs)
@@ -37,12 +59,17 @@ message("CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_
 add_subdirectory(src)
 
 if(BUILD_TESTS)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     include(googletest_cmake/googletest.cmake)
     fetch_googletest(
         ${PROJECT_SOURCE_DIR}/googletest_cmake
         ${PROJECT_BINARY_DIR}/googletest
     )
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    # if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
+    #     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    # else()
+    #     set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)    
+    # endif()
     add_subdirectory(tests)
 endif(BUILD_TESTS)
 
@@ -75,19 +102,14 @@ set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(${project_name} PUBLIC src)
 
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-# -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
-# all the fast flags (Ofast helps but hardly)!
-# set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -fno-omit-frame-pointer")
-
-
 add_executable(measure_speed_random_games driver/measure_speed_random_games.cpp)
 add_executable(run_minimax_depth src/run_minimax_depth.cpp)
 target_link_libraries(run_minimax_depth PUBLIC ${project_name})
 target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 
+unset(BUILD_TESTS)
+unset(CMAKE_BUILD_TYPE)
 
 # cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # errors, prob figure out why
 
