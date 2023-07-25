@@ -23,6 +23,14 @@ int MinimaxAI::bits_in(ull bitboard)
     return (int) bs.count();
 }
 
+template<class T>
+std::string format_with_commas(T value) {
+    std::stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << std::fixed << value;
+    return ss.str();
+}
+
 int MinimaxAI::evaluate_board(Color color) {
     Color opposite_turn = utility::representation::get_opposite_color(color);
 
@@ -52,7 +60,100 @@ int MinimaxAI::evaluate_board(Color color) {
 }
 
 
-// chatgpt 4
+
+double MinimaxAI::store_board_values(int depth, int color_multiplier, double alpha, double beta, unordered_map<int, double> board_values) {
+    nodes_visited++;
+    vector<ShumiChess::Move> moves = engine.get_legal_moves();
+    ShumiChess::GameState state = engine.game_over(moves);
+    
+    if (state == ShumiChess::GameState::BLACKWIN) {
+        return (-DBL_MAX + 1) * (color_multiplier);
+    }
+    else if (state == ShumiChess::GameState::WHITEWIN) {
+        return (DBL_MAX - 1) * (color_multiplier);
+    }
+    else if (state == ShumiChess::GameState::DRAW) {
+        return 0;
+    }
+    
+    if (depth == 0) {
+        Color color_perspective = Color::BLACK;
+        if (color_multiplier) {
+            color_perspective = Color::WHITE;
+        }
+        return evaluate_board(color_perspective) * color_multiplier;
+    }
+
+    if (color_multiplier == 1) {  // Maximizing player
+        double max_move_value = -DBL_MAX;
+        for (Move& m : moves) {
+            engine.push(m);
+            double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
+            engine.pop();
+            max_move_value = std::max(max_move_value, score_value);
+            alpha = std::max(alpha, max_move_value);
+            if (beta <= alpha) {
+                break; // beta cut-off
+            }
+        }
+        return max_move_value;
+    } else {  // Minimizing player
+        double min_move_value = DBL_MAX;
+        for (Move& m : moves) {
+            engine.push(m);
+            double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
+            engine.pop();
+            min_move_value = std::min(min_move_value, score_value);
+            beta = std::min(beta, min_move_value);
+            if (beta <= alpha) {
+                break; // alpha cut-off
+            }
+        }
+        return min_move_value;
+    }
+}
+
+
+Move MinimaxAI::get_move_iterative_deepening(double time) {
+    auto required_end_time = std::chrono::high_resolution_clock::now() + time;
+
+    nodes_visited = 0;
+
+
+    int color_multiplier = 1;
+    if (engine.game_board.turn == Color::BLACK) {
+        color_multiplier = -1;
+    }
+
+    unordered_map<int, double> board_values;
+    int depth = 1;
+    while (std::chrono::high_resolution_clock::now() >= required_end_time) {
+        store_board_values(depth, color_multiplier * -1, -DBL_MAX, DBL_MAX, board_values);        
+        depth++;
+    }
+
+    vector<ShumiChess::Move> top_level_moves = engine.get_legal_moves();
+    Move move_chosen = top_level_moves[0];
+    double max_move_value = -DBL_MAX;
+
+    for (Move& m : top_level_moves) {
+        engine.push(m);
+        double score_value = color_multiplier * board_values[engine.game_board.turn];
+        if (score_value > max_move_value) {
+            max_move_value = score_value;
+            move_chosen = m;
+        }
+        engine.pop();
+    }
+    std::string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_CYAN, "Minimax AI chose move: for " + color + " player") << endl;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "Time taken: " + std::to_string(time) + " s") << endl;
+    return move_chosen;
+}
+
+
+// === straight forward minimax below ===
 double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, double beta) {
     nodes_visited++;
     vector<ShumiChess::Move> moves = engine.get_legal_moves();
@@ -105,21 +206,8 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
     }
 }
 
-template<class T>
-std::string format_with_commas(T value) {
-    std::stringstream ss;
-    ss.imbue(std::locale(""));
-    ss << std::fixed << value;
-    return ss.str();
-}
-
 Move MinimaxAI::get_move(int depth) {
-    auto start = std::chrono::high_resolution_clock::now();
-
-    if (depth < 1) {
-        cout << utility::colorize(utility::AnsiColor::BRIGHT_RED, "Error: Cannot have depth be lower than 1 for minimax_ai") << endl;
-        assert(false);
-    }
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     nodes_visited = 0;
 
@@ -145,8 +233,7 @@ Move MinimaxAI::get_move(int depth) {
     cout << utility::colorize(utility::AnsiColor::BRIGHT_CYAN, "Minimax AI chose move: for " + color + " player") << endl;
     cout << utility::colorize(utility::AnsiColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> total_time = end - start;
+    std::chrono::duration<double> total_time = std::chrono::high_resolution_clock::now() - start_time;
     cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Total time taken for get_move(): " + std::to_string(total_time.count()) + " s") << endl;
 
     return move_chosen;
