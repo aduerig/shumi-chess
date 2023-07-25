@@ -191,52 +191,6 @@ const std::string GameBoard::to_fen() {
     return utility::string::join(fen_components, " ");
 }
 
-ull GameBoard::get_pieces(Color color) {
-    if (color == Color::WHITE) {
-        return white_pawns | white_rooks | white_knights | 
-               white_bishops | white_queens | white_king;
-    }
-    else {
-        return black_pawns | black_rooks | black_knights | 
-               black_bishops | black_queens | black_king;
-    }
-}
-
-ull GameBoard::get_pieces(Piece piece_type) {
-    if (piece_type == Piece::PAWN) {
-        return black_pawns | white_pawns;
-    }
-    else if (piece_type == Piece::ROOK) {
-        return black_rooks | white_rooks;
-    }
-    else if (piece_type == Piece::KNIGHT) {
-        return black_knights | white_knights;
-    }
-    else if (piece_type == Piece::BISHOP) {
-        return black_bishops | white_bishops;
-    }
-    else if (piece_type == Piece::QUEEN) {
-        return black_queens | white_queens;
-    }
-    return black_king | white_king;
-}
-
-// Piece GameBoard::get_piece_type_on_bitboard_using_templates(ull bitboard) {
-//     vector<void()> all_piece_funcs = { 
-//                                     &get_pieces_template<Piece::PAWN>, 
-//                                     &get_pieces_template<Piece::ROOK>, 
-//                                     &get_pieces_template<Piece::KNIGHT>, 
-//                                     &get_pieces_template<Piece::BISHOP>, 
-//                                     &get_pieces_template<Piece::QUEEN>, 
-//                                     &get_pieces_template<Piece::KING> 
-//                                     };
-//     for (auto get_piece_function : all_piece_funcs) {
-//         if (get_piece_function() & bitboard) {
-//             return piece_type;
-//         }
-//     }
-//     return Piece::NONE;
-// }
 
 Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
     vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
@@ -246,15 +200,6 @@ Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
         }
     }
     return Piece::NONE;
-}
-
-ull GameBoard::get_pieces(Color color, Piece piece_type) {
-    return get_pieces(piece_type) & get_pieces(color);
-}
-
-ull GameBoard::get_pieces() {
-    return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king | 
-           black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king;
 }
 
 Color GameBoard::get_color_on_bitboard(ull bitboard) {

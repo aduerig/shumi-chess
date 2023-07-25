@@ -55,6 +55,9 @@ This project uses GTest for its unittests, after building with `cmake --build .`
 ** `PYTHONPATH=driver`
 
 ## technical notes
+[probably a good resource](https://github.com/GunshipPenguin/shallow-blue)
+  * [his blog on magic bitboards](https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html)
+
 ### using this as CMAKE + gtest template
 https://github.com/bast/gtest-demo
 

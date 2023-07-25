@@ -7,6 +7,13 @@ using namespace std;
 
 namespace ShumiChess {
 Engine::Engine() {
+    ShumiChess::initialize_rays();
+    // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[25]") << endl;
+    // utility::representation::print_bitboard(south_west_square_ray[25]);
+    // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[28]") << endl;
+    // utility::representation::print_bitboard(south_west_square_ray[28]);
+    // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[37]") << endl;
+    // utility::representation::print_bitboard(south_west_square_ray[37]);
     reset_engine();
 }
 
@@ -90,10 +97,10 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
                            ((temp & ~col_masks[0]) >> 1));
 
     // knights
-    ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(square)];
+    ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_lowest_square(square)];
 
     // kings
-    ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(square)];
+    ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(square)];
 
     return ((deadly_straight & straight_attacks_from_king) ||
             (deadly_diags & diagonal_attacks_from_king) ||
@@ -402,7 +409,7 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
     while (knights) {
         ull single_knight = utility::bit::lsb_and_pop(knights);
-        ull avail_attacks = tables::movegen::knight_attack_table[utility::bit::bitboard_to_square(single_knight)];
+        ull avail_attacks = tables::movegen::knight_attack_table[utility::bit::bitboard_to_lowest_square(single_knight)];
         
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -478,7 +485,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull all_pieces = game_board.get_pieces();
     ull own_pieces = game_board.get_pieces(color);
 
-    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_square(king)];
+    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
 
     // captures
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -515,9 +522,11 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     }
 }
 
-// something like this? https://www.chessprogramming.org/Blockers_and_Beyond
+// https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html
 ull Engine::get_diagonal_attacks(ull bitboard) {
     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+    ull masked_blockers = all_pieces_but_self;
+    
     ull attacks = 0;
 
     ull curr = bitboard;
@@ -549,6 +558,41 @@ ull Engine::get_diagonal_attacks(ull bitboard) {
     }
     return attacks;
 }
+
+// something like this? https://www.chessprogramming.org/Blockers_and_Beyond
+// ull Engine::get_diagonal_attacks_slow(ull bitboard) {
+//     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+//     ull attacks = 0;
+
+//     ull curr = bitboard;
+//     // up left
+//     for (int i = 0; i < 7; i++) {
+//         curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 9;
+//         attacks |= curr;
+//     }
+
+//     // down left
+//     curr = bitboard;
+//     for (int i = 0; i < 7; i++) {
+//         curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) >> 7;
+//         attacks |= curr;
+//     }
+
+//     // up right
+//     curr = bitboard;
+//     for (int i = 0; i < 7; i++) {
+//         curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) << 7;
+//         attacks |= curr;
+//     }
+
+//     // down right
+//     curr = bitboard;
+//     for (int i = 0; i < 7; i++) {
+//         curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 9;
+//         attacks |= curr;
+//     }
+//     return attacks;
+// }
 
 ull Engine::get_straight_attacks(ull bitboard) {
     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;

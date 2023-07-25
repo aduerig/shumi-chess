@@ -4,6 +4,8 @@
 #include <optional>
 #include <unordered_map>
 #include <vector>
+#include <ostream>
+#include <iostream>
 
 typedef unsigned long long ull;
 
@@ -39,15 +41,13 @@ struct Move {
 };
 
 // ? is this best way to number
-// ? Should we try to make most checked things = 0 for magical compiler iszero optimixations? (applies to piece enum as well)
+// ? Should we try to make most checked things = 0 for magical compiler iszero optimizations? (applies to piece enum as well)
 enum GameState {
     INPROGRESS = -1,
     WHITEWIN = 0,
     DRAW = 1,
     BLACKWIN = 2
 };
-
-
 
 
 // ? maybe can use inline here for externs? but it complicates the build. defining in globals.cpp
@@ -81,9 +81,18 @@ extern ull a_col;
 extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
 
+extern std::unordered_map<int, int> square_to_y;
+extern std::unordered_map<int, int> square_to_x;
+
 extern std::unordered_map<int, ull> down_right_diagonals;
 extern std::unordered_map<int, ull> down_left_diagonals;
 
+extern std::unordered_map<int, ull> north_east_square_ray;
+extern std::unordered_map<int, ull> north_west_square_ray;
+extern std::unordered_map<int, ull> south_east_square_ray;
+extern std::unordered_map<int, ull> south_west_square_ray;
+
+void initialize_rays();
 
 extern std::vector<Piece> promotion_values;
 

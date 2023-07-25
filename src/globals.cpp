@@ -85,6 +85,42 @@ std::unordered_map<int, ull> down_left_diagonals = {
     {15, 1ULL << 63}
 };
 
+
+std::unordered_map<int, int> square_to_y;
+std::unordered_map<int, int> square_to_x;
+
+
+std::unordered_map<int, ull> north_east_square_ray;
+std::unordered_map<int, ull> north_west_square_ray;
+std::unordered_map<int, ull> south_east_square_ray;
+std::unordered_map<int, ull> south_west_square_ray;
+
+void initialize_rays() {
+    for (int square = 1; square < 65; square++) {
+        square_to_y[square] = (int) (square - 1) / 8;
+        square_to_x[square] = (int) (square - 1) % 8;
+    }
+
+    for (int square = 1; square < 65; square++) {
+        int square_x = square_to_x[square];
+        int square_y = square_to_y[square];
+        for (int i = 1; i < 8; i++) {
+            if (square_x - i >= 0 && square_y + i < 8) {
+                north_east_square_ray[square] |= 1ULL << ((square - 1) + 8*i - i);
+            }
+            if (square_x + i >= 0 && square_y + i < 8) {
+                north_west_square_ray[square] |= 1ULL << ((square - 1) + 8*i + i);
+            }
+            if (square_x - i >= 0 && square_y - i >= 0) {
+                south_east_square_ray[square] |= 1ULL << ((square - 1) - 8*i - i);
+            }
+            if (square_x + i < 8 && square_y - i >= 0) {
+                south_west_square_ray[square] |= 1ULL << ((square - 1) - 8*i + i);
+            }
+        }
+    }
+}
+
 std::vector<Piece> promotion_values = {
     Piece::BISHOP,
     Piece::KNIGHT,

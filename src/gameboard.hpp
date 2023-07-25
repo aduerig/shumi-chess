@@ -56,7 +56,7 @@ class GameBoard {
         const std::string to_fen();
 
         template <Piece p>  
-        ull get_pieces_template() {
+        inline ull get_pieces_template() {
             if constexpr (p == Piece::PAWN) { return black_pawns | white_pawns; }
             if constexpr (p == Piece::ROOK) { return black_rooks | white_rooks; }
             if constexpr (p == Piece::KNIGHT) { return black_knights | white_knights; }
@@ -66,7 +66,7 @@ class GameBoard {
         };
 
         template <Piece p, Color c>  
-        ull get_pieces_template() {
+        inline ull get_pieces_template() {
             if constexpr (p == Piece::PAWN && c == Color::BLACK) { return black_pawns; }
             if constexpr (p == Piece::PAWN && c == Color::WHITE) { return white_pawns; }   
             if constexpr (p == Piece::ROOK && c == Color::BLACK) { return black_rooks; }
@@ -82,7 +82,7 @@ class GameBoard {
         }; 
 
         template <Piece p>
-        ull get_pieces_template(Color c) {
+        inline ull get_pieces_template(Color c) {
             if (c == Color::BLACK) { 
                 return get_pieces_template<p, Color::BLACK>(); 
             }
@@ -90,16 +90,54 @@ class GameBoard {
         };
 
         template <Color c>
-        ull get_pieces_template() {
+        inline ull get_pieces_template() {
             if constexpr (c == Color::WHITE) { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }   
             if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king; }
         }
 
-        ull get_pieces();
-        ull get_pieces(Color);
-        ull get_pieces(Piece);
-        ull get_pieces(Color, Piece);
+        // ull get_pieces();
+        // ull get_pieces(Color);
+        // ull get_pieces(Piece);
+        // ull get_pieces(Color, Piece);
 
+        inline ull get_pieces(Color color) {
+            if (color == Color::WHITE) {
+                return white_pawns | white_rooks | white_knights | 
+                    white_bishops | white_queens | white_king;
+            }
+            else {
+                return black_pawns | black_rooks | black_knights | 
+                    black_bishops | black_queens | black_king;
+            }
+        }
+
+        inline ull get_pieces(Piece piece_type) {
+            if (piece_type == Piece::PAWN) {
+                return black_pawns | white_pawns;
+            }
+            else if (piece_type == Piece::ROOK) {
+                return black_rooks | white_rooks;
+            }
+            else if (piece_type == Piece::KNIGHT) {
+                return black_knights | white_knights;
+            }
+            else if (piece_type == Piece::BISHOP) {
+                return black_bishops | white_bishops;
+            }
+            else if (piece_type == Piece::QUEEN) {
+                return black_queens | white_queens;
+            }
+            return black_king | white_king;
+        }
+
+        inline ull get_pieces(Color color, Piece piece_type) {
+            return get_pieces(piece_type) & get_pieces(color);
+        }
+
+        inline ull get_pieces() {
+            return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king | 
+                black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king;
+        }
 
         // Piece get_piece_type_on_bitboard_using_templates(ull bitboard);
         Piece get_piece_type_on_bitboard(ull);
