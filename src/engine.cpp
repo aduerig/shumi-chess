@@ -578,38 +578,4 @@ ull Engine::get_straight_attacks(ull bitboard) {
     return n_attacks | s_attacks | w_attacks | e_attacks;
 }
 
-ull Engine::get_straight_attacks_slow(ull bitboard) {
-    ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-    ull attacks = 0;
-
-    // left
-    ull curr = bitboard;
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 1;
-        attacks |= curr;
-    }
-
-    // right
-    curr = bitboard;
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 1;
-        attacks |= curr;
-    }
-
-    // up
-    curr = bitboard;
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~row_masks[Row::ROW_8] & ~all_pieces_but_self) << 8;
-        attacks |= curr;
-    }
-
-    // down
-    curr = bitboard;
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~row_masks[Row::ROW_1] & ~all_pieces_but_self) >> 8;
-        attacks |= curr;
-    }
-    return attacks;
-}
-
 } // end namespace ShumiChess
