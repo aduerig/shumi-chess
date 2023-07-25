@@ -319,7 +319,7 @@ def start_video_in_mpv_async(video_path, volume=70):
 def is_linux_root():
     return is_linux() and os.geteuid() == 0
 
-def run_command_blocking(full_command_arr, timeout=None, debug=False, print_std_out=False, stdin=None, stdout_pipe=subprocess.PIPE, stderr_pipe=subprocess.PIPE):
+def run_command_blocking(full_command_arr, timeout=None, debug=False, stdin_pipe=None, stdout_pipe=subprocess.PIPE, stderr_pipe=subprocess.PIPE):
     for index in range(len(full_command_arr)):
         cmd = full_command_arr[index]
         if type(cmd) != str:
@@ -330,26 +330,35 @@ def run_command_blocking(full_command_arr, timeout=None, debug=False, print_std_
         if full_command_arr[0] in ['ffmpeg', 'ffplay', 'ffprobe']:
             full_command_arr[0] += '.exe'
 
+    full_call = full_command_arr[0] + ' ' + ' '.join(map(lambda x: f'"{x}"', full_command_arr[1:]))
     if debug:
-        full_call = full_command_arr[0] + ' ' + ' '.join(map(lambda x: f'"{x}"', full_command_arr[1:]))
         print(f'going to run "{full_call}"')
-    # env = os.environ.copy()
-    # env['SSH_AUTH_SOCK'] = os.
-    # environ['SSH_AUTH_SOCK']
-    process = subprocess.Popen(full_command_arr, stdout=stdout_pipe, stderr=stderr_pipe, stdin=stdin)
+    
+    # env = os.environ.copy() # env['SSH_AUTH_SOCK'] = os.
+    process = subprocess.Popen(full_command_arr, stdout=stdout_pipe, stderr=stderr_pipe, stdin=stdin_pipe)
     stdout, stderr = process.communicate(timeout=timeout)
 
     if debug:
         print(f'Finished execution, return code was {process.returncode}')
 
-    if print_std_out and not process.returncode:
-        print(f'stdout: {stdout.decode("utf-8")}')
-    
-    
     if stdout is not None:
         stdout = stdout.decode("utf-8")
     if stderr is not None:
         stderr = stderr.decode("utf-8")
+
+    if process.returncode:
+        print_red(f'FAILURE executing "{full_call}"')
+        if stdout:
+            print('stdout', stdout)
+        if stderr:
+            print_red('stderr', stderr)
+    elif debug:
+        print_green(f'SUCCESS executing "{full_call}"')
+        if stdout:
+            print('stdout', stdout)
+        if stderr:
+            print_red('stderr', stderr)
+        
     return process.returncode, stdout, stderr
 
 

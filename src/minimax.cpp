@@ -146,8 +146,8 @@ Move MinimaxAI::get_move(int depth) {
     cout << utility::colorize(utility::AnsiColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
 
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> total_time = end - start;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Total time taken for get_move(): " + std::to_string(total_time.count()) + " ms") << endl;
+    std::chrono::duration<double> total_time = end - start;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Total time taken for get_move(): " + std::to_string(total_time.count()) + " s") << endl;
 
     return move_chosen;
 }
