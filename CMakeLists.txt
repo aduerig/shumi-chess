@@ -26,7 +26,7 @@ else()
     # all the fast flags (Ofast helps but hardly)!
     # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
     # maybe we don't always want -g, maybe pass in only for perf stuff
-    add_compile_options(-g -O2)
+    add_compile_options(-g -Ofast)
 endif()
 
 

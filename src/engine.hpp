@@ -59,5 +59,6 @@ class Engine {
         // helpers for move generation
         ull get_diagonal_attacks(ull);
         ull get_straight_attacks(ull);
+        ull get_straight_attacks_slow(ull);
 };
 } // end namespace ShumiChess

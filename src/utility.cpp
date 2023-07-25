@@ -9,41 +9,6 @@
 
 namespace utility {
 
-namespace bit {
-
-
-// opposite is __builtin_clzll
-int bitboard_to_lowest_square(ull bitboard) {
-    return __builtin_ctzll(bitboard);
-}
-
-int bitboard_to_highest_square(ull bitboard) {
-    return __builtin_clzll(bitboard);
-}
-
-int square_to_bitboard(int square) {
-    return 1ULL << (square + 1);
-}
-
-// I think this is very similar to "__builtin_ctzll", just that its defined at bitboard == 0 https://www.felixcloutier.com/x86/tzcnt.html
-// int bitboard_get_lowest_square(ull bitboard) {
-//     return __builtin_ia32_tzcnt_u64(bitboard);
-// }
-
-
-ull lsb_and_pop(ull& bitboard) {
-    ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
-    bitboard = bitboard & (~lsb_fast);
-    return lsb_fast;
-}
-
-ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) {
-    if (color == ShumiChess::WHITE) {
-        return bitboard << amount;
-    }
-    return bitboard >> amount;
-}
-} // end namespace bit
 
 namespace representation {
 

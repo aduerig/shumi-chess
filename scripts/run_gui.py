@@ -12,9 +12,8 @@ from helpers import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', dest='release', default=True, action='store_false')
-parser.add_argument('--build_tests', dest='build_tests', default=False, action='store_true')
 args = parser.parse_args()
 
-shared_build_code.build_shumi_chess(args.release, args.build_tests)
+shared_build_code.build_shumi_chess(args.release, build_tests=False)
 shared_build_code.build_python_gui_module(args.release)
 shared_build_code.run_python_gui()

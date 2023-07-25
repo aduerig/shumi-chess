@@ -86,39 +86,64 @@ std::unordered_map<int, ull> down_left_diagonals = {
 };
 
 
-std::unordered_map<int, int> square_to_y;
-std::unordered_map<int, int> square_to_x;
+std::array<ull, 64> square_to_y = {};
+std::array<ull, 64> square_to_x = {};
 
+std::array<ull, 65> north_east_square_ray = {};
+std::array<ull, 65> north_west_square_ray = {};
+std::array<ull, 65> south_east_square_ray = {};
+std::array<ull, 65> south_west_square_ray = {};
 
-std::unordered_map<int, ull> north_east_square_ray;
-std::unordered_map<int, ull> north_west_square_ray;
-std::unordered_map<int, ull> south_east_square_ray;
-std::unordered_map<int, ull> south_west_square_ray;
+std::array<ull, 65> north_square_ray = {};
+std::array<ull, 65> south_square_ray = {};
+std::array<ull, 65> east_square_ray = {};
+std::array<ull, 65> west_square_ray = {};
 
 void initialize_rays() {
-    for (int square = 1; square < 65; square++) {
-        square_to_y[square] = (int) (square - 1) / 8;
-        square_to_x[square] = (int) (square - 1) % 8;
+    for (int square = 0; square < 64; square++) {
+        square_to_y[square] = (int) square / 8;
+        square_to_x[square] = (int) square % 8;
     }
 
-    for (int square = 1; square < 65; square++) {
+    for (int square = 0; square < 64; square++) {
         int square_x = square_to_x[square];
         int square_y = square_to_y[square];
         for (int i = 1; i < 8; i++) {
             if (square_x - i >= 0 && square_y + i < 8) {
-                north_east_square_ray[square] |= 1ULL << ((square - 1) + 8*i - i);
+                north_east_square_ray[square] |= 1ULL << (square + 8*i - i);
             }
-            if (square_x + i >= 0 && square_y + i < 8) {
-                north_west_square_ray[square] |= 1ULL << ((square - 1) + 8*i + i);
+            if (square_x + i < 8 && square_y + i < 8) {
+                north_west_square_ray[square] |= 1ULL << (square + 8*i + i);
             }
             if (square_x - i >= 0 && square_y - i >= 0) {
-                south_east_square_ray[square] |= 1ULL << ((square - 1) - 8*i - i);
+                south_east_square_ray[square] |= 1ULL << (square - 8*i - i);
             }
             if (square_x + i < 8 && square_y - i >= 0) {
-                south_west_square_ray[square] |= 1ULL << ((square - 1) - 8*i + i);
+                south_west_square_ray[square] |= 1ULL << (square - 8*i + i);
+            }
+
+            if (square_y + i < 8) {
+                north_square_ray[square] |= 1ULL << (square + 8*i);
+            }
+            if (square_y - i >= 0) {
+                south_square_ray[square] |= 1ULL << (square - 8*i);
+            }
+            if (square_x - i >= 0) {
+                east_square_ray[square] |= 1ULL << (square - i);
+            }
+            if (square_x + i < 8) {
+                west_square_ray[square] |= 1ULL << (square + i);
             }
         }
     }
+    north_east_square_ray[64] = 0ULL;
+    north_west_square_ray[64] = 0ULL;
+    south_east_square_ray[64] = 0ULL;
+    south_west_square_ray[64] = 0ULL;
+    north_square_ray[64] = 0ULL;
+    south_square_ray[64] = 0ULL;
+    east_square_ray[64] = 0ULL;
+    west_square_ray[64] = 0ULL;
 }
 
 std::vector<Piece> promotion_values = {

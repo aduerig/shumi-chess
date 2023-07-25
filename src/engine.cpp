@@ -80,6 +80,7 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 
     // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
     ull straight_attacks_from_king = get_straight_attacks(square);
+    // cout << "diagonal_attacks_from_king: " << square << endl;
     ull diagonal_attacks_from_king = get_diagonal_attacks(square);
     
     ull deadly_diags = game_board.get_pieces_template<Piece::QUEEN>(enemy_color) | game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
@@ -449,6 +450,7 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
         ull single_bishop = utility::bit::lsb_and_pop(bishops);
         ull avail_attacks = get_diagonal_attacks(single_bishop);
 
+
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
         add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP, color, true, false, 0ULL, false, false);
@@ -522,79 +524,61 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     }
 }
 
-// https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html
+// !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
 ull Engine::get_diagonal_attacks(ull bitboard) {
     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-    ull masked_blockers = all_pieces_but_self;
-    
-    ull attacks = 0;
-
-    ull curr = bitboard;
-    // up left
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 9;
-        attacks |= curr;
-    }
-
-    // down left
-    curr = bitboard;
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) >> 7;
-        attacks |= curr;
-    }
+    ull square = utility::bit::bitboard_to_lowest_square(bitboard);
 
     // up right
-    curr = bitboard;
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) << 7;
-        attacks |= curr;
-    }
+    ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
+    int blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_ne);
+    ull ne_attacks = ~north_east_square_ray[blocked_square] & north_east_square_ray[square];
+
+    // up left
+    ull masked_blockers_nw = all_pieces_but_self & north_west_square_ray[square];
+    blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_nw);
+    ull nw_attacks = ~north_west_square_ray[blocked_square] & north_west_square_ray[square];
 
     // down right
-    curr = bitboard;
-    for (int i = 0; i < 7; i++) {
-        curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 9;
-        attacks |= curr;
-    }
-    return attacks;
+    ull masked_blockers_se = all_pieces_but_self & south_east_square_ray[square];
+    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_se);
+    ull se_attacks = ~south_east_square_ray[blocked_square] & south_east_square_ray[square];
+
+    // down left
+    ull masked_blockers_sw = all_pieces_but_self & south_west_square_ray[square];
+    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_sw);
+    ull sw_attacks = ~south_west_square_ray[blocked_square] & south_west_square_ray[square];
+
+    return ne_attacks | nw_attacks | se_attacks | sw_attacks;
 }
 
-// something like this? https://www.chessprogramming.org/Blockers_and_Beyond
-// ull Engine::get_diagonal_attacks_slow(ull bitboard) {
-//     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-//     ull attacks = 0;
-
-//     ull curr = bitboard;
-//     // up left
-//     for (int i = 0; i < 7; i++) {
-//         curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) << 9;
-//         attacks |= curr;
-//     }
-
-//     // down left
-//     curr = bitboard;
-//     for (int i = 0; i < 7; i++) {
-//         curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_A] & ~all_pieces_but_self) >> 7;
-//         attacks |= curr;
-//     }
-
-//     // up right
-//     curr = bitboard;
-//     for (int i = 0; i < 7; i++) {
-//         curr = (curr & ~row_masks[Row::ROW_8] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) << 7;
-//         attacks |= curr;
-//     }
-
-//     // down right
-//     curr = bitboard;
-//     for (int i = 0; i < 7; i++) {
-//         curr = (curr & ~row_masks[Row::ROW_1] & ~col_masks[Col::COL_H] & ~all_pieces_but_self) >> 9;
-//         attacks |= curr;
-//     }
-//     return attacks;
-// }
-
 ull Engine::get_straight_attacks(ull bitboard) {
+    ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+    ull square = utility::bit::bitboard_to_lowest_square(bitboard);
+
+    // north
+    ull masked_blockers_n = all_pieces_but_self & north_square_ray[square];
+    int blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_n);
+    ull n_attacks = ~north_square_ray[blocked_square] & north_square_ray[square];
+
+    // south 
+    ull masked_blockers_s = all_pieces_but_self & south_square_ray[square];
+    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_s);
+    ull s_attacks = ~south_square_ray[blocked_square] & south_square_ray[square];
+
+    // left
+    ull masked_blockers_w = all_pieces_but_self & west_square_ray[square];
+    blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_w);
+    ull w_attacks = ~west_square_ray[blocked_square] & west_square_ray[square];
+
+    // right
+    ull masked_blockers_e = all_pieces_but_self & east_square_ray[square];
+    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_e);
+    ull e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
+    return n_attacks | s_attacks | w_attacks | e_attacks;
+}
+
+ull Engine::get_straight_attacks_slow(ull bitboard) {
     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
     ull attacks = 0;
 

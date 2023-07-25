@@ -42,9 +42,33 @@ inline std::string colorize(AnsiColor color, const std::string& text) {
 
 namespace bit {
 
-ull bitshift_by_color(ull, ShumiChess::Color, int);
-ull lsb_and_pop(ull&);
-int bitboard_to_lowest_square(ull);
+inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) {
+    if (color == ShumiChess::WHITE) {
+        return bitboard << amount;
+    }
+    return bitboard >> amount;
+};
+
+inline ull lsb_and_pop(ull& bitboard) {
+    ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
+    bitboard = bitboard & (~lsb_fast);
+    return lsb_fast;
+};
+
+inline int square_to_bitboard(int square) {
+    return 1ULL << (square - 1);
+};
+
+// both the asm instructions return 64 if bitboard == 0 
+inline int bitboard_to_lowest_square(ull bitboard) {
+    return __builtin_ctzll(bitboard);
+};
+// !TODO is this an instruction? https://www.felixcloutier.com/x86/bsr.html
+// talked about here: https://www.felixcloutier.com/x86/bsr.html
+inline int bitboard_to_highest_square(ull bitboard) {
+    // idk if this is optimal, but it works, from chatgpt tbh
+    return 63 - (__builtin_clzll(bitboard | 1));
+};
 
 } // end namespace bit
 
