@@ -9,10 +9,10 @@ we're back
   * lld: error: unable to find library -lvcruntime140, find out how to fix this...
 
 ### How to run gui
-* Linux
-  * `.\scripts\build_debug_run_gui.sh`
-* Windows
-  * `.\scripts\win_build_debug_run_gui.ps1`
+* `python scripts\run_gui.py`
+
+### How to run tests
+* `python scripts\run_tests.py`
 
 
 ## intro
