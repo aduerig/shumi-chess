@@ -19,13 +19,13 @@ endif()
 message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 
-# -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
-# all the fast flags (Ofast helps but hardly)!
-# set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
 if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
-    add_compile_options(-g)
+    # -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
+    add_compile_options(-g -fno-omit-frame-pointer)
 else()
-    add_compile_options(-O3 -fno-omit-frame-pointer)
+    # all the fast flags (Ofast helps but hardly)!
+    # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
+    add_compile_options(-Ofast)
 endif()
 
 
@@ -54,11 +54,6 @@ if(BUILD_TESTS)
         ${PROJECT_SOURCE_DIR}/googletest_cmake
         ${PROJECT_BINARY_DIR}/googletest
     )
-    # if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
-    #     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    # else()
-    #     set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)    
-    # endif()
     add_subdirectory(tests)
 endif(BUILD_TESTS)
 
@@ -99,6 +94,10 @@ target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 unset(BUILD_TESTS)
 unset(CMAKE_BUILD_TYPE)
+
+
+
+
 
 # cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # errors, prob figure out why
 
@@ -142,3 +141,9 @@ unset(CMAKE_BUILD_TYPE)
 
 # # set(CMAKE_BUILD_TYPE Debug)
 # # set (CMAKE_CXX_STANDARD 17)
+
+# if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
+#     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# else()
+#     set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)    
+# endif()

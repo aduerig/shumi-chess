@@ -1,4 +1,4 @@
-# try: python .\driver\build_c_module_for_python.py build --compiler=mingw32
+# called by: python .\driver\build_c_module_for_python.py build --compiler=mingw32
 
 from setuptools import setup, Extension
 import sys
@@ -13,13 +13,12 @@ from helpers import *
 
 release_mode = 'release'
 if '--release' in sys.argv:
-    del sys.argv[sys.argv.index('--debug')]
+    del sys.argv[sys.argv.index('--release')]
 if '--debug' in sys.argv:
     release_mode = 'debug'
     del sys.argv[sys.argv.index('--debug')]
 
-
-print_cyan(f'{root_of_project_directory=}, {this_file_directory=}')
+print_cyan(f'building with {release_mode=}, {root_of_project_directory=}, {this_file_directory=}')
 
 lib_dir = root_of_project_directory.joinpath('lib')
 extra_link_args = [str(lib_dir.joinpath('libShumiChess.a'))]
@@ -30,7 +29,8 @@ if is_windows():
 
 if release_mode == 'debug':
     extra_compile_args += ['-g', '-O0']
-
+else:
+    extra_compile_args += ['-Ofast']
 
 the_module = Extension(
     'engine_communicator',

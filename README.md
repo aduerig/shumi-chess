@@ -6,7 +6,7 @@ we're back
 * Python
 * IF WINDOWS: 
   * [mingw](https://github.com/niXman/mingw-builds-binaries)
-  * lld: error: unable to find library -lvcruntime140 ([i think you need to install the x86 and x64 from here](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170))
+  * lld: error: unable to find library -lvcruntime140, find out how to fix this...
 
 ### How to run gui
 * Linux
