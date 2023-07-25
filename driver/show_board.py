@@ -42,6 +42,8 @@ def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
     if name_of_ai.lower() == 'random_ai':
         return get_random_move(legal_moves)
     move = engine_communicator.minimax_ai_get_move()
+    # seconds = .5
+    # move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
     return move[0:2], move[2:4]
 
 

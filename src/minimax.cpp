@@ -115,7 +115,8 @@ double MinimaxAI::store_board_values(int depth, int color_multiplier, double alp
 
 
 Move MinimaxAI::get_move_iterative_deepening(double time) {
-    auto required_end_time = std::chrono::high_resolution_clock::now() + time;
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto required_end_time = start_time + std::chrono::duration<double>(time);
 
     nodes_visited = 0;
 
@@ -127,7 +128,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     unordered_map<int, double> board_values;
     int depth = 1;
-    while (std::chrono::high_resolution_clock::now() >= required_end_time) {
+    while (std::chrono::high_resolution_clock::now() <= required_end_time) {
         store_board_values(depth, color_multiplier * -1, -DBL_MAX, DBL_MAX, board_values);        
         depth++;
     }
@@ -138,17 +139,23 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     for (Move& m : top_level_moves) {
         engine.push(m);
-        double score_value = color_multiplier * board_values[engine.game_board.turn];
-        if (score_value > max_move_value) {
-            max_move_value = score_value;
-            move_chosen = m;
+        // !TODO is this the proper way to search an unordered map?
+        if (board_values.find(engine.game_board.turn) != board_values.end()) {
+            // int board_hash = engine.game_board;
+            int board_hash = 0;
+            double score_value = color_multiplier * board_values[board_hash];
+            if (score_value > max_move_value) {
+                max_move_value = score_value;
+                move_chosen = m;
+            }
         }
         engine.pop();
     }
     std::string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
     cout << utility::colorize(utility::AnsiColor::BRIGHT_CYAN, "Minimax AI chose move: for " + color + " player") << endl;
     cout << utility::colorize(utility::AnsiColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "Time taken: " + std::to_string(time) + " s") << endl;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "Time it was supposed to take: " + std::to_string(time) + " s") << endl;
+    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Actual time taken: " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
     return move_chosen;
 }
 

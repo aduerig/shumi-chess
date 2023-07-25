@@ -13,10 +13,8 @@
 
 using namespace std;
 
-// testing functions
 static PyObject*
-engine_communicator_systemcall(PyObject* self, PyObject* args)
-{
+engine_communicator_systemcall(PyObject* self, PyObject* args) {
     const char *command;
     int sts;
 
@@ -29,20 +27,17 @@ engine_communicator_systemcall(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-engine_communicator_print_from_c(PyObject* self, PyObject* args)
-{
+engine_communicator_print_from_c(PyObject* self, PyObject* args) {
     cout << "this is from C" << endl;
     return Py_BuildValue(""); // this is None in Python
 }
 
 
-// ! actual chess functionality
 ShumiChess::Engine python_engine;
 vector<ShumiChess::Move> last_moves;
 
 static PyObject*
-engine_communicator_get_legal_moves(PyObject* self, PyObject* args)
-{
+engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
     vector<ShumiChess::Move> moves = python_engine.get_legal_moves();
     last_moves = moves;
     vector<string> moves_readable;
@@ -63,8 +58,7 @@ engine_communicator_get_legal_moves(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-engine_communicator_get_piece_positions(PyObject* self, PyObject* args)
-{
+engine_communicator_get_piece_positions(PyObject* self, PyObject* args) {
     vector<pair<string, ull>> pieces = {
         make_pair("black_pawn", python_engine.game_board.black_pawns),
         make_pair("black_rook", python_engine.game_board.black_rooks),
@@ -98,8 +92,7 @@ engine_communicator_get_piece_positions(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
-{
+engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     char* from_square_c_str;
     char* to_square_c_str;
 
@@ -123,80 +116,67 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-engine_communicator_pop(PyObject* self, PyObject* args)
-{
+engine_communicator_pop(PyObject* self, PyObject* args) {
     python_engine.pop();
     return Py_BuildValue("");
 }
 
 static PyObject*
-engine_communicator_game_over(PyObject* self, PyObject* args)
-{
+engine_communicator_game_over(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", (int) python_engine.game_over());
 }
 
 static PyObject*
-engine_communicator_reset_engine(PyObject* self, PyObject* args)
-{
+engine_communicator_reset_engine(PyObject* self, PyObject* args) {
     python_engine.reset_engine();
     return Py_BuildValue("");
 }
 
 static PyObject*
-engine_communicator_get_move_number(PyObject* self, PyObject* args)
-{
+engine_communicator_get_move_number(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
 }
 
 
 static PyObject*
-engine_communicator_get_engine(PyObject* self, PyObject* args)
-{
+engine_communicator_get_engine(PyObject* self, PyObject* args) {
     // Create Python capsule with a pointer to the Engine object
     PyObject* engine_capsule = PyCapsule_New((void * ) &python_engine, "engineptr", NULL);
     return engine_capsule;
 }
 
 
-MinimaxAI* minimax_ai = NULL;
-
-// ! actual chess functionality
+MinimaxAI* minimax_ai = new MinimaxAI(python_engine);
 static PyObject*
-minimax_ai_get_move(PyObject* self, PyObject* args)
-{
-    // Get the pointer to Engine object
-    if (minimax_ai == NULL) {
-        minimax_ai = new MinimaxAI(python_engine);
-    }
-
+minimax_ai_get_move(PyObject* self, PyObject* args) {
     ShumiChess::Move gotten_move = minimax_ai->get_move();
     string move_in_acn_notation = utility::representation::move_to_string(gotten_move);
     return Py_BuildValue("s", move_in_acn_notation.c_str());
 }
 
+static PyObject*
+minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
+    double depth;
+    if (!PyArg_ParseTuple(args, "d", &depth))
+        return NULL;
+    ShumiChess::Move gotten_move = minimax_ai->get_move_iterative_deepening(depth);
+    string move_in_acn_notation = utility::representation::move_to_string(gotten_move);
+    return Py_BuildValue("s", move_in_acn_notation.c_str());
+}
+
 static PyMethodDef engine_communicator_methods[] = {
-    {"systemcall",  engine_communicator_systemcall, METH_VARARGS,
-        "Execute a shell command."},
-    {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS,
-        "gets a move minimax"},
-    {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS,
-        "just prints"},
-    {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS,
-        "gets all legal moves"},    
-    {"game_over",  engine_communicator_game_over, METH_VARARGS,
-        "reports the state of the game"},
-    {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS,
-        "gets all piece positions"},
-    {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS,
-        "takes two acn coordinates and makes the move on the board"},
-    {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS,
-        "resets the engine to the begining"},
-    {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS,
-        "gets the current move number"},
-    {"pop",  engine_communicator_pop, METH_VARARGS,
-        "undoes the last move"},
-    {"get_engine",  engine_communicator_get_engine, METH_VARARGS,
-        "just returns the raw engine pointer"},
+    {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
+    {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
+    {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
+    {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
+    {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
+    {"game_over",  engine_communicator_game_over, METH_VARARGS, ""},
+    {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
+    {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
+    {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},
+    {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
+    {"pop",  engine_communicator_pop, METH_VARARGS, ""},
+    {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -210,10 +190,12 @@ static struct PyModuleDef engine_communicatormodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_engine_communicator(void)
-{
+PyInit_engine_communicator(void) {
     return PyModule_Create(&engine_communicatormodule);
 }
+
+
+
 
 // don't need for now, from tutorial
 
