@@ -102,6 +102,29 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     assert(square_counter == 0);
     
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
+
+    // sets zobrist
+    for (int color_int = 0; color_int < 2; color_int++) {
+        Color color = static_cast<Color>(color_int);
+        
+        for (int j = 1; j < 7; j++) {
+            Piece piece = static_cast<Piece>(j);
+            ull bitboard = get_pieces(color, piece);
+            while (bitboard) {
+                int square = utility::bit::lsb_and_pop_to_square(bitboard);
+                zobrist_key ^= zobrist_piece_square[piece + color_int * 6][square];
+            }
+        }
+    }
+
+    // if (st->epSquare != SQ_NONE)
+    //     st->key ^= Zobrist::enpassant[file_of(st->epSquare)];
+
+    if (turn == Color::BLACK) {
+        zobrist_key ^= zobrist_side;
+    }
+
+    // st->key ^= Zobrist::castling[st->castlingRights];
 }
 
 // fields for fen are:

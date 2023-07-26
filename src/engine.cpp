@@ -7,14 +7,15 @@ using namespace std;
 
 namespace ShumiChess {
 Engine::Engine() {
+    reset_engine();
     ShumiChess::initialize_rays();
+    ShumiChess::initialize_zobrist();
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[25]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[25]);
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[28]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[28]);
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[37]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[37]);
-    reset_engine();
 }
 
 //TODO what is right way to handle popping past default state here?
@@ -131,6 +132,11 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
         return GameState::DRAW;
     }
     return GameState::INPROGRESS;
+}
+
+// https://www.chessprogramming.org/Zobrist_Hashing
+void Engine::update_zobrist() {
+    // 
 }
 
 // takes a move, but tracks it so pop() can undo

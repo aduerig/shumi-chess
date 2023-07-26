@@ -7,23 +7,25 @@
 #include <ostream>
 #include <iostream>
 #include <array>
+#include <cstdlib>
+// #include <random>
 
 typedef unsigned long long ull;
 
 namespace ShumiChess {
 enum Color {
-    WHITE,
-    BLACK
+    WHITE = 0,
+    BLACK,
 };
 
 enum Piece {
-    NONE,
+    NONE = 0,
     PAWN,
     ROOK,
     KNIGHT,
     BISHOP,
     QUEEN,
-    KING
+    KING,
 };
 
 // TODO think about if this is the right way to represent
@@ -82,8 +84,12 @@ extern ull a_col;
 extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
 
-extern std::unordered_map<int, ull> down_right_diagonals;
-extern std::unordered_map<int, ull> down_left_diagonals;
+extern int zobrist_piece_square[12][64];
+extern int zobrist_enpassant[8];
+extern int zobrist_castling[16];
+extern int zobrist_side;
+
+void initialize_zobrist();
 
 extern std::array<ull, 64> square_to_y;
 extern std::array<ull, 64> square_to_x;

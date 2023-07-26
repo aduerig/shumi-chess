@@ -44,6 +44,8 @@ class GameBoard {
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
         ull en_passant {0}; 
 
+        int zobrist_key {0};
+
         // move clock
         uint8_t halfmove;
         uint8_t fullmove;
@@ -55,7 +57,7 @@ class GameBoard {
         // Member methods
         const std::string to_fen();
 
-        template <Piece p>  
+        template <Piece p>
         inline ull get_pieces_template() {
             if constexpr (p == Piece::PAWN) { return black_pawns | white_pawns; }
             if constexpr (p == Piece::ROOK) { return black_rooks | white_rooks; }
