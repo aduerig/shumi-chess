@@ -125,6 +125,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     }
 
     // st->key ^= Zobrist::castling[st->castlingRights];
+
 }
 
 // fields for fen are:
