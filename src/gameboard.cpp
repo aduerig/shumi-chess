@@ -108,11 +108,11 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         Color color = static_cast<Color>(color_int);
         
         for (int j = 1; j < 7; j++) {
-            Piece piece = static_cast<Piece>(j);
-            ull bitboard = get_pieces(color, piece);
+            Piece piece_type = static_cast<Piece>(j);
+            ull bitboard = get_pieces(color, piece_type);
             while (bitboard) {
                 int square = utility::bit::lsb_and_pop_to_square(bitboard);
-                zobrist_key ^= zobrist_piece_square[piece + color_int * 6][square];
+                zobrist_key ^= zobrist_piece_square[piece_type + color * 6][square];
             }
         }
     }
@@ -125,7 +125,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     }
 
     // st->key ^= Zobrist::castling[st->castlingRights];
-
 }
 
 // fields for fen are:

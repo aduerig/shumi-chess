@@ -144,6 +144,9 @@ void Engine::push(const Move& move) {
     move_history.push(move);
 
     this->game_board.turn = utility::representation::get_opposite_color(move.color);
+    if (this->game_board.turn) {
+        game_board.zobrist_key ^= zobrist_side;
+    }
 
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
     this->halfway_move_state.push(this->game_board.halfmove);
@@ -155,21 +158,32 @@ void Engine::push(const Move& move) {
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.from;
 
+    int square_from = utility::bit::bitboard_to_lowest_square(move.from);
+    int square_to = utility::bit::bitboard_to_lowest_square(move.to);
+
+    game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
+
     if (move.promotion == Piece::NONE) {
         moving_piece |= move.to;
+        game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
     }
     else {
         access_piece_of_color(move.promotion, move.color) |= move.to;
+        game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }
     if (move.capture != Piece::NONE) {
         this->game_board.halfmove = 0;
-        if (!move.is_en_passent_capture) {
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
-        } else {
+        if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
+            int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][target_pawn_square];
+        } else {
+            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][square_to];
         }
-    } else if (move.is_castle_move) {  
+    } else if (move.is_castle_move) {
+        // !TODO zobrist update for castling
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
@@ -193,6 +207,7 @@ void Engine::push(const Move& move) {
     }
 
     this->en_passant_history.push(this->game_board.en_passant);
+    // !TODO zobrist update for en_passant
     this->game_board.en_passant = move.en_passant;
     
     uint8_t castle_opp = (this->game_board.black_castle << 2) | this->game_board.white_castle;
