@@ -33,7 +33,7 @@ GameBoard::GameBoard() :
 }
 
 GameBoard::GameBoard(const std::string& fen_notation) {
-    const std::vector<std::string> fen_components = utility::string::split(fen_notation);
+    const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
     
     assert(fen_components.size() == 6);
     assert(fen_components[1].size() == 1);
@@ -137,7 +137,7 @@ void GameBoard::set_zobrist() {
 
 // fields for fen are:
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
-const std::string GameBoard::to_fen() {
+const string GameBoard::to_fen() {
     vector<string> fen_components;
 
     unordered_map<ull, char> piece_to_letter = {
@@ -177,7 +177,7 @@ const std::string GameBoard::to_fen() {
         }
         piece_positions.push_back(poses);
     }
-    fen_components.push_back(utility::string::join(piece_positions, "/"));
+    fen_components.push_back(utility::our_string::join(piece_positions, "/"));
 
     // current turn
     string color_rep = "w";
@@ -219,7 +219,7 @@ const std::string GameBoard::to_fen() {
     fen_components.push_back(to_string(fullmove));
 
     // returns string joined by spaces
-    return utility::string::join(fen_components, " ");
+    return utility::our_string::join(fen_components, " ");
 }
 
 

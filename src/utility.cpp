@@ -139,7 +139,7 @@ std::string square_to_position_string(ull square) {
 
 } // end namespace representation
 
-namespace string {
+namespace our_string {
 
 std::vector<std::string> split(const std::string& str, const std::string& delimiter) {
     std::string::size_type curr_pos = 0;

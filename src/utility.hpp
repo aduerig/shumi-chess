@@ -17,7 +17,7 @@ using namespace std;
 
 namespace utility {
 
-enum class AnsiColor {
+enum class AColor {
     RESET = 0,
     RED = 31,
     GREEN = 32,
@@ -36,7 +36,7 @@ enum class AnsiColor {
     BRIGHT_WHITE = 97
 };
 
-inline std::string colorize(AnsiColor color, const std::string& text) {
+inline std::string colorize(AColor color, const std::string& text) {
     return "\033[1;" + std::to_string(static_cast<int>(color)) + "m" + text + "\033[0m";
 }
 
@@ -95,7 +95,7 @@ std::string square_to_position_string(ull);
 } // end namespace representation
 
 // ? should we really clash in namespace name here
-namespace string {
+namespace our_string {
 
 // Split an input string according to some string delimiter.
 // Uses space by default. 

@@ -9,6 +9,9 @@
 
 using namespace std;
 using namespace ShumiChess;
+using namespace utility;
+using namespace utility::representation;
+using namespace utility::bit;
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { }
 
@@ -19,20 +22,20 @@ int MinimaxAI::evaluate_board() {
 
 int MinimaxAI::bits_in(ull bitboard)
 {
-    auto bs = std::bitset<64>(bitboard);
+    auto bs = bitset<64>(bitboard);
     return (int) bs.count();
 }
 
 template<class T>
-std::string format_with_commas(T value) {
-    std::stringstream ss;
-    ss.imbue(std::locale(""));
-    ss << std::fixed << value;
+string format_with_commas(T value) {
+    stringstream ss;
+    ss.imbue(locale(""));
+    ss << fixed << value;
     return ss.str();
 }
 
 int MinimaxAI::evaluate_board(Color color) {
-    Color opposite_turn = utility::representation::get_opposite_color(color);
+    Color opposite_turn = get_opposite_color(color);
 
     piece_and_values = {
         {engine.game_board.get_pieces_template<Piece::PAWN>(color), 1},
@@ -61,46 +64,46 @@ int MinimaxAI::evaluate_board(Color color) {
 
 
 
-double MinimaxAI::store_board_values(int depth, ShumiChess::Color color, double alpha, double beta, unordered_map<int, std::vector<tuple<Move, int>>> &board_values) {
+double MinimaxAI::store_board_values(int depth, Color color, double alpha, double beta, unordered_map<int, vector<tuple<Move, int>>> &board_values) {
     int starting_zobrist_key = engine.game_board.zobrist_key;
 
     nodes_visited++;
-    vector<ShumiChess::Move> moves = engine.get_legal_moves();
-    ShumiChess::GameState state = engine.game_over(moves);
+    vector<Move> moves = engine.get_legal_moves();
+    GameState state = engine.game_over(moves);
     
-    if (state == ShumiChess::GameState::BLACKWIN) {
+    if (state == GameState::BLACKWIN) {
         return -DBL_MAX + 1;
     }
-    else if (state == ShumiChess::GameState::WHITEWIN) {
+    else if (state == GameState::WHITEWIN) {
         return DBL_MAX - 1;
 
     }
-    else if (state == ShumiChess::GameState::DRAW) {
+    else if (state == GameState::DRAW) {
         return 0;
     }
     
     if (depth == 0) {
-        return evaluate_board(ShumiChess::WHITE);
+        return evaluate_board(WHITE);
     }
 
-    if (color == ShumiChess::Color::WHITE) {  // Maximizing player
+    if (color == Color::WHITE) {  // Maximizing player
         double max_move_value = -DBL_MAX;
         for (Move& m : moves) {
             // cout << "before" << endl;
-            // utility::representation::print_gameboard(engine.game_board);
+            // print_gameboard(engine.game_board);
             engine.push(m);
             // cout << "after" << endl;
-            // utility::representation::print_gameboard(engine.game_board);
-            double score_value = store_board_values(depth - 1, ShumiChess::Color::BLACK, alpha, beta, board_values);
+            // print_gameboard(engine.game_board);
+            double score_value = store_board_values(depth - 1, Color::BLACK, alpha, beta, board_values);
             engine.pop();
-            board_values[engine.game_board.zobrist_key].push_back(std::make_tuple(m, score_value));
+            board_values[engine.game_board.zobrist_key].push_back(make_tuple(m, score_value));
             if (engine.game_board.zobrist_key != starting_zobrist_key) {
-                utility::representation::print_gameboard(engine.game_board);
-                cout << "zobrist key doesn't match for: " << utility::representation::move_to_string(m) << endl;
+                print_gameboard(engine.game_board);
+                cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
                 exit(1);
             }
-            max_move_value = std::max(max_move_value, score_value);
-            alpha = std::max(alpha, max_move_value);
+            max_move_value = max(max_move_value, score_value);
+            alpha = max(alpha, max_move_value);
             if (beta <= alpha) {
                 break; // beta cut-off
             }
@@ -110,20 +113,20 @@ double MinimaxAI::store_board_values(int depth, ShumiChess::Color color, double 
         double min_move_value = DBL_MAX;
         for (Move& m : moves) {
             // cout << "before" << endl;
-            // utility::representation::print_gameboard(engine.game_board);
+            // print_gameboard(engine.game_board);
             engine.push(m);
             // cout << "after" << endl;
-            // utility::representation::print_gameboard(engine.game_board);
-            double score_value = store_board_values(depth - 1, ShumiChess::Color::WHITE, alpha, beta, board_values);
+            // print_gameboard(engine.game_board);
+            double score_value = store_board_values(depth - 1, Color::WHITE, alpha, beta, board_values);
             engine.pop();
-            board_values[engine.game_board.zobrist_key].push_back(std::make_tuple(m, score_value));
+            board_values[engine.game_board.zobrist_key].push_back(make_tuple(m, score_value));
             if (engine.game_board.zobrist_key != starting_zobrist_key) {
-                utility::representation::print_gameboard(engine.game_board);
-                cout << "zobrist key doesn't match for: " << utility::representation::move_to_string(m) << endl;
+                print_gameboard(engine.game_board);
+                cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
                 exit(1);
             }
-            min_move_value = std::min(min_move_value, score_value);
-            beta = std::min(beta, min_move_value);
+            min_move_value = min(min_move_value, score_value);
+            beta = min(beta, min_move_value);
             if (beta <= alpha) {
                 break; // alpha cut-off
             }
@@ -137,8 +140,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     int zobrist_key_start = engine.game_board.zobrist_key;
     cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
 
-    auto start_time = std::chrono::high_resolution_clock::now();
-    auto required_end_time = start_time + std::chrono::duration<double>(time);
+    auto start_time = chrono::high_resolution_clock::now();
+    auto required_end_time = start_time + chrono::duration<double>(time);
 
     nodes_visited = 0;
 
@@ -148,14 +151,14 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         color_multiplier = -1;
     }
 
-    unordered_map<int, std::vector<tuple<Move, int>>> board_values;
+    unordered_map<int, vector<tuple<Move, int>>> board_values;
     int depth = 1;
-    while (std::chrono::high_resolution_clock::now() <= required_end_time) {
+    while (chrono::high_resolution_clock::now() <= required_end_time) {
         store_board_values(depth, engine.game_board.turn, -DBL_MAX, DBL_MAX, board_values);        
         depth++;
     }
 
-    vector<ShumiChess::Move> top_level_moves = engine.get_legal_moves();
+    vector<Move> top_level_moves = engine.get_legal_moves();
     Move move_chosen = top_level_moves[0];
     double max_move_value = -DBL_MAX;
 
@@ -171,7 +174,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     for (auto move_and_value : stored_move_values) {
         Move m;
         double score_value;
-        std::tie(m, score_value) = move_and_value;
+        tie(m, score_value) = move_and_value;
         score_value *= color_multiplier;
         if (score_value > max_move_value) {
             max_move_value = score_value;
@@ -182,22 +185,22 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     for (Move& m : top_level_moves) {
         bool found = false;
         for (auto move_and_value : stored_move_values) {
-            Move move_with_val = std::get<0>(move_and_value);
-            if (utility::representation::move_to_string(move_with_val) == utility::representation::move_to_string(m)) {
+            Move move_with_val = get<0>(move_and_value);
+            if (move_to_string(move_with_val) == move_to_string(m)) {
                 found = true;
                 break;
             }
         }
         if (!found) {
-            std::cout << "did not find move " << utility::representation::move_to_string(m) << " in the stored moves. this is probably bad" << endl;
+            cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
             exit(1);
         }
     }
-    std::string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + std::to_string(max_move_value)) << endl;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "Time it was supposed to take: " + std::to_string(time) + " s") << endl;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Actual time taken: " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
+    string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
+    cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + to_string(max_move_value)) << endl;
+    cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
+    cout << colorize(AColor::BRIGHT_BLUE, "Time it was supposed to take: " + to_string(time) + " s") << endl;
+    cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
     cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
     return move_chosen;
 }
@@ -206,16 +209,16 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 // === straight forward minimax below ===
 double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, double beta) {
     nodes_visited++;
-    vector<ShumiChess::Move> moves = engine.get_legal_moves();
-    ShumiChess::GameState state = engine.game_over(moves);
+    vector<Move> moves = engine.get_legal_moves();
+    GameState state = engine.game_over(moves);
     
-    if (state == ShumiChess::GameState::BLACKWIN) {
+    if (state == GameState::BLACKWIN) {
         return (-DBL_MAX + 1) * (color_multiplier);
     }
-    else if (state == ShumiChess::GameState::WHITEWIN) {
+    else if (state == GameState::WHITEWIN) {
         return (DBL_MAX - 1) * (color_multiplier);
     }
-    else if (state == ShumiChess::GameState::DRAW) {
+    else if (state == GameState::DRAW) {
         return 0;
     }
     
@@ -233,8 +236,8 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
             engine.push(m);
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
             engine.pop();
-            max_move_value = std::max(max_move_value, score_value);
-            alpha = std::max(alpha, max_move_value);
+            max_move_value = max(max_move_value, score_value);
+            alpha = max(alpha, max_move_value);
             if (beta <= alpha) {
                 break; // beta cut-off
             }
@@ -246,8 +249,8 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
             engine.push(m);
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
             engine.pop();
-            min_move_value = std::min(min_move_value, score_value);
-            beta = std::min(beta, min_move_value);
+            min_move_value = min(min_move_value, score_value);
+            beta = min(beta, min_move_value);
             if (beta <= alpha) {
                 break; // alpha cut-off
             }
@@ -257,7 +260,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
 }
 
 Move MinimaxAI::get_move(int depth) {
-    auto start_time = std::chrono::high_resolution_clock::now();
+    auto start_time = chrono::high_resolution_clock::now();
 
     nodes_visited = 0;
 
@@ -268,7 +271,7 @@ Move MinimaxAI::get_move(int depth) {
 
     Move move_chosen;
     double max_move_value = -DBL_MAX;
-    vector<ShumiChess::Move> moves = engine.get_legal_moves();
+    vector<Move> moves = engine.get_legal_moves();
     for (Move& m : moves) {
         engine.push(m);
         double score_value = get_value(depth - 1, color_multiplier * -1, -DBL_MAX, DBL_MAX);
@@ -279,19 +282,19 @@ Move MinimaxAI::get_move(int depth) {
         engine.pop();
     }
     
-    std::string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_CYAN, "Minimax AI get_move chose move: for " + color + " player") << endl;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
+    string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
+    cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move chose move: for " + color + " player") << endl;
+    cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
 
-    std::chrono::duration<double> total_time = std::chrono::high_resolution_clock::now() - start_time;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Total time taken for get_move(): " + std::to_string(total_time.count()) + " s") << endl;
+    chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time;
+    cout << colorize(AColor::BRIGHT_GREEN, "Total time taken for get_move(): " + to_string(total_time.count()) + " s") << endl;
 
     return move_chosen;
 }
 
 Move MinimaxAI::get_move() {
     int default_depth = 7;
-    cout << utility::colorize(utility::AnsiColor::BRIGHT_GREEN, "Called MinimaxAI::get_move() with no arguments, using default depth: " + std::to_string(default_depth)) << endl;
+    cout << colorize(AColor::BRIGHT_GREEN, "Called MinimaxAI::get_move() with no arguments, using default depth: " + to_string(default_depth)) << endl;
     return get_move(default_depth);
 }
 
@@ -300,16 +303,16 @@ Move MinimaxAI::get_move() {
 // double MinimaxAI::get_value(int depth, int color_multiplier, double white_highest_val, double black_highest_val) {
 //     // if the gamestate is over
 //     nodes_visited++;
-//     vector<ShumiChess::Move> moves = engine.get_legal_moves();
-//     ShumiChess::GameState state = engine.game_over(moves);
+//     vector<Move> moves = engine.get_legal_moves();
+//     GameState state = engine.game_over(moves);
 
-//     if (state == ShumiChess::GameState::BLACKWIN) {
+//     if (state == GameState::BLACKWIN) {
 //         return ((-DBL_MAX) + 1) * (color_multiplier);
 //     }
-//     else if (state == ShumiChess::GameState::WHITEWIN) {
+//     else if (state == GameState::WHITEWIN) {
 //         return (DBL_MAX - 1) * (color_multiplier);
 //     }
-//     else if (state == ShumiChess::GameState::DRAW) {
+//     else if (state == GameState::DRAW) {
 //         return 0;
 //     }
     

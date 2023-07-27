@@ -10,7 +10,7 @@ using namespace std;
 
 int main()
 {
-    auto val = utility::string::split("fishorbanana", "or");
+    auto val = utility::our_string::split("fishorbanana", "or");
     for (auto x : val) {
         cout << x << endl;
     }
