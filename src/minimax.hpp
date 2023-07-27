@@ -28,7 +28,7 @@ public:
     int evaluate_board();
     int evaluate_board(ShumiChess::Color);
 
-    double store_board_values(int, int, double, double, unordered_map<int, double>);
+    double store_board_values(int depth, ShumiChess::Color color, double alpha, double beta, unordered_map<int, double> &board_values);
     ShumiChess::Move get_move_iterative_deepening(double);
 
     double get_value(int, int, double, double);

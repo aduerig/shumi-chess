@@ -43,6 +43,7 @@ int zobrist_side;
 // Eight numbers to indicate the file of a valid En passant square, if any
 // This leaves us with an array with 793 (12*64 + 1 + 16 + 8)
 void initialize_zobrist() {
+    srand(69);
     for (int i = 0; i < 12; i++) {
         for (int j = 0; j < 64; j++) {
             zobrist_piece_square[i][j] = std::rand();

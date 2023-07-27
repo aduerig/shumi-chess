@@ -215,7 +215,6 @@ void Engine::pop() {
 
     game_board.zobrist_key ^= zobrist_side;
 
-
     this->game_board.turn = move.color;
 
     this->game_board.fullmove -= static_cast<int>(move.color == ShumiChess::Color::BLACK);
@@ -229,10 +228,12 @@ void Engine::pop() {
     moving_piece &= ~move.to;
     moving_piece |= move.from;
 
-    game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
 
-    if (move.promotion != Piece::NONE) {
+    if (move.promotion == Piece::NONE) {
+        game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
+    }
+    else {
         access_piece_of_color(move.promotion, move.color) &= ~move.to;
         game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }

@@ -22,7 +22,8 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * https://github.com/aduerig/chess-ai
 
 ## todo
-* zobrist hashing not implemented for enpassant or castling. it might not be set correctly for turn stuff either.
+* zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
+* I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.
