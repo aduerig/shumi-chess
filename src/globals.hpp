@@ -19,13 +19,13 @@ enum Color {
 };
 
 enum Piece {
-    NONE = 0,
-    PAWN,
+    PAWN = 0,
     ROOK,
     KNIGHT,
     BISHOP,
     QUEEN,
     KING,
+    NONE,
 };
 
 // TODO think about if this is the right way to represent

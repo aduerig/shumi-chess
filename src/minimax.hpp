@@ -5,8 +5,7 @@
 #include <utility.hpp>
 
 class RandomAI {
-    public:
-
+public:
     ShumiChess::Engine engine;
     unordered_map<ull, int> piece_and_values;
 
@@ -17,8 +16,7 @@ class RandomAI {
 
 
 class MinimaxAI {
-    public:
-
+public:
     int nodes_visited = 0;
 
     ShumiChess::Engine& engine;

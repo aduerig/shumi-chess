@@ -33,8 +33,6 @@ class Engine {
         // Member methods
         void reset_engine();
 
-        void update_zobrist();
-
         void push(const Move&);
         void pop();
         GameState game_over();

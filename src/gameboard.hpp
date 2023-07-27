@@ -57,6 +57,8 @@ class GameBoard {
         // Member methods
         const std::string to_fen();
 
+        void set_zobrist();
+
         template <Piece p>
         inline ull get_pieces_template() {
             if constexpr (p == Piece::PAWN) { return black_pawns | white_pawns; }

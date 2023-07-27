@@ -26,6 +26,10 @@ GameBoard::GameBoard() :
     en_passant(0),
     halfmove(0),
     fullmove(1) {
+    // !TODO doesn't belong here i don't think
+    ShumiChess::initialize_zobrist();
+    set_zobrist();
+    cout << "GameBoard() constructor being run" << endl;
 }
 
 GameBoard::GameBoard(const std::string& fen_notation) {
@@ -102,12 +106,15 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     assert(square_counter == 0);
     
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
+    ShumiChess::initialize_zobrist();
+    set_zobrist();
+}
 
-    // sets zobrist
+void GameBoard::set_zobrist() {
+    cout << "GameBoard::setting zobrist..." << endl;
     for (int color_int = 0; color_int < 2; color_int++) {
         Color color = static_cast<Color>(color_int);
-        
-        for (int j = 1; j < 7; j++) {
+        for (int j = 0; j < 6; j++) {
             Piece piece_type = static_cast<Piece>(j);
             ull bitboard = get_pieces(color, piece_type);
             while (bitboard) {
@@ -124,6 +131,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         zobrist_key ^= zobrist_side;
     }
 
+    cout << "zobrist key starts at: " << zobrist_key << endl;
     // st->key ^= Zobrist::castling[st->castlingRights];
 }
 

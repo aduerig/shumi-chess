@@ -148,13 +148,17 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     for (Move& m : top_level_moves) {
         engine.push(m);
-        // !TODO is this the proper way to search an unordered map?
         if (board_values.find(engine.game_board.turn) != board_values.end()) {
             double score_value = color_multiplier * board_values[engine.game_board.zobrist_key];
+            cout << "Color is " << (engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE");
+            cout << "Move is: " << utility::representation::move_to_string(m) << endl;
             if (score_value > max_move_value) {
                 max_move_value = score_value;
                 move_chosen = m;
             }
+        }
+        else {
+            cout << "ERROR: zobrist_key for move " << utility::representation::move_to_string(m) << " not found in board_values" << endl;
         }
         engine.pop();
     }

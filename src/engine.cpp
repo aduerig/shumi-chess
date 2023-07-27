@@ -9,7 +9,6 @@ namespace ShumiChess {
 Engine::Engine() {
     reset_engine();
     ShumiChess::initialize_rays();
-    ShumiChess::initialize_zobrist();
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[25]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[25]);
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[28]") << endl;
@@ -134,19 +133,12 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
     return GameState::INPROGRESS;
 }
 
-// https://www.chessprogramming.org/Zobrist_Hashing
-void Engine::update_zobrist() {
-    // 
-}
-
 // takes a move, but tracks it so pop() can undo
 void Engine::push(const Move& move) {
     move_history.push(move);
 
     this->game_board.turn = utility::representation::get_opposite_color(move.color);
-    if (this->game_board.turn) {
-        game_board.zobrist_key ^= zobrist_side;
-    }
+    game_board.zobrist_key ^= zobrist_side;
 
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
     this->halfway_move_state.push(this->game_board.halfmove);
@@ -221,24 +213,38 @@ void Engine::pop() {
     const Move move = this->move_history.top();
     this->move_history.pop();
 
+    game_board.zobrist_key ^= zobrist_side;
+
+
     this->game_board.turn = move.color;
 
     this->game_board.fullmove -= static_cast<int>(move.color == ShumiChess::Color::BLACK);
     this->game_board.halfmove = this->halfway_move_state.top();
     this->halfway_move_state.pop();
 
+    int square_from = utility::bit::bitboard_to_lowest_square(move.from);
+    int square_to = utility::bit::bitboard_to_lowest_square(move.to);
+
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.to;
     moving_piece |= move.from;
+
+    game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
+    game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
+
     if (move.promotion != Piece::NONE) {
         access_piece_of_color(move.promotion, move.color) &= ~move.to;
+        game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }
     if (move.capture != Piece::NONE) {
-        if (!move.is_en_passent_capture) {
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= move.to;
-        } else {
+        if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
+            int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][target_pawn_square];
             access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= target_pawn_bitboard;
+        } else {
+            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= move.to;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
