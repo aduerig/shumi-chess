@@ -6,6 +6,8 @@
 #include "gameboard.hpp"
 #include "utility.hpp"
 
+using namespace std;
+
 namespace ShumiChess {
 GameBoard::GameBoard() : 
     black_pawns(0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
@@ -32,8 +34,8 @@ GameBoard::GameBoard() :
     cout << "GameBoard() constructor being run" << endl;
 }
 
-GameBoard::GameBoard(const std::string& fen_notation) {
-    const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
+GameBoard::GameBoard(const string& fen_notation) {
+    const vector<string> fen_components = utility::our_string::split(fen_notation);
     
     assert(fen_components.size() == 6);
     assert(fen_components[1].size() == 1);
@@ -100,8 +102,8 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         this->en_passant = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
     }
 
-    this->halfmove = std::stoi(fen_components[4]);
-    this->fullmove = std::stoi(fen_components[5]);
+    this->halfmove = stoi(fen_components[4]);
+    this->fullmove = stoi(fen_components[5]);
 
     assert(square_counter == 0);
     

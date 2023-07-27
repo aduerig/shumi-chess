@@ -7,6 +7,7 @@
 #include <utility.hpp>
 
 using namespace std;
+using namespace ShumiChess;
 
 int main()
 {
@@ -19,11 +20,6 @@ int main()
 
     int num_legal_moves = test_engine.get_legal_moves().size(); 
     cout << "number of legal moves turn one: " << num_legal_moves << endl;
-
-    for (auto pair : ShumiChess::down_right_diagonals) {
-        cout << pair.first << endl;
-        utility::representation::print_bitboard(pair.second);
-    }
 
     return 0;
 }

@@ -27,7 +27,7 @@ void Engine::reset_engine() {
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
-    std::stack<ull> en_passant_history;
+    stack<ull> en_passant_history;
     en_passant_history.push(0);
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
@@ -283,28 +283,28 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
     switch (piece)
     {
     case Piece::PAWN:
-        if (color) {return std::ref(this->game_board.black_pawns);}
-        else {return std::ref(this->game_board.white_pawns);}
+        if (color) {return ref(this->game_board.black_pawns);}
+        else {return ref(this->game_board.white_pawns);}
         break;
     case Piece::ROOK:
-        if (color) {return std::ref(this->game_board.black_rooks);}
-        else {return std::ref(this->game_board.white_rooks);}
+        if (color) {return ref(this->game_board.black_rooks);}
+        else {return ref(this->game_board.white_rooks);}
         break;
     case Piece::KNIGHT:
-        if (color) {return std::ref(this->game_board.black_knights);}
-        else {return std::ref(this->game_board.white_knights);}
+        if (color) {return ref(this->game_board.black_knights);}
+        else {return ref(this->game_board.white_knights);}
         break;
     case Piece::BISHOP:
-        if (color) {return std::ref(this->game_board.black_bishops);}
-        else {return std::ref(this->game_board.white_bishops);}
+        if (color) {return ref(this->game_board.black_bishops);}
+        else {return ref(this->game_board.white_bishops);}
         break;
     case Piece::QUEEN:
-        if (color) {return std::ref(this->game_board.black_queens);}
-        else {return std::ref(this->game_board.white_queens);}
+        if (color) {return ref(this->game_board.black_queens);}
+        else {return ref(this->game_board.white_queens);}
         break;
     case Piece::KING:
-        if (color) {return std::ref(this->game_board.black_king);}
-        else {return std::ref(this->game_board.white_king);}
+        if (color) {return ref(this->game_board.black_king);}
+        else {return ref(this->game_board.white_king);}
         break;
     }
     // TODO remove this, i'm just putting it here because it prevents a warning
