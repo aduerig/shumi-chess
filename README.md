@@ -81,3 +81,89 @@ https://gist.github.com/elliotchance/8215283
 * gprof (line by line)
   * add `-pg` to complilation, and -l
   * `gprof -l ./my_program > analysis.txt`
+
+
+
+# laser
+
+example websocket requests
+```
+SEND (periodically, looks like every 9s): {
+  "messageType":"ping"
+}
+
+SEND: {
+  "messageType":"games"
+}
+
+GET (x2): {
+  "status":"games","data":{"games":[],"nConnections":4}
+}
+
+GET: {
+  "status": "games",
+  "data": {
+    "games": [
+      {
+        "fen": "7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7 b - - 0 1",
+        "turn": "b",
+        "times": [180000, 180000],
+        "increments": [0, 0],
+        "lastMoveTime": null,
+        "name": [null, "idk"],
+        "allFens": { "7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7": 1 },
+        "id": "Y6FiSixi56az-oi57EZGH"
+      }
+    ],
+    "nConnections": 4
+  }
+}
+
+SEND: {
+  "messageType":"join","data":{"id":"Y6FiSixi56az-oi57EZGH","name":"lmfao"}
+}
+
+GET: {
+  "status": "joined",
+  "data": {
+    "fen": "7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7 b - - 0 1",
+    "key": "C28LgQd9apnQ0sP7JGToP",
+    "id": "Y6FiSixi56az-oi57EZGH",
+    "names": ["lmfao", "idk"],
+    "times": [180000, 180000],
+    "index": 0,
+    "color": "w"
+  }
+}
+
+GET: {
+  "status":"moved","data":{"times":[180000,156899],"move":["f5","e4"],"winner":null}
+}
+
+SEND: {
+  "messageType":"move","data":{"key":"C28LgQd9apnQ0sP7JGToP","id":"Y6FiSixi56az-oi57EZGH","name":"lmfao","fen":"7q/4pnk1/4prn1/3P2p1/1P2p3/1NRP4/1KNP4/Q7 b - - 0 1","move":["c4","d5"]}
+}
+
+GET: {
+  "status":"moved","data":{"times":[179901,156899],"move":["c4","d5"],"winner":null}
+}
+
+GET: {
+  "status":"gameOver","data":{"winner":"w","times":[179901,0]}
+}
+```
+
+
+TO CREATE GAME:
+
+```
+SEND: {"messageType":"create","data":{"fen":"7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7 b - - 0 1","turn":"b","times":[180000,180000],"increments":[0,0],"color":"b","name":"lmfao"}}
+
+GET: {"status":"created","data":{"key":"8p2Lt1nEgcwclSeWQ2XQQ","id":"j2CENKH6XNcmUDtu72VTS"}}
+GET: {"status":"games","data":{"games":[{"fen":"7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7 b - - 0 1","turn":"b","times":[180000,180000],"increments":[0,0],"lastMoveTime":null,"name":[null,"lmfao"],"allFens":{"7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7":1},"id":"j2CENKH6XNcmUDtu72VTS"}],"nConnections":3}}
+
+someone joins
+
+GET: {"status":"joined","data":{"fen":"7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7 b - - 0 1","key":"8p2Lt1nEgcwclSeWQ2XQQ","id":"j2CENKH6XNcmUDtu72VTS","names":["idk","lmfao"],"times":[180000,180000],"index":1,"color":"b"}}
+GET: {"status":"games","data":{"games":[],"nConnections":3}}
+```
