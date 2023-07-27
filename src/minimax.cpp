@@ -190,6 +190,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         }
         if (!found) {
             std::cout << "did not find move " << utility::representation::move_to_string(m) << " in the stored moves. this is probably bad" << endl;
+            exit(1);
         }
     }
     std::string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
