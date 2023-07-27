@@ -61,7 +61,7 @@ int MinimaxAI::evaluate_board(Color color) {
 
 
 
-double MinimaxAI::store_board_values(int depth, ShumiChess::Color color, double alpha, double beta, unordered_map<int, double> &board_values) {
+double MinimaxAI::store_board_values(int depth, ShumiChess::Color color, double alpha, double beta, unordered_map<int, std::vector<tuple<Move, int>>> &board_values) {
     int starting_zobrist_key = engine.game_board.zobrist_key;
 
     nodes_visited++;
@@ -69,22 +69,18 @@ double MinimaxAI::store_board_values(int depth, ShumiChess::Color color, double 
     ShumiChess::GameState state = engine.game_over(moves);
     
     if (state == ShumiChess::GameState::BLACKWIN) {
-        board_values[engine.game_board.zobrist_key] = (-DBL_MAX + 1);
-        return board_values[engine.game_board.zobrist_key];
+        return -DBL_MAX + 1;
     }
     else if (state == ShumiChess::GameState::WHITEWIN) {
-        board_values[engine.game_board.zobrist_key] = (DBL_MAX - 1);
-        return board_values[engine.game_board.zobrist_key];
+        return DBL_MAX - 1;
 
     }
     else if (state == ShumiChess::GameState::DRAW) {
-        board_values[engine.game_board.zobrist_key] = 0;
-        return board_values[engine.game_board.zobrist_key];
+        return 0;
     }
     
     if (depth == 0) {
-        board_values[engine.game_board.zobrist_key] = evaluate_board(ShumiChess::WHITE);
-        return board_values[engine.game_board.zobrist_key];
+        return evaluate_board(ShumiChess::WHITE);
     }
 
     if (color == ShumiChess::Color::WHITE) {  // Maximizing player
@@ -95,10 +91,9 @@ double MinimaxAI::store_board_values(int depth, ShumiChess::Color color, double 
             engine.push(m);
             // cout << "after" << endl;
             // utility::representation::print_gameboard(engine.game_board);
-
             double score_value = store_board_values(depth - 1, ShumiChess::Color::BLACK, alpha, beta, board_values);
-            board_values[engine.game_board.zobrist_key] = score_value;
             engine.pop();
+            board_values[engine.game_board.zobrist_key].push_back(std::make_tuple(m, score_value));
             if (engine.game_board.zobrist_key != starting_zobrist_key) {
                 utility::representation::print_gameboard(engine.game_board);
                 cout << "zobrist key doesn't match for: " << utility::representation::move_to_string(m) << endl;
@@ -119,10 +114,9 @@ double MinimaxAI::store_board_values(int depth, ShumiChess::Color color, double 
             engine.push(m);
             // cout << "after" << endl;
             // utility::representation::print_gameboard(engine.game_board);
-
             double score_value = store_board_values(depth - 1, ShumiChess::Color::WHITE, alpha, beta, board_values);
-            board_values[engine.game_board.zobrist_key] = score_value;
             engine.pop();
+            board_values[engine.game_board.zobrist_key].push_back(std::make_tuple(m, score_value));
             if (engine.game_board.zobrist_key != starting_zobrist_key) {
                 utility::representation::print_gameboard(engine.game_board);
                 cout << "zobrist key doesn't match for: " << utility::representation::move_to_string(m) << endl;
@@ -154,7 +148,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         color_multiplier = -1;
     }
 
-    unordered_map<int, double> board_values;
+    unordered_map<int, std::vector<tuple<Move, int>>> board_values;
     int depth = 1;
     while (std::chrono::high_resolution_clock::now() <= required_end_time) {
         store_board_values(depth, engine.game_board.turn, -DBL_MAX, DBL_MAX, board_values);        
@@ -167,21 +161,36 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     cout << "Went to depth " << depth - 1 << endl;
     cout << "Found " << board_values.size() << " items inside of board_values" << endl;
+
+    if (board_values.find(engine.game_board.zobrist_key) == board_values.end()) {
+        cout << "Did not find zobrist key in board_values, this is bad" << endl;
+        exit(1);
+    }
+
+    auto stored_move_values = board_values[engine.game_board.zobrist_key];
+    for (auto move_and_value : stored_move_values) {
+        Move m;
+        double score_value;
+        std::tie(m, score_value) = move_and_value;
+        score_value *= color_multiplier;
+        if (score_value > max_move_value) {
+            max_move_value = score_value;
+            move_chosen = m;
+        }
+    }
+
     for (Move& m : top_level_moves) {
-        engine.push(m);
-        if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
-            double score_value = color_multiplier * board_values[engine.game_board.zobrist_key];
-            // cout << "Color is " << (engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE");
-            // cout << ", Move is: " << utility::representation::move_to_string(m) << endl;
-            if (score_value > max_move_value) {
-                max_move_value = score_value;
-                move_chosen = m;
+        bool found = false;
+        for (auto move_and_value : stored_move_values) {
+            Move move_with_val = std::get<0>(move_and_value);
+            if (utility::representation::move_to_string(move_with_val) == utility::representation::move_to_string(m)) {
+                found = true;
+                break;
             }
         }
-        else {
-            cout << "ERROR: zobrist_key for move " << utility::representation::move_to_string(m) << " not found in board_values" << endl;
+        if (!found) {
+            std::cout << "did not find move " << utility::representation::move_to_string(m) << " in the stored moves. this is probably bad" << endl;
         }
-        engine.pop();
     }
     std::string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
     cout << utility::colorize(utility::AnsiColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + std::to_string(max_move_value)) << endl;
