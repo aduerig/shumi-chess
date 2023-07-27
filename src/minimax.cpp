@@ -63,8 +63,7 @@ int MinimaxAI::evaluate_board(Color color) {
 }
 
 
-
-double MinimaxAI::store_board_values(int depth, Color color, double alpha, double beta, unordered_map<int, vector<tuple<Move, int>>> &board_values) {
+double MinimaxAI::store_board_values(int depth, Color color, double alpha, double beta, unordered_map<int, unordered_map<Move, double, MoveHash>> &board_values) {
     int starting_zobrist_key = engine.game_board.zobrist_key;
 
     nodes_visited++;
@@ -86,55 +85,90 @@ double MinimaxAI::store_board_values(int depth, Color color, double alpha, doubl
         return evaluate_board(WHITE);
     }
 
-    if (color == Color::WHITE) {  // Maximizing player
-        double max_move_value = -DBL_MAX;
-        for (Move& m : moves) {
-            // cout << "before" << endl;
-            // print_gameboard(engine.game_board);
-            engine.push(m);
-            // cout << "after" << endl;
-            // print_gameboard(engine.game_board);
-            double score_value = store_board_values(depth - 1, Color::BLACK, alpha, beta, board_values);
-            engine.pop();
-            board_values[engine.game_board.zobrist_key].push_back(make_tuple(m, score_value));
-            if (engine.game_board.zobrist_key != starting_zobrist_key) {
-                print_gameboard(engine.game_board);
-                cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
+    unordered_map<Move, double, MoveHash> moves_with_values;
+    std::vector<Move> sorted_moves;
+
+    if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
+        moves_with_values = board_values[engine.game_board.zobrist_key];
+
+        for (auto& something : moves_with_values) {
+            Move looking = something.first;
+            if (std::find(moves.begin(), moves.end(), looking) == moves.end()) {
+                cout << "Move shouldnt be legal: " << move_to_string(looking) << " at depth 1" << endl;
                 exit(1);
             }
+        }
+
+
+        std::vector<std::pair<Move, double>> vec(moves_with_values.begin(), moves_with_values.end());
+
+        if (color == Color::WHITE) {
+            std::sort(vec.begin(), vec.end(), 
+                [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
+                    return a.second > b.second;
+                });
+        }
+        else {
+            std::sort(vec.begin(), vec.end(), 
+                [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
+                    return a.second < b.second;
+                });
+        }
+
+        for (const auto& pair : vec) {
+            sorted_moves.push_back(pair.first);
+        }
+        for (Move& m : moves) {
+            if (moves_with_values.find(m) == moves_with_values.end()) {
+                // cout << "this is weird... depth: " << depth << endl;
+                sorted_moves.push_back(m);
+            }
+        }
+    } else {
+        sorted_moves = moves;
+    }
+
+    if (color == Color::WHITE) {  // Maximizing player
+        double max_move_value = -DBL_MAX;
+
+        for (Move &m : sorted_moves) {
+            engine.push(m);
+            double score_value = store_board_values(depth - 1, Color::BLACK, alpha, beta, board_values);
+            engine.pop();
+            board_values[engine.game_board.zobrist_key][m] = score_value;
+
             max_move_value = max(max_move_value, score_value);
             alpha = max(alpha, max_move_value);
             if (beta <= alpha) {
-                break; // beta cut-off
+                break;
             }
         }
+
         return max_move_value;
-    } else {  // Minimizing player
+    } else {
         double min_move_value = DBL_MAX;
-        for (Move& m : moves) {
-            // cout << "before" << endl;
-            // print_gameboard(engine.game_board);
+
+        for (Move& m : sorted_moves) {
             engine.push(m);
-            // cout << "after" << endl;
-            // print_gameboard(engine.game_board);
             double score_value = store_board_values(depth - 1, Color::WHITE, alpha, beta, board_values);
             engine.pop();
-            board_values[engine.game_board.zobrist_key].push_back(make_tuple(m, score_value));
-            if (engine.game_board.zobrist_key != starting_zobrist_key) {
-                print_gameboard(engine.game_board);
-                cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
-                exit(1);
-            }
+            board_values[engine.game_board.zobrist_key][m] = score_value;
+
             min_move_value = min(min_move_value, score_value);
             beta = min(beta, min_move_value);
             if (beta <= alpha) {
-                break; // alpha cut-off
+                break;
             }
         }
         return min_move_value;
     }
 }
 
+// if (engine.game_board.zobrist_key != starting_zobrist_key) {
+//     print_gameboard(engine.game_board);
+//     cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
+//     exit(1);
+// }
 
 Move MinimaxAI::get_move_iterative_deepening(double time) {
     int zobrist_key_start = engine.game_board.zobrist_key;
@@ -151,9 +185,11 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         color_multiplier = -1;
     }
 
-    unordered_map<int, vector<tuple<Move, int>>> board_values;
+
+    unordered_map<int, unordered_map<Move, double, MoveHash>> board_values;
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
+        cout << "Deepening to " << depth << endl;
         store_board_values(depth, engine.game_board.turn, -DBL_MAX, DBL_MAX, board_values);        
         depth++;
     }
@@ -172,10 +208,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     auto stored_move_values = board_values[engine.game_board.zobrist_key];
     for (auto move_and_value : stored_move_values) {
-        Move m;
-        double score_value;
-        tie(m, score_value) = move_and_value;
-        score_value *= color_multiplier;
+        Move m = move_and_value.first;
+        double score_value = move_and_value.second * color_multiplier;
         if (score_value > max_move_value) {
             max_move_value = score_value;
             move_chosen = m;
@@ -183,15 +217,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     }
 
     for (Move& m : top_level_moves) {
-        bool found = false;
-        for (auto move_and_value : stored_move_values) {
-            Move move_with_val = get<0>(move_and_value);
-            if (move_to_string(move_with_val) == move_to_string(m)) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
+        if (stored_move_values.find(m) == stored_move_values.end()) {
             cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
             exit(1);
         }

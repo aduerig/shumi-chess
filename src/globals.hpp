@@ -41,6 +41,10 @@ struct Move {
     ull en_passant = 0;
     bool is_en_passent_capture = false;
     bool is_castle_move = false;
+
+    bool operator==(const Move &other) const {
+        return from == other.from && to == other.to;
+    }
 };
 
 // ? is this best way to number

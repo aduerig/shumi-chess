@@ -8,6 +8,7 @@
 #include "globals.hpp"
 
 using namespace std;
+using namespace ShumiChess;
 
 namespace utility {
 
@@ -40,7 +41,7 @@ string bitboard_to_acn_conversion(ull bitboard) {
     return bitboard_to_acn_map[bitboard];
 }
 
-string move_to_string(ShumiChess::Move move) {
+string move_to_string(Move move) {
     return square_to_position_string(move.from) + square_to_position_string(move.to);
 }
 
@@ -63,7 +64,7 @@ void print_bitboard(ull bitboard) {
     cout << builder << endl;
 }
 
-void print_gameboard(ShumiChess::GameBoard gameboard) {
+void print_gameboard(GameBoard gameboard) {
     unordered_map<ull, char> bitboard_to_letter = {
         {gameboard.white_bishops, 'B'},
         {gameboard.white_knights, 'N'},
@@ -98,14 +99,14 @@ void print_gameboard(ShumiChess::GameBoard gameboard) {
     cout << builder << endl;
 }
 
-string stringify(ShumiChess::Piece piece) {
-    unordered_map<ShumiChess::Piece, string> piece_strings = {
-        {ShumiChess::Piece::PAWN, "pawn"}, 
-        {ShumiChess::Piece::ROOK, "rook"}, 
-        {ShumiChess::Piece::KNIGHT, "knight"}, 
-        {ShumiChess::Piece::BISHOP, "bishop"}, 
-        {ShumiChess::Piece::QUEEN, "queen"}, 
-        {ShumiChess::Piece::KING, "king"} 
+string stringify(Piece piece) {
+    unordered_map<Piece, string> piece_strings = {
+        {Piece::PAWN, "pawn"}, 
+        {Piece::ROOK, "rook"}, 
+        {Piece::KNIGHT, "knight"}, 
+        {Piece::BISHOP, "bishop"}, 
+        {Piece::QUEEN, "queen"}, 
+        {Piece::KING, "king"} 
     };
     return piece_strings[piece];
 }

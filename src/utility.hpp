@@ -87,6 +87,11 @@ inline const ShumiChess::Color get_opposite_color(const ShumiChess::Color color)
     return (ShumiChess::Color) (1 - (int) color);
 }
 std::string move_to_string(ShumiChess::Move);
+struct MoveHash {
+    std::size_t operator()(const ShumiChess::Move &m) const {
+        return std::hash<std::string>{}(move_to_string(m));
+    }
+};
 void print_bitboard(ull);
 void print_gameboard(ShumiChess::GameBoard);
 std::string stringify(ShumiChess::Piece);
@@ -124,4 +129,5 @@ static inline void trim(std::string &s) {
 }
 
 } // end namespace string
+
 } // end namespace utility
