@@ -66,6 +66,19 @@ int MinimaxAI::evaluate_board(Color color) {
 double MinimaxAI::store_board_values(int depth, Color color, double alpha, double beta, unordered_map<int, unordered_map<Move, double, MoveHash>> &board_values) {
     int starting_zobrist_key = engine.game_board.zobrist_key;
 
+    if (seen_zobrist.find(starting_zobrist_key) != seen_zobrist.end()) {
+        if (seen_zobrist[starting_zobrist_key] != gameboard_to_string(engine.game_board)) {
+            cout << "Zobrist collision!" << endl;
+            cout << "Zobrist key: " << starting_zobrist_key << endl;
+            cout << "Seen zobrist:\n" << seen_zobrist[starting_zobrist_key] << endl;
+            cout << "Current zobrist:\n" << gameboard_to_string(engine.game_board) << endl;
+            exit(1);
+        }
+    }
+    else {
+        seen_zobrist[starting_zobrist_key] = gameboard_to_string(engine.game_board);
+    }
+
     nodes_visited++;
     vector<Move> moves = engine.get_legal_moves();
     GameState state = engine.game_over(moves);
@@ -94,6 +107,7 @@ double MinimaxAI::store_board_values(int depth, Color color, double alpha, doubl
         for (auto& something : moves_with_values) {
             Move looking = something.first;
             if (std::find(moves.begin(), moves.end(), looking) == moves.end()) {
+                print_gameboard(engine.game_board);
                 cout << "Move shouldnt be legal: " << move_to_string(looking) << " at depth 1" << endl;
                 exit(1);
             }
@@ -171,6 +185,8 @@ double MinimaxAI::store_board_values(int depth, Color color, double alpha, doubl
 // }
 
 Move MinimaxAI::get_move_iterative_deepening(double time) {
+    seen_zobrist.clear();
+
     int zobrist_key_start = engine.game_board.zobrist_key;
     cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
 

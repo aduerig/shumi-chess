@@ -425,9 +425,9 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         // enpassant attacks
         // TODO improvement here, because we KNOW that enpassant results in the capture of a pawn, but it adds a lot of code here to get the speed upgrade. Words fine as is
-        ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
-                     true, false, 0ULL, true, false);
+        // ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
+        // add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
+        //              true, false, 0ULL, true, false);
     }
 }
 
@@ -527,29 +527,29 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
     // castling
-    if (color == Color::WHITE) {
-        if (game_board.white_castle & (0b00000001) && 
-            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-        if (game_board.white_castle & (0b00000010) && 
-            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-    } else {
-        if (game_board.black_castle & (0b00000001) && 
-            ((0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-        if (game_board.black_castle & (0b00000010) && 
-            ((0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-    }
+    // if (color == Color::WHITE) {
+    //     if (game_board.white_castle & (0b00000001) && 
+    //         ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    //     if (game_board.white_castle & (0b00000010) && 
+    //         ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    // } else {
+    //     if (game_board.black_castle & (0b00000001) && 
+    //         ((0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    //     if (game_board.black_castle & (0b00000010) && 
+    //         ((0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    // }
 }
 
 // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top

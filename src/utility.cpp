@@ -45,7 +45,7 @@ string move_to_string(Move move) {
     return square_to_position_string(move.from) + square_to_position_string(move.to);
 }
 
-void print_bitboard(ull bitboard) {
+std::string bitboard_to_string(ull bitboard) {
     string builder;
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
@@ -61,10 +61,14 @@ void print_bitboard(ull bitboard) {
             builder = "\n" + builder;
         }
     }
-    cout << builder << endl;
+    return builder;
 }
 
-void print_gameboard(GameBoard gameboard) {
+void print_bitboard(ull bitboard) {
+    cout << bitboard_to_string(bitboard) << endl;
+}
+
+std::string gameboard_to_string(GameBoard gameboard) {
     unordered_map<ull, char> bitboard_to_letter = {
         {gameboard.white_bishops, 'B'},
         {gameboard.white_knights, 'N'},
@@ -96,7 +100,11 @@ void print_gameboard(GameBoard gameboard) {
             }
         }
     }
-    cout << builder << endl;
+    return builder;
+}
+
+void print_gameboard(GameBoard gameboard) {
+    cout << gameboard_to_string(gameboard) << endl;
 }
 
 string stringify(Piece piece) {

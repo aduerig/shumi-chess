@@ -92,7 +92,9 @@ struct MoveHash {
         return std::hash<std::string>{}(move_to_string(m));
     }
 };
+std::string bitboard_to_string(ull);
 void print_bitboard(ull);
+std::string gameboard_to_string(ShumiChess::GameBoard);
 void print_gameboard(ShumiChess::GameBoard);
 std::string stringify(ShumiChess::Piece);
 std::string square_to_position_string(ull);

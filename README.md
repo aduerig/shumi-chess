@@ -22,6 +22,7 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * https://github.com/aduerig/chess-ai
 
 ## todo
+* i disabled enpassant and castling temporarily until zobrist hashing works
 * zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
 * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
 

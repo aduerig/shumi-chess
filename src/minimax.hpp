@@ -22,6 +22,7 @@ public:
 
     ShumiChess::Engine& engine;
     unordered_map<ull, int> piece_and_values;
+    unordered_map<int, std::string> seen_zobrist;
 
     MinimaxAI(ShumiChess::Engine&);
 
