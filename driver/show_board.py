@@ -90,11 +90,13 @@ class Button:
 
 
 def clicked_pop_button(button_obj):
+    global legal_moves, acn_focused, avail_moves
     engine_communicator.pop()
-    undraw_pieces()
-    render_all_pieces_and_assign(board)
+    legal_moves = engine_communicator.get_legal_moves()
     acn_focused = None
     avail_moves = []
+    undraw_pieces()
+    render_all_pieces_and_assign(board)
 
 
 def get_next_player(player_name: str) -> str:

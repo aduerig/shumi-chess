@@ -166,7 +166,6 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     nodes_visited = 0;
 
     uint64_t zobrist_key_start = engine.game_board.zobrist_key;
-    cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
 
     auto start_time = chrono::high_resolution_clock::now();
     auto required_end_time = start_time + chrono::duration<double>(time);
@@ -211,7 +210,10 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
     cout << colorize(AColor::BRIGHT_BLUE, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
-    cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
+    if (engine.game_board.zobrist_key != zobrist_key_start) {
+        cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
+        exit(1);
+    }
     return best_move;
 }
 

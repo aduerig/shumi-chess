@@ -91,8 +91,10 @@ class Engine {
             return curr_move;
         };
 
-
         Move moves[256];
+
+        unordered_map<uint64_t, int> count_zobrist_states;
+        bool three_fold_rep_draw {false};
 
         std::tuple<Move*, int> get_legal_moves();
         Move* add_pawn_moves_to_vector(Move*, Color);

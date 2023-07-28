@@ -23,7 +23,6 @@ GameBoard::GameBoard() :
     turn(BLACK) {
     ShumiChess::initialize_zobrist();
     set_zobrist();
-    cout << "GameBoard() constructor being run" << endl;
 }
 
 GameBoard::GameBoard(const std::string& fen_notation) {
@@ -76,7 +75,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 }
 
 void GameBoard::set_zobrist() {
-    cout << "GameBoard::setting zobrist..." << endl;
     for (int color_int = 0; color_int < 2; color_int++) {
         Color color = static_cast<Color>(color_int);
         for (int j = 0; j < 5; j++) {
@@ -92,8 +90,6 @@ void GameBoard::set_zobrist() {
     if (turn == Color::BLACK) {
         zobrist_key ^= zobrist_side;
     }
-
-    cout << "zobrist key starts at: " << zobrist_key << endl;
 }
 
 // fields for fen are:

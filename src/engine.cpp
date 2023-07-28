@@ -26,10 +26,9 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 
 void Engine::reset_engine() {
     game_board = GameBoard();
-    // ! is reinitalize these stacks the right way to clear the previous entries?
     move_history = stack<Move>();
-    stack<ull> en_passant_history;
-    en_passant_history.push(0);
+    three_fold_rep_draw = false;
+    count_zobrist_states.clear();
 }
 
 tuple<Move*, int> Engine::get_legal_moves() {
@@ -57,6 +56,9 @@ GameState Engine::game_over(tuple<Move*, int> legal_moves_tuple) {
 
 GameState Engine::game_over(Move* all_moves, int num_moves) {
     if (num_moves == 0) {
+        return GameState::DRAW;
+    }
+    if (three_fold_rep_draw == true) {
         return GameState::DRAW;
     }
     if (game_board.black_king == 0 && game_board.white_king == 0) {
@@ -112,13 +114,18 @@ void Engine::push(const Move& move) {
         access_piece_of_color(move.capture, opposite_color(move.color)) &= ~move.to;
         game_board.zobrist_key ^= zobrist_piece_square[move.capture + opposite_color(move.color) * 5][square_to];
     }
+    count_zobrist_states[game_board.zobrist_key]++;
+    if (count_zobrist_states[game_board.zobrist_key] == 3) {
+        three_fold_rep_draw = true;
+    }
     // cout << "ending push" << endl;
 }
 
 // undos last move, errors if no move was made before
 void Engine::pop() {
     // cout << "starting pop" << endl;
-
+    count_zobrist_states[game_board.zobrist_key]--;
+    three_fold_rep_draw = false;
     const Move move = this->move_history.top();
     this->move_history.pop();
 
