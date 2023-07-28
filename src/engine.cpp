@@ -61,6 +61,14 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
     if (game_board.white_king == 0) {
         return GameState::BLACKWIN;
     }
+    ull white_win_squares = 0b00000000'00000000'00000000'00000000'10000000'10000000'10000000'11110000;
+    if ((game_board.get_pieces_template<Piece::PAWN, Color::WHITE>() & white_win_squares) != 0ULL) {
+        return GameState::WHITEWIN;
+    }
+    ull black_win_squares = 0b00001111'00000001'00000001'00000001'00000000'00000000'00000000'00000000;
+    if ((game_board.get_pieces_template<Piece::PAWN, Color::BLACK>() & black_win_squares) != 0) {
+        return GameState::BLACKWIN;
+    }
     return GameState::INPROGRESS;
 }
 
@@ -206,23 +214,6 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
 void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
     ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
 
-    ull enemy_starting_rank_mask = row_masks[Row::ROW_8];
-    ull pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
-    ull pawn_starting_rank_mask = row_masks[Row::ROW_2];
-    ull pawn_enpassant_rank_mask = row_masks[Row::ROW_3];
-    ull top_row = row_masks[Row::ROW_8];
-    ull bottom_row = row_masks[Row::ROW_1];
-    ull right_col = col_masks[Col::COL_H];
-    ull left_col = col_masks[Col::COL_A];
-    if (color == Color::BLACK) {
-        enemy_starting_rank_mask = row_masks[Row::ROW_1];
-        pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
-        pawn_enpassant_rank_mask = row_masks[Row::ROW_6];
-        pawn_starting_rank_mask = row_masks[Row::ROW_7];
-        right_col = col_masks[Col::COL_A];
-        left_col = col_masks[Col::COL_H];
-    }
-
     ull all_pieces = game_board.get_pieces();
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
 
@@ -230,18 +221,18 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull single_pawn = lsb_and_pop(pawns);
         
         // moves diagonols
-        ull attack_fleft = (single_pawn & ~right_col) << 9;
-        ull attack_fright = (single_pawn & ~left_col) << 7;
-        ull attack_rleft = (single_pawn & ~left_col) >> 9;
-        ull attack_rright = (single_pawn & ~right_col) >> 7;
-        ull non_attacks = (attack_fleft | attack_fright | attack_rleft | attack_rright) & ~all_pieces;
+        ull move_fleft = (single_pawn & ~col_masks[Col::COL_A]) << 9;
+        ull move_fright = (single_pawn & ~col_masks[Col::COL_H]) << 7;
+        ull move_rleft = (single_pawn & ~col_masks[Col::COL_A]) >> 7;
+        ull move_rright = (single_pawn & ~col_masks[Col::COL_H]) >> 9;
+        ull non_attacks = (move_fleft | move_fright | move_rleft | move_rright) & ~all_pieces;
         add_move_to_vector(all_psuedo_legal_moves, single_pawn, non_attacks, Piece::PAWN, color, false, false, 0ULL);
 
         // attacks sides
-        ull attack_up = (single_pawn & ~top_row) << 8;
-        ull attack_down = (single_pawn & ~bottom_row) >> 8;
-        ull attack_right = (single_pawn & ~right_col) >> 1;
-        ull attack_left = (single_pawn & ~left_col) << 1;
+        ull attack_up = (single_pawn & ~row_masks[Row::ROW_8]) << 8;
+        ull attack_down = (single_pawn & ~row_masks[Row::ROW_1]) >> 8;
+        ull attack_right = (single_pawn & ~col_masks[Col::COL_H]) >> 1;
+        ull attack_left = (single_pawn & ~col_masks[Col::COL_A]) << 1;
 
         ull attacks = (attack_up | attack_down | attack_right | attack_left) & all_enemy_pieces;
         add_move_to_vector(all_psuedo_legal_moves, single_pawn, attacks, Piece::PAWN, color, true, false, 0ULL);
@@ -301,7 +292,6 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         add_move_to_vector(all_psuedo_legal_moves, single_queen, avail_moves, Piece::QUEEN, color, false, false, 0ULL);
 
         // laser
-
         ull square = bitboard_to_lowest_square(single_queen);
         ull rooks = game_board.get_pieces_template<Piece::ROOK>();
         ull transposed_rooks;
@@ -311,40 +301,46 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         ull right_col = col_masks[Col::COL_H];
         ull left_col = col_masks[Col::COL_A];
 
+
+
         // up right
         transposed_rooks = (rooks & ~left_col & ~bottom_row) >> 7;
-        ull up_and_right_far = ~single_queen & highest_bitboard(north_east_square_ray[square]);
+        ull up_and_right_far = ~rooks & ~single_queen & highest_bitboard(north_east_square_ray[square]);
         ull masked_blockers_ne = (transposed_rooks | up_and_right_far) & north_east_square_ray[square];
         ull ne_attacks = ~single_queen & lowest_bitboard(masked_blockers_ne);
         if (ne_attacks != 0) {
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, ne_attacks, Piece::QUEEN, color, false, true, north_east_square_ray[square]);
+            ull back_ray = ne_attacks | (north_east_square_ray[square] & south_west_square_ray[bitboard_to_highest_square(ne_attacks)]);
+            add_move_to_vector(all_psuedo_legal_moves, single_queen, ne_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
 
         // up left
         transposed_rooks = (rooks & ~left_col & ~top_row) >> 9;
-        ull up_and_left_far = ~single_queen & highest_bitboard(north_west_square_ray[square]);
+        ull up_and_left_far = ~rooks & ~single_queen & highest_bitboard(north_west_square_ray[square]);
         ull masked_blockers_nw = (transposed_rooks | up_and_left_far) & north_west_square_ray[square];
         ull nw_attacks = ~single_queen & lowest_bitboard(masked_blockers_nw);
         if (nw_attacks != 0) {
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, nw_attacks, Piece::QUEEN, color, false, true, north_west_square_ray[square]);
+            ull back_ray = nw_attacks | (north_west_square_ray[square] & south_east_square_ray[bitboard_to_highest_square(nw_attacks)]);
+            add_move_to_vector(all_psuedo_legal_moves, single_queen, nw_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
 
         // down right
         transposed_rooks = (rooks & ~right_col & ~bottom_row) << 9;
-        ull down_and_right_far = ~single_queen & lowest_bitboard(south_east_square_ray[square]);
+        ull down_and_right_far = ~rooks & ~single_queen & lowest_bitboard(south_east_square_ray[square]);
         ull masked_blockers_se = (transposed_rooks | down_and_right_far) & south_east_square_ray[square];
         ull se_attacks = ~single_queen & highest_bitboard(masked_blockers_se);
         if (se_attacks != 0) {
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, se_attacks, Piece::QUEEN, color, false, true, south_east_square_ray[square]);
+            ull back_ray = se_attacks | (south_east_square_ray[square] & north_west_square_ray[bitboard_to_lowest_square(se_attacks)]);
+            add_move_to_vector(all_psuedo_legal_moves, single_queen, se_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
 
         // down left
         transposed_rooks = (rooks & ~left_col & ~bottom_row) << 7;
-        ull down_and_left_far = ~single_queen & lowest_bitboard(south_west_square_ray[square]);
+        ull down_and_left_far = ~rooks & ~single_queen & lowest_bitboard(south_west_square_ray[square]);
         ull masked_blockers_sw = (transposed_rooks | down_and_left_far) & south_west_square_ray[square];
         ull sw_attacks = ~single_queen & highest_bitboard(masked_blockers_sw);
         if (sw_attacks != 0) {
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, sw_attacks, Piece::QUEEN, color, false, true, south_west_square_ray[square]);
+            ull back_ray = sw_attacks | (south_west_square_ray[square] & north_east_square_ray[bitboard_to_lowest_square(sw_attacks)]);
+            add_move_to_vector(all_psuedo_legal_moves, single_queen, sw_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
     }
 }

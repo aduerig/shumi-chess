@@ -48,7 +48,7 @@ def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
 
 
 ai_default = 'minimax_ai'
-both_players = ['human', 'human']
+both_players = ['minimax_ai', 'human']
 
 # ! drawing GUI elements
 screen_width = 800

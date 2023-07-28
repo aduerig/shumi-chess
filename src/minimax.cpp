@@ -170,6 +170,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         best_move = get<1>(ret_val);
         depth++;
     }
+    // cout << "finsished store_board_values_negamax" << endl;
+    // exit(1);
 
     vector<Move> top_level_moves = engine.get_legal_moves();
     Move move_chosen = top_level_moves[0];

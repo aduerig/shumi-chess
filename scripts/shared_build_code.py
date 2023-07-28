@@ -64,7 +64,8 @@ def build_python_gui_module(release):
         sys.exit(1)
 
 def run_python_gui():
-    _return_code, _stdout, _stderr = run_command_blocking([
+    return_code, _stdout, _stderr = run_command_blocking([
         'python',
         str(show_board_path),
     ], stdout_pipe=None, stderr_pipe=None)
+    print(f'return code was {return_code}')

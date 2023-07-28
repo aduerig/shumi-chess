@@ -80,10 +80,16 @@ inline int bitboard_to_highest_square(ull bitboard) {
 
 
 inline ull lowest_bitboard(ull bitboard) {
+    if (bitboard == 0ULL) {
+        return 0ULL;
+    }
     return 1ULL << bitboard_to_lowest_square(bitboard);
 };
 
 inline ull highest_bitboard(ull bitboard) {
+    if (bitboard == 0ULL) {
+        return 0ULL;
+    }
     return 1ULL << bitboard_to_highest_square(bitboard);
 };
 
