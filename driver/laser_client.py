@@ -26,6 +26,7 @@ get_games_json = {
 
 minutes_for_us = 2
 minutes_for_them = 3
+time_to_engine = .1
 seconds_for_us = int(minutes_for_us * 60 * 1000)
 seconds_for_them = int(minutes_for_them * 60 * 1000)
 our_name = 'mr. robot'
@@ -42,60 +43,6 @@ create_game_json = {
 }
 
 
-# async def update_engine_with_move(websocket, move):
-#     print('Updating engine!')
-#     timeout_seconds = 10
-
-#     while True:
-#         if time.time() - start_time > timeout_seconds:
-#             print_yellow(f'Solve timed out after {timeout_seconds} seconds')
-#             process.terminate()
-#             process.join()
-#             await send_msg(websocket, json.dumps({'type': 'timeout', 'time': timeout_seconds}))
-#             return
-#         elif not process.is_alive():
-#             solved_board, seconds_taken = final_queue.get()
-#             break
-#         else:
-#             intermediary_grid = None
-#             while intermediary_queue.qsize() > 0:
-#                 try:
-#                     intermediary_grid = intermediary_queue.get_nowait()
-#                 except:
-#                     pass
-
-#             if intermediary_grid is not None:
-#                 grid_back = precompute.grid_to_js_grid(intermediary_grid)
-#                 msg = {
-#                     'type': 'whole_board',
-#                     'grid': grid_back,
-#                 }
-#                 await send_msg(websocket, json.dumps(msg))
-
-#             await asyncio.sleep(0.1)
-
-#     if solved_board is None:
-#         print_yellow('Solve was impossible, sending impossible message back')
-#         await send_msg(websocket, json.dumps({'type': 'impossible', 'time': seconds_taken}))
-#         return
-
-#     print_green('Solved board successfully and sending back')
-#     msg = {
-#         'type': 'clues',
-#         'clues': crossword.get_clues(solved_board),
-#     }
-#     await send_msg(websocket, json.dumps(msg))
-
-#     grid_back = precompute.grid_to_js_grid(solved_board.grid)
-#     msg = {
-#         'type': 'whole_board',
-#         'grid': grid_back,
-#     }
-
-#     await send_msg(websocket, json.dumps(msg))
-#     await send_msg(websocket, json.dumps({'type': 'solved', 'time': seconds_taken}))
-
-
 
 def wait_for_engine_instructions(in_queue, out_queue):
     print(f'Starting wait_for_engine_instructions')    
@@ -106,15 +53,17 @@ def wait_for_engine_instructions(in_queue, out_queue):
             # maybe need try catch here?
             instruction, data = in_queue.get_nowait()
 
-        if instruction == 'get_fen':
-            fen_str = engine_communicator.get_fen()
-            out_queue.put(fen_str)
-        elif instruction == 'get_move':
-            move_str = engine_communicator.get_move_iterative_deepening(data)
-            out_queue.put(move_str)
-        elif instruction == 'make_move':
-            engine_communicator.make_move_two_acn(data[0:2], data[2:4])
-            out_queue.put(None)
+            if instruction == 'get_fen':
+                # !TODO
+                # fen_str = engine_communicator.get_fen()
+                fen_str = '7q/4pnk1/4prn1/3P2p1/1P2p3/1NRP4/1KNP4/Q7 b - - 0 1'
+                out_queue.put(fen_str)
+            elif instruction == 'get_move':
+                move_str = engine_communicator.minimax_ai_get_move_iterative_deepening(data)
+                out_queue.put(move_str)
+            elif instruction == 'make_move':
+                engine_communicator.make_move_two_acn(data[0:2], data[2:4])
+                out_queue.put(None)
         time.sleep(.01)
 
 
@@ -138,7 +87,7 @@ async def init_new_game():
 async def host_and_play_games(websocket):
     for game_num in range(10000000):
         print(f'Hosting {game_num=}')
-        init_new_game()
+        await init_new_game()
         await websocket.send(json.dumps(create_game_json))
 
 
@@ -163,19 +112,19 @@ async def host_and_play_games(websocket):
         players = response_data['data']['names']
         game_key = response_data['data']['key']
         game_id = response_data['data']['id']
-        print(f'Playing game {players=}, {game_id=}, {game_key=}')
-
         seconds_left_for_us = seconds_for_us
         seconds_left_for_them = seconds_for_them
-        while True:
-            response_data = json.loads(await websocket.recv())
-            print_blue('Response: ' + json.dumps(response_data, indent=4))
+        print(f'Playing game {players=}, {game_id=}, {game_key=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
 
+        while True:
+            print('Waiting for response...')
+            response_data = json.loads(await websocket.recv())
+            print('Got response!')
             if response_data['status'] == 'games':
                 print('Got games lisit, but ignoring it')
-            elif response_data['status'] == 'move':
-                print_green('Got move')
-
+                continue
+            # print_blue('Response: ' + json.dumps(response_data, indent=4))
+            if response_data['status'] == 'moved':
                 move_str = ''.join(response_data['data']['move'])
                 winner = response_data['data']['winner']
                 if winner == 'null':
@@ -184,20 +133,35 @@ async def host_and_play_games(websocket):
 
                 seconds_left_for_us = response_data['data']['times'][0]
                 seconds_left_for_them = response_data['data']['times'][1]
+                print_green(f'Got move from opponent {move_str=}, {winner=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
 
-                # updates engine
+                print_cyan('updating engine with their move')
                 in_queue.put(('make_move', move_str))
-                if in_queue.qsize():
-                    return_val = out_queue.get_nowait()
-                    print(f'Got "{return_val}" from engine, expected None')
-                # asyncio.create_task(update_engine_with_move(websocket, move))
+                while out_queue.qsize() == 0:
+                    time.sleep(.01)
+                return_val = out_queue.get_nowait()
+                print(f'Got "{return_val}" from engine, expected None')
 
-    
-                # gets our move
-                # asyncio.create_taskfgt(get_move_from_engine(websocket))
+                print_cyan(f'querying engine for our move with {time_to_engine} seconds')
+                in_queue.put(('get_move', time_to_engine))
+                while out_queue.qsize() == 0:
+                    time.sleep(.01)
+                chosen_move_str = out_queue.get_nowait()
+                print(f'Got "{chosen_move_str}" from engine, expected a move')
 
-                chosen_move = 'a1a2'
-                current_fen = '7q/4pnk1/4prn1/3P2p1/1P2p3/1NRP4/1KNP4/Q7 b - - 0 1'
+                print_cyan('updating engine with our move')
+                in_queue.put(('make_move', chosen_move_str))
+                while out_queue.qsize() == 0:
+                    time.sleep(.01)
+                return_val = out_queue.get_nowait()
+                print(f'Got "{return_val}" from engine, expected None')
+
+                # gets new fen
+                in_queue.put(('get_fen', time_to_engine))
+                while out_queue.qsize() == 0:
+                    time.sleep(.01)
+                current_fen = out_queue.get_nowait()
+                print(f'Got "{current_fen}" from engine, expected a fen')
 
                 # need to send
                 move_to_send = {
@@ -207,7 +171,7 @@ async def host_and_play_games(websocket):
                         'id': game_id, 
                         'name': our_name,
                         'fen': current_fen,
-                        'move': [chosen_move[0:2], chosen_move[2:4]]
+                        'move': [chosen_move_str[0:2], chosen_move_str[2:4]]
                     }
                 }
                 await websocket.send(json.dumps(move_to_send))
