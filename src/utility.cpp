@@ -41,10 +41,6 @@ string bitboard_to_acn_conversion(ull bitboard) {
     return bitboard_to_acn_map[bitboard];
 }
 
-string move_to_string(Move move) {
-    return square_to_position_string(move.from) + square_to_position_string(move.to);
-}
-
 std::string bitboard_to_string(ull bitboard) {
     string builder;
     for (int i = 0; i < 8; i++) {
@@ -119,33 +115,17 @@ string stringify(Piece piece) {
     return piece_strings[piece];
 }
 
-// assumes layout is:
-// lower right is 2^0
-// lower left is 2^7
-// upper right is 2^56
-// upper left is 2^63
-string square_to_position_string(ull square) {
-    unordered_map<int, string> row_to_letter = {
-        {1, "a"},
-        {2, "b"},
-        {3, "c"},
-        {4, "d"},
-        {5, "e"},
-        {6, "f"},
-        {7, "g"},
-        {8, "h"}
-    };
+std::array<std::string, 8> row_to_letter = {
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+};
 
-    for (int i = 1; i <= 8; i++) {
-        for (int j = 1; j <= 8; j++) {
-            if (1ULL & square) {
-                return row_to_letter[9 - j] + to_string(i);
-            }
-            square = square >> 1;
-        }
-    }
-    return "error";
-}
 
 } // end namespace representation
 

@@ -16,12 +16,7 @@ using namespace utility::bit;
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { }
 
 
-int MinimaxAI::evaluate_board() {
-    return evaluate_board(engine.game_board.turn);
-}
-
-int MinimaxAI::bits_in(ull bitboard)
-{
+int MinimaxAI::bits_in(ull bitboard) {
     auto bs = bitset<64>(bitboard);
     return (int) bs.count();
 }
@@ -34,68 +29,60 @@ string format_with_commas(T value) {
     return ss.str();
 }
 
-int MinimaxAI::evaluate_board(Color color) {
-    Color opposite_turn = get_opposite_color(color);
+double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& moves) {
+    double board_val_adjusted = 0;
+    for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
+        double board_val = 0;
+        for (const auto& i : piece_and_values) {
+            Piece piece_type;
+            double piece_value;
+            tie(piece_type, piece_value) = i;
+            
+            if (piece_type == Piece::KING) {
+                continue;
+            }
+            ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
-    piece_and_values = {
-        {engine.game_board.get_pieces_template<Piece::PAWN>(color), 1},
-        {engine.game_board.get_pieces_template<Piece::ROOK>(color), 5},
-        {engine.game_board.get_pieces_template<Piece::KNIGHT>(color), 3},
-        {engine.game_board.get_pieces_template<Piece::BISHOP>(color), 3},
-        {engine.game_board.get_pieces_template<Piece::QUEEN>(color), 8},
-
-        {engine.game_board.get_pieces_template<Piece::PAWN>(opposite_turn), -1},
-        {engine.game_board.get_pieces_template<Piece::ROOK>(opposite_turn), -5},
-        {engine.game_board.get_pieces_template<Piece::KNIGHT>(opposite_turn), -3},
-        {engine.game_board.get_pieces_template<Piece::BISHOP>(opposite_turn), -3},
-        {engine.game_board.get_pieces_template<Piece::QUEEN>(opposite_turn), -8},
-    };
-
-    int total_board_val = 0;
-    for (const auto& i : piece_and_values) {
-        total_board_val += i.second * bits_in(i.first);
-        // while (piece_bitboard) {
-        //     bit::lsb_and_pop(piece_bitboard);
-        //     total_board_val += piece_value;
-        // }
+            board_val += piece_value * bits_in(pieces_bitboard);
+            
+            if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
+                ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
+                board_val +=  0.1 * bits_in(middle_place);
+                // cout << "adding up " << color_str(color) << endl;
+            }
+        }
+        if (color != for_color) {
+            board_val *= -1;
+        }
+        board_val_adjusted += board_val;
     }
-    return total_board_val;
+    return board_val_adjusted + moves.size() / 80;
 }
 
 
-double MinimaxAI::store_board_values(int depth, Color color, double alpha, double beta, unordered_map<int, unordered_map<Move, double, MoveHash>> &board_values) {
-    int starting_zobrist_key = engine.game_board.zobrist_key;
-
-    if (seen_zobrist.find(starting_zobrist_key) != seen_zobrist.end()) {
-        if (seen_zobrist[starting_zobrist_key] != gameboard_to_string(engine.game_board)) {
-            cout << "Zobrist collision!" << endl;
-            cout << "Zobrist key: " << starting_zobrist_key << endl;
-            cout << "Seen zobrist:\n" << seen_zobrist[starting_zobrist_key] << endl;
-            cout << "Current zobrist:\n" << gameboard_to_string(engine.game_board) << endl;
-            exit(1);
-        }
-    }
-    else {
-        seen_zobrist[starting_zobrist_key] = gameboard_to_string(engine.game_board);
-    }
-
+tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta, unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &board_values, bool debug) {
     nodes_visited++;
     vector<Move> moves = engine.get_legal_moves();
     GameState state = engine.game_over(moves);
     
-    if (state == GameState::BLACKWIN) {
-        return -DBL_MAX + 1;
-    }
-    else if (state == GameState::WHITEWIN) {
-        return DBL_MAX - 1;
-
-    }
-    else if (state == GameState::DRAW) {
-        return 0;
+    if (state != GameState::INPROGRESS) {
+        double end_value = 0;
+        if (state == GameState::BLACKWIN) {
+            end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
+        }
+        else if (state == GameState::WHITEWIN) {
+            end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
+        }
+        return make_tuple(end_value, Move{});
     }
     
     if (depth == 0) {
-        return evaluate_board(WHITE);
+        double eval = evaluate_board(engine.game_board.turn, moves);
+        if (debug == true) {
+            cout << colorize(AColor::BRIGHT_BLUE, "===== DEPTH 0 EVAL: " + to_string(eval) + ", color is: " + color_str(engine.game_board.turn)) << endl;
+            print_gameboard(engine.game_board);
+        }
+        return make_tuple(eval, Move{});
     }
 
     unordered_map<Move, double, MoveHash> moves_with_values;
@@ -113,28 +100,18 @@ double MinimaxAI::store_board_values(int depth, Color color, double alpha, doubl
             }
         }
 
-
         std::vector<std::pair<Move, double>> vec(moves_with_values.begin(), moves_with_values.end());
 
-        if (color == Color::WHITE) {
-            std::sort(vec.begin(), vec.end(), 
-                [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
-                    return a.second > b.second;
-                });
-        }
-        else {
-            std::sort(vec.begin(), vec.end(), 
-                [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
-                    return a.second < b.second;
-                });
-        }
+        std::sort(vec.begin(), vec.end(), 
+            [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
+                return a.second > b.second;
+            });
 
         for (const auto& pair : vec) {
             sorted_moves.push_back(pair.first);
         }
         for (Move& m : moves) {
             if (moves_with_values.find(m) == moves_with_values.end()) {
-                // cout << "this is weird... depth: " << depth << endl;
                 sorted_moves.push_back(m);
             }
         }
@@ -142,77 +119,60 @@ double MinimaxAI::store_board_values(int depth, Color color, double alpha, doubl
         sorted_moves = moves;
     }
 
-    if (color == Color::WHITE) {  // Maximizing player
-        double max_move_value = -DBL_MAX;
-
-        for (Move &m : sorted_moves) {
-            engine.push(m);
-            double score_value = store_board_values(depth - 1, Color::BLACK, alpha, beta, board_values);
-            engine.pop();
-            board_values[engine.game_board.zobrist_key][m] = score_value;
-
-            max_move_value = max(max_move_value, score_value);
-            alpha = max(alpha, max_move_value);
-            if (beta <= alpha) {
-                break;
-            }
+    double max_move_value = -DBL_MAX;
+    Move best_move = sorted_moves[0];
+    for (Move &m : sorted_moves) {
+        engine.push(m);
+        auto ret_val = store_board_values_negamax(depth - 1, -beta, -alpha, board_values, debug);
+        double score_value = -get<0>(ret_val);
+        if (debug == true) {
+            cout << colorize(AColor::BRIGHT_GREEN, "On depth " + to_string(depth) + ", move is: " + move_to_string(m) + ", score_value below is: " + to_string(score_value) + ", color perspective: " + color_str(engine.game_board.turn)) << endl;
+            print_gameboard(engine.game_board);
         }
 
-        return max_move_value;
-    } else {
-        double min_move_value = DBL_MAX;
+        engine.pop();
+        board_values[engine.game_board.zobrist_key][m] = score_value;
 
-        for (Move& m : sorted_moves) {
-            engine.push(m);
-            double score_value = store_board_values(depth - 1, Color::WHITE, alpha, beta, board_values);
-            engine.pop();
-            board_values[engine.game_board.zobrist_key][m] = score_value;
-
-            min_move_value = min(min_move_value, score_value);
-            beta = min(beta, min_move_value);
-            if (beta <= alpha) {
-                break;
-            }
+        if (score_value > max_move_value) {
+            max_move_value = score_value;
+            best_move = m;
         }
-        return min_move_value;
+        alpha = max(alpha, max_move_value);
+        if (alpha >= beta) {
+            break;
+        }
     }
+    return make_tuple(max_move_value, best_move);
 }
 
-// if (engine.game_board.zobrist_key != starting_zobrist_key) {
-//     print_gameboard(engine.game_board);
-//     cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
-//     exit(1);
-// }
+
+
 
 Move MinimaxAI::get_move_iterative_deepening(double time) {
     seen_zobrist.clear();
+    nodes_visited = 0;
 
-    int zobrist_key_start = engine.game_board.zobrist_key;
+    uint64_t zobrist_key_start = engine.game_board.zobrist_key;
     cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
 
     auto start_time = chrono::high_resolution_clock::now();
     auto required_end_time = start_time + chrono::duration<double>(time);
 
-    nodes_visited = 0;
+    unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> board_values;
+    Move best_move;
+    double best_move_value;
 
-
-    int color_multiplier = 1;
-    if (engine.game_board.turn == Color::BLACK) {
-        color_multiplier = -1;
-    }
-
-
-    unordered_map<int, unordered_map<Move, double, MoveHash>> board_values;
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
         cout << "Deepening to " << depth << endl;
-        store_board_values(depth, engine.game_board.turn, -DBL_MAX, DBL_MAX, board_values);        
+        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, false);
+        best_move_value = get<0>(ret_val);
+        best_move = get<1>(ret_val);
         depth++;
     }
 
     vector<Move> top_level_moves = engine.get_legal_moves();
     Move move_chosen = top_level_moves[0];
-    double max_move_value = -DBL_MAX;
 
     cout << "Went to depth " << depth - 1 << endl;
     cout << "Found " << board_values.size() << " items inside of board_values" << endl;
@@ -222,30 +182,28 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         exit(1);
     }
 
-    auto stored_move_values = board_values[engine.game_board.zobrist_key];
-    for (auto move_and_value : stored_move_values) {
-        Move m = move_and_value.first;
-        double score_value = move_and_value.second * color_multiplier;
-        if (score_value > max_move_value) {
-            max_move_value = score_value;
-            move_chosen = m;
-        }
-    }
-
-    for (Move& m : top_level_moves) {
-        if (stored_move_values.find(m) == stored_move_values.end()) {
-            cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
-            exit(1);
-        }
-    }
+    // auto stored_move_values = board_values[engine.game_board.zobrist_key];
+    // for (Move& m : top_level_moves) {
+    //     if (stored_move_values.find(m) == stored_move_values.end()) {
+    //         cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
+    //         exit(1);
+    //     }
+    // }
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
-    cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + to_string(max_move_value)) << endl;
+    cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + to_string(best_move_value)) << endl;
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
     cout << colorize(AColor::BRIGHT_BLUE, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
     cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
-    return move_chosen;
+    return best_move;
 }
+
+
+
+
+
+
+
 
 
 // === straight forward minimax below ===
@@ -269,7 +227,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         if (color_multiplier) {
             color_perspective = Color::WHITE;
         }
-        return evaluate_board(color_perspective) * color_multiplier;
+        return evaluate_board(color_perspective, moves) * color_multiplier;
     }
 
     if (color_multiplier == 1) {  // Maximizing player
@@ -341,59 +299,24 @@ Move MinimaxAI::get_move() {
 }
 
 
+// uint64_t starting_zobrist_key = engine.game_board.zobrist_key;
 
-// double MinimaxAI::get_value(int depth, int color_multiplier, double white_highest_val, double black_highest_val) {
-//     // if the gamestate is over
-//     nodes_visited++;
-//     vector<Move> moves = engine.get_legal_moves();
-//     GameState state = engine.game_over(moves);
+// if (seen_zobrist.find(starting_zobrist_key) != seen_zobrist.end()) {
+//     if (seen_zobrist[starting_zobrist_key] != gameboard_to_string(engine.game_board)) {
+//         cout << "Zobrist collision!" << endl;
+//         cout << "Zobrist key: " << starting_zobrist_key << endl;
+//         cout << "Seen zobrist:\n" << seen_zobrist[starting_zobrist_key] << endl;
+//         cout << "Current zobrist:\n" << gameboard_to_string(engine.game_board) << endl;
+//         exit(1);
+//     }
+// }
+// else {
+//     seen_zobrist[starting_zobrist_key] = gameboard_to_string(engine.game_board);
+// }
 
-//     if (state == GameState::BLACKWIN) {
-//         return ((-DBL_MAX) + 1) * (color_multiplier);
-//     }
-//     else if (state == GameState::WHITEWIN) {
-//         return (DBL_MAX - 1) * (color_multiplier);
-//     }
-//     else if (state == GameState::DRAW) {
-//         return 0;
-//     }
-    
-//     // if we are at max depth
-//     if (depth == 0) {
-//         Color color_perspective = Color::BLACK;
-//         if (color_multiplier) {
-//             color_perspective = Color::WHITE;
-//         }
-//         return evaluate_board(color_perspective) * color_multiplier;
-//     }
 
-//     // calculate leaf nodes
-//     double max_move_value = -DBL_MAX;
-//     for (Move& m : moves) {
-//         engine.push(m);
-//         double score_value = -1 * get_value(depth - 1, color_multiplier * -1, white_highest_val, black_highest_val);
-//         if (score_value > max_move_value) {
-//             max_move_value = score_value;
-//         }
-//         if (color_multiplier) {
-//             if (max_move_value > white_highest_val) {
-//                 white_highest_val = max_move_value;
-//             }
-//             // if (-black_highest_val < white_highest_val) {
-//             //     engine.pop();
-//             //     break;d
-//             // }
-//         }
-//         else {
-//             if (max_move_value > black_highest_val) {
-//                 black_highest_val = max_move_value;
-//             }
-//             // if (-black_highest_val < white_highest_val) {
-//             //     engine.pop();
-//             //     break;
-//             // }
-//         }
-//         engine.pop();
-//     }
-//     return max_move_value;
+// if (engine.game_board.zobrist_key != starting_zobrist_key) {
+//     print_gameboard(engine.game_board);
+//     cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
+//     exit(1);
 // }

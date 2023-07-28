@@ -186,12 +186,12 @@ TEST(EngineMoveStorage, EngineZobristConsistancy) {
     using namespace ShumiChess;
     Engine test_engine;
 
-    int starting_zobrist = test_engine.game_board.zobrist_key;
+    uint64_t starting_zobrist = test_engine.game_board.zobrist_key;
     test_engine.push(Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
-    int mid_zobrist = test_engine.game_board.zobrist_key;
+    uint64_t mid_zobrist = test_engine.game_board.zobrist_key;
     test_engine.pop();
 
-    int ending_zobrist = test_engine.game_board.zobrist_key;
+    uint64_t ending_zobrist = test_engine.game_board.zobrist_key;
 
     EXPECT_EQ(starting_zobrist, ending_zobrist);
 }

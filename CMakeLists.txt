@@ -89,8 +89,8 @@ target_include_directories(${project_name} PUBLIC src)
 
 
 add_executable(measure_speed_random_games driver/measure_speed_random_games.cpp)
-add_executable(run_minimax_depth src/run_minimax_depth.cpp)
-target_link_libraries(run_minimax_depth PUBLIC ${project_name})
+add_executable(run_minimax_time src/run_minimax_time.cpp)
+target_link_libraries(run_minimax_time PUBLIC ${project_name})
 target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 

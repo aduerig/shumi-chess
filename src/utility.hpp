@@ -83,10 +83,36 @@ namespace representation {
 
 ull acn_to_bitboard_conversion(const std::string&);
 std::string bitboard_to_acn_conversion(ull);
-inline const ShumiChess::Color get_opposite_color(const ShumiChess::Color color) {
+inline const ShumiChess::Color opposite_color(const ShumiChess::Color color) {
     return (ShumiChess::Color) (1 - (int) color);
 }
-std::string move_to_string(ShumiChess::Move);
+inline const string color_str(const ShumiChess::Color color) {
+    return color == ShumiChess::WHITE ? "white" : "black";
+}
+
+
+extern std::array<std::string, 8> row_to_letter;
+
+// assumes layout is:
+// lower right is 2^0
+// lower left is 2^7
+// upper right is 2^56
+// upper left is 2^63
+inline std::string square_to_position_string(ull square) {
+    for (int i = 1; i <= 8; i++) {
+        for (int j = 1; j <= 8; j++) {
+            if (1ULL & square) {
+                return row_to_letter[(9 - j) - 1] + to_string(i);
+            }
+            square = square >> 1;
+        }
+    }
+    return "error";
+};
+
+inline std::string move_to_string(ShumiChess::Move move) {
+    return square_to_position_string(move.from) + square_to_position_string(move.to);
+};
 struct MoveHash {
     std::size_t operator()(const ShumiChess::Move &m) const {
         return std::hash<std::string>{}(move_to_string(m));

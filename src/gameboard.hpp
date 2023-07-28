@@ -44,7 +44,7 @@ class GameBoard {
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
         ull en_passant {0}; 
 
-        int zobrist_key {0};
+        uint64_t zobrist_key {0};
 
         // move clock
         uint8_t halfmove;

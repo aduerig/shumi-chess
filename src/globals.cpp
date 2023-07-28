@@ -1,4 +1,5 @@
 #include <globals.hpp>
+#include <limits>
 
 using namespace std;
 
@@ -33,11 +34,29 @@ vector<ull> col_masks = {
 };
 
 
+class MyPRNG {
+private:
+    // Parameters for a 64-bit Linear Congruential Generator (LCG) [Numerical Recipes (3rd edition)]
+    static constexpr uint64_t a = 6364136223846793005ULL; // multiplier
+    static constexpr uint64_t c = 1442695040888963407ULL; // increment
+    static constexpr uint64_t m = std::numeric_limits<uint64_t>::max(); // modulus
+    uint64_t current_state {123456789};
+
+public:
+    MyPRNG() {}
+
+    uint64_t get_random_number() {
+        current_state = (a * current_state + c) % m; // LCG formula
+        return current_state;
+    }
+};
+
+
 // !TODO: Make this the same as array probably
-int zobrist_piece_square[12][64];
-int zobrist_enpassant[8];
-int zobrist_castling[16];
-int zobrist_side;
+uint64_t zobrist_piece_square[12][64];
+uint64_t zobrist_enpassant[8];
+uint64_t zobrist_castling[16];
+uint64_t zobrist_side;
 
 // One number for each piece at each square
 // One number to indicate the side to move is black
@@ -45,19 +64,20 @@ int zobrist_side;
 // Eight numbers to indicate the file of a valid En passant square, if any
 // This leaves us with an array with 793 (12*64 + 1 + 16 + 8)
 void initialize_zobrist() {
-    srand(402);
+    MyPRNG randomer;
+    
     for (int i = 0; i < 12; i++) {
         for (int j = 0; j < 64; j++) {
-            zobrist_piece_square[i][j] = rand();
+            zobrist_piece_square[i][j] = randomer.get_random_number();
         }
     }
     for (int i = 0; i < 8; i++) {
-        zobrist_enpassant[i] = rand();
+        zobrist_enpassant[i] = randomer.get_random_number();
     }
     for (int i = 0; i < 16; i++) {
-        zobrist_castling[i] = rand();
+        zobrist_castling[i] = randomer.get_random_number();
     }
-    zobrist_side = rand();
+    zobrist_side = randomer.get_random_number();
 }
 
 

@@ -21,16 +21,22 @@ public:
     int nodes_visited = 0;
 
     ShumiChess::Engine& engine;
-    unordered_map<ull, int> piece_and_values;
-    unordered_map<int, std::string> seen_zobrist;
+    std::array<std::tuple<ShumiChess::Piece, double>, 6> piece_and_values = {
+        make_tuple(ShumiChess::Piece::PAWN, 1),
+        make_tuple(ShumiChess::Piece::ROOK, 5),
+        make_tuple(ShumiChess::Piece::KNIGHT, 3),
+        make_tuple(ShumiChess::Piece::BISHOP, 3),
+        make_tuple(ShumiChess::Piece::QUEEN, 8),
+        make_tuple(ShumiChess::Piece::KING, 0),
+    };
+    unordered_map<uint64_t, std::string> seen_zobrist;
 
     MinimaxAI(ShumiChess::Engine&);
 
     int bits_in(ull);
-    int evaluate_board();
-    int evaluate_board(ShumiChess::Color);
+    double evaluate_board(ShumiChess::Color, vector<ShumiChess::Move>&);
 
-    double store_board_values(int depth, ShumiChess::Color color, double alpha, double beta, unordered_map<int, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &board_values);
+    std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &board_values, bool);
     ShumiChess::Move get_move_iterative_deepening(double);
 
     double get_value(int, int, double, double);

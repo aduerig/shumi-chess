@@ -10,9 +10,9 @@
 using namespace std;
 
 TEST(InverseColor, GetOpposingColorTest) {
-    EXPECT_EQ(utility::representation::get_opposite_color(ShumiChess::Color::WHITE),
+    EXPECT_EQ(utility::representation::opposite_color(ShumiChess::Color::WHITE),
               ShumiChess::Color::BLACK);
-    ASSERT_EQ(utility::representation::get_opposite_color(ShumiChess::Color::BLACK),
+    ASSERT_EQ(utility::representation::opposite_color(ShumiChess::Color::BLACK),
               ShumiChess::Color::WHITE);
 }
 

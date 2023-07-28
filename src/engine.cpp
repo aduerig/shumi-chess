@@ -76,7 +76,7 @@ bool Engine::is_king_in_check(const ShumiChess::Color& color) {
 }
 
 bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square) {
-    Color enemy_color = utility::representation::get_opposite_color(color);
+    Color enemy_color = utility::representation::opposite_color(color);
 
     // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
     ull straight_attacks_from_king = get_straight_attacks(square);
@@ -137,7 +137,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 void Engine::push(const Move& move) {
     move_history.push(move);
 
-    this->game_board.turn = utility::representation::get_opposite_color(move.color);
+    this->game_board.turn = utility::representation::opposite_color(move.color);
     game_board.zobrist_key ^= zobrist_side;
 
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
@@ -168,11 +168,11 @@ void Engine::push(const Move& move) {
         if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][target_pawn_square];
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
         } else {
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][square_to];
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~move.to;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
         // !TODO zobrist update for castling
@@ -241,11 +241,11 @@ void Engine::pop() {
         if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][target_pawn_square];
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= target_pawn_bitboard;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
         } else {
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= move.to;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][square_to];
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
@@ -307,8 +307,7 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
         else {return ref(this->game_board.white_king);}
         break;
     }
-    // TODO remove this, i'm just putting it here because it prevents a warning
-    return this->game_board.white_king;
+    return this->game_board.white_king; // warning prevention
 }
 
 void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passant, bool is_en_passent_capture, bool is_castle) {
@@ -385,7 +384,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     }
 
     ull all_pieces = game_board.get_pieces();
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
 
     while (pawns) {
         // pop and get one pawn bitboard
@@ -433,7 +432,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull knights = game_board.get_pieces_template<Piece::KNIGHT>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (knights) {
@@ -452,7 +451,7 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
 void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (rooks) {
@@ -471,7 +470,7 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull bishops = game_board.get_pieces_template<Piece::BISHOP>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (bishops) {
@@ -491,7 +490,7 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
 void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (queens) {
@@ -511,7 +510,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 // assumes 1 king exists per color
 void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull king = game_board.get_pieces_template<Piece::KING>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull all_pieces = game_board.get_pieces();
     ull own_pieces = game_board.get_pieces(color);
 
