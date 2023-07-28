@@ -25,7 +25,6 @@ public:
         make_tuple(ShumiChess::Piece::PAWN, 1),
         make_tuple(ShumiChess::Piece::ROOK, 5),
         make_tuple(ShumiChess::Piece::KNIGHT, 3),
-        make_tuple(ShumiChess::Piece::BISHOP, 3),
         make_tuple(ShumiChess::Piece::QUEEN, 8),
         make_tuple(ShumiChess::Piece::KING, 0),
     };

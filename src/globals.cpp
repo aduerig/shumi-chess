@@ -53,29 +53,16 @@ public:
 
 
 // !TODO: Make this the same as array probably
-uint64_t zobrist_piece_square[12][64];
-uint64_t zobrist_enpassant[8];
-uint64_t zobrist_castling[16];
+uint64_t zobrist_piece_square[10][64];
 uint64_t zobrist_side;
 
-// One number for each piece at each square
-// One number to indicate the side to move is black
-// Four numbers to indicate the castling rights, though usually 16 (2^4) are used for speed
-// Eight numbers to indicate the file of a valid En passant square, if any
-// This leaves us with an array with 793 (12*64 + 1 + 16 + 8)
 void initialize_zobrist() {
     MyPRNG randomer;
     
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 64; j++) {
             zobrist_piece_square[i][j] = randomer.get_random_number();
         }
-    }
-    for (int i = 0; i < 8; i++) {
-        zobrist_enpassant[i] = randomer.get_random_number();
-    }
-    for (int i = 0; i < 16; i++) {
-        zobrist_castling[i] = randomer.get_random_number();
     }
     zobrist_side = randomer.get_random_number();
 }
@@ -140,12 +127,5 @@ void initialize_rays() {
     east_square_ray[64] = 0ULL;
     west_square_ray[64] = 0ULL;
 }
-
-vector<Piece> promotion_values = {
-    Piece::BISHOP,
-    Piece::KNIGHT,
-    Piece::QUEEN,
-    Piece::ROOK
-};
 
 } // end namespace ShumiChess

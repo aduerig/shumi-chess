@@ -62,6 +62,7 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
     return square;
 };
 
+
 inline int square_to_bitboard(int square) {
     return 1ULL << (square - 1);
 };
@@ -75,6 +76,15 @@ inline int bitboard_to_lowest_square(ull bitboard) {
 inline int bitboard_to_highest_square(ull bitboard) {
     // idk if this is optimal, but it works, from chatgpt tbh
     return 63 - (__builtin_clzll(bitboard | 1));
+};
+
+
+inline ull lowest_bitboard(ull bitboard) {
+    return 1ULL << bitboard_to_lowest_square(bitboard);
+};
+
+inline ull highest_bitboard(ull bitboard) {
+    return 1ULL << bitboard_to_highest_square(bitboard);
 };
 
 } // end namespace bit

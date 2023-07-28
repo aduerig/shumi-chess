@@ -66,13 +66,11 @@ void print_bitboard(ull bitboard) {
 
 std::string gameboard_to_string(GameBoard gameboard) {
     unordered_map<ull, char> bitboard_to_letter = {
-        {gameboard.white_bishops, 'B'},
         {gameboard.white_knights, 'N'},
         {gameboard.white_king, 'K'},
         {gameboard.white_pawns, 'P'},
         {gameboard.white_rooks, 'R'},
         {gameboard.white_queens, 'Q'},
-        {gameboard.black_bishops, 'b'},
         {gameboard.black_knights, 'n'},
         {gameboard.black_king, 'k'},
         {gameboard.black_pawns, 'p'},
@@ -108,7 +106,6 @@ string stringify(Piece piece) {
         {Piece::PAWN, "pawn"}, 
         {Piece::ROOK, "rook"}, 
         {Piece::KNIGHT, "knight"}, 
-        {Piece::BISHOP, "bishop"}, 
         {Piece::QUEEN, "queen"}, 
         {Piece::KING, "king"} 
     };

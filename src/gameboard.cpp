@@ -10,39 +10,17 @@ using namespace std;
 
 namespace ShumiChess {
 GameBoard::GameBoard() : 
-    // black queen endgame
-    black_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    black_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    black_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    black_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    black_queens(0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    black_king(0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_king(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
-
-    // black_pawns(0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
-    // black_rooks(0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000001),
-    // black_knights(0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01000010),
-    // black_bishops(0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00100100),
-    // black_queens(0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00010000),
-    // black_king(0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_king(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
-    turn(WHITE),
-    black_castle(0b00000011),
-    white_castle(0b00000011),
-    en_passant(0),
-    halfmove(0),
-    fullmove(1) {
-    // !TODO doesn't belong here i don't think
+    black_pawns(0b00000000'00000000'00000000'00000000'01100000'00010000'00010000'00000000),
+    white_pawns(0b00000000'00001000'00001000'00000110'00000000'00000000'00000000'00000000),
+    black_rooks(0b00000000'00000000'00000000'00000000'00000000'00100000'00000000'00000000),
+    white_rooks(0b00000000'00000000'00000100'00000000'00000000'00000000'00000000'00000000),
+    black_knights(0b00000000'00000000'00000000'00000000'00000000'01000000'00100000'00000000),
+    white_knights(0b00000000'00000100'00000010'00000000'00000000'00000000'00000000'00000000),
+    black_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000),
+    white_queens(0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    black_king(0b00000000'00000000'00000000'00000000'00000000'00000000'01000000'00000000),
+    white_king(0b00000000'00000010'00000000'00000000'00000000'00000000'00000000'00000000),
+    turn(BLACK) {
     ShumiChess::initialize_zobrist();
     set_zobrist();
     cout << "GameBoard() constructor being run" << endl;
@@ -75,10 +53,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
             this->black_knights |= 1ULL << square_counter;
         } else if (token == 'N') {
             this->white_knights |= 1ULL << square_counter;
-        } else if (token == 'b') {
-            this->black_bishops |= 1ULL << square_counter;
-        } else if (token == 'B') {
-            this->white_bishops |= 1ULL << square_counter;
         } else if (token == 'q') {
             this->black_queens |= 1ULL << square_counter;
         } else if (token == 'Q') {
@@ -94,31 +68,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
 
-    for (const char token : fen_components[2]) {
-        switch (token)
-        {
-        case 'k':
-            this->black_castle |= 1;
-            break;
-        case 'q':
-            this->black_castle |= 2;
-            break;
-        case 'K':
-            this->white_castle |= 1;
-            break;
-        case 'Q':
-            this->white_castle |= 2; 
-            break;
-        }
-    }
-
-    if (fen_components[3] != "-") { 
-        this->en_passant = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
-    }
-
-    this->halfmove = std::stoi(fen_components[4]);
-    this->fullmove = std::stoi(fen_components[5]);
-
     assert(square_counter == 0);
     
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
@@ -130,25 +79,21 @@ void GameBoard::set_zobrist() {
     cout << "GameBoard::setting zobrist..." << endl;
     for (int color_int = 0; color_int < 2; color_int++) {
         Color color = static_cast<Color>(color_int);
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < 5; j++) {
             Piece piece_type = static_cast<Piece>(j);
             ull bitboard = get_pieces(color, piece_type);
             while (bitboard) {
                 int square = utility::bit::lsb_and_pop_to_square(bitboard);
-                zobrist_key ^= zobrist_piece_square[piece_type + color * 6][square];
+                zobrist_key ^= zobrist_piece_square[piece_type + color * 5][square];
             }
         }
     }
-
-    // if (st->epSquare != SQ_NONE)
-    //     st->key ^= Zobrist::enpassant[file_of(st->epSquare)];
 
     if (turn == Color::BLACK) {
         zobrist_key ^= zobrist_side;
     }
 
     cout << "zobrist key starts at: " << zobrist_key << endl;
-    // st->key ^= Zobrist::castling[st->castlingRights];
 }
 
 // fields for fen are:
@@ -157,7 +102,6 @@ const string GameBoard::to_fen() {
     vector<string> fen_components;
 
     unordered_map<ull, char> piece_to_letter = {
-        {Piece::BISHOP, 'b'},
         {Piece::KING, 'k'},
         {Piece::KNIGHT, 'n'},
         {Piece::PAWN, 'p'},
@@ -202,37 +146,13 @@ const string GameBoard::to_fen() {
     }
     fen_components.push_back(color_rep);
 
-    // TODO: castling
-    string castlestuff;
-    if (0b00000001 & white_castle) {
-        castlestuff += 'K';
-    }
-    if (0b00000010 & white_castle) {
-        castlestuff += 'Q';
-    }
-    if (0b00000001 & black_castle) {
-        castlestuff += 'k';
-    }
-    if (0b00000010 & black_castle) {
-        castlestuff += 'q';
-    }
-    if (castlestuff.empty()) {
-        castlestuff = "-";
-    }
-    fen_components.push_back(castlestuff);
-
-    // TODO: enpassant
-    string enpassant_info = "-";
-    if (en_passant != 0) {
-        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant);
-    }
-    fen_components.push_back(enpassant_info);
+    // castling avaliablity + enpassant
+    fen_components.push_back("-");
+    fen_components.push_back("-");
     
-    // TODO: halfmove number (fifty move rule)
-    fen_components.push_back(to_string(halfmove));
-
-    // TODO: total moves
-    fen_components.push_back(to_string(fullmove));
+    // halfmove and fullmove
+    fen_components.push_back(to_string(0));
+    fen_components.push_back(to_string(0));
 
     // returns string joined by spaces
     return utility::our_string::join(fen_components, " ");
@@ -240,7 +160,7 @@ const string GameBoard::to_fen() {
 
 
 Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
-    vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
+    vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::QUEEN, Piece::KING };
     for (auto piece_type : all_piece_types) {
         if (get_pieces(piece_type) & bitboard) {
             return piece_type;
@@ -254,17 +174,5 @@ Color GameBoard::get_color_on_bitboard(ull bitboard) {
         return Color::WHITE;
     }
     return Color::BLACK;
-    // vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
-    // vector<Color> all_colors = {Color::WHITE, Color::BLACK};
-    // for (auto piece_type : all_piece_types) {
-    //     for (auto color : all_colors) {
-    //         if (get_pieces(color, piece_type) & bitboard) {
-    //             return color;
-    //         }
-    //     }
-    // }
-    // assert(false);
-    // // TODO remove this, i'm just putting it here because it prevents a warning
-    // return Color::WHITE;
 }
 } // end namespace ShumiChess

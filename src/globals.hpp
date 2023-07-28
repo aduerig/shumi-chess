@@ -8,7 +8,6 @@
 #include <iostream>
 #include <array>
 #include <cstdlib>
-// #include <random>
 
 typedef unsigned long long ull;
 
@@ -22,7 +21,6 @@ enum Piece {
     PAWN = 0,
     ROOK,
     KNIGHT,
-    BISHOP,
     QUEEN,
     KING,
     NONE,
@@ -35,20 +33,14 @@ struct Move {
     ull from; // bitboard
     ull to; // bitboard
     Piece capture = Piece::NONE;
-    Piece promotion = Piece::NONE;
-    uint8_t black_castle = 0b00000011;
-    uint8_t white_castle = 0b00000011;
-    ull en_passant = 0;
-    bool is_en_passent_capture = false;
-    bool is_castle_move = false;
+    bool is_laser = false;
+    std::vector<std::tuple<Color, Piece, ull>> pieces_lasered;
 
     bool operator==(const Move &other) const {
         return from == other.from && to == other.to;
     }
 };
 
-// ? is this best way to number
-// ? Should we try to make most checked things = 0 for magical compiler iszero optimizations? (applies to piece enum as well)
 enum GameState {
     INPROGRESS = -1,
     WHITEWIN = 0,
@@ -56,8 +48,6 @@ enum GameState {
     BLACKWIN = 2
 };
 
-
-// ? maybe can use inline here for externs? but it complicates the build. defining in globals.cpp
 
 enum Row {
     ROW_1 = 0,
@@ -88,9 +78,7 @@ extern ull a_col;
 extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
 
-extern uint64_t zobrist_piece_square[12][64];
-extern uint64_t zobrist_enpassant[8];
-extern uint64_t zobrist_castling[16];
+extern uint64_t zobrist_piece_square[10][64];
 extern uint64_t zobrist_side;
 
 void initialize_zobrist();

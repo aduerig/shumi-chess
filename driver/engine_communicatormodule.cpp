@@ -63,13 +63,11 @@ engine_communicator_get_piece_positions(PyObject* self, PyObject* args) {
         make_pair("black_pawn", python_engine.game_board.black_pawns),
         make_pair("black_rook", python_engine.game_board.black_rooks),
         make_pair("black_knight", python_engine.game_board.black_knights),
-        make_pair("black_bishop", python_engine.game_board.black_bishops),
         make_pair("black_queen", python_engine.game_board.black_queens),
         make_pair("black_king", python_engine.game_board.black_king),
         make_pair("white_pawn", python_engine.game_board.white_pawns),
         make_pair("white_rook", python_engine.game_board.white_rooks),
         make_pair("white_knight", python_engine.game_board.white_knights),
-        make_pair("white_bishop", python_engine.game_board.white_bishops),
         make_pair("white_queen", python_engine.game_board.white_queens),
         make_pair("white_king", python_engine.game_board.white_king)
     };
@@ -104,7 +102,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string to_square_acn(to_square_c_str);
 
     ShumiChess::Move found_move;
-    for (const auto move : last_moves) {
+    for (const auto &move : last_moves) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
                 to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
             found_move = move;
@@ -132,10 +130,10 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args) {
     return Py_BuildValue("");
 }
 
-static PyObject*
-engine_communicator_get_move_number(PyObject* self, PyObject* args) {
-    return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
-}
+// static PyObject*
+// engine_communicator_get_move_number(PyObject* self, PyObject* args) {
+//     return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
+// }
 
 
 static PyObject*
@@ -174,7 +172,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},
-    {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
+    // {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
     {"pop",  engine_communicator_pop, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */

@@ -48,7 +48,7 @@ def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
 
 
 ai_default = 'minimax_ai'
-both_players = ['human', ai_default]
+both_players = ['human', 'human']
 
 # ! drawing GUI elements
 screen_width = 800
@@ -173,7 +173,7 @@ for button_obj in button_holder:
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
     Point(square_size * .5, square_size * 9), 
-    turn_text_values[0]
+    turn_text_values[1]
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
 current_turn_text.draw(win)
@@ -189,7 +189,8 @@ curr_game_text.draw(win)
 
 curr_move_text = Text(
     Point(square_size * 4.5, square_size * 9), 
-    'Move {}'.format(engine_communicator.get_move_number())
+    'idk the move number'
+    # 'Move {}'.format(engine_communicator.get_move_number())
 )
 curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
@@ -343,7 +344,7 @@ def make_move(from_acn, to_acn):
 
 # ! playing loop for players
 global legal_moves, player_index, acn_focused, is_dragging, drawn_potential
-player_index = 0
+player_index = 1
 acn_focused = None
 drawn_potential = []
 avail_moves = []
@@ -359,7 +360,8 @@ while True:
         # sets text
         current_turn_text.setText(turn_text_values[player_index])
         curr_game_text.setText('Game {}'.format(curr_game))
-        curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
+        # curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
+        curr_move_text.setText('idk the move number')
 
         raw_position_left_click = win.checkMouse()
         user_left_clicked = False
@@ -370,6 +372,7 @@ while True:
 
         # if is AIs turn and the user hasn't clicked
         if not user_left_clicked:
+
             curr_player = both_players[player_index]
             if 'ai' in curr_player:
                 from_acn, to_acn = get_ai_move(legal_moves, curr_player)
