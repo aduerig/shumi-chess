@@ -80,7 +80,7 @@ GameState Engine::game_over(Move* all_moves, int num_moves) {
 }
 
 void Engine::push(const Move& move) {
-    cout << "Pushing move" << utility::representation::move_to_string(move) << endl;
+    // cout << "Pushing move: " << utility::representation::move_to_string(move) << endl;
     move_history.push(move);
 
     this->game_board.turn = opposite_color(move.color);
@@ -124,7 +124,7 @@ void Engine::pop() {
     count_zobrist_states[game_board.zobrist_key]--;
     three_fold_rep_draw = false;
     const Move move = this->move_history.top();
-    cout << "Popping move" << utility::representation::move_to_string(move) << endl;
+    // cout << "Popping move" << utility::representation::move_to_string(move) << endl;
     this->move_history.pop();
 
     game_board.zobrist_key ^= zobrist_side;

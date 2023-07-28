@@ -42,6 +42,17 @@ create_game_json = {
     }
 }
 
+def invert_square(square):
+    letter = square[0]
+    number = square[1]
+    inverted_letter = chr(ord('h') - ord(letter) + ord('a'))
+    inverted_number = chr(ord('8') - ord(number) + ord('1'))
+    return inverted_letter + inverted_number
+
+def invert_move(move):
+    from_square = move[0]
+    to_square = move[1]
+    return [invert_square(from_square), invert_square(to_square)]
 
 
 def wait_for_engine_instructions(in_queue, out_queue):
@@ -60,9 +71,18 @@ def wait_for_engine_instructions(in_queue, out_queue):
                 out_queue.put(fen_str)
             elif instruction == 'get_move':
                 move_str = engine_communicator.minimax_ai_get_move_iterative_deepening(data)
-                out_queue.put(move_str)
+                move = [move_str[0:2], move_str[2:4]]
+                inverted_move = invert_move(move)
+                print(f'Got {move=} out of engine, {inverted_move=}')
+                out_queue.put(inverted_move)
             elif instruction == 'make_move':
-                engine_communicator.make_move_two_acn(data[0:2], data[2:4])
+                inverted_move = invert_move(data)
+                print(f'Making {data=} move in engine, {inverted_move=}')
+                engine_communicator.get_legal_moves()
+                print('might hang here')
+                engine_communicator.make_move_two_acn(inverted_move[0], inverted_move[1])
+                print('current state:')
+                engine_communicator.print_gameboard()
                 out_queue.put(None)
         time.sleep(.01)
 
@@ -125,7 +145,7 @@ async def host_and_play_games(websocket):
                 continue
             # print_blue('Response: ' + json.dumps(response_data, indent=4))
             if response_data['status'] == 'moved':
-                move_str = ''.join(response_data['data']['move'])
+                move = response_data['data']['move']
                 winner = response_data['data']['winner']
                 if winner == 'null':
                     print_red(f'Game over, {winner=}')
@@ -133,10 +153,10 @@ async def host_and_play_games(websocket):
 
                 seconds_left_for_us = response_data['data']['times'][0]
                 seconds_left_for_them = response_data['data']['times'][1]
-                print_green(f'Got move from opponent {move_str=}, {winner=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
+                print_green(f'Got move from opponent {move=}, {winner=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
 
                 print_cyan('updating engine with their move')
-                in_queue.put(('make_move', move_str))
+                in_queue.put(('make_move', move))
                 while out_queue.qsize() == 0:
                     time.sleep(.01)
                 return_val = out_queue.get_nowait()
@@ -146,11 +166,11 @@ async def host_and_play_games(websocket):
                 in_queue.put(('get_move', time_to_engine))
                 while out_queue.qsize() == 0:
                     time.sleep(.01)
-                chosen_move_str = out_queue.get_nowait()
-                print(f'Got "{chosen_move_str}" from engine, expected a move')
+                engine_move = out_queue.get_nowait()
+                print(f'Got "{engine_move}" from engine, expected a move')
 
                 print_cyan('updating engine with our move')
-                in_queue.put(('make_move', chosen_move_str))
+                in_queue.put(('make_move', engine_move))
                 while out_queue.qsize() == 0:
                     time.sleep(.01)
                 return_val = out_queue.get_nowait()
@@ -171,15 +191,15 @@ async def host_and_play_games(websocket):
                         'id': game_id, 
                         'name': our_name,
                         'fen': current_fen,
-                        'move': [chosen_move_str[0:2], chosen_move_str[2:4]]
+                        'move': engine_move,
                     }
                 }
                 await websocket.send(json.dumps(move_to_send))
 
                 # check if this hangs
-                print('going to wait for a response lets see what happens here...')
+                print('eating a reponse here that is ourselves...')
                 response_data = json.loads(await websocket.recv())
-                print_blue('Response: ' + json.dumps(response_data, indent=4))
+                # print_blue('Response: ' + json.dumps(response_data, indent=4))
 
         await asyncio.sleep(10000)
 

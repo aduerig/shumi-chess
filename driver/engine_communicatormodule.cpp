@@ -38,6 +38,13 @@ Engine python_engine;
 vector<Move> last_moves;
 
 static PyObject*
+engine_communicator_print_gameboard(PyObject* self, PyObject* args) {
+    utility::representation::print_gameboard(python_engine.game_board);
+    return Py_BuildValue(""); // this is None in Python
+}
+
+
+static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
     tuple<Move*, int> all_moves_tuple = python_engine.get_legal_moves();
     Move* all_moves = get<0>(all_moves_tuple);
@@ -109,6 +116,9 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
+    cout << "from_square_acn: " << from_square_acn << endl;
+    cout << "to_square_acn: " << to_square_acn << endl;
+
     Move found_move;
     for (const auto &move : last_moves) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
@@ -166,6 +176,7 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
+    {"print_gameboard",  engine_communicator_print_gameboard, METH_VARARGS, ""},
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
     {"game_over",  engine_communicator_game_over, METH_VARARGS, ""},
