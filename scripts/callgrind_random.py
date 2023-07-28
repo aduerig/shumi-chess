@@ -16,19 +16,15 @@ make_if_not_exist(shared_build_code.bin_dir.joinpath('callgrind_out'))
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', dest='release', default=True, action='store_false')
-parser.add_argument('--time_to_use', dest='time_to_use', default=1)
 args = parser.parse_args()
 
 shared_build_code.build_shumi_chess(args.release, build_tests=False)
 shared_build_code.build_python_gui_module(args.release)
 
-
-print_blue(f'Running perf test with time_to_use {args.time_to_use}')
 run_command_blocking([
     'valgrind',
     '--tool=callgrind',
-    str(shared_build_code.bin_dir.joinpath('run_minimax_time')),
-    str(args.time_to_use),
+    str(shared_build_code.bin_dir.joinpath('measure_speed_random_games')),
 ], debug=True, stdout_pipe=None, stderr_pipe=None)
 
 callgrind_files = []

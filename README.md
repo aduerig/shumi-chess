@@ -22,6 +22,8 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * https://github.com/aduerig/chess-ai
 
 ## todo
+* write the websocket client
+* check if this is off by one in the engine `return make_tuple(moves, curr_move - moves);`
 * I need implement a transposition table so it doesn't re-search
 * why is gameboard constructor run twice, and therefore GameBoard::set_zobrist is set twice.
 
@@ -75,6 +77,8 @@ https://gist.github.com/elliotchance/8215283
 
 
 # laser
+
+wss://api.playlaser.xyz/
 
 example websocket requests
 ```

@@ -39,9 +39,9 @@ GameState play_game(Engine& engine, int& total_moves) {
         }
         total_moves++;
         engine.push(get_random_move(all_moves, num_moves));
-        for (const auto & [ key, value ] : engine.count_zobrist_states) {
-            cout << "key: " << key << " value: " << value << endl;
-        }
+        // for (const auto & [ key, value ] : engine.count_zobrist_states) {
+        //     cout << "key: " << key << " value: " << value << endl;
+        // }
         result = engine.game_over();
     }
     engine.reset_engine();

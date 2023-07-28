@@ -176,7 +176,9 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
-        cout << "Deepening to " << depth << endl;
+        if (depth < 100) {
+            cout << "Deepening to " << depth << endl;
+        }
         auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, false);
         best_move_value = get<0>(ret_val);
         best_move = get<1>(ret_val);

@@ -32,7 +32,6 @@ void Engine::reset_engine() {
 }
 
 tuple<Move*, int> Engine::get_legal_moves() {
-    // cout << "starting get_legal_moves" << endl;
     Color color = game_board.turn;
     Move* curr_move = moves;
     curr_move = add_pawn_moves_to_vector(curr_move, color); 
@@ -40,8 +39,7 @@ tuple<Move*, int> Engine::get_legal_moves() {
     curr_move = add_queen_moves_to_vector(curr_move, color); 
     curr_move = add_king_moves_to_vector(curr_move, color); 
     curr_move = add_knight_moves_to_vector(curr_move, color);
-    // cout << "ending get_legal_moves" << endl;
-    // !TODO see if this is off by 1
+    // 
     return make_tuple(moves, curr_move - moves);
 }
 

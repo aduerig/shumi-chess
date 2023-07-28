@@ -25,7 +25,7 @@ for key, val in imported_ais.items():
 
 def reset_board():
     global curr_game, legal_moves
-    engine_communicator.reset_engine();
+    engine_communicator.reset_engine()
     undraw_pieces()
     render_all_pieces_and_assign(board)
     curr_game += 1
