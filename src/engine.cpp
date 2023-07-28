@@ -83,17 +83,12 @@ void Engine::push(const Move& move) {
 
 
     if (move.is_laser) {
-        for (auto &i : move.pieces_lasered) {
-            Color color;
-            Piece piece_type;
-            ull bitboard;
-            tie(color, piece_type, bitboard) = i;
+        for (int i = 0; i < move.lasered_pieces; i++) {
+            ull& to_kill_piece = access_piece_of_color(move.lasered_piece[i], move.lasered_color[i]);
+            to_kill_piece &= ~move.lasered_bitboard[i];
 
-            ull& to_kill_piece = access_piece_of_color(piece_type, color);
-            to_kill_piece &= ~bitboard;
-
-            int laser_square = bitboard_to_lowest_square(bitboard);
-            game_board.zobrist_key ^= zobrist_piece_square[piece_type + color * 5][laser_square];
+            int laser_square = bitboard_to_lowest_square(move.lasered_bitboard[i]);
+            game_board.zobrist_key ^= zobrist_piece_square[move.lasered_piece[i] + move.lasered_color[i] * 5][laser_square];
         }
     }
     else {
@@ -124,17 +119,12 @@ void Engine::pop() {
     int square_to = bitboard_to_lowest_square(move.to);
 
     if (move.is_laser) {
-        for (auto &i : move.pieces_lasered) {
-            Color color;
-            Piece piece_type;
-            ull bitboard;
-            tie(color, piece_type, bitboard) = i;
+        for (int i = 0; i < move.lasered_pieces; i++) {
+            ull& to_regen_piece = access_piece_of_color(move.lasered_piece[i], move.lasered_color[i]);
+            to_regen_piece |= move.lasered_bitboard[i];
 
-            ull& to_regen_piece = access_piece_of_color(piece_type, color);
-            to_regen_piece |= bitboard;
-
-            int laser_square = bitboard_to_lowest_square(bitboard);
-            game_board.zobrist_key ^= zobrist_piece_square[piece_type + color * 5][laser_square];
+            int laser_square = bitboard_to_lowest_square(move.lasered_bitboard[i]);
+            game_board.zobrist_key ^= zobrist_piece_square[move.lasered_piece[i] + move.lasered_color[i] * 5][laser_square];
         }
     }
     else {
@@ -177,38 +167,6 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
         break;
     }
     return this->game_board.white_king; // warning prevention
-}
-
-void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool is_laser, ull pieces_lasered_ray) {
-    while (bitboard_to) {
-        ull single_bitboard_to = lsb_and_pop(bitboard_to);
-        Piece piece_captured = Piece::NONE;
-        if (capture) {
-            piece_captured = { game_board.get_piece_type_on_bitboard(single_bitboard_to) };
-        }
-
-        Move new_move;
-        new_move.color = color;
-        new_move.piece_type = piece;
-        new_move.from = single_bitboard_from;
-        new_move.to = single_bitboard_to;
-        new_move.capture = piece_captured;
-        new_move.is_laser = is_laser;
-
-        if (is_laser) {
-            for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
-                for (const auto& piece_type : array<Piece, 5>{Piece::KING, Piece::ROOK, Piece::QUEEN, Piece::PAWN, Piece::KNIGHT}) {
-                    ull bitboard = game_board.get_pieces(color, piece_type) & pieces_lasered_ray;
-                    while (bitboard) {
-                        ull single = lsb_and_pop(bitboard);
-                        new_move.pieces_lasered.emplace_back(color, piece_type, single);
-                    }
-                }
-            }
-        }
-
-        moves.emplace_back(new_move);
-    }
 }
 
 void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
@@ -300,7 +258,6 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         ull bottom_row = row_masks[Row::ROW_1];
         ull right_col = col_masks[Col::COL_H];
         ull left_col = col_masks[Col::COL_A];
-
 
 
         // up right

@@ -34,7 +34,13 @@ struct Move {
     ull to; // bitboard
     Piece capture = Piece::NONE;
     bool is_laser = false;
-    std::vector<std::tuple<Color, Piece, ull>> pieces_lasered;
+
+    uint8_t lasered_pieces = 0;
+    ShumiChess::Color lasered_color[7];
+    ShumiChess::Piece lasered_piece[7];
+    ull lasered_bitboard[7];
+
+    // std::vector<std::tuple<Color, Piece, ull>> pieces_lasered;
 
     bool operator==(const Move &other) const {
         return from == other.from && to == other.to;
@@ -71,7 +77,7 @@ enum Col {
     COL_H = 7
 };
 
-// TODO move all this to movegen
+extern std::array<Color, 2> color_arr;
 
 extern ull a_row;
 extern ull a_col;

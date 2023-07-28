@@ -5,6 +5,8 @@ using namespace std;
 
 namespace ShumiChess {
 
+array<Color, 2> color_arr = array<Color, 2>{Color::WHITE, Color::BLACK};
+
 ull a_row = 1ULL << 0 | 1ULL << 1 | 1ULL << 2 | 1ULL << 3 |
             1ULL << 4 | 1ULL << 5 | 1ULL << 6 | 1ULL << 7;
 
