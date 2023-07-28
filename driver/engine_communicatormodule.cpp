@@ -12,6 +12,7 @@
 #include <minimax.hpp>
 
 using namespace std;
+using namespace ShumiChess;
 
 static PyObject*
 engine_communicator_systemcall(PyObject* self, PyObject* args) {
@@ -33,15 +34,22 @@ engine_communicator_print_from_c(PyObject* self, PyObject* args) {
 }
 
 
-ShumiChess::Engine python_engine;
-vector<ShumiChess::Move> last_moves;
+Engine python_engine;
+vector<Move> last_moves;
 
 static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
-    vector<ShumiChess::Move> moves = python_engine.get_legal_moves();
+    tuple<Move*, int> all_moves_tuple = python_engine.get_legal_moves();
+    Move* all_moves = get<0>(all_moves_tuple);
+    int num_moves = get<1>(all_moves_tuple);
+    vector<Move> moves;
+
+    for (int i = 0; i < num_moves; i++) {
+        moves.push_back(all_moves[i]);
+    }
+
     last_moves = moves;
     vector<string> moves_readable;
-    // map function that loads into moves_string
     transform(
         moves.begin(),
         moves.end(),
@@ -101,7 +109,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
-    ShumiChess::Move found_move;
+    Move found_move;
     for (const auto &move : last_moves) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
                 to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
@@ -146,18 +154,11 @@ engine_communicator_get_engine(PyObject* self, PyObject* args) {
 
 MinimaxAI* minimax_ai = new MinimaxAI(python_engine);
 static PyObject*
-minimax_ai_get_move(PyObject* self, PyObject* args) {
-    ShumiChess::Move gotten_move = minimax_ai->get_move();
-    string move_in_acn_notation = utility::representation::move_to_string(gotten_move);
-    return Py_BuildValue("s", move_in_acn_notation.c_str());
-}
-
-static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
     double depth;
     if (!PyArg_ParseTuple(args, "d", &depth))
         return NULL;
-    ShumiChess::Move gotten_move = minimax_ai->get_move_iterative_deepening(depth);
+    Move gotten_move = minimax_ai->get_move_iterative_deepening(depth);
     string move_in_acn_notation = utility::representation::move_to_string(gotten_move);
     return Py_BuildValue("s", move_in_acn_notation.c_str());
 }
@@ -165,7 +166,6 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
-    {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
     {"game_over",  engine_communicator_game_over, METH_VARARGS, ""},

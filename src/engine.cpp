@@ -32,24 +32,31 @@ void Engine::reset_engine() {
     en_passant_history.push(0);
 }
 
-vector<Move> Engine::get_legal_moves() {
-    vector<Move> all_legal_moves;
+tuple<Move*, int> Engine::get_legal_moves() {
+    // cout << "starting get_legal_moves" << endl;
     Color color = game_board.turn;
-    add_pawn_moves_to_vector(all_legal_moves, color); 
-    add_rook_moves_to_vector(all_legal_moves, color); 
-    add_queen_moves_to_vector(all_legal_moves, color); 
-    add_king_moves_to_vector(all_legal_moves, color); 
-    add_knight_moves_to_vector(all_legal_moves, color); 
-    return all_legal_moves;
+    Move* curr_move = moves;
+    curr_move = add_pawn_moves_to_vector(curr_move, color); 
+    curr_move = add_rook_moves_to_vector(curr_move, color); 
+    curr_move = add_queen_moves_to_vector(curr_move, color); 
+    curr_move = add_king_moves_to_vector(curr_move, color); 
+    curr_move = add_knight_moves_to_vector(curr_move, color);
+    // cout << "ending get_legal_moves" << endl;
+    // !TODO see if this is off by 1
+    return make_tuple(moves, curr_move - moves);
 }
 
 GameState Engine::game_over() {
-    vector<Move> legal_moves = get_legal_moves();
-    return game_over(legal_moves);
+    tuple<Move*, int> legal_moves_tuple = get_legal_moves();
+    return game_over(legal_moves_tuple);
 }
 
-GameState Engine::game_over(vector<Move>& legal_moves) {
-    if (legal_moves.size() == 0) {
+GameState Engine::game_over(tuple<Move*, int> legal_moves_tuple) {
+    return game_over(get<0>(legal_moves_tuple), get<1>(legal_moves_tuple));
+}
+
+GameState Engine::game_over(Move* all_moves, int num_moves) {
+    if (num_moves == 0) {
         return GameState::DRAW;
     }
     if (game_board.black_king == 0 && game_board.white_king == 0) {
@@ -73,6 +80,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 }
 
 void Engine::push(const Move& move) {
+    // cout << "starting push" << endl;
     move_history.push(move);
 
     this->game_board.turn = opposite_color(move.color);
@@ -104,10 +112,13 @@ void Engine::push(const Move& move) {
         access_piece_of_color(move.capture, opposite_color(move.color)) &= ~move.to;
         game_board.zobrist_key ^= zobrist_piece_square[move.capture + opposite_color(move.color) * 5][square_to];
     }
+    // cout << "ending push" << endl;
 }
 
 // undos last move, errors if no move was made before
 void Engine::pop() {
+    // cout << "starting pop" << endl;
+
     const Move move = this->move_history.top();
     this->move_history.pop();
 
@@ -140,6 +151,7 @@ void Engine::pop() {
         access_piece_of_color(move.capture, opposite_color(move.color)) |= move.to;
         game_board.zobrist_key ^= zobrist_piece_square[move.capture + opposite_color(move.color) * 5][square_to];
     }
+    // cout << "ending pop" << endl;
 }
 
 ull& Engine::access_piece_of_color(Piece piece, Color color) {
@@ -169,7 +181,7 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
     return this->game_board.white_king; // warning prevention
 }
 
-void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
+Move* Engine::add_pawn_moves_to_vector(Move* curr_move, Color color) {    
     ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
 
     ull all_pieces = game_board.get_pieces();
@@ -184,7 +196,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull move_rleft = (single_pawn & ~col_masks[Col::COL_A]) >> 7;
         ull move_rright = (single_pawn & ~col_masks[Col::COL_H]) >> 9;
         ull non_attacks = (move_fleft | move_fright | move_rleft | move_rright) & ~all_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, non_attacks, Piece::PAWN, color, false, false, 0ULL);
+        curr_move = add_move_to_vector(curr_move, single_pawn, non_attacks, Piece::PAWN, color, false, false, 0ULL);
 
         // attacks sides
         ull attack_up = (single_pawn & ~row_masks[Row::ROW_8]) << 8;
@@ -193,12 +205,12 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull attack_left = (single_pawn & ~col_masks[Col::COL_A]) << 1;
 
         ull attacks = (attack_up | attack_down | attack_right | attack_left) & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, attacks, Piece::PAWN, color, true, false, 0ULL);
-
+        curr_move = add_move_to_vector(curr_move, single_pawn, attacks, Piece::PAWN, color, true, false, 0ULL);
     }
+    return curr_move;
 }
 
-void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
+Move* Engine::add_knight_moves_to_vector(Move* curr_move, Color color) {
     ull knights = game_board.get_pieces_template<Piece::KNIGHT>(color);
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
@@ -209,15 +221,16 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
         
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT, color, true, false, 0ULL);
+        curr_move = add_move_to_vector(curr_move, single_knight, enemy_piece_attacks, Piece::KNIGHT, color, true, false, 0ULL);
 
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT, color, false, false, 0ULL);
+        curr_move = add_move_to_vector(curr_move, single_knight, non_attack_moves, Piece::KNIGHT, color, false, false, 0ULL);
     }
+    return curr_move;
 }
 
-void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
+Move* Engine::add_rook_moves_to_vector(Move* curr_move, Color color) {
     ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
@@ -228,15 +241,16 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK, color, true, false, 0ULL);
-    
+        curr_move = add_move_to_vector(curr_move, single_rook, enemy_piece_attacks, Piece::ROOK, color, true, false, 0ULL);
+
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK, color, false, false, 0ULL);
+        curr_move = add_move_to_vector(curr_move, single_rook, non_attack_moves, Piece::ROOK, color, false, false, 0ULL);
     }
+    return curr_move;
 }
 
-void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
+Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
     ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);
     ull all_pieces = game_board.get_pieces();
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
@@ -247,7 +261,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 
         // moves
         ull avail_moves = get_straight_attacks(single_queen) & ~all_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_queen, avail_moves, Piece::QUEEN, color, false, false, 0ULL);
+        curr_move = add_move_to_vector(curr_move, single_queen, avail_moves, Piece::QUEEN, color, false, false, 0ULL);
 
         // laser
         ull square = bitboard_to_lowest_square(single_queen);
@@ -267,7 +281,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         ull ne_attacks = ~single_queen & lowest_bitboard(masked_blockers_ne);
         if (ne_attacks != 0) {
             ull back_ray = ne_attacks | (north_east_square_ray[square] & south_west_square_ray[bitboard_to_highest_square(ne_attacks)]);
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, ne_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector(curr_move, single_queen, ne_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
 
         // up left
@@ -277,7 +291,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         ull nw_attacks = ~single_queen & lowest_bitboard(masked_blockers_nw);
         if (nw_attacks != 0) {
             ull back_ray = nw_attacks | (north_west_square_ray[square] & south_east_square_ray[bitboard_to_highest_square(nw_attacks)]);
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, nw_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector(curr_move, single_queen, nw_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
 
         // down right
@@ -287,7 +301,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         ull se_attacks = ~single_queen & highest_bitboard(masked_blockers_se);
         if (se_attacks != 0) {
             ull back_ray = se_attacks | (south_east_square_ray[square] & north_west_square_ray[bitboard_to_lowest_square(se_attacks)]);
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, se_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector(curr_move, single_queen, se_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
 
         // down left
@@ -297,12 +311,13 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
         ull sw_attacks = ~single_queen & highest_bitboard(masked_blockers_sw);
         if (sw_attacks != 0) {
             ull back_ray = sw_attacks | (south_west_square_ray[square] & north_east_square_ray[bitboard_to_lowest_square(sw_attacks)]);
-            add_move_to_vector(all_psuedo_legal_moves, single_queen, sw_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector(curr_move, single_queen, sw_attacks, Piece::QUEEN, color, false, true, back_ray);
         }
     }
+    return curr_move;
 }
 
-void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
+Move* Engine::add_king_moves_to_vector(Move* curr_move, Color color) {
     ull king = game_board.get_pieces_template<Piece::KING>(color);
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
     ull all_pieces = game_board.get_pieces();
@@ -312,12 +327,13 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
     // captures
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-    add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING, color, true, false, 0ULL);
+    curr_move = add_move_to_vector(curr_move, king, enemy_piece_attacks, Piece::KING, color, true, false, 0ULL);
 
     // non-capture moves
     ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
     
-    add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL);
+    curr_move = add_move_to_vector(curr_move, king, non_attack_moves, Piece::KING, color, false, false, 0ULL);
+    return curr_move;
 }
 
 

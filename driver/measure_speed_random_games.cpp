@@ -19,9 +19,9 @@ int rand_int(int min, int max) {
 }
 
 
-Move& get_random_move(vector<Move>& moves) {
-    int index = rand_int(0, (int) moves.size() - 1);
-    return moves[index];
+Move& get_random_move(Move* all_moves, int num_moves) {
+    int index = rand_int(0, num_moves - 1);
+    return all_moves[index];
 }
 
 
@@ -29,14 +29,16 @@ GameState play_game(Engine& engine, int& total_moves) {
     GameState result = engine.game_over();
 
     while (result == GameState::INPROGRESS) {
-        vector<Move> all_moves = engine.get_legal_moves();
+        tuple<Move*, int> all_moves_tuple = engine.get_legal_moves();
+        Move* all_moves = get<0>(all_moves_tuple);
+        int num_moves = get<1>(all_moves_tuple);
         // checking for draws manually
-        if (all_moves.size() == 0) {
+        if (num_moves == 0) {
             result = GameState::DRAW;
             break;
         }
         total_moves++;
-        engine.push(get_random_move(all_moves));
+        engine.push(get_random_move(all_moves, num_moves));
         result = engine.game_over();
     }
     engine.reset_engine();

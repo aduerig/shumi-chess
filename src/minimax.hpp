@@ -33,12 +33,8 @@ public:
     MinimaxAI(ShumiChess::Engine&);
 
     int bits_in(ull);
-    double evaluate_board(ShumiChess::Color, vector<ShumiChess::Move>&);
+    double evaluate_board(ShumiChess::Color, tuple<ShumiChess::Move*, int>);
 
-    std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &board_values, bool);
+    std::tuple<double, ShumiChess::Move> store_board_values_negamax(int, double, double, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &, bool);
     ShumiChess::Move get_move_iterative_deepening(double);
-
-    double get_value(int, int, double, double);
-    ShumiChess::Move get_move(int);
-    ShumiChess::Move get_move();
 };
