@@ -50,10 +50,10 @@ pair<string, vector<string>> get_fens_from_file(fs::path filepath) {
     string line;
     string starting_fen;
     if (getline (myfile, line)) {
-        if (utility::string::starts_with(line, "Starting Fen:")) {
-            vector<string> splitted = utility::string::split(line, ":");
+        if (utility::our_string::starts_with(line, "Starting Fen:")) {
+            vector<string> splitted = utility::our_string::split(line, ":");
             starting_fen = splitted.back();
-            utility::string::trim(starting_fen); // in place
+            utility::our_string::trim(starting_fen); // in place
         }
     }
     
@@ -89,7 +89,7 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     // ? seg faults when i pass a fs::path into here, idk why
     fs::path local_filepath = fs::path(GetParam());
     string filename = local_filepath.stem().string();
-    string string_depth = utility::string::split(filename, "_").back();
+    string string_depth = utility::our_string::split(filename, "_").back();
 
     // cout << "depth of file: " << local_filepath.filename() << ", is: " << string_depth << endl;
     int depth = stoi(string_depth);
@@ -133,11 +133,11 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
             ShumiChess::Engine test_engine1(baseline_fen);
             utility::representation::print_gameboard(test_engine1.game_board);
             cout << "Trying to find matching board positions (not perfect fen match)..." << endl;
-            string just_position = utility::string::split(baseline_fen, " ")[0];
+            string just_position = utility::our_string::split(baseline_fen, " ")[0];
             for (const auto& pair2 : shumi_fens) {
                 string fenner = pair2.first;
                 int nothingmatters = pair2.second;
-                string just_position2 = utility::string::split(fenner, " ")[0];
+                string just_position2 = utility::our_string::split(fenner, " ")[0];
                 if (just_position == just_position2) {
                     cout << "generated matching board found, fen is: " << fenner << ", board position is" << endl;
                     ShumiChess::Engine test_engine8(fenner);

@@ -6,30 +6,50 @@
 #include "gameboard.hpp"
 #include "utility.hpp"
 
+using namespace std;
+
 namespace ShumiChess {
 GameBoard::GameBoard() : 
-    black_pawns(0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
-    black_rooks(0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000001),
-    black_knights(0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01000010),
-    black_bishops(0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00100100),
+    // black queen endgame
+    black_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    black_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    black_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    black_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
     black_queens(0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00010000),
+    white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
     black_king(0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
     white_king(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
+
+    // black_pawns(0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
+    // white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
+    // black_rooks(0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    // white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000001),
+    // black_knights(0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    // white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01000010),
+    // black_bishops(0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    // white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00100100),
+    // black_queens(0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    // white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00010000),
+    // black_king(0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
+    // white_king(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
     turn(WHITE),
     black_castle(0b00000011),
     white_castle(0b00000011),
     en_passant(0),
     halfmove(0),
     fullmove(1) {
+    // !TODO doesn't belong here i don't think
+    ShumiChess::initialize_zobrist();
+    set_zobrist();
+    cout << "GameBoard() constructor being run" << endl;
 }
 
 GameBoard::GameBoard(const std::string& fen_notation) {
-    const std::vector<std::string> fen_components = utility::string::split(fen_notation);
+    const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
     
     assert(fen_components.size() == 6);
     assert(fen_components[1].size() == 1);
@@ -102,12 +122,15 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     assert(square_counter == 0);
     
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
+    ShumiChess::initialize_zobrist();
+    set_zobrist();
+}
 
-    // sets zobrist
+void GameBoard::set_zobrist() {
+    cout << "GameBoard::setting zobrist..." << endl;
     for (int color_int = 0; color_int < 2; color_int++) {
         Color color = static_cast<Color>(color_int);
-        
-        for (int j = 1; j < 7; j++) {
+        for (int j = 0; j < 6; j++) {
             Piece piece_type = static_cast<Piece>(j);
             ull bitboard = get_pieces(color, piece_type);
             while (bitboard) {
@@ -124,12 +147,13 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         zobrist_key ^= zobrist_side;
     }
 
+    cout << "zobrist key starts at: " << zobrist_key << endl;
     // st->key ^= Zobrist::castling[st->castlingRights];
 }
 
 // fields for fen are:
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
-const std::string GameBoard::to_fen() {
+const string GameBoard::to_fen() {
     vector<string> fen_components;
 
     unordered_map<ull, char> piece_to_letter = {
@@ -169,7 +193,7 @@ const std::string GameBoard::to_fen() {
         }
         piece_positions.push_back(poses);
     }
-    fen_components.push_back(utility::string::join(piece_positions, "/"));
+    fen_components.push_back(utility::our_string::join(piece_positions, "/"));
 
     // current turn
     string color_rep = "w";
@@ -211,7 +235,7 @@ const std::string GameBoard::to_fen() {
     fen_components.push_back(to_string(fullmove));
 
     // returns string joined by spaces
-    return utility::string::join(fen_components, " ");
+    return utility::our_string::join(fen_components, " ");
 }
 
 

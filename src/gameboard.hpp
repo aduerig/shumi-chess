@@ -44,7 +44,7 @@ class GameBoard {
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
         ull en_passant {0}; 
 
-        int zobrist_key {0};
+        uint64_t zobrist_key {0};
 
         // move clock
         uint8_t halfmove;
@@ -56,6 +56,8 @@ class GameBoard {
 
         // Member methods
         const std::string to_fen();
+
+        void set_zobrist();
 
         template <Piece p>
         inline ull get_pieces_template() {

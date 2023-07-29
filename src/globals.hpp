@@ -19,13 +19,13 @@ enum Color {
 };
 
 enum Piece {
-    NONE = 0,
-    PAWN,
+    PAWN = 0,
     ROOK,
     KNIGHT,
     BISHOP,
     QUEEN,
     KING,
+    NONE,
 };
 
 // TODO think about if this is the right way to represent
@@ -41,6 +41,10 @@ struct Move {
     ull en_passant = 0;
     bool is_en_passent_capture = false;
     bool is_castle_move = false;
+
+    bool operator==(const Move &other) const {
+        return from == other.from && to == other.to;
+    }
 };
 
 // ? is this best way to number
@@ -84,10 +88,10 @@ extern ull a_col;
 extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
 
-extern int zobrist_piece_square[12][64];
-extern int zobrist_enpassant[8];
-extern int zobrist_castling[16];
-extern int zobrist_side;
+extern uint64_t zobrist_piece_square[12][64];
+extern uint64_t zobrist_enpassant[8];
+extern uint64_t zobrist_castling[16];
+extern uint64_t zobrist_side;
 
 void initialize_zobrist();
 

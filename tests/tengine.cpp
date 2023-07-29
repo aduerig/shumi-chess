@@ -182,6 +182,20 @@ TEST(EngineMoveStorage, PushPopMini) {
     }
 }
 
+TEST(EngineMoveStorage, EngineZobristConsistancy) {
+    using namespace ShumiChess;
+    Engine test_engine;
+
+    uint64_t starting_zobrist = test_engine.game_board.zobrist_key;
+    test_engine.push(Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
+    uint64_t mid_zobrist = test_engine.game_board.zobrist_key;
+    test_engine.pop();
+
+    uint64_t ending_zobrist = test_engine.game_board.zobrist_key;
+
+    EXPECT_EQ(starting_zobrist, ending_zobrist);
+}
+
 //TODO use a different game to test pop (this one is same game as push), more variety
 //? ^ Test different castling rook
 //? Maybe just more mini tests

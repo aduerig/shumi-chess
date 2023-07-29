@@ -21,15 +21,16 @@ int main(int argc, char** argv) {
     Engine engine;
     MinimaxAI minimax_ai(engine);
 
-    int depth = 1;
+    double time_to_use = 1;
     if (argc < 2) {
-        cout << "You entered no argument for 'depth', using default value of 1" << endl;
+        cout << "You entered no argument for 'time_to_use', using default value of 1" << endl;
     }
     else {
-        depth = atoi(argv[1]);
-        cout << "You entered depth of: " << depth << endl;
+        time_to_use = atoi(argv[1]);
+        cout << "You entered time_to_use of: " << time_to_use << endl;
     }
-    minimax_ai.get_move(depth);
-    cout << "Got a move at depth: " << depth << endl;
+    // minimax_ai.get_move(time_to_use);
+    minimax_ai.get_move_iterative_deepening(time_to_use);
+    cout << "Got a move at time_to_use: " << time_to_use << endl;
     return 0;
 }

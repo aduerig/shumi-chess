@@ -9,7 +9,6 @@ namespace ShumiChess {
 Engine::Engine() {
     reset_engine();
     ShumiChess::initialize_rays();
-    ShumiChess::initialize_zobrist();
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[25]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[25]);
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[28]") << endl;
@@ -28,7 +27,7 @@ void Engine::reset_engine() {
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
-    std::stack<ull> en_passant_history;
+    stack<ull> en_passant_history;
     en_passant_history.push(0);
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
@@ -77,7 +76,7 @@ bool Engine::is_king_in_check(const ShumiChess::Color& color) {
 }
 
 bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square) {
-    Color enemy_color = utility::representation::get_opposite_color(color);
+    Color enemy_color = utility::representation::opposite_color(color);
 
     // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
     ull straight_attacks_from_king = get_straight_attacks(square);
@@ -134,19 +133,12 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
     return GameState::INPROGRESS;
 }
 
-// https://www.chessprogramming.org/Zobrist_Hashing
-void Engine::update_zobrist() {
-    // 
-}
-
 // takes a move, but tracks it so pop() can undo
 void Engine::push(const Move& move) {
     move_history.push(move);
 
-    this->game_board.turn = utility::representation::get_opposite_color(move.color);
-    if (this->game_board.turn) {
-        game_board.zobrist_key ^= zobrist_side;
-    }
+    this->game_board.turn = utility::representation::opposite_color(move.color);
+    game_board.zobrist_key ^= zobrist_side;
 
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
     this->halfway_move_state.push(this->game_board.halfmove);
@@ -176,11 +168,11 @@ void Engine::push(const Move& move) {
         if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~target_pawn_bitboard;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][target_pawn_square];
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
         } else {
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) &= ~move.to;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::get_opposite_color(move.color) * 6][square_to];
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~move.to;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
         // !TODO zobrist update for castling
@@ -221,24 +213,39 @@ void Engine::pop() {
     const Move move = this->move_history.top();
     this->move_history.pop();
 
+    game_board.zobrist_key ^= zobrist_side;
+
     this->game_board.turn = move.color;
 
     this->game_board.fullmove -= static_cast<int>(move.color == ShumiChess::Color::BLACK);
     this->game_board.halfmove = this->halfway_move_state.top();
     this->halfway_move_state.pop();
 
+    int square_from = utility::bit::bitboard_to_lowest_square(move.from);
+    int square_to = utility::bit::bitboard_to_lowest_square(move.to);
+
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.to;
     moving_piece |= move.from;
-    if (move.promotion != Piece::NONE) {
+
+    game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
+
+    if (move.promotion == Piece::NONE) {
+        game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
+    }
+    else {
         access_piece_of_color(move.promotion, move.color) &= ~move.to;
+        game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }
     if (move.capture != Piece::NONE) {
-        if (!move.is_en_passent_capture) {
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= move.to;
-        } else {
+        if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
-            access_piece_of_color(move.capture, utility::representation::get_opposite_color(move.color)) |= target_pawn_bitboard;
+            int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
+        } else {
+            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
+            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
@@ -276,32 +283,31 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
     switch (piece)
     {
     case Piece::PAWN:
-        if (color) {return std::ref(this->game_board.black_pawns);}
-        else {return std::ref(this->game_board.white_pawns);}
+        if (color) {return ref(this->game_board.black_pawns);}
+        else {return ref(this->game_board.white_pawns);}
         break;
     case Piece::ROOK:
-        if (color) {return std::ref(this->game_board.black_rooks);}
-        else {return std::ref(this->game_board.white_rooks);}
+        if (color) {return ref(this->game_board.black_rooks);}
+        else {return ref(this->game_board.white_rooks);}
         break;
     case Piece::KNIGHT:
-        if (color) {return std::ref(this->game_board.black_knights);}
-        else {return std::ref(this->game_board.white_knights);}
+        if (color) {return ref(this->game_board.black_knights);}
+        else {return ref(this->game_board.white_knights);}
         break;
     case Piece::BISHOP:
-        if (color) {return std::ref(this->game_board.black_bishops);}
-        else {return std::ref(this->game_board.white_bishops);}
+        if (color) {return ref(this->game_board.black_bishops);}
+        else {return ref(this->game_board.white_bishops);}
         break;
     case Piece::QUEEN:
-        if (color) {return std::ref(this->game_board.black_queens);}
-        else {return std::ref(this->game_board.white_queens);}
+        if (color) {return ref(this->game_board.black_queens);}
+        else {return ref(this->game_board.white_queens);}
         break;
     case Piece::KING:
-        if (color) {return std::ref(this->game_board.black_king);}
-        else {return std::ref(this->game_board.white_king);}
+        if (color) {return ref(this->game_board.black_king);}
+        else {return ref(this->game_board.white_king);}
         break;
     }
-    // TODO remove this, i'm just putting it here because it prevents a warning
-    return this->game_board.white_king;
+    return this->game_board.white_king; // warning prevention
 }
 
 void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passant, bool is_en_passent_capture, bool is_castle) {
@@ -378,7 +384,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     }
 
     ull all_pieces = game_board.get_pieces();
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
 
     while (pawns) {
         // pop and get one pawn bitboard
@@ -418,15 +424,15 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         // enpassant attacks
         // TODO improvement here, because we KNOW that enpassant results in the capture of a pawn, but it adds a lot of code here to get the speed upgrade. Words fine as is
-        ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
-                     true, false, 0ULL, true, false);
+        // ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
+        // add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
+        //              true, false, 0ULL, true, false);
     }
 }
 
 void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull knights = game_board.get_pieces_template<Piece::KNIGHT>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (knights) {
@@ -445,7 +451,7 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
 void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (rooks) {
@@ -464,7 +470,7 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull bishops = game_board.get_pieces_template<Piece::BISHOP>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (bishops) {
@@ -484,7 +490,7 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
 void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
     while (queens) {
@@ -504,7 +510,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 // assumes 1 king exists per color
 void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull king = game_board.get_pieces_template<Piece::KING>(color);
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::get_opposite_color(color));
+    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull all_pieces = game_board.get_pieces();
     ull own_pieces = game_board.get_pieces(color);
 
@@ -520,29 +526,29 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
     // castling
-    if (color == Color::WHITE) {
-        if (game_board.white_castle & (0b00000001) && 
-            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-        if (game_board.white_castle & (0b00000010) && 
-            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-    } else {
-        if (game_board.black_castle & (0b00000001) && 
-            ((0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-        if (game_board.black_castle & (0b00000010) && 
-            ((0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-    }
+    // if (color == Color::WHITE) {
+    //     if (game_board.white_castle & (0b00000001) && 
+    //         ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    //     if (game_board.white_castle & (0b00000010) && 
+    //         ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    // } else {
+    //     if (game_board.black_castle & (0b00000001) && 
+    //         ((0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    //     if (game_board.black_castle & (0b00000010) && 
+    //         ((0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
+    //         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
+    //         add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
+    //     }
+    // }
 }
 
 // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
