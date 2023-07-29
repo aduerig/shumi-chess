@@ -26,7 +26,7 @@ get_games_json = {
 
 minutes_for_us = 2
 minutes_for_them = 3
-time_to_engine = .1
+time_to_engine = .5
 seconds_for_us = int(minutes_for_us * 60 * 1000)
 seconds_for_them = int(minutes_for_them * 60 * 1000)
 our_name = 'mr. robot'
@@ -66,8 +66,7 @@ def wait_for_engine_instructions(in_queue, out_queue):
 
             if instruction == 'get_fen':
                 # !TODO
-                # fen_str = engine_communicator.get_fen()
-                fen_str = '7q/4pnk1/4prn1/3P2p1/1P2p3/1NRP4/1KNP4/Q7 b - - 0 1'
+                fen_str = engine_communicator.get_fen()
                 out_queue.put(fen_str)
             elif instruction == 'get_move':
                 move_str = engine_communicator.minimax_ai_get_move_iterative_deepening(data)

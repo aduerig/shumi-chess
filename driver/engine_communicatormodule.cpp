@@ -35,8 +35,6 @@ engine_communicator_print_from_c(PyObject* self, PyObject* args) {
 
 
 Engine python_engine;
-vector<Move> last_moves;
-
 static PyObject*
 engine_communicator_print_gameboard(PyObject* self, PyObject* args) {
     utility::representation::print_gameboard(python_engine.game_board);
@@ -46,6 +44,7 @@ engine_communicator_print_gameboard(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
+    // !this is slow for no reason
     tuple<Move*, int> all_moves_tuple = python_engine.get_legal_moves();
     Move* all_moves = get<0>(all_moves_tuple);
     int num_moves = get<1>(all_moves_tuple);
@@ -55,7 +54,6 @@ engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
         moves.push_back(all_moves[i]);
     }
 
-    last_moves = moves;
     vector<string> moves_readable;
     transform(
         moves.begin(),
@@ -119,12 +117,28 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     cout << "from_square_acn: " << from_square_acn << endl;
     cout << "to_square_acn: " << to_square_acn << endl;
 
+    tuple<Move*, int> all_moves_tuple = python_engine.get_legal_moves();
+    Move* all_moves = get<0>(all_moves_tuple);
+    int num_moves = get<1>(all_moves_tuple);
+    vector<Move> all_legal_moves;
+
+    for (int i = 0; i < num_moves; i++) {
+        all_legal_moves.push_back(all_moves[i]);
+    }
+
     Move found_move;
-    for (const auto &move : last_moves) {
+    bool found = false;
+    for (const auto &move : all_legal_moves) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
                 to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
             found_move = move;
+            found = true;
+            break;
         }
+    }
+    if (!found) {
+        cout << "move not found in legal moves, somethings wrong" << endl;
+        return Py_BuildValue("");
     }
     python_engine.push(found_move);
 
@@ -147,6 +161,13 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args) {
     python_engine.reset_engine();
     return Py_BuildValue("");
 }
+
+
+static PyObject*
+engine_communicator_get_fen(PyObject* self, PyObject* args) {
+    return Py_BuildValue("s", python_engine.game_board.to_fen().c_str());
+}
+
 
 // static PyObject*
 // engine_communicator_get_move_number(PyObject* self, PyObject* args) {
@@ -178,6 +199,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
     {"print_gameboard",  engine_communicator_print_gameboard, METH_VARARGS, ""},
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
+    {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
     {"game_over",  engine_communicator_game_over, METH_VARARGS, ""},
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
