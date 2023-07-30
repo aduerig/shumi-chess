@@ -57,6 +57,8 @@ public:
     double black_pawn_value_lookup[64];
     double white_pawn_value_lookup[64];
 
+    ShumiChess::Move capture_moves_internal[256];
+
     MinimaxAI(ShumiChess::Engine&);
 
     template <ShumiChess::Piece piece_type>
