@@ -35,6 +35,17 @@ public:
     std::array<double, 6> all_piece_values = {1, 5, 3, 8, 0};
     spp::sparse_hash_map<uint64_t, std::string> seen_zobrist;
 
+    std::array<std::array<double, 8>, 8> black_pawn_value_lookup = {
+        {5, 5, 7, 7, 0, 0, 0, 0},
+        {4, 6, 6, 8, 8, 8, 8, 0},
+        {5, 5, 7, 7, 7, 7, 8, 0},
+        {4, 6, 6, 6, 6, 6, 8, 0},
+        {5, 5, 5, 5, 5, 5, 8, 7},
+        {4, 4, 4, 4, 4, 7, 6, 7},
+        {3, 3, 3, 3, 6, 5, 6, 5},
+        {2, 2, 2, 5, 4, 5, 4, 5},
+    };
+
     MinimaxAI(ShumiChess::Engine&);
 
     inline int bits_in(ull bitboard) {

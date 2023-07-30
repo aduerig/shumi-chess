@@ -37,12 +37,18 @@ double MinimaxAI::evaluate_board(Color for_color, tuple<Move*, int> all_moves_tu
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
             board_val += piece_value * bits_in(pieces_bitboard);
-            
-            if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
+
+            if (piece_type == Piece::PAWN) {
                 ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
                 board_val +=  0.1 * bits_in(middle_place);
                 // cout << "adding up " << color_str(color) << endl;
             }
+
+            // if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
+            //     ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
+            //     board_val +=  0.1 * bits_in(middle_place);
+            //     // cout << "adding up " << color_str(color) << endl;
+            // }
         }
         if (color != for_color) {
             board_val *= -1;
