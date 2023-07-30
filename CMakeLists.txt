@@ -7,7 +7,7 @@ option(BUILD_TESTS "blank" OFF)
 message("BUILDING TESTS ${BUILD_TESTS}")
 
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(project_name ShumiChess)
 project(${project_name} CXX)
@@ -32,8 +32,10 @@ else()
     # all the fast flags (Ofast helps but hardly)!
     # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
     # maybe we don't always want -g, maybe pass in only for perf stuff
+
     # add_compile_options(-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules)
-    add_compile_options(-g -Ofast)
+    add_compile_options(-g -Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules)
+    # add_compile_options(-g -Ofast)
 endif()
 
 
@@ -55,8 +57,10 @@ message("CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_
 
 add_subdirectory(src)
 
+
+
 if(BUILD_TESTS)
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    # set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     include(googletest_cmake/googletest.cmake)
     fetch_googletest(
         ${PROJECT_SOURCE_DIR}/googletest_cmake
@@ -64,6 +68,16 @@ if(BUILD_TESTS)
     )
     add_subdirectory(tests)
 endif(BUILD_TESTS)
+
+
+# pretty hacky idk
+include(sparsepp_cmake/sparsepp.cmake)
+fetch_sparsepp(
+    ${PROJECT_SOURCE_DIR}/sparsepp_cmake
+    ${PROJECT_BINARY_DIR}/sparsepp
+)
+file(GLOB SPARSEPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/sparsepp/sparsepp-src/sparsepp/*")
+file(COPY ${SPARSEPP_FILES} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 
 set(Headers
@@ -74,6 +88,7 @@ set(Headers
     src/utility.hpp
     src/minimax.hpp
 )
+
 
 set(Sources
     src/gameboard.cpp

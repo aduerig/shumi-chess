@@ -13,7 +13,7 @@ ull a_row = 1ULL << 0 | 1ULL << 1 | 1ULL << 2 | 1ULL << 3 |
 ull a_col = 1ULL << 0 | 1ULL << 8 | 1ULL << 16 | 1ULL << 24 |
             1ULL << 32 | 1ULL << 40 | 1ULL << 48 | 1ULL << 56;
 
-vector<ull> row_masks = {
+array<ull, 8> row_masks = {
     a_row,
     a_row << 8,
     a_row << 16,
@@ -24,7 +24,7 @@ vector<ull> row_masks = {
     a_row << 56
 };
 
-vector<ull> col_masks = {
+array<ull, 8> col_masks = {
     a_col << 7,
     a_col << 6,
     a_col << 5,

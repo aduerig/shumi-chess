@@ -114,9 +114,6 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
-    cout << "from_square_acn: " << from_square_acn << endl;
-    cout << "to_square_acn: " << to_square_acn << endl;
-
     tuple<Move*, int> all_moves_tuple = python_engine.get_legal_moves();
     Move* all_moves = get<0>(all_moves_tuple);
     int num_moves = get<1>(all_moves_tuple);

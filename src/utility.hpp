@@ -49,9 +49,15 @@ inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) 
     return bitboard >> amount;
 };
 
+// inline ull lsb_and_pop(ull& bitboard) {
+//     ull lsb_fast = 1ULL << (__builtin_ffsll(bitboard) - 1);
+//     bitboard = bitboard & (~lsb_fast);
+//     return lsb_fast;
+// };
+
 inline ull lsb_and_pop(ull& bitboard) {
     ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
-    bitboard = bitboard & (~lsb_fast);
+    bitboard ^= lsb_fast;
     return lsb_fast;
 };
 
@@ -131,7 +137,11 @@ inline std::string move_to_string(ShumiChess::Move move) {
 };
 struct MoveHash {
     std::size_t operator()(const ShumiChess::Move &m) const {
-        return std::hash<std::string>{}(move_to_string(m));
+        int ok1 = utility::bit::bitboard_to_lowest_square(m.from);
+        int ok2 = utility::bit::bitboard_to_lowest_square(m.to);
+        return (std::size_t) ok1 + (ok2 * 64);
+        // return std::hash<int>{ok1 + (ok2 * 64)}();
+        // return std::hash<std::string>{}(move_to_string(m));
     }
 };
 std::string bitboard_to_string(ull);

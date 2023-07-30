@@ -81,8 +81,8 @@ extern std::array<Color, 2> color_arr;
 
 extern ull a_row;
 extern ull a_col;
-extern std::vector<ull> row_masks;
-extern std::vector<ull> col_masks;
+extern std::array<ull, 8> row_masks;
+extern std::array<ull, 8> col_masks;
 
 extern uint64_t zobrist_piece_square[10][64];
 extern uint64_t zobrist_side;

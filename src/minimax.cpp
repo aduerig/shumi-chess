@@ -1,5 +1,4 @@
 #include <float.h>
-#include <bitset>
 #include <iomanip>
 #include <sstream>
 #include <locale>
@@ -16,11 +15,6 @@ using namespace utility::bit;
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { }
 
 
-int MinimaxAI::bits_in(ull bitboard) {
-    auto bs = bitset<64>(bitboard);
-    return (int) bs.count();
-}
-
 template<class T>
 string format_with_commas(T value) {
     stringstream ss;
@@ -31,12 +25,11 @@ string format_with_commas(T value) {
 
 double MinimaxAI::evaluate_board(Color for_color, tuple<Move*, int> all_moves_tuple) {
     double board_val_adjusted = 0;
-    for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
+    for (const auto& color : color_arr) {
         double board_val = 0;
-        for (const auto& i : piece_and_values) {
-            Piece piece_type;
-            double piece_value;
-            tie(piece_type, piece_value) = i;
+        for (int i = 0; i < 6; i++) {
+            Piece piece_type = all_pieces[i];
+            double piece_value = all_piece_values[i];
             
             if (piece_type == Piece::KING) {
                 continue;
@@ -60,7 +53,7 @@ double MinimaxAI::evaluate_board(Color for_color, tuple<Move*, int> all_moves_tu
 }
 
 
-tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta, unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &board_values, bool debug) {
+tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<Move, double, MoveHash>> &board_values, bool debug) {
     nodes_visited++;
     tuple<Move*, int> all_moves_tuple = engine.get_legal_moves();
     Move* all_moves = get<0>(all_moves_tuple);
@@ -87,24 +80,24 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         return make_tuple(eval, Move{});
     }
 
-    unordered_map<Move, double, MoveHash> moves_with_values;
+    spp::sparse_hash_map<Move, double, MoveHash> moves_with_values;
     std::vector<Move> sorted_moves;
+    sorted_moves.reserve(total_moves);
 
     if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
         moves_with_values = board_values[engine.game_board.zobrist_key];
 
         for (auto& something : moves_with_values) {
-            Move looking = something.first;
             bool found = false;
             for (int i = 0; i < total_moves; i++) {
-                if (all_moves[i] == looking) {
+                if (all_moves[i] == something.first) {
                     found = true;
                     break;
                 }
             }
             if (!found) {
                 print_gameboard(engine.game_board);
-                cout << "Move shouldnt be legal: " << move_to_string(looking) << " at depth 1" << endl;
+                cout << "Move shouldnt be legal: " << move_to_string(something.first) << " at depth 1" << endl;
                 exit(1);
             }
         }
@@ -115,7 +108,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
                 return a.second > b.second;
             });
-
+        
         for (const auto& pair : vec) {
             sorted_moves.push_back(pair.first);
         }
@@ -126,7 +119,6 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             }
         }
     } else {
-        sorted_moves.reserve(total_moves);
         for (int i = 0; i < total_moves; i++) {
             sorted_moves.push_back(all_moves[i]);
         }
@@ -170,7 +162,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     auto start_time = chrono::high_resolution_clock::now();
     auto required_end_time = start_time + chrono::duration<double>(time);
 
-    unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> board_values;
+    spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<Move, double, MoveHash>> board_values;
     Move best_move;
     double best_move_value;
 

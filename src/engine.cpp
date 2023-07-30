@@ -39,7 +39,6 @@ tuple<Move*, int> Engine::get_legal_moves() {
     curr_move = add_queen_moves_to_vector(curr_move, color); 
     curr_move = add_king_moves_to_vector(curr_move, color); 
     curr_move = add_knight_moves_to_vector(curr_move, color);
-    // 
     return make_tuple(moves, curr_move - moves);
 }
 
@@ -80,7 +79,6 @@ GameState Engine::game_over(Move* all_moves, int num_moves) {
 }
 
 void Engine::push(const Move& move) {
-    // cout << "Pushing move: " << utility::representation::move_to_string(move) << endl;
     move_history.push(move);
 
     this->game_board.turn = opposite_color(move.color);
@@ -116,7 +114,6 @@ void Engine::push(const Move& move) {
     if (count_zobrist_states[game_board.zobrist_key] == 3) {
         three_fold_rep_draw = true;
     }
-    // cout << "ending push" << endl;
 }
 
 // undos last move, errors if no move was made before
@@ -124,7 +121,6 @@ void Engine::pop() {
     count_zobrist_states[game_board.zobrist_key]--;
     three_fold_rep_draw = false;
     const Move move = this->move_history.top();
-    // cout << "Popping move" << utility::representation::move_to_string(move) << endl;
     this->move_history.pop();
 
     game_board.zobrist_key ^= zobrist_side;
@@ -156,7 +152,6 @@ void Engine::pop() {
         access_piece_of_color(move.capture, opposite_color(move.color)) |= move.to;
         game_board.zobrist_key ^= zobrist_piece_square[move.capture + opposite_color(move.color) * 5][square_to];
     }
-    // cout << "ending pop" << endl;
 }
 
 ull& Engine::access_piece_of_color(Piece piece, Color color) {
@@ -192,22 +187,27 @@ Move* Engine::add_pawn_moves_to_vector(Move* curr_move, Color color) {
     ull all_pieces = game_board.get_pieces();
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
 
+    ull not_a_file = ~col_masks[Col::COL_A];
+    ull not_h_file = ~col_masks[Col::COL_H];
+    ull not_8_row = ~row_masks[Row::ROW_8];
+    ull not_1_row = ~row_masks[Row::ROW_1];
+
     while (pawns) {
         ull single_pawn = lsb_and_pop(pawns);
         
         // moves diagonols
-        ull move_fleft = (single_pawn & ~col_masks[Col::COL_A]) << 9;
-        ull move_fright = (single_pawn & ~col_masks[Col::COL_H]) << 7;
-        ull move_rleft = (single_pawn & ~col_masks[Col::COL_A]) >> 7;
-        ull move_rright = (single_pawn & ~col_masks[Col::COL_H]) >> 9;
+        ull move_fleft = (single_pawn & not_a_file) << 9;
+        ull move_fright = (single_pawn & not_h_file) << 7;
+        ull move_rleft = (single_pawn & not_a_file) >> 7;
+        ull move_rright = (single_pawn & not_h_file) >> 9;
         ull non_attacks = (move_fleft | move_fright | move_rleft | move_rright) & ~all_pieces;
         curr_move = add_move_to_vector(curr_move, single_pawn, non_attacks, Piece::PAWN, color, false, false, 0ULL);
 
         // attacks sides
-        ull attack_up = (single_pawn & ~row_masks[Row::ROW_8]) << 8;
-        ull attack_down = (single_pawn & ~row_masks[Row::ROW_1]) >> 8;
-        ull attack_right = (single_pawn & ~col_masks[Col::COL_H]) >> 1;
-        ull attack_left = (single_pawn & ~col_masks[Col::COL_A]) << 1;
+        ull attack_up = (single_pawn & not_8_row) << 8;
+        ull attack_down = (single_pawn & not_1_row) >> 8;
+        ull attack_right = (single_pawn & not_h_file) >> 1;
+        ull attack_left = (single_pawn & not_a_file) << 1;
 
         ull attacks = (attack_up | attack_down | attack_right | attack_left) & all_enemy_pieces;
         curr_move = add_move_to_vector(curr_move, single_pawn, attacks, Piece::PAWN, color, true, false, 0ULL);
@@ -236,12 +236,12 @@ Move* Engine::add_knight_moves_to_vector(Move* curr_move, Color color) {
 }
 
 Move* Engine::add_rook_moves_to_vector(Move* curr_move, Color color) {
-    ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
-    ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
-    ull own_pieces = game_board.get_pieces(color);
+    ull single_rook = game_board.get_pieces_template<Piece::ROOK>(color);
 
-    while (rooks) {
-        ull single_rook = lsb_and_pop(rooks);
+    if (single_rook) {
+        ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
+        ull own_pieces = game_board.get_pieces(color);
+
         ull avail_attacks = get_straight_attacks(single_rook);
 
         // captures
@@ -256,13 +256,11 @@ Move* Engine::add_rook_moves_to_vector(Move* curr_move, Color color) {
 }
 
 Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
-    ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);
-    ull all_pieces = game_board.get_pieces();
-    ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
-    ull own_pieces = game_board.get_pieces(color);
-
-    while (queens) {
-        ull single_queen = lsb_and_pop(queens);
+    ull single_queen = game_board.get_pieces_template<Piece::QUEEN>(color);
+    if (single_queen) {
+        ull all_pieces = game_board.get_pieces();
+        ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
+        ull own_pieces = game_board.get_pieces(color);
 
         // moves
         ull avail_moves = get_straight_attacks(single_queen) & ~all_pieces;

@@ -5,6 +5,8 @@
 #include <stack>
 #include <vector>
 
+#include <spp.h>
+
 #include "globals.hpp"
 #include "gameboard.hpp"
 #include "move_tables.hpp"
@@ -93,7 +95,7 @@ class Engine {
 
         Move moves[256];
 
-        unordered_map<uint64_t, int> count_zobrist_states;
+        spp::sparse_hash_map<uint64_t, int> count_zobrist_states;
         bool three_fold_rep_draw {false};
 
         std::tuple<Move*, int> get_legal_moves();

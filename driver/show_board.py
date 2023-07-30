@@ -382,7 +382,6 @@ while True:
                 make_move(from_acn, to_acn)
                 continue
         
-        # if human
         if curr_player == 'human':
             if time.time() < (last_frame + 1/fps):
                 time.sleep(time.time() - (last_frame + 1/fps))

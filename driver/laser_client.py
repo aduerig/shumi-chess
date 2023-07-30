@@ -204,8 +204,7 @@ async def host_and_play_games(websocket):
                     f.write(f'Move {move_num + 1}: {" ".join(invert_move(engine_move))}\n')
                     move_num += 1
 
-                    # need to send
-                    move_to_send = {
+                    await websocket.send(json.dumps({
                         'messageType': 'move',
                         'data': {
                             'key': game_key,
@@ -214,8 +213,7 @@ async def host_and_play_games(websocket):
                             'fen': communicate_with_engine('get_fen'),
                             'move': engine_move,
                         }
-                    }
-                    await websocket.send(json.dumps(move_to_send))
+                    }))
             communicate_with_engine('kill_engine')
             curr_process.join()
 

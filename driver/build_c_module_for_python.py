@@ -23,7 +23,7 @@ print_cyan(f'building with {release_mode=}, {root_of_project_directory=}, {this_
 
 lib_dir = root_of_project_directory.joinpath('lib')
 extra_link_args = [str(lib_dir.joinpath('libShumiChess.a'))]
-extra_compile_args=['-std=c++17']
+extra_compile_args=['-std=c++20']
 
 # if is_windows():
 #     extra_link_args += ['-static', '-static-libgcc', '-static-libstdc++']

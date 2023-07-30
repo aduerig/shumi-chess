@@ -23,10 +23,11 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * https://github.com/aduerig/chess-ai
 
 ## todo
-* write the websocket client
 * check if this is off by one in the engine `return make_tuple(moves, curr_move - moves);`
 * I need implement a transposition table so it doesn't re-search
 * why is gameboard constructor run twice, and therefore GameBoard::set_zobrist is set twice.
+* need faster hash table
+  * https://github.com/mattiasgustavsson/libs/blob/main/hashtable.h
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.
