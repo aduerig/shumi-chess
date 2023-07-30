@@ -29,16 +29,13 @@ GameState play_game(Engine& engine, int& total_moves) {
     GameState result = engine.game_over();
 
     while (result == GameState::INPROGRESS) {
-        tuple<Move*, int> all_moves_tuple = engine.get_legal_moves();
-        Move* all_moves = get<0>(all_moves_tuple);
-        int num_moves = get<1>(all_moves_tuple);
-        // checking for draws manually
-        if (num_moves == 0) {
+        LegalMoves legal_moves = engine.get_legal_moves();
+        if (legal_moves.num_moves == 0) { // draw
             result = GameState::DRAW;
             break;
         }
         total_moves++;
-        engine.push(get_random_move(all_moves, num_moves));
+        engine.push(get_random_move(legal_moves.moves, legal_moves.num_moves));
         // for (const auto & [ key, value ] : engine.count_zobrist_states) {
         //     cout << "key: " << key << " value: " << value << endl;
         // }

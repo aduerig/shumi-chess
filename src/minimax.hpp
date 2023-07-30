@@ -9,6 +9,7 @@
 #include <algorithm>
 
 
+
 class RandomAI {
 public:
     ShumiChess::Engine engine;
@@ -19,6 +20,12 @@ public:
     ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
 
+
+struct MoveBoardValueDepth {
+    ShumiChess::Move move;
+    double board_value;
+    int depth;
+};
 
 class MinimaxAI {
 public:
@@ -32,6 +39,7 @@ public:
         ShumiChess::Piece::QUEEN,
         ShumiChess::Piece::KING,
     };
+
     std::array<double, 6> all_piece_values = {1, 5, 3, 8, 0};
     spp::sparse_hash_map<uint64_t, std::string> seen_zobrist;
 
@@ -46,11 +54,41 @@ public:
         {2, 2, 2, 5, 4, 5, 4, 5},
     }};
 
-    std::array<double, 64> black_pawn_value_lookup;
-    std::array<double, 64> white_pawn_value_lookup;
-
+    double black_pawn_value_lookup[64];
+    double white_pawn_value_lookup[64];
 
     MinimaxAI(ShumiChess::Engine&);
+
+    template <ShumiChess::Piece piece_type>
+    inline double evaluate_board(ShumiChess::Color for_color, ShumiChess::LegalMoves legal_moves) {
+        if constexpr (piece_type == ShumiChess::Piece::NONE) {
+            return legal_moves.num_moves / 50;
+        }
+
+        double board_val_adjusted = 0;
+        double* pawn_value_lookup = white_pawn_value_lookup;
+        for (const auto& color : ShumiChess::color_arr) {
+            double board_val = 0;
+            double piece_value = all_piece_values[(int)piece_type];
+            
+            ull pieces_bitboard = engine.game_board.get_pieces_template<piece_type>(color);
+
+            board_val += piece_value * bits_in(pieces_bitboard);
+
+            if constexpr (piece_type == ShumiChess::Piece::PAWN) {
+                while (pieces_bitboard) {
+                    int square = utility::bit::lsb_and_pop_to_square(pieces_bitboard);
+                    board_val += pawn_value_lookup[square];
+                }
+            }
+            if (color != for_color) {
+                board_val *= -1;
+            }
+            board_val_adjusted += board_val;
+            pawn_value_lookup = black_pawn_value_lookup;
+        }
+        return board_val_adjusted;
+    }
 
     inline int bits_in(ull bitboard) {
         auto bs = bitset<64>(bitboard);
@@ -64,8 +102,6 @@ public:
         // return std::popcount(bitboard);
     }
 
-    double evaluate_board(ShumiChess::Color, tuple<ShumiChess::Move*, int>);
-
-    std::tuple<double, ShumiChess::Move> store_board_values_negamax(int, double, double, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<ShumiChess::Move, double, utility::representation::MoveHash>> &, bool);
+    ShumiChess::MoveAndBoardValue store_board_values_negamax(int, double, double, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<ShumiChess::Move, double, utility::representation::MoveHash>> &, spp::sparse_hash_map<int, MoveBoardValueDepth> &, bool);
     ShumiChess::Move get_move_iterative_deepening(double);
 };

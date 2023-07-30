@@ -30,12 +30,12 @@ class Engine {
         void pop();
 
         GameState game_over();
-        GameState game_over(tuple<Move*, int> legal_moves_tuple);
-        GameState game_over(Move* all_moves, int num_moves);
+        GameState game_over(LegalMoves);
 
         ull& access_piece_of_color(Piece, Color);
 
-        inline Move* add_move_to_vector(Move* curr_move, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool is_laser, ull pieces_lasered_ray) {
+        template <Piece piece>
+        inline Move* add_move_to_vector(Move* curr_move, ull single_bitboard_from, ull bitboard_to, Color color, bool capture, bool is_laser, ull pieces_lasered_ray) {
             while (bitboard_to) {
                 ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
                 Piece piece_captured = Piece::NONE;
@@ -93,12 +93,12 @@ class Engine {
             return curr_move;
         };
 
-        Move moves[256];
+        Move start_of_moves[256];
 
         spp::sparse_hash_map<uint64_t, int> count_zobrist_states;
         bool three_fold_rep_draw {false};
 
-        std::tuple<Move*, int> get_legal_moves();
+        LegalMoves get_legal_moves();
         Move* add_pawn_moves_to_vector(Move*, Color);
         Move* add_knight_moves_to_vector(Move*, Color);
         Move* add_queen_moves_to_vector(Move*, Color);

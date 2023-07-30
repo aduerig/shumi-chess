@@ -13,7 +13,11 @@ build_c_module_for_python_path = root_of_project_directory.joinpath('driver', 'b
 show_board_path = root_of_project_directory.joinpath('driver', 'show_board.py')
 bin_dir = root_of_project_directory.joinpath('bin')
 print_cyan(f'{show_board_path=}, {build_c_module_for_python_path=}')
-def build_shumi_chess(release, build_tests):
+def build_shumi_chess(release, build_tests=False, add_g=False):
+    add_g_str = 'OFF'
+    if add_g:
+        add_g_str = 'ON'
+
     build_tests_str = 'OFF'
     if build_tests:
         build_tests_str = 'ON'
@@ -29,6 +33,7 @@ def build_shumi_chess(release, build_tests):
         '-Wno-dev',
         f'-DCMAKE_BUILD_TYPE={build_type_str}',
         f'-DBUILD_TESTS={build_tests_str}',
+        f'-DADD_G={add_g_str}',
     ]
     if is_windows():
         cmd.insert(1, '-G')

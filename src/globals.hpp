@@ -47,6 +47,16 @@ struct Move {
     }
 };
 
+struct MoveAndBoardValue {
+    Move move;
+    double board_value;
+};
+
+struct LegalMoves {
+    Move* moves;
+    int num_moves;
+};
+
 enum GameState {
     INPROGRESS = -1,
     WHITEWIN = 0,

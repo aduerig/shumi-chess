@@ -31,28 +31,23 @@ void Engine::reset_engine() {
     count_zobrist_states.clear();
 }
 
-tuple<Move*, int> Engine::get_legal_moves() {
+LegalMoves Engine::get_legal_moves() {
     Color color = game_board.turn;
-    Move* curr_move = moves;
+    Move* curr_move = start_of_moves;
     curr_move = add_pawn_moves_to_vector(curr_move, color); 
     curr_move = add_rook_moves_to_vector(curr_move, color); 
     curr_move = add_queen_moves_to_vector(curr_move, color); 
     curr_move = add_king_moves_to_vector(curr_move, color); 
     curr_move = add_knight_moves_to_vector(curr_move, color);
-    return make_tuple(moves, curr_move - moves);
+    return {start_of_moves, (int) (curr_move - start_of_moves)};
 }
 
 GameState Engine::game_over() {
-    tuple<Move*, int> legal_moves_tuple = get_legal_moves();
-    return game_over(legal_moves_tuple);
+    return game_over(get_legal_moves());
 }
 
-GameState Engine::game_over(tuple<Move*, int> legal_moves_tuple) {
-    return game_over(get<0>(legal_moves_tuple), get<1>(legal_moves_tuple));
-}
-
-GameState Engine::game_over(Move* all_moves, int num_moves) {
-    if (num_moves == 0) {
+GameState Engine::game_over(LegalMoves legal_moves) {
+    if (legal_moves.num_moves == 0) {
         return GameState::DRAW;
     }
     if (three_fold_rep_draw == true) {
@@ -201,7 +196,7 @@ Move* Engine::add_pawn_moves_to_vector(Move* curr_move, Color color) {
         ull move_rleft = (single_pawn & not_a_file) >> 7;
         ull move_rright = (single_pawn & not_h_file) >> 9;
         ull non_attacks = (move_fleft | move_fright | move_rleft | move_rright) & ~all_pieces;
-        curr_move = add_move_to_vector(curr_move, single_pawn, non_attacks, Piece::PAWN, color, false, false, 0ULL);
+        curr_move = add_move_to_vector<Piece::PAWN>(curr_move, single_pawn, non_attacks, color, false, false, 0ULL);
 
         // attacks sides
         ull attack_up = (single_pawn & not_8_row) << 8;
@@ -210,7 +205,7 @@ Move* Engine::add_pawn_moves_to_vector(Move* curr_move, Color color) {
         ull attack_left = (single_pawn & not_a_file) << 1;
 
         ull attacks = (attack_up | attack_down | attack_right | attack_left) & all_enemy_pieces;
-        curr_move = add_move_to_vector(curr_move, single_pawn, attacks, Piece::PAWN, color, true, false, 0ULL);
+        curr_move = add_move_to_vector<Piece::PAWN>(curr_move, single_pawn, attacks, color, true, false, 0ULL);
     }
     return curr_move;
 }
@@ -226,11 +221,11 @@ Move* Engine::add_knight_moves_to_vector(Move* curr_move, Color color) {
         
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        curr_move = add_move_to_vector(curr_move, single_knight, enemy_piece_attacks, Piece::KNIGHT, color, true, false, 0ULL);
+        curr_move = add_move_to_vector<Piece::KNIGHT>(curr_move, single_knight, enemy_piece_attacks, color, true, false, 0ULL);
 
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        curr_move = add_move_to_vector(curr_move, single_knight, non_attack_moves, Piece::KNIGHT, color, false, false, 0ULL);
+        curr_move = add_move_to_vector<Piece::KNIGHT>(curr_move, single_knight, non_attack_moves, color, false, false, 0ULL);
     }
     return curr_move;
 }
@@ -246,11 +241,11 @@ Move* Engine::add_rook_moves_to_vector(Move* curr_move, Color color) {
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        curr_move = add_move_to_vector(curr_move, single_rook, enemy_piece_attacks, Piece::ROOK, color, true, false, 0ULL);
+        curr_move = add_move_to_vector<Piece::ROOK>(curr_move, single_rook, enemy_piece_attacks, color, true, false, 0ULL);
 
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        curr_move = add_move_to_vector(curr_move, single_rook, non_attack_moves, Piece::ROOK, color, false, false, 0ULL);
+        curr_move = add_move_to_vector<Piece::ROOK>(curr_move, single_rook, non_attack_moves, color, false, false, 0ULL);
     }
     return curr_move;
 }
@@ -264,7 +259,7 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
 
         // moves
         ull avail_moves = get_straight_attacks(single_queen) & ~all_pieces;
-        curr_move = add_move_to_vector(curr_move, single_queen, avail_moves, Piece::QUEEN, color, false, false, 0ULL);
+        curr_move = add_move_to_vector<Piece::QUEEN>(curr_move, single_queen, avail_moves, color, false, false, 0ULL);
 
         // laser
         ull square = bitboard_to_lowest_square(single_queen);
@@ -284,7 +279,7 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
         ull ne_attacks = ~single_queen & lowest_bitboard(masked_blockers_ne);
         if (ne_attacks != 0) {
             ull back_ray = ne_attacks | (north_east_square_ray[square] & south_west_square_ray[bitboard_to_highest_square(ne_attacks)]);
-            curr_move = add_move_to_vector(curr_move, single_queen, ne_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector<Piece::QUEEN>(curr_move, single_queen, ne_attacks, color, false, true, back_ray);
         }
 
         // up left
@@ -294,7 +289,7 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
         ull nw_attacks = ~single_queen & lowest_bitboard(masked_blockers_nw);
         if (nw_attacks != 0) {
             ull back_ray = nw_attacks | (north_west_square_ray[square] & south_east_square_ray[bitboard_to_highest_square(nw_attacks)]);
-            curr_move = add_move_to_vector(curr_move, single_queen, nw_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector<Piece::QUEEN>(curr_move, single_queen, nw_attacks, color, false, true, back_ray);
         }
 
         // down right
@@ -304,7 +299,7 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
         ull se_attacks = ~single_queen & highest_bitboard(masked_blockers_se);
         if (se_attacks != 0) {
             ull back_ray = se_attacks | (south_east_square_ray[square] & north_west_square_ray[bitboard_to_lowest_square(se_attacks)]);
-            curr_move = add_move_to_vector(curr_move, single_queen, se_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector<Piece::QUEEN>(curr_move, single_queen, se_attacks, color, false, true, back_ray);
         }
 
         // down left
@@ -314,7 +309,7 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
         ull sw_attacks = ~single_queen & highest_bitboard(masked_blockers_sw);
         if (sw_attacks != 0) {
             ull back_ray = sw_attacks | (south_west_square_ray[square] & north_east_square_ray[bitboard_to_lowest_square(sw_attacks)]);
-            curr_move = add_move_to_vector(curr_move, single_queen, sw_attacks, Piece::QUEEN, color, false, true, back_ray);
+            curr_move = add_move_to_vector<Piece::QUEEN>(curr_move, single_queen, sw_attacks, color, false, true, back_ray);
         }
     }
     return curr_move;
@@ -330,12 +325,12 @@ Move* Engine::add_king_moves_to_vector(Move* curr_move, Color color) {
 
     // captures
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-    curr_move = add_move_to_vector(curr_move, king, enemy_piece_attacks, Piece::KING, color, true, false, 0ULL);
+    curr_move = add_move_to_vector<Piece::KING>(curr_move, king, enemy_piece_attacks, color, true, false, 0ULL);
 
     // non-capture moves
     ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
     
-    curr_move = add_move_to_vector(curr_move, king, non_attack_moves, Piece::KING, color, false, false, 0ULL);
+    curr_move = add_move_to_vector<Piece::KING>(curr_move, king, non_attack_moves, color, false, false, 0ULL);
     return curr_move;
 }
 

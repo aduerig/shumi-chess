@@ -59,8 +59,6 @@ uint64_t zobrist_piece_square[10][64];
 uint64_t zobrist_side;
 
 void initialize_zobrist() {
-    cout << "initing zobrist" << endl;
-    
     MyPRNG randomer;
     
     for (int i = 0; i < 10; i++) {

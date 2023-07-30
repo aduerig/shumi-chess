@@ -44,14 +44,11 @@ engine_communicator_print_gameboard(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
-    // !this is slow for no reason
-    tuple<Move*, int> all_moves_tuple = python_engine.get_legal_moves();
-    Move* all_moves = get<0>(all_moves_tuple);
-    int num_moves = get<1>(all_moves_tuple);
+    LegalMoves legal_moves = python_engine.get_legal_moves();
     vector<Move> moves;
 
-    for (int i = 0; i < num_moves; i++) {
-        moves.push_back(all_moves[i]);
+    for (int i = 0; i < legal_moves.num_moves; i++) {
+        moves.push_back(legal_moves.moves[i]);
     }
 
     vector<string> moves_readable;
@@ -114,18 +111,16 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
-    tuple<Move*, int> all_moves_tuple = python_engine.get_legal_moves();
-    Move* all_moves = get<0>(all_moves_tuple);
-    int num_moves = get<1>(all_moves_tuple);
-    vector<Move> all_legal_moves;
+    LegalMoves legal_moves = python_engine.get_legal_moves();
+    vector<Move> legal_move_vector;
 
-    for (int i = 0; i < num_moves; i++) {
-        all_legal_moves.push_back(all_moves[i]);
+    for (int i = 0; i < legal_moves.num_moves; i++) {
+        legal_move_vector.push_back(legal_moves.moves[i]);
     }
 
     Move found_move;
     bool found = false;
-    for (const auto &move : all_legal_moves) {
+    for (const auto &move : legal_move_vector) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
                 to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
             found_move = move;

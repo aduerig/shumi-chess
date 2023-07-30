@@ -4,7 +4,9 @@
 
 # !TODO THIS DOESNT WORK DUE TO CACHE STUFF
 option(BUILD_TESTS "blank" OFF)
-message("BUILDING TESTS ${BUILD_TESTS}")
+option(ADD_G "blank" OFF)
+message("BUILD_TESTS ${BUILD_TESTS}")
+message("ADD_G ${ADD_G}")
 
 
 set(CMAKE_CXX_STANDARD 20)
@@ -24,7 +26,6 @@ endif()
 
 message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-
 if(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
     # -fno-omit-frame-pointer does have a perf hit, but it enables call stacks when using perf -g
     add_compile_options(-g -fno-omit-frame-pointer)
@@ -32,10 +33,11 @@ else()
     # all the fast flags (Ofast helps but hardly)!
     # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules")
     # maybe we don't always want -g, maybe pass in only for perf stuff
-
+    if(ADD_G)
+        add_compile_options(-g)
+    endif()
     add_compile_options(-Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules)
     # add_compile_options(-g -Ofast -march=native -ffloat-store -ffast-math -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno -funsafe-math-optimizations -fassociative-math -freciprocal-math -ffinite-math-only -fno-signed-zeros -fno-trapping-math -frounding-math -fsingle-precision-constant -fcx-fortran-rules)
-    # add_compile_options(-g -Ofast)
 endif()
 
 

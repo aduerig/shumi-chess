@@ -61,7 +61,8 @@ class GameBoard {
             if constexpr (p == Piece::QUEEN && c == Color::WHITE) { return white_queens; } 
             if constexpr (p == Piece::KING && c == Color::BLACK) { return black_king; }
             if constexpr (p == Piece::KING && c == Color::WHITE) { return white_king; }
-        }; 
+            if constexpr (p == Piece::NONE) { return 0ULL; }
+        }
 
         template <Piece p>
         inline ull get_pieces_template(Color c) {
