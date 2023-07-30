@@ -12,7 +12,28 @@ using namespace utility;
 using namespace utility::representation;
 using namespace utility::bit;
 
-MinimaxAI::MinimaxAI(Engine& e) : engine(e) { }
+MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
+    // std::array<std::array<double, 8>, 8> pawn_values = {{
+    //     {5, 5, 7, 7, 0, 0, 0, 0},
+    //     {4, 6, 6, 8, 8, 8, 8, 0},
+    //     {5, 5, 7, 7, 7, 7, 8, 0},
+    //     {4, 6, 6, 6, 6, 6, 8, 0},
+    //     {5, 5, 5, 5, 5, 5, 8, 7},
+    //     {4, 4, 4, 4, 4, 7, 6, 7},
+    //     {3, 3, 3, 3, 6, 5, 6, 5},
+    //     {2, 2, 2, 5, 4, 5, 4, 5},
+    // }};
+
+    // std::array<double, 64> black_pawn_value_lookup;
+    // std::array<double, 64> white_pawn_value_lookup;
+
+    for (int i = 0; i < 64; i++) {
+        int row = i / 8;
+        int col = i % 8;
+        black_pawn_value_lookup[i] = .1 * pawn_values[7 - row][7 - col];
+        white_pawn_value_lookup[63 - i] = .1 * pawn_values[7 - row][7 - col];
+    }
+}
 
 
 template<class T>
@@ -25,6 +46,7 @@ string format_with_commas(T value) {
 
 double MinimaxAI::evaluate_board(Color for_color, tuple<Move*, int> all_moves_tuple) {
     double board_val_adjusted = 0;
+    array<double, 64> pawn_value_lookup = white_pawn_value_lookup;
     for (const auto& color : color_arr) {
         double board_val = 0;
         for (int i = 0; i < 6; i++) {
@@ -39,9 +61,10 @@ double MinimaxAI::evaluate_board(Color for_color, tuple<Move*, int> all_moves_tu
             board_val += piece_value * bits_in(pieces_bitboard);
 
             if (piece_type == Piece::PAWN) {
-                ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
-                board_val +=  0.1 * bits_in(middle_place);
-                // cout << "adding up " << color_str(color) << endl;
+                while (pieces_bitboard) {
+                    int square = lsb_and_pop_to_square(pieces_bitboard);
+                    board_val += pawn_value_lookup[square];
+                }
             }
 
             // if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
@@ -54,6 +77,7 @@ double MinimaxAI::evaluate_board(Color for_color, tuple<Move*, int> all_moves_tu
             board_val *= -1;
         }
         board_val_adjusted += board_val;
+        pawn_value_lookup = black_pawn_value_lookup;
     }
     return board_val_adjusted + get<1>(all_moves_tuple) / 80;
 }
@@ -174,9 +198,9 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
-        if (depth < 40) {
-            cout << "Deepening to " << depth << endl;
-        }
+        // if (depth < 40) {
+        //     cout << "Deepening to " << depth << endl;
+        // }
         auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, false);
         best_move_value = get<0>(ret_val);
         best_move = get<1>(ret_val);

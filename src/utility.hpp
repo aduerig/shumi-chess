@@ -64,7 +64,7 @@ inline ull lsb_and_pop(ull& bitboard) {
 inline ull lsb_and_pop_to_square(ull& bitboard) {
     int square = __builtin_ctzll(bitboard);
     ull lsb_fast = 1ULL << square;
-    bitboard = bitboard & (~lsb_fast);
+    bitboard ^= lsb_fast;
     return square;
 };
 
