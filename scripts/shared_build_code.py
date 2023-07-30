@@ -23,22 +23,28 @@ def build_shumi_chess(release, build_tests):
         build_type_str = 'Release'
 
     print_cyan('==== BUILDING SHUMICHESS STEP 1 =====')
-    return_code, _stdout, _stderr = run_command_blocking([
+    cmd = [
         'cmake',
         str(root_of_project_directory.joinpath('CMakeLists.txt')),
         '-Wno-dev',
         f'-DCMAKE_BUILD_TYPE={build_type_str}',
         f'-DBUILD_TESTS={build_tests_str}',
-    ], stdout_pipe=None, stderr_pipe=None, debug=True)
+    ]
+    if is_windows():
+        cmd.insert(1, '-G')
+        cmd.insert(2, 'MinGW Makefiles')
+
+    return_code, _stdout, _stderr = run_command_blocking(cmd, stdout_pipe=None, stderr_pipe=None, debug=True)
     if return_code:
         sys.exit(1)
 
     print_cyan('==== BUILDING SHUMICHESS STEP 2 =====')
-    return_code, _stdout, _stderr = run_command_blocking([
+    cmd = [
         'cmake',
         '--build',
         str(root_of_project_directory.joinpath('.')),
-    ], stdout_pipe=None, stderr_pipe=None, debug=True)
+    ]
+    return_code, _stdout, _stderr = run_command_blocking(cmd, stdout_pipe=None, stderr_pipe=None, debug=True)
     if return_code:
         sys.exit(1)
 

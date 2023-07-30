@@ -6,9 +6,15 @@
 option(BUILD_TESTS "blank" OFF)
 message("BUILDING TESTS ${BUILD_TESTS}")
 
+
+set(CMAKE_CXX_STANDARD 17)
+
 set(project_name ShumiChess)
 project(${project_name} CXX)
-set (CMAKE_CXX_STANDARD 17)
+
+message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
+message(STATUS "CXX Compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "CMAKE_CXX_STANDARD: ${CMAKE_CXX_STANDARD}")
 
 
 if(NOT CMAKE_BUILD_TYPE)

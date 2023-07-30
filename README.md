@@ -6,6 +6,7 @@ we're back
 * Python
 * IF WINDOWS: 
   * [mingw](https://github.com/niXman/mingw-builds-binaries)
+    * install the ucrt 64bit
   * lld: error: unable to find library -lvcruntime140, find out how to fix this...
 
 ### How to run gui

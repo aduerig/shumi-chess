@@ -5,6 +5,7 @@ import sys
 import pathlib
 import os
 
+
 this_file_directory = pathlib.Path(__file__).parent.resolve()
 root_of_project_directory = this_file_directory.parent
 
@@ -24,8 +25,8 @@ lib_dir = root_of_project_directory.joinpath('lib')
 extra_link_args = [str(lib_dir.joinpath('libShumiChess.a'))]
 extra_compile_args=['-std=c++17']
 
-if is_windows():
-    extra_link_args = [str(lib_dir.joinpath('ShumiChess.lib')), '-static', '-static-libgcc', '-static-libstdc++']
+# if is_windows():
+#     extra_link_args += ['-static', '-static-libgcc', '-static-libstdc++']
 
 if release_mode == 'debug':
     extra_compile_args += ['-g', '-O0']
@@ -52,16 +53,16 @@ setup(
 
 if is_windows():
     last_modified = float('-inf')
-    output_path = None
-    for filename, filepath in get_all_paths(this_file_directory.joinpath('build'), recursive=True, allowed_extensions=set(['.pyd'])):
-        if filepath.stat().st_mtime > last_modified:
-            last_modified = filepath.stat().st_mtime
-            output_path = filepath
-    wanted_path = root_of_project_directory.joinpath('driver', filename)
+    # output_path = None
+    # for filename, filepath in get_all_paths(this_file_directory.joinpath('build'), recursive=True, allowed_extensions=set(['.pyd'])):
+    #     if filepath.stat().st_mtime > last_modified:
+    #         last_modified = filepath.stat().st_mtime
+    #         output_path = filepath
+    # wanted_path = root_of_project_directory.joinpath('driver', filename)
 
-    if output_path is None:
-        print_red(f'Could not find {output_path}')
-        sys.exit(1)
-    print_green(f'Copying {output_path} to {wanted_path}')
-    wanted_path.unlink(missing_ok=True)
-    os.rename(output_path, wanted_path)
+    # if output_path is None:
+    #     print_red(f'Could not find {output_path}')
+    #     sys.exit(1)
+    # print_green(f'Copying {output_path} to {wanted_path}')
+    # wanted_path.unlink(missing_ok=True)
+    # os.rename(output_path, wanted_path)
