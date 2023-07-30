@@ -45,8 +45,50 @@ string format_with_commas(T value) {
     return ss.str();
 }
 
-MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<Move, double, MoveHash>> &board_values, spp::sparse_hash_map<int, MoveBoardValueDepth> &transposition_table, bool debug) {
+
+double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int max_depth, double alpha, double beta) {
+    double stand_pat = evaluate_board<Piece::PAWN>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::ROOK>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::KNIGHT>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::QUEEN>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::NONE>(engine.game_board.turn, capture_moves);
+    if( stand_pat >= beta )
+        return beta;
+    if( alpha < stand_pat )
+        alpha = stand_pat;
+
+    vector<Move> temp_moves;
+    temp_moves.reserve(capture_moves.num_moves);
+    for (int i = 0; i < capture_moves.num_moves; i++) {
+        temp_moves.push_back(capture_moves.moves[i]);
+    }
+
+    for (auto move : temp_moves) {
+        engine.push(move);
+
+        LegalMoves legal_moves = engine.get_legal_moves();
+
+        int move_counter = 0;
+        for (int i = 0; i < legal_moves.num_moves; i++) {
+            Move m = legal_moves.moves[i];
+            if (m.capture != Piece::NONE) {
+                capture_moves_internal[move_counter] = m;
+                move_counter += 1;
+            }
+        }
+
+        LegalMoves new_capture_moves {capture_moves_internal, move_counter};
+        
+        double score = -Quiesce(new_capture_moves, depth - 1, max_depth, -beta, -alpha);
+        engine.pop();
+
+        if( score >= beta )
+            return beta;
+        if( score > alpha )
+           alpha = score;
+    }
+    return alpha;
+}
+
+MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_depth, double alpha, double beta, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<Move, double, MoveHash>> &board_values, spp::sparse_hash_map<int, MoveBoardValueDepth> &transposition_table, bool debug) {
     nodes_visited++;
+    max_depth = max(max_depth, starting_depth - depth);
     LegalMoves consider_moves = engine.get_legal_moves();
     GameState state = engine.game_over(consider_moves);
     
@@ -60,8 +102,29 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
         }
         return {Move{}, end_value};
     }
-    
-    // !TODO is this a problem being above the depth check, it returns bogus moves
+
+
+    if (depth == 0) {
+        int move_counter = 0;
+        for (int i = 0; i < consider_moves.num_moves; i++) {
+            Move m = consider_moves.moves[i];
+            if (m.capture != Piece::NONE) {
+                capture_moves_internal[move_counter] = m;
+                move_counter += 1;
+            }
+        }
+
+        LegalMoves capture_moves {capture_moves_internal, move_counter};
+        if (capture_moves.num_moves == 0) {
+            double eval = evaluate_board<Piece::PAWN>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::ROOK>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::KNIGHT>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::QUEEN>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::NONE>(engine.game_board.turn, consider_moves);
+            return {Move{}, eval};
+        }
+        else {
+            return {Move{}, Quiesce(capture_moves, depth, max_depth, alpha, beta)};
+        }
+    }
+
+    // !TODO the interplay of this and capture moves could be an issue, gating behind else right now but its kinda nonsensicle idk
     if (transposition_table.find(engine.game_board.zobrist_key) != transposition_table.end()) {
         MoveBoardValueDepth mbvd = transposition_table[engine.game_board.zobrist_key];
         if (mbvd.depth >= depth) {
@@ -69,36 +132,6 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
         }
     }
 
-
-    if (depth <= 0) {
-        Move* capture_moves_internal_iterator = capture_moves_internal;
-        int move_counter = 0;
-        for (int i = 0; i < consider_moves.num_moves; i++) {
-            // Move* m = consider_moves.moves + i;
-            Move m = consider_moves.moves[i];
-            if (m.capture != Piece::NONE) {
-                capture_moves_internal_iterator[move_counter] = m;
-                // capture_moves_internal_iterator++;
-                move_counter += 1;
-            }
-        }
-
-        // LegalMoves capture_moves {capture_moves_internal, (int)(capture_moves_internal_iterator - capture_moves_internal)};
-        LegalMoves capture_moves {capture_moves_internal, move_counter};
-
-        // cout << "Depth: " << depth << ", Num capture_moves: " << capture_moves.num_moves << endl;
-        if (capture_moves.num_moves > 256) {
-            exit(1);
-        }
-
-        if (capture_moves.num_moves == 0) {
-            double eval = evaluate_board<Piece::PAWN>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::ROOK>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::KNIGHT>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::QUEEN>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::NONE>(engine.game_board.turn, consider_moves);
-            return {Move{}, eval};
-        }
-        else {
-            consider_moves = capture_moves;
-        }
-    }
 
     std::vector<Move> moves_ordered_search;
     moves_ordered_search.reserve(consider_moves.num_moves);
@@ -111,12 +144,12 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
 
 
         for (int i = 0; i < consider_moves.num_moves; i++) {
-            // !TODO maybe moves arent always in moves_with_values, i think it doesn't error so hadd a check
             if (moves_with_values.find(consider_moves.moves[i]) == moves_with_values.end()) {
-                cout << "not found somehow..." << endl;
-                exit(1);
+                temp_sorting_vec.push_back({consider_moves.moves[i], -DBL_MAX + 1});
             }
-            temp_sorting_vec.push_back({consider_moves.moves[i], moves_with_values[consider_moves.moves[i]]});
+            else {
+                temp_sorting_vec.push_back({consider_moves.moves[i], moves_with_values[consider_moves.moves[i]]});
+            }
         }
 
         std::sort(temp_sorting_vec.begin(), temp_sorting_vec.end(), 
@@ -127,14 +160,6 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
         for (const auto& move_and_board_value : temp_sorting_vec) {
             moves_ordered_search.push_back(move_and_board_value.move);
         }
-
-        // !TODO why was i ever doing this?
-        // for (int i = 0; i < consider_moves.num_moves; i++) {
-        //     Move m = consider_moves.moves[i];
-        //     if (moves_with_values.find(m) == moves_with_values.end()) {
-        //         moves_ordered_search.push_back(m);
-        //     }
-        // }
     } else {
         for (int i = 0; i < consider_moves.num_moves; i++) {
             moves_ordered_search.push_back(consider_moves.moves[i]);
@@ -144,18 +169,16 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
     double max_move_value = -DBL_MAX;
     Move best_move = moves_ordered_search[0];
     for (Move &m : moves_ordered_search) {
-        if (depth <= 0 && m.capture == Piece::NONE) {
-            cout << "ERROR: depth <= 0 && m.capture == Piece::NONE, should only be captures" << endl;
-            cout << "There were " << moves_ordered_search.size() << " moves" << endl;
-            exit(1);
-        }
-
         engine.push(m);
-        MoveAndBoardValue move_and_board_value = store_board_values_negamax(depth - 1, -beta, -alpha, board_values, transposition_table, debug);
+        MoveAndBoardValue move_and_board_value = store_board_values_negamax(depth - 1, starting_depth, -beta, -alpha, board_values, transposition_table, debug);
         double board_value = -move_and_board_value.board_value;
 
         engine.pop();
-        board_values[engine.game_board.zobrist_key][m] = board_value;
+
+        // !TODO same as above, this feels bogus. need to think about quissense and caching stuff
+        if (depth > 0) {
+            board_values[engine.game_board.zobrist_key][m] = board_value;
+        }
 
         if (board_value > max_move_value) {
             max_move_value = board_value;
@@ -166,7 +189,11 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
             break;
         }
     }
-    transposition_table[engine.game_board.zobrist_key] = {best_move, max_move_value, depth};
+
+    if (transposition_table.find(engine.game_board.zobrist_key) == transposition_table.end() || 
+        transposition_table[engine.game_board.zobrist_key].depth <= depth) {
+        transposition_table[engine.game_board.zobrist_key] = {best_move, max_move_value, depth};
+    }
     return {best_move, max_move_value};
 }
 
@@ -178,6 +205,7 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
 Move MinimaxAI::get_move_iterative_deepening(double time) {
     seen_zobrist.clear();
     nodes_visited = 0;
+    max_depth = 0;
 
     uint64_t zobrist_key_start = engine.game_board.zobrist_key;
 
@@ -191,7 +219,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
         cout << "deepening to depth " << depth << endl;
-        best_move = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, transposition_table, false);
+        best_move = store_board_values_negamax(depth, depth, -DBL_MAX, DBL_MAX, board_values, transposition_table, false);
         if (best_move.board_value == (DBL_MAX - 1) || best_move.board_value == (-DBL_MAX + 1)) {
             break;
         }
@@ -201,7 +229,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     LegalMoves legal_moves = engine.get_legal_moves();
     Move move_chosen = legal_moves.moves[0];
 
-    cout << "Went to depth " << depth - 1 << endl;
+    cout << "Went to iterative depth " << depth - 1 << ", max depth was: " << max_depth << endl;
     cout << "Found " << format_with_commas(board_values.size()) << " items inside of board_values" << endl;
 
     if (board_values.find(engine.game_board.zobrist_key) == board_values.end()) {

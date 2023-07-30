@@ -30,6 +30,7 @@ struct MoveBoardValueDepth {
 class MinimaxAI {
 public:
     int nodes_visited = 0;
+    int max_depth = 0;
 
     ShumiChess::Engine& engine;
     std::array<ShumiChess::Piece, 6> all_pieces = {
@@ -60,6 +61,8 @@ public:
     ShumiChess::Move capture_moves_internal[256];
 
     MinimaxAI(ShumiChess::Engine&);
+
+    double Quiesce(ShumiChess::LegalMoves, int, int, double, double);
 
     template <ShumiChess::Piece piece_type>
     inline double evaluate_board(ShumiChess::Color for_color, ShumiChess::LegalMoves legal_moves) {
@@ -104,6 +107,6 @@ public:
         // return std::popcount(bitboard);
     }
 
-    ShumiChess::MoveAndBoardValue store_board_values_negamax(int, double, double, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<ShumiChess::Move, double, utility::representation::MoveHash>> &, spp::sparse_hash_map<int, MoveBoardValueDepth> &, bool);
+    ShumiChess::MoveAndBoardValue store_board_values_negamax(int, int, double, double, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<ShumiChess::Move, double, utility::representation::MoveHash>> &, spp::sparse_hash_map<int, MoveBoardValueDepth> &, bool);
     ShumiChess::Move get_move_iterative_deepening(double);
 };
