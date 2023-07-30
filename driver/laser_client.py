@@ -42,6 +42,7 @@ create_game_json = {
     }
 }
 
+
 def invert_square(square):
     letter = square[0]
     number = square[1]
@@ -49,41 +50,14 @@ def invert_square(square):
     inverted_number = chr(ord('8') - ord(number) + ord('1'))
     return inverted_letter + inverted_number
 
+
 def invert_move(move):
     from_square = move[0]
     to_square = move[1]
     return [invert_square(from_square), invert_square(to_square)]
 
 
-def wait_for_engine_instructions(in_queue, out_queue):
-    print(f'Starting wait_for_engine_instructions')    
-    legal_moves = engine_communicator.get_legal_moves()
-    print(f'Called engine_communicator.get_legal_moves() successfully, {len(legal_moves)}')
-    while True:
-        if in_queue.qsize():
-            # maybe need try catch here?
-            instruction, data = in_queue.get_nowait()
 
-            if instruction == 'get_fen':
-                # !TODO
-                fen_str = engine_communicator.get_fen()
-                out_queue.put(fen_str)
-            elif instruction == 'get_move':
-                move_str = engine_communicator.minimax_ai_get_move_iterative_deepening(data)
-                move = [move_str[0:2], move_str[2:4]]
-                inverted_move = invert_move(move)
-                print(f'Got {move=} out of engine, {inverted_move=}')
-                out_queue.put(inverted_move)
-            elif instruction == 'make_move':
-                inverted_move = invert_move(data)
-                print(f'Making {data=} move in engine, {inverted_move=}')
-                engine_communicator.get_legal_moves()
-                print('might hang here')
-                engine_communicator.make_move_two_acn(inverted_move[0], inverted_move[1])
-                print('current state:')
-                engine_communicator.print_gameboard()
-                out_queue.put(None)
-        time.sleep(.01)
 
 
 curr_process = None
@@ -91,11 +65,9 @@ in_queue, out_queue = None, None
 async def init_new_game():
     global in_queue, out_queue, curr_process
 
-    if curr_process is not None:
+    if curr_process is not None and curr_process.is_alive():
         print_red('curr_process is not None, meaning there was another process, how kill? maybe just send message')
         exit(1)
-        # curr_process.terminate()
-        # curr_process.join()
 
     manager = multiprocessing.Manager()
     out_queue, in_queue = manager.Queue(), manager.Queue()
@@ -103,29 +75,66 @@ async def init_new_game():
     curr_process.start()
 
 
+def wait_for_engine_instructions(in_queue, out_queue):
+    print(f'Starting wait_for_engine_instructions')    
+    while True:
+        if in_queue.qsize():
+            instruction, data = in_queue.get_nowait()
+
+            if instruction == 'get_fen':
+                fen_str = engine_communicator.get_fen()
+                out_queue.put(fen_str)
+            elif instruction == 'get_move':
+                move_str = engine_communicator.minimax_ai_get_move_iterative_deepening(data)
+                move = [move_str[0:2], move_str[2:4]]
+                inverted_move = invert_move(move)
+                out_queue.put(inverted_move)
+            elif instruction == 'make_move':
+                inverted_move = invert_move(data)
+                engine_communicator.get_legal_moves()
+                engine_communicator.make_move_two_acn(inverted_move[0], inverted_move[1])
+                print_cyan('Current boardstate')
+                engine_communicator.print_gameboard()
+                out_queue.put(None)
+            elif instruction == 'kill_engine':
+                break
+        time.sleep(.01)
+
+
+def communicate_with_engine(instruction, data=None):
+    in_queue.put((instruction, data))
+    while out_queue.qsize() == 0:
+        time.sleep(.01)
+    return_val = out_queue.get_nowait()
+    print(f'Got "{return_val}" from engine')
+    return return_val
+
+
+games_log_path = this_file_directory.joinpath('games_log')
+max_existing_game_num = -1
+for filename, filepath in get_all_paths(games_log_path):
+    if '_' in filename:
+        number_part = filename.split('_')[0]
+        if number_part.isnumeric():
+            max_existing_game_num = max(max_existing_game_num, int(number_part))
 async def host_and_play_games(websocket):
-    for game_num in range(10000000):
+    total_games = 0
+    won_games = 0
+    for game_num in range(max_existing_game_num + 1, 10000000):
         print(f'Hosting {game_num=}')
         await init_new_game()
         await websocket.send(json.dumps(create_game_json))
 
-
         response_data = json.loads(await websocket.recv())
-        print_cyan('Response: ' + json.dumps(response_data, indent=4))
-
         if response_data['status'] == 'nameTaken':
             print_red('Quitting because name taken')
             exit(1)
 
-
         while True:
             response_data = json.loads(await websocket.recv())
-            print_cyan('Response: ' + json.dumps(response_data, indent=4))
-
             if response_data['status'] == 'games':
                 print('Got games lisit, but ignoring it')
             elif response_data['status'] == 'joined':
-                print_green('SOMEONE JOINED')
                 break
         
         players = response_data['data']['names']
@@ -133,74 +142,68 @@ async def host_and_play_games(websocket):
         game_id = response_data['data']['id']
         seconds_left_for_us = seconds_for_us
         seconds_left_for_them = seconds_for_them
-        print(f'Playing game {players=}, {game_id=}, {game_key=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
+        print_cyan(f'Someone Joined! Playing game {players=}, {game_id=}, {game_key=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
 
-        while True:
-            print('Waiting for response...')
-            response_data = json.loads(await websocket.recv())
-            print('Got response!')
-            if response_data['status'] == 'games':
-                print('Got games lisit, but ignoring it')
-                continue
-            # print_blue('Response: ' + json.dumps(response_data, indent=4))
-            if response_data['status'] == 'moved':
-                move = response_data['data']['move']
-                winner = response_data['data']['winner']
-                if winner == 'null':
-                    print_red(f'Game over, {winner=}')
-                    break
 
-                seconds_left_for_us = response_data['data']['times'][0]
-                seconds_left_for_them = response_data['data']['times'][1]
-                print_green(f'Got move from opponent {move=}, {winner=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
-
-                print_cyan('updating engine with their move')
-                in_queue.put(('make_move', move))
-                while out_queue.qsize() == 0:
-                    time.sleep(.01)
-                return_val = out_queue.get_nowait()
-                print(f'Got "{return_val}" from engine, expected None')
-
-                print_cyan(f'querying engine for our move with {time_to_engine} seconds')
-                in_queue.put(('get_move', time_to_engine))
-                while out_queue.qsize() == 0:
-                    time.sleep(.01)
-                engine_move = out_queue.get_nowait()
-                print(f'Got "{engine_move}" from engine, expected a move')
-
-                print_cyan('updating engine with our move')
-                in_queue.put(('make_move', engine_move))
-                while out_queue.qsize() == 0:
-                    time.sleep(.01)
-                return_val = out_queue.get_nowait()
-                print(f'Got "{return_val}" from engine, expected None')
-
-                # gets new fen
-                in_queue.put(('get_fen', time_to_engine))
-                while out_queue.qsize() == 0:
-                    time.sleep(.01)
-                current_fen = out_queue.get_nowait()
-                print(f'Got "{current_fen}" from engine, expected a fen')
-
-                # need to send
-                move_to_send = {
-                    'messageType': 'move',
-                    'data': {
-                        'key': game_key,
-                        'id': game_id, 
-                        'name': our_name,
-                        'fen': current_fen,
-                        'move': engine_move,
-                    }
-                }
-                await websocket.send(json.dumps(move_to_send))
-
-                # check if this hangs
-                print('eating a reponse here that is ourselves...')
+        with open(games_log_path.joinpath(f'{game_num}_{players[0]}_{players[1]}.dat'), 'w') as f:
+            for move_num in range(1, 1000000):
                 response_data = json.loads(await websocket.recv())
-                # print_blue('Response: ' + json.dumps(response_data, indent=4))
+                if response_data['status'] == 'games':
+                    print('Got games lisit, but ignoring it')
+                    continue
+            
+                if response_data['status'] == 'gameOver':
+                    print_red(f'Game over, {winner=}')
+                    winner = response_data['data']['winner']
+                    if winner == 'w':
+                        won_games += 1
+                    total_games += 1
+                    f.write(f'Winner: {winner}\n')
+                    break
+                
+                if response_data['status'] == 'moved':
+                    opponent_move = response_data['data']['move']
+                    winner = response_data['data']['winner']
+                    if winner is not None:
+                        print_red(f'Game over, {winner=}')
 
-        await asyncio.sleep(10000)
+                        if winner == 'w':
+                            won_games += 1
+                        total_games += 1
+                        f.write(f'Winner: {winner}\n')
+                        break
+
+                    seconds_left_for_us = response_data['data']['times'][0]
+                    seconds_left_for_them = response_data['data']['times'][1]
+                    print_green(f'Got move from opponent {opponent_move=}, {winner=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
+
+                    # makes the opponents move
+                    communicate_with_engine('make_move', opponent_move)
+                    f.write(f'Move {move_num}: {" ".join(opponent_move)}\n')
+
+                    # gets move from engine
+                    engine_move = communicate_with_engine('get_move', time_to_engine)
+
+                    # updates engine with our move
+                    communicate_with_engine('make_move', engine_move)
+                    f.write(f'Move {move_num + 1}: {" ".join(engine_move)}\n')
+
+                    # need to send
+                    move_to_send = {
+                        'messageType': 'move',
+                        'data': {
+                            'key': game_key,
+                            'id': game_id, 
+                            'name': our_name,
+                            'fen': communicate_with_engine('get_fen'),
+                            'move': engine_move,
+                        }
+                    }
+                    await websocket.send(json.dumps(move_to_send))
+
+                    print('eating a reponse here that is ourselves...')
+                    response_data = json.loads(await websocket.recv()) # the only thing that indicates the move was ours is that the "move" is the same
+            communicate_with_engine('kill_engine')
 
 
 async def send_ping(websocket):
@@ -219,22 +222,3 @@ async def main():
         await asyncio.gather(send_ping(websocket), host_and_play_games(websocket))
 
 asyncio.run(main())
-
-
-
-
-# move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
-
-
-# while engine_communicator.game_over() == -1:
-# winner = 'draw'
-# if engine_communicator.game_over() == 0:
-#     winner = 'white'
-# elif engine_communicator.game_over() == 2:
-#     winner = 'black'
-
-
-
-
-# legal_moves = engine_communicator.get_legal_moves()
-# engine_communicator.reset_engine()

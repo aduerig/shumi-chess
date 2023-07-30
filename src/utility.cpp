@@ -65,32 +65,46 @@ void print_bitboard(ull bitboard) {
 }
 
 std::string gameboard_to_string(GameBoard gameboard) {
-    unordered_map<ull, char> bitboard_to_letter = {
-        {gameboard.white_knights, 'N'},
-        {gameboard.white_king, 'K'},
-        {gameboard.white_pawns, 'P'},
-        {gameboard.white_rooks, 'R'},
-        {gameboard.white_queens, 'Q'},
-        {gameboard.black_knights, 'n'},
-        {gameboard.black_king, 'k'},
-        {gameboard.black_pawns, 'p'},
-        {gameboard.black_rooks, 'r'},
-        {gameboard.black_queens, 'q'},
+    unordered_map<ull, string> bitboard_to_letter = {
+        // {gameboard.white_knights, 'N'},
+        // {gameboard.white_king, 'K'},
+        // {gameboard.white_pawns, 'P'},
+        // {gameboard.white_rooks, 'R'},
+        // {gameboard.white_queens, 'Q'},
+        // {gameboard.black_knights, 'n'},
+        // {gameboard.black_king, 'k'},
+        // {gameboard.black_pawns, 'p'},
+        // {gameboard.black_rooks, 'r'},
+        // {gameboard.black_queens, 'q'},
+
+        {gameboard.white_knights, "♞"},
+        {gameboard.white_king, "♚"},
+        {gameboard.white_pawns, "♟"},
+        {gameboard.white_rooks, "♜"},
+        {gameboard.white_queens, "♛"},
+        {gameboard.black_knights, "♘"},
+        {gameboard.black_king, "♔"},
+        {gameboard.black_pawns, "♙"},
+        {gameboard.black_rooks, "♖"},
+        {gameboard.black_queens, "♕"},
     };
 
-    string builder(71, '-');
+    // string builder(71, '-');
+    string builder;
     for (const auto& pair : bitboard_to_letter) {
         ull bitboard = pair.first;
-        char letter = pair.second;
+        string letter = pair.second;
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 ull curr_single_bitboard = (1ULL << ((i*8) + j));
                 if (bitboard & curr_single_bitboard) {
-                    builder[70 - ((i*9) + j)] = letter;
+                    // builder[70 - ((i*9) + j)] = letter;
+                    builder += letter;
                 }
             }
             if (i != 7) {
-                builder[70 - ((i*9) + 8)] = '\n';
+                // builder[70 - ((i*9) + 8)] = '\n';
+                builder += '\n';
             }
         }
     }

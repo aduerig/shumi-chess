@@ -76,6 +76,11 @@ https://gist.github.com/elliotchance/8215283
 
 
 
+## chess piece emojis
+♟♞♝♜♛♚
+♙♘♗♖♕♔
+
+
 # laser
 
 wss://api.playlaser.xyz/

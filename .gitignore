@@ -41,6 +41,7 @@ googletest/
 Testing/
 driver/build/
 .vscode/
+games_log/
 perf.data
 perf.data.old
 out/src/class_diagram/class_diagram.png
