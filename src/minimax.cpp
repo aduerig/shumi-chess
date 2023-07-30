@@ -112,6 +112,10 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha,
 
         for (int i = 0; i < consider_moves.num_moves; i++) {
             // !TODO maybe moves arent always in moves_with_values, i think it doesn't error so hadd a check
+            if (moves_with_values.find(consider_moves.moves[i]) == moves_with_values.end()) {
+                cout << "not found somehow..." << endl;
+                exit(1);
+            }
             temp_sorting_vec.push_back({consider_moves.moves[i], moves_with_values[consider_moves.moves[i]]});
         }
 
