@@ -97,7 +97,8 @@ def wait_for_engine_instructions(in_queue, out_queue):
                 engine_communicator.print_gameboard()
                 out_queue.put(None)
             elif instruction == 'kill_engine':
-                break
+                out_queue.put(None)
+                sys.exit(0)
         time.sleep(.01)
 
 
@@ -120,8 +121,10 @@ for filename, filepath in get_all_paths(games_log_path):
 async def host_and_play_games(websocket):
     total_games = 0
     won_games = 0
+    drawn_games = 0
+    engine_last_move = None
     for game_num in range(max_existing_game_num + 1, 10000000):
-        print(f'Hosting {game_num=}')
+        print(f'Hosting {game_num=}, {won_games=}, {drawn_games=}, {total_games=}')
         await init_new_game()
         await websocket.send(json.dumps(create_game_json))
 
@@ -133,7 +136,8 @@ async def host_and_play_games(websocket):
         while True:
             response_data = json.loads(await websocket.recv())
             if response_data['status'] == 'games':
-                print('Got games lisit, but ignoring it')
+                pass
+                # print('Got games lisit, but ignoring it')
             elif response_data['status'] == 'joined':
                 break
         
@@ -146,7 +150,8 @@ async def host_and_play_games(websocket):
 
 
         with open(games_log_path.joinpath(f'{game_num}_{players[0]}_{players[1]}.dat'), 'w') as f:
-            for move_num in range(1, 1000000):
+            move_num = 1
+            while True:
                 response_data = json.loads(await websocket.recv())
                 if response_data['status'] == 'games':
                     print('Got games lisit, but ignoring it')
@@ -157,21 +162,29 @@ async def host_and_play_games(websocket):
                     winner = response_data['data']['winner']
                     if winner == 'w':
                         won_games += 1
+                    if winner == 'd':
+                        drawn_games += 1
                     total_games += 1
                     f.write(f'Winner: {winner}\n')
                     break
                 
                 if response_data['status'] == 'moved':
                     opponent_move = response_data['data']['move']
+
                     winner = response_data['data']['winner']
                     if winner is not None:
                         print_red(f'Game over, {winner=}')
 
                         if winner == 'w':
                             won_games += 1
+                        if winner == 'd':
+                            drawn_games += 1
                         total_games += 1
                         f.write(f'Winner: {winner}\n')
                         break
+
+                    if opponent_move == engine_last_move:
+                        continue
 
                     seconds_left_for_us = response_data['data']['times'][0]
                     seconds_left_for_them = response_data['data']['times'][1]
@@ -179,14 +192,17 @@ async def host_and_play_games(websocket):
 
                     # makes the opponents move
                     communicate_with_engine('make_move', opponent_move)
-                    f.write(f'Move {move_num}: {" ".join(opponent_move)}\n')
+                    f.write(f'Move {move_num}: {" ".join(invert_move(opponent_move))}\n')
+                    move_num += 1
 
                     # gets move from engine
                     engine_move = communicate_with_engine('get_move', time_to_engine)
+                    engine_last_move = deepcopy(engine_move)
 
                     # updates engine with our move
                     communicate_with_engine('make_move', engine_move)
-                    f.write(f'Move {move_num + 1}: {" ".join(engine_move)}\n')
+                    f.write(f'Move {move_num + 1}: {" ".join(invert_move(engine_move))}\n')
+                    move_num += 1
 
                     # need to send
                     move_to_send = {
@@ -200,10 +216,8 @@ async def host_and_play_games(websocket):
                         }
                     }
                     await websocket.send(json.dumps(move_to_send))
-
-                    print('eating a reponse here that is ourselves...')
-                    response_data = json.loads(await websocket.recv()) # the only thing that indicates the move was ours is that the "move" is the same
             communicate_with_engine('kill_engine')
+            curr_process.join()
 
 
 async def send_ping(websocket):
