@@ -23,8 +23,6 @@ GameBoard::GameBoard() :
     turn(BLACK) {
     ShumiChess::initialize_zobrist();
     set_zobrist();
-    utility::representation::print_gameboard(*this);
-    exit(1);
 }
 
 GameBoard::GameBoard(const std::string& fen_notation) {
