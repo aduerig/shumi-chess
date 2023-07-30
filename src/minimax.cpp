@@ -45,7 +45,6 @@ string format_with_commas(T value) {
     return ss.str();
 }
 
-
 MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<Move, double, MoveHash>> &board_values, spp::sparse_hash_map<int, MoveBoardValueDepth> &transposition_table, bool debug) {
     nodes_visited++;
     LegalMoves legal_moves = engine.get_legal_moves();
@@ -165,41 +164,37 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
-        // if (depth < 40) {
-        //     cout << "Deepening to " << depth << endl;
-        // }
         best_move = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, transposition_table, false);
         if (best_move.board_value == (DBL_MAX - 1) || best_move.board_value == (-DBL_MAX + 1)) {
             break;
         }
         depth++;
     }
-    // cout << "finsished store_board_values_negamax" << endl;
-    // exit(1);
 
     LegalMoves legal_moves = engine.get_legal_moves();
     Move move_chosen = legal_moves.moves[0];
 
     cout << "Went to depth " << depth - 1 << endl;
-    cout << "Found " << board_values.size() << " items inside of board_values" << endl;
+    cout << "Found " << format_with_commas(board_values.size()) << " items inside of board_values" << endl;
 
     if (board_values.find(engine.game_board.zobrist_key) == board_values.end()) {
         cout << "Did not find zobrist key in board_values, this is bad" << endl;
         exit(1);
     }
 
-    // auto stored_move_values = board_values[engine.game_board.zobrist_key];
-    // for (Move& m : top_level_moves) {
-    //     if (stored_move_values.find(m) == stored_move_values.end()) {
-    //         cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
-    //         exit(1);
-    //     }
-    // }
+    auto stored_move_values = board_values[engine.game_board.zobrist_key];
+    for (int i = 0; i < legal_moves.num_moves; i++) {
+        Move m = legal_moves.moves[i];
+        if (stored_move_values.find(m) == stored_move_values.end()) {
+            cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
+            exit(1);
+        }
+    }
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
     cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + to_string(best_move.board_value)) << endl;
+    cout << colorize(AColor::BRIGHT_MAGENTA, "Nodes per second: " + format_with_commas((int)(nodes_visited / chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()))) << endl;
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
-    cout << colorize(AColor::BRIGHT_BLUE, "Time it was supposed to take: " + to_string(time) + " s") << endl;
-    cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
+    cout << colorize(AColor::BRIGHT_BLUE, "Time it was supposed to take: " + to_string(time) + "s, Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + "s") << endl;
     if (engine.game_board.zobrist_key != zobrist_key_start) {
         cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
         exit(1);
