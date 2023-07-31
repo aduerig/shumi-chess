@@ -334,7 +334,6 @@ Move* Engine::add_king_moves_to_vector(Move* curr_move, Color color) {
     return curr_move;
 }
 
-
 ull Engine::get_straight_attacks(ull bitboard) {
     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
     ull square = bitboard_to_lowest_square(bitboard);
@@ -360,6 +359,7 @@ ull Engine::get_straight_attacks(ull bitboard) {
     ull e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
     return n_attacks | s_attacks | w_attacks | e_attacks;
 }
+
 
 } // end namespace ShumiChess
 

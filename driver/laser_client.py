@@ -139,6 +139,9 @@ async def host_and_play_games(websocket):
     for game_num in range(max_existing_game_num + 1, 10000000):
         print(f'Hosting {game_num=}, {won_games=}, {drawn_games=}, {total_games=}')
         await init_new_game()
+
+        create_game_json['data']['name'] = f'mr. robot - wins: {won_games}, draws: {drawn_games}, losses: {total_games - (won_games + drawn_games)}'
+        our_name = f'mr. robot - wins: {won_games}, draws: {drawn_games}, losses: {total_games - (won_games + drawn_games)}'
         await websocket.send(json.dumps(create_game_json))
 
         response_data = json.loads(await websocket.recv())

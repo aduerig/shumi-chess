@@ -48,6 +48,9 @@ string format_with_commas(T value) {
 
 double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int max_depth, double alpha, double beta) {
     double stand_pat = evaluate_board<Piece::PAWN>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::ROOK>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::KNIGHT>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::QUEEN>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::NONE>(engine.game_board.turn, capture_moves);
+
+    // !TODO is king dead
+
     if( stand_pat >= beta )
         return beta;
     if( alpha < stand_pat )
