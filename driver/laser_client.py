@@ -6,6 +6,7 @@ import json
 import time
 import traceback
 from copy import deepcopy
+import datetime
 
 import websockets
 
@@ -15,6 +16,11 @@ root_of_project_directory = this_file_directory.parent
 sys.path.insert(0, str(root_of_project_directory))
 from helpers import *
 import engine_communicator
+
+
+def get_datetime_string():
+    now = datetime.datetime.now()
+    return now.strftime("%d/%m/%Y %H:%M:%S") # dd/mm/YY H:M:S# dd/mm/YY H:M:S
 
 
 
@@ -239,6 +245,7 @@ async def send_ping(websocket):
         ping_message = json.dumps({
             "messageType": "ping",
         })
+        print(f'{get_datetime_string()}: Sending ping')
         await websocket.send(ping_message)
         await asyncio.sleep(9)
 
@@ -246,7 +253,7 @@ async def send_ping(websocket):
 async def main():
     times = 0
     while True:
-        print(f'Going to start websockets {times=}')
+        print(f'{get_datetime_string()}: Going to start websockets {times=}')
         try:
             async with websockets.connect(uri) as websocket:
                 print_green(f'Connected to {uri}')
