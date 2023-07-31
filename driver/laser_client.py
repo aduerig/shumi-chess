@@ -163,6 +163,8 @@ async def host_and_play_games(websocket):
 
 
         with open(games_log_path.joinpath(f'{game_num}_{players[0]}_{players[1]}.dat'), 'w') as f:
+            f.write(f'Player 0: {players[0]}, Player 1: {players[1]}\n')
+            f.write(f'Seconds for player 0: {seconds_left_for_us}, Seconds for player 0: {seconds_left_for_them}\n')
             move_num = 1
             while True:
                 response_data = json.loads(await websocket.recv())
@@ -199,13 +201,13 @@ async def host_and_play_games(websocket):
                     if opponent_move == engine_last_move:
                         continue
 
-                    seconds_left_for_us = response_data['data']['times'][0]
-                    seconds_left_for_them = response_data['data']['times'][1]
+                    seconds_left_for_us = response_data['data']['times'][0] / 1000
+                    seconds_left_for_them = response_data['data']['times'][1] / 1000
                     print_green(f'Got move from opponent {opponent_move=}, {winner=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
 
                     # makes the opponents move
                     communicate_with_engine('make_move', opponent_move)
-                    f.write(f'Move {move_num}: {" ".join(invert_move(opponent_move))}\n')
+                    f.write(f'Move {move_num}: {" ".join(invert_move(opponent_move))}, Player 0 seconds: {seconds_left_for_us}, Player 1 seconds: {seconds_left_for_them}\n')
                     move_num += 1
 
                     # gets move from engine
@@ -214,7 +216,7 @@ async def host_and_play_games(websocket):
 
                     # updates engine with our move
                     communicate_with_engine('make_move', engine_move)
-                    f.write(f'Move {move_num + 1}: {" ".join(invert_move(engine_move))}\n')
+                    f.write(f'Move {move_num}: {" ".join(invert_move(engine_move))}\n')
                     move_num += 1
 
                     await websocket.send(json.dumps({
