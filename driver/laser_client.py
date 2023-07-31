@@ -4,6 +4,7 @@ import asyncio
 import multiprocessing
 import json
 import time
+import traceback
 from copy import deepcopy
 
 import websockets
@@ -102,6 +103,13 @@ def wait_for_engine_instructions(in_queue, out_queue):
         time.sleep(.01)
 
 
+def close_engine_if_open():
+    if curr_process is not None and curr_process.is_alive():
+        print_yellow('Closing engine')
+        communicate_with_engine('kill_engine')
+        curr_process.join()
+
+
 def communicate_with_engine(instruction, data=None):
     in_queue.put((instruction, data))
     while out_queue.qsize() == 0:
@@ -111,18 +119,23 @@ def communicate_with_engine(instruction, data=None):
     return return_val
 
 
-games_log_path = this_file_directory.joinpath('games_log')
-max_existing_game_num = -1
-for filename, filepath in get_all_paths(games_log_path):
-    if '_' in filename:
-        number_part = filename.split('_')[0]
-        if number_part.isnumeric():
-            max_existing_game_num = max(max_existing_game_num, int(number_part))
+
 async def host_and_play_games(websocket):
     total_games = 0
     won_games = 0
     drawn_games = 0
     engine_last_move = None
+
+    close_engine_if_open()
+
+    games_log_path = this_file_directory.joinpath('games_log')
+    max_existing_game_num = -1
+    for filename, filepath in get_all_paths(games_log_path):
+        if '_' in filename:
+            number_part = filename.split('_')[0]
+            if number_part.isnumeric():
+                max_existing_game_num = max(max_existing_game_num, int(number_part))
+
     for game_num in range(max_existing_game_num + 1, 10000000):
         print(f'Hosting {game_num=}, {won_games=}, {drawn_games=}, {total_games=}')
         await init_new_game()
@@ -214,9 +227,7 @@ async def host_and_play_games(websocket):
                             'move': engine_move,
                         }
                     }))
-            communicate_with_engine('kill_engine')
-            curr_process.join()
-
+        close_engine_if_open()
 
 async def send_ping(websocket):
     while True:
@@ -228,9 +239,16 @@ async def send_ping(websocket):
 
 
 async def main():
-    print('starting main')
-    async with websockets.connect(uri) as websocket:
-        print_green(f'Connected to {uri}')
-        await asyncio.gather(send_ping(websocket), host_and_play_games(websocket))
-
+    times = 0
+    while True:
+        print(f'Going to start websockets {times=}')
+        try:
+            async with websockets.connect(uri) as websocket:
+                print_green(f'Connected to {uri}')
+                await asyncio.gather(send_ping(websocket), host_and_play_games(websocket))
+        except websockets.exceptions.WebSocketException as e:
+            print_red(f'WebSocketException in main: {e}')
+            traceback.print_exc()
+        times += 1
+        time.sleep(.5)
 asyncio.run(main())
