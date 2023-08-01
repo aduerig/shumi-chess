@@ -116,10 +116,10 @@ def close_engine_if_open():
         curr_process.join()
 
 
-def communicate_with_engine(instruction, data=None):
+async def communicate_with_engine(instruction, data=None):
     in_queue.put((instruction, data))
     while out_queue.qsize() == 0:
-        time.sleep(.01)
+        await asyncio.sleep(.01)
     return_val = out_queue.get_nowait()
     print(f'Got "{return_val}" from engine')
     return return_val
@@ -172,6 +172,7 @@ async def host_and_play_games(websocket):
 
 
         with open(games_log_path.joinpath(f'{game_num}_{players[0]}_{players[1]}.dat'), 'w') as f:
+            f.write(f'Game started at: {get_datetime_string()}\n')
             f.write(f'Player 0: {players[0]}, Player 1: {players[1]}\n')
             f.write(f'Seconds for player 0: {seconds_left_for_us}, Seconds for player 0: {seconds_left_for_them}\n')
             move_num = 1
@@ -215,16 +216,16 @@ async def host_and_play_games(websocket):
                     print_green(f'Got move from opponent {opponent_move=}, {winner=}, {seconds_left_for_us=}, {seconds_left_for_them=}')
 
                     # makes the opponents move
-                    communicate_with_engine('make_move', opponent_move)
+                    await communicate_with_engine('make_move', opponent_move)
                     f.write(f'Move {move_num}: {" ".join(invert_move(opponent_move))}, Player 0 seconds: {seconds_left_for_us}, Player 1 seconds: {seconds_left_for_them}\n')
                     move_num += 1
 
                     # gets move from engine
-                    engine_move = communicate_with_engine('get_move', time_to_engine)
+                    engine_move = await communicate_with_engine('get_move', time_to_engine)
                     engine_last_move = deepcopy(engine_move)
 
                     # updates engine with our move
-                    communicate_with_engine('make_move', engine_move)
+                    await communicate_with_engine('make_move', engine_move)
                     f.write(f'Move {move_num}: {" ".join(invert_move(engine_move))}\n')
                     move_num += 1
 
@@ -234,7 +235,7 @@ async def host_and_play_games(websocket):
                             'key': game_key,
                             'id': game_id, 
                             'name': our_name,
-                            'fen': communicate_with_engine('get_fen'),
+                            'fen': await communicate_with_engine('get_fen'),
                             'move': engine_move,
                         }
                     }))

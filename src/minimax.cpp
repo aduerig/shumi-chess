@@ -46,15 +46,18 @@ string format_with_commas(T value) {
 }
 
 
-double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int max_depth, double alpha, double beta) {
-    double stand_pat = evaluate_board<Piece::PAWN>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::ROOK>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::KNIGHT>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::QUEEN>(engine.game_board.turn, capture_moves) + evaluate_board<Piece::NONE>(engine.game_board.turn, capture_moves);
+double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int starting_depth, int max_depth, double alpha, double beta) {
+    max_depth = max(max_depth, starting_depth - depth);
+    double stand_pat = evaluate_board(engine.game_board.turn, capture_moves);
 
-    // !TODO is king dead
+    // !TODO Game over logic
 
-    if( stand_pat >= beta )
+    if (stand_pat >= beta) {
         return beta;
-    if( alpha < stand_pat )
+    }
+    if (alpha < stand_pat) {
         alpha = stand_pat;
+    }
 
     vector<Move> temp_moves;
     temp_moves.reserve(capture_moves.num_moves);
@@ -78,16 +81,31 @@ double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int max_depth, do
 
         LegalMoves new_capture_moves {capture_moves_internal, move_counter};
         
-        double score = -Quiesce(new_capture_moves, depth - 1, max_depth, -beta, -alpha);
+        double score = -Quiesce(new_capture_moves, depth - 1, starting_depth, max_depth, -beta, -alpha);
         engine.pop();
 
-        if( score >= beta )
+        if (score >= beta) {
             return beta;
-        if( score > alpha )
+        }
+        if (score > alpha) {
            alpha = score;
+        }
     }
     return alpha;
 }
+
+
+MoveAndBoardValue MinimaxAI::game_over_value(GameState state, Color color) {
+    double end_value = 0;
+    if (state == GameState::BLACKWIN) {
+        end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
+    }
+    else if (state == GameState::WHITEWIN) {
+        end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
+    }
+    return {Move{}, end_value};
+}
+
 
 MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_depth, double alpha, double beta, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<Move, double, MoveHash>> &board_values, spp::sparse_hash_map<int, MoveBoardValueDepth> &transposition_table, bool debug) {
     nodes_visited++;
@@ -95,17 +113,10 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
     LegalMoves consider_moves = engine.get_legal_moves();
     GameState state = engine.game_over(consider_moves);
     
-    if (state != GameState::INPROGRESS) {
-        double end_value = 0;
-        if (state == GameState::BLACKWIN) {
-            end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
-        }
-        else if (state == GameState::WHITEWIN) {
-            end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
-        }
-        return {Move{}, end_value};
-    }
 
+    if (state != GameState::INPROGRESS) {
+        return game_over_value(state, engine.game_board.turn);
+    }
 
     if (depth == 0) {
         int move_counter = 0;
