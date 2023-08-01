@@ -109,10 +109,10 @@ def wait_for_engine_instructions(in_queue, out_queue):
         time.sleep(.01)
 
 
-def close_engine_if_open():
+async def close_engine_if_open():
     if curr_process is not None and curr_process.is_alive():
         print_yellow('Closing engine')
-        communicate_with_engine('kill_engine')
+        await communicate_with_engine('kill_engine')
         curr_process.join()
 
 
@@ -124,6 +124,8 @@ async def communicate_with_engine(instruction, data=None):
     print(f'Got "{return_val}" from engine')
     return return_val
 
+class CustomError(Exception):
+    pass
 
 
 async def host_and_play_games(websocket):
@@ -132,7 +134,7 @@ async def host_and_play_games(websocket):
     drawn_games = 0
     engine_last_move = None
 
-    close_engine_if_open()
+    await close_engine_if_open()
 
     games_log_path = this_file_directory.joinpath('games_log')
     max_existing_game_num = -1
@@ -165,8 +167,8 @@ async def host_and_play_games(websocket):
 
         response_data = json.loads(await websocket.recv())
         if response_data['status'] == 'nameTaken':
-            print_red('Quitting because name taken')
-            exit(1)
+            print_red('Raising exception because name taken')
+            raise CustomError('Name taken')
 
         while True:
             response_data = json.loads(await websocket.recv())
@@ -252,7 +254,7 @@ async def host_and_play_games(websocket):
                             'move': engine_move,
                         }
                     }))
-        close_engine_if_open()
+        await close_engine_if_open()
 
 async def send_ping(websocket):
     while True:
@@ -274,6 +276,9 @@ async def main():
         except websockets.exceptions.WebSocketException as e:
             print_red(f'WebSocketException in main: {e}')
             traceback.print_exc()
+        except CustomError as e:
+            print_red(f'Name was taken in main, sleeping for 30')
+            time.sleep(30)
         times += 1
         time.sleep(.5)
 asyncio.run(main())

@@ -22,6 +22,7 @@ This project is a hobby C++ engine written by OhMesch and I. It functions as a f
 This project has no AI to make intelligent chess moves. There is another repo written by OhMesch and I that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
 * https://github.com/aduerig/chess-ai
 
+
 ## todo
 * check if this is off by one in the engine `return make_tuple(moves, curr_move - moves);`
 * I need implement a transposition table so it doesn't re-search
@@ -29,6 +30,9 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * need faster hash table
   * https://github.com/mattiasgustavsson/libs/blob/main/hashtable.h
 * i think i need to send WINNER thing lol
+* chess engine depth expected
+    * https://www.reddit.com/r/ComputerChess/comments/p9jv4e/how_chess_engines_reached_depth_1215_in_1_secmove/
+
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.
