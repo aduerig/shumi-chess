@@ -19,8 +19,8 @@ enum Color {
 
 enum Piece {
     PAWN = 0,
-    ROOK,
     KNIGHT,
+    ROOK,
     QUEEN,
     KING,
     NONE,

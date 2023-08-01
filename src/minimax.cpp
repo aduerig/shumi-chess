@@ -46,11 +46,22 @@ string format_with_commas(T value) {
 }
 
 
-double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int starting_depth, int max_depth, double alpha, double beta) {
+double MinimaxAI::Quiesce(int depth, int starting_depth, double alpha, double beta) {
+    nodes_visited++;
     max_depth = max(max_depth, starting_depth - depth);
-    double stand_pat = evaluate_board(engine.game_board.turn, capture_moves);
 
-    // !TODO Game over logic
+    // this is double calling legal_moves on the initial call
+    LegalMoves legal_moves = engine.get_legal_moves();
+    LegalMoves capture_moves = get_capture_moves(legal_moves);
+    GameState state = engine.game_over(legal_moves);
+    
+    double stand_pat;
+    if (state != GameState::INPROGRESS) {
+        stand_pat = game_over_value(state, engine.game_board.turn);
+    }
+    else {
+        stand_pat = evaluate_board(engine.game_board.turn, capture_moves);
+    }
 
     if (stand_pat >= beta) {
         return beta;
@@ -67,21 +78,8 @@ double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int starting_dept
 
     for (auto move : temp_moves) {
         engine.push(move);
-
-        LegalMoves legal_moves = engine.get_legal_moves();
-
-        int move_counter = 0;
-        for (int i = 0; i < legal_moves.num_moves; i++) {
-            Move m = legal_moves.moves[i];
-            if (m.capture != Piece::NONE) {
-                capture_moves_internal[move_counter] = m;
-                move_counter += 1;
-            }
-        }
-
-        LegalMoves new_capture_moves {capture_moves_internal, move_counter};
         
-        double score = -Quiesce(new_capture_moves, depth - 1, starting_depth, max_depth, -beta, -alpha);
+        double score = -Quiesce(depth - 1, starting_depth, -beta, -alpha);
         engine.pop();
 
         if (score >= beta) {
@@ -95,47 +93,23 @@ double MinimaxAI::Quiesce(LegalMoves capture_moves, int depth, int starting_dept
 }
 
 
-MoveAndBoardValue MinimaxAI::game_over_value(GameState state, Color color) {
-    double end_value = 0;
-    if (state == GameState::BLACKWIN) {
-        end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
-    }
-    else if (state == GameState::WHITEWIN) {
-        end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
-    }
-    return {Move{}, end_value};
-}
-
 
 MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_depth, double alpha, double beta, spp::sparse_hash_map<uint64_t, spp::sparse_hash_map<Move, double, MoveHash>> &board_values, spp::sparse_hash_map<int, MoveBoardValueDepth> &transposition_table, bool debug) {
     nodes_visited++;
     max_depth = max(max_depth, starting_depth - depth);
-    LegalMoves consider_moves = engine.get_legal_moves();
-    GameState state = engine.game_over(consider_moves);
+    LegalMoves legal_moves = engine.get_legal_moves();
+    GameState state = engine.game_over(legal_moves);
     
-
     if (state != GameState::INPROGRESS) {
-        return game_over_value(state, engine.game_board.turn);
+        return {Move{}, game_over_value(state, engine.game_board.turn)};
     }
 
     if (depth == 0) {
-        int move_counter = 0;
-        for (int i = 0; i < consider_moves.num_moves; i++) {
-            Move m = consider_moves.moves[i];
-            if (m.capture != Piece::NONE) {
-                capture_moves_internal[move_counter] = m;
-                move_counter += 1;
-            }
+        LegalMoves capture_moves = get_capture_moves(legal_moves);
+        if (capture_moves.num_moves != 0) {
+            return {Move{}, Quiesce(depth, starting_depth, alpha, beta)};
         }
-
-        LegalMoves capture_moves {capture_moves_internal, move_counter};
-        if (capture_moves.num_moves == 0) {
-            double eval = evaluate_board<Piece::PAWN>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::ROOK>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::KNIGHT>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::QUEEN>(engine.game_board.turn, consider_moves) + evaluate_board<Piece::NONE>(engine.game_board.turn, consider_moves);
-            return {Move{}, eval};
-        }
-        else {
-            return {Move{}, Quiesce(capture_moves, depth, max_depth, alpha, beta)};
-        }
+        return {Move{}, evaluate_board(engine.game_board.turn, legal_moves)};
     }
 
     // !TODO the interplay of this and capture moves could be an issue, gating behind else right now but its kinda nonsensicle idk
@@ -146,44 +120,47 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
         }
     }
 
-
-    std::vector<Move> moves_ordered_search;
-    moves_ordered_search.reserve(consider_moves.num_moves);
-
+    std::vector<MoveAndBoardValue> moves_ordered_search;
+    moves_ordered_search.reserve(legal_moves.num_moves);
     if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
         spp::sparse_hash_map<Move, double, MoveHash> moves_with_values = board_values[engine.game_board.zobrist_key];
 
-        std::vector<MoveAndBoardValue> temp_sorting_vec;
-        temp_sorting_vec.reserve(consider_moves.num_moves);
-
-
-        for (int i = 0; i < consider_moves.num_moves; i++) {
-            if (moves_with_values.find(consider_moves.moves[i]) == moves_with_values.end()) {
-                temp_sorting_vec.push_back({consider_moves.moves[i], -DBL_MAX + 1});
+        for (int i = 0; i < legal_moves.num_moves; i++) {
+            // This shouldnt be filling -dbl_max probably, should be sorting like the else below (capture sorting)
+            if (moves_with_values.find(legal_moves.moves[i]) == moves_with_values.end()) {
+                moves_ordered_search.push_back({legal_moves.moves[i], -DBL_MAX + 1});
             }
             else {
-                temp_sorting_vec.push_back({consider_moves.moves[i], moves_with_values[consider_moves.moves[i]]});
+                moves_ordered_search.push_back({legal_moves.moves[i], moves_with_values[legal_moves.moves[i]]});
             }
         }
 
-        std::sort(temp_sorting_vec.begin(), temp_sorting_vec.end(), 
-            [](const MoveAndBoardValue& a, const MoveAndBoardValue& b) {
-                return a.board_value > b.board_value;
-            });
-        
-        for (const auto& move_and_board_value : temp_sorting_vec) {
-            moves_ordered_search.push_back(move_and_board_value.move);
-        }
     } else {
-        for (int i = 0; i < consider_moves.num_moves; i++) {
-            moves_ordered_search.push_back(consider_moves.moves[i]);
+        for (int i = 0; i < legal_moves.num_moves; i++) {
+            
+            double capture_bonus = 0;
+            if (legal_moves.moves[i].capture != Piece::NONE) {
+                capture_bonus = 10000;
+            }
+            // capture_bonus = min((5 - (int) legal_moves.moves[i].capture), 1) * 100;
+            double capture_piece = legal_moves.moves[i].capture * 100;
+            double capturing_piece = -legal_moves.moves[i].piece_type;
+            double capture_val = capture_bonus + capture_piece + capturing_piece;
+
+            moves_ordered_search.push_back({legal_moves.moves[i], capture_val});
         }
     }
 
+    std::sort(moves_ordered_search.begin(), moves_ordered_search.end(), 
+        [](const MoveAndBoardValue& a, const MoveAndBoardValue& b) {
+            return a.board_value > b.board_value;
+        });
+
     double max_move_value = -DBL_MAX;
-    Move best_move = moves_ordered_search[0];
-    for (Move &m : moves_ordered_search) {
-        engine.push(m);
+    Move best_move = moves_ordered_search[0].move;
+    for (MoveAndBoardValue &m : moves_ordered_search) {
+        Move move = m.move;
+        engine.push(move);
         MoveAndBoardValue move_and_board_value = store_board_values_negamax(depth - 1, starting_depth, -beta, -alpha, board_values, transposition_table, debug);
         double board_value = -move_and_board_value.board_value;
 
@@ -191,12 +168,12 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
 
         // !TODO same as above, this feels bogus. need to think about quissense and caching stuff
         if (depth > 0) {
-            board_values[engine.game_board.zobrist_key][m] = board_value;
+            board_values[engine.game_board.zobrist_key][move] = board_value;
         }
 
         if (board_value > max_move_value) {
             max_move_value = board_value;
-            best_move = m;
+            best_move = move;
         }
         alpha = max(alpha, max_move_value);
         if (alpha >= beta) {
@@ -232,7 +209,6 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
-        cout << "deepening to depth " << depth << endl;
         best_move = store_board_values_negamax(depth, depth, -DBL_MAX, DBL_MAX, board_values, transposition_table, false);
         if (best_move.board_value == (DBL_MAX - 1) || best_move.board_value == (-DBL_MAX + 1)) {
             break;

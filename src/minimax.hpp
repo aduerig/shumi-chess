@@ -7,6 +7,7 @@
 #include <engine.hpp>
 #include <utility.hpp>
 #include <algorithm>
+#include <cfloat>
 
 
 
@@ -35,13 +36,13 @@ public:
     ShumiChess::Engine& engine;
     std::array<ShumiChess::Piece, 6> all_pieces = {
         ShumiChess::Piece::PAWN,
-        ShumiChess::Piece::ROOK,
         ShumiChess::Piece::KNIGHT,
+        ShumiChess::Piece::ROOK,
         ShumiChess::Piece::QUEEN,
         ShumiChess::Piece::KING,
     };
 
-    std::array<double, 6> all_piece_values = {1, 5, 3, 8, 0};
+    std::array<double, 6> all_piece_values = {1, 3, 5, 8, 0};
     spp::sparse_hash_map<uint64_t, std::string> seen_zobrist;
 
     std::array<std::array<double, 8>, 8> pawn_values = {{
@@ -62,9 +63,37 @@ public:
 
     MinimaxAI(ShumiChess::Engine&);
 
-    MoveAndBoardValue game_over_value(ShumiChess::GameState, ShumiChess::Color);
+    inline double game_over_value(ShumiChess::GameState state, ShumiChess::Color color) {
+        double end_value = 0;
+        if (state == ShumiChess::GameState::BLACKWIN) {
+            end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
+        }
+        else if (state == ShumiChess::GameState::WHITEWIN) {
+            end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
+        }
+        return end_value;
+    };
 
-    double Quiesce(ShumiChess::LegalMoves, int, int, int, double, double);
+
+    inline ShumiChess::LegalMoves get_capture_moves(ShumiChess::LegalMoves legal_moves) {
+        int move_counter = 0;
+
+        // for (int i = 0; i < legal_moves.num_moves; i++) {
+        //     capture_moves_internal[move_counter] = legal_moves.moves[i];
+        //     move_counter += min(1, 5 - (int) legal_moves.moves[i].capture);
+        // }
+
+        for (int i = 0; i < legal_moves.num_moves; i++) {
+            if (legal_moves.moves[i].capture != ShumiChess::Piece::NONE) {
+                capture_moves_internal[move_counter] = legal_moves.moves[i];
+                move_counter += 1;
+            }
+        }
+        return {capture_moves_internal, move_counter};
+    };
+
+    double Quiesce(int, int, double, double);
+
 
     template <ShumiChess::Piece piece_type>
     inline double evaluate_board(ShumiChess::Color for_color, ShumiChess::LegalMoves legal_moves) {
@@ -93,8 +122,8 @@ public:
         return board_val_adjusted;
     }
 
-    inline double evaluate_board(ShumiChess::Color color, LegalMoves legal_moves) {
-        return evaluate_board<Piece::PAWN>(engine.game_board.turn, legal_moves) + evaluate_board<Piece::ROOK>(engine.game_board.turn, legal_moves) + evaluate_board<Piece::KNIGHT>(engine.game_board.turn, legal_moves) + evaluate_board<Piece::QUEEN>(engine.game_board.turn, legal_moves) + (legal_moves.num_moves / 50);
+    inline double evaluate_board(ShumiChess::Color color, ShumiChess::LegalMoves legal_moves) {
+        return evaluate_board<ShumiChess::Piece::PAWN>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::ROOK>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::KNIGHT>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::QUEEN>(engine.game_board.turn, legal_moves) + (legal_moves.num_moves / 50);
     }
 
     inline int bits_in(ull bitboard) {
