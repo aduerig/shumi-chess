@@ -244,13 +244,27 @@ async def host_and_play_games(websocket):
                     f.write(f'Move {move_num}: {" ".join(invert_move(engine_move))}\n')
                     move_num += 1
 
+                    fen = await communicate_with_engine('get_fen')
+
+                    new_string = ''
+                    for char in fen:
+                        if char in 'acefghijklmnopqrstuvxyz' or char in 'acefghijklmnopqrstuvxyz'.upper():
+                            if char.isupper():
+                                new_string += char.lower()
+                            else:
+                                new_string += char.upper()
+                        else:
+                            new_string += char
+                    fen = new_string
+                    fen = fen.replace('b', 'w')
+                    print(f'sending fen {fen}')
                     await websocket.send(json.dumps({
                         'messageType': 'move',
                         'data': {
                             'key': game_key,
                             'id': game_id, 
                             'name': our_name,
-                            'fen': await communicate_with_engine('get_fen'),
+                            'fen': fen,
                             'move': engine_move,
                         }
                     }))
@@ -262,6 +276,7 @@ async def send_ping(websocket):
             "messageType": "ping",
         })
         await websocket.send(ping_message)
+        print(f'{get_datetime_string()}: Sent ping')
         await asyncio.sleep(9)
 
 
