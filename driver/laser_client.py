@@ -141,13 +141,26 @@ async def host_and_play_games(websocket):
             number_part = filename.split('_')[0]
             if number_part.isnumeric():
                 max_existing_game_num = max(max_existing_game_num, int(number_part))
+        
+        try:
+            with open(filepath, 'r') as f:
+                for line in f:
+                    if line.startswith('Winner:'):
+                        if line.startswith('Winner: w'):
+                            won_games += 1
+                        elif line.startswith('Winner: d'):
+                            drawn_games += 1
+                        total_games += 1
+        except:
+            print_stacktrace()
+            print(f'Couldnt load game data from {filepath}')
 
     for game_num in range(max_existing_game_num + 1, 10000000):
         print(f'Hosting {game_num=}, {won_games=}, {drawn_games=}, {total_games=}')
         await init_new_game()
 
-        create_game_json['data']['name'] = f'mr. robot - wins: {won_games}, draws: {drawn_games}, losses: {total_games - (won_games + drawn_games)}'
-        our_name = f'mr. robot - wins: {won_games}, draws: {drawn_games}, losses: {total_games - (won_games + drawn_games)}'
+        create_game_json['data']['name'] = f'mr. robot - w: {won_games}, d: {drawn_games}, l: {total_games - (won_games + drawn_games)}'
+        our_name = create_game_json['data']['name']
         await websocket.send(json.dumps(create_game_json))
 
         response_data = json.loads(await websocket.recv())
