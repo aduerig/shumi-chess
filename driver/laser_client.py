@@ -246,7 +246,6 @@ async def send_ping(websocket):
         ping_message = json.dumps({
             "messageType": "ping",
         })
-        print(f'{get_datetime_string()}: Sending ping')
         await websocket.send(ping_message)
         await asyncio.sleep(9)
 
