@@ -90,6 +90,7 @@ GameState Engine::game_over(LegalMoves legal_moves) {
 
 
 void Engine::push(const Move& move) {
+    // cout << colorize(AColor::BRIGHT_GREEN, "Pushing move: " + all_move_info_str(move)) << endl;
     move_history.push(move);
 
     this->game_board.turn = opposite_color(move.color);
@@ -97,8 +98,6 @@ void Engine::push(const Move& move) {
     
     int square_from = bitboard_to_lowest_square(move.from);
     int square_to = bitboard_to_lowest_square(move.to);
-
-    cout << move_to_str(move) << endl;
 
     if (move.is_laser) {
         for (int i = 0; i < move.lasered_pieces; i++) {
@@ -120,7 +119,6 @@ void Engine::push(const Move& move) {
     }
     if (move.piece_captured != Piece::NONE) {
         access_piece_of_color(move.piece_captured, opposite_color(move.color)) &= ~move.to;
-        // cout << "is_capture=true: " << piece_to_str(move.piece_captured) << endl;
 
         game_board.zobrist_key ^= zobrist_piece_square[move.piece_captured + opposite_color(move.color) * 5][square_to];
     }

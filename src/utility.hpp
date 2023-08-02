@@ -141,6 +141,8 @@ inline std::string square_to_position_string(ull square) {
     return "error";
 };
 
+std::string all_move_info_str(ShumiChess::Move);
+
 inline std::string move_to_string(ShumiChess::Move move) {
     return square_to_position_string(move.from) + square_to_position_string(move.to);
 };
@@ -154,7 +156,6 @@ struct MoveHash {
     }
 };
 std::string bitboard_to_string(ull);
-std::string move_to_str(ShumiChess::Move);
 void print_bitboard(ull);
 std::string gameboard_to_string(ShumiChess::GameBoard);
 void print_gameboard(ShumiChess::GameBoard);
