@@ -274,8 +274,9 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
         ull south_east_rook_cancels = ~rooks;
         ull south_west_rook_cancels = ~rooks;
 
-        while (rooks) {
-            ull single_rook = lsb_and_pop(rooks);
+
+        ull single_rook = lsb_and_pop(rooks);
+        for (int i = 0; i < 2; i++) {
 
             ull single_rook_for_ne = single_rook & north_east_square_ray[queen_square];
             north_east_rook_cancels &= ~north_east_square_ray[bitboard_to_lowest_square(single_rook_for_ne)];
@@ -288,6 +289,7 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
 
             ull single_rook_for_sw = single_rook & south_west_square_ray[queen_square];
             south_west_rook_cancels &= ~south_west_square_ray[bitboard_to_lowest_square(single_rook_for_sw)];
+            single_rook = lowest_bitboard(single_rook);
         }
 
         // up right
