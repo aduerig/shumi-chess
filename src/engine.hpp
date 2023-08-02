@@ -41,15 +41,16 @@ class Engine {
                 ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
                 Piece piece_captured = Piece::NONE;
 
-                if (is_capture) { 
+                if (is_capture) {                    
                     Piece piece_captured = game_board.get_piece_type_on_bitboard(single_bitboard_to);
+                    cout << "is_capture=true: " << piece_to_str(piece_captured) << endl;
                 }
 
                 curr_move->color = color;
                 curr_move->piece_type = piece;
                 curr_move->from = single_bitboard_from;
                 curr_move->to = single_bitboard_to;
-                curr_move->is_capture = piece_captured;
+                curr_move->piece_captured = piece_captured;
                 curr_move->is_laser = is_laser;
 
                 if (is_laser) { 

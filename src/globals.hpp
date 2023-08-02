@@ -17,6 +17,11 @@ enum Color {
     BLACK,
 };
 
+inline std::string color_to_str(Color color) {
+    if (color == Color::WHITE) { return "WHITE"; }
+    return "BLACK";
+}
+
 enum Piece {
     PAWN = 0,
     KNIGHT,
@@ -26,6 +31,15 @@ enum Piece {
     NONE,
 };
 
+inline std::string piece_to_str(Piece piece) {
+    if (piece == Piece::PAWN) { return "PAWN"; }
+    if (piece == Piece::KNIGHT) { return "KNIGHT"; }
+    if (piece == Piece::ROOK) { return "ROOK"; }
+    if (piece == Piece::QUEEN) { return "QUEEN"; }
+    if (piece == Piece::KING) { return "KING"; }
+    return "NONE";
+}
+
 extern std::array<Piece, 5> piece_arr;
 
 // TODO think about if this is the right way to represent
@@ -34,15 +48,13 @@ struct Move {
     Piece piece_type;
     ull from; // bitboard
     ull to; // bitboard
-    Piece is_capture = Piece::NONE;
+    Piece piece_captured = Piece::NONE;
     bool is_laser = false;
 
     uint8_t lasered_pieces = 0;
     ShumiChess::Color lasered_color[7];
     ShumiChess::Piece lasered_piece[7];
     ull lasered_bitboard[7];
-
-    // std::vector<std::tuple<Color, Piece, ull>> pieces_lasered;
 
     bool operator==(const Move &other) const {
         return from == other.from && to == other.to;

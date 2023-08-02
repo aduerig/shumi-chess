@@ -80,11 +80,11 @@ public:
 
         // for (int i = 0; i < legal_moves.num_moves; i++) {
         //     capture_moves_internal[move_counter] = legal_moves.moves[i];
-        //     move_counter += min(1, 5 - (int) legal_moves.moves[i].is_capture);
+        //     move_counter += min(1, 5 - (int) legal_moves.moves[i].piece_captured);
         // }
 
         for (int i = 0; i < legal_moves.num_moves; i++) {
-            if (legal_moves.moves[i].is_capture != ShumiChess::Piece::NONE) {
+            if (legal_moves.moves[i].piece_captured != ShumiChess::Piece::NONE) {
                 capture_moves_internal[move_counter] = legal_moves.moves[i];
                 move_counter += 1;
             }

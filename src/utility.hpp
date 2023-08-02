@@ -154,6 +154,7 @@ struct MoveHash {
     }
 };
 std::string bitboard_to_string(ull);
+std::string move_to_str(ShumiChess::Move);
 void print_bitboard(ull);
 std::string gameboard_to_string(ShumiChess::GameBoard);
 void print_gameboard(ShumiChess::GameBoard);

@@ -41,14 +41,14 @@ engine_communicator_print_gameboard(PyObject* self, PyObject* args) {
     return Py_BuildValue(""); // this is None in Python
 }
 
-
+LegalMoves last_legal_moves;
 static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
-    LegalMoves legal_moves = python_engine.get_legal_moves();
+    last_legal_moves = python_engine.get_legal_moves();
     vector<Move> moves;
 
-    for (int i = 0; i < legal_moves.num_moves; i++) {
-        moves.push_back(legal_moves.moves[i]);
+    for (int i = 0; i < last_legal_moves.num_moves; i++) {
+        moves.push_back(last_legal_moves.moves[i]);
     }
 
     vector<string> moves_readable;
@@ -111,11 +111,11 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
-    LegalMoves legal_moves = python_engine.get_legal_moves();
+    last_legal_moves = python_engine.get_legal_moves();
     vector<Move> legal_move_vector;
 
-    for (int i = 0; i < legal_moves.num_moves; i++) {
-        legal_move_vector.push_back(legal_moves.moves[i]);
+    for (int i = 0; i < last_legal_moves.num_moves; i++) {
+        legal_move_vector.push_back(last_legal_moves.moves[i]);
     }
 
     Move found_move;
@@ -145,7 +145,8 @@ engine_communicator_pop(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_game_over(PyObject* self, PyObject* args) {
-    return Py_BuildValue("i", (int) python_engine.game_over());
+    GameState state = python_engine.game_over(last_legal_moves);
+    return Py_BuildValue("i", (int) state);
 }
 
 static PyObject*
