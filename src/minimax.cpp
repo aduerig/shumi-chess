@@ -145,13 +145,13 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
             return a.board_value > b.board_value;
         });
 
-    if (depth == starting_depth) {
-        cout << "Searching the moves at depth " << depth << "/" << starting_depth << " in the following order" << endl;
-        for (MoveAndBoardValue &m : moves_ordered_search) {
-            cout << all_move_info_str(m.move) << ": " << m.board_value << ", ";
-        }
-        cout << endl;
-    }
+    // if (depth == starting_depth) {
+    //     cout << "Searching the moves at depth " << depth << "/" << starting_depth << " in the following order" << endl;
+    //     for (MoveAndBoardValue &m : moves_ordered_search) {
+    //         cout << all_move_info_str(m.move) << ": " << m.board_value << ", ";
+    //     }
+    //     cout << endl;
+    // }
 
     double max_move_value = -DBL_MAX;
     Move best_move = moves_ordered_search[0].move;
