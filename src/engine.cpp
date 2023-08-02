@@ -33,6 +33,9 @@ void Engine::reset_engine() {
 
 LegalMoves Engine::get_legal_moves() {
     Color color = game_board.turn;
+
+    all_pieces_cache = game_board.get_pieces();
+
     Move* curr_move = start_of_moves;
     curr_move = add_pawn_moves_to_vector(curr_move, color); 
     curr_move = add_rook_moves_to_vector(curr_move, color); 
@@ -179,7 +182,6 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
 Move* Engine::add_pawn_moves_to_vector(Move* curr_move, Color color) {    
     ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
 
-    ull all_pieces = game_board.get_pieces();
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
 
     ull not_a_file = ~col_masks[Col::COL_A];
@@ -195,7 +197,7 @@ Move* Engine::add_pawn_moves_to_vector(Move* curr_move, Color color) {
         ull move_fright = (single_pawn & not_h_file) << 7;
         ull move_rleft = (single_pawn & not_a_file) >> 7;
         ull move_rright = (single_pawn & not_h_file) >> 9;
-        ull non_attacks = (move_fleft | move_fright | move_rleft | move_rright) & ~all_pieces;
+        ull non_attacks = (move_fleft | move_fright | move_rleft | move_rright) & ~all_pieces_cache;
         curr_move = add_move_to_vector<Piece::PAWN>(curr_move, single_pawn, non_attacks, color, false, false, 0ULL);
 
         // attacks sides
@@ -257,10 +259,8 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
 
 
     if (single_queen) {
-        ull all_pieces = game_board.get_pieces();
-
         // queen moves
-        ull avail_moves = get_straight_attacks(single_queen) & ~all_pieces;
+        ull avail_moves = get_straight_attacks(single_queen) & ~all_pieces_cache;
         curr_move = add_move_to_vector<Piece::QUEEN>(curr_move, single_queen, avail_moves, color, false, false, 0ULL);
 
 
@@ -323,7 +323,6 @@ Move* Engine::add_queen_moves_to_vector(Move* curr_move, Color color) {
 Move* Engine::add_king_moves_to_vector(Move* curr_move, Color color) {
     ull king = game_board.get_pieces_template<Piece::KING>(color);
     ull all_enemy_pieces = game_board.get_pieces(opposite_color(color));
-    ull all_pieces = game_board.get_pieces();
     ull own_pieces = game_board.get_pieces(color);
 
     ull avail_attacks = tables::movegen::king_attack_table[bitboard_to_lowest_square(king)];
@@ -340,7 +339,7 @@ Move* Engine::add_king_moves_to_vector(Move* curr_move, Color color) {
 }
 
 ull Engine::get_straight_attacks(ull bitboard) {
-    ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+    ull all_pieces_but_self = all_pieces_cache & ~bitboard;
     ull square = bitboard_to_lowest_square(bitboard);
 
     // north
@@ -367,32 +366,3 @@ ull Engine::get_straight_attacks(ull bitboard) {
 
 
 } // end namespace ShumiChess
-
-
-
-// ull Engine::get_diagonal_attacks(ull bitboard) {
-//     ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-//     ull square = bitboard_to_lowest_square(bitboard);
-
-//     // up right
-//     ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
-//     int blocked_square = bitboard_to_lowest_square(masked_blockers_ne);
-//     ull ne_attacks = ~north_east_square_ray[blocked_square] & north_east_square_ray[square];
-
-//     // up left
-//     ull masked_blockers_nw = all_pieces_but_self & north_west_square_ray[square];
-//     blocked_square = bitboard_to_lowest_square(masked_blockers_nw);
-//     ull nw_attacks = ~north_west_square_ray[blocked_square] & north_west_square_ray[square];
-
-//     // down right
-//     ull masked_blockers_se = all_pieces_but_self & south_east_square_ray[square];
-//     blocked_square = bitboard_to_highest_square(masked_blockers_se);
-//     ull se_attacks = ~south_east_square_ray[blocked_square] & south_east_square_ray[square];
-
-//     // down left
-//     ull masked_blockers_sw = all_pieces_but_self & south_west_square_ray[square];
-//     blocked_square = bitboard_to_highest_square(masked_blockers_sw);
-//     ull sw_attacks = ~south_west_square_ray[blocked_square] & south_west_square_ray[square];
-
-//     return ne_attacks | nw_attacks | se_attacks | sw_attacks;
-// }

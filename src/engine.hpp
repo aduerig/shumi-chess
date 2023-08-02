@@ -33,6 +33,7 @@ class Engine {
         GameState game_over(LegalMoves);
 
         ull& access_piece_of_color(Piece, Color);
+        ull all_pieces_cache;
 
         template <Piece piece>
         inline Move* add_move_to_vector(Move* curr_move, ull single_bitboard_from, ull bitboard_to, Color color, bool capture, bool is_laser, ull pieces_lasered_ray) {

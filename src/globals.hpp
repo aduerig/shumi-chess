@@ -26,6 +26,8 @@ enum Piece {
     NONE,
 };
 
+extern std::array<Piece, 5> piece_arr;
+
 // TODO think about if this is the right way to represent
 struct Move {
     Color color;

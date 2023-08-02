@@ -69,6 +69,7 @@ void initialize_zobrist() {
     zobrist_side = randomer.get_random_number();
 }
 
+array<Piece, 5> piece_arr = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::QUEEN, Piece::KING };
 
 array<ull, 64> square_to_y = {};
 array<ull, 64> square_to_x = {};

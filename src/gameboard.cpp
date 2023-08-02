@@ -156,8 +156,8 @@ const string GameBoard::to_fen() {
 
 
 Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
-    vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::QUEEN, Piece::KING };
-    for (auto piece_type : all_piece_types) {
+    for (int i = 0; i < 5; i++) {
+        Piece piece_type = (Piece) piece_arr[i];
         if (get_pieces(piece_type) & bitboard) {
             return piece_type;
         }
