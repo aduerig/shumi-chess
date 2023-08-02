@@ -42,7 +42,7 @@ class Engine {
                 Piece piece_captured = Piece::NONE;
 
                 if constexpr (is_capture) { 
-                    piece_captured = { game_board.get_piece_type_on_bitboard(single_bitboard_to) };
+                    Piece piece_captured = { game_board.get_piece_type_on_bitboard(single_bitboard_to) };
                 }
 
                 curr_move->color = color;

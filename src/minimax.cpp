@@ -167,9 +167,7 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
         engine.pop();
 
         // !TODO same as above, this feels bogus. need to think about quissense and caching stuff
-        if (depth > 0) {
-            board_values[engine.game_board.zobrist_key][move] = board_value;
-        }
+        board_values[engine.game_board.zobrist_key][move] = board_value;
 
         if (board_value > max_move_value) {
             max_move_value = board_value;
@@ -188,10 +186,6 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
     return {best_move, max_move_value};
 }
 
-// if (debug == true) {
-//     cout << colorize(AColor::BRIGHT_BLUE, "===== DEPTH 0 EVAL: " + to_string(eval) + ", color is: " + color_str(engine.game_board.turn)) << endl;
-//     print_gameboard(engine.game_board);
-// }
 
 Move MinimaxAI::get_move_iterative_deepening(double time) {
     seen_zobrist.clear();
