@@ -156,11 +156,20 @@ const string GameBoard::to_fen() {
 
 
 Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
-    for (int i = 0; i < 5; i++) {
-        Piece piece_type = (Piece) piece_arr[i];
-        if (get_pieces(piece_type) & bitboard) {
-            return piece_type;
-        }
+    if (get_pieces<Piece::PAWN>() & bitboard) {
+        return Piece::PAWN;
+    }
+    else if (get_pieces<Piece::KNIGHT>() & bitboard) {
+        return Piece::KNIGHT;
+    }
+    else if (get_pieces<Piece::ROOK>() & bitboard) {
+        return Piece::ROOK;
+    }
+    else if (get_pieces<Piece::QUEEN>() & bitboard) {
+        return Piece::QUEEN;
+    }
+    else if (get_pieces<Piece::KING>() & bitboard) {
+        return Piece::KING;
     }
     return Piece::NONE;
 }
