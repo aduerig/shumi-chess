@@ -221,14 +221,14 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         exit(1);
     }
 
-    // auto stored_move_values = board_values[engine.game_board.zobrist_key];
-    // for (int i = 0; i < legal_moves.num_moves; i++) {
-    //     Move m = legal_moves.moves[i];
-    //     if (stored_move_values.find(m) == stored_move_values.end()) {
-    //         cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
-    //         exit(1);
-    //     }
-    // }
+    auto stored_move_values = board_values[engine.game_board.zobrist_key];
+    for (int i = 0; i < legal_moves.num_moves; i++) {
+        Move m = legal_moves.moves[i];
+        if (stored_move_values.find(m) == stored_move_values.end()) {
+            cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
+            exit(1);
+        }
+    }
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
     cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + to_string(best_move.board_value)) << endl;
     cout << colorize(AColor::BRIGHT_MAGENTA, "Nodes per second: " + format_with_commas((int)(nodes_visited / chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()))) << endl;

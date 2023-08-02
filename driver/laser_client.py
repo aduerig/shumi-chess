@@ -277,7 +277,7 @@ async def send_ping(websocket):
         })
         await websocket.send(ping_message)
         print(f'{get_datetime_string()}: Sent ping')
-        await asyncio.sleep(9)
+        await asyncio.sleep(8)
 
 
 async def main():

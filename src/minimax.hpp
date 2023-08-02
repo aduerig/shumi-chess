@@ -66,10 +66,10 @@ public:
     inline double game_over_value(ShumiChess::GameState state, ShumiChess::Color color) {
         double end_value = 0;
         if (state == ShumiChess::GameState::BLACKWIN) {
-            end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
+            end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX / 2 : DBL_MAX / 2;
         }
         else if (state == ShumiChess::GameState::WHITEWIN) {
-            end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
+            end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX / 2 : DBL_MAX / 2;
         }
         return end_value;
     };
