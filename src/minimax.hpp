@@ -80,11 +80,11 @@ public:
 
         // for (int i = 0; i < legal_moves.num_moves; i++) {
         //     capture_moves_internal[move_counter] = legal_moves.moves[i];
-        //     move_counter += min(1, 5 - (int) legal_moves.moves[i].capture);
+        //     move_counter += min(1, 5 - (int) legal_moves.moves[i].is_capture);
         // }
 
         for (int i = 0; i < legal_moves.num_moves; i++) {
-            if (legal_moves.moves[i].capture != ShumiChess::Piece::NONE) {
+            if (legal_moves.moves[i].is_capture != ShumiChess::Piece::NONE) {
                 capture_moves_internal[move_counter] = legal_moves.moves[i];
                 move_counter += 1;
             }
@@ -103,7 +103,7 @@ public:
             double board_val = 0;
             double piece_value = all_piece_values[(int)piece_type];
             
-            ull pieces_bitboard = engine.game_board.get_pieces_template<piece_type>(color);
+            ull pieces_bitboard = engine.game_board.get_pieces<piece_type>(color);
 
             board_val += piece_value * bits_in(pieces_bitboard);
 

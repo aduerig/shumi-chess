@@ -34,7 +34,7 @@ struct Move {
     Piece piece_type;
     ull from; // bitboard
     ull to; // bitboard
-    Piece capture = Piece::NONE;
+    Piece is_capture = Piece::NONE;
     bool is_laser = false;
 
     uint8_t lasered_pieces = 0;

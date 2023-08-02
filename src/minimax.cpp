@@ -139,11 +139,11 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
         for (int i = 0; i < legal_moves.num_moves; i++) {
             
             double capture_bonus = 0;
-            if (legal_moves.moves[i].capture != Piece::NONE) {
+            if (legal_moves.moves[i].is_capture != Piece::NONE) {
                 capture_bonus = 10000;
             }
-            // capture_bonus = min((5 - (int) legal_moves.moves[i].capture), 1) * 100;
-            double capture_piece = legal_moves.moves[i].capture * 100;
+            // capture_bonus = min((5 - (int) legal_moves.moves[i].is_capture), 1) * 100;
+            double capture_piece = legal_moves.moves[i].is_capture * 100;
             double capturing_piece = -legal_moves.moves[i].piece_type;
             double capture_val = capture_bonus + capture_piece + capturing_piece;
 

@@ -106,9 +106,17 @@ namespace representation {
 
 ull acn_to_bitboard_conversion(const std::string&);
 std::string bitboard_to_acn_conversion(ull);
+
+
+constexpr ShumiChess::Color opposite_color_constexpr(ShumiChess::Color color) {
+    return (color == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
+}
+
 inline const ShumiChess::Color opposite_color(const ShumiChess::Color color) {
     return (ShumiChess::Color) (1 - (int) color);
 }
+
+
 inline const string color_str(const ShumiChess::Color color) {
     return color == ShumiChess::WHITE ? "white" : "black";
 }

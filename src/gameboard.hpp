@@ -41,7 +41,7 @@ class GameBoard {
         void set_zobrist();
 
         template <Piece p>
-        inline ull get_pieces_template() {
+        inline ull get_pieces() {
             if constexpr (p == Piece::PAWN) { return black_pawns | white_pawns; }
             if constexpr (p == Piece::ROOK) { return black_rooks | white_rooks; }
             if constexpr (p == Piece::KNIGHT) { return black_knights | white_knights; }
@@ -50,7 +50,7 @@ class GameBoard {
         };
 
         template <Piece p, Color c>  
-        inline ull get_pieces_template() {
+        inline ull get_pieces() {
             if constexpr (p == Piece::PAWN && c == Color::BLACK) { return black_pawns; }
             if constexpr (p == Piece::PAWN && c == Color::WHITE) { return white_pawns; }   
             if constexpr (p == Piece::ROOK && c == Color::BLACK) { return black_rooks; }
@@ -65,15 +65,15 @@ class GameBoard {
         }
 
         template <Piece p>
-        inline ull get_pieces_template(Color c) {
+        inline ull get_pieces(Color c) {
             if (c == Color::BLACK) { 
-                return get_pieces_template<p, Color::BLACK>(); 
+                return get_pieces<p, Color::BLACK>(); 
             }
-            return get_pieces_template<p, Color::WHITE>(); 
+            return get_pieces<p, Color::WHITE>(); 
         };
 
         template <Color c>
-        inline ull get_pieces_template() {
+        inline ull get_pieces() {
             if constexpr (c == Color::WHITE) { return white_pawns | white_rooks | white_knights | white_queens | white_king; }   
             if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_queens | black_king; }
         }
