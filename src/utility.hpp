@@ -70,7 +70,7 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
 
 
 inline int square_to_bitboard(int square) {
-    return 1ULL << (square - 1);
+    return 1ULL << square;
 };
 
 // both the asm instructions return 64 if bitboard == 0 
