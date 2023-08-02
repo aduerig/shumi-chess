@@ -32,7 +32,7 @@ get_games_json = {
 
 
 minutes_for_us = 2
-minutes_for_them = 3
+minutes_for_them = 5
 time_to_engine = .3
 seconds_for_us = int(minutes_for_us * 60 * 1000)
 seconds_for_them = int(minutes_for_them * 60 * 1000)
@@ -294,6 +294,10 @@ async def main():
         except CustomError as e:
             print_red(f'Name was taken in main, sleeping for 30')
             time.sleep(30)
+        except TimeoutError as e:
+            print_red(f'Timeout error in main, sleeping for 30')
+            time.sleep(30)
+            
         times += 1
         time.sleep(.5)
 asyncio.run(main())
