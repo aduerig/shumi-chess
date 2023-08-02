@@ -63,7 +63,7 @@ std::string bitboard_to_string(ull bitboard) {
 std::string all_move_info_str(Move move) {
     std::string str;
     str += color_to_str(move.color) + " ";
-    str += piece_to_str(move.piece_type) + " Capture: " + piece_to_str(move.piece_captured) + ", " + move_to_string(move) + "\n";
+    str += piece_to_str(move.piece_type) + " Capture: " + piece_to_str(move.piece_captured) + ", " + move_to_string(move);
 
     // str += "from:\n" + bitboard_to_string(move.from) + "\n";
     // str += "to:\n" + bitboard_to_string(move.to) + "\n";

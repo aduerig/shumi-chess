@@ -123,7 +123,8 @@ public:
     }
 
     inline double evaluate_board(ShumiChess::Color color, ShumiChess::LegalMoves legal_moves) {
-        return evaluate_board<ShumiChess::Piece::PAWN>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::ROOK>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::KNIGHT>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::QUEEN>(engine.game_board.turn, legal_moves) + (legal_moves.num_moves / 50);
+        double avail_move_bonus = (legal_moves.num_moves / 70.0);
+        return evaluate_board<ShumiChess::Piece::PAWN>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::ROOK>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::KNIGHT>(engine.game_board.turn, legal_moves) + evaluate_board<ShumiChess::Piece::QUEEN>(engine.game_board.turn, legal_moves) + avail_move_bonus;
     }
 
     inline int bits_in(ull bitboard) {

@@ -13,20 +13,9 @@ using namespace utility;
 using namespace utility::representation;
 using namespace utility::bit;
 
-MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
-    // std::array<std::array<double, 8>, 8> pawn_values = {{
-    //     {5, 5, 7, 7, 0, 0, 0, 0},
-    //     {4, 6, 6, 8, 8, 8, 8, 0},
-    //     {5, 5, 7, 7, 7, 7, 8, 0},
-    //     {4, 6, 6, 6, 6, 6, 8, 0},
-    //     {5, 5, 5, 5, 5, 5, 8, 7},
-    //     {4, 4, 4, 4, 4, 7, 6, 7},
-    //     {3, 3, 3, 3, 6, 5, 6, 5},
-    //     {2, 2, 2, 5, 4, 5, 4, 5},
-    // }};
+MinimaxAI::MinimaxAI(Engine& e) : engine(e) {   
 
-    // std::array<double, 64> black_pawn_value_lookup;
-    // std::array<double, 64> white_pawn_value_lookup;
+    
 
     for (int i = 0; i < 64; i++) {
         int row = i / 8;
@@ -50,16 +39,20 @@ double MinimaxAI::Quiesce(int depth, int starting_depth, double alpha, double be
     nodes_visited++;
     max_depth = max(max_depth, starting_depth - depth);
 
-    // this is double calling legal_moves on the initial call
+    // still double calling legal moves i think
     LegalMoves legal_moves = engine.get_legal_moves();
-    LegalMoves capture_moves = get_capture_moves(legal_moves);
     GameState state = engine.game_over(legal_moves);
-    
+    LegalMoves capture_moves = get_capture_moves(legal_moves);
+
+
     double stand_pat;
     if (state != GameState::INPROGRESS) {
         stand_pat = game_over_value(state, engine.game_board.turn);
     }
     else {
+        if (capture_moves.num_moves == 0 && depth == 0) {
+            return evaluate_board(engine.game_board.turn, legal_moves);
+        }
         stand_pat = evaluate_board(engine.game_board.turn, capture_moves);
     }
 
@@ -105,11 +98,7 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
     }
 
     if (depth == 0) {
-        LegalMoves capture_moves = get_capture_moves(legal_moves);
-        if (capture_moves.num_moves != 0) {
-            return {Move{}, Quiesce(depth, starting_depth, alpha, beta)};
-        }
-        return {Move{}, evaluate_board(engine.game_board.turn, legal_moves)};
+        return {Move{}, Quiesce(depth, starting_depth, alpha, beta)};
     }
 
     // !TODO the interplay of this and capture moves could be an issue, gating behind else right now but its kinda nonsensicle idk
@@ -155,6 +144,14 @@ MoveAndBoardValue MinimaxAI::store_board_values_negamax(int depth, int starting_
         [](const MoveAndBoardValue& a, const MoveAndBoardValue& b) {
             return a.board_value > b.board_value;
         });
+
+    if (depth == starting_depth) {
+        cout << "Searching the moves at depth " << depth << "/" << starting_depth << " in the following order" << endl;
+        for (MoveAndBoardValue &m : moves_ordered_search) {
+            cout << all_move_info_str(m.move) << ": " << m.board_value << ", ";
+        }
+        cout << endl;
+    }
 
     double max_move_value = -DBL_MAX;
     Move best_move = moves_ordered_search[0].move;
