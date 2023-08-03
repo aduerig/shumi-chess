@@ -36,6 +36,10 @@ minutes_for_them = 5
 time_to_engine = .5
 seconds_for_us = int(minutes_for_us * 60 * 1000)
 seconds_for_them = int(minutes_for_them * 60 * 1000)
+
+seconds_increment_for_us = 0
+seconds_increment_for_them = 2
+
 our_name = 'mr. robot'
 create_game_json = {
     "messageType": "create",
@@ -43,7 +47,7 @@ create_game_json = {
         "fen": "7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7 b - - 0 1",
         "turn": "b",
         "times": [seconds_for_us, seconds_for_them],
-        "increments": [0, 0],
+        "increments": [seconds_increment_for_them, seconds_increment_for_us],
         "color": "w",
         "name": our_name,
     }
