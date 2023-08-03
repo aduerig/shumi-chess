@@ -38,7 +38,7 @@ seconds_for_us = int(minutes_for_us * 60 * 1000)
 seconds_for_them = int(minutes_for_them * 60 * 1000)
 
 seconds_increment_for_us = 0
-seconds_increment_for_them = 2
+seconds_increment_for_them = 2 * 1000
 
 our_name = 'mr. robot'
 create_game_json = {
