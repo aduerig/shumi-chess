@@ -202,8 +202,8 @@ async def host_and_play_games(websocket):
                     continue
             
                 if response_data['status'] == 'gameOver':
-                    print_red(f'Game over, {winner=}')
                     winner = response_data['data']['winner']
+                    print_red(f'Game over, {winner=}')
                     if winner == 'w':
                         won_games += 1
                     if winner == 'd':
