@@ -3,7 +3,6 @@
 from setuptools import setup, Extension
 import sys
 import pathlib
-import os
 
 
 this_file_directory = pathlib.Path(__file__).parent.resolve()

@@ -33,7 +33,7 @@ get_games_json = {
 
 minutes_for_us = 2
 minutes_for_them = 5
-time_to_engine = .5
+time_to_engine = .6
 seconds_for_us = int(minutes_for_us * 60 * 1000)
 seconds_for_them = int(minutes_for_them * 60 * 1000)
 
