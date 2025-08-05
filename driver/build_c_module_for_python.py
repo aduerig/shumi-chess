@@ -25,12 +25,13 @@ if is_windows():
     extra_compile_args = ['/std:c++17']
 
 
+config_subdir = 'Release' if release_mode == 'release' else 'Debug'
 if is_windows():
-    config_subdir = 'Release' if release_mode == 'release' else 'Debug'
     lib_path = lib_dir.joinpath(config_subdir, 'ShumiChess.lib')
     extra_link_args = [str(lib_path)]
 else:
-    extra_link_args = [str(lib_dir.joinpath('libShumiChess.a'))]
+    lib_path = lib_dir.joinpath(config_subdir, 'libShumiChess.a')
+    extra_link_args = [str(lib_path)]
 
 
 if release_mode == 'debug':
