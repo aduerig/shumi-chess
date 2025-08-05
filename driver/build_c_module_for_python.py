@@ -18,8 +18,7 @@ if '--debug' in sys.argv:
 
 print_cyan(f'building with {release_mode=}, {root_of_project_directory=}, {this_file_directory=}')
 
-lib_dir = root_of_project_directory.joinpath('lib')
-
+lib_dir = root_of_project_directory.joinpath('build', 'lib')
 
 extra_compile_args=['-std=c++17']
 if is_windows():
@@ -27,14 +26,16 @@ if is_windows():
 
 
 if is_windows():
-    extra_link_args = [str(lib_dir.joinpath('ShumiChess.lib'))]
+    config_subdir = 'Release' if release_mode == 'release' else 'Debug'
+    lib_path = lib_dir.joinpath(config_subdir, 'ShumiChess.lib')
+    extra_link_args = [str(lib_path)]
 else:
     extra_link_args = [str(lib_dir.joinpath('libShumiChess.a'))]
 
 
 if release_mode == 'debug':
     if is_windows():
-        extra_compile_args += ['/Zi', '/Od']
+        extra_compile_args += ['/Zi', '/Od', '/MDd', '/D_DEBUG']
     else:
         extra_compile_args += ['-g', '-O0']
 else:
@@ -59,18 +60,19 @@ setup(
     ext_modules = [the_module]
 )
 
-if is_windows():
-    last_modified = float('-inf')
-    output_path = None
-    for filename, filepath in get_all_paths(this_file_directory.joinpath('build'), recursive=True, allowed_extensions=set(['.pyd'])):
-        if filepath.stat().st_mtime > last_modified:
-            last_modified = filepath.stat().st_mtime
-            output_path = filepath
-    wanted_path = root_of_project_directory.joinpath('driver', filename)
+# if is_windows():
+#     last_modified = float('-inf')
+#     output_path = None
+    # for filename, filepath in get_all_paths(this_file_directory.joinpath('build'), recursive=True, allowed_extensions=set(['.pyd'])):
+    #     print(filename)
+    #     if filepath.stat().st_mtime > last_modified:
+    #         last_modified = filepath.stat().st_mtime
+    #         output_path = filepath
+    # wanted_path = root_of_project_directory.joinpath('driver', filename)
 
-    if output_path is None:
-        print_red(f'Could not find {output_path}')
-        sys.exit(1)
-    print_green(f'Copying {output_path} to {wanted_path}')
-    wanted_path.unlink(missing_ok=True)
-    os.rename(output_path, wanted_path)
+    # if output_path is None:
+    #     print_red(f'Could not find {output_path}')
+    #     sys.exit(1)
+    # print_green(f'Copying {output_path} to {wanted_path}')
+    # wanted_path.unlink(missing_ok=True)
+    # os.rename(output_path, wanted_path)

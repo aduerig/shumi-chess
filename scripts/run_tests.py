@@ -17,10 +17,16 @@ args = parser.parse_args()
 
 
 shared_build_code.build_shumi_chess(args.release, build_tests=True)
-shared_build_code.build_python_gui_module(args.release)
+# shared_build_code.build_python_gui_module(args.release)
+
+windows_exe = '.exe' if is_windows() else ''
+
+
+release_mode = 'debug' if not args.release else 'release'
+release_mode = release_mode.capitalize()
 
 cmd = [
-    str(shared_build_code.bin_dir.joinpath('unit_tests')),
+    str(shared_build_code.bin_dir.joinpath(f'{release_mode}/unit_tests{windows_exe}')),
     '--gtest_color=yes',
 ]
 if args.test_filter != '*':

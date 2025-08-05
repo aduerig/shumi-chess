@@ -11,7 +11,9 @@ from helpers import *
 
 build_c_module_for_python_path = root_of_project_directory.joinpath('driver', 'build_c_module_for_python.py')
 show_board_path = root_of_project_directory.joinpath('driver', 'show_board.py')
-bin_dir = root_of_project_directory.joinpath('bin')
+bin_dir = root_of_project_directory.joinpath('build').joinpath('bin')
+
+
 print_cyan(f'{show_board_path=}, {build_c_module_for_python_path=}')
 def build_shumi_chess(release, build_tests):
     build_tests_str = 'OFF'
@@ -22,26 +24,28 @@ def build_shumi_chess(release, build_tests):
     if release:
         build_type_str = 'Release'
 
-    print_cyan('==== BUILDING SHUMICHESS STEP 1 =====')
+    print_cyan('==== BUILDING SHUMICHESS STEP 1 (CONFIGURE) =====')
     cmd = [
         'cmake',
-        str(root_of_project_directory.joinpath('CMakeLists.txt')),
+        '-S', str(root_of_project_directory),
+        '-B', str(root_of_project_directory.joinpath('build')), # Use a dedicated build folder
         '-Wno-dev',
         f'-DCMAKE_BUILD_TYPE={build_type_str}',
         f'-DBUILD_TESTS={build_tests_str}',
     ]
-    # if is_windows():
-    #     cmd.insert(0, 'CC=gcc')
     return_code, _stdout, _stderr = run_command_blocking(cmd, stdout_pipe=None, stderr_pipe=None, debug=True)
     if return_code:
         sys.exit(1)
 
-    print_cyan('==== BUILDING SHUMICHESS STEP 2 =====')
-    return_code, _stdout, _stderr = run_command_blocking([
+    print_cyan('==== BUILDING SHUMICHESS STEP 2 (BUILD) =====')
+    cmd_build = [
         'cmake',
         '--build',
-        str(root_of_project_directory.joinpath('.')),
-    ], stdout_pipe=None, stderr_pipe=None, debug=True)
+        str(root_of_project_directory.joinpath('build')),
+        '--config',
+        build_type_str
+    ]
+    return_code, _stdout, _stderr = run_command_blocking(cmd_build, stdout_pipe=None, stderr_pipe=None, debug=True)
     if return_code:
         sys.exit(1)
 
