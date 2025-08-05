@@ -61,7 +61,8 @@ def build_python_gui_module(release):
         f'--{build_type_str.lower()}',
     ]
     if is_windows():
-        cmd_options.append('--compiler=mingw32')
+        # cmd_options.append('--compiler=mingw32')
+        cmd_options.append('--compiler=msvc')
     return_code, _stdout, _stderr = run_command_blocking(cmd_options, stdout_pipe=None, stderr_pipe=None, debug=True)
     if return_code:
         sys.exit(1)

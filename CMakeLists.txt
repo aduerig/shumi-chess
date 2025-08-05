@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 4.1)
+
 # -DBUILD_TESTS=ON       or       -DBUILD_TESTS=OFF
 # set(BUILD_TESTS OFF)
 # option(BUILD_TESTS "This is settable from the command line" OFF CACHE BOOL "idk" FORCE)
@@ -45,7 +47,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
 message("CMAKE_ARCHIVE_OUTPUT_DIRECTORY: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 message("CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}")
 
-add_subdirectory(src)
+# add_subdirectory(src)
 
 if(BUILD_TESTS)
     include(googletest_cmake/googletest.cmake)

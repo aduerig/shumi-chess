@@ -1,5 +1,3 @@
-# called by: python .\driver\build_c_module_for_python.py build --compiler=mingw32
-
 from setuptools import setup, Extension
 import sys
 import pathlib
@@ -21,16 +19,27 @@ if '--debug' in sys.argv:
 print_cyan(f'building with {release_mode=}, {root_of_project_directory=}, {this_file_directory=}')
 
 lib_dir = root_of_project_directory.joinpath('lib')
-extra_link_args = [str(lib_dir.joinpath('libShumiChess.a'))]
+
+
 extra_compile_args=['-std=c++17']
+if is_windows():
+    extra_compile_args = ['/std:c++17']
+
 
 if is_windows():
-    extra_link_args = [str(lib_dir.joinpath('ShumiChess.lib')), '-static', '-static-libgcc', '-static-libstdc++']
+    extra_link_args = [str(lib_dir.joinpath('ShumiChess.lib'))]
+else:
+    extra_link_args = [str(lib_dir.joinpath('libShumiChess.a'))]
+
 
 if release_mode == 'debug':
-    extra_compile_args += ['-g', '-O0']
+    if is_windows():
+        extra_compile_args += ['/Zi', '/Od']
+    else:
+        extra_compile_args += ['-g', '-O0']
 else:
-    extra_compile_args += ['-Ofast']
+    if not is_windows():
+        extra_compile_args += ['-Ofast']
 
 the_module = Extension(
     'engine_communicator',

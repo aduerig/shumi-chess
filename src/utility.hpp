@@ -1,5 +1,31 @@
 #pragma once
 
+
+#ifdef _MSC_VER  // Check if we are using the Microsoft Visual C++ compiler
+#include <intrin.h> // Include the header for MSVC intrinsics
+
+// MSVC doesn't have __builtin_ctzll, so we create our own version
+// using the _BitScanForward64 intrinsic.
+inline int __builtin_ctzll(unsigned long long x) {
+    unsigned long index;
+    if (_BitScanForward64(&index, x)) {
+        return (int)index;
+    }
+    return 64; // GCC's behavior for 0 is undefined, 64 is a common fallback
+}
+
+// MSVC doesn't have __builtin_clzll, so we create our own version
+// using the _BitScanReverse64 intrinsic.
+inline int __builtin_clzll(unsigned long long x) {
+    unsigned long index;
+    if (_BitScanReverse64(&index, x)) {
+        return 63 - (int)index;
+    }
+    return 64; // GCC's behavior for 0 is undefined, 64 is a common fallback
+}
+
+#endif // _MSC_VER
+
 //TODO shares a name with builtin lib
 #include <algorithm> 
 #include <cctype>
