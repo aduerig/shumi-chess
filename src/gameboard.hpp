@@ -32,7 +32,7 @@ class GameBoard {
         // other information about the board state
         Color turn;
 
-        //1<<1 for queenside, 1<<0 for kingside
+        //1<<1 for queenside, 1<<0 for kingside 
         uint8_t black_castle = 0b00000000;
         uint8_t white_castle = 0b00000000;
 
@@ -95,14 +95,10 @@ class GameBoard {
 
         template <Color c>
         inline ull get_pieces_template() {
+            // NOTE: This function should have an assert for the else case
             if constexpr (c == Color::WHITE) { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }   
             if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king; }
         }
-
-        // ull get_pieces();
-        // ull get_pieces(Color);
-        // ull get_pieces(Piece);
-        // ull get_pieces(Color, Piece);
 
         inline ull get_pieces(Color color) {
             if (color == Color::WHITE) {
@@ -113,6 +109,7 @@ class GameBoard {
                 return black_pawns | black_rooks | black_knights | 
                     black_bishops | black_queens | black_king;
             }
+            // NOTE: This function should have an assert for the else case
         }
 
         inline ull get_pieces(Piece piece_type) {
@@ -132,6 +129,7 @@ class GameBoard {
                 return black_queens | white_queens;
             }
             return black_king | white_king;
+            // NOTE: This function should have an assert for the else case
         }
 
         inline ull get_pieces(Color color, Piece piece_type) {

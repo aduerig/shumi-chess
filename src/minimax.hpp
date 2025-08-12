@@ -8,7 +8,7 @@
 class RandomAI {
 public:
     ShumiChess::Engine engine;
-    unordered_map<ull, int> piece_and_values;
+    unordered_map<ull, int> thePieceValues;
 
     RandomAI(ShumiChess::Engine&);
     int rand_int(int, int);
@@ -20,8 +20,10 @@ class MinimaxAI {
 public:
     int nodes_visited = 0;
 
+    // NOTE: Can these be more accurate (i.e. decimals like 2.8 for knight)
+    // NOTE: Can these be more accurate as to "2 bishops" etc.
     ShumiChess::Engine& engine;
-    std::array<std::tuple<ShumiChess::Piece, double>, 6> piece_and_values = {
+    std::array<std::tuple<ShumiChess::Piece, double>, 6> thePieceValues = {
         make_tuple(ShumiChess::Piece::PAWN, 1),
         make_tuple(ShumiChess::Piece::ROOK, 5),
         make_tuple(ShumiChess::Piece::KNIGHT, 3),

@@ -31,32 +31,39 @@ string format_with_commas(T value) {
 
 double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& moves) {
     double board_val_adjusted = 0;
+
     for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
-        double board_val = 0;
-        for (const auto& i : piece_and_values) {
+        double dBoard_val = 0;
+        //
+        // Add up the values for each piece
+        for (const auto& i : thePieceValues) {
+            
+            // Obtain piece type and value
             Piece piece_type;
             double piece_value;
             tie(piece_type, piece_value) = i;
             
-            if (piece_type == Piece::KING) {
-                continue;
-            }
+            // King has "no value" (infinite), could just use zero but this is faster?
+            if (piece_type == Piece::KING) continue;
+
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
-            board_val += piece_value * bits_in(pieces_bitboard);
+            dBoard_val += (piece_value * bits_in(pieces_bitboard));
             
+            // NOTE: ???
             if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
                 ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
-                board_val +=  0.1 * bits_in(middle_place);
+                dBoard_val +=  0.1 * bits_in(middle_place);
                 // cout << "adding up " << color_str(color) << endl;
             }
         }
+        // Negative score for opposite pieces
         if (color != for_color) {
-            board_val *= -1;
+            dBoard_val *= -1;
         }
-        board_val_adjusted += board_val;
+        board_val_adjusted += dBoard_val;
     }
-    return board_val_adjusted + moves.size() / 80;
+    return board_val_adjusted + (moves.size() / 80);
 }
 
 
@@ -119,7 +126,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         sorted_moves = moves;
     }
 
-    double max_move_value = -DBL_MAX;
+    double dMax_move_value = -DBL_MAX;
     Move best_move = sorted_moves[0];
     for (Move &m : sorted_moves) {
         engine.push(m);
@@ -133,16 +140,16 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         engine.pop();
         board_values[engine.game_board.zobrist_key][m] = score_value;
 
-        if (score_value > max_move_value) {
-            max_move_value = score_value;
+        if (score_value > dMax_move_value) {
+            dMax_move_value = score_value;
             best_move = m;
         }
-        alpha = max(alpha, max_move_value);
+        alpha = max(alpha, dMax_move_value);
         if (alpha >= beta) {
             break;
         }
     }
-    return make_tuple(max_move_value, best_move);
+    return make_tuple(dMax_move_value, best_move);
 }
 
 
@@ -222,6 +229,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         return 0;
     }
     
+    // Depth decreases, when it hits zero we stop looking.
     if (depth == 0) {
         Color color_perspective = Color::BLACK;
         if (color_multiplier) {
@@ -229,35 +237,42 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         }
         return evaluate_board(color_perspective, moves) * color_multiplier;
     }
-
+    //
+    // Otherwise dive down one more level.
+    //
     if (color_multiplier == 1) {  // Maximizing player
-        double max_move_value = -DBL_MAX;
+        double dMax_move_value = -DBL_MAX;
         for (Move& m : moves) {
             engine.push(m);
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
             engine.pop();
-            max_move_value = max(max_move_value, score_value);
-            alpha = max(alpha, max_move_value);
+            dMax_move_value = max(dMax_move_value, score_value);
+            alpha = max(alpha, dMax_move_value);
             if (beta <= alpha) {
                 break; // beta cut-off
             }
         }
-        return max_move_value;
+        return dMax_move_value;
+
     } else {  // Minimizing player
-        double min_move_value = DBL_MAX;
+        double dMin_move_value = DBL_MAX;
         for (Move& m : moves) {
             engine.push(m);
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
             engine.pop();
-            min_move_value = min(min_move_value, score_value);
-            beta = min(beta, min_move_value);
+            dMin_move_value = min(dMin_move_value, score_value);
+            beta = min(beta, dMin_move_value);
             if (beta <= alpha) {
                 break; // alpha cut-off
             }
         }
-        return min_move_value;
+        return dMin_move_value;
     }
 }
+
+//
+// Get 
+//
 
 Move MinimaxAI::get_move(int depth) {
     auto start_time = chrono::high_resolution_clock::now();
@@ -270,13 +285,13 @@ Move MinimaxAI::get_move(int depth) {
     }
 
     Move move_chosen;
-    double max_move_value = -DBL_MAX;
+    double dMax_move_value = -DBL_MAX;
     vector<Move> moves = engine.get_legal_moves();
     for (Move& m : moves) {
         engine.push(m);
         double score_value = get_value(depth - 1, color_multiplier * -1, -DBL_MAX, DBL_MAX);
-        if (score_value * -1 > max_move_value) {
-            max_move_value = score_value * -1;
+        if (score_value * -1 > dMax_move_value) {
+            dMax_move_value = score_value * -1;
             move_chosen = m;
         }
         engine.pop();
