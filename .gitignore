@@ -1,3 +1,6 @@
+helpme.txt
+*.bak
+driver/games_log/
 run_minimax_time.dir/
 *vcxproj*
 ShumiChess.lib
