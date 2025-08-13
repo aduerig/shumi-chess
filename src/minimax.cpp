@@ -33,35 +33,34 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
     double board_val_adjusted = 0;
 
     for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
-        double dBoard_val = 0;
-        //
+        double d_board_val = 0;
         // Add up the values for each piece
-        for (const auto& i : thePieceValues) {
+        for (const auto& i : piece_values) {
             
             // Obtain piece type and value
             Piece piece_type;
             double piece_value;
             tie(piece_type, piece_value) = i;
             
-            // King has "no value" (infinite), could just use zero but this is faster?
+            // Since the king can never leave the board (engine does not allow), and there is an infinite score checked earlier we can just skip kings
             if (piece_type == Piece::KING) continue;
 
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
-            dBoard_val += (piece_value * bits_in(pieces_bitboard));
+            d_board_val += (piece_value * bits_in(pieces_bitboard));
             
-            // NOTE: ???
+            // NOTE: This is adding a small bonus for pawns and knights in the middle of the board
             if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
                 ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
-                dBoard_val +=  0.1 * bits_in(middle_place);
+                d_board_val +=  0.1 * bits_in(middle_place);
                 // cout << "adding up " << color_str(color) << endl;
             }
         }
         // Negative score for opposite pieces
         if (color != for_color) {
-            dBoard_val *= -1;
+            d_board_val *= -1;
         }
-        board_val_adjusted += dBoard_val;
+        board_val_adjusted += d_board_val;
     }
     return board_val_adjusted + (moves.size() / 80);
 }

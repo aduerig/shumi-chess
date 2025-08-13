@@ -38,12 +38,12 @@ void Engine::reset_engine() {
 vector<Move> Engine::get_legal_moves() {
     vector<Move> all_legal_moves;
     Color color = game_board.turn;
-    //
-    //  "psuedo_legal" moves are those that does not put the king in check
+    // "psuedo_legal" moves are those that does not put the king in check
     vector<Move> psuedo_legal_moves; 
     psuedo_legal_moves = get_psuedo_legal_moves(color);
 
     // Ensure the output array is big enough (NOTE:could this be done as a constant allocation?)
+    // Smart idea, we should calculate a sane max and run it through benchmarks
     all_legal_moves.reserve(psuedo_legal_moves.size());
 
     for (Move move : psuedo_legal_moves) {
@@ -71,7 +71,7 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     return all_psuedo_legal_moves;
 }
 
-// NOTE: does this take into account castling crossing a checked square?
+// NOTE: does this take into account castling crossing a checked square? I think NOT but I think the psuedo legal moves do take that into account. (not sure)
 bool Engine::is_king_in_check(const ShumiChess::Color& color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
     return is_square_in_check(color, friendly_king);
@@ -130,9 +130,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
     }
     // TODO check if this is off by one or something
     else if (game_board.halfmove >= 50) {
-        //
         //  If fifty moves, its a draw.
-        //
         return GameState::DRAW;
     }
     return GameState::INPROGRESS;
@@ -531,8 +529,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
-    // NOTE: Ummm, shouldnt there be code here? There used to be two years ago.
-    //
     // castling
     if (color == Color::WHITE) {
         if (game_board.white_castle & (0b00000001) && 
