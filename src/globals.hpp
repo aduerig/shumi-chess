@@ -48,6 +48,7 @@ struct Move {
 };
 
 // ? is this best way to number
+// NOTE: cant we just renumber it from 0 ?
 // ? Should we try to make most checked things = 0 for magical compiler iszero optimizations? (applies to piece enum as well)
 enum GameState {
     INPROGRESS = -1,

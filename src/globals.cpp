@@ -144,8 +144,8 @@ void initialize_rays() {
 vector<Piece> promotion_values = {
     Piece::BISHOP,
     Piece::KNIGHT,
-    Piece::QUEEN,
-    Piece::ROOK
+    Piece::ROOK,
+    Piece::QUEEN
 };
 
 } // end namespace ShumiChess

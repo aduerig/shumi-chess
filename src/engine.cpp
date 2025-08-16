@@ -3,6 +3,12 @@
 #include "engine.hpp"
 #include "utility"
 
+
+// NOTE: How is NDEBUG being defined by someone (CMAKE?). I would rather do it in the make apparutus than in source files.
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
+
 using namespace std;
 
 namespace ShumiChess {
@@ -38,17 +44,19 @@ void Engine::reset_engine() {
 vector<Move> Engine::get_legal_moves() {
     vector<Move> all_legal_moves;
     Color color = game_board.turn;
-    // "psuedo_legal" moves are those that does not put the king in check
+    //
+    // Get "psuedo_legal" moves. Those that does not put the king in check, and do not 
+    // cross the king over a "checked square".
     vector<Move> psuedo_legal_moves; 
     psuedo_legal_moves = get_psuedo_legal_moves(color);
-
+    //
     // Ensure the output array is big enough (NOTE:could this be done as a constant allocation?)
     // Smart idea, we should calculate a sane max and run it through benchmarks
     all_legal_moves.reserve(psuedo_legal_moves.size());
 
     for (Move move : psuedo_legal_moves) {
         push(move);        
-        // is NOT in check after making the move
+        // King is NOT in check after making the move
         if (!is_king_in_check(color)) {
             all_legal_moves.emplace_back(move);
         }
@@ -71,7 +79,7 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     return all_psuedo_legal_moves;
 }
 
-// NOTE: does this take into account castling crossing a checked square? I think NOT but I think the psuedo legal moves do take that into account. (not sure)
+// Does not take into account castling crossing a checked square? Yes, is_square_in_check() does this.
 bool Engine::is_king_in_check(const ShumiChess::Color& color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
     return is_square_in_check(color, friendly_king);
@@ -309,12 +317,16 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
         if (color) {return ref(this->game_board.black_king);}
         else {return ref(this->game_board.white_king);}
         break;
+    default:        // Note: skipping a default is illegal in some states.
+        assert(0);
+        break;
     }
     // TODO remove this, i'm just putting it here because it prevents a warning
     return this->game_board.white_king;
 }
 
 void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color, bool capture, bool promotion, ull en_passant, bool is_en_passent_capture, bool is_castle) {
+
     // code to actually pop all the potential squares and add them as moves
     while (bitboard_to) {
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
@@ -339,7 +351,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         new_move.is_castle_move = is_castle;
 
         // castling rights
-        ull from_or_to = single_bitboard_from | single_bitboard_to;
+        ull from_or_to = (single_bitboard_from | single_bitboard_to);
         if (from_or_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000) {
             new_move.white_castle &= 0b00000001;
         }
@@ -358,11 +370,16 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
             moves.emplace_back(new_move);
         }
         else {
-            for (auto& promo_piece : promotion_values) {
-                Move promo_move = new_move;
-                new_move.promotion = promo_piece;
-                moves.emplace_back(new_move);
-            }
+            // TODO No choice over piece to promote to.
+            new_move.promotion = Piece::QUEEN;
+            moves.emplace_back(new_move);
+            //
+            // NOTE: This for loop looks useless, it just loops to the last item in the list.
+            // for (auto& promo_piece : promotion_values) {
+            //     Move promo_move = new_move;
+            //     new_move.promotion = promo_piece;
+            //     moves.emplace_back(new_move);
+            // }
         }
     }
 }
@@ -378,6 +395,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull pawn_enpassant_rank_mask = row_masks[Row::ROW_3];
     ull far_right_row = col_masks[Col::COL_H];
     ull far_left_row = col_masks[Col::COL_A];
+
     if (color == Color::BLACK) {
         enemy_starting_rank_mask = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
@@ -395,6 +413,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         
         // single moves forward, don't check for promotions
+        // NOTE: What happens during promotion then?
         ull move_forward = utility::bit::bitshift_by_color(single_pawn & ~pawn_enemy_starting_rank_mask, color, 8); 
         ull move_forward_not_blocked = move_forward & ~all_pieces;
         ull spaces_to_move = move_forward_not_blocked;
@@ -526,7 +545,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
     // non-capture moves
     ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-    
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
     // castling

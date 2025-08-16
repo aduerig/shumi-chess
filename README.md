@@ -26,6 +26,14 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
 * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
 
+## log
+  * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
+  * Farnsworth 8/15/2025    Fixed rook promotion bug. Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up during castling. Seperated out board initial setup.
+
+## current bug log
+  * Magical rook appearence. This can happen nearly anywhere, the rook is real and can be moved. They always appear at f1/f8/h1/h8/a1/a8/d1/d8. Do not seem to occur after castling.
+  * Tests do not all pass.
+
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.
 
@@ -72,6 +80,7 @@ https://gist.github.com/elliotchance/8215283
 * gprof (line by line)
   * add `-pg` to complilation, and -l
   * `gprof -l ./my_program > analysis.txt`
+
 
 
 

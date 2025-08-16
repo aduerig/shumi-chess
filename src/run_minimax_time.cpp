@@ -6,6 +6,10 @@
 #include <math.h>
 #include <sstream>
 
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
+
 #include <globals.hpp>
 #include <engine.hpp>
 #include <utility.hpp>
@@ -16,8 +20,12 @@ using namespace std;
 using namespace ShumiChess;
 using namespace std::chrono;
 
+////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv) {
+
+    assert(0);  // Remove me
+
     Engine engine;
     MinimaxAI minimax_ai(engine);
 

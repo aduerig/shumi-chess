@@ -1,7 +1,11 @@
 
-#include <assert.h>
+
 #include <math.h>
 #include <vector>
+
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
 
 #include "gameboard.hpp"
 #include "utility.hpp"
@@ -9,47 +13,19 @@
 using namespace std;
 
 namespace ShumiChess {
-GameBoard::GameBoard() : 
-    // black queen endgame
-    // black_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_pawns(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // black_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_rooks(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // black_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // black_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // black_queens(0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_queens(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // black_king(0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_king(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
 
-    // Initial positions of the pieces (standard setup)
-    black_pawns  (0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_pawns  (0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
-    black_rooks  (0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_rooks  (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000001),
-    black_knights(0b01000010'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01000010),
-    black_bishops(0b00100100'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00100100),
-    black_queens (0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_queens (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00010000),
-    black_king   (0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    white_king   (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
-    turn(WHITE),
-    black_castle(0b00000011),
-    white_castle(0b00000011),
-    en_passant(0),
-    halfmove(0),
-    // NOTE: How can the below "{" compile? What does it mean?
-    fullmove(1) {
+    GameBoard::GameBoard() : 
+ 
+    // NOTE: Initial board setup seperated for easy changing.
+    #include "gameBoardSetup.hpp"
 
-    // !TODO doesn't belong here i don't think. NOTE: Certainly does not belong here.
-    ShumiChess::initialize_zobrist();
-    set_zobrist();
-    // cout << "GameBoard() constructor being run" << endl;
-}
+    {
+
+        // !TODO doesn't belong here i don't think.
+        ShumiChess::initialize_zobrist();
+        set_zobrist();
+        // cout << "GameBoard() constructor being run" << endl;
+    }
 
 GameBoard::GameBoard(const std::string& fen_notation) {
     const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
@@ -63,7 +39,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     int square_counter = 64;
     for (const char token : fen_components[0]) {
 
-        if (token != '/') { 
+        if (token != '/') {    // In FEN notation these are just seperaters.
             --square_counter;
         }
 
@@ -116,6 +92,9 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         case 'Q':
             this->white_castle |= 2; 
             break;
+        default:        // Note: skipping a default is illegal in some states.
+            //assert(0);  // NOte: this fires in some test, is it ok? WHat is the default case?
+            break;
         }
     }
 
@@ -132,6 +111,8 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     ShumiChess::initialize_zobrist();
     set_zobrist();
 }
+
+
 
 void GameBoard::set_zobrist() {
     // cout << "GameBoard::setting zobrist..." << endl;
@@ -158,6 +139,7 @@ void GameBoard::set_zobrist() {
     // st->key ^= Zobrist::castling[st->castlingRights];
 }
 
+//
 // fields for fen are:
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
 const string GameBoard::to_fen() {
@@ -210,6 +192,7 @@ const string GameBoard::to_fen() {
     fen_components.push_back(color_rep);
 
     // TODO: castling
+    // NOTE: What do you mean, TODO. here and below, What's to do? Is this an unfinished project?
     string castlestuff;
     if (0b00000001 & white_castle) {
         castlestuff += 'K';

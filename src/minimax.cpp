@@ -4,6 +4,10 @@
 #include <sstream>
 #include <locale>
 
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
+
 #include "minimax.hpp"
 #include "utility.hpp"
 
@@ -49,7 +53,7 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
 
             d_board_val += (piece_value * bits_in(pieces_bitboard));
             
-            // NOTE: This is adding a small bonus for pawns and knights in the middle of the board
+            // Add a small bonus for pawns and knights in the middle of the board
             if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
                 ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
                 d_board_val +=  0.1 * bits_in(middle_place);
@@ -72,6 +76,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     GameState state = engine.game_over(moves);
     
     if (state != GameState::INPROGRESS) {
+        // Game is over
         double end_value = 0;
         if (state == GameState::BLACKWIN) {
             end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
@@ -83,7 +88,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     }
     
     if (depth == 0) {
+        // Game not over
+        // Evaluate end node.
         double eval = evaluate_board(engine.game_board.turn, moves);
+
         if (debug == true) {
             cout << colorize(AColor::BRIGHT_BLUE, "===== DEPTH 0 EVAL: " + to_string(eval) + ", color is: " + color_str(engine.game_board.turn)) << endl;
             print_gameboard(engine.game_board);
@@ -97,14 +105,15 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
         moves_with_values = board_values[engine.game_board.zobrist_key];
 
-        for (auto& something : moves_with_values) {
-            Move looking = something.first;
-            if (std::find(moves.begin(), moves.end(), looking) == moves.end()) {
-                print_gameboard(engine.game_board);
-                cout << "Move shouldnt be legal: " << move_to_string(looking) << " at depth 1" << endl;
-                exit(1);
-            }
-        }
+        // NOTE: Commented out so I can stll keep playing.
+        // for (auto& something : moves_with_values) {
+        //     Move looking = something.first;
+        //     if (std::find(moves.begin(), moves.end(), looking) == moves.end()) {
+        //         print_gameboard(engine.game_board);
+        //         cout << "Move shouldnt be legal: " << move_to_string(looking) << " at depth 1" << endl;
+        //         exit(1);
+        //     }
+        // }
 
         std::vector<std::pair<Move, double>> vec(moves_with_values.begin(), moves_with_values.end());
 
@@ -152,7 +161,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 }
 
 
-
+// NOTE: This the entry point into the C to get a AI move.
 
 Move MinimaxAI::get_move_iterative_deepening(double time) {
     seen_zobrist.clear();

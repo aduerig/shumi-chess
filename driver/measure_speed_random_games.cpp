@@ -43,10 +43,13 @@ GameState play_game(Engine& engine, int& total_moves) {
     return result;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
-    Engine engine;
 
+    assert(0);  // Remove me
+
+    Engine engine;
 
     int total = 5000;
     int black_wins = 0;

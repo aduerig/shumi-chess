@@ -3,6 +3,10 @@
 #include <string>
 #include <iostream>
 
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
+
 #include "globals.hpp"
 
 namespace ShumiChess {
@@ -10,6 +14,7 @@ namespace ShumiChess {
 // ? Will we ever want to copy?
 class GameBoard {
     public:
+
         // Piece locations
         ull black_pawns {};
         ull white_pawns {};
@@ -95,9 +100,9 @@ class GameBoard {
 
         template <Color c>
         inline ull get_pieces_template() {
-            // NOTE: This function should have an assert for the else case
             if constexpr (c == Color::WHITE) { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }   
-            if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king; }
+            else if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king; }
+            else {assert(0);return 0;}
         }
 
         inline ull get_pieces(Color color) {
@@ -105,11 +110,15 @@ class GameBoard {
                 return white_pawns | white_rooks | white_knights | 
                     white_bishops | white_queens | white_king;
             }
-            else {
+            else if (color == Color::BLACK) {
                 return black_pawns | black_rooks | black_knights | 
                     black_bishops | black_queens | black_king;
             }
-            // NOTE: This function should have an assert for the else case
+            else {
+                assert(0);
+                return 0;
+            }
+
         }
 
         inline ull get_pieces(Piece piece_type) {
@@ -128,8 +137,13 @@ class GameBoard {
             else if (piece_type == Piece::QUEEN) {
                 return black_queens | white_queens;
             }
-            return black_king | white_king;
-            // NOTE: This function should have an assert for the else case
+            else if (piece_type == Piece::KING) {
+               return black_king | white_king;
+            }
+            else {
+                assert(0);
+                return 0;
+            }
         }
 
         inline ull get_pieces(Color color, Piece piece_type) {

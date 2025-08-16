@@ -40,8 +40,8 @@ class Engine {
 
         ull& access_piece_of_color(Piece, Color);
 
-        void apply_en_passant_checks(const Move&);
-        void apply_castling_changes(const Move&);
+        // void apply_en_passant_checks(const Move&);
+        // void apply_castling_changes(const Move&);
 
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
