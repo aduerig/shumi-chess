@@ -33,6 +33,7 @@ for key, val in imported_ais.items():
 def reset_board(fen=""):
     global curr_game, legal_moves
 
+    print('reset_board called from python')
     if fen:
         engine_communicator.reset_engine(fen)
     else:
@@ -150,6 +151,7 @@ def load_game(button_obj):
 
 def get_fen(button_obj):
     fen = engine_communicator.get_fen()
+    print(f'Current FEN: {fen}')
 
 
 # def get_random_move(legal_moves):
@@ -161,21 +163,55 @@ def get_fen(button_obj):
 
 def output_fens_depth_1(button_obj):
     global legal_moves
+    import chess
+
+    print(f'Output_fens_depth_1 called')
+
     legal_moves = engine_communicator.get_legal_moves()
-    fens = []
-    for choice in legal_moves:
+    before_fen = engine_communicator.get_fen()
+    python_chess_engine_board = chess.Board(before_fen)
+    shumi_fens = []
+    python_fens = []
+    for choice in reversed(legal_moves):
         from_acn, to_acn = choice[0:2], choice[2:4]
         engine_communicator.make_move_two_acn(from_acn, to_acn)
         fen = engine_communicator.get_fen()
-        fens.append(fen)
+        shumi_fens.append(fen)
         engine_communicator.pop()
+        after_fen = engine_communicator.get_fen()
+
+        if before_fen != after_fen:
+            print(f'FENS DID NOT MATCH AFTER POP, INTERRUPTING PRINT OUT')
+            print(f'Before: {before_fen}, After: {after_fen}')
+            print(f'Tried to make move: {from_acn} to {to_acn}')
+            return
+        python_chess_engine_board.push_san(from_acn + to_acn)
+        python_fens.append(python_chess_engine_board.fen(en_passant="fen"))
+        python_chess_engine_board.pop()
+
     legal_moves = engine_communicator.get_legal_moves()
+
+
+    python_fens_set = set(python_fens)
+    shumi_fens_set = set(shumi_fens)
+
+    temp = shumi_fens_set - python_fens_set
+    if temp:
+        print(f'Fens in SHUMI that are NOT in other engines:')
+        for i in temp:
+            print(f' - {i}')
+
+    temp = python_fens_set - shumi_fens_set
+    if temp:
+        print(f'Fens in other engines that are NOT in SHUMI:')
+        for i in temp:
+            print(f' - {i}')
 
     filepath = get_temp_file(suffix='.txt')
     with open(filepath, 'w') as f:
-        for fen in fens:
+        for fen in shumi_fens:
             f.write(fen + '\n')
-    print(f'Output {len(fens)} FENs to {filepath}')
+    print(f'Output {len(shumi_fens)} FENs to {filepath}')
 
 
 # argument list: function to run on click, text, button_color, text color
@@ -187,7 +223,7 @@ button_holder = [
     Button(clicked_autoreset, lambda: "Autoreset board on\ndraw: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(get_fen, lambda: "Get Fen", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(output_fens_depth_1, lambda: "Output depth 1 fens", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
+    Button(output_fens_depth_1, lambda: "Depth 1 fens + test", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
 
 def gui_click_choices():
@@ -396,10 +432,12 @@ def unfocus_and_stop_dragging():
 
 def make_move(from_acn, to_acn):
     global legal_moves, player_index
+    print('MAKIN A MOVE FROM PYTHON')
     engine_communicator.make_move_two_acn(from_acn, to_acn)
     legal_moves = engine_communicator.get_legal_moves()
     graphics_update_only_moved_pieces()
     player_index = 1 - player_index
+
 
 
 
@@ -418,6 +456,8 @@ while True:
 
     game_over_text.undraw()
     # 1 game iteration
+
+    # THIS IS WHY IT'S NOISY, CACHE THIS
     while engine_communicator.game_over() == -1:
         # stuff to do every frame no matter what
         # sets text
@@ -438,6 +478,7 @@ while True:
             if 'ai' in curr_player:
                 from_acn, to_acn = get_ai_move(legal_moves, curr_player)
                 # print('AI has come up with move: {} to {}'.format(from_acn, to_acn))
+                print(f'AI making move')
                 make_move(from_acn, to_acn)
                 continue
         
@@ -461,6 +502,7 @@ while True:
                 if (left_released_x, left_released_y) in list(map(lambda x: acn_to_x_y[x], avail_moves)):
                     temp = acn_focused
                     unfocus_and_stop_dragging()
+                    print(f'Human making move')
                     make_move(temp, x_y_to_acn[(left_released_x, left_released_y)])
                     avail_moves = []
                 # mouse was released on the same square as it was clicked on
@@ -493,6 +535,7 @@ while True:
                 if acn_clicked in avail_moves: # if user inputs a valid move
                     temp = acn_focused
                     unfocus_and_stop_dragging()
+                    print('MAKING MOVE LEFT CLICKED')
                     make_move(temp, acn_clicked)
                     avail_moves = []
                     continue
@@ -536,6 +579,7 @@ while True:
     game_over_text.draw(win)
     
     if winner == 'draw' and autoreset_toggle:
+        print('RESETTING BOARD CAUSE DRAW AND TOGGLE')
         reset_board()
         continue
 

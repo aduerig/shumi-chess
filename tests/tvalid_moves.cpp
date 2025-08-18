@@ -20,6 +20,8 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
     }
     vector<ShumiChess::Move> legal_moves = engine.get_legal_moves();
     for (ShumiChess::Move move : legal_moves) {
+
+        string before_fen = engine.game_board.to_fen();
         engine.push(move);
 
         recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
@@ -27,6 +29,12 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
             fen_holder.push_back(engine.game_board.to_fen());
         }
         engine.pop();
+        string after_fen = engine.game_board.to_fen();
+
+        if (before_fen != after_fen) {
+            FAIL() << "At depth " << depth << " fens DID NOT MATCH AFTER POP() "
+                   << "Before: " << before_fen << ", After: " << after_fen << endl;
+        }
     }
 }
 

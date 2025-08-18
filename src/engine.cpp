@@ -15,6 +15,8 @@ namespace ShumiChess {
 Engine::Engine() {
     reset_engine();
     ShumiChess::initialize_rays();
+
+    cout << "Created new engine" << endl;
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[25]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[25]);
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[28]") << endl;
@@ -57,6 +59,7 @@ void Engine::reset_engine(const string& fen) {
 vector<Move> Engine::get_legal_moves() {
     vector<Move> all_legal_moves;
     Color color = game_board.turn;
+    cout << "Getting legal moves for color: " << (color == Color::WHITE ? "White" : "Black") << endl;
     //
     // Get "psuedo_legal" moves. Those that does not put the king in check, and do not 
     // cross the king over a "checked square".
@@ -214,6 +217,10 @@ void Engine::push(const Move& move) {
         // !TODO zobrist update for castling
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
+        // cout << "Friendly rooks are:";
+        // utility::representation::print_bitboard(friendly_rooks);
+
+
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr
             // Queenside Castle
@@ -233,6 +240,13 @@ void Engine::push(const Move& move) {
             } else {
                 friendly_rooks &= ~(1ULL<<56);
                 friendly_rooks |= (1ULL<<58);
+
+
+                cout << "Putting rook on:";
+                utility::representation::print_bitboard(1ULL<<58);
+
+                cout << "Removing rook from:";
+                utility::representation::print_bitboard(1ULL<<56);
             }
         } else {    // NOTE: what about this?
 
