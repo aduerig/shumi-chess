@@ -435,9 +435,10 @@ def unfocus_and_stop_dragging():
 
 def make_move(from_acn, to_acn):
     global legal_moves, player_index
-    print('MAKIN A MOVE FROM PYTHON')
     engine_communicator.make_move_two_acn(from_acn, to_acn)
     legal_moves = engine_communicator.get_legal_moves()
+    fen = engine_communicator.get_fen()
+    print(f'Fen is now {fen}')
     graphics_update_only_moved_pieces()
     player_index = 1 - player_index
 
