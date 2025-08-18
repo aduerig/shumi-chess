@@ -28,7 +28,7 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 }
 
 void Engine::reset_engine() {
-    game_board = GameBoard("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+    game_board = GameBoard();
     // ! is reinitalize these stacks the right way to clear the previous entries?
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
