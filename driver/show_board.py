@@ -3,15 +3,22 @@ import os
 import random
 from tkinter import filedialog
 import time
+import pathlib
 
 # same directory
 from modified_graphics import *
 import engine_communicator
 
-script_file_dir, _ = os.path.split(os.path.realpath(__file__))
+script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
+
+temp_folder = script_file_dir.joinpath('temp')
+temp_folder.mkdir(exist_ok=True)
+
+def get_temp_file(suffix=''):
+    return temp_folder.joinpath(f'temp_file_{time.time()}{suffix}')
 
 
-# trying to import any avaliable AIs
+# trying to import any available AIs
 imported_ais = {}
 for filepath in os.listdir(script_file_dir):
     if filepath.endswith('.so') and 'ai' in filepath.lower():
@@ -23,9 +30,14 @@ for key, val in imported_ais.items():
     print('AI: {} imported, module is: {}'.format(key, val))
 
 
-def reset_board():
+def reset_board(fen=""):
     global curr_game, legal_moves
-    engine_communicator.reset_engine();
+
+    if fen:
+        engine_communicator.reset_engine(fen)
+    else:
+        print('Resetting to basic position because FEN string is empty')
+        engine_communicator.reset_engine()
     undraw_pieces()
     render_all_pieces_and_assign(board)
     curr_game += 1
@@ -53,7 +65,7 @@ both_players = ['human', ai_default]
 
 # ! drawing GUI elements
 screen_width = 800
-screen_height = 800
+screen_height = 900
 win = GraphWin(width = screen_width, height = screen_height)
 
 # set the coordinates of the window; bottom left is (0, 0) and top right is (1, 1)
@@ -125,7 +137,10 @@ def clicked_autoreset(button_obj):
 
 
 def clicked_reset_button(button_obj):
-    reset_board()
+    # get stripped entry text
+    fen_string = set_fen_text.getText().strip()
+    print(f'Got FEN string: {fen_string}')
+    reset_board(fen_string)
 
 
 def load_game(button_obj):
@@ -135,17 +150,44 @@ def load_game(button_obj):
 
 def get_fen(button_obj):
     fen = engine_communicator.get_fen()
-    print('FEN string:', fen)
+
+
+# def get_random_move(legal_moves):
+#     choice = random.choice(legal_moves)
+#     return choice[0:2], choice[2:4]
+
+# engine_communicator.make_move_two_acn(from_acn, to_acn)
+# legal_moves = engine_communicator.get_legal_moves()
+
+def output_fens_depth_1(button_obj):
+    global legal_moves
+    legal_moves = engine_communicator.get_legal_moves()
+    fens = []
+    for choice in legal_moves:
+        from_acn, to_acn = choice[0:2], choice[2:4]
+        engine_communicator.make_move_two_acn(from_acn, to_acn)
+        fen = engine_communicator.get_fen()
+        fens.append(fen)
+        engine_communicator.pop()
+    legal_moves = engine_communicator.get_legal_moves()
+
+    filepath = get_temp_file(suffix='.txt')
+    with open(filepath, 'w') as f:
+        for fen in fens:
+            f.write(fen + '\n')
+    print(f'Output {len(fens)} FENs to {filepath}')
+
 
 # argument list: function to run on click, text, button_color, text color
 button_holder = [
     Button(clicked_pop_button, lambda: "pop!", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_white_button, lambda: "White\n{}".format(both_players[0]), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
     Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1]), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
-    Button(clicked_reset_button, lambda: "Reset", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(clicked_reset_button, lambda: "Reset (to fen above)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_autoreset, lambda: "Autoreset board on\ndraw: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(get_fen, lambda: "Get Fen", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
+    Button(get_fen, lambda: "Get Fen", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(output_fens_depth_1, lambda: "Output depth 1 fens", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
 
 def gui_click_choices():
@@ -199,6 +241,19 @@ curr_move_text = Text(
 )
 curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
+
+
+set_fen_text = Entry(
+    Point(square_size * 6.5, square_size * 9), 
+    60
+)
+set_fen_text.setFill(color_rgb(200, 200, 200))
+set_fen_text.draw(win)
+
+
+
+
+
 
 
 winner_text = 'GAME OVER: {} wins'
@@ -360,16 +415,6 @@ last_frame = 0
 legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
 while True:
-    # fen_entry = Entry(Point(4.5, 9.5), 60)
-    # fen_entry.setText("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-    # fen_entry.draw(win)
-
-    # reset_button_rect = Rectangle(Point(8, 9.25), Point(9.7, 9.75))
-    # reset_button_rect.setFill('lightgray')
-    # reset_button_rect.draw(win)
-
-    # reset_button_text = Text(Point(8.85, 9.5), "Reset to FEN")
-    # reset_button_text.draw(win)
 
     game_over_text.undraw()
     # 1 game iteration
