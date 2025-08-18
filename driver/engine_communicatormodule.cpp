@@ -126,17 +126,31 @@ engine_communicator_game_over(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", (int) python_engine.game_over());
 }
 
+
 static PyObject*
 engine_communicator_reset_engine(PyObject* self, PyObject* args) {
-    python_engine.reset_engine();
-    return Py_BuildValue("");
+    const char* fen_string = nullptr;
+    if (!PyArg_ParseTuple(args, "|s", &fen_string)) {
+        return nullptr; 
+    }
+    if (fen_string != nullptr) {
+        python_engine.reset_engine(fen_string);
+    } else {
+        python_engine.reset_engine();
+    }
+    Py_RETURN_NONE;
 }
+
+static PyObject*
+engine_communicator_get_fen(PyObject* self, PyObject* args) {
+    return Py_BuildValue("s", python_engine.game_board.to_fen().c_str());
+}
+
 
 static PyObject*
 engine_communicator_get_move_number(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
 }
-
 
 static PyObject*
 engine_communicator_get_engine(PyObject* self, PyObject* args) {
@@ -174,6 +188,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},
+    {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
     {"pop",  engine_communicator_pop, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},

@@ -32,6 +32,7 @@ class Engine {
 
         // Member methods
         void reset_engine();
+        void reset_engine(const string&);
 
         void push(const Move&);
         void pop();

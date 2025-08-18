@@ -133,6 +133,10 @@ def load_game(button_obj):
     print('you selected this path:', file_path)
 
 
+def get_fen(button_obj):
+    fen = engine_communicator.get_fen()
+    print('FEN string:', fen)
+
 # argument list: function to run on click, text, button_color, text color
 button_holder = [
     Button(clicked_pop_button, lambda: "pop!", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
@@ -140,7 +144,8 @@ button_holder = [
     Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1]), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
     Button(clicked_reset_button, lambda: "Reset", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_autoreset, lambda: "Autoreset board on\ndraw: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
+    Button(load_game, lambda: "Load game\n(doesn't work)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(get_fen, lambda: "Get Fen", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
 
 def gui_click_choices():
@@ -342,6 +347,8 @@ def make_move(from_acn, to_acn):
     player_index = 1 - player_index
 
 
+
+
 # ! playing loop for players
 global legal_moves, player_index, acn_focused, is_dragging, drawn_potential
 player_index = 0
@@ -353,6 +360,17 @@ last_frame = 0
 legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
 while True:
+    # fen_entry = Entry(Point(4.5, 9.5), 60)
+    # fen_entry.setText("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    # fen_entry.draw(win)
+
+    # reset_button_rect = Rectangle(Point(8, 9.25), Point(9.7, 9.75))
+    # reset_button_rect.setFill('lightgray')
+    # reset_button_rect.draw(win)
+
+    # reset_button_text = Text(Point(8.85, 9.5), "Reset to FEN")
+    # reset_button_text.draw(win)
+
     game_over_text.undraw()
     # 1 game iteration
     while engine_communicator.game_over() == -1:
