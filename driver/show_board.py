@@ -31,7 +31,7 @@ for key, val in imported_ais.items():
 
 
 def reset_board(fen=""):
-    global curr_game, legal_moves
+    global curr_game, legal_moves, game_state_might_change
 
     print('reset_board called from python')
     if fen:
@@ -43,6 +43,7 @@ def reset_board(fen=""):
     render_all_pieces_and_assign(board)
     curr_game += 1
     legal_moves = engine_communicator.get_legal_moves()
+    game_state_might_change = True
 
 
 def get_random_move(legal_moves):
@@ -104,7 +105,9 @@ class Button:
 
 
 def clicked_pop_button(button_obj):
+    global game_state_might_change
     engine_communicator.pop()
+    game_state_might_change = True
     undraw_pieces()
     render_all_pieces_and_assign(board)
     acn_focused = None
@@ -440,6 +443,15 @@ def make_move(from_acn, to_acn):
 
 
 
+game_state_might_change = True
+game_state_result = -1
+def game_over_cache():
+    global game_state_might_change, game_state_result
+    if game_state_might_change:
+        game_state_result = engine_communicator.game_over()
+        game_state_might_change = False
+    return game_state_result
+
 
 
 # ! playing loop for players
@@ -455,12 +467,8 @@ is_dragging = False
 while True:
 
     game_over_text.undraw()
-    # 1 game iteration
+    while game_over_cache() == -1: # stuff to do every frame no matter what
 
-    # THIS IS WHY IT'S NOISY, CACHE THIS
-    while engine_communicator.game_over() == -1:
-        # stuff to do every frame no matter what
-        # sets text
         current_turn_text.setText(turn_text_values[player_index])
         curr_game_text.setText('Game {}'.format(curr_game))
         curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
@@ -478,8 +486,8 @@ while True:
             if 'ai' in curr_player:
                 from_acn, to_acn = get_ai_move(legal_moves, curr_player)
                 # print('AI has come up with move: {} to {}'.format(from_acn, to_acn))
-                print(f'AI making move')
                 make_move(from_acn, to_acn)
+                game_state_might_change = True
                 continue
         
         # if human
@@ -502,8 +510,8 @@ while True:
                 if (left_released_x, left_released_y) in list(map(lambda x: acn_to_x_y[x], avail_moves)):
                     temp = acn_focused
                     unfocus_and_stop_dragging()
-                    print(f'Human making move')
                     make_move(temp, x_y_to_acn[(left_released_x, left_released_y)])
+                    game_state_might_change = True
                     avail_moves = []
                 # mouse was released on the same square as it was clicked on
                 elif (left_released_x, left_released_y) != acn_to_x_y[acn_focused]:
@@ -535,8 +543,8 @@ while True:
                 if acn_clicked in avail_moves: # if user inputs a valid move
                     temp = acn_focused
                     unfocus_and_stop_dragging()
-                    print('MAKING MOVE LEFT CLICKED')
                     make_move(temp, acn_clicked)
+                    game_state_might_change = True
                     avail_moves = []
                     continue
                 # if clicking on a piece that cannot be moved to
@@ -581,6 +589,7 @@ while True:
     if winner == 'draw' and autoreset_toggle:
         print('RESETTING BOARD CAUSE DRAW AND TOGGLE')
         reset_board()
+        game_state_might_change = True
         continue
 
     # get raw positions

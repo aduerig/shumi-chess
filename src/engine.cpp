@@ -59,7 +59,6 @@ void Engine::reset_engine(const string& fen) {
 vector<Move> Engine::get_legal_moves() {
     vector<Move> all_legal_moves;
     Color color = game_board.turn;
-    cout << "Getting legal moves for color: " << (color == Color::WHITE ? "White" : "Black") << endl;
     //
     // Get "psuedo_legal" moves. Those that does not put the king in check, and do not 
     // cross the king over a "checked square".
@@ -217,10 +216,8 @@ void Engine::push(const Move& move) {
         // !TODO zobrist update for castling
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
-        // cout << "Friendly rooks are:";
+        // cout << "PUSHING: Friendly rooks are:";
         // utility::representation::print_bitboard(friendly_rooks);
-
-
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr
             // Queenside Castle
@@ -231,7 +228,7 @@ void Engine::push(const Move& move) {
                 friendly_rooks &= ~(1ULL<<63);
                 friendly_rooks |= (1ULL<<60);
             }
-        } else if (move.to & 0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
              //                rnbqkbnr
             // Kingside castle
             if (move.color == ShumiChess::Color::WHITE) {
@@ -240,13 +237,6 @@ void Engine::push(const Move& move) {
             } else {
                 friendly_rooks &= ~(1ULL<<56);
                 friendly_rooks |= (1ULL<<58);
-
-
-                cout << "Putting rook on:";
-                utility::representation::print_bitboard(1ULL<<58);
-
-                cout << "Removing rook from:";
-                utility::representation::print_bitboard(1ULL<<56);
             }
         } else {    // NOTE: what about this?
 
@@ -438,16 +428,11 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
             moves.emplace_back(new_move);
         }
         else {
-            // TODO No choice over piece to promote to.
-            new_move.promotion = Piece::QUEEN;
-            moves.emplace_back(new_move);
-            //
-            // NOTE: This for loop looks useless, it just loops to the last item in the list.
-            // for (auto& promo_piece : promotion_values) {
-            //     Move promo_move = new_move;
-            //     new_move.promotion = promo_piece;
-            //     moves.emplace_back(new_move);
-            // }
+            for (auto& promo_piece : promotion_values) {
+                Move promo_move = new_move;
+                promo_move.promotion = promo_piece;
+                moves.emplace_back(promo_move);
+            }
         }
     }
 }
