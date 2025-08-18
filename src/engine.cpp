@@ -28,7 +28,7 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 }
 
 void Engine::reset_engine() {
-    game_board = GameBoard();
+    game_board = GameBoard("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
     // ! is reinitalize these stacks the right way to clear the previous entries?
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
@@ -605,8 +605,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
                 actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
                 if (actual_rooks_location & needed_rook_location) {
-                    is_castle = true;
                     king_origin_square = 1ULL<<1;
+                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
                 }
             }
         }
@@ -619,8 +619,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
                 actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
                 if (actual_rooks_location & needed_rook_location) {
-                    is_castle = true;
                     king_origin_square = 1ULL<<5;
+                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
                 }
             }
         }
@@ -633,8 +633,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                 actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
                 if (actual_rooks_location & needed_rook_location) {
-                    is_castle = true;
                     king_origin_square = 1ULL<<57;
+                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
                 }
             }
         }
@@ -648,18 +648,13 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 if (actual_rooks_location & needed_rook_location) {
                     is_castle = true;
                     king_origin_square = 1ULL<<61;
+                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
                 }
             }
         }
     } else {
       assert(0);
     }
-
-    // Add castle to move list
-    if (is_castle) {
-        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
-    }
-
 }
 
 // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
