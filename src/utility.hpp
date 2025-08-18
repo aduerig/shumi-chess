@@ -6,6 +6,7 @@
 
 // MSVC doesn't have __builtin_ctzll, so we create our own version
 // using the _BitScanForward64 intrinsic.
+// __builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
 inline int __builtin_ctzll(unsigned long long x) {
     unsigned long index;
     if (_BitScanForward64(&index, x)) {
@@ -16,6 +17,7 @@ inline int __builtin_ctzll(unsigned long long x) {
 
 // MSVC doesn't have __builtin_clzll, so we create our own version
 // using the _BitScanReverse64 intrinsic.
+// __builtin_clzll returns the number of leading zeros in the binary representation of a 64-bit integer
 inline int __builtin_clzll(unsigned long long x) {
     unsigned long index;
     if (_BitScanReverse64(&index, x)) {
@@ -92,10 +94,14 @@ inline int square_to_bitboard(int square) {
     return 1ULL << (square - 1);
 };
 
-// both the asm instructions return 64 if bitboard == 0 
+// Returns the number of trailing zeros in the binary representation of a 64-bit integer.
+// Returns 64 if bitboard == 0.
 inline int bitboard_to_lowest_square(ull bitboard) {
     return __builtin_ctzll(bitboard);
 };
+
+// Returns the number of leading zeros in the binary representation of a 64-bit integer.
+// Returns 64 if bitboard == 0.
 // !TODO is this an instruction? https://www.felixcloutier.com/x86/bsr.html
 // talked about here: https://www.felixcloutier.com/x86/bsr.html
 inline int bitboard_to_highest_square(ull bitboard) {

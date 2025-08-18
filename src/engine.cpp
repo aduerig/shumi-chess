@@ -148,9 +148,12 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 void Engine::push(const Move& move) {
     move_history.push(move);
 
+    // Switch color
     this->game_board.turn = utility::representation::opposite_color(move.color);
+
     game_board.zobrist_key ^= zobrist_side;
 
+    // push move status
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
     this->halfway_move_state.push(this->game_board.halfmove);
     ++this->game_board.halfmove;
@@ -158,22 +161,30 @@ void Engine::push(const Move& move) {
         this->game_board.halfmove = 0;
     }
     
+    // Remove the piece from where it was
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.from;
 
     int square_from = utility::bit::bitboard_to_lowest_square(move.from);
-    int square_to = utility::bit::bitboard_to_lowest_square(move.to);
+    int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
 
+    // zobrist_key update (for normal moves)
     game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
 
+    // Put the piece where it will go.
     if (move.promotion == Piece::NONE) {
         moving_piece |= move.to;
+
         game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
     }
     else {
-        access_piece_of_color(move.promotion, move.color) |= move.to;
+        // Promote the piece
+        ull& promoted_piece = access_piece_of_color(move.promotion, move.color);
+        promoted_piece |= move.to;
+
         game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }
+
     if (move.capture != Piece::NONE) {
         this->game_board.halfmove = 0;
         if (move.is_en_passent_capture) {
@@ -182,7 +193,8 @@ void Engine::push(const Move& move) {
             access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
         } else {
-            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~move.to;
+            ull& where_I_was = access_piece_of_color(move.capture, utility::representation::opposite_color(move.color));
+            where_I_was &= ~move.to;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
@@ -190,7 +202,8 @@ void Engine::push(const Move& move) {
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
-            //Queenside Castle
+            //          rnbqkbnr
+            // Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<7);
                 friendly_rooks |= (1ULL<<4);
@@ -198,7 +211,9 @@ void Engine::push(const Move& move) {
                 friendly_rooks &= ~(1ULL<<63);
                 friendly_rooks |= (1ULL<<60);
             }
-        } else {
+        } else if (move.to & 0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+             //                rnbqkbnr
+            // Kingside castle
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<0);
                 friendly_rooks |= (1ULL<<2);
@@ -206,6 +221,8 @@ void Engine::push(const Move& move) {
                 friendly_rooks &= ~(1ULL<<56);
                 friendly_rooks |= (1ULL<<58);
             }
+        } else {    // NOTE: what about this?
+
         }
     }
 
@@ -220,6 +237,8 @@ void Engine::push(const Move& move) {
 }
 
 // undos last move, errors if no move was made before
+// NOTE: Ummm, has does it return an error?
+// 
 void Engine::pop() {
     const Move move = this->move_history.top();
     this->move_history.pop();
@@ -228,42 +247,57 @@ void Engine::pop() {
 
     this->game_board.turn = move.color;
 
+    // pop move states
     this->game_board.fullmove -= static_cast<int>(move.color == ShumiChess::Color::BLACK);
     this->game_board.halfmove = this->halfway_move_state.top();
     this->halfway_move_state.pop();
 
     int square_from = utility::bit::bitboard_to_lowest_square(move.from);
-    int square_to = utility::bit::bitboard_to_lowest_square(move.to);
+    int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
 
+    // pop the "actual move". This removes the piece from its square and puts it back to where it was.
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.to;
     moving_piece |= move.from;
 
     game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
 
+    // pop pawn promotions
     if (move.promotion == Piece::NONE) {
         game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
     }
     else {
-        access_piece_of_color(move.promotion, move.color) &= ~move.to;
+        ull& promoted_piece = access_piece_of_color(move.promotion, move.color);
+        promoted_piece &= ~move.to;
+
         game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }
+
     if (move.capture != Piece::NONE) {
         if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
+            // NOTE: here the statements are reversed from the else. What gives?
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
+          
             access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
+     
         } else {
+
             access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
+        
+        // pop the rook from castle moves
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         // ! Bet we can make this part of push a func and do something fancy with to and from
         // TODO at least keep standard with push implimentation.
+
+        // NOTE: we popped the "normal move" above, so the K is back on the square prior to castling
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
-            //Queenside Castle
+            //          rnbqkbnr     
+            // Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<4);
                 friendly_rooks |= (1ULL<<7);
@@ -271,7 +305,9 @@ void Engine::pop() {
                 friendly_rooks &= ~(1ULL<<60);
                 friendly_rooks |= (1ULL<<63);
             }
-        } else {
+        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+            //                 rnbqkbnr   
+            // Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<2);
                 friendly_rooks |= (1ULL<<0);
@@ -279,12 +315,17 @@ void Engine::pop() {
                 friendly_rooks &= ~(1ULL<<58);
                 friendly_rooks |= (1ULL<<56);
             }
+            
+        } else {
+            // NOTE: What about this?
         }
     }
 
+    // pop enpassent status
     this->game_board.en_passant = this->en_passant_history.top();
     this->en_passant_history.pop();
     
+    // pop castle status
     this->game_board.black_castle = this->castle_opportunity_history.top() >> 2;
     this->game_board.white_castle = this->castle_opportunity_history.top() & 0b0011;
     this->castle_opportunity_history.pop();
@@ -547,30 +588,78 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
-    // castling
+    // castling, NOTE: a Rook must exist in the right place to castle the king.
+    ull squares_inbetween;
+    ull needed_rook_location;
+    ull actual_rooks_location;
+    ull king_origin_square;
+    bool is_castle = false;
+    
     if (color == Color::WHITE) {
-        if (game_board.white_castle & (0b00000001) && 
-            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<1, Piece::KING, color, false, false, 0ULL, false, true);
+        if (game_board.white_castle & (0b00000001)) { 
+            squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
+            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                  !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {   
+                // King side castle
+
+                needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
+                actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                if (actual_rooks_location & needed_rook_location) {
+                    is_castle = true;
+                    king_origin_square = 1ULL<<1;
+                }
+            }
         }
-        if (game_board.white_castle & (0b00000010) && 
-            ((0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000 & ~all_pieces) == 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<5, Piece::KING, color, false, false, 0ULL, false, true);
+        if (game_board.white_castle & (0b00000010)) {
+            squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
+            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                    !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
+                // Queen side castle
+                //assert(0);
+                needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
+                actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                if (actual_rooks_location & needed_rook_location) {
+                    is_castle = true;
+                    king_origin_square = 1ULL<<5;
+                }
+            }
+        }
+    } else if (color == Color::BLACK) {
+        if (game_board.black_castle & (0b00000001)) {
+            squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                    !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {
+                // King side castle
+                needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                if (actual_rooks_location & needed_rook_location) {
+                    is_castle = true;
+                    king_origin_square = 1ULL<<57;
+                }
+            }
+        }
+        if (game_board.black_castle & (0b00000010)) {
+            squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                    !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
+                // Queen side castle
+                needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                if (actual_rooks_location & needed_rook_location) {
+                    is_castle = true;
+                    king_origin_square = 1ULL<<61;
+                }
+            }
         }
     } else {
-        if (game_board.black_castle & (0b00000001) && 
-            ((0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<57, Piece::KING, color, false, false, 0ULL, false, true);
-        }
-        if (game_board.black_castle & (0b00000010) && 
-            ((0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000 & ~all_pieces) == 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) &&
-            !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2)) {
-            add_move_to_vector(all_psuedo_legal_moves, king, 1ULL<<61, Piece::KING, color, false, false, 0ULL, false, true);
-        }
+      assert(0);
     }
+
+    // Add castle to move list
+    if (is_castle) {
+        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+    }
+
 }
 
 // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top

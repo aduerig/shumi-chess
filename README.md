@@ -26,13 +26,23 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
 * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
 
-## log
+## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
-  * Farnsworth 8/15/2025    Fixed rook promotion bug. Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up during castling. Seperated out board initial setup.
+  * Farnsworth 8/15/2025    Fixed rook promotion bug (now always queen). Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up around castling. Seperated out board initial setup.
 
-## current bug log
-  * Magical rook appearence. This can happen nearly anywhere, the rook is real and can be moved. They always appear at f1/f8/h1/h8/a1/a8/d1/d8. Do not seem to occur after castling.
+## current bug log (unless otherwise specified, happens in minimax AI)
+  * Doesnt recognize three time position repitition.
+  * Magical rook appearence. This can happen nearly anywhere, the rook is real and can be moved. They always appear at f1/f8/h1/h8/a1/a8/d1/d8. Do not seem to occur after castling. Happens with either AI. Most evident only when kings on board.
   * Tests do not all pass.
+  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Hsppens occasionaly.
+  * Enpassent seems to be broken (disallowed)
+  * Runaway Deepening error: (happens when it black is about to be checkmated)
+      ...
+      Deepening to 11872
+      Deepening to 11873
+      Went to depth 11873
+      Found 2 items inside of board_values
+      Minimax AI get_move_iterative_deepening chose move: for BLACK player with score of -179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.000000
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.

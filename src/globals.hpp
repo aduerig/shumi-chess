@@ -28,7 +28,7 @@ enum Piece {
     NONE,
 };
 
-// TODO think about if this is the right way to represent
+// TODO think about if this is the right way to represent a move
 struct Move {
     Color color;
     Piece piece_type;

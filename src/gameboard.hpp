@@ -150,6 +150,7 @@ class GameBoard {
             return get_pieces(piece_type) & get_pieces(color);
         }
 
+        // Returns a bitboard
         inline ull get_pieces() {
             return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king | 
                 black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king;
