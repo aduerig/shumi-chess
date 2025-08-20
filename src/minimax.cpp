@@ -34,10 +34,11 @@ string format_with_commas(T value) {
 }
 
 double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& moves) {
-    double board_val_adjusted = 0;
+    double d_board_val_adjusted = 0.0;
 
     for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
         double d_board_val = 0;
+
         // Add up the values for each piece
         for (const auto& i : piece_values) {
             
@@ -49,24 +50,33 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
             // Since the king can never leave the board (engine does not allow), and there is an infinite score checked earlier we can just skip kings
             if (piece_type == Piece::KING) continue;
 
+            // Get bitboard of all pieces on board of this type and color
+            // NOTE: whatabout pairs of knights etc. We handle these toegether?
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
+            // Adds for the piece value mutiplied by a ratio of, say 1 or 2? (see above)
             d_board_val += (piece_value * bits_in(pieces_bitboard));
             
             // Add a small bonus for pawns and knights in the middle of the board
             if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
-                ull middle_place = pieces_bitboard & (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
+                ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
+                ull middle_place = pieces_bitboard & center_squares;
                 d_board_val +=  0.1 * bits_in(middle_place);
                 // cout << "adding up " << color_str(color) << endl;
             }
         }
-        // Negative score for opposite pieces
+        // Negate score for color
         if (color != for_color) {
             d_board_val *= -1;
         }
-        board_val_adjusted += d_board_val;
+        d_board_val_adjusted += d_board_val;
     }
-    return board_val_adjusted + (moves.size() / 80);
+
+    // Favor for most moves, divided by arbitrary constant "80" 
+    // NOTE: But we already adusted for color,  didnt we just above?
+    d_board_val_adjusted += (moves.size() / 80);
+
+    return d_board_val_adjusted;
 }
 
 
