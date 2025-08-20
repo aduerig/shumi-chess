@@ -43,6 +43,7 @@ This project has no AI to make intelligent chess moves. There is another repo wr
       Went to depth 11873
       Found 2 items inside of board_values
       Minimax AI get_move_iterative_deepening chose move: for BLACK player with score of -179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.000000
+  * fen "r3k2r/7p/8/8/8/8/7P/R3K2R w KQkq - 0 1" make white pawn move, crash
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.

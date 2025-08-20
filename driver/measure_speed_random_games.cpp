@@ -46,9 +46,6 @@ GameState play_game(Engine& engine, int& total_moves) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
-
-    assert(0);  // Remove me
-
     Engine engine;
 
     int total = 5000;

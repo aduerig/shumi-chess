@@ -30,6 +30,7 @@ inline int __builtin_clzll(unsigned long long x) {
 
 //TODO shares a name with builtin lib
 #include <algorithm> 
+#include <bitset>
 #include <cctype>
 #include <iterator>
 #include <locale>
@@ -147,6 +148,62 @@ inline std::string square_to_position_string(ull square) {
 inline std::string move_to_string(ShumiChess::Move move) {
     return square_to_position_string(move.from) + square_to_position_string(move.to);
 };
+
+
+inline std::string piece_to_string(ShumiChess::Piece piece) {
+    switch (piece) {
+        case ShumiChess::Piece::NONE:   return "None";
+        case ShumiChess::Piece::PAWN:   return "Pawn";
+        case ShumiChess::Piece::KNIGHT: return "Knight";
+        case ShumiChess::Piece::BISHOP: return "Bishop";
+        case ShumiChess::Piece::ROOK:   return "Rook";
+        case ShumiChess::Piece::QUEEN:  return "Queen";
+        case ShumiChess::Piece::KING:   return "King";
+        default:                        return "Unknown Piece";
+    }
+}
+
+inline std::string color_to_string(ShumiChess::Color color) {
+    switch (color) {
+        case ShumiChess::Color::WHITE: return "White";
+        case ShumiChess::Color::BLACK: return "Black";
+        default:                       return "Unknown Color";
+    }
+}
+
+inline void cout_move_info(const ShumiChess::Move& move) {
+    auto print_if_not_none = [](const std::string& label, ShumiChess::Piece piece) {
+        if (piece != ShumiChess::Piece::NONE) {
+            std::cout << label << piece_to_string(piece) << std::endl;
+        }
+    };
+
+    std::cout << "--- Move Details for " << move_to_string(move) << " ---" << std::endl;
+    std::cout << "Player: " << color_to_string(move.color) << std::endl;
+    std::cout << "Piece: " << piece_to_string(move.piece_type) << std::endl;
+    
+    // Print optional information only if it's relevant
+    print_if_not_none("Capture: ", move.capture);
+    print_if_not_none("Promotion: ", move.promotion);
+    
+    // Use std::boolalpha to print booleans as "true" or "false"
+    std::cout << std::boolalpha;
+    std::cout << "Is Castle: " << move.is_castle_move << std::endl;
+    std::cout << "Is En Passant Capture: " << move.is_en_passent_capture << std::endl;
+    
+    // Print en passant target square if it exists
+    if (move.en_passant != 0) {
+        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant) << std::endl;
+    }
+
+    // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)
+    // Assumes bit 1 is Kingside and bit 0 is Queenside
+    std::cout << "White Castle Rights (KQ): " << std::bitset<2>(move.white_castle) << std::endl;
+    std::cout << "Black Castle Rights (kq): " << std::bitset<2>(move.black_castle) << std::endl;
+    std::cout << "----------------------------------" << std::endl;
+}
+
+
 struct MoveHash {
     std::size_t operator()(const ShumiChess::Move &m) const {
         return std::hash<std::string>{}(move_to_string(m));

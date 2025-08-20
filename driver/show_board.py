@@ -432,7 +432,6 @@ def unfocus_and_stop_dragging():
     acn_focused = None
     is_dragging = False
 
-
 def make_move(from_acn, to_acn):
     global legal_moves, player_index
     engine_communicator.make_move_two_acn(from_acn, to_acn)

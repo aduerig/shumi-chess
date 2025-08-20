@@ -387,6 +387,7 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
         else {return ref(this->game_board.white_king);}
         break;
     default:        // Note: skipping a default is illegal in some states.
+        cout << "Unexpected piece type in access_piece_of_color: " << piece << endl;
         assert(0);
         break;
     }
@@ -641,7 +642,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
             if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
                     !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
-               // King square, and squares inbetween are empty and not in check
                 needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
                 actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
                 if (actual_rooks_location & needed_rook_location) {
@@ -683,7 +683,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             }
         }
     } else {
-      assert(0);
+        cout << "Unexpected color in king moves: " << color << endl;
+        assert(0);
     }
 }
 

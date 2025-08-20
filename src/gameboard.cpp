@@ -105,7 +105,8 @@ GameBoard::GameBoard(const std::string& fen_notation) {
             this->white_castle |= 2; 
             break;
         default:        // Note: skipping a default is illegal in some states.
-            //assert(0);  // NOte: this fires in some test, is it ok? WHat is the default case?
+            std::cout << "Unexpected castling rights token: " << token << std::endl;
+            assert(0);  // Note: this fires in some test, is it ok? What is the default case?
             break;
         }
     }

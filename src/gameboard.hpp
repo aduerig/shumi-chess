@@ -115,6 +115,7 @@ class GameBoard {
                     black_bishops | black_queens | black_king;
             }
             else {
+                std::cout << "Unexpected color in get_pieces 1: " << color << std::endl;
                 assert(0);
                 return 0;
             }
@@ -141,6 +142,7 @@ class GameBoard {
                return black_king | white_king;
             }
             else {
+                std::cout << "Unexpected piece type in get_pieces 2: " << piece_type << std::endl;
                 assert(0);
                 return 0;
             }

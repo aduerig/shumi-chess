@@ -147,6 +147,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     double dMax_move_value = -DBL_MAX;
     Move best_move = sorted_moves[0];
     for (Move &m : sorted_moves) {
+        // TODO remove this once positive it works
+        string temp_fen_before = engine.game_board.to_fen();
         engine.push(m);
         auto ret_val = store_board_values_negamax(depth - 1, -beta, -alpha, board_values, debug);
         double score_value = -get<0>(ret_val);
@@ -156,6 +158,14 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         }
 
         engine.pop();
+        string temp_fen_after = engine.game_board.to_fen();
+        if (temp_fen_before != temp_fen_after) {
+            cout << "PROBLEM WITH PUSH POP!!!!!" << endl;
+            cout << "FEN before: " << temp_fen_before << endl;
+            cout_move_info(m);
+            cout << "FEN after: " << temp_fen_after << endl;
+            assert(0);
+        }
         board_values[engine.game_board.zobrist_key][m] = score_value;
 
         if (score_value > dMax_move_value) {
