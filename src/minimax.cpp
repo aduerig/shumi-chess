@@ -39,7 +39,7 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
     double d_board_val_adjusted = 0.0;
 
     for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
-        double d_board_val = 0;
+        double d_board_val = 0.0;
 
         // Add up the values for each piece
         for (const auto& i : piece_values) {
@@ -53,14 +53,14 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
             if (piece_type == Piece::KING) continue;
 
             // Get bitboard of all pieces on board of this type and color
-            // NOTE: whatabout pairs of knights etc. We handle these toegether?
+            // NOTE: whatabout pairs of knights etc. We handle these all toegether? I think we do!
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
             // Adds for the piece value mutiplied by a ratio of, say 1 or 2? (see above)
             d_board_val += (piece_value * bits_in(pieces_bitboard));
             
             // Add a small bonus for pawns and knights in the middle of the board
-            if (piece_type == Piece::PAWN || piece_type == Piece::KNIGHT) {
+            if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
                 ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
                 ull middle_place = pieces_bitboard & center_squares;
                 d_board_val +=  0.1 * bits_in(middle_place);
@@ -75,8 +75,9 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
     }
 
     // Favor for most moves, divided by arbitrary constant "80" 
-    // NOTE: But we already adusted for color,  didnt we just above?
-    d_board_val_adjusted += (moves.size() / 80);
+    // NOTE: But we already adusted for color,  didnt we just above?  
+    //     HAS THIS BEEN "play tested", it seems to do nothing.
+    //d_board_val_adjusted += (moves.size() / 80);
 
     return d_board_val_adjusted;
 }

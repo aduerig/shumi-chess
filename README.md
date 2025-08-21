@@ -22,27 +22,29 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 * https://github.com/aduerig/chess-ai
 
 ## todo
-* i disabled enpassant and castling temporarily until zobrist hashing works
+* i disabled enpassant and ~~castling~~ temporarily until zobrist hashing works
 * zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
-* I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
 
 ## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
-  * Farnsworth 8/15/2025    Fixed rook promotion bug (now always queen). Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up around castling. Seperated out board initial setup.
+  * Farnsworth 8/15/2025    Fixed "rook promotion bug" (pawn now always promotes to queen). Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up around castling. Seperated out board initial setup.
+  * Farnsworth 8/20/2025    BASELINE 1.  All tests now pass. Most castle bugs now fixed. Updated bug log. Refactored.  NOTE: This means the tests don't test enpassant, nor do they test "magical rook appearence3" bug.
 
 ## current bug log (unless otherwise specified, happens in minimax AI)
+  * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
+  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionaly. Related to above? This one seems to alwaus be in left and right columns also.
   * Doesnt recognize three fold position repitition.
-  * Magical rook appearence3: Reproduce: Load fen rnb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/RNBQK2R w KQkq - 2 5, then move white Nc3. Extra rook shows up on f1. (in debug now it crasshes with the boards)
-  * Load fen "r3k2r/7p/8/8/8/8/7P/R3K2R w KQkq - 0 1" make white pawn move, crash. Same bug as above most likley.
-  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionaly.
+  * Magical rook appearence3 bug: Reproduce: Load fen rnb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/RNBQK2R w KQkq - 2 5, then move white Nc3. Extra rook shows up on f1. (in debug now it crashes with debug displays)
+  * Load fen "r3k2r/7p/8/8/8/8/7P/R3K2R w KQkq - 0 1" make white pawn move, crash. Same castling bug as above most likley.
   * Doesnt recognize Enpassent (disallowed)
-  * Runaway Deepening error: (happens when it black is about to be checkmated)
+  * Hilarous Runaway Deepening error: (happens when it black is about to be checkmated)
       ...
       Deepening to 11872
       Deepening to 11873
       Went to depth 11873
       Found 2 items inside of board_values
-      Minimax AI get_move_iterative_deepening chose move: for BLACK player with score of -179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.000000
+      Minimax AI get_move_iterative_deepening chose move: for BLACK player with score of -179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.000000   
+    Bythe way, the above is -DBL_MAX
 
 
 ## building
