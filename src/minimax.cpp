@@ -8,6 +8,8 @@
 #undef NDEBUG
 #include <assert.h>
 
+#define _DEBUGGING_PUSH_POP
+
 #include "minimax.hpp"
 #include "utility.hpp"
 
@@ -79,29 +81,36 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
     return d_board_val_adjusted;
 }
 
-
-tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta, unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &board_values, bool debug) {
+//
+// Choose the "minimax" AI move.
+//
+tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta
+                                                , unordered_map<uint64_t, unordered_map<Move
+                                                , double, MoveHash>> &board_values, bool debug) {
     nodes_visited++;
     vector<Move> moves = engine.get_legal_moves();
     GameState state = engine.game_over(moves);
     
     if (state != GameState::INPROGRESS) {
         // Game is over
-        double end_value = 0;
+        double d_end_value;
+        // Use of DBL_MAX + 1 not really valid, as DBL_MAX + 1 == DBL_MAX in doubles.
         if (state == GameState::BLACKWIN) {
-            end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
+            d_end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
         }
         else if (state == GameState::WHITEWIN) {
-            end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
+            d_end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
         }
-        return make_tuple(end_value, Move{});
+        return make_tuple(d_end_value, Move{});
     }
     
+    // depth == 0 is the deepest level of analysis
     if (depth == 0) {
-        // Game not over
+
         // Evaluate end node.
         double eval = evaluate_board(engine.game_board.turn, moves);
 
+        // Debug   NOTE: this if check reduces speed
         if (debug == true) {
             cout << colorize(AColor::BRIGHT_BLUE, "===== DEPTH 0 EVAL: " + to_string(eval) + ", color is: " + color_str(engine.game_board.turn)) << endl;
             print_gameboard(engine.game_board);
@@ -113,6 +122,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     std::vector<Move> sorted_moves;
 
     if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
+        // NOTE: do someting with zobrist key? This is probably broken.
         moves_with_values = board_values[engine.game_board.zobrist_key];
 
         // NOTE: Commented out so I can stll keep playing.
@@ -127,9 +137,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
         std::vector<std::pair<Move, double>> vec(moves_with_values.begin(), moves_with_values.end());
 
+        // Sort moves by best to worst
         std::sort(vec.begin(), vec.end(), 
             [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
-                return a.second > b.second;
+                return (a.second > b.second);
             });
 
         for (const auto& pair : vec) {
@@ -140,42 +151,66 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
                 sorted_moves.push_back(m);
             }
         }
-    } else {
+    } else {   // NOTE: Is this the normal path?
         sorted_moves = moves;
     }
 
     double dMax_move_value = -DBL_MAX;
     Move best_move = sorted_moves[0];
     for (Move &m : sorted_moves) {
-        // TODO remove this once positive it works
-        string temp_fen_before = engine.game_board.to_fen();
+        
+        // NOTE: Undef _DEBUGGING_PUSH_POP after it works.
+        #ifdef _DEBUGGING_PUSH_POP
+            string temp_fen_before = engine.game_board.to_fen();
+        #endif
+        
+        // Push data
         engine.push(m);
-        auto ret_val = store_board_values_negamax(depth - 1, -beta, -alpha, board_values, debug);
-        double score_value = -get<0>(ret_val);
-        if (debug == true) {
-            cout << colorize(AColor::BRIGHT_GREEN, "On depth " + to_string(depth) + ", move is: " + move_to_string(m) + ", score_value below is: " + to_string(score_value) + ", color perspective: " + color_str(engine.game_board.turn)) << endl;
-            print_gameboard(engine.game_board);
-        }
 
+        #ifdef _DEBUGGING_PUSH_POP
+            string temp_fen_between = engine.game_board.to_fen();
+        #endif
+
+        // Recursive call down another level.
+        bool debug = false;
+        auto ret_val = store_board_values_negamax((depth - 1), -beta, -alpha, board_values, debug);
+        // ret_val is a tuple of the score and the move.
+        double d_score_value = -get<0>(ret_val);
+
+        // Debug   NOTE: this if check reduces speed
+        // if (debug == true) {
+        //     cout << colorize(AColor::BRIGHT_GREEN, "On depth " + to_string(depth) + ", move is: " + move_to_string(m) + ", score_value below is: " + to_string(d_score_value) + ", color perspective: " + color_str(engine.game_board.turn)) << endl;
+        //     print_gameboard(engine.game_board);
+        // }
+
+        // Pop data
         engine.pop();
-        string temp_fen_after = engine.game_board.to_fen();
-        if (temp_fen_before != temp_fen_after) {
-            cout << "PROBLEM WITH PUSH POP!!!!!" << endl;
-            cout << "FEN before: " << temp_fen_before << endl;
-            cout_move_info(m);
-            cout << "FEN after: " << temp_fen_after << endl;
-            assert(0);
-        }
-        board_values[engine.game_board.zobrist_key][m] = score_value;
 
-        if (score_value > dMax_move_value) {
-            dMax_move_value = score_value;
+        #ifdef _DEBUGGING_PUSH_POP
+            string temp_fen_after = engine.game_board.to_fen();
+            if (temp_fen_before != temp_fen_after) {
+                cout << "PROBLEM WITH PUSH POP!!!!!" << endl;
+                cout_move_info(m);
+                cout << "FEN before  push/pop: " << temp_fen_before  << endl;
+                cout << "FEN between push/pop: " << temp_fen_between << endl;
+                cout << "FEN after   push/pop: " << temp_fen_after   << endl;
+                assert(0);
+            }
+        #endif
+
+        // Digest score result
+        board_values[engine.game_board.zobrist_key][m] = d_score_value;
+
+        if (d_score_value > dMax_move_value) {
+            dMax_move_value = d_score_value;
             best_move = m;
         }
         alpha = max(alpha, dMax_move_value);
         if (alpha >= beta) {
+            // Stop looking for new moves - 
             break;
         }
+
     }
     return make_tuple(dMax_move_value, best_move);
 }
@@ -199,17 +234,22 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
-        cout << "Deepening to " << depth << endl;
-        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, false);
+        
+        cout << "Deepening to " << (depth - 1) << endl;
+
+        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, true);
+
+        // ret_val is a tuple of the score and the move.
         best_move_value = get<0>(ret_val);
         best_move = get<1>(ret_val);
+
         depth++;
     }
 
     vector<Move> top_level_moves = engine.get_legal_moves();
     Move move_chosen = top_level_moves[0];
 
-    cout << "Went to depth " << depth - 1 << endl;
+    cout << "Went to depth " << (depth - 1) << endl;
     cout << "Found " << board_values.size() << " items inside of board_values" << endl;
 
     if (board_values.find(engine.game_board.zobrist_key) == board_values.end()) {
@@ -248,6 +288,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
     GameState state = engine.game_over(moves);
     
     if (state == GameState::BLACKWIN) {
+        // Use of DBL_MAX + 1 not really valid, as DBL_MAX + 1 == DBL_MAX in doubles.
         return (-DBL_MAX + 1) * (color_multiplier);
     }
     else if (state == GameState::WHITEWIN) {

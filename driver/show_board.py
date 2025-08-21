@@ -56,8 +56,8 @@ def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
     if name_of_ai.lower() == 'random_ai':
         return get_random_move(legal_moves)
     # move = engine_communicator.minimax_ai_get_move()
-    # NOTE: this  is where you can control total time.
-    seconds = 1.5
+    # NOTE: this is where you can control total time.
+    seconds = 5.5
     move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
     return move[0:2], move[2:4]
 
@@ -598,3 +598,23 @@ while True:
     left_clicked_x, left_clicked_y = int(raw_left_clicked_x * 10), int(raw_left_clicked_y * 10)
 
     gui_click_choices()
+
+
+############################# debug storage please leave ######################
+    # castle bug line , then move Nc3:
+    #    rnb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/RNBQK2R w KQkq - 2 5
+    #    1nb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/1NBQK2R w KQkq - 2 5
+    # rnb1kbnr/pppp3p/1qp5/4pp2/8/2NPPN2/PPP1BPPP/R1BQK2R b KQkq - 2 5
+
+    # PROBLEM WITH PUSH POP!!!!!
+# --- Move Details for f1e1 ---
+# Player: White
+# Piece: Rook
+# Is Castle: false
+# Is En Passant Capture: false
+# White Castle Rights (KQ): 00
+# Black Castle Rights (kq): 11
+# ----------------------------------
+# FEN before  push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQ2KR w kq - 0 8
+# FEN between push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQR1KR b kq - 1 8
+# FEN after   push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQ1RKR w kq - 0 8

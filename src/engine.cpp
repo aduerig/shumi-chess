@@ -222,6 +222,7 @@ void Engine::push(const Move& move) {
         }
     } else if (move.is_castle_move) {
         // !TODO zobrist update for castling
+
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         // cout << "PUSHING: Friendly rooks are:";
@@ -247,7 +248,7 @@ void Engine::push(const Move& move) {
                 friendly_rooks |= (1ULL<<58);
             }
         } else {        // Something wrong, its not a castle
-            assert(0);   // NOTE: this fired in tests, because of bug in above if block
+            assert(0);
         }
     }
 
@@ -316,15 +317,15 @@ void Engine::pop() {
         }
     } else if (move.is_castle_move) {
         
-        // pop the rook from castle moves
+        // get pointer to the rook? Which rook?
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
         // ! Bet we can make this part of push a func and do something fancy with to and from
         // TODO at least keep standard with push implimentation.
 
-        // NOTE: we popped the "normal move" above, so the K is back on the square prior to castling
+        // NOTE: the castles move has not been popped yet
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       rnbqkbnr   
-            // Queenside Castle
+            // Popping a Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<4);
                 friendly_rooks |= (1ULL<<7);
@@ -334,10 +335,10 @@ void Engine::pop() {
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       rnbqkbnr
-            // Kingside Castle
+            // Popping a Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<2);
-                friendly_rooks |= (1ULL<<0);
+                friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
+                friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
             } else {
                 friendly_rooks &= ~(1ULL<<58);
                 friendly_rooks |= (1ULL<<56);
@@ -359,41 +360,83 @@ void Engine::pop() {
     this->castle_opportunity_history.pop();
 }
 
+// ull& Engine::access_piece_of_color(Piece piece, Color color) {
+//     switch (piece)
+//     {
+//     case Piece::PAWN:
+//         if (color) {return ref(this->game_board.black_pawns);}
+//         else {return ref(this->game_board.white_pawns);}
+//         break;
+//     case Piece::ROOK:
+//         if (color) {return ref(this->game_board.black_rooks);}
+//         else {return ref(this->game_board.white_rooks);}
+//         break;
+//     case Piece::KNIGHT:
+//         if (color) {return ref(this->game_board.black_knights);}
+//         else {return ref(this->game_board.white_knights);}
+//         break;
+//     case Piece::BISHOP:
+//         if (color) {return ref(this->game_board.black_bishops);}
+//         else {return ref(this->game_board.white_bishops);}
+//         break;
+//     case Piece::QUEEN:
+//         if (color) {return ref(this->game_board.black_queens);}
+//         else {return ref(this->game_board.white_queens);}
+//         break;
+//     case Piece::KING:
+//         if (color) {return ref(this->game_board.black_king);}
+//         else {return ref(this->game_board.white_king);}
+//         break;
+//     default:
+//         cout << "Unexpected piece type in access_piece_of_color: " << piece << endl;
+//         assert(0);
+//         break;
+//     }
+//     // TODO remove this, i'm just putting it here because it prevents a warning
+//     // NOTE: remove it I agree. 
+//     return this->game_board.white_king;
+// }
+
 ull& Engine::access_piece_of_color(Piece piece, Color color) {
     switch (piece)
     {
-    case Piece::PAWN:
-        if (color) {return ref(this->game_board.black_pawns);}
-        else {return ref(this->game_board.white_pawns);}
-        break;
-    case Piece::ROOK:
-        if (color) {return ref(this->game_board.black_rooks);}
-        else {return ref(this->game_board.white_rooks);}
-        break;
-    case Piece::KNIGHT:
-        if (color) {return ref(this->game_board.black_knights);}
-        else {return ref(this->game_board.white_knights);}
-        break;
-    case Piece::BISHOP:
-        if (color) {return ref(this->game_board.black_bishops);}
-        else {return ref(this->game_board.white_bishops);}
-        break;
-    case Piece::QUEEN:
-        if (color) {return ref(this->game_board.black_queens);}
-        else {return ref(this->game_board.white_queens);}
-        break;
-    case Piece::KING:
-        if (color) {return ref(this->game_board.black_king);}
-        else {return ref(this->game_board.white_king);}
-        break;
-    default:        // Note: skipping a default is illegal in some states.
-        cout << "Unexpected piece type in access_piece_of_color: " << piece << endl;
-        assert(0);
-        break;
+        case Piece::PAWN:
+            if (color) {return this->game_board.black_pawns;}
+            else       {return this->game_board.white_pawns;}
+            break;
+        case Piece::ROOK:
+            if (color) {return this->game_board.black_rooks;}
+            else       {return this->game_board.white_rooks;}
+            break;
+        case Piece::KNIGHT:
+            if (color) {return this->game_board.black_knights;}
+            else       {return this->game_board.white_knights;}
+            break;
+        case Piece::BISHOP:
+            if (color) {return this->game_board.black_bishops;}
+            else       {return this->game_board.white_bishops;}
+            break;
+        case Piece::QUEEN:
+            if (color) {return this->game_board.black_queens;}
+            else       {return this->game_board.white_queens;}
+            break;
+        case Piece::KING:
+            if (color) {return this->game_board.black_king;}
+            else       {return this->game_board.white_king;}
+            break;
+
+        default:
+            cout << "Unexpected piece type in access_piece_of_color: " << piece << endl;
+            assert(0);
+            break;
     }
-    // TODO remove this, i'm just putting it here because it prevents a warning
+
+    // Unreachable, but required to avoid warnings
     return this->game_board.white_king;
 }
+
+
+
 
 void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color
     , bool capture, bool promotion, ull en_passant, bool is_en_passent_capture, bool is_castle) {
