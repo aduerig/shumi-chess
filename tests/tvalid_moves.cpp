@@ -92,6 +92,7 @@ vector<string>  test_filenames = get_filenames_to_test_positions(test_data_path)
 // uncomment if need just one file
 // vector<string>  test_filenames = vector<string>{"tests/test_data/rooks_depth_1.dat"};
 
+
 class LegalPositionsByDepth : public testing::TestWithParam<string> {}; 
 TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     // ? seg faults when i pass a fs::path into here, idk why
@@ -180,3 +181,38 @@ TEST_P(LegalPositionsByDepth, LegalPositionsByDepth) {
     }
 }
 INSTANTIATE_TEST_SUITE_P(LegalPositionsByDepthParam, LegalPositionsByDepth, testing::ValuesIn(test_filenames));
+
+
+
+
+vector<string> fens_to_test_push_pop = {
+    "rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQ2KR w kq - 0 8",
+};
+
+class ValidMoves : public testing::TestWithParam<string> {}; 
+TEST_P(ValidMoves, PushPopFenValidation) {
+    using namespace ShumiChess;
+
+    Engine test_engine;
+    test_engine.reset_engine(GetParam());
+
+    // get all legal moves
+    auto legal_moves = test_engine.get_legal_moves();
+
+    for (const auto& move : legal_moves) {
+        string before_fen = test_engine.game_board.to_fen();
+        test_engine.push(move);
+        string in_between_fen = test_engine.game_board.to_fen();
+        test_engine.pop();
+        string after_fen = test_engine.game_board.to_fen();
+        if (before_fen != after_fen) {
+            utility::representation::cout_move_info(move);
+            FAIL() << "FEN mismatch detected:\n"
+                   << "Before: " << before_fen << "\n"
+                   << "In Between: " << in_between_fen << "\n"
+                   << "After: " << after_fen << "\n";
+        }
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(ValidMoves, ValidMoves, testing::ValuesIn(fens_to_test_push_pop));
