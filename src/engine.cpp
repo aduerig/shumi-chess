@@ -74,6 +74,7 @@ vector<Move> Engine::get_legal_moves() {
 
     for (Move move : psuedo_legal_moves) {
 
+        // NOTE: is this the most effecient way to do this (push()/pop())?
         push(move);        
         
         if (!is_king_in_check(color)) {
@@ -142,7 +143,8 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
             (reachable_kings & game_board.get_pieces_template<Piece::KING>(enemy_color)));
 }
 
-// TODO should this check for draws by internally calling get legal moves and caching that and returning on the actual call?, very slow calling get_legal_moves again
+// TODO should this check for draws by internally calling get legal moves and caching that and 
+//      returning on the actual call?, very slow calling get_legal_moves again
 GameState Engine::game_over() {
     vector<Move> legal_moves = get_legal_moves();
     return game_over(legal_moves);
@@ -188,6 +190,7 @@ void Engine::push(const Move& move) {
     ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
     moving_piece &= ~move.from;
 
+    // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
     int square_from = utility::bit::bitboard_to_lowest_square(move.from);
     int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
 
@@ -302,6 +305,7 @@ void Engine::pop() {
     }
 
     if (move.capture != Piece::NONE) {
+
         if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);

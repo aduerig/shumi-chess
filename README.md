@@ -35,7 +35,7 @@ This project has no AI to make intelligent chess moves. There is another repo wr
   * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionaly. Related to above? This one seems to alwaus be in left and right columns also.
   * Doesnt recognize three fold position repitition.
   * Magical rook appearence3 bug: Reproduce: Load fen rnb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/RNBQK2R w KQkq - 2 5, then move white Nc3. Extra rook shows up on f1. (in debug now it crashes with debug displays)
-  * Load fen "r3k2r/7p/8/8/8/8/7P/R3K2R w KQkq - 0 1" make white pawn move, crash. Same castling bug as above most likley.
+  * Load fen "4k2r/7p/8/8/8/8/7P/4K2R w KQkq - 0 1" make white pawn move, crash. Same castling bug as above most likley. Happens to black.
   * Doesnt recognize Enpassent (disallowed)
   * Hilarous Runaway Deepening error: (happens when it black is about to be checkmated)
       ...

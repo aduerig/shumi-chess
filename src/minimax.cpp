@@ -56,16 +56,23 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
             // NOTE: whatabout pairs of knights etc. We handle these all toegether? I think we do!
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
-            // Adds for the piece value mutiplied by a ratio of, say 1 or 2? (see above)
+            // Adds for the piece value mutiplied by how many of that piece there is.
             d_board_val += (piece_value * bits_in(pieces_bitboard));
+
+            // hack improvements Favors ??
+            double dMultiplier = 1.0;
+            if (piece_type == Piece::QUEEN) dMultiplier = 0.5;
+            if (piece_type == Piece::KNIGHT) dMultiplier = 7.0;
+            if (piece_type == Piece::BISHOP) dMultiplier = 5.0;
+            d_board_val += (moves.size() * dMultiplier / 100);
             
             // Add a small bonus for pawns and knights in the middle of the board
-            if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
-                ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
-                ull middle_place = pieces_bitboard & center_squares;
-                d_board_val +=  0.1 * bits_in(middle_place);
-                // cout << "adding up " << color_str(color) << endl;
-            }
+            // if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
+            //     ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
+            //     ull middle_place = pieces_bitboard & center_squares;
+            //     d_board_val +=  0.1 * bits_in(middle_place);
+            //     // cout << "adding up " << color_str(color) << endl;
+            // }
         }
         // Negate score for color
         if (color != for_color) {
@@ -89,18 +96,19 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
                                                 , unordered_map<uint64_t, unordered_map<Move
                                                 , double, MoveHash>> &board_values, bool debug) {
     nodes_visited++;
+    
     vector<Move> moves = engine.get_legal_moves();
+
     GameState state = engine.game_over(moves);
     
     if (state != GameState::INPROGRESS) {
         // Game is over
         double d_end_value;
-        // Use of DBL_MAX + 1 not really valid, as DBL_MAX + 1 == DBL_MAX in doubles.
         if (state == GameState::BLACKWIN) {
-            d_end_value = engine.game_board.turn == ShumiChess::WHITE ? -DBL_MAX + 1 : DBL_MAX - 1;
+            d_end_value = engine.game_board.turn == ShumiChess::WHITE ? (-DBL_MAX + 1) : (DBL_MAX - 1);
         }
         else if (state == GameState::WHITEWIN) {
-            d_end_value = engine.game_board.turn == ShumiChess::BLACK ? -DBL_MAX + 1 : DBL_MAX - 1;
+            d_end_value = engine.game_board.turn == ShumiChess::BLACK ? (-DBL_MAX + 1) : (DBL_MAX - 1);
         }
         return make_tuple(d_end_value, Move{});
     }

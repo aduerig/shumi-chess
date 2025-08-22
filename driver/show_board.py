@@ -618,3 +618,21 @@ while True:
 # FEN before  push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQ2KR w kq - 0 8
 # FEN between push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQR1KR b kq - 1 8
 # FEN after   push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQ1RKR w kq - 0 8
+
+#
+# EXTRA ROOK BUG.
+# error starting FEN  4k2r/7p/8/8/8/8/7P/4K2R w KQkq - 0 1
+# PROBLEM WITH PUSH POP!!!!!
+# --- Move Details for h8g8 ---
+# Player: Black
+# Piece: Rook
+# Is Castle: false
+# Is En Passant Capture: false
+# White Castle Rights (KQ): 11
+# Black Castle Rights (kq): 10
+# ----------------------------------
+# FEN before  push/pop: 5r2/6kp/8/7P/8/8/8/4K2R b KQ - 0 3
+# FEN between push/pop: 5rr1/6kp/8/7P/8/8/8/4K2R w KQ - 1 4
+# FEN after   push/pop: 5r1r/6kp/8/7P/8/8/8/4K2R b KQ - 0 3
+# Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 205
+# FAILURE executing "python "C:\programming\shumi-chess\driver\show_board.py""
