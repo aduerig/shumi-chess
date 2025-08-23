@@ -3,12 +3,11 @@
 #include <iomanip>
 #include <sstream>
 #include <locale>
+#include <string>
 
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
 #include <assert.h>
-
-#define _DEBUGGING_PUSH_POP
 
 #include "minimax.hpp"
 #include "utility.hpp"
@@ -18,6 +17,11 @@ using namespace ShumiChess;
 using namespace utility;
 using namespace utility::representation;
 using namespace utility::bit;
+
+#define _DEBUGGING_PUSH_POP
+extern string temp_fen_before1_DEBUG;
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { }
 
@@ -60,11 +64,11 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
             d_board_val += (piece_value * bits_in(pieces_bitboard));
 
             // hack improvements Favors ??
-            double dMultiplier = 1.0;
-            if (piece_type == Piece::QUEEN) dMultiplier = 0.5;
-            if (piece_type == Piece::KNIGHT) dMultiplier = 7.0;
-            if (piece_type == Piece::BISHOP) dMultiplier = 5.0;
-            d_board_val += (moves.size() * dMultiplier / 100);
+            // double dMultiplier = 1.0;
+            // if (piece_type == Piece::QUEEN) dMultiplier = 0.5;
+            // if (piece_type == Piece::KNIGHT) dMultiplier = 7.0;
+            // if (piece_type == Piece::BISHOP) dMultiplier = 5.0;
+            // d_board_val += (moves.size() * dMultiplier / 100);
             
             // Add a small bonus for pawns and knights in the middle of the board
             // if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
@@ -130,7 +134,9 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     unordered_map<Move, double, MoveHash> moves_with_values;
     std::vector<Move> sorted_moves;
 
-    if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
+    // NOTE: disabled so I can stll keep playing.
+    if (0) {
+    //if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
         // NOTE: do someting with zobrist key? This is probably broken.
         moves_with_values = board_values[engine.game_board.zobrist_key];
 
@@ -201,6 +207,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
                 cout << "PROBLEM WITH PUSH POP!!!!!" << endl;
                 cout_move_info(m);
                 cout << "FEN before  push/pop: " << temp_fen_before  << endl;
+                cout << "FEN before1 push/pop: " << temp_fen_before1_DEBUG  << endl;
                 cout << "FEN between push/pop: " << temp_fen_between << endl;
                 cout << "FEN after   push/pop: " << temp_fen_after   << endl;
                 assert(0);

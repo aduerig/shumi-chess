@@ -20,9 +20,11 @@ class MinimaxAI {
 public:
     int nodes_visited = 0;
 
+    // The chess engine
+    ShumiChess::Engine& engine;
+
     // NOTE: Can these be more accurate (i.e. decimals like 2.8 for knight)
     // NOTE: Can these be more accurate as to "2 bishops" etc.
-    ShumiChess::Engine& engine;
     std::array<std::tuple<ShumiChess::Piece, double>, 6> piece_values = {
         make_tuple(ShumiChess::Piece::PAWN, 1),
         make_tuple(ShumiChess::Piece::ROOK, 5),
