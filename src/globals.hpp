@@ -29,6 +29,7 @@ enum Piece {
 };
 
 // TODO think about if this is the right way to represent a move
+// NOTE: Can this be a class?
 struct Move {
     Color color;
     Piece piece_type;
@@ -42,6 +43,7 @@ struct Move {
     bool is_en_passent_capture = false;
     bool is_castle_move = false;
 
+    // NOTE: Is this right ? It only checks the squares, not the pieces on the square.
     bool operator==(const Move &other) const {
         return from == other.from && to == other.to;
     }

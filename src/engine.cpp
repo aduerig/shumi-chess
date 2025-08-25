@@ -9,7 +9,6 @@
 #undef NDEBUG
 #include <assert.h>
 
-#define _DEBUGGING_PUSH_POP
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -166,7 +165,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
     }
     // TODO check if this is off by one or something
     else if (game_board.halfmove >= 50) {
-        //  If fifty moves, its a draw.
+        //  After fifty "ply" or half moves, without a pawn move or capture, its a draw.
         return GameState::DRAW;
     }
     return GameState::INPROGRESS;
@@ -175,6 +174,8 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 // takes a move, but tracks it so pop() can undo
 void Engine::push(const Move& move) {
 
+    assert(move.piece_type != NONE);
+
     move_history.push(move);
 
     // Switch color
@@ -182,10 +183,13 @@ void Engine::push(const Move& move) {
 
     game_board.zobrist_key ^= zobrist_side;
 
-    // push move status
+    // Update full move "clock" (used for display)
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
   
+    // Push full move "clock"
     this->halfway_move_state.push(this->game_board.halfmove);
+
+    // Update half move status (used only to apply the "fifty-move draw")
     ++this->game_board.halfmove;
     if(move.piece_type == ShumiChess::Piece::PAWN) {
         this->game_board.halfmove = 0;
@@ -217,18 +221,23 @@ void Engine::push(const Move& move) {
     }
 
     if (move.capture != Piece::NONE) {
+        // The move is a capture
         this->game_board.halfmove = 0;
+
         if (move.is_en_passent_capture) {
+            // Enpassent capture
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
         } else {
+            // Regular capture
             ull& where_I_was = access_piece_of_color(move.capture, utility::representation::opposite_color(move.color));
             where_I_was &= ~move.to;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
+
         // !TODO zobrist update for castling
 
         ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
@@ -236,7 +245,7 @@ void Engine::push(const Move& move) {
         // cout << "PUSHING: Friendly rooks are:";
         // utility::representation::print_bitboard(friendly_rooks);
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
-            //          rnbqkbnr                                                       rnbqkbnr
+            //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<7);
@@ -246,7 +255,7 @@ void Engine::push(const Move& move) {
                 friendly_rooks |= (1ULL<<60);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
-             //                rnbqkbnr
+             //                rnbqkbnr                                                       RNBQKBNR
             // Kingside castle
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<0);
@@ -264,6 +273,7 @@ void Engine::push(const Move& move) {
     // !TODO zobrist update for en_passant
     this->game_board.en_passant = move.en_passant;
     
+    // Manage castling rights
     uint8_t castle_opp = (this->game_board.black_castle << 2) | this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
     this->game_board.black_castle &= move.black_castle;

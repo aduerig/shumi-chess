@@ -57,7 +57,7 @@ def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
         return get_random_move(legal_moves)
     # move = engine_communicator.minimax_ai_get_move()
     # NOTE: this is where you can control total time.
-    seconds = 6.5
+    seconds = 2.5
     move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
     return move[0:2], move[2:4]
 
@@ -645,3 +645,15 @@ while True:
 # PS C:\programming\shumi-chess> 
 #
 #    rnb1kbnr/pppp1ppp/8/8/2B1q3/1Q6/PB3PPP/RN2K1NR w KQkq - 0 6
+
+
+# 1. Algebriac  (gameboard_to_string()) like function
+# 2. Failed tests
+# 3. Rename recursive, rename access.
+# 4. Deepening
+# 5. Horizon
+#  5. Beard
+# 6. time testing to theoritical?
+# 7. Alpha beta testing?
+# change time limited to depth limited
+# get_value() .vs. store_board_values_negamax()

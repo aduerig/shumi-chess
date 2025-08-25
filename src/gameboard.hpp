@@ -52,8 +52,8 @@ class GameBoard {
         uint64_t zobrist_key {0};
 
         // move clock
-        uint8_t halfmove;
-        uint8_t fullmove;
+        uint8_t halfmove;  // Used only to apply the "fifty-move draw" rule in chess
+        uint8_t fullmove;  // Used only for display purposes.
 
         // Constructors
         explicit GameBoard();

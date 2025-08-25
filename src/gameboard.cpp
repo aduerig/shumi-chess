@@ -42,6 +42,7 @@ namespace ShumiChess {
 GameBoard::GameBoard(const std::string& fen_notation) {
     const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
     
+    // Make sure FEN components are valid
     assert(fen_components.size() == 6);
     assert(fen_components[1].size() == 1);
     assert(fen_components[2].size() <= 4);
@@ -115,11 +116,12 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         this->en_passant = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
     }
 
-    this->halfmove = std::stoi(fen_components[4]);
+    // halfmove is used to apply the "fifty-move draw" rule in chess
+    this->halfmove = std::stoi(fen_components[4]);  
+
+    // fullmove is Used only for display purposes.
     this->fullmove = std::stoi(fen_components[5]);
 
-    assert(square_counter == 0);
-    
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
     ShumiChess::initialize_zobrist();
     set_zobrist();

@@ -21,7 +21,7 @@ using namespace utility::representation;
 using namespace utility::bit;
 
 // Debug
-#define _DEBUGGING_PUSH_POP
+//#define _DEBUGGING_PUSH_POP
 //#define _DEBUGGING_MOVE_TREE
 #ifdef _DEBUGGING_MOVE_TREE
     FILE *fpStatistics = NULL;
@@ -120,9 +120,8 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
 // Choose the "minimax" AI move.
 //
 tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta
-                                                , unordered_map<uint64_t, unordered_map<Move
-                                                , double, MoveHash>> &board_values
-                                                , ShumiChess::Move& moveLast, bool debug) {
+                                    , unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &board_values
+                                    , ShumiChess::Move& moveLast, bool debug) {
 
     nodes_visited++;
     
@@ -132,6 +131,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     GameState state = engine.game_over(moves);
     
     if (state != GameState::INPROGRESS) {
+        
         // Game is over
         double d_end_value;
         if (state == GameState::BLACKWIN) {
@@ -169,7 +169,6 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
         // Debug   NOTE: this if check reduces speed
         if (debug == true) {
-            assert(0);
             cout << colorize(AColor::BRIGHT_BLUE, "===== DEPTH 0 EVAL: " + to_string(d_eval) + ", color is: " + color_str(engine.game_board.turn)) << endl;
             print_gameboard(engine.game_board);
 
@@ -220,7 +219,6 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     Move best_move = sorted_moves[0];
     for (Move &m : sorted_moves) {
         
-        // NOTE: Undef _DEBUGGING_PUSH_POP after it works.
         #ifdef _DEBUGGING_PUSH_POP
             string temp_fen_before = engine.game_board.to_fen();
         #endif
@@ -289,10 +287,11 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     auto start_time = chrono::high_resolution_clock::now();
     auto required_end_time = start_time + chrono::duration<double>(time);
 
+    // Zobrist stuff ?
     unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> board_values;
 
     Move best_move;
-    double best_move_value;
+    double d_best_move_value;
 
     Move null_move;
 
@@ -301,10 +300,10 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         
         cout << "Deepening to " << depth << " half moves" << endl;
 
-        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, null_move, true);
+        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, null_move, false);
 
         // ret_val is a tuple of the score and the move.
-        best_move_value = get<0>(ret_val);
+        d_best_move_value = get<0>(ret_val);
         best_move = get<1>(ret_val);
 
         depth++;
@@ -329,7 +328,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //     }
     // }
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
-    cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move_iterative_deepening chose move: for " + color + " player with score of " + to_string(best_move_value)) << endl;
+    cout << colorize(AColor::BRIGHT_CYAN, to_string(d_best_move_value) + "= score, Minimax AI get_move_iterative_deepening chose move: for " + color + " to move") << endl;
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
     cout << colorize(AColor::BRIGHT_BLUE, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
@@ -347,6 +346,9 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
 // === straight forward minimax below ===
 double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, double beta) {
+
+    assert(0);
+
     nodes_visited++;
     vector<Move> moves = engine.get_legal_moves();
     GameState state = engine.game_over(moves);
@@ -376,9 +378,13 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
     if (color_multiplier == 1) {  // Maximizing player
         double dMax_move_value = -DBL_MAX;
         for (Move& m : moves) {
+
             engine.push(m);
+
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
+
             engine.pop();
+
             dMax_move_value = max(dMax_move_value, score_value);
             alpha = max(alpha, dMax_move_value);
             if (beta <= alpha) {
