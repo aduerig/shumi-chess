@@ -9,8 +9,10 @@
 #undef NDEBUG
 #include <assert.h>
 
-#include "minimax.hpp"
+#include <globals.hpp>
 #include "utility.hpp"
+#include "minimax.hpp"
+
 
 using namespace std;
 using namespace ShumiChess;
@@ -18,13 +20,34 @@ using namespace utility;
 using namespace utility::representation;
 using namespace utility::bit;
 
+// Debug
 #define _DEBUGGING_PUSH_POP
-extern string temp_fen_before1_DEBUG;
+//#define _DEBUGGING_MOVE_TREE
+#ifdef _DEBUGGING_MOVE_TREE
+    FILE *fpStatistics = NULL;
+    char szDebug[256];
+#endif
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-MinimaxAI::MinimaxAI(Engine& e) : engine(e) { }
+MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
+     // Open a file for debug writing
 
+    #ifdef _DEBUGGING_MOVE_TREE 
+        fpStatistics = fopen("C:\\programming\\shumi-chess\\Statistics.txt", "w");
+        if(fpStatistics == NULL)    // Check if file was opened successfully
+        {
+            printf("Error opening statistics file!");
+            assert(0);
+        }    
+    #endif
+}
+
+MinimaxAI::~MinimaxAI() { 
+    #ifdef _DEBUGGING_MOVE_TREE
+        if (fpStatistics != NULL) fclose(fpStatistics);
+    #endif
+}
 
 int MinimaxAI::bits_in(ull bitboard) {
     auto bs = bitset<64>(bitboard);
@@ -98,9 +121,12 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
 //
 tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta
                                                 , unordered_map<uint64_t, unordered_map<Move
-                                                , double, MoveHash>> &board_values, bool debug) {
+                                                , double, MoveHash>> &board_values
+                                                , ShumiChess::Move& moveLast, bool debug) {
+
     nodes_visited++;
     
+    // Get all legal moves from this position
     vector<Move> moves = engine.get_legal_moves();
 
     GameState state = engine.game_over(moves);
@@ -121,14 +147,34 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     if (depth == 0) {
 
         // Evaluate end node.
-        double eval = evaluate_board(engine.game_board.turn, moves);
+        double d_eval = evaluate_board(engine.game_board.turn, moves);
+
+        #ifdef _DEBUGGING_MOVE_TREE
+            // Write to debug file 
+            int nChars;
+            strcpy(szDebug, "\n\n");
+            nChars = fputs(szDebug, fpStatistics);
+            if (nChars == EOF) assert(0);
+
+            std::string stemp = gameboard_to_string(engine.game_board);
+            const char* psz = stemp.c_str();
+            nChars = fputs(psz, fpStatistics);
+            if (nChars == EOF) assert(0);
+
+
+            sprintf(szDebug, "      depth= %ld  score= %f", depth, d_eval);
+            nChars = fputs(szDebug, fpStatistics);
+            if (nChars == EOF) assert(0);
+        #endif
 
         // Debug   NOTE: this if check reduces speed
         if (debug == true) {
-            cout << colorize(AColor::BRIGHT_BLUE, "===== DEPTH 0 EVAL: " + to_string(eval) + ", color is: " + color_str(engine.game_board.turn)) << endl;
+            assert(0);
+            cout << colorize(AColor::BRIGHT_BLUE, "===== DEPTH 0 EVAL: " + to_string(d_eval) + ", color is: " + color_str(engine.game_board.turn)) << endl;
             print_gameboard(engine.game_board);
+
         }
-        return make_tuple(eval, Move{});
+        return make_tuple(d_eval, Move{});
     }
 
     unordered_map<Move, double, MoveHash> moves_with_values;
@@ -187,8 +233,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         #endif
 
         // Recursive call down another level.
-        bool debug = false;
-        auto ret_val = store_board_values_negamax((depth - 1), -beta, -alpha, board_values, debug);
+        auto ret_val = store_board_values_negamax((depth - 1), -beta, -alpha, board_values, m, debug);
+        
         // ret_val is a tuple of the score and the move.
         double d_score_value = -get<0>(ret_val);
 
@@ -207,7 +253,6 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
                 cout << "PROBLEM WITH PUSH POP!!!!!" << endl;
                 cout_move_info(m);
                 cout << "FEN before  push/pop: " << temp_fen_before  << endl;
-                cout << "FEN before1 push/pop: " << temp_fen_before1_DEBUG  << endl;
                 cout << "FEN between push/pop: " << temp_fen_between << endl;
                 cout << "FEN after   push/pop: " << temp_fen_after   << endl;
                 assert(0);
@@ -239,21 +284,24 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     nodes_visited = 0;
 
     uint64_t zobrist_key_start = engine.game_board.zobrist_key;
-    cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
+    //cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
 
     auto start_time = chrono::high_resolution_clock::now();
     auto required_end_time = start_time + chrono::duration<double>(time);
 
     unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> board_values;
+
     Move best_move;
     double best_move_value;
+
+    Move null_move;
 
     int depth = 1;
     while (chrono::high_resolution_clock::now() <= required_end_time) {
         
-        cout << "Deepening to " << (depth - 1) << endl;
+        cout << "Deepening to " << depth << " half moves" << endl;
 
-        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, true);
+        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, null_move, true);
 
         // ret_val is a tuple of the score and the move.
         best_move_value = get<0>(ret_val);
@@ -285,7 +333,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
     cout << colorize(AColor::BRIGHT_BLUE, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
-    cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
+    //cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
     return best_move;
 }
 

@@ -168,13 +168,15 @@ def output_fens_depth_1(button_obj):
     global legal_moves
     import chess
 
-    print(f'Output_fens_depth_1 called')
+    # print(f'Output_fens_depth_1 called')
 
     legal_moves = engine_communicator.get_legal_moves()
     before_fen = engine_communicator.get_fen()
     python_chess_engine_board = chess.Board(before_fen)
+
     shumi_fens = []
     python_fens = []
+
     for choice in reversed(legal_moves):
         from_acn, to_acn = choice[0:2], choice[2:4]
         engine_communicator.make_move_two_acn(from_acn, to_acn)
@@ -210,7 +212,9 @@ def output_fens_depth_1(button_obj):
         for i in temp:
             print(f' - {i}')
 
-    filepath = get_temp_file(suffix='.txt')
+    filepath = "shumi_fens.txt"   # always the same file in the current working dir
+    # filepath = get_temp_file(suffix='.txt')
+
     with open(filepath, 'w') as f:
         for fen in shumi_fens:
             f.write(fen + '\n')
@@ -639,3 +643,5 @@ while True:
 # Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 211
 # FAILURE executing "python "C:\programming\shumi-chess\driver\show_board.py""
 # PS C:\programming\shumi-chess> 
+#
+#    rnb1kbnr/pppp1ppp/8/8/2B1q3/1Q6/PB3PPP/RN2K1NR w KQkq - 0 6

@@ -205,7 +205,8 @@ const string GameBoard::to_fen() {
     fen_components.push_back(color_rep);
 
     // TODO: castling
-    // NOTE: What do you mean, TODO. here and below, What's to do? Is this an unfinished project? I think the TODOs are wrong.
+    // NOTE: What do you mean, TODO. here and below, What's to do? Is this an unfinished project?
+    // I think the TODOs are outdated.
     string castlestuff;
     if (0b00000001 & white_castle) {
         castlestuff += 'K';

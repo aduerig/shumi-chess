@@ -35,14 +35,17 @@ public:
     };
     unordered_map<uint64_t, std::string> seen_zobrist;
 
+    // NOTE: move me to top of class declaration.
     MinimaxAI(ShumiChess::Engine&);
+    ~MinimaxAI();
 
     int bits_in(ull);
     double evaluate_board(ShumiChess::Color, vector<ShumiChess::Move>&);
 
     std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta
                                             , unordered_map<uint64_t, unordered_map<ShumiChess::Move
-                                            , double, utility::representation::MoveHash>> &board_values, bool);
+                                            , double, utility::representation::MoveHash>> &board_values
+                                            , ShumiChess::Move& moveLast, bool debug);
     ShumiChess::Move get_move_iterative_deepening(double);
 
     double get_value(int, int, double, double);

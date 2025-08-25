@@ -10,7 +10,8 @@
 #include <assert.h>
 
 #define _DEBUGGING_PUSH_POP
-string temp_fen_before1_DEBUG;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 
@@ -173,10 +174,6 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 
 // takes a move, but tracks it so pop() can undo
 void Engine::push(const Move& move) {
-
-    #ifdef _DEBUGGING_PUSH_POP
-        temp_fen_before1_DEBUG = game_board.to_fen();
-    #endif
 
     move_history.push(move);
 

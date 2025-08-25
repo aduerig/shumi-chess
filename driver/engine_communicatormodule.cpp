@@ -8,6 +8,7 @@
 #include <iostream>
 #include <utility>
 
+#include <globals.hpp>
 #include <engine.hpp>
 #include <minimax.hpp>
 
