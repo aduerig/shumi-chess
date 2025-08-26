@@ -87,3 +87,5 @@ if __name__ == "__main__":
     generate_all_files_in_depth('3qk3/8/8/8/8/8/8/3QK3 w - - 0 1', 4, 'queens')
     generate_all_files_in_depth('4k3/8/8/8/8/8/8/4K3 w - - 0 1', 5, 'kings')
     generate_all_files_in_depth('kn6/5P2/8/8/8/8/5p2/KN6 w - - 0 1', 5, 'promotion')
+
+    generate_all_files_in_depth('4k3/pp1p1ppp/8/4pP2/1Pp1P3/8/P1PP2PP/4K3 w HAha - 0 1', 3, 'enpassant')
