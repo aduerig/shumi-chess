@@ -57,7 +57,7 @@ def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
         return get_random_move(legal_moves)
     # move = engine_communicator.minimax_ai_get_move()
     # NOTE: this is where you can control total time.
-    seconds = 2.5
+    seconds = 1.0
     move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
     return move[0:2], move[2:4]
 
@@ -603,57 +603,3 @@ while True:
 
     gui_click_choices()
 
-
-############################# debug storage please leave ######################
-    # castle bug line , then move Nc3:
-    #    rnb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/RNBQK2R w KQkq - 2 5
-    #    1nb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/1NBQK2R w KQkq - 2 5
-    # rnb1kbnr/pppp3p/1qp5/4pp2/8/2NPPN2/PPP1BPPP/R1BQK2R b KQkq - 2 5
-
-    # PROBLEM WITH PUSH POP!!!!!
-# --- Move Details for f1e1 ---
-# Player: White
-# Piece: Rook
-# Is Castle: false
-# Is En Passant Capture: false
-# White Castle Rights (KQ): 00
-# Black Castle Rights (kq): 11
-# ----------------------------------
-# FEN before  push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQ2KR w kq - 0 8
-# FEN between push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQR1KR b kq - 1 8
-# FEN after   push/pop: rnb1kbnr/pppp3p/1q4p1/4p3/8/2NPpN2/PPP1BPPP/R1BQ1RKR w kq - 0 8
-
-#  4k2r/8/8/8/8/8/8/4K2R w KQkq - 0 1
-#
-# EXTRA ROOK BUG.
-# error starting FEN 4k2r/7p/8/8/8/8/7P/4K2R w KQkq - 0 1
-# PROBLEM WITH PUSH POP!!!!!
-# --- Move Details for h8g8 ---
-# Player: Black
-# Piece: Rook
-# Is Castle: false
-# Is En Passant Capture: false
-# White Castle Rights (KQ): 11
-# Black Castle Rights (kq): 10
-# ----------------------------------
-# FEN before  push/pop: 5r2/6kp/8/8/7P/8/4K3/7R b - - 0 3
-# FEN before1 push/pop: 5rr1/6kp/8/8/7P/8/4K3/7R w - - 1 4
-# FEN between push/pop: 5rr1/6kp/8/8/7P/8/4K3/7R w - - 1 4
-# FEN after   push/pop: 5r1r/6kp/8/8/7P/8/4K3/7R b - - 0 3
-# Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 211
-# FAILURE executing "python "C:\programming\shumi-chess\driver\show_board.py""
-# PS C:\programming\shumi-chess> 
-#
-#    rnb1kbnr/pppp1ppp/8/8/2B1q3/1Q6/PB3PPP/RN2K1NR w KQkq - 0 6
-
-
-# 1. Algebriac  (gameboard_to_string()) like function
-# 2. Failed tests
-# 3. Rename recursive, rename access.
-# 4. Deepening
-# 5. Horizon
-#  5. Beard
-# 6. time testing to theoritical?
-# 7. Alpha beta testing?
-# change time limited to depth limited
-# get_value() .vs. store_board_values_negamax()

@@ -18,6 +18,15 @@ namespace ShumiChess {
  
     #include "gameboardSetup.hpp"
 
+//
+// Comment on bitboards, as used here. You got a "h1 = 0" (right-to-left) file mapping.
+// More verbosely: your bitboards are indexed so that
+// bit 0 corresponds to h1, and within a rank the file index runs h1 to a1 as the square number increases,
+// while the rank index is standard: 0 is rank 1,  rank 8.
+// In chess-programming lingo, you can think of it as: files are mirrored relative to the common "A1 = 0" layout. 
+// So your rank math was fine; only the file needed the file = 7 - (sq & 7) mirror.
+//
+    
     // black_pawns  (0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
     // white_pawns  (0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
     // black_rooks  (0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),

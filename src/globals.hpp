@@ -32,9 +32,9 @@ enum Piece {
 // NOTE: Can this be a class?
 struct Move {
     Color color;
-    Piece piece_type;
-    ull from; // bitboard
-    ull to; // bitboard
+    Piece piece_type;       // As in "pawn", queen", etc. that is moving.
+    ull from; // bitboard (but with only one bit set)
+    ull to; // bitboard (but with only one bit set)
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
     uint8_t black_castle = 0b00000011;

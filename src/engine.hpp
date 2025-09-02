@@ -12,6 +12,9 @@
 
 using namespace std;
 
+
+#define _MAX_ALGEBRIAC_SIZE 16        // longest text possible? -> "exd8=Q#" or "axb8=R+"
+
 namespace ShumiChess {
 class Engine {
     public:
@@ -39,7 +42,8 @@ class Engine {
         GameState game_over();
         GameState game_over(vector<Move>&);
 
-        ull& access_piece_of_color(Piece, Color);
+        // Returns direct pointer (reference) to a bit board.
+        ull& access_pieces_of_color(Piece, Color);
 
         // void apply_en_passant_checks(const Move&);
         // void apply_castling_changes(const Move&);
@@ -48,8 +52,23 @@ class Engine {
 
         vector<Move> get_legal_moves();
         vector<Move> get_psuedo_legal_moves(Color);
+
+
+        //bool in_check_after_move(Color color, const Move move);
+        inline bool in_check_after_move(Color color, const Move move) {
+            // NOTE: is this the most effecient way to do this (push()/pop())?
+            push(move);        
+            
+            bool bReturn = is_king_in_check(color);
+            
+            pop();
+            return bReturn;
+        }
+
+
         bool is_king_in_check(const Color&);
         bool is_square_in_check(const Color&, const ull&);
+
         void add_pawn_moves_to_vector(vector<Move>&, Color);
         void add_knight_moves_to_vector(vector<Move>&, Color);
         void add_bishop_moves_to_vector(vector<Move>&, Color);
@@ -60,5 +79,25 @@ class Engine {
         // helpers for move generation
         ull get_diagonal_attacks(ull);
         ull get_straight_attacks(ull);
-};
+
+        char sz_move_text[_MAX_ALGEBRIAC_SIZE];     // longest text possible? -> "exd8=Q#" or "axb8=R+"
+
+        void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move, GameState state 
+                                    , const vector<ShumiChess::Move>* p_legal_moves   // from this position
+                                    , char* pszMoveText);            // output
+
+        char get_piece_char(Piece p);
+        char file_from_move(const Move& m);
+        char rank_from_move(const Move& m);
+
+        char file_to_move(const Move& m);
+        char rank_to_move(const Move& m);
+
+        void print_bitboard_to_file(ull bb, FILE* fp);
+        void print_moves_to_file(const vector<ShumiChess::Move>& moves, FILE* fp);
+
+        int bits_in(ull);
+        bool flip_a_coin(void);
+
+    };
 } // end namespace ShumiChess

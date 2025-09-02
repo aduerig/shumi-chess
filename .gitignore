@@ -57,3 +57,5 @@ gperf_analysis.txt
 gprof_analysis.txt
 callgrind.out.*
 temp
+Statistics.txt
+debug.dat

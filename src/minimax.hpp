@@ -16,9 +16,12 @@ public:
 };
 
 
+
 class MinimaxAI {
 public:
     int nodes_visited = 0;
+    
+    int top_depth = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
 
     // The chess engine
     ShumiChess::Engine& engine;
@@ -39,16 +42,15 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    int bits_in(ull);
     double evaluate_board(ShumiChess::Color, vector<ShumiChess::Move>&);
 
     std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta
                                             , unordered_map<uint64_t, unordered_map<ShumiChess::Move
                                             , double, utility::representation::MoveHash>> &board_values
-                                            , ShumiChess::Move& moveLast, bool debug);
+                                            , ShumiChess::Move& move_last, bool debug);
     ShumiChess::Move get_move_iterative_deepening(double);
 
-    double get_value(int, int, double, double);
+    double get_value(int depth, int color_multiplier, double alpha, double beta);
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
 };

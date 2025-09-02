@@ -26,6 +26,8 @@ Engine::Engine() {
     // utility::representation::print_bitboard(south_west_square_ray[28]);
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[37]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[37]);
+
+    srand((unsigned)time(NULL));
 }
 
 //TODO what is right way to handle popping past default state here?
@@ -78,16 +80,23 @@ vector<Move> Engine::get_legal_moves() {
     for (Move move : psuedo_legal_moves) {
 
         // NOTE: is this the most effecient way to do this (push()/pop())?
-        push(move);        
+        bool bKingInCheck = in_check_after_move(color, move);
         
-        if (!is_king_in_check(color)) {
+        //push(move);        
+        
+        //bool bKingInCheck = is_king_in_check(color);
+
+        if (!bKingInCheck) {
             // King is NOT in check after making the move
+
+            // Add this move to the list of legal moves.
             all_legal_moves.emplace_back(move);
         }
 
-        pop();
+        //pop();
 
     }
+
     return all_legal_moves;
 }
 
@@ -148,6 +157,7 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 
 // TODO should this check for draws by internally calling get legal moves and caching that and 
 //      returning on the actual call?, very slow calling get_legal_moves again
+// NOTE: I complely agree this is wastefull. But it is not called in the "main line", the one below is.
 GameState Engine::game_over() {
     vector<Move> legal_moves = get_legal_moves();
     return game_over(legal_moves);
@@ -161,7 +171,9 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
         else if (is_square_in_check(Color::BLACK, game_board.black_king)) {
             return GameState::WHITEWIN;
         }
-        return GameState::DRAW;
+        else {
+            return GameState::DRAW;
+        }
     }
     // TODO check if this is off by one or something
     else if (game_board.halfmove >= 50) {
@@ -196,7 +208,7 @@ void Engine::push(const Move& move) {
     }
     
     // Remove the piece from where it was
-    ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
+    ull& moving_piece = access_pieces_of_color(move.piece_type, move.color);
     moving_piece &= ~move.from;
 
     // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
@@ -208,13 +220,14 @@ void Engine::push(const Move& move) {
 
     // Put the piece where it will go.
     if (move.promotion == Piece::NONE) {
+
         moving_piece |= move.to;
 
         game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
     }
     else {
         // Promote the piece
-        ull& promoted_piece = access_piece_of_color(move.promotion, move.color);
+        ull& promoted_piece = access_pieces_of_color(move.promotion, move.color);
         promoted_piece |= move.to;
 
         game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
@@ -228,11 +241,12 @@ void Engine::push(const Move& move) {
             // Enpassent capture
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
-            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
+            access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
         } else {
             // Regular capture
-            ull& where_I_was = access_piece_of_color(move.capture, utility::representation::opposite_color(move.color));
+
+            ull& where_I_was = access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color));
             where_I_was &= ~move.to;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
@@ -240,7 +254,7 @@ void Engine::push(const Move& move) {
 
         // !TODO zobrist update for castling
 
-        ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
+        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         // cout << "PUSHING: Friendly rooks are:";
         // utility::representation::print_bitboard(friendly_rooks);
@@ -300,7 +314,7 @@ void Engine::pop() {
     int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
 
     // pop the "actual move". This removes the piece from its square and puts it back to where it was.
-    ull& moving_piece = access_piece_of_color(move.piece_type, move.color);
+    ull& moving_piece = access_pieces_of_color(move.piece_type, move.color);
     moving_piece &= ~move.to;
     moving_piece |= move.from;
 
@@ -313,7 +327,7 @@ void Engine::pop() {
     }
     else {
         // Is a pawn promotion
-        ull& promoted_piece = access_piece_of_color(move.promotion, move.color);
+        ull& promoted_piece = access_pieces_of_color(move.promotion, move.color);
         promoted_piece &= ~move.to;
 
         game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
@@ -327,17 +341,17 @@ void Engine::pop() {
             // NOTE: here the statements are reversed from the else. What gives?
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
           
-            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
+            access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
      
         } else {
 
-            access_piece_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
+            access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
             game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
         
         // get pointer to the rook? Which rook?
-        ull& friendly_rooks = access_piece_of_color(ShumiChess::Piece::ROOK, move.color);
+        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         // ! Bet we can make this part of push a func and do something fancy with to and from
         // TODO at least keep standard with push implimentation.
 
@@ -379,7 +393,7 @@ void Engine::pop() {
     this->castle_opportunity_history.pop();
 }
 
-// ull& Engine::access_piece_of_color(Piece piece, Color color) {
+// ull& Engine::access_pieces_of_color(Piece piece, Color color) {
 //     switch (piece)
 //     {
 //     case Piece::PAWN:
@@ -407,7 +421,7 @@ void Engine::pop() {
 //         else {return ref(this->game_board.white_king);}
 //         break;
 //     default:
-//         cout << "Unexpected piece type in access_piece_of_color: " << piece << endl;
+//         cout << "Unexpected piece type in access_pieces_of_color: " << piece << endl;
 //         assert(0);
 //         break;
 //     }
@@ -416,7 +430,7 @@ void Engine::pop() {
 //     return this->game_board.white_king;
 // }
 
-ull& Engine::access_piece_of_color(Piece piece, Color color) {
+ull& Engine::access_pieces_of_color(Piece piece, Color color) {
     switch (piece)
     {
         case Piece::PAWN:
@@ -445,12 +459,12 @@ ull& Engine::access_piece_of_color(Piece piece, Color color) {
             break;
 
         default:
-            cout << "Unexpected piece type in access_piece_of_color: " << piece << endl;
+            cout << "Unexpected piece type in access_pieces_of_color: " << piece << endl;
             assert(0);
             break;
     }
 
-    // Unreachable, but required to avoid warnings
+    // Unreachable, but required to avoid warnings Note: Fix this.
     return this->game_board.white_king;
 }
 
@@ -500,12 +514,14 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
 
         if (!promotion) {
             new_move.promotion = Piece::NONE;
+            // Add new move to the list of moves.  
             moves.emplace_back(new_move);
         }
         else {
             for (auto& promo_piece : promotion_values) {
                 Move promo_move = new_move;
                 promo_move.promotion = promo_piece;
+                // Add new move to the list of moves. 
                 moves.emplace_back(promo_move);
             }
         }
@@ -802,6 +818,269 @@ ull Engine::get_straight_attacks(ull bitboard) {
     blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_e);
     ull e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
     return n_attacks | s_attacks | w_attacks | e_attacks;
+}
+//
+//
+// Translates a "Move" to SAN (standard algebriac notation).
+// Dad's first ShumiChess function. Does NO safety checks, as to in passed string (pszMoveText).
+// Does check, mate, promotion, and disambigoation. 
+//   Only thing I added was '~' for forced draws (50 move, or 3-time).
+//
+void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move the_move, GameState state 
+                            , const vector<ShumiChess::Move>* p_legal_moves   // from this position. This is only used for disambigouation
+                            , char* pszMoveText)             // output
+{
+    char thisChar;
+    //ull correct_bit_board;
+
+    // "p" is tthe pointer to where we are adding in the passed string
+    char* p = pszMoveText;             // start at beginning of string
+
+    //*p++ = '\n';    // Preface with line return
+
+    bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
+
+    // switch (the_move.piece_type)
+    // {
+    //     case Piece::PAWN:
+    //         if (color_that_moved) {correct_bit_board = game_board.black_pawns;}
+    //         else                  {correct_bit_board = game_board.white_pawns;}
+    //         break;
+    //     case Piece::ROOK:
+    //         if (color_that_moved) {correct_bit_board = game_board.black_rooks;}
+    //         else                  {correct_bit_board = game_board.white_rooks;}
+    //         break;
+    //     case Piece::KNIGHT:
+    //         if (color_that_moved) {correct_bit_board = game_board.black_knights;}
+    //         else                  {correct_bit_board = game_board.white_knights;}
+    //         break;
+    //     case Piece::BISHOP:
+    //         if (color_that_moved) {correct_bit_board = game_board.black_bishops;}
+    //         else                  {correct_bit_board = game_board.white_bishops;}
+    //         break;
+    //     case Piece::QUEEN:
+    //         if (color_that_moved) {correct_bit_board = game_board.black_queens;}
+    //         else                  {correct_bit_board = game_board.white_queens;}
+    //         break;
+    //     case Piece::KING:
+    //         if (color_that_moved) {correct_bit_board = game_board.black_king;}
+    //         else                  {correct_bit_board = game_board.white_king;}
+    //         break;
+    //     default:
+    //         cout << "Unexpected piece type in bitboards_to_algebraic(): " << the_move.piece_type << endl;
+    //         assert(0);
+    //         break;
+    // }
+
+
+    if (b_is_pawn_move) {
+        // For pawn move we give the ".from" file, and omit the "p"
+        thisChar = file_from_move(the_move);
+        *p++ = thisChar;
+    } else {
+        // Add the correct piece character
+        thisChar = get_piece_char(the_move.piece_type);
+        *p++ = thisChar;
+    }
+
+    // disambiguation ??? Code should live here
+    //if (legal_moves && !legal_moves->empty()) {
+  
+
+    // Add "capture" character
+    bool b_is_capture = (the_move.capture != Piece::NONE);
+    if (b_is_capture) *p++ = 'x';
+
+
+    // Add ".to" information
+    if (b_is_pawn_move && !b_is_capture) {
+        // Omit the "from" column, for pawn moves that are not captures.
+        thisChar = rank_to_move(the_move);
+        *p++ = thisChar;
+
+    } else {
+        thisChar = file_to_move(the_move);
+        *p++ = thisChar;
+
+        thisChar = rank_to_move(the_move);
+        *p++ = thisChar;
+    }
+
+    // Add promotion information, if needed
+    if (the_move.promotion != Piece::NONE)
+    {
+       *p++ = '=';  
+
+        assert(the_move.promotion != Piece::PAWN);   // certainly a promotion error. Pawns don't promot to pawns
+        thisChar = get_piece_char(the_move.promotion);
+        *p++ = thisChar;
+
+    }
+
+    // Add the check or checkmate symbol if needed.
+    if ( (state == GameState::WHITEWIN) || (state == GameState::BLACKWIN) ) {
+        *p++ = '#';
+    }
+    else if (state == GameState::DRAW) {
+        *p++ = '~';                 // NOT technically SAN, but I need to see 3-time rep and 5- move rule.
+    }
+    else {
+        // // Not a checkmate or draw. See if its a check
+
+        // Add a check character if needed (NOTE: This is very expensive!)
+        if (in_check_after_move(color_that_moved, the_move)) {
+        *p++ = '+';
+        }
+    }
+
+      // Note: disambiguation. Fix this. Doesnt work because the legal_moves are for the wrong color!
+    if (0) {  // p_legal_moves) {
+
+        for (const Move& m : *p_legal_moves) {
+            //int iPieces = bits_in(correct_bit_board);
+            if ( (m.from == the_move.from) && (m.to == the_move.to) ) continue;
+            ull mask = (the_move.to & m.to);    //assert (iPieces>0);
+            if ( (mask != 0ull) && (the_move.piece_type == m.piece_type) ) {
+                *p++ = '&';
+                *p++ = '(';
+
+                char temp[64];
+                bitboards_to_algebraic(color_that_moved, m, GameState::INPROGRESS
+                            , NULL                      // NO disambiguation
+                            , temp);            // output
+                strcpy(p, temp);           // temp is NULL-terminated
+                p += strlen(temp);         // now p points at the '\0' we just wrote
+            }
+        }
+    }
+
+    //*p++ = '\n';        // Post face with a carriage return
+
+    *p = '\0';              // don�t forget to terminate
+
+
+}
+
+// Returns character, for the piece (note in algebriac, SAN, caps are always used)
+char Engine::get_piece_char(Piece p) {
+
+    switch (p)
+    {
+        case Piece::PAWN:
+            return ' ';
+            break;
+        case Piece::ROOK:
+            return 'R';
+            break;
+        case Piece::KNIGHT:
+            return 'N';
+            break;
+        case Piece::BISHOP:
+            return 'B';
+            break;
+        case Piece::QUEEN:
+            return 'Q';
+            break;
+        case Piece::KING:
+            return 'K';
+            break;
+        default:
+            assert(0);
+            break;
+    }
+    return ' ';
+}
+
+// Returns character, for the rank of the "from" square
+char Engine::rank_from_move(const Move& m)
+{
+    int from_sq = utility::bit::bitboard_to_lowest_square(m.from);
+    int rank    = from_sq >> 3;             // 0..7 for ranks 1..8
+    return '1' + rank;                      // '1'..'8'
+}
+
+// Returns character, for the file of the "from" square
+char Engine::file_to_move(const Move& m)
+{
+    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 0..63
+    int file  = to_sq & 7;     // within-rank index 0..7
+    file      = 7 - file;      // mirror because bit 0 = h1 in your layout
+    return 'a' + file;         // 'a'..'h'
+}
+
+/// Returns character, for the rank of the "to" square
+char Engine::rank_to_move(const Move& m)
+{
+    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // <-- NOTE: m.to, not m.from
+    int rank  = to_sq / 8;   // 0=rank 1, 1=rank 2, ..., 7=rank 8
+    return '1' + rank;       // convert to character '1'..'8'
+}
+
+char Engine::file_from_move(const Move& m)
+{
+    int from_sq = utility::bit::bitboard_to_lowest_square(m.from); // 0..63
+    int file  = from_sq & 7;     // within-rank index 0..7
+    file      = 7 - file;      // mirror because bit 0 = h1 in your layout
+    return 'a' + file;         // 'a'..'h'
+}
+
+
+void Engine::print_bitboard_to_file(ull bb, FILE* fp)
+{
+    int nChars;
+
+    nChars = fputs("\n", fp);
+    if (nChars == EOF) assert(0);
+
+    string stringFrom = utility::representation::bitboard_to_string(bb);
+    nChars = fputs(stringFrom.c_str(), fp);
+    if (nChars == EOF) assert(0);
+
+    nChars = fputs("\n", fp);
+    if (nChars == EOF) assert(0);
+
+}
+
+// NO disambiguation
+void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, FILE* fp) {
+    // 
+    int nChars;
+
+    for (const auto& move : moves) {
+
+        bitboards_to_algebraic(Color::BLACK, move, GameState::INPROGRESS
+                            , NULL                      // NO disambiguation
+                            , sz_move_text);            // output
+        strcat(sz_move_text, "\n");
+        nChars = fputs(sz_move_text, fp);
+        if (nChars == EOF) assert(0);
+        //     ull check_test = ( (move.to & game_board.white_king) || (move.to & game_board.black_king) );
+        //     if (check_test != 0ull) {
+        //         assert(0);
+        //         *p++ = '+';             // Its a check.
+        //     }
+    }
+    nChars = fputs("\n", fp);
+    if (nChars == EOF) assert(0);
+
+    // bool btemp;
+    // btemp = is_king_in_check(Color::BLACK);
+    // nChars = fputs(btemp ? "   black1\n" : "   black0\n", fp);
+    // if (nChars == EOF) assert(0);
+    // btemp = is_king_in_check(Color::WHITE);
+    // nChars = fputs(btemp ? "   white1\n" : "   white0\n", fp);
+    // if (nChars == EOF) assert(0);
+
+}
+
+
+bool Engine::flip_a_coin(void) {
+    return (rand() & 1) != 0;   // 0 or 1 ? false or true
+}
+
+int Engine::bits_in(ull bitboard) {
+    auto bs = bitset<64>(bitboard);
+    return (int) bs.count();
 }
 
 } // end namespace ShumiChess
