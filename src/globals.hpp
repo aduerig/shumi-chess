@@ -31,10 +31,10 @@ enum Piece {
 // TODO think about if this is the right way to represent a move
 // NOTE: Can this be a class?
 struct Move {
-    Color color;
+    Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", queen", etc. that is moving.
-    ull from;   // bitboard (but with only one bit set)
-    ull to;     // bitboard (but with only one bit set)
+    ull from = 0ULL;   // bitboard (but with only one bit set)
+    ull to = 0ULL;     // bitboard (but with only one bit set)
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
     uint8_t black_castle = 0b00000011;

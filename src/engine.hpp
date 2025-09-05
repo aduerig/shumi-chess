@@ -53,8 +53,6 @@ class Engine {
         vector<Move> get_legal_moves();
         vector<Move> get_psuedo_legal_moves(Color);
 
-
-        //bool in_check_after_move(Color color, const Move move);
         inline bool in_check_after_move(Color color, const Move move) {
             // NOTE: is this the most effecient way to do this (push()/pop())?
             push(move);        
@@ -80,11 +78,12 @@ class Engine {
         ull get_diagonal_attacks(ull);
         ull get_straight_attacks(ull);
 
-        char sz_move_text[_MAX_ALGEBRIAC_SIZE];     // longest text possible? -> "exd8=Q#" or "axb8=R+"
+        std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
 
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move, GameState state 
-                                    , const vector<ShumiChess::Move>* p_legal_moves   // from this position
-                                    , char* pszMoveText);            // output
+                                    //, const vector<ShumiChess::Move>* p_legal_moves   // from this position
+                                    //, char* pszMoveText);            // output
+                                    , std::string& MoveText);           // output
 
         char get_piece_char(Piece p);
         char file_from_move(const Move& m);

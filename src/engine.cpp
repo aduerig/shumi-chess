@@ -32,9 +32,12 @@ Engine::Engine() {
 
 //TODO what is right way to handle popping past default state here?
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
+    move_string.reserve(_MAX_ALGEBRIAC_SIZE);
 }
 
 void Engine::reset_engine() {
+
+    move_string.reserve(_MAX_ALGEBRIAC_SIZE);
 
     // You can override the gameboard setup with fen positions as in:
     //game_board = GameBoard("r4rk1/7R/8/8/8/8/8/R3K3 w Q - 2 2");
@@ -820,6 +823,13 @@ ull Engine::get_straight_attacks(ull bitboard) {
     return n_attacks | s_attacks | w_attacks | e_attacks;
 }
 //
+
+// inline void safe_push_back(std::string &s, char c) {
+//     if (s.size() < s.capacity()) s.push_back(c); else assert(0);
+//}
+inline void safe_push_back(std::string &s, char c) {
+    s.push_back(c);   // always works
+}
 //
 // Translates a "Move" to SAN (standard algebriac notation).
 // Dad's first ShumiChess function. Does NO safety checks, as to in passed string (pszMoveText).
@@ -827,145 +837,118 @@ ull Engine::get_straight_attacks(ull bitboard) {
 //   Only thing I added was '~' for forced draws (50 move, or 3-time).
 //
 void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move the_move, GameState state 
-                            , const vector<ShumiChess::Move>* p_legal_moves   // from this position. This is only used for disambigouation
-                            , char* pszMoveText)             // output
+                            //, const vector<ShumiChess::Move>* p_legal_moves   // from this position. This is only used for disambigouation
+                            //, char* pszMoveText)             // output
+                            , std::string& MoveText)            // output
 {
     char thisChar;
+    //thisChar = get_piece_char(the_move.piece_type);
     //ull correct_bit_board;
 
     // "p" is tthe pointer to where we are adding in the passed string
-    char* p = pszMoveText;             // start at beginning of string
+    //char* p = pszMoveText;             // start at beginning of string
 
     //*p++ = '\n';    // Preface with line return
+    MoveText.clear();        // start fresh (does NOT free capacity)
+
 
     if (the_move.piece_type == Piece::NONE) {
-        *p++ = '?';
-        *p++ = '?';
-        *p++ = '?';
-        return;
-    }
-
-
-    bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
-
-    // switch (the_move.piece_type)
-    // {
-    //     case Piece::PAWN:
-    //         if (color_that_moved) {correct_bit_board = game_board.black_pawns;}
-    //         else                  {correct_bit_board = game_board.white_pawns;}
-    //         break;
-    //     case Piece::ROOK:
-    //         if (color_that_moved) {correct_bit_board = game_board.black_rooks;}
-    //         else                  {correct_bit_board = game_board.white_rooks;}
-    //         break;
-    //     case Piece::KNIGHT:
-    //         if (color_that_moved) {correct_bit_board = game_board.black_knights;}
-    //         else                  {correct_bit_board = game_board.white_knights;}
-    //         break;
-    //     case Piece::BISHOP:
-    //         if (color_that_moved) {correct_bit_board = game_board.black_bishops;}
-    //         else                  {correct_bit_board = game_board.white_bishops;}
-    //         break;
-    //     case Piece::QUEEN:
-    //         if (color_that_moved) {correct_bit_board = game_board.black_queens;}
-    //         else                  {correct_bit_board = game_board.white_queens;}
-    //         break;
-    //     case Piece::KING:
-    //         if (color_that_moved) {correct_bit_board = game_board.black_king;}
-    //         else                  {correct_bit_board = game_board.white_king;}
-    //         break;
-    //     default:
-    //         cout << "Unexpected piece type in bitboards_to_algebraic(): " << the_move.piece_type << endl;
-    //         assert(0);
-    //         break;
-    // }
-
-
-    if (b_is_pawn_move) {
-        // For pawn move we give the ".from" file, and omit the "p"
-        thisChar = file_from_move(the_move);
-        *p++ = thisChar;
+        safe_push_back(MoveText,'?');
+        safe_push_back(MoveText,'?');
+        safe_push_back(MoveText,'?');
+        
     } else {
-        // Add the correct piece character
-        thisChar = get_piece_char(the_move.piece_type);
-        *p++ = thisChar;
-    }
 
-    // disambiguation ??? Code should live here
-    //if (legal_moves && !legal_moves->empty()) {
-  
+        bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
 
-    // Add "capture" character
-    bool b_is_capture = (the_move.capture != Piece::NONE);
-    if (b_is_capture) *p++ = 'x';
-
-
-    // Add ".to" information
-    if (b_is_pawn_move && !b_is_capture) {
-        // Omit the "from" column, for pawn moves that are not captures.
-        thisChar = rank_to_move(the_move);
-        *p++ = thisChar;
-
-    } else {
-        thisChar = file_to_move(the_move);
-        *p++ = thisChar;
-
-        thisChar = rank_to_move(the_move);
-        *p++ = thisChar;
-    }
-
-    // Add promotion information, if needed
-    if (the_move.promotion != Piece::NONE)
-    {
-       *p++ = '=';  
-
-        assert(the_move.promotion != Piece::PAWN);   // certainly a promotion error. Pawns don't promote to pawns
-        thisChar = get_piece_char(the_move.promotion);
-        *p++ = thisChar;
-
-    }
-
-    // Add the check or checkmate symbol if needed.
-    if ( (state == GameState::WHITEWIN) || (state == GameState::BLACKWIN) ) {
-        *p++ = '#';
-    }
-    else if (state == GameState::DRAW) {
-        *p++ = '~';                 // NOT technically SAN, but I need to see 3-time rep and 5- move rule.
-    }
-    else {
-        // // Not a checkmate or draw. See if its a check
-
-        // Add a check character if needed (NOTE: This is very expensive!)
-        if (in_check_after_move(color_that_moved, the_move)) {
-        *p++ = '+';
+        if (b_is_pawn_move) {
+            // For pawn move we give the ".from" file, and omit the "p"
+            thisChar = file_from_move(the_move);
+            safe_push_back(MoveText,thisChar);
+        } else {
+            // Add the correct piece character
+            thisChar = get_piece_char(the_move.piece_type);
+            safe_push_back(MoveText,thisChar);
         }
-    }
 
-      // Note: disambiguation. Fix this. Doesnt work because the legal_moves passed inare of the wrong color!
-    if (0) {  // p_legal_moves) {
+        // disambiguation ??? Code should live here
+        //if (legal_moves && !legal_moves->empty()) {
+    
 
-        for (const Move& m : *p_legal_moves) {
-            //int iPieces = bits_in(correct_bit_board);
-            if ( (m.from == the_move.from) && (m.to == the_move.to) ) continue;
-            ull mask = (the_move.to & m.to);    //assert (iPieces>0);
-            if ( (mask != 0ull) && (the_move.piece_type == m.piece_type) ) {
-                *p++ = '&';
-                *p++ = '(';
+        // Add "capture" character
+        bool b_is_capture = (the_move.capture != Piece::NONE);
+        if (b_is_capture) safe_push_back(MoveText,'x');
 
-                char temp[64];
-                bitboards_to_algebraic(color_that_moved, m, GameState::INPROGRESS
-                            , NULL                      // NO disambiguation
-                            , temp);            // output
-                strcpy(p, temp);           // temp is NULL-terminated
-                p += strlen(temp);         // now p points at the '\0' we just wrote
-            }
+
+        // Add ".to" information
+        if (b_is_pawn_move && !b_is_capture) {
+            // Omit the "from" column, for pawn moves that are not captures.
+            thisChar = rank_to_move(the_move);
+            safe_push_back(MoveText,thisChar);
+
+        } else {
+            thisChar = file_to_move(the_move);
+            safe_push_back(MoveText,thisChar);
+
+            thisChar = rank_to_move(the_move);
+            safe_push_back(MoveText,thisChar);
         }
+
+        // Add promotion information, if needed
+        if (the_move.promotion != Piece::NONE)
+        {
+            safe_push_back(MoveText,'=');  
+
+            assert(the_move.promotion != Piece::PAWN);   // certainly a promotion error. Pawns don't promote to pawns
+            thisChar = get_piece_char(the_move.promotion);
+            safe_push_back(MoveText,thisChar);
+
+        }
+
+        // Add the check or checkmate symbol if needed.
+        if ( (state == GameState::WHITEWIN) || (state == GameState::BLACKWIN) ) {
+            safe_push_back(MoveText,'#');
+        }
+        else if (state == GameState::DRAW) {
+            safe_push_back(MoveText,'~');                 // NOT technically SAN, but I need to see 3-time rep and 5- move rule.
+        }
+        else {
+            // // Not a checkmate or draw. See if its a check
+
+            // Add a check character if needed (NOTE: This is very expensive!)
+            // if (in_check_after_move(color_that_moved, the_move)) {
+            //     safe_push_back(MoveText,'+');
+            // }
+        }
+
+        // Note: disambiguation. Fix this. Doesnt work because the legal_moves passed inare of the wrong color!
+        // if (0) {  // p_legal_moves) {
+
+        //     for (const Move& m : *p_legal_moves) {
+        //         //int iPieces = bits_in(correct_bit_board);
+        //         if ( (m.from == the_move.from) && (m.to == the_move.to) ) continue;
+        //         ull mask = (the_move.to & m.to);    //assert (iPieces>0);
+        //         if ( (mask != 0ull) && (the_move.piece_type == m.piece_type) ) {
+        //             safe_push_back(MoveText,'&';
+        //             safe_push_back(MoveText,'(';
+
+        //             char temp[64];
+        //             bitboards_to_algebraic(color_that_moved, m, GameState::INPROGRESS
+        //                         , NULL                      // NO disambiguation
+        //                         , temp);            // output
+        //             strcpy(p, temp);           // temp is NULL-terminated
+        //             p += strlen(temp);         // now p points at the '\0' we just wrote
+        //         }
+        //     }
+        // }
+
+        //safe_push_back(MoveText,'\n';        // Post face with a carriage return
+
     }
 
-    //*p++ = '\n';        // Post face with a carriage return
+    //*p = '\0';              // don�t forget to terminate
 
-    *p = '\0';              // don�t forget to terminate
-
+    return;
 
 }
 
@@ -991,6 +974,9 @@ char Engine::get_piece_char(Piece p) {
             break;
         case Piece::KING:
             return 'K';
+            break;
+        case Piece::NONE:
+            return '?';
             break;
         default:
             assert(0);
@@ -1053,19 +1039,27 @@ void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, FILE* fp) {
     // 
     int nChars;
+    std::string a_move_string;
+    a_move_string.reserve(_MAX_ALGEBRIAC_SIZE);
 
     for (const auto& move : moves) {
 
         bitboards_to_algebraic(Color::BLACK, move, GameState::INPROGRESS
-                            , NULL                      // NO disambiguation
-                            , sz_move_text);            // output
-        strcat(sz_move_text, "\n");
+                            //, NULL                      // NO disambiguation
+                            , a_move_string);            // output
+
+        const char* sz_move_text = a_move_string.c_str();
+
         nChars = fputs(sz_move_text, fp);
         if (nChars == EOF) assert(0);
+
+        nChars = fputc('\n', fp);
+        if (nChars == EOF) assert(0);
+        
         //     ull check_test = ( (move.to & game_board.white_king) || (move.to & game_board.black_king) );
         //     if (check_test != 0ull) {
         //         assert(0);
-        //         *p++ = '+';             // Its a check.
+        //         safe_push_back(MoveText,'+';             // Its a check.
         //     }
     }
     nChars = fputs("\n", fp);
