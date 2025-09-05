@@ -14,6 +14,12 @@ using namespace ShumiChess;
 using namespace std::chrono;
 
 
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
+
+/////////////////////////////////////////////////////////////////////////////////
+
 int rand_int(int min, int max) {
     return min + (rand() % static_cast<int>(max - min + 1));
 }
@@ -27,6 +33,8 @@ Move& get_random_move(vector<Move>& moves) {
 
 GameState play_game(Engine& engine, int& total_moves) {
     GameState result = engine.game_over();
+
+    assert(0);
 
     while (result == GameState::INPROGRESS) {
         vector<Move> all_moves = engine.get_legal_moves();
