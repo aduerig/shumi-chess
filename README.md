@@ -24,7 +24,7 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 ## todo
 * i disabled enpassant and ~~castling~~ temporarily until zobrist hashing works
 * zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
-* See [Brainstorm](doc/Brainstorm.md) for more future directions.
+* See [brainStorm](doc/brainStorm.md) for more future directions.
 
 ## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
