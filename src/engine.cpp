@@ -838,6 +838,14 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
 
     //*p++ = '\n';    // Preface with line return
 
+    if (the_move.piece_type == Piece::NONE) {
+        *p++ = '?';
+        *p++ = '?';
+        *p++ = '?';
+        return;
+    }
+
+
     bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
 
     // switch (the_move.piece_type)
@@ -911,7 +919,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
     {
        *p++ = '=';  
 
-        assert(the_move.promotion != Piece::PAWN);   // certainly a promotion error. Pawns don't promot to pawns
+        assert(the_move.promotion != Piece::PAWN);   // certainly a promotion error. Pawns don't promote to pawns
         thisChar = get_piece_char(the_move.promotion);
         *p++ = thisChar;
 
@@ -933,7 +941,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
         }
     }
 
-      // Note: disambiguation. Fix this. Doesnt work because the legal_moves are for the wrong color!
+      // Note: disambiguation. Fix this. Doesnt work because the legal_moves passed inare of the wrong color!
     if (0) {  // p_legal_moves) {
 
         for (const Move& m : *p_legal_moves) {

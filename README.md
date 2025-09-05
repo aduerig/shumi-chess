@@ -24,6 +24,7 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 ## todo
 * i disabled enpassant and ~~castling~~ temporarily until zobrist hashing works
 * zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
+* See [Brainstorm](docs/Brainstorm.md) for more future directions.
 
 ## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
@@ -34,19 +35,12 @@ This project has no AI to make intelligent chess moves. There is another repo wr
 
 ## current bug log (unless otherwise specified, happens in minimax AI)
   * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
-  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionaly. Related to above? This one seems to alwaus be in left and right columns also.
+  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionally. Related to above? This one seems to alwaus be in left and right columns also.
   * Doesnt recognize three fold position repitition.
   * ~~Magical rook appearence3 bug: Reproduce: Load fen rnb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/RNBQK2R w KQkq - 2 5, then move white Nc3. Extra rook shows up on f1. (in debug now it crashes with debug displays)~~
   * ~~Load fen "4k2r/7p/8/8/8/8/8/4K2R w KQkq - 0 1" make white king move, crash. Same castling bug as above most likley. Happens to black in this FEN.~~
   * Doesnt recognize Enpassent (disallowed)
-  * Hilarous Runaway Deepening error: (happens when it black is about to be checkmated)
-      ...
-      Deepening to 11872
-      Deepening to 11873
-      Went to depth 11873
-      Found 2 items inside of board_values
-      Minimax AI get_move_iterative_deepening chose move: for BLACK player with score of -179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.000000   
-    Bythe way, the above is -DBL_MAX
+  
 
 
 ## building

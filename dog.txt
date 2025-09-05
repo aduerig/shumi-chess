@@ -1,0 +1,38 @@
+    ???              ==      depth is  0 of 1     WHITE  to move  
+        ...h6               ==      depth is  1 of 1
+        ...h5               ==      depth is  1 of 1     WHITE  to move  
+        ...g6               ==      depth is  1 of 1     WHITE  to move  
+        ...g5               ==      depth is  1 of 1     WHITE  to move  
+        ...f6               ==      depth is  1 of 1     WHITE  to move  
+        ...f5               ==      depth is  1 of 1     WHITE  to move  
+        ...e6               ==      depth is  1 of 1     WHITE  to move  
+        ...e5               ==      depth is  1 of 1     WHITE  to move  
+        ...d6               ==      depth is  1 of 1     WHITE  to move  
+        ...d5               ==      depth is  1 of 1     WHITE  to move  
+        ...c6               ==      depth is  1 of 1     WHITE  to move  
+        ...c5               ==      depth is  1 of 1     WHITE  to move  
+        ...b6               ==      depth is  1 of 1     WHITE  to move  
+        ...b5               ==      depth is  1 of 1     WHITE  to move  
+        ...a6               ==      depth is  1 of 1     WHITE  to move  
+        ...a5               ==      depth is  1 of 1     WHITE  to move  
+        ...Nh6              ==      depth is  1 of 1     WHITE  to move  
+        ...Nf6              ==      depth is  1 of 1     WHITE  to move  
+        ...Nc6              ==      depth is  1 of 1     WHITE  to move  
+        ...Na6              ==      depth is  1 of 1     WHITE  to move  
+
+        ...h6
+            ...h6, h3                  ==      depth is  2 of 2     BLACK  to move  
+            ...h6, h4                  ==      depth is  2 of 2     BLACK  to move  
+            ...h6, f3                  ==      depth is  2 of 2     BLACK  to move  
+            ...h6, f4                  ==      depth is  2 of 2     BLACK  to move  
+            ...h6, e3                  ==      depth is  2 of 2     BLACK  to move  
+        ...h6               ==      depth is  1 of 2     WHITE  to move  
+
+        ...h5
+            ...h5, h3             ==      depth is  2 of 2     BLACK  to move  
+        ...h6               ==      depth is  1 of 2     WHITE  to move  
+
+        ...g6               ==      depth is  1 of 2     WHITE  to move  
+            ...g6, h3                    ==      depth is  2 of 2     BLACK  to move  
+
+      

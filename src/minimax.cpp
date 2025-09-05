@@ -119,6 +119,9 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
 
 //
 // Choose the "minimax" AI move.
+// Returns a tuple of:
+//    the score value
+//    the "best move"
 //
 tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta
                                     , unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &board_values
@@ -137,9 +140,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     
     if (state != GameState::INPROGRESS) {
         
-        // Game is over
-        // cout << state;
-        // assert(0);
+        // Game is over.  Here recursive analysis must stop.
         if (state == GameState::BLACKWIN) {
             d_end_value = engine.game_board.turn == ShumiChess::WHITE ? (-DBL_MAX + 1) : (DBL_MAX - 1);
         }
@@ -147,11 +148,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             d_end_value = engine.game_board.turn == ShumiChess::BLACK ? (-DBL_MAX + 1) : (DBL_MAX - 1);
         }
 
-        final_result = make_tuple(d_end_value, Move{});
+        Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
+        final_result = make_tuple(d_end_value, defaultMove);
 
     } else if (depth == 0) {
     
-        // depth == 0 is the deepest level of analysis
+        // depth == 0 is the deepest level of analysis. Here recursive analysis must stop.
         //
         // Evaluate end node "relative score". Relative score is always positive for great positions for the specified player. 
         // Absolute score is always positive for great positions for white.
@@ -164,11 +166,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
         // }
 
-        final_result = make_tuple(d_end_value, Move{});
+        Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
+        final_result = make_tuple(d_end_value, defaultMove);
 
     } else {
         //
-        // Keep anaylyzing moves (recirse another level)
+        // Keep analyzing moves (recurse another level)
         //
         unordered_map<Move, double, MoveHash> moves_with_values;
         std::vector<Move> sorted_moves;
@@ -282,48 +285,9 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     }
 
     #ifdef _DEBUGGING_MOVE_TREE
-        // Debug only
-        if ( (state != GameState::INPROGRESS) || (depth == 0) )
-        {
-            // Write to debug file 
-            int nChars;
-            strcpy(szDebug, "\n\n");
-            nChars = fputs(szDebug, fpStatistics);
-            if (nChars == EOF) assert(0);
 
-            //engine.print_moves_to_file(moves, fpStatistics);
-
-            std::string stemp = gameboard_to_string(engine.game_board);
-            const char* psz = stemp.c_str();
-            nChars = fputs(psz, fpStatistics);
-            if (nChars == EOF) assert(0);
-
-            double d_eval_abs = d_end_value;
-            if (engine.game_board.turn == ShumiChess::BLACK)  d_eval_abs = -d_eval_abs;
-
-            snprintf(szValue, sizeof(szValue), (fabs(d_eval_abs) >= 1e6) ? "%.2e" : "%.2f", d_eval_abs);
-
-            if (engine.game_board.turn == ShumiChess::WHITE) strcpy(szName, " WHITE");
-            else if (engine.game_board.turn == ShumiChess::BLACK) strcpy(szName, " BLACK");
-            else strcpy(szName, "     ");
-
-            //sprintf(szDebug, "      depth  %ld of %ld  abs_Score %+f", (top_depth-depth), top_depth, d_eval_abs);
-            snprintf(szDebug, sizeof(szDebug), "      %8s      depth is  %ld of %ld  %8s  to move  "
-                    , szValue, (top_depth-depth), top_depth, szName);
-
-            nChars = fputs(szDebug, fpStatistics);
-            if (nChars == EOF) assert(0);
-
-            nChars = fputs("\n", fpStatistics);
-            if (nChars == EOF) assert(0);
-
-            engine.bitboards_to_algebraic(engine.game_board.turn, move_last, state
-                , &moves
-                , engine.sz_move_text);
-            nChars = fputs(engine.sz_move_text, fpStatistics);
-            if (nChars == EOF) assert(0);
-
-        }
+        Print_tree_to_file(fpStatistics, move_last, d_end_value, state, depth);
+        
     #endif
 
 
@@ -349,9 +313,10 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     Move best_move;
     double d_best_move_value;
 
-    Move null_move;   // NOTE: Make me go away
+   // NOTE: Make me go away
+    Move null_move = Move{};
 
-    int max_depth = 8;      // Note: because i said so.
+    int max_depth = 6;      // Note: because i said so.
 
 
     // NOTE: this should be an option: depth .vs. time.
@@ -399,6 +364,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     engine.bitboards_to_algebraic(engine.game_board.turn, best_move, (GameState::INPROGRESS)
                 , NULL
                 , engine.sz_move_text);
+
     cout << colorize(AColor::BRIGHT_CYAN,engine.sz_move_text) << "   ";
 
     cout << colorize(AColor::BRIGHT_CYAN, temp + "= score, Minimax AI chose move: for " + color + " to move") << endl;
@@ -406,6 +372,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     cout << colorize(AColor::BRIGHT_GREEN, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
     //cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
+    
     return best_move;
 }
 
@@ -551,3 +518,84 @@ Move MinimaxAI::get_move() {
 //     cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
 //     exit(1);
 // }
+
+
+void MinimaxAI::Print_tree_to_file(FILE* fpStatistics, ShumiChess::Move& move_last, double d_end_value, GameState state
+                                    ,int depth
+                                    )
+{
+
+    #ifdef _DEBUGGING_MOVE_TREE
+    // Debug only
+    //if ( (state != GameState::INPROGRESS) || (depth == 0) )
+    if (1)   // (state != GameState::INPROGRESS) || (depth == 0) )
+    {
+        // Write to debug file 
+        int nChars;
+
+        strcpy(szDebug, "\n");
+        nChars = fputs(szDebug, fpStatistics);
+        if (nChars == EOF) assert(0);
+
+        // Show legal moves from here.
+        //engine.print_moves_to_file(moves, fpStatistics);
+
+        // Show board
+        // std::string stemp = gameboard_to_string(engine.game_board);
+        // const char* psz = stemp.c_str();
+        // nChars = fputs(psz, fpStatistics);
+        // if (nChars == EOF) assert(0);
+        // strcpy(szDebug, "\n");
+        // nChars = fputs(szDebug, fpStatistics);
+        // if (nChars == EOF) assert(0);
+
+        // Cobvert last move to algebriac
+        engine.bitboards_to_algebraic(engine.game_board.turn, move_last, state
+            , NULL
+            , engine.sz_move_text);
+
+        // Tab the thing over based on depth level
+        //int nTabs = top_depth - (top_depth - depth);
+        int nTabs = depth+2;
+        nTabs += -depth;
+        if (nTabs<0) nTabs=0;
+        //(top_depth-depth)
+        //nTabs=0;
+        int nSpaces = nTabs*4;
+        nChars = fprintf(fpStatistics, "%*s", nSpaces, "");
+
+        // compose "..."+move (for Black) or just move (for White)
+        if (engine.game_board.turn == ShumiChess::BLACK) snprintf(szValue, sizeof(szValue), "...%s", engine.sz_move_text);
+        else                                             snprintf(szValue, sizeof(szValue), "%s",    engine.sz_move_text);
+
+        // Show the "..." if black.
+        // print as a single left-justified 8-char field: "...e4   " or "e4     "
+        fprintf(fpStatistics, "%-8.8s", szValue);
+
+        // Show absolute score
+        double d_eval_abs = d_end_value;
+        if (engine.game_board.turn == ShumiChess::BLACK)  d_eval_abs = -d_eval_abs;
+        if (fabs(d_eval_abs) < 0.000000005) d_eval_abs = 0.0;   // Note: Crazy trick to avoid "-0.00"
+        if (d_eval_abs == 0.0) {
+            snprintf(szValue, sizeof(szValue), "==", d_eval_abs);
+        } else {
+            snprintf(szValue, sizeof(szValue), (fabs(d_eval_abs) >= 1e6) ? "end=%.2e" : "val=%.2f", d_eval_abs);
+        }
+        // Show miscellanous information.
+        if (state == GameState::INPROGRESS) {
+            Color thisColor = utility::representation::opposite_color(engine.game_board.turn);
+            if (thisColor == ShumiChess::WHITE) strcpy(szName, " WHITE");
+            else if (thisColor == ShumiChess::BLACK) strcpy(szName, " BLACK");
+            else strcpy(szName, "???");
+            }
+
+        //sprintf(szDebug, "      depth  %ld of %ld  abs_Score %+f", (top_depth-depth), top_depth, d_eval_abs);
+        snprintf(szDebug, sizeof(szDebug), "      %8s      depth is  %ld of %ld  %8s  to move  "
+                , szValue, (top_depth-depth), top_depth, szName);
+
+        nChars = fputs(szDebug, fpStatistics);
+        if (nChars == EOF) assert(0);
+
+    }
+    #endif
+}

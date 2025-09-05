@@ -32,9 +32,9 @@ enum Piece {
 // NOTE: Can this be a class?
 struct Move {
     Color color;
-    Piece piece_type;       // As in "pawn", queen", etc. that is moving.
-    ull from; // bitboard (but with only one bit set)
-    ull to; // bitboard (but with only one bit set)
+    Piece piece_type =  Piece::NONE;       // As in "pawn", queen", etc. that is moving.
+    ull from;   // bitboard (but with only one bit set)
+    ull to;     // bitboard (but with only one bit set)
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
     uint8_t black_castle = 0b00000011;
@@ -43,6 +43,7 @@ struct Move {
     bool is_en_passent_capture = false;
     bool is_castle_move = false;
 
+    // This means two Moves are considered equal if they go from the same square to the same square.
     // NOTE: Is this right ? It only checks the squares, not the pieces on the square.
     bool operator==(const Move &other) const {
         return from == other.from && to == other.to;
