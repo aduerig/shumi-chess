@@ -127,7 +127,7 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
 //    the "best move"
 //
 tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta
-                                    , unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &board_values
+                                    , unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &move_scores
                                     , ShumiChess::Move& move_last, bool debug) {
     assert(depth>=0);
 
@@ -186,10 +186,11 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         std::vector<Move> sorted_moves;
 
         // NOTE: disabled so I can stll keep playing.
-        if (0) {
-        //if (board_values.find(engine.game_board.zobrist_key) != board_values.end()) {
+        // (causes "Magical rook appearence3 bug:", after Ke2)
+        if (0) {  // "temporary fix"
+        //if (move_scores.find(engine.game_board.zobrist_key) != move_scores.end()) {
             // NOTE: do someting with zobrist key? This is probably broken.
-            moves_with_values = board_values[engine.game_board.zobrist_key];
+            moves_with_values = move_scores[engine.game_board.zobrist_key];
 
             // NOTE: Commented out so I can stll keep playing.
             // for (auto& something : moves_with_values) {
@@ -237,7 +238,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             #endif
 
             // Recursive call down another level.
-            auto ret_val = store_board_values_negamax((depth - 1), -beta, -alpha, board_values, m, debug);
+            auto ret_val = store_board_values_negamax((depth - 1), -beta, -alpha, move_scores, m, debug);
             
             // ret_val is a tuple of the score and the move.
             double d_score_value = -get<0>(ret_val);
@@ -264,7 +265,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             #endif
 
             // Digest score result
-            board_values[engine.game_board.zobrist_key][m] = d_score_value;
+            move_scores[engine.game_board.zobrist_key][m] = d_score_value;
             bool b_use_this_move = (d_score_value > d_end_score);
             
             // Note: this should be done as a real random choice. (random over the moves possible). 
@@ -324,7 +325,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     auto required_end_time = start_time + chrono::duration<double>(time);
 
     // Zobrist stuff ?
-    unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> board_values;
+    unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> move_scores;
 
     Move best_move;
     double d_best_move_value;
@@ -332,7 +333,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
    // NOTE: Make me go away
     Move null_move = Move{};
 
-    int max_depth = 6;      // Note: because i said so.
+    int max_depth = 8;      // Note: because i said so.
 
 
     // NOTE: this should be an option: depth .vs. time.
@@ -342,7 +343,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         cout << "Deepening to " << depth << " half moves" << endl;
 
         top_depth = depth;
-        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, board_values, null_move, false);
+        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, move_scores, null_move, false);
 
         // ret_val is a tuple of the score and the move.
         d_best_move_value = get<0>(ret_val);
@@ -356,14 +357,14 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     Move move_chosen = top_level_moves[0];     // Note: Assumes the moves are sorted?
 
     cout << "Went to depth " << (depth - 1) << endl;
-    //cout << "Found " << board_values.size() << " items inside of board_values" << endl;
+    //cout << "Found " << move_scores.size() << " items inside of move_scores" << endl;
 
-    if (board_values.find(engine.game_board.zobrist_key) == board_values.end()) {
-        cout << "Did not find zobrist key in board_values, this is bad" << endl;
+    if (move_scores.find(engine.game_board.zobrist_key) == move_scores.end()) {
+        cout << "Did not find zobrist key in move_scores, this is bad" << endl;
         exit(1);
     }
 
-    // auto stored_move_values = board_values[engine.game_board.zobrist_key];
+    // auto stored_move_values = move_scores[engine.game_board.zobrist_key];
     // for (Move& m : top_level_moves) {
     //     if (stored_move_values.find(m) == stored_move_values.end()) {
     //         cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;

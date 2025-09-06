@@ -46,7 +46,7 @@ public:
 
     std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta
                                             , unordered_map<uint64_t, unordered_map<ShumiChess::Move
-                                            , double, utility::representation::MoveHash>> &board_values
+                                            , double, utility::representation::MoveHash>> &move_scores
                                             , ShumiChess::Move& move_last, bool debug);
     ShumiChess::Move get_move_iterative_deepening(double);
 

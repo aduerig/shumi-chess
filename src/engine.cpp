@@ -842,13 +842,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
                             , std::string& MoveText)            // output
 {
     char thisChar;
-    //thisChar = get_piece_char(the_move.piece_type);
-    //ull correct_bit_board;
-
-    // "p" is tthe pointer to where we are adding in the passed string
-    //char* p = pszMoveText;             // start at beginning of string
-
-    //*p++ = '\n';    // Preface with line return
+   
     MoveText.clear();        // start fresh (does NOT free capacity)
 
 
