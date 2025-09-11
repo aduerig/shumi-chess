@@ -104,13 +104,21 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
-    ShumiChess::Move found_move;
+    ShumiChess::Move found_move = {};
     for (const auto move : last_moves) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
                 to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
             found_move = move;
         }
     }
+
+    // Get, and store in engine, the algebriac (SAN) text form of the user's move.
+    string tempString;
+    python_engine.bitboards_to_algebraic(ShumiChess::WHITE, found_move, ShumiChess::GameState::INPROGRESS, tempString);
+    python_engine.users_last_move = found_move;
+    cout << tempString << endl;
+
+
     python_engine.push(found_move);
 
     return Py_BuildValue("");

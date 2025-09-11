@@ -107,12 +107,13 @@ vector<Move> Engine::get_legal_moves() {
 vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     vector<Move> all_psuedo_legal_moves;
     
-    add_pawn_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
+
     add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_queen_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_king_moves_to_vector(all_psuedo_legal_moves, color); 
     add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_pawn_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_queen_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_king_moves_to_vector(all_psuedo_legal_moves, color); 
     
     return all_psuedo_legal_moves;
 }
@@ -175,7 +176,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
             return GameState::WHITEWIN;
         }
         else {
-            return GameState::DRAW;
+            return GameState::DRAW;    // Stalemate
         }
     }
     // TODO check if this is off by one or something
@@ -847,10 +848,8 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
 
 
     if (the_move.piece_type == Piece::NONE) {
-        safe_push_back(MoveText,'?');
-        safe_push_back(MoveText,'?');
-        safe_push_back(MoveText,'?');
-        
+        //MoveText += "???";
+        MoveText += "none";
     } else {
 
         bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
@@ -910,6 +909,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
             // // Not a checkmate or draw. See if its a check
 
             // Add a check character if needed (NOTE: This is very expensive!)
+            //  NOTE: this causes bugs if d4 from opening position
             // if (in_check_after_move(color_that_moved, the_move)) {
             //     safe_push_back(MoveText,'+');
             // }

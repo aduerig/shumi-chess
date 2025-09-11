@@ -29,12 +29,11 @@ using namespace utility::bit;
     char szDebug[256];
     char szValue[128];
     char szScore[128];
-    char szName[128];
 #endif
 
 //#define RANDOMIZING_EQUAL_MOVES
 
-static void printMoveToFile(const char* p_move_text, Color turn, int depth, int top_depth, bool precede_with_CR);
+static void printMoveToFile(const char* p_move_text, Color turn, int level, bool precede_with_CR);
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -68,7 +67,7 @@ string format_with_commas(T value) {
 }
 
 //
-// Returns " relative score". Relative score is positive for great positions for the specified player. 
+// Returns " relative (negamax) score". Relative score is positive for great positions for the specified player. 
 // Absolute score is always positive for great positions for white.
 //
 double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& moves) {
@@ -104,7 +103,7 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
             // }
         }
 
-        // Mske the "absolute score" a "relative score".
+        // Mske the "absolute score" an "relative (negamax) score".
         assert (d_board_val>=0);
         if (color != for_color) {
             d_board_val *= -1;
@@ -126,33 +125,62 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
 //    the score value
 //    the "best move"
 //
+#define HUGE_SCORE 10000  // A million centipawns!       //  DBL_MAX    // A relative score
+
 tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta
                                     , unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &move_scores
                                     , ShumiChess::Move& move_last, bool debug) {
     assert(depth>=0);
 
+    // These are are the final result, returened from here. A best score, and best move.
+    // If I didnt look at any moves, then the bets move is "default", or "???".
+    double d_end_score = 0.0;
+    Move the_best_move = {};
+
+    // default-initializes the tuple: the double becomes 0.0 and Move is default-constructed.
     std::tuple<double, ShumiChess::Move> final_result;
-    double d_end_score;
+
+    int level = (top_depth-depth);
+    assert (level >= 0);
+    double d_level = static_cast<double>(level);
+    //d_level = 0.0;
 
     nodes_visited++;
     
     // Get all legal moves from this position
     vector<Move> moves = engine.get_legal_moves();
 
+
     GameState state = engine.game_over(moves);
 
     if (state != GameState::INPROGRESS) {
         
         // Game is over.  Here recursive analysis must stop.
-        if (state == GameState::BLACKWIN) {
-            d_end_score = engine.game_board.turn == ShumiChess::WHITE ? (-DBL_MAX + 1) : (DBL_MAX - 1);
+
+        // Relative (negamax): score is from the side-to-move’s perspective.
+        // NOTE: I added "mate-distance bookkeeping":
+        // Use a large mate score reduced by d_level so shorter mates have larger magnitude.
+        if (state == GameState::WHITEWIN) {
+            d_end_score = (engine.game_board.turn == ShumiChess::WHITE)
+                            ? (+HUGE_SCORE - d_level)   // (edge case, normally loser to move)
+                            : (-HUGE_SCORE + d_level);  // side to move is mated
         }
-        else if (state == GameState::WHITEWIN) {
-            d_end_score = engine.game_board.turn == ShumiChess::BLACK ? (-DBL_MAX + 1) : (DBL_MAX - 1);
+        else if (state == GameState::BLACKWIN) {
+            d_end_score = (engine.game_board.turn == ShumiChess::BLACK)
+                            ? (+HUGE_SCORE - d_level)   // (edge case, normally loser to move)
+                            : (-HUGE_SCORE + d_level);  // side to move is mated
+        }
+        else if (state == GameState::DRAW) { 
+            //print_gameboard(engine.game_board);
+            d_end_score = 0.0;    // I am not needed because of initilazation
+        }
+        else
+        {
+            assert(0);
         }
 
-        Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
-        final_result = make_tuple(d_end_score, defaultMove);
+        //Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
+        final_result = make_tuple(d_end_score, the_best_move);
 
     } else if (depth == 0) {
     
@@ -169,8 +197,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
         // }
 
-        Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
-        final_result = make_tuple(d_end_score, defaultMove);
+        //Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
+        final_result = make_tuple(d_end_score, the_best_move);
 
     } else {
         //
@@ -178,11 +206,15 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         //
 
         #ifdef _DEBUGGING_MOVE_TREE
-            engine.bitboards_to_algebraic(engine.game_board.turn, move_last, state, engine.move_string);                // <-- append newline safely
-            printMoveToFile(engine.move_string.c_str(), engine.game_board.turn, depth, top_depth, true);
+            engine.bitboards_to_algebraic(engine.game_board.turn, move_last, state, engine.move_string);         
+            
+            int level = (top_depth-depth);
+            printMoveToFile(engine.move_string.c_str(), engine.game_board.turn, level, true);
         #endif
 
         unordered_map<Move, double, MoveHash> moves_with_values;
+
+        // Local array to store sorted moves
         std::vector<Move> sorted_moves;
 
         // NOTE: disabled so I can stll keep playing.
@@ -222,8 +254,15 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             sorted_moves = moves;
         }
 
-        d_end_score = -DBL_MAX;
-        Move best_move = sorted_moves[0];
+        //
+        // Loop over all moves
+        //
+        d_end_score = -HUGE_SCORE;
+        // Note: by default pick the first move? Or best move from last time?
+        the_best_move =  sorted_moves[0]; 
+
+
+
         for (Move &m : sorted_moves) {
             
             #ifdef _DEBUGGING_PUSH_POP
@@ -238,7 +277,9 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             #endif
 
             // Recursive call down another level.
-            auto ret_val = store_board_values_negamax((depth - 1), -beta, -alpha, move_scores, m, debug);
+            auto ret_val = store_board_values_negamax((depth - 1), -beta, -alpha
+                                                    , move_scores
+                                                    , m, debug);
             
             // ret_val is a tuple of the score and the move.
             double d_score_value = -get<0>(ret_val);
@@ -281,17 +322,27 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
             if (b_use_this_move) {
                 d_end_score = d_score_value;
-                best_move = m;
+                the_best_move = m;
             }
+
+            #define VERY_SMALL 1.0e-9
             alpha = max(alpha, d_end_score);
-            if (alpha >= beta) {
-                // Stop looking for new moves - (break out of the for loop over all moves)
+            // NOTE: Is this the best way to do this comparison?
+            //if ((alpha) >= beta) {
+            if ((alpha) >= (beta+VERY_SMALL)) {   
+                // Stop looking for new moves - (break out of the for loop over all legal moves)
+                #ifdef _DEBUGGING_MOVE_TREE
+                    // Append to the move tree
+                    snprintf(szDebug, sizeof(szDebug), "   alpha= %f,  beta %f      %f", alpha, beta, d_end_score);
+                    int ierr = fputs(szDebug, fpStatistics);
+                    assert (ierr!=EOF);
+                #endif
                 break;
             }
 
         }
 
-        final_result = make_tuple(d_end_score, best_move);
+        final_result = make_tuple(d_end_score, the_best_move);
     }
 
 
@@ -299,7 +350,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
     #ifdef _DEBUGGING_MOVE_TREE
 
-        Print_tree_to_file(fpStatistics, move_last, final_result, state, depth);
+        // int level = (top_depth-depth);   // Increasing positive with analysis
+        assert (level>=0);
+        Add_to_print_tree(fpStatistics
+                            , move_last
+                            , final_result
+                            , state, level);
    
     #endif
 
@@ -307,13 +363,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     return final_result;
 }
 
-
+//
 // NOTE: This the entry point into the C to get a minimax AI move.
-
+//
 Move MinimaxAI::get_move_iterative_deepening(double time) {
-
-
-    //assert(0);
 
     seen_zobrist.clear();
     nodes_visited = 0;
@@ -326,14 +379,15 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     // Zobrist stuff ?
     unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> move_scores;
+    double d_Move_scores[128];
 
-    Move best_move;
+    Move best_move = {};
     double d_best_move_value;
 
-   // NOTE: Make me go away
-    Move null_move = Move{};
+    //Move null_move = Move{};
+    Move null_move = engine.users_last_move;
 
-    int max_depth = 8;      // Note: because i said so.
+    int max_depth = 6;        // Note: because i said so.
 
 
     // NOTE: this should be an option: depth .vs. time.
@@ -343,7 +397,9 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         cout << "Deepening to " << depth << " half moves" << endl;
 
         top_depth = depth;
-        auto ret_val = store_board_values_negamax(depth, -DBL_MAX, DBL_MAX, move_scores, null_move, false);
+        auto ret_val = store_board_values_negamax(depth, -HUGE_SCORE, HUGE_SCORE
+                                                , move_scores
+                                                , null_move, false);
 
         // ret_val is a tuple of the score and the move.
         d_best_move_value = get<0>(ret_val);
@@ -541,8 +597,10 @@ Move MinimaxAI::get_move() {
 
 #ifdef _DEBUGGING_MOVE_TREE
 
-static void printMoveToFile(const char* p_move_text, Color turn, int depth, int top_depth, bool precede_with_CR)
+static void printMoveToFile(const char* p_move_text, Color turn, int level, bool precede_with_CR)
 {
+
+    //int level = (top_depth-depth);
 
     if (precede_with_CR) {
         int ierr = fputc('\n', fpStatistics);
@@ -553,7 +611,8 @@ static void printMoveToFile(const char* p_move_text, Color turn, int depth, int 
     assert (ierr!=EOF);
 
     // Indent the whole thing over based on depth level
-    int nTabs = (top_depth-depth)+2;
+    int nTabs = level+2;
+    
     if (nTabs<0) nTabs=0;
 
     int nSpaces = nTabs*4;
@@ -564,7 +623,8 @@ static void printMoveToFile(const char* p_move_text, Color turn, int depth, int 
     else                                           snprintf(szValue, sizeof(szValue), "%s",    p_move_text);
 
     // print as a single left-justified 8-char field: "...e4   " or "e4     "
-    fprintf(fpStatistics, "%-8.8s", szValue);
+    //                                                 12345678
+    fprintf(fpStatistics, "%-12.8s", szValue);
 
 }
 
@@ -572,12 +632,16 @@ static void printMoveToFile(const char* p_move_text, Color turn, int depth, int 
 ///////////////////////////////////////////////////////////////////////////////////
 
 
-void MinimaxAI::Print_tree_to_file(FILE* fpStatistics, ShumiChess::Move& move_last
-                                    ,std::tuple<double, ShumiChess::Move> final_result    //, double d_end_score
+void MinimaxAI::Add_to_print_tree(FILE* fpStatistics
+                                    , ShumiChess::Move& move_last
+                                    ,std::tuple<double, ShumiChess::Move> final_result
                                     , GameState state
-                                    ,int depth
+                                    ,int level
                                     )
 {
+
+    assert(level>=0);
+    const char* sz_move_text;
 
     double d_end_score = std::get<0>(final_result);                 // first element
     ShumiChess::Move best_move = std::get<1>(final_result);         // second element
@@ -589,34 +653,40 @@ void MinimaxAI::Print_tree_to_file(FILE* fpStatistics, ShumiChess::Move& move_la
         // Write to debug file 
         int nChars;
 
+        // Get algebriac (SAN) text form of the last move.
         engine.bitboards_to_algebraic(engine.game_board.turn, move_last, state, engine.move_string);
-        const char* sz_move_text = engine.move_string.c_str();
+        sz_move_text = engine.move_string.c_str();
 
-        printMoveToFile(sz_move_text, engine.game_board.turn, depth, top_depth, false);
+        printMoveToFile(sz_move_text, engine.game_board.turn, level, false);
 
-
+        // Print the rest of the crap
         strcpy(szValue, "");
 
-        // Show absolute score
+        // Add the best move
+        strcat(szValue, "  best= ");
+        engine.bitboards_to_algebraic(engine.game_board.turn, best_move, state, engine.move_string);
+        sz_move_text = engine.move_string.c_str();
+        strcat(szValue, sz_move_text);
+
+
+       // Show absolute score
         double d_eval_abs_score = d_end_score;
         if (engine.game_board.turn == ShumiChess::BLACK)  d_eval_abs_score = -d_eval_abs_score;
         if (fabs(d_eval_abs_score) < 0.000000005) d_eval_abs_score = 0.0;   // Note: Crazy trick to avoid "-0.00"
 
-
         if (d_eval_abs_score == 0.0) {
-            // simple, approximate centering in the same spot as val=
-            snprintf(szScore, sizeof(szScore), " val=  ==");
+            // approximate centering in the same spot as val=
+            snprintf(szScore, sizeof(szScore), "     ~   ");
         } else {
             snprintf(szScore, sizeof(szScore),
-                    (fabs(d_eval_abs_score) >= 1e6) ? " end=%.2e" : " val=%.2f",
+                    (fabs(d_eval_abs_score) >= 1e6) ? "%8.2e " : "%8.2f ",
                     d_eval_abs_score);
         }
-
-        // Add t "level, top_level" output
         strcat(szValue, szScore);
 
-       snprintf(szScore, sizeof(szScore), " %4d, %4d ", depth, top_depth);
-       strcat(szValue, szScore);
+        // Add the "level
+        snprintf(szScore, sizeof(szScore), " lev= %-4d", level);
+        strcat(szValue, szScore);
 
         // Print the mess.
         nChars = fputs(szValue, fpStatistics);

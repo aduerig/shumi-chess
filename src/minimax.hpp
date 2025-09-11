@@ -54,10 +54,10 @@ public:
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
 
-    void Print_tree_to_file(FILE* fpStatistics
+    void Add_to_print_tree(FILE* fpStatistics
                                     ,ShumiChess::Move& move_last
-                                    ,std::tuple<double, ShumiChess::Move> final_result //, double d_end_score
+                                    ,std::tuple<double, ShumiChess::Move> final_result
                                     , ShumiChess::GameState state
-                                    ,int depth);
+                                    ,int level);
 
 };

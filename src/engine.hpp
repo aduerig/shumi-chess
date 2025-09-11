@@ -79,6 +79,7 @@ class Engine {
         ull get_straight_attacks(ull);
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
+        Move users_last_move = {};
 
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move, GameState state 
                                     //, const vector<ShumiChess::Move>* p_legal_moves   // from this position
