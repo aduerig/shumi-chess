@@ -45,9 +45,15 @@ struct Move {
 
     // This means two Moves are considered equal if they go from the same square to the same square.
     // NOTE: Is this right ? It only checks the squares, not the pieces on the square.
+    // But wait, the piece on the square, and the rest of the board already encoded in the FEN 
+    // which is the "outer map" of the hashTable? I have no idea what im talking about. In any case,
+    // the promotion piece must be added to the equality. Not sure about the "en_passant"?
+
     bool operator==(const Move &other) const {
-        return from == other.from && to == other.to;
+        //return ((from == other.from) && (to == other.to));
+        return ((from == other.from) && (to == other.to) && (promotion == other.promotion));
     }
+    
 };
 
 // ? is this best way to number

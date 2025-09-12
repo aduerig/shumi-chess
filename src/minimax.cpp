@@ -129,6 +129,10 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
 
 tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alpha, double beta
                                     , unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &move_scores
+                                    //, unordered_map<Move, unordered_map<std::string, double, MoveHash>> &move_scores
+                                    //, unordered_map<std::string, unordered_map<Move, double, MoveHash>> &move_scores
+                                    //, unordered_map<std::string, unordered_map<Move, double, MoveHash>>& move_scores,
+                                    //, unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> &move_scores
                                     , ShumiChess::Move& move_last, bool debug) {
     assert(depth>=0);
 
@@ -305,8 +309,17 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
                 }
             #endif
 
-            // Digest score result
-            move_scores[engine.game_board.zobrist_key][m] = d_score_value;
+            // Digest (store) score result
+
+            // string temp_fen_now = engine.game_board.to_fen();
+            // move_scores[temp_fen_now][m] = d_score_value;
+
+            uint64_t someInt = engine.game_board.zobrist_key;
+            move_scores[someInt][m] = d_score_value;
+
+            //move_scores[engine.game_board.zobrist_key][m] = d_score_value;
+
+
             bool b_use_this_move = (d_score_value > d_end_score);
             
             // Note: this should be done as a real random choice. (random over the moves possible). 
@@ -363,9 +376,13 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     return final_result;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
 //
 // NOTE: This the entry point into the C to get a minimax AI move.
+//   It does "Iterative deepening".
 //
+//////////////////////////////////////////////////////////////////////////////////
+
 Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     seen_zobrist.clear();
