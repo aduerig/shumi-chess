@@ -107,14 +107,13 @@ vector<Move> Engine::get_legal_moves() {
 vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     vector<Move> all_psuedo_legal_moves;
     
-
-    add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
     add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
+    add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
     add_pawn_moves_to_vector(all_psuedo_legal_moves, color); 
     add_queen_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
     add_king_moves_to_vector(all_psuedo_legal_moves, color); 
-    
+    add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
+
     return all_psuedo_legal_moves;
 }
 
@@ -294,6 +293,7 @@ void Engine::push(const Move& move) {
     // Manage castling rights
     uint8_t castle_opp = (this->game_board.black_castle << 2) | this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
+    
     this->game_board.black_castle &= move.black_castle;
     this->game_board.white_castle &= move.white_castle;
 }
@@ -397,42 +397,6 @@ void Engine::pop() {
     this->castle_opportunity_history.pop();
 }
 
-// ull& Engine::access_pieces_of_color(Piece piece, Color color) {
-//     switch (piece)
-//     {
-//     case Piece::PAWN:
-//         if (color) {return ref(this->game_board.black_pawns);}
-//         else {return ref(this->game_board.white_pawns);}
-//         break;
-//     case Piece::ROOK:
-//         if (color) {return ref(this->game_board.black_rooks);}
-//         else {return ref(this->game_board.white_rooks);}
-//         break;
-//     case Piece::KNIGHT:
-//         if (color) {return ref(this->game_board.black_knights);}
-//         else {return ref(this->game_board.white_knights);}
-//         break;
-//     case Piece::BISHOP:
-//         if (color) {return ref(this->game_board.black_bishops);}
-//         else {return ref(this->game_board.white_bishops);}
-//         break;
-//     case Piece::QUEEN:
-//         if (color) {return ref(this->game_board.black_queens);}
-//         else {return ref(this->game_board.white_queens);}
-//         break;
-//     case Piece::KING:
-//         if (color) {return ref(this->game_board.black_king);}
-//         else {return ref(this->game_board.white_king);}
-//         break;
-//     default:
-//         cout << "Unexpected piece type in access_pieces_of_color: " << piece << endl;
-//         assert(0);
-//         break;
-//     }
-//     // TODO remove this, i'm just putting it here because it prevents a warning
-//     // NOTE: remove it I agree. 
-//     return this->game_board.white_king;
-// }
 
 ull& Engine::access_pieces_of_color(Piece piece, Color color) {
     switch (piece)
@@ -770,59 +734,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     }
 }
 
-// !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
-ull Engine::get_diagonal_attacks(ull bitboard) {
-    ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-    ull square = utility::bit::bitboard_to_lowest_square(bitboard);
-
-    // up right
-    ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
-    int blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_ne);
-    ull ne_attacks = ~north_east_square_ray[blocked_square] & north_east_square_ray[square];
-
-    // up left
-    ull masked_blockers_nw = all_pieces_but_self & north_west_square_ray[square];
-    blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_nw);
-    ull nw_attacks = ~north_west_square_ray[blocked_square] & north_west_square_ray[square];
-
-    // down right
-    ull masked_blockers_se = all_pieces_but_self & south_east_square_ray[square];
-    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_se);
-    ull se_attacks = ~south_east_square_ray[blocked_square] & south_east_square_ray[square];
-
-    // down left
-    ull masked_blockers_sw = all_pieces_but_self & south_west_square_ray[square];
-    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_sw);
-    ull sw_attacks = ~south_west_square_ray[blocked_square] & south_west_square_ray[square];
-
-    return ne_attacks | nw_attacks | se_attacks | sw_attacks;
-}
-
-ull Engine::get_straight_attacks(ull bitboard) {
-    ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-    ull square = utility::bit::bitboard_to_lowest_square(bitboard);
-
-    // north
-    ull masked_blockers_n = all_pieces_but_self & north_square_ray[square];
-    int blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_n);
-    ull n_attacks = ~north_square_ray[blocked_square] & north_square_ray[square];
-
-    // south 
-    ull masked_blockers_s = all_pieces_but_self & south_square_ray[square];
-    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_s);
-    ull s_attacks = ~south_square_ray[blocked_square] & south_square_ray[square];
-
-    // left
-    ull masked_blockers_w = all_pieces_but_self & west_square_ray[square];
-    blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_w);
-    ull w_attacks = ~west_square_ray[blocked_square] & west_square_ray[square];
-
-    // right
-    ull masked_blockers_e = all_pieces_but_self & east_square_ray[square];
-    blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_e);
-    ull e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
-    return n_attacks | s_attacks | w_attacks | e_attacks;
-}
 //
 
 // inline void safe_push_back(std::string &s, char c) {

@@ -15,7 +15,7 @@ namespace ShumiChess {
 class GameBoard {
     public:
 
-        // Piece locations
+        // Piece location bitboards
         ull black_pawns {};
         ull white_pawns {};
 
@@ -161,5 +161,8 @@ class GameBoard {
         // Piece get_piece_type_on_bitboard_using_templates(ull bitboard);
         Piece get_piece_type_on_bitboard(ull);
         Color get_color_on_bitboard(ull);
+
+        bool are_bit_boards_valid() const;
+        
 };
 } // end namespace ShumiChess

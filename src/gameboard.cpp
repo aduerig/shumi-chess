@@ -16,38 +16,24 @@ namespace ShumiChess {
 
     GameBoard::GameBoard() : 
  
+    // IN this constructer, the bitboards are the input
     #include "gameboardSetup.hpp"
-
-//
-// Comment on bitboards, as used here. You got a "h1 = 0" (right-to-left) file mapping.
-// More verbosely: your bitboards are indexed so that
-// bit 0 corresponds to h1, and within a rank the file index runs h1 to a1 as the square number increases,
-// while the rank index is standard: 0 is rank 1,  rank 8.
-// In chess-programming lingo, you can think of it as: files are mirrored relative to the common "A1 = 0" layout. 
-// So your rank math was fine; only the file needed the file = 7 - (sq & 7) mirror.
-//
-    
-    // black_pawns  (0b00000000'11111111'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_pawns  (0b00000000'00000000'00000000'00000000'00000000'00000000'11111111'00000000),
-    // black_rooks  (0b10000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_rooks  (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000001),
-    // black_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_knights(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // black_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_bishops(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // black_queens (0b00010000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_queens (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00010000),
-    // black_king   (0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
-    // white_king   (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),
 
     {
 
         // !TODO doesn't belong here i don't think.
         ShumiChess::initialize_zobrist();
         set_zobrist();
-        // cout << "GameBoard() constructor being run" << endl;
-    }
+ 
+        bool no_pieces_on_same_square = are_bit_boards_valid();
+        assert(no_pieces_on_same_square);
 
+
+    }
+//
+// IN this constructer, the FEN is the input
+// Makes a "bitboard" Gameboard based on a FEN.
+//
 GameBoard::GameBoard(const std::string& fen_notation) {
     const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
     
@@ -56,7 +42,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     assert(fen_components[1].size() == 1);
     assert(fen_components[2].size() <= 4);
     assert(fen_components[3].size() <= 2);
-
 
     int square_counter = 64;
     for (const char token : fen_components[0]) {
@@ -130,6 +115,12 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
     // fullmove is Used only for display purposes.
     this->fullmove = std::stoi(fen_components[5]);
+
+
+
+    bool no_pieces_on_same_square = are_bit_boards_valid();
+    assert(no_pieces_on_same_square);
+
 
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
     ShumiChess::initialize_zobrist();
@@ -282,4 +273,30 @@ Color GameBoard::get_color_on_bitboard(ull bitboard) {
     // // TODO remove this, i'm just putting it here because it prevents a warning
     // return Color::WHITE;
 }
+
+// Is there only zero or one pieces on eacxh square?
+bool GameBoard::are_bit_boards_valid() const {
+    ull occupied = 0ULL;
+
+    // Make an array of the bit maps.
+    const ull bbs[] = {
+        black_pawns,  white_pawns,
+        black_rooks,  white_rooks,
+        black_knights,white_knights,
+        black_bishops,white_bishops,
+        black_queens, white_queens,
+        black_king,   white_king
+    };
+
+    for (ull bb : bbs) {
+        if (bb & occupied) return false;  // overlap: two+ pieces on a square
+        occupied |= bb;
+    }
+    return true; // no overlaps found
+}
+
+
+
+
+
 } // end namespace ShumiChess
