@@ -5,6 +5,11 @@
 #include <utility.hpp>
 #include <algorithm>
 
+#include <vector>
+#include <unordered_map>
+#include <string>
+#include <limits>
+
 class RandomAI {
 public:
     ShumiChess::Engine engine;
@@ -56,6 +61,13 @@ public:
     double get_value(int depth, int color_multiplier, double alpha, double beta);
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
+
+
+    // std::vector<Move> sort_moves_by_score(
+    //                         const std::unordered_map<std::string, std::unordered_map<Move, double, MoveHash>>& move_scores,
+    //                         const std::string& fen,
+    //                         bool sort_descending
+    //                     );
 
     void Add_to_print_tree(FILE* fpStatistics
                                     ,ShumiChess::Move& move_last

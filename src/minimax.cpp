@@ -268,6 +268,39 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
         sorted_moves = legal_moves;
 
+
+        // put code below   ---->
+
+{
+    const std::string fen = engine.game_board.to_fen();
+    auto row_it = move_scores.find(fen);  // don't create if missing
+    if (row_it != move_scores.end() && !row_it->second.empty()) {
+        const auto& row = row_it->second; // unordered_map<Move,double,...>
+
+        // Pair up each current legal move with its stored score (or a tiny fallback)
+        std::vector<std::pair<Move,double>> a;
+        a.reserve(sorted_moves.size());
+        for (const Move& m : sorted_moves) {
+            auto it = row.find(m);
+            double s = (it != row.end()) ? it->second : std::numeric_limits<double>::lowest();
+            a.emplace_back(m, s);  // unscored moves will end up last
+        }
+
+        // Insertion sort by score (descending)
+        for (size_t i = 1; i < a.size(); ++i) {
+            auto key = a[i];
+            size_t j = i;
+            while (j > 0 && a[j-1].second < key.second) { a[j] = a[j-1]; --j; }
+            a[j] = key;
+        }
+
+        // Write back just the moves in the new order
+        for (size_t i = 0; i < a.size(); ++i) sorted_moves[i] = a[i].first;
+    }
+}
+
+       
+
         //
         // Loop over all moves
         //
@@ -275,8 +308,6 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         // Note: by default pick the first move? Or best move from last time? Does it matter?
         // I guess note, if we are not sorted.
         the_best_move =  sorted_moves[0]; 
-
-
 
         for (Move &m : sorted_moves) {
             
@@ -322,8 +353,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
             // Digest (store) score result
 
-            // string temp_fen_now = engine.game_board.to_fen();
-            // move_scores[temp_fen_now][m] = d_score_value;
+            string temp_fen_now = engine.game_board.to_fen();
+            move_scores[temp_fen_now][m] = d_score_value;
 
             // uint64_t someInt = engine.game_board.zobrist_key;
             // move_scores[someInt][m] = d_score_value;
@@ -421,7 +452,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    int maximum_depth = 3;        // Note: because i said so.
+    int maximum_depth = 7;        // Note: because i said so.
 
 
     // NOTE: this should be an option: depth .vs. time.
@@ -438,6 +469,15 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         // ret_val is a tuple of the score and the move.
         d_best_move_value = get<0>(ret_val);
         best_move = get<1>(ret_val);
+
+
+
+        // std::vector<Move> sort_moves_by_score(
+        //                     move_scores,
+        //                     const std::string& fen,
+        //                     true
+        //                 );
+
 
 
         #ifdef _DEBUGGING_MOVE_TREE
@@ -466,8 +506,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
                     std::string san_string;
                     engine.bitboards_to_algebraic(
-                        ShumiChess::BLACK
-                        //utility::representation::opposite_color(engine.game_board.turn)
+                                                ShumiChess::BLACK
+                                                //utility::representation::opposite_color(engine.game_board.turn)
                                                 ,m
                                                 ,ShumiChess::GameState::INPROGRESS
                                                 ,san_string);
@@ -673,35 +713,35 @@ Move MinimaxAI::get_move() {
 //     exit(1);
 // }
 
-std::vector<Move> sort_moves_by_score(
-                        const std::unordered_map<std::string, std::unordered_map<Move, double, MoveHash>>& move_scores,
-                        const std::string& fen,
-                        bool sort_descending
-                    )
-{
-    auto it = move_scores.find(fen);
-    if (it == move_scores.end() || it->second.empty()) return {};
+// std::vector<Move> sort_moves_by_score(
+//                         const std::unordered_map<std::string, std::unordered_map<Move, double, MoveHash>>& move_scores,
+//                         const std::string& fen,
+//                         bool sort_descending
+//                     )
+// {
+//     auto it = move_scores.find(fen);
+//     if (it == move_scores.end() || it->second.empty()) return {};
 
-    std::vector<std::pair<Move,double>> a;
-    a.reserve(it->second.size());
-    for (const auto& kv : it->second) a.push_back(kv);  // (Move, score)
+//     std::vector<std::pair<Move,double>> a;
+//     a.reserve(it->second.size());
+//     for (const auto& kv : it->second) a.push_back(kv);  // (Move, score)
 
-    for (size_t i = 1; i < a.size(); ++i) {
-        auto key = a[i];
-        size_t j = i;
-        if (sort_descending) {
-            while (j > 0 && a[j-1].second < key.second) { a[j] = a[j-1]; --j; }
-        } else {
-            while (j > 0 && a[j-1].second > key.second) { a[j] = a[j-1]; --j; }
-        }
-        a[j] = key;
-    }
+//     for (size_t i = 1; i < a.size(); ++i) {
+//         auto key = a[i];
+//         size_t j = i;
+//         if (sort_descending) {
+//             while (j > 0 && a[j-1].second < key.second) { a[j] = a[j-1]; --j; }
+//         } else {
+//             while (j > 0 && a[j-1].second > key.second) { a[j] = a[j-1]; --j; }
+//         }
+//         a[j] = key;
+//     }
 
-    std::vector<Move> out;
-    out.reserve(a.size());
-    for (const auto& p : a) out.push_back(p.first);
-    return out;
-}
+//     std::vector<Move> out;
+//     out.reserve(a.size());
+//     for (const auto& p : a) out.push_back(p.first);
+//     return out;
+// }
 
 
 
