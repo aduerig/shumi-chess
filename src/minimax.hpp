@@ -63,11 +63,13 @@ public:
     ShumiChess::Move get_move();
 
 
-    // std::vector<Move> sort_moves_by_score(
-    //                         const std::unordered_map<std::string, std::unordered_map<Move, double, MoveHash>>& move_scores,
-    //                         const std::string& fen,
-    //                         bool sort_descending
-    //                     );
+    void sort_moves_by_score(
+        std::vector<ShumiChess::Move>& moves,  // reorder this in place
+        const std::unordered_map<std::string,
+            std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>
+        >& move_scores,
+        bool sort_descending  // true = highest relative score first
+    );
 
     void Add_to_print_tree(FILE* fpStatistics
                                     ,ShumiChess::Move& move_last

@@ -161,6 +161,9 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
     GameState state = engine.game_over(legal_moves);
 
+
+    // vector<ShumiChess::Move> unquiet_moves;
+
     if (state != GameState::INPROGRESS) {
         
         // Game is over.  Here recursive analysis must stop.
@@ -197,6 +200,26 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         //
         // Evaluate end node "relative score". Relative score is always positive for great positions for the specified player. 
         // Absolute score is always positive for great positions for white.
+
+
+        // bool in_check = engine.is_king_in_check(engine.game_board.turn);
+
+        // unquiet_moves = engine.reduce_to_unquiet_moves(legal_moves);
+        // if (unquiet_moves.size() > 0) {
+            
+        //     // stand-pat cutoff
+        //     // If d_end_score ≥ beta ⇒ return d_end_score (fail-high).
+        //     if (d_end_score >= beta) {
+        //         return { d_end_score, Move{} };
+        //     }
+
+        //     // raise alpha to stand-pat, then search captures/promotions only
+        //     alpha = std::max(alpha, d_end_score);
+
+        //     // Code to conutine search, but over unquiet_moves for each leaf, not legal_moves for each leaf.
+
+        // }
+
         double d_end_score = evaluate_board(engine.game_board.turn, legal_moves);
 
         // Debug   NOTE: this if check reduces speed
@@ -223,83 +246,15 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             printMoveToFile(engine.move_string.c_str(), engine.game_board.turn, level, true);
         #endif
 
-        //unordered_map<Move, double, MoveHash> moves_with_values;
-
-        // NOTE: disabled so I can stll keep playing.
-        // (causes "Magical rook appearence3 bug:", after Ke2)
-        // if (0) {  // "temporary fix"
-        // //if (move_scores.find(engine.game_board.zobrist_key) != move_scores.end()) {
-        //     // NOTE: do someting with zobrist key? This is probably broken.
-        //     moves_with_values = move_scores[engine.game_board.zobrist_key];
-
-        //     // NOTE: Commented out so I can stll keep playing.
-        //     // for (auto& something : moves_with_values) {
-        //     //     Move looking = something.first;
-        //     //     if (std::find(moves.begin(), moves.end(), looking) == moves.end()) {
-        //     //         print_gameboard(engine.game_board);
-        //     //         cout << "Move shouldnt be legal: " << move_to_string(looking) << " at depth 1" << endl;
-        //     //         exit(1);
-        //     //     }
-        //     // }
-
-        //     std::vector<std::pair<Move, double>> vec(moves_with_values.begin(), moves_with_values.end());
-
-        //     // Sort moves by best to worst
-        //     std::sort(vec.begin(), vec.end(), 
-        //         [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
-        //             return (a.second > b.second);
-        //         });
-
-        //     for (const auto& pair : vec) {
-        //         sorted_moves.push_back(pair.first);
-        //     }
-        //     for (Move& m : legal_moves) {
-        //         if (moves_with_values.find(m) == moves_with_values.end()) {
-        //             sorted_moves.push_back(m);
-        //         }
-        //     }
-        // } else {   // NOTE: Is this the normal path?
-        //     sorted_moves = legal_moves;
-        // }
 
 
-        // Local array to store sorted moves
-        std::vector<Move> sorted_moves;
-
+        std::vector<Move> sorted_moves;              // Local array to store sorted moves
         sorted_moves = legal_moves;
 
 
-        // put code below   ---->
-
-{
-    const std::string fen = engine.game_board.to_fen();
-    auto row_it = move_scores.find(fen);  // don't create if missing
-    if (row_it != move_scores.end() && !row_it->second.empty()) {
-        const auto& row = row_it->second; // unordered_map<Move,double,...>
-
-        // Pair up each current legal move with its stored score (or a tiny fallback)
-        std::vector<std::pair<Move,double>> a;
-        a.reserve(sorted_moves.size());
-        for (const Move& m : sorted_moves) {
-            auto it = row.find(m);
-            double s = (it != row.end()) ? it->second : std::numeric_limits<double>::lowest();
-            a.emplace_back(m, s);  // unscored moves will end up last
-        }
-
-        // Insertion sort by score (descending)
-        for (size_t i = 1; i < a.size(); ++i) {
-            auto key = a[i];
-            size_t j = i;
-            while (j > 0 && a[j-1].second < key.second) { a[j] = a[j-1]; --j; }
-            a[j] = key;
-        }
-
-        // Write back just the moves in the new order
-        for (size_t i = 0; i < a.size(); ++i) sorted_moves[i] = a[i].first;
-    }
-}
-
-       
+        // Sort the moves by relative score (a descending sort over doubles)
+        // "iterive deepining"
+        sort_moves_by_score(sorted_moves, move_scores, true);
 
         //
         // Loop over all moves
@@ -359,6 +314,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             // uint64_t someInt = engine.game_board.zobrist_key;
             // move_scores[someInt][m] = d_score_value;
 
+            // Note: Should this comparison be done with a fuzz?
             bool b_use_this_move = (d_score_value > d_end_score);
             
             // Note: this should be done as a real random choice. (random over the moves possible). 
@@ -413,6 +369,36 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     #endif
 
 
+
+    #ifdef _DEBUGGING_MOVE_TREE
+        if (depth==0) {
+
+
+            // vector<ShumiChess::Move> unquiet_moves;
+            // unquiet_moves = engine.reduce_to_unquiet_moves(legal_moves);
+
+
+            // for (const ShumiChess::Move& mv : legal_moves) {
+            //     // ...
+            //     //engine.bitboards_to_algebraic(engine.game_board.turn, mv, (GameState::INPROGRESS), engine.move_string);       
+            //     print_move
+            // }
+
+            bool in_check = engine.is_king_in_check(engine.game_board.turn);
+
+            sprintf(szDebug, "EVAL:%i %i\n", in_check, unquiet_moves.size());
+            int nChars = fputs(szDebug, fpStatistics);
+            if (nChars == EOF) assert(0);
+            engine.print_moves_to_file(unquiet_moves, (4+level), fpStatistics);
+
+            
+        }
+    #endif
+
+
+
+
+
     return final_result;
 }
 
@@ -438,8 +424,6 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     auto required_end_time = start_time + chrono::duration<double>(time);
 
     // Results of previous searches
-    double d_Move_scores[128];   // Note: make me go away.
-
     //unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> move_scores;
     unordered_map<std::string, unordered_map<Move, double, MoveHash>> move_scores;
 
@@ -452,8 +436,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    int maximum_depth = 7;        // Note: because i said so.
-
+    int maximum_depth = 2;        // Note: because i said so.
+    assert(maximum_depth>=1);
 
     // NOTE: this should be an option: depth .vs. time.
     int depth = 1;
@@ -470,66 +454,22 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
         d_best_move_value = get<0>(ret_val);
         best_move = get<1>(ret_val);
 
-
-
-        // std::vector<Move> sort_moves_by_score(
-        //                     move_scores,
-        //                     const std::string& fen,
-        //                     true
-        //                 );
-
-
-
         #ifdef _DEBUGGING_MOVE_TREE
 
-            // sprintf(szValue, "\n---------------------------------------------------------------------------");
-            // fprintf(fpStatistics, "%s", szValue);
-            // size_t iFENS = move_scores.size();    // This returns the number of FEN rows.
-            // sprintf(szValue, "\n\n  nFENS = %i", (int)iFENS);
-            // fprintf(fpStatistics, "%s", szValue);
-    
-            fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
-            fprintf(fpStatistics, "\n  nFENS = %zu\n", move_scores.size());  // %zu for size_t
-
-            // cout << endl;
-            // print_gameboard(engine.game_board);
-
-            for (const auto& fen_row : move_scores) {
-                const auto& moves_map = fen_row.second;
-
-                // Optional: print the FEN once per block
-                fprintf(fpStatistics, "\nFEN: %s\n", fen_row.first.c_str());
-
-                for (const auto& kv : moves_map) {
-                    const Move& m = kv.first;
-                    double score  = kv.second;
-
-                    std::string san_string;
-                    engine.bitboards_to_algebraic(
-                                                ShumiChess::BLACK
-                                                //utility::representation::opposite_color(engine.game_board.turn)
-                                                ,m
-                                                ,ShumiChess::GameState::INPROGRESS
-                                                ,san_string);
-
-                    fprintf(fpStatistics, "%s  %.6f\n", san_string.c_str(), score);
-                }
-            }
-            fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
-
-
+            //print_move_scores_to_file(fpStatistics, move_scores);
 
         #endif
 
 
         depth++;
     //} while (chrono::high_resolution_clock::now() <= required_end_time);
-    } while (depth < maximum_depth);
-
-    vector<Move> top_level_moves = engine.get_legal_moves();
-    Move move_chosen = top_level_moves[0];     // Note: Assumes the moves are sorted?
+    } while (depth < (maximum_depth+1));
 
     cout << "Went to depth " << (depth - 1) << endl;
+
+    //vector<Move> top_level_moves = engine.get_legal_moves();
+    //Move move_chosen = top_level_moves[0];     // Note: Assumes the moves are sorted?
+
     //cout << "Found " << move_scores.size() << " items inside of move_scores" << endl;
 
     // if (move_scores.find(engine.game_board.zobrist_key) == move_scores.end()) {
@@ -549,7 +489,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     // Convert to absolute score
     double d_best_move_value_abs = d_best_move_value;
     if (engine.game_board.turn == Color::BLACK) d_best_move_value_abs = -d_best_move_value_abs;
-    string temp = to_string(d_best_move_value_abs);
+    
+    string abs_score_string = to_string(d_best_move_value_abs);
 
     engine.bitboards_to_algebraic(engine.game_board.turn, best_move, (GameState::INPROGRESS)
                 //, NULL
@@ -557,7 +498,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
-    cout << colorize(AColor::BRIGHT_CYAN, temp + "= score, Minimax AI chose move: for " + color + " to move") << endl;
+    cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + "= score, Minimax AI chose move: for " + color + " to move") << endl;
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
     cout << colorize(AColor::BRIGHT_GREEN, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
@@ -652,6 +593,10 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
 //
 
 Move MinimaxAI::get_move(int depth) {
+
+    assert(0);      // exploratory assert
+
+
     auto start_time = chrono::high_resolution_clock::now();
 
     nodes_visited = 0;
@@ -713,35 +658,84 @@ Move MinimaxAI::get_move() {
 //     exit(1);
 // }
 
-// std::vector<Move> sort_moves_by_score(
-//                         const std::unordered_map<std::string, std::unordered_map<Move, double, MoveHash>>& move_scores,
-//                         const std::string& fen,
-//                         bool sort_descending
-//                     )
-// {
-//     auto it = move_scores.find(fen);
-//     if (it == move_scores.end() || it->second.empty()) return {};
+// Sort the moves by relative score (a descending sort over doubles)
+void MinimaxAI::sort_moves_by_score(
+    std::vector<ShumiChess::Move>& moves,  // reorder this in place
+    const std::unordered_map<std::string,
+        std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>
+    >& move_scores,
+    bool sort_descending  // true = highest score first
+)
 
-//     std::vector<std::pair<Move,double>> a;
-//     a.reserve(it->second.size());
-//     for (const auto& kv : it->second) a.push_back(kv);  // (Move, score)
+{
+    const std::string fen = engine.game_board.to_fen();
+    auto row_it = move_scores.find(fen);  // don't create if missing
+    if (row_it != move_scores.end() && !row_it->second.empty()) {
+        const auto& row = row_it->second; // unordered_map<Move,double,...>
 
-//     for (size_t i = 1; i < a.size(); ++i) {
-//         auto key = a[i];
-//         size_t j = i;
-//         if (sort_descending) {
-//             while (j > 0 && a[j-1].second < key.second) { a[j] = a[j-1]; --j; }
-//         } else {
-//             while (j > 0 && a[j-1].second > key.second) { a[j] = a[j-1]; --j; }
-//         }
-//         a[j] = key;
-//     }
+        // Pair up each current legal move with its stored score (or a tiny fallback)
+        std::vector<std::pair<Move,double>> a;
+        a.reserve(moves.size());
+        for (const Move& m : moves) {
+            auto it = row.find(m);
+            double s = (it != row.end()) ? it->second : std::numeric_limits<double>::lowest();
+            a.emplace_back(m, s);  // unscored moves will end up last
+        }
 
-//     std::vector<Move> out;
-//     out.reserve(a.size());
-//     for (const auto& p : a) out.push_back(p.first);
-//     return out;
-// }
+        // Insertion sort by score (descending)
+        for (size_t i = 1; i < a.size(); ++i) {
+            auto key = a[i];
+            size_t j = i;
+            while (j > 0 && a[j-1].second < key.second) { a[j] = a[j-1]; --j; }
+            a[j] = key;
+        }
+
+        // Write back just the moves, to sorted_moves, in the new order
+        for (size_t i = 0; i < a.size(); ++i) moves[i] = a[i].first;
+    }
+}
+
+        //unordered_map<Move, double, MoveHash> moves_with_values;
+
+        // NOTE: disabled so I can stll keep playing.
+        // (causes "Magical rook appearence3 bug:", after Ke2)
+        // if (0) {  // "temporary fix"
+        // //if (move_scores.find(engine.game_board.zobrist_key) != move_scores.end()) {
+        //     // NOTE: do someting with zobrist key? This is probably broken.
+        //     moves_with_values = move_scores[engine.game_board.zobrist_key];
+
+        //     // NOTE: Commented out so I can stll keep playing.
+        //     // for (auto& something : moves_with_values) {
+        //     //     Move looking = something.first;
+        //     //     if (std::find(moves.begin(), moves.end(), looking) == moves.end()) {
+        //     //         print_gameboard(engine.game_board);
+        //     //         cout << "Move shouldnt be legal: " << move_to_string(looking) << " at depth 1" << endl;
+        //     //         exit(1);
+        //     //     }
+        //     // }
+
+        //     std::vector<std::pair<Move, double>> vec(moves_with_values.begin(), moves_with_values.end());
+
+        //     // Sort moves by best to worst
+        //     std::sort(vec.begin(), vec.end(), 
+        //         [](const std::pair<Move, double>& a, const std::pair<Move, double>& b) {
+        //             return (a.second > b.second);
+        //         });
+
+        //     for (const auto& pair : vec) {
+        //         sorted_moves.push_back(pair.first);
+        //     }
+        //     for (Move& m : legal_moves) {
+        //         if (moves_with_values.find(m) == moves_with_values.end()) {
+        //             sorted_moves.push_back(m);
+        //         }
+        //     }
+        // } else {   // NOTE: Is this the normal path?
+        //     sorted_moves = legal_moves;
+        // }
+
+
+
 
 
 
@@ -847,6 +841,52 @@ void MinimaxAI::Add_to_print_tree(FILE* fpStatistics
     }
 
 }
+
+
+void MinimaxAI::print_move_scores_to_file(
+    FILE* fpStatistics,
+    const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores
+)
+{
+
+    // sprintf(szValue, "\n---------------------------------------------------------------------------");
+    // fprintf(fpStatistics, "%s", szValue);
+    // size_t iFENS = move_scores.size();    // This returns the number of FEN rows.
+    // sprintf(szValue, "\n\n  nFENS = %i", (int)iFENS);
+    // fprintf(fpStatistics, "%s", szValue);
+
+    fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
+    fprintf(fpStatistics, "\n  nFENS = %zu\n", move_scores.size());  // %zu for size_t
+
+    // cout << endl;
+    // print_gameboard(engine.game_board);
+
+    for (const auto& fen_row : move_scores) {
+        const auto& moves_map = fen_row.second;
+
+        // Optional: print the FEN once per block
+        fprintf(fpStatistics, "\nFEN: %s\n", fen_row.first.c_str());
+
+        for (const auto& kv : moves_map) {
+            const Move& m = kv.first;
+            double score  = kv.second;
+
+            std::string san_string;
+            engine.bitboards_to_algebraic(
+                                        ShumiChess::BLACK
+                                        //utility::representation::opposite_color(engine.game_board.turn)
+                                        ,m
+                                        ,ShumiChess::GameState::INPROGRESS
+                                        ,san_string);
+
+            fprintf(fpStatistics, "%s  %.6f\n", san_string.c_str(), score);
+        }
+    }
+    fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
+
+
+}
+
 
 #endif
 

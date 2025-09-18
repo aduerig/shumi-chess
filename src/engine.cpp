@@ -941,7 +941,7 @@ void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 }
 
 // NO disambiguation
-void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, FILE* fp) {
+void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp) {
     // 
     int nChars;
     std::string a_move_string;
@@ -954,6 +954,12 @@ void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, FILE* fp
                             , a_move_string);            // output
 
         const char* sz_move_text = a_move_string.c_str();
+
+
+        assert (nTabs>=0);
+        for (int i = 0; i < nTabs; ++i) {
+            if (fputc('\t', fp) == EOF) assert(0);
+        }
 
         nChars = fputs(sz_move_text, fp);
         if (nChars == EOF) assert(0);
@@ -980,6 +986,22 @@ void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, FILE* fp
 
 }
 
+//
+// Have an object? push_back(obj) / push_back(std::move(obj)).
+// Have constructor args? emplace_back(args...).
+//
+vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves) {
+
+    vector<ShumiChess::Move> vReturn;
+    for (const ShumiChess::Move& mv : moves) {
+        if (mv.capture != ShumiChess::Piece::NONE
+            || mv.promotion != ShumiChess::Piece::NONE)  // include promotions too if you want
+        {
+            vReturn.push_back(mv); // or: vReturn.emplace_back(mv);
+        }
+    }
+    return vReturn;
+}
 
 bool Engine::flip_a_coin(void) {
     return (rand() & 1) != 0;   // 0 or 1 ? false or true
