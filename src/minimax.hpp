@@ -77,4 +77,12 @@ public:
                                     , ShumiChess::GameState state
                                     ,int level);
 
+
+    void print_move_scores_to_file(
+        FILE* fpStatistics,
+        const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores
+    );
+
+
+
 };

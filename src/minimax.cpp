@@ -220,7 +220,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         // Keep analyzing moves (recurse another level)
         //
 
-        #ifdef _DEBUGGING_MOVE_TREE
+        #ifdef _DEBUGGING_MOVE_TREE7
             engine.bitboards_to_algebraic(engine.game_board.turn, move_last, state, engine.move_string);         
             
             int level = (top_depth-depth);
@@ -354,7 +354,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
 
 
-    #ifdef _DEBUGGING_MOVE_TREE
+    #ifdef _DEBUGGING_MOVE_TREE8
         if (depth==0) {
 
 
