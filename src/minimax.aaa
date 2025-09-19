@@ -142,6 +142,9 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
                                     , bool debug) {
     //assert(depth>=0);
 
+    nodes_visited++;
+    
+
     // These are are the final result, returned from here. A best score, and best move.
     // If I didnt look at any moves, then the best move is, default, or "none".
     double d_end_score = 0.0;
@@ -154,16 +157,17 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
     assert (level >= 0);
     double d_level = static_cast<double>(level);
     //d_level = 0.0;   // Stupid debug. Delete me.
-
-    nodes_visited++;
-    
+     
     vector<Move> legal_moves = engine.get_legal_moves();
+
+    std::vector<Move> moves_to_loop_over = legal_moves;     // By default
+
+
 
     GameState state = engine.game_over(legal_moves);
 
-    vector<Move> moves_to_loop_over = legal_moves;
 
-    // vector<ShumiChess::Move> unquiet_moves;
+    std::vector<ShumiChess::Move> unquiet_moves;
 
     if (state != GameState::INPROGRESS) {
         
@@ -194,28 +198,55 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
         //Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
         final_result = make_tuple(d_end_score, the_best_move);
-        return final_result;
 
+        return final_result;
 
 
     } else if (depth <= 0) {
 
-        // depth == 0 is the deepest level of analysis. Here recursive analysis must stop.
-        //
-        // Evaluate end node "relative score". Relative score is always positive for great positions for the specified player. 
-        // Absolute score is always positive for great positions for white.
+
+        bool in_check = engine.is_king_in_check(engine.game_board.turn);
 
 
-          double d_end_score = evaluate_board(engine.game_board.turn, legal_moves);
+        if (in_check) {
+            // when mover in check, by definition all legal moves are check escapes, and all escapes are legal moves.
+            // This is done by get_legal_moves()
 
-        // print_gameboard(engine.game_board);
+            moves_to_loop_over = legal_moves;   
 
-        //Move defaultMove = Move{};       // Use a default move", as there is no "best move" in this position. Its the end.
-        final_result = make_tuple(d_end_score, the_best_move);
+            // decrement depth, and 
+            // continue recursive search. 
+            
 
-        return final_result;
+        } else {
 
-    } else {
+            // Evaluate posistion
+            d_end_score = evaluate_board(engine.game_board.turn, legal_moves);
+
+            // stand-pat cutoff
+            // If d_end_score ≥ beta ⇒ return d_end_score (fail-high).
+            if (d_end_score >= beta) {
+                return { d_end_score, Move{} };
+            }
+
+            // raise alpha to stand-pat, then search captures/promotions only
+            alpha = std::max(alpha, d_end_score);
+
+            unquiet_moves = engine.reduce_to_unquiet_moves(legal_moves);
+
+            // End analsisi if no unquiet moves
+            if (unquiet_moves.size() == 0) {
+                  return { d_end_score, Move{} };
+            }
+            
+
+            moves_to_loop_over = unquiet_moves;   
+
+
+    }
+
+
+    //{
         //
         // Keep analyzing moves (recurse another level)
         //
@@ -228,16 +259,16 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         #endif
 
 
-
         std::vector<Move> sorted_moves;              // Local array to store sorted moves
-
-
+        
+        
+        
         //sorted_moves = legal_moves;
         sorted_moves = moves_to_loop_over;
 
 
         // Sort the moves by relative score (a descending sort over doubles)
-        // "iterive deepining"
+        // "iterative deepening"
         sort_moves_by_score(sorted_moves, move_scores, true);
 
         //
@@ -336,7 +367,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
         // Assemble return
         final_result = make_tuple(d_end_score, the_best_move);
-    }
+    
+    //}
 
 
 
@@ -378,10 +410,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
             
         }
     #endif
-
-
-
-
+    
+    }
 
     return final_result;
 }
@@ -420,7 +450,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    int maximum_depth = 4;        // Note: because i said so.
+    int maximum_depth = 5;        // Note: because i said so.
     assert(maximum_depth>=1);
 
     // NOTE: this should be an option: depth .vs. time.
