@@ -196,7 +196,7 @@ void Engine::push(const Move& move) {
     // Switch color
     this->game_board.turn = utility::representation::opposite_color(move.color);
 
-    game_board.zobrist_key ^= zobrist_side;
+    //game_board.zobrist_key ^= zobrist_side;
 
     // Update full move "clock" (used for display)
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
@@ -219,21 +219,21 @@ void Engine::push(const Move& move) {
     int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
 
     // zobrist_key update (for normal moves)
-    game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
+    //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
 
     // Put the piece where it will go.
     if (move.promotion == Piece::NONE) {
 
         moving_piece |= move.to;
 
-        game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
+        //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
     }
     else {
         // Promote the piece
         ull& promoted_piece = access_pieces_of_color(move.promotion, move.color);
         promoted_piece |= move.to;
 
-        game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
+        //game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }
 
     if (move.capture != Piece::NONE) {
@@ -245,13 +245,13 @@ void Engine::push(const Move& move) {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
+            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
         } else {
             // Regular capture
 
             ull& where_I_was = access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color));
             where_I_was &= ~move.to;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
+            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
 
@@ -305,7 +305,7 @@ void Engine::pop() {
     const Move move = this->move_history.top();
     this->move_history.pop();
 
-    game_board.zobrist_key ^= zobrist_side;
+    //game_board.zobrist_key ^= zobrist_side;
 
     this->game_board.turn = move.color;
 
@@ -322,19 +322,19 @@ void Engine::pop() {
     moving_piece &= ~move.to;
     moving_piece |= move.from;
 
-    game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
+    //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
 
     // pop pawn promotions
     if (move.promotion == Piece::NONE) {
         // Not a pawn promotion
-        game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
+        //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
     }
     else {
         // Is a pawn promotion
         ull& promoted_piece = access_pieces_of_color(move.promotion, move.color);
         promoted_piece &= ~move.to;
 
-        game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
+        //game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
     }
 
     if (move.capture != Piece::NONE) {
@@ -343,14 +343,14 @@ void Engine::pop() {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             // NOTE: here the statements are reversed from the else. What gives?
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
+            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
           
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
      
         } else {
 
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
-            game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
+            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
         }
     } else if (move.is_castle_move) {
         
@@ -940,6 +940,9 @@ void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 
 }
 
+
+
+
 // NO disambiguation
 void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp) {
     // 
@@ -986,10 +989,9 @@ void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTab
 
 }
 
-//
+
 // Have an object? push_back(obj) / push_back(std::move(obj)).
 // Have constructor args? emplace_back(args...).
-//
 vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves) {
 
     vector<ShumiChess::Move> vReturn;
@@ -1011,5 +1013,10 @@ int Engine::bits_in(ull bitboard) {
     auto bs = bitset<64>(bitboard);
     return (int) bs.count();
 }
+
+
+
+
+
 
 } // end namespace ShumiChess

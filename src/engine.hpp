@@ -151,6 +151,9 @@ class Engine {
         void print_bitboard_to_file(ull bb, FILE* fp);
         void print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp);
 
+
+
+
         vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
 
 

@@ -22,8 +22,8 @@ namespace ShumiChess {
     {
 
         // !TODO doesn't belong here i don't think.
-        ShumiChess::initialize_zobrist();
-        set_zobrist();
+        //ShumiChess::initialize_zobrist();
+        //set_zobrist();
  
         bool no_pieces_on_same_square = are_bit_boards_valid();
         assert(no_pieces_on_same_square);
@@ -123,8 +123,8 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
 
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
-    ShumiChess::initialize_zobrist();
-    set_zobrist();
+    //ShumiChess::initialize_zobrist();
+    //set_zobrist();
 }
 
 

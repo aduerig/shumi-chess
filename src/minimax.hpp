@@ -71,13 +71,15 @@ public:
         bool sort_descending  // true = highest relative score first
     );
 
-    void Add_to_print_tree(FILE* fpStatistics
+    void Add_result_to_print_tree(FILE* fpStatistics
                                     ,ShumiChess::Move& move_last
                                     ,std::tuple<double, ShumiChess::Move> final_result
                                     , ShumiChess::GameState state
-                                    ,int level);
+                                    ,int level
+                                    ,int depth);
 
 
+    void print_move_to_print_tree(ShumiChess::Move m, int depth);
     void print_move_scores_to_file(
         FILE* fpStatistics,
         const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores
