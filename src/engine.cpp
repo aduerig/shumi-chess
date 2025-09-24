@@ -277,6 +277,7 @@ void Engine::pushMove(const Move& move) {
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<0);
                 friendly_rooks |= (1ULL<<2);
+                assert (this->game_board.white_castle);
             } else {
                 friendly_rooks &= ~(1ULL<<56);
                 friendly_rooks |= (1ULL<<58);
@@ -294,6 +295,7 @@ void Engine::pushMove(const Move& move) {
     uint8_t castle_opp = (this->game_board.black_castle << 2) | this->game_board.white_castle;
     this->castle_opportunity_history.push(castle_opp);
     
+    // Manage castling status
     this->game_board.black_castle &= move.black_castle;
     this->game_board.white_castle &= move.white_castle;
 }
@@ -387,13 +389,15 @@ void Engine::popMove() {
         }
     }
 
-    // pop enpassent status
+    // pop enpassent status off the top of the stack
     this->game_board.en_passant = this->en_passant_history.top();
     this->en_passant_history.pop();
     
-    // pop castle status
-    this->game_board.black_castle = this->castle_opportunity_history.top() >> 2;
-    this->game_board.white_castle = this->castle_opportunity_history.top() & 0b0011;
+    // pop castle status off the top of the stack (after merging)
+    this->game_board.black_castle = this->castle_opportunity_history.top() >> 2;      // shift 
+    this->game_board.white_castle = this->castle_opportunity_history.top() & 0b0011;  // remove black castle bits
+    
+    // pop castle opportunity history
     this->castle_opportunity_history.pop();
 }
 

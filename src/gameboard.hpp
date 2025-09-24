@@ -37,7 +37,7 @@ class GameBoard {
         // other information about the board state
         Color turn;
 
-        //1<<1 for queenside, 1<<0 for kingside 
+        //1<<1 for queenside, 1<<0 for kingside (other bits not used)
         uint8_t black_castle = 0b00000000;
         uint8_t white_castle = 0b00000000;
 
@@ -51,7 +51,7 @@ class GameBoard {
 
         uint64_t zobrist_key {0};
 
-        // move clock
+        // move clocks
         uint8_t halfmove;  // Used only to apply the "fifty-move draw" rule in chess
         uint8_t fullmove;  // Used only for display purposes.
 
