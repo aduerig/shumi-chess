@@ -59,3 +59,5 @@ callgrind.out.*
 temp
 Statistics.txt
 debug.dat
+Untitled-1.cpp
+crash.log

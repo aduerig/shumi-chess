@@ -44,7 +44,7 @@ GameState play_game(Engine& engine, int& total_moves) {
             break;
         }
         total_moves++;
-        engine.push(get_random_move(all_moves));
+        engine.pushMove(get_random_move(all_moves));
         result = engine.game_over();
     }
     engine.reset_engine();

@@ -70,38 +70,41 @@ string format_with_commas(T value) {
     return ss.str();
 }
 
+
+
+
 //
 // Returns " relative (negamax) score". Relative score is positive for great positions for the specified player. 
 // Absolute score is always positive for great positions for white.
 //
-double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& moves) {
+double MinimaxAI::evaluate_board(Color for_color, ShumiChess::Move& last_move, vector<ShumiChess::Move>& moves) {
     double d_board_val_adjusted = 0.0;
 
 
+    // Loop over the two colors
     for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
-        double d_board_val = 0.0;
+         int cp_board_score_sum = 0;
 
-        // Add up the values for each piece
-        for (const auto& i : piece_values) {
+        // Add up the scores for each piece
+        //for (const auto& i : piece_values) {
+        for (Piece piece_type = Piece::PAWN;
+            piece_type <= Piece::QUEEN;
+            piece_type = static_cast<Piece>(static_cast<int>(piece_type) + 1))
+        {    
             
-            // Obtain piece type and value
-            Piece piece_type;
-            double piece_value;
-            tie(piece_type, piece_value) = i;
-            
-            // Since the king can never leave the board (engine does not allow), and there is an infinite score checked earlier we can just skip kings
+            // Since the king can never leave the board (engine does not allow), 
+            // and there is a huge score checked earlier we can just skip kings. NOTE: this not needed. 
             if (piece_type == Piece::KING) continue;
 
             // Get bitboard of all pieces on board of this type and color
-            // NOTE: whatabout pairs of knights etc. We handle these all toegether? I think we do!
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
 
-            // Adds for the piece value mutiplied by how many of that piece there is.
-            d_board_val += (piece_value * (double)engine.bits_in(pieces_bitboard));
+            // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
+            int cp_board_score = engine.centipawn_score_of(piece_type);
+            int nPieces = engine.bits_in(pieces_bitboard);
+            cp_board_score_sum += (nPieces * cp_board_score);
 
             #ifdef DADS_CRAZY_EVALUATION_CHANGES
-                  //d_board_val += 0.0;
-   
                 // Add a small bonus for pawns and knights in the middle of the board
                 if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
                     ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
@@ -109,16 +112,22 @@ double MinimaxAI::evaluate_board(Color for_color, vector<ShumiChess::Move>& move
                     d_board_val +=  0.1 * engine.bits_in(middle_place);
                     // cout << "adding up " << color_str(color) << endl;
                 }
-
             #endif
+
         }
 
-        // Mske the "absolute score" an "relative (negamax) score".
-        assert (d_board_val>=0);
+        // Convert sum from centipawns.
+        double d_board_score = cp_board_score_sum / 100.0;
+
+        // Make the "absolute score" an "relative (negamax) score".
+        assert (d_board_score>=0);
+        //assert (d_board_val==d_board_score);
+
+        // Sum the values for the two colors.
         if (color != for_color) {
-            d_board_val *= -1;
+            d_board_score *= -1;
         }
-        d_board_val_adjusted += d_board_val;
+        d_board_val_adjusted += d_board_score;
     }
 
     // Favor for most moves from this position, divided by arbitrary constant "80" 
@@ -151,7 +160,14 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     ShumiChess::Move& move_last,
     bool debug)
 {
-    assert(alpha <= beta);
+
+    //assert(alpha <= beta);
+    if ( abs(alpha - beta) < -1.0e-10 )
+    {
+        cout << "spinkle" << ((alpha-beta)*1000.0) << endl;
+        assert(0);
+    }
+
 
     double d_end_score = 0.0;
     Move the_best_move = {};
@@ -214,8 +230,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     if (depth <= 0) {
         bool in_check = engine.is_king_in_check(engine.game_board.turn);
 
-        d_end_score = evaluate_board(engine.game_board.turn, legal_moves);
-        unquiet_moves = engine.reduce_to_unquiet_moves(legal_moves);
+        d_end_score = evaluate_board(engine.game_board.turn, move_last, legal_moves);
+        unquiet_moves = engine.reduce_to_unquiet_moves3(legal_moves);
 
         // If quiet (not in check & no tactics), just return stand-pat
         if (!in_check && unquiet_moves.empty()) {
@@ -230,6 +246,16 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             alpha = std::max(alpha, d_end_score);
             // Extend on captures/promotions only
             moves_to_loop_over = unquiet_moves;
+
+            #ifdef _DEBUGGING_MOVE_TREE
+                int ierr = sprintf( szDebug, "\nunquiet=%ld ", unquiet_moves.size());
+                assert (ierr!=EOF);
+
+                print_moves_to_print_tree(unquiet_moves, depth, szDebug, "\n");
+
+
+            #endif
+
         } else {
             // In check: use all legal moves
             moves_to_loop_over = legal_moves;
@@ -256,7 +282,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                 std::string temp_fen_before = engine.game_board.to_fen();
             #endif
 
-            engine.push(m);
+            engine.pushMove(m);
 
             #ifdef _DEBUGGING_MOVE_TREE
                 print_move_to_print_tree(m, depth);
@@ -271,7 +297,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
             double d_score_value = -std::get<0>(ret_val);
 
-            engine.pop();
+            engine.popMove();
 
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_after = engine.game_board.to_fen();
@@ -427,7 +453,12 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
-    cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + "= score, Minimax AI chose move: for " + color + " to move") << endl;
+
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
+    abs_score_string = buf;
+
+    cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score, Minimax AI chose move: for " + color + " to move") << endl;
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << endl;
     // cout << colorize(AColor::BRIGHT_GREEN, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     // cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
@@ -474,7 +505,8 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         if (color_multiplier) {
             color_perspective = Color::WHITE;
         }
-        return evaluate_board(color_perspective, moves) * color_multiplier;
+        Move mvdefault = Move{};
+        return evaluate_board(color_perspective, mvdefault, moves) * color_multiplier;
     }
     //
     // Otherwise dive down one more level.
@@ -483,11 +515,11 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         double dMax_move_value = -DBL_MAX;
         for (Move& m : moves) {
 
-            engine.push(m);
+            engine.pushMove(m);
 
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
 
-            engine.pop();
+            engine.popMove();
 
             dMax_move_value = max(dMax_move_value, score_value);
             alpha = max(alpha, dMax_move_value);
@@ -501,11 +533,11 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         double dMin_move_value = DBL_MAX;
         for (Move& m : moves) {
 
-            engine.push(m);
+            engine.pushMove(m);
 
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
 
-            engine.pop();
+            engine.popMove();
 
             dMin_move_value = min(dMin_move_value, score_value);
             beta = min(beta, dMin_move_value);
@@ -539,13 +571,13 @@ Move MinimaxAI::get_move(int depth) {
     double dMax_move_value = -DBL_MAX;
     vector<Move> moves = engine.get_legal_moves();
     for (Move& m : moves) {
-        engine.push(m);
+        engine.pushMove(m);
         double score_value = get_value(depth - 1, color_multiplier * -1, -DBL_MAX, DBL_MAX);
         if (score_value * -1 > dMax_move_value) {
             dMax_move_value = score_value * -1;
             move_chosen = m;
         }
-        engine.pop();
+        engine.popMove();
     }
     
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
@@ -682,6 +714,20 @@ void MinimaxAI::print_move_to_print_tree(ShumiChess::Move m, int depth) {
     print_move_to_file_from_string(engine.move_string.c_str(), engine.game_board.turn, level, false);
 }
 
+
+void MinimaxAI::print_moves_to_print_tree(std::vector<Move> mvs, int depth, char* szHeader, char* szTrailer)
+{
+
+    if (szHeader != NULL) {int ierr = fprintf(fpStatistics, szHeader);}
+    
+     for (Move &m : mvs) {
+        print_move_to_print_tree(m, depth);
+     }
+
+    if (szTrailer != NULL) {int ierr = fprintf(fpStatistics, szTrailer);}
+
+
+}
 
 
 

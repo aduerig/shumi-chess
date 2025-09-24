@@ -187,7 +187,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 }
 
 // takes a move, but tracks it so pop() can undo
-void Engine::push(const Move& move) {
+void Engine::pushMove(const Move& move) {
 
     assert(move.piece_type != NONE);
 
@@ -301,7 +301,7 @@ void Engine::push(const Move& move) {
 // undos last move, errors if no move was made before
 // NOTE: Ummm, how does it return an error?
 // 
-void Engine::pop() {
+void Engine::popMove() {
     const Move move = this->move_history.top();
     this->move_history.pop();
 
@@ -1004,6 +1004,73 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
     }
     return vReturn;
 }
+
+
+vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves3(const vector<ShumiChess::Move>& moves)
+{
+    vector<ShumiChess::Move> vReturn;
+    vReturn.reserve(moves.size());
+
+    for (const ShumiChess::Move& mv : moves) {
+        if (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE) {
+
+            // If it's a capture, insert in descending MVV-LVA order
+            if (mv.capture != ShumiChess::Piece::NONE) {
+                int key = mvv_lva_key(mv);  // uses your static function (captures only)
+
+                auto it = vReturn.begin();
+                for (; it != vReturn.end(); ++it) {
+                    // Only compare against other captures; promos-without-capture stay after captures
+                    if (it->capture != ShumiChess::Piece::NONE &&
+                        key > mvv_lva_key(*it)) {
+                        break;
+                    }
+                }
+                vReturn.insert(it, mv);
+            } else {
+                // Promotion without capture: append after all captures
+                vReturn.push_back(mv);
+            }
+        }
+    }
+
+    return vReturn;
+}
+
+
+int Engine::centipawn_score_of(ShumiChess::Piece p) {
+    switch (p) {
+        case ShumiChess::Piece::PAWN:   return 100;
+        case ShumiChess::Piece::KNIGHT: return 320;
+        case ShumiChess::Piece::BISHOP: return 330;
+        case ShumiChess::Piece::ROOK:   return 500;
+        case ShumiChess::Piece::QUEEN:  return 900;
+        case ShumiChess::Piece::KING:   return 0;   // king is infinite in theory; keep 0 for material sums
+        default:                        {assert(0);return 0;}
+    }
+}
+
+// MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
+// biggest victim with the smallest attacker.
+int Engine::mvv_lva_key(const Move& m) {
+    if (m.capture == ShumiChess::Piece::NONE) assert(0);    // non-captures (shouldn't be in quiescence list)
+    int victim  = centipawn_score_of(m.capture);
+    int attacker= centipawn_score_of(m.piece_type);
+
+    // Victim dominates (shift by a few bits, note: a few?, 10?), attacker is a tiebreaker penalty
+    int key = (victim << 10) - attacker;
+
+    // Promotions: capturing + promoting should go even earlier
+    if (m.promotion != ShumiChess::Piece::NONE) {
+        key += centipawn_score_of(m.promotion) - centipawn_score_of(ShumiChess::Piece::PAWN);
+    }
+
+    // En passant: treat as a pawn capture
+    // (no extra handling needed if m.capture == Piece::PAWN is already set for EP)
+    return key;
+}
+
+
 
 bool Engine::flip_a_coin(void) {
     return (rand() & 1) != 0;   // 0 or 1 ? false or true

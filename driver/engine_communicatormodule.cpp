@@ -119,14 +119,14 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     cout << tempString << endl;
 
 
-    python_engine.push(found_move);
+    python_engine.pushMove(found_move);
 
     return Py_BuildValue("");
 }
 
 static PyObject*
 engine_communicator_pop(PyObject* self, PyObject* args) {
-    python_engine.pop();
+    python_engine.popMove();
     return Py_BuildValue("");
 }
 

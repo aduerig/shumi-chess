@@ -37,8 +37,9 @@ class Engine {
         void reset_engine();
         void reset_engine(const string&);
 
-        void push(const Move&);
-        void pop();
+        void pushMove(const Move&);
+        void popMove();
+        
         GameState game_over();
         GameState game_over(vector<Move>&);
 
@@ -55,11 +56,11 @@ class Engine {
 
         inline bool in_check_after_move(Color color, const Move move) {
             // NOTE: is this the most effecient way to do this (push()/pop())?
-            push(move);        
+            pushMove(move);        
             
             bool bReturn = is_king_in_check(color);
             
-            pop();
+            popMove();
             return bReturn;
         }
 
@@ -155,7 +156,11 @@ class Engine {
 
 
         vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
+        vector<ShumiChess::Move> reduce_to_unquiet_moves3(const vector<ShumiChess::Move>& moves);
 
+
+        int centipawn_score_of(ShumiChess::Piece p);
+        int mvv_lva_key(const ShumiChess::Move& m);
 
         int bits_in(ull);
         bool flip_a_coin(void);

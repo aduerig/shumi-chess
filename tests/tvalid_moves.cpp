@@ -22,13 +22,13 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
     for (ShumiChess::Move move : legal_moves) {
 
         string before_fen = engine.game_board.to_fen();
-        engine.push(move);
+        engine.pushMove(move);
 
         recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
         if (depth == max_depth) {
             fen_holder.push_back(engine.game_board.to_fen());
         }
-        engine.pop();
+        engine.popMove();
         string after_fen = engine.game_board.to_fen();
 
         if (before_fen != after_fen) {
@@ -201,9 +201,9 @@ TEST_P(ValidMoves, PushPopFenValidation) {
 
     for (const auto& move : legal_moves) {
         string before_fen = test_engine.game_board.to_fen();
-        test_engine.push(move);
+        test_engine.pushMove(move);
         string in_between_fen = test_engine.game_board.to_fen();
-        test_engine.pop();
+        test_engine.popMove();
         string after_fen = test_engine.game_board.to_fen();
         if (before_fen != after_fen) {
             utility::representation::cout_move_info(move);

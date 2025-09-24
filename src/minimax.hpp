@@ -13,7 +13,8 @@
 class RandomAI {
 public:
     ShumiChess::Engine engine;
-    unordered_map<ull, int> piece_values;
+    
+    //unordered_map<ull, int> piece_values;
 
     RandomAI(ShumiChess::Engine&);
     int rand_int(int, int);
@@ -33,21 +34,22 @@ public:
 
     // NOTE: Can these be more accurate (i.e. decimals like 2.8 for knight)
     // NOTE: Can these be more accurate as to "2 bishops" etc.
-    std::array<std::tuple<ShumiChess::Piece, double>, 6> piece_values = {
-        make_tuple(ShumiChess::Piece::PAWN, 1),
-        make_tuple(ShumiChess::Piece::ROOK, 5),
-        make_tuple(ShumiChess::Piece::KNIGHT, 3),
-        make_tuple(ShumiChess::Piece::BISHOP, 3),
-        make_tuple(ShumiChess::Piece::QUEEN, 8),
-        make_tuple(ShumiChess::Piece::KING, 0),
-    };
+    // std::array<std::tuple<ShumiChess::Piece, double>, 6> piece_values = {
+    //     make_tuple(ShumiChess::Piece::PAWN, 1),
+    //     make_tuple(ShumiChess::Piece::ROOK, 5),
+    //     make_tuple(ShumiChess::Piece::KNIGHT, 3.2),
+    //     make_tuple(ShumiChess::Piece::BISHOP, 3.3),
+    //     make_tuple(ShumiChess::Piece::QUEEN, 9),
+    //     make_tuple(ShumiChess::Piece::KING, 0),
+    // };
+
     unordered_map<uint64_t, std::string> seen_zobrist;
 
     // NOTE: move me to top of class declaration.
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    double evaluate_board(ShumiChess::Color, vector<ShumiChess::Move>&);
+    double evaluate_board(ShumiChess::Color, ShumiChess::Move& last_move, vector<ShumiChess::Move>&);
 
     ShumiChess::Move get_move_iterative_deepening(double);
 
@@ -80,6 +82,9 @@ public:
 
 
     void print_move_to_print_tree(ShumiChess::Move m, int depth);
+    void print_moves_to_print_tree(std::vector<ShumiChess::Move> mvs, int depth, char* szHeader, char* szTrailer);
+
+
     void print_move_scores_to_file(
         FILE* fpStatistics,
         const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores
