@@ -164,5 +164,7 @@ class GameBoard {
 
         bool are_bit_boards_valid() const;
         
+        bool king_coords(Color c, double& centerness) const;
+
 };
 } // end namespace ShumiChess

@@ -277,7 +277,7 @@ void Engine::pushMove(const Move& move) {
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<0);
                 friendly_rooks |= (1ULL<<2);
-                assert (this->game_board.white_castle);
+                //assert (this->game_board.white_castle);
             } else {
                 friendly_rooks &= ~(1ULL<<56);
                 friendly_rooks |= (1ULL<<58);

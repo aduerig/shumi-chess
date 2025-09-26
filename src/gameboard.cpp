@@ -295,7 +295,28 @@ bool GameBoard::are_bit_boards_valid() const {
     return true; // no overlaps found
 }
 
+bool GameBoard::king_coords(Color c, double& centerness) const {
+//bool GameBoard::king_coords(Color c, double& row, double& col) const {
+    double row; 
+    double col;
+    ull bb = (c == Color::WHITE) ? white_king : black_king;
+    if (!bb) return false;
 
+    ull tmp = bb; // don’t mutate the real bitboard
+    int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+
+    int row_idx = s / 8;            // 0..7
+    int col_idx = 7 - (s % 8);      // 0..7 (a..h)
+
+    row = static_cast<double>(row_idx) - 3.5;  // -3.5 .. 3.5
+    col = static_cast<double>(col_idx) - 3.5;  // -3.5 .. 3.5
+
+
+    centerness = ((fabs(row)/3.5) + (fabs(col)/3.5)) / 2.0; 
+    // Gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
+
+    return true;
+}
 
 
 

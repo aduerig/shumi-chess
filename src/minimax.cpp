@@ -32,8 +32,7 @@ using namespace utility::bit;
     char szScore[128];
 #endif
 
-//#define DADS_CRAZY_EVALUATION_CHANGES
-
+#define DADS_CRAZY_EVALUATION_CHANGES
 
 #define RANDOMIZING_EQUAL_MOVES
 
@@ -93,8 +92,9 @@ double MinimaxAI::evaluate_board(Color for_color, ShumiChess::Move& last_move, v
         {    
             
             // Since the king can never leave the board (engine does not allow), 
-            // and there is a huge score checked earlier we can just skip kings. NOTE: this not needed. 
+            // and there is a huge score checked earlier we can just skip kings.
             if (piece_type == Piece::KING) continue;
+
 
             // Get bitboard of all pieces on board of this type and color
             ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
@@ -104,17 +104,27 @@ double MinimaxAI::evaluate_board(Color for_color, ShumiChess::Move& last_move, v
             int nPieces = engine.bits_in(pieces_bitboard);
             cp_board_score_sum += (nPieces * cp_board_score);
 
-            #ifdef DADS_CRAZY_EVALUATION_CHANGES
-                // Add a small bonus for pawns and knights in the middle of the board
-                if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
-                    ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
-                    ull middle_place = pieces_bitboard & center_squares;
-                    d_board_val +=  0.1 * engine.bits_in(middle_place);
-                    // cout << "adding up " << color_str(color) << endl;
-                }
-            #endif
+
+                // // Add a small bonus for pawns and knights in the middle of the board
+                // if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
+                //     ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
+                //     ull middle_place = pieces_bitboard & center_squares;
+                //     d_board_val +=  0.1 * engine.bits_in(middle_place);
+                //     // cout << "adding up " << color_str(color) << endl;
+                // }
+ 
 
         }
+
+        #ifdef DADS_CRAZY_EVALUATION_CHANGES
+            // Add code to make king shy from center.
+            double centerness;
+            bool isOK = engine.game_board.king_coords(color, centerness);
+            //assert (isOK);
+            if (isOK) { // NOTE: why does this have to be there?
+                cp_board_score_sum += centerness*80;   // centipawns
+            }
+        #endif
 
         // Convert sum from centipawns.
         double d_board_score = cp_board_score_sum / 100.0;
@@ -464,6 +474,16 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     // cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
     //cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
     
+    //cout << "bc=" << (int)engine.game_board.black_castle << endl;
+
+    // double row, col, centerness;
+    // bool isOK;
+    // isOK = engine.game_board.king_coords(Color::WHITE, centerness);  // Gets smaller closer to center.
+    // assert (isOK);
+   
+    // cout << "wht " << centerness << endl;
+    // isOK = engine.game_board.king_coords(Color::BLACK, centerness);  // Gets smaller closer to center.
+    // assert (isOK);
 
 
 
