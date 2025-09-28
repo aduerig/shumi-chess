@@ -1,4 +1,37 @@
 
 
-this is a mate in three!, (asfter Ng5) it does not see it. at depth=7!
+this is a mate in three!, (after Ng5) it does not see it UNTIL depth=6!
 1rbqkb1r/pppppppp/8/3NP3/2B1P3/5N2/PPP2PPP/R1BQK2R w KQk - 6 8
+
+
+
+
+
+
+
+rnbr2k1/pppp1ppp/4pn2/8/3Pq3/B1P2N2/P1P1BPPP/R2Q1RK1 w - - 5 9 then Be7
+
+
+
+r1bqkbnr/pppp1ppp/2n5/4p2Q/8/8/PPP2PPP/RNB1KBNR w KQkq - 0 4
+
+
+
+
+rnbqk2r/1pppp1bp/6pn/p3p3/2PP1P2/2NB1N2/PP4PP/R1BQK2R w KQkq - 0 9
+
+
+
+crash positions
+==================
+
+
+rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play h3.
+rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play Bd2.
+
+
+
+
+
+
+

@@ -49,7 +49,8 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    double evaluate_board(ShumiChess::Color, ShumiChess::Move& last_move, vector<ShumiChess::Move>&);
+    double evaluate_board(ShumiChess::Color);     // ShumiChess::Move& last_move, 
+                                                  // ,vector<ShumiChess::Move>&);   // Output
 
     ShumiChess::Move get_move_iterative_deepening(double);
 
@@ -57,7 +58,7 @@ public:
                                             //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores
                                             , unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores
                                             , ShumiChess::Move& move_last
-                                            , bool debug);
+                                            , int nPly);
 
 
     double get_value(int depth, int color_multiplier, double alpha, double beta);
@@ -72,6 +73,12 @@ public:
         >& move_scores,
         bool sort_descending  // true = highest relative score first
     );
+
+    std::tuple<double, ShumiChess::Move>
+    best_move_static(ShumiChess::Color color,
+                                const std::vector<ShumiChess::Move>& moves);
+
+
 
     void Add_result_to_print_tree(FILE* fpStatistics
                                     ,ShumiChess::Move& move_last

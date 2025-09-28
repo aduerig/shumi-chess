@@ -32,12 +32,12 @@ Engine::Engine() {
 
 //TODO what is right way to handle popping past default state here?
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
-    move_string.reserve(_MAX_ALGEBRIAC_SIZE);
+    move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 }
 
 void Engine::reset_engine() {
 
-    move_string.reserve(_MAX_ALGEBRIAC_SIZE);
+    move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 
     // You can override the gameboard setup with fen positions as in:
     //game_board = GameBoard("r4rk1/7R/8/8/8/8/8/R3K3 w Q - 2 2");
@@ -754,7 +754,7 @@ inline void safe_push_back(std::string &s, char c) {
 //
 void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move the_move, GameState state 
                             //, const vector<ShumiChess::Move>* p_legal_moves   // from this position. This is only used for disambigouation
-                            //, char* pszMoveText)             // output
+                            , bool bPadTrailing
                             , std::string& MoveText)            // output
 {
     char thisChar;
@@ -857,6 +857,22 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
 
     //*p = '\0';              // don�t forget to terminate
 
+
+
+     if (bPadTrailing) {
+
+        auto it = std::find(MoveText.begin(), MoveText.end(), ' ');
+        int nonblank_len = static_cast<int>(it - MoveText.begin());
+        int i = std::max(0, 5 - nonblank_len);
+
+        assert (i < _MAX_ALGEBRIAC_SIZE);
+        for (int k = 0; k < i; ++k) {
+            safe_push_back(MoveText, ' ');
+        }  
+    }
+
+
+
     return;
 
 }
@@ -944,7 +960,31 @@ void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 
 }
 
+// Puts best move and absolute score. 
+void Engine::result_to_string(double d_best_move_value, const ShumiChess::Move& best_move)
+{
 
+    if (game_board.turn == ShumiChess::BLACK) d_best_move_value = -d_best_move_value;  // Convert relative score to abs score
+
+    if (std::fabs(d_best_move_value) < VERY_SMALL_SCORE) d_best_move_value = 0.0;        // avoid negative zero
+
+    bitboards_to_algebraic(game_board.turn, best_move, (GameState::INPROGRESS)
+                    , true 
+                    , move_string); 
+
+    char buf[32];
+
+    if (d_best_move_value < 0.0) {
+
+        std::snprintf(buf, sizeof(buf), "; %.2f", d_best_move_value);  // 2 digits after decimal
+    }
+    else {
+        std::snprintf(buf, sizeof(buf), "; %+.2f", d_best_move_value);  // 2 digits after decimal
+    }
+
+    move_string += buf;
+
+}
 
 
 // NO disambiguation
@@ -952,12 +992,13 @@ void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTab
     // 
     int nChars;
     std::string a_move_string;
-    a_move_string.reserve(_MAX_ALGEBRIAC_SIZE);
+    a_move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 
     for (const auto& move : moves) {
 
         bitboards_to_algebraic(Color::BLACK, move, GameState::INPROGRESS
                             //, NULL                      // NO disambiguation
+                            , false
                             , a_move_string);            // output
 
         const char* sz_move_text = a_move_string.c_str();
@@ -1084,6 +1125,7 @@ int Engine::bits_in(ull bitboard) {
     auto bs = bitset<64>(bitboard);
     return (int) bs.count();
 }
+
 
 
 

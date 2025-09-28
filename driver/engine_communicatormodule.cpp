@@ -114,7 +114,9 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 
     // Get, and store in engine, the algebriac (SAN) text form of the user's move.
     string tempString;
-    python_engine.bitboards_to_algebraic(ShumiChess::WHITE, found_move, ShumiChess::GameState::INPROGRESS, tempString);
+    python_engine.bitboards_to_algebraic(ShumiChess::WHITE, found_move, ShumiChess::GameState::INPROGRESS
+                                        , false
+                                        , tempString);      // Output
     python_engine.users_last_move = found_move;
     cout << tempString << endl;
 

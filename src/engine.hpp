@@ -13,7 +13,11 @@
 using namespace std;
 
 
-#define _MAX_ALGEBRIAC_SIZE 16        // longest text possible? -> "exd8=Q#" or "axb8=R+"
+#define VERY_SMALL_SCORE 1.0e-9     // 10 micro centipawns?
+#define HUGE_SCORE 10000            // A million centipawns!       //  DBL_MAX    // A relative score
+
+#define _MAX_ALGEBRIAC_SIZE 16        // longest SAN text possible? -> "exd8=Q#" or "axb8=R+"
+#define _MAX_MOVE_PLUS_SCORE_SIZE (_MAX_ALGEBRIAC_SIZE+32)        // Move text plus a score
 
 namespace ShumiChess {
 class Engine {
@@ -141,7 +145,7 @@ class Engine {
 
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move, GameState state 
                                     //, const vector<ShumiChess::Move>* p_legal_moves   // from this position
-                                    //, char* pszMoveText);            // output
+                                    , bool bPadTrailing
                                     , std::string& MoveText);           // output
 
         char get_piece_char(Piece p);
@@ -150,6 +154,9 @@ class Engine {
 
         char file_to_move(const Move& m);
         char rank_to_move(const Move& m);
+
+
+        void result_to_string(double d_best_move_value, const ShumiChess::Move& best_move);
 
         void print_bitboard_to_file(ull bb, FILE* fp);
         void print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp);

@@ -166,5 +166,7 @@ class GameBoard {
         
         bool king_coords(Color c, double& centerness) const;
 
+        bool rook_connectiveness(Color c, double& connectiveness) const;
+
 };
 } // end namespace ShumiChess

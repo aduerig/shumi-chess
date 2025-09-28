@@ -296,7 +296,6 @@ bool GameBoard::are_bit_boards_valid() const {
 }
 
 bool GameBoard::king_coords(Color c, double& centerness) const {
-//bool GameBoard::king_coords(Color c, double& row, double& col) const {
     double row; 
     double col;
     ull bb = (c == Color::WHITE) ? white_king : black_king;
@@ -315,6 +314,61 @@ bool GameBoard::king_coords(Color c, double& centerness) const {
     centerness = ((fabs(row)/3.5) + (fabs(col)/3.5)) / 2.0; 
     // Gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
 
+    return true;
+}
+
+
+bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
+{
+    using ull = unsigned long long;
+
+    const ull rooks = (c == Color::WHITE) ? white_rooks : black_rooks;
+    const ull my_pieces =
+        (c == Color::WHITE)
+        ? (white_pawns | white_knights | white_bishops | white_rooks | white_queens | white_king)
+        : (black_pawns | black_knights | black_bishops | black_rooks | black_queens | black_king);
+
+    const int back_rank = (c == Color::WHITE) ? 0 : 7;          // rank 1 (white) or rank 8 (black)
+    const ull back_mask = 0xFFULL << (back_rank * 8);
+    ull back_rooks = rooks & back_mask;                         // only rooks on the back rank
+
+    // Need at least two rooks on the back rank
+    if (back_rooks == 0 || (back_rooks & (back_rooks - 1)) == 0) {
+        connectiveness = 0.0;
+        return false;
+    }
+
+    // Copy the mask; we will *extract* two rook squares from this temporary.
+    // lsb_and_pop_to_square(tmp) returns the index (0..63) of the least-significant 1 bit
+    // and clears that bit in 'tmp'. We use a temp so the real board state is untouched.
+    ull tmp = back_rooks;
+    int s1 = utility::bit::lsb_and_pop_to_square(tmp);          // first rook square (by lowest bit)
+    int s2 = utility::bit::lsb_and_pop_to_square(tmp);          // second rook square
+
+    // Convert to files (0=a .. 7=h)
+    int f1 = s1 % 8;
+    int f2 = s2 % 8;
+
+    // Ensure f1 <= f2 so f1 is the left rook and f2 is the right rook on the back rank.
+    // (This just normalizes order; it does not change the position.)
+    if (f1 > f2) std::swap(f1, f2);
+
+    int files_between = f2 - f1 - 1;                            // squares strictly between
+    if (files_between <= 0) {                                   // adjacent rooks ⇒ fully connected
+        connectiveness = 1.0;
+        return true;
+    }
+
+    // Count OWN pieces strictly between the two rooks on the back rank
+    int base = back_rank * 8;
+    int own_between = 0;
+    for (int f = f1 + 1; f <= f2 - 1; ++f) {
+        ull bit = 1ULL << (base + f);
+        if (my_pieces & bit) ++own_between;
+    }
+
+    connectiveness = 1.0 - (static_cast<double>(own_between) / files_between);
+    if (connectiveness < 0.0) connectiveness = 0.0;             // clamp
     return true;
 }
 
