@@ -18,30 +18,27 @@ we're back
 ## intro
 This project is a hobby C++ engine written by OhMesch and I. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
 
-This project has no AI to make intelligent chess moves. There is another repo written by OhMesch and I that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
+This project has AI to make intelligent chess moves. There is another repo written by OhMesch and I that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
 * https://github.com/aduerig/chess-ai
 
 ## todo
 * i disabled enpassant and ~~castling~~ temporarily until zobrist hashing works
-* zobrist hashing not implemented for enpassant RIGHTS (it works for capture) or castling. it might not be set correctly for turn stuff either.
 * See [brainStorm](doc/brainStorm.md) for more future directions.
 
+
+## current bug log (unless otherwise specified, happens in minimax AI)
+  * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
+  * Edge and king bug. White king cannot take pawn. see FEN: 5r1k/1Q5p/8/p2P3B/1KP1P3/1P6/P7/8 w - a6 0 42  
+  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionally. Related to above? This one seems to always be in left and right columns also.
+  * Doesnt recognize three fold position repitition. 50 move rule not tested.
+  * Doesnt recognize Enpassent (disallowed)
+  
 ## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
   * Farnsworth 8/15/2025    Fixed "rook promotion bug" (pawn now always promotes to queen). Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up around castling. Seperated out board initial setup.
   * Farnsworth 8/20/2025    BASELINE 1.  All tests now pass. Most castle bugs now fixed. Updated bug log. Refactored.  NOTE: This means the tests don't test enpassant, nor do they test "magical rook appearence3" bug.
  * Farnsworth 8/22/2025     Jailed the "Magical rook appearence3" By disabling zobrist code, see: "if (move_scores.find(engine.game_board.zobrist_key) != move_scores.end()) {". Simplfied the evaluator to just
  see material. Did not yet remove the ""Magical rook appearence3" bug debug code, awaiting more testing.
-
-## current bug log (unless otherwise specified, happens in minimax AI)
-  * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
-  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionally. Related to above? This one seems to alwaus be in left and right columns also.
-  * Doesnt recognize three fold position repitition.
-  * This bug only fixed by hack, see "temporary fix" disabling. ~~Magical rook appearence3 bug: Reproduce: Load fen rnb1kbnr/pppp3p/5qp1/4pp2/8/3PPN2/PPP1BPPP/RNBQK2R w KQkq - 2 5, then move white Nc3. Extra rook shows up on f1. (in debug now it crashes with debug displays)~~
-  * ~~Load fen "4k2r/7p/8/8/8/8/8/4K2R w KQkq - 0 1" make white king move, crash. Same castling bug as above most likley. Happens to black in this FEN.~~
-  * Doesnt recognize Enpassent (disallowed)
-  
-
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.

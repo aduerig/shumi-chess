@@ -295,7 +295,7 @@ bool GameBoard::are_bit_boards_valid() const {
     return true; // no overlaps found
 }
 
-bool GameBoard::king_coords(Color c, double& centerness) const {
+bool GameBoard::king_anti_centerness(Color c, double& centerness) const {
     double row; 
     double col;
     ull bb = (c == Color::WHITE) ? white_king : black_king;
@@ -316,6 +316,41 @@ bool GameBoard::king_coords(Color c, double& centerness) const {
 
     return true;
 }
+
+
+
+
+bool GameBoard::knights_centerness(Color c, double& centerness) const
+{
+    ull bb = (c == Color::WHITE) ? white_knights : black_knights;
+    if (!bb) return false;
+
+    double sum = 0.0;
+    int count = 0;
+
+    ull tmp = bb; // don’t mutate the real bitboard
+    while (tmp)
+    {
+        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+
+        int row_idx = s / 8;           // 0..7
+        int col_idx = 7 - (s % 8);     // 0..7 (a..h)
+
+        double row = static_cast<double>(row_idx) - 3.5;  // -3.5 .. 3.5
+        double col = static_cast<double>(col_idx) - 3.5;  // -3.5 .. 3.5
+
+        // 0 at corners, 1.0 at center (inverted from the king version)
+        double away   = ((fabs(row)/3.5) + (fabs(col)/3.5)) / 2.0; // 0 center, 1 corner
+        double toward = 1.0 - away;                                // 1 center, 0 corner
+
+        sum += toward;
+        ++count;
+    }
+
+    centerness = sum / static_cast<double>(count);
+    return true;
+}
+
 
 
 bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const

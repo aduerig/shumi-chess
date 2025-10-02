@@ -25,7 +25,9 @@ public:
 
 class MinimaxAI {
 public:
+
     int nodes_visited = 0;
+    int g_evals = 0;
     
     int top_depth = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
 
@@ -76,7 +78,9 @@ public:
 
     std::tuple<double, ShumiChess::Move>
     best_move_static(ShumiChess::Color color,
-                                const std::vector<ShumiChess::Move>& moves);
+                                const std::vector<ShumiChess::Move>& moves,
+                                bool in_Check
+                            );
 
 
 
@@ -87,8 +91,16 @@ public:
                                     ,int level
                                     ,int depth);
 
+    void clear_stats_file(FILE*& fpStatistics, const char* path);
 
-    void print_move_to_print_tree(ShumiChess::Move m, int depth);
+    void print_move_to_file(ShumiChess::Move m, int nPly, ShumiChess::GameState gs, bool isInCheck);
+
+    void print_move_to_file_from_string(const char* p_move_text, ShumiChess::Color turn, int nPly
+                                            , char preCharacter
+                                            , char postCharacter
+                                            , bool b_right_Pad);
+
+
     void print_moves_to_print_tree(std::vector<ShumiChess::Move> mvs, int depth, char* szHeader, char* szTrailer);
 
 

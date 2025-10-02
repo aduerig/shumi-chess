@@ -143,7 +143,9 @@ class Engine {
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
 
-        void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move, GameState state 
+        void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move
+                                    , GameState state 
+                                    , bool isCheck
                                     //, const vector<ShumiChess::Move>* p_legal_moves   // from this position
                                     , bool bPadTrailing
                                     , std::string& MoveText);           // output

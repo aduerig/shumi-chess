@@ -116,6 +116,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string tempString;
     python_engine.bitboards_to_algebraic(ShumiChess::WHITE, found_move, ShumiChess::GameState::INPROGRESS
                                         , false
+                                        , false
                                         , tempString);      // Output
     python_engine.users_last_move = found_move;
     cout << tempString << endl;

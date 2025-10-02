@@ -164,7 +164,8 @@ class GameBoard {
 
         bool are_bit_boards_valid() const;
         
-        bool king_coords(Color c, double& centerness) const;
+        bool king_anti_centerness(Color c, double& centerness) const;
+        bool knights_centerness(Color c, double& centerness) const;
 
         bool rook_connectiveness(Color c, double& connectiveness) const;
 

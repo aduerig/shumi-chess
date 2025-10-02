@@ -748,11 +748,13 @@ inline void safe_push_back(std::string &s, char c) {
 }
 //
 // Translates a "Move" to SAN (standard algebriac notation).
-// Dad's first ShumiChess function. Does NO safety checks, as to in passed string (pszMoveText).
-// Does check, mate, promotion, and disambigoation. 
+// Dad's first ShumiChess function.
+// Does check, mate, promotion, and disambiguation. 
 //   Only thing I added was '~' for forced draws (50 move, or 3-time).
 //
-void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move the_move, GameState state 
+void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move the_move
+                            , GameState state 
+                            , bool isCheck
                             //, const vector<ShumiChess::Move>* p_legal_moves   // from this position. This is only used for disambigouation
                             , bool bPadTrailing
                             , std::string& MoveText)            // output
@@ -817,11 +819,16 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
         if ( (state == GameState::WHITEWIN) || (state == GameState::BLACKWIN) ) {
             safe_push_back(MoveText,'#');
         }
-        else if (state == GameState::DRAW) {
-            safe_push_back(MoveText,'~');                 // NOT technically SAN, but I need to see 3-time rep and 5- move rule.
+        else if (state == GameState::DRAW) {      
+            safe_push_back(MoveText,'~');       // NOT technically SAN, but I need to see 3-time rep and 5- move rule.
         }
         else {
             // // Not a checkmate or draw. See if its a check
+
+            if (isCheck) {
+                safe_push_back(MoveText,'+');
+            }
+
 
             // Add a check character if needed (NOTE: This is very expensive!)
             //  NOTE: this causes bugs if d4 from opening position
@@ -968,7 +975,9 @@ void Engine::result_to_string(double d_best_move_value, const ShumiChess::Move& 
 
     if (std::fabs(d_best_move_value) < VERY_SMALL_SCORE) d_best_move_value = 0.0;        // avoid negative zero
 
-    bitboards_to_algebraic(game_board.turn, best_move, (GameState::INPROGRESS)
+    bitboards_to_algebraic(game_board.turn, best_move
+                    , (GameState::INPROGRESS)
+                    , false
                     , true 
                     , move_string); 
 
@@ -996,8 +1005,10 @@ void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTab
 
     for (const auto& move : moves) {
 
-        bitboards_to_algebraic(Color::BLACK, move, GameState::INPROGRESS
+        bitboards_to_algebraic(Color::BLACK, move
+                            , GameState::INPROGRESS
                             //, NULL                      // NO disambiguation
+                            , false
                             , false
                             , a_move_string);            // output
 
