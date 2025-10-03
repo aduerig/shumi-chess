@@ -29,16 +29,17 @@ This project has AI to make intelligent chess moves. There is another repo writt
 ## current bug log (unless otherwise specified, happens in minimax AI)
   * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
   * Edge and king bug. White king cannot take pawn. see FEN: 5r1k/1Q5p/8/p2P3B/1KP1P3/1P6/P7/8 w - a6 0 42  
-  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionally. Related to above? This one seems to always be in left and right columns also.
-  * Doesnt recognize three fold position repitition. 50 move rule not tested.
+  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionally. Related to above? This one seems to always be in left and right columns also.  
+  * Doesnt recognize three fold position repitition. 50 move rule is tested! stalemate works fine.
   * Doesnt recognize Enpassent (disallowed)
   
 ## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
   * Farnsworth 8/15/2025    Fixed "rook promotion bug" (pawn now always promotes to queen). Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up around castling. Seperated out board initial setup.
   * Farnsworth 8/20/2025    BASELINE 1.  All tests now pass. Most castle bugs now fixed. Updated bug log. Refactored.  NOTE: This means the tests don't test enpassant, nor do they test "magical rook appearence3" bug.
- * Farnsworth 8/22/2025     Jailed the "Magical rook appearence3" By disabling zobrist code, see: "if (move_scores.find(engine.game_board.zobrist_key) != move_scores.end()) {". Simplfied the evaluator to just
+  * Farnsworth 8/22/2025     Jailed the "Magical rook appearence3" By disabling zobrist code, see: "if (move_scores.find(engine.game_board.zobrist_key) != move_scores.end()) {". Simplfied the evaluator to just
  see material. Did not yet remove the ""Magical rook appearence3" bug debug code, awaiting more testing.
+  * Farnsworth 7/13/2025     Fixed "Edge and king bug"
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.

@@ -35,6 +35,8 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 //#define _DEBUGGING_MOVE_TREE
 //#define _DEBUGGING_MOVE_CHAIN
 
+// extern bool bMoreDebug;
+// extern string debugMove;
 
 #ifdef _DEBUGGING_TO_FILE
     FILE *fpStatistics = NULL;
@@ -93,10 +95,10 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
         fpStatistics = fopen("C:\\programming\\shumi-chess\\debug.dat", "w");
         if(fpStatistics == NULL)    // Check if file was opened successfully
         {
-            printf("Error opening statistics file!");
+            printf("Error opening debug.dat file!");
             assert(0);
         }    
-        fprintf(fpStatistics, "opening statistics file!");
+        fprintf(fpStatistics, "opening debug.dat file!");
 
     #endif
 }
@@ -276,7 +278,22 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
     // =====================================================================
 
+    #ifdef _DEBUGGING_MOVE_CHAIN
+        engine.bitboards_to_algebraic(engine.game_board.turn, move_last
+                                , (GameState::INPROGRESS)
+                                , false
+                                , false
+                                , engine.move_string);
+
+    #endif
+
+    //bMoreDebug = true;
+    //debugMove = engine.move_string;
+
     bool in_check = engine.is_king_in_check(engine.game_board.turn);
+
+    //bMoreDebug = false;
+
 
     //  If mover is in check, this routine returns all check escapes and only check escapes.
     std::vector<Move> legal_moves = engine.get_legal_moves();
@@ -531,7 +548,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 5;        // Note: because i said so.
+    this_depth = 4;        // Note: because i said so.
     int maximum_depth = this_depth;
 
     //int maximum_depth = this_depth;
@@ -546,7 +563,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     do {
 
         #ifdef _DEBUGGING_TO_FILE 
-            clear_stats_file(fpStatistics, "C:\\programming\\shumi-chess\\debug.dat");
+            //clear_stats_file(fpStatistics, "C:\\programming\\shumi-chess\\debug.dat");
         #endif
 
         #ifdef _DEBUGGING_MOVE_TREE
@@ -622,7 +639,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     abs_score_string = buf;
 
     cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
-    cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total") << "----"  << format_with_commas(g_evals) << endl;
+    cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total" + " ---- " + format_with_commas(g_evals) + " Evals") << endl;
     // cout << colorize(AColor::BRIGHT_GREEN, "Time it was supposed to take: " + to_string(time) + " s") << endl;
     // cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
     //cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;

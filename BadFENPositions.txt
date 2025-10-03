@@ -30,13 +30,21 @@ rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play h
 rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play Bd2.
 
 
-not so bad fens   good gmes
+not so bad fens   good games
 ===============
 
-Current FEN: r1bq1rk1/pp3npp/2pp1p2/8/4PP2/2NQB3/PPP3PP/3R1R1K w - - 4 17
+r1bq1rk1/pp3npp/2pp1p2/8/4PP2/2NQB3/PPP3PP/3R1R1K w - - 4 17
 
 
-Edge bugs with king and pawm?
+Edge bugs with king and pawn? (Edge and king bug)
 ==============================
+5r1k/1Q5p/8/p2P3B/1KP1P3/1P6/P7/8 w - a6 0 42
+5r1k/1Q5p/8/p2P3B/2P1P3/1PK5/P7/8 w - a6 0 42
 
-Current FEN: 5r1k/1Q5p/8/p2P3B/1KP1P3/1P6/P7/8 w - a6 0 42
+
+3 time repetation draw
+==============================
+r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17
+
+
+

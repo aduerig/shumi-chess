@@ -9,6 +9,15 @@
 #undef NDEBUG
 #include <assert.h>
 
+#define _DEBUGGING_ENGINE
+
+#ifdef _DEBUGGING_ENGINE
+    extern FILE *fpStatistics;
+    extern char szValue[256];
+#endif
+
+// bool bMoreDebug = false;
+// string debugMove;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -39,8 +48,10 @@ void Engine::reset_engine() {
 
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 
-    // You can override the gameboard setup with fen positions as in:
-    //game_board = GameBoard("r4rk1/7R/8/8/8/8/8/R3K3 w Q - 2 2");
+    // You can override the gameboard setup with fen positions as in: (enter FEN here)
+    //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
+    //game_board = GameBoard("5r1k/1R5p/8/p2P4/K1P1P3/1P6/P7/8 w - a6 0 42");      // good
+    
     game_board = GameBoard();
 
     // ! is reinitalize these stacks the right way to clear the previous entries?
@@ -85,10 +96,6 @@ vector<Move> Engine::get_legal_moves() {
         // NOTE: is this the most effecient way to do this (push()/pop())?
         bool bKingInCheck = in_check_after_move(color, move);
         
-        //push(move);        
-        
-        //bool bKingInCheck = is_king_in_check(color);
-
         if (!bKingInCheck) {
             // King is NOT in check after making the move
 
@@ -117,24 +124,35 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     return all_psuedo_legal_moves;
 }
 
+
+
+
 // Does not take into account castling crossing a checked square? Yes, is_square_in_check() does this.
 bool Engine::is_king_in_check(const ShumiChess::Color& color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
-    return is_square_in_check(color, friendly_king);
+
+    bool bReturn =  is_square_in_check(color, friendly_king);
+     
+    return bReturn;
 }
 
+//
+// Determines if a square is in check.
+// All bitboards are asssummed to be "h1=0". 
 bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square) {
     Color enemy_color = utility::representation::opposite_color(color);
 
-    // ? probably don't need knights here because pins cannot happen with knights, but we don't check if king is in check yet
+    // Note: ? probably don't need knights here because pins cannot happen with knights, but 
+    //   we don't check if king is in check yet
     ull straight_attacks_from_king = get_straight_attacks(square);
     // cout << "diagonal_attacks_from_king: " << square << endl;
     ull diagonal_attacks_from_king = get_diagonal_attacks(square);
-    
+
+    // bishop, rook, queens that can reach (capture to) this square
     ull deadly_diags = game_board.get_pieces_template<Piece::QUEEN>(enemy_color) | game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
     ull deadly_straight = game_board.get_pieces_template<Piece::QUEEN>(enemy_color) | game_board.get_pieces_template<Piece::ROOK>(enemy_color);
 
-    // pawns
+    // pawns that can reach (capture to) this square
     ull temp;
     if (color == Color::WHITE) {
         temp = (square & ~row_masks[7]) << 8;
@@ -142,13 +160,20 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     else {
         temp = (square & ~row_masks[0]) >> 8;
     }
-    ull reachable_pawns = (((temp & ~col_masks[7]) << 1) | 
-                           ((temp & ~col_masks[0]) >> 1));
+    
+    // OLD wrong code that causes "Edge and king bug", FEN: 5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42
+    // ull reachable_pawns = (((temp & ~col_masks[7]) << 1) | 
+    //                        ((temp & ~col_masks[0]) >> 1));
 
-    // knights
+    // New code fix?
+    ull reachable_pawns = (((temp & ~col_masks[0]) << 1) | 
+                           ((temp & ~col_masks[7]) >> 1));                           
+
+
+    // knights that can reach (capture to) this square
     ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_lowest_square(square)];
 
-    // kings
+    // kings that can reach (capture to) this square
     ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(square)];
 
     return ((deadly_straight & straight_attacks_from_king) ||
@@ -169,18 +194,19 @@ GameState Engine::game_over() {
 GameState Engine::game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
         if (is_square_in_check(Color::WHITE, game_board.white_king)) {
-            return GameState::BLACKWIN;
+            return GameState::BLACKWIN;     // Checkmate
         }
         else if (is_square_in_check(Color::BLACK, game_board.black_king)) {
-            return GameState::WHITEWIN;
+            return GameState::WHITEWIN;     // Checkmate
         }
         else {
-            return GameState::DRAW;    // Stalemate
+            return GameState::DRAW;    //  Draw by Stalemate
         }
     }
-    // TODO check if this is off by one or something
+    // TODO check if this is off by one or something Or Note: off by two ?
     else if (game_board.halfmove >= 50) {
         //  After fifty "ply" or half moves, without a pawn move or capture, its a draw.
+        //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;
         return GameState::DRAW;
     }
     return GameState::INPROGRESS;
@@ -764,6 +790,10 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
     MoveText.clear();        // start fresh (does NOT free capacity)
 
 
+    // MoveText += '[';
+    // MoveText += (isCheck ? '1' : '0'); 
+    // MoveText += ']';
+
     if (the_move.piece_type == Piece::NONE) {
         //MoveText += "???";
         MoveText += "none";
@@ -1035,13 +1065,6 @@ void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTab
     nChars = fputs("\n", fp);
     if (nChars == EOF) assert(0);
 
-    // bool btemp;
-    // btemp = is_king_in_check(Color::BLACK);
-    // nChars = fputs(btemp ? "   black1\n" : "   black0\n", fp);
-    // if (nChars == EOF) assert(0);
-    // btemp = is_king_in_check(Color::WHITE);
-    // nChars = fputs(btemp ? "   white1\n" : "   white0\n", fp);
-    // if (nChars == EOF) assert(0);
 
 }
 
