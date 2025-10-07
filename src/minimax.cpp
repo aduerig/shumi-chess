@@ -121,17 +121,19 @@ string format_with_commas(T value) {
 
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Returns " relative (negamax) score". Relative score is positive for great positions for the specified player. 
 // Absolute score is always positive for great positions for white.
 //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 double MinimaxAI::evaluate_board(Color for_color)
                                    //, ShumiChess::Move& last_move
                                    // , vector<ShumiChess::Move>& moves)
 {
 
-    g_evals++;
+    evals_visited++;
 
     double d_board_val_adjusted = 0.0;
 
@@ -228,17 +230,172 @@ double MinimaxAI::evaluate_board(Color for_color)
     return d_board_val_adjusted;
 }
 
+
+
+int g_iMove = 0;
+
+//////////////////////////////////////////////////////////////////////////////////
+//
+// NOTE: This the entry point into the C to get a minimax AI move.
+//   It does "Iterative deepening".
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+Move MinimaxAI::get_move_iterative_deepening(double time) {
+
+    seen_zobrist.clear();
+    nodes_visited = 0;
+
+    uint64_t zobrist_key_start = engine.game_board.zobrist_key;
+    //cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
+
+    auto start_time = chrono::high_resolution_clock::now();
+    auto required_end_time = start_time + chrono::duration<double>(time);
+
+	#ifdef IS_CALLBACK_THREAD
+    	start_callback_thread();
+    #endif
+
+    
+    // Results of previous searches
+    //unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> move_scores_table;
+    unordered_map<std::string, unordered_map<Move, double, MoveHash>> move_scores_table;
+
+    size_t nFENS = move_scores_table.size();    // This returns the number of FEN rows.
+    assert(nFENS == 0);
+    
+    int this_depth;
+
+    Move best_move = {};
+    double d_best_move_value;
+
+    g_iMove++;
+    cout << "\nMove: " << g_iMove << endl;
+
+    //Move null_move = Move{};
+    Move null_move = engine.users_last_move;
+
+    this_depth = 5;        // Note: because i said so.
+    int maximum_depth = this_depth;
+
+    //int maximum_depth = this_depth;
+    //maximum_depth = this_depth - (int)(g_iMove/10);
+    //if (maximum_depth < 4) maximum_depth = 4;
+    assert(maximum_depth>=1);
+
+    // NOTE: there should be an option: depth .vs. time.
+    int depth = 1;
+    int nPly = 0;
+
+    do {
+
+        #ifdef _DEBUGGING_TO_FILE 
+            //clear_stats_file(fpStatistics, "C:\\programming\\shumi-chess\\debug.dat");
+        #endif
+
+        #ifdef _DEBUGGING_MOVE_TREE
+            fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
+            print_move_to_file(null_move, nPly, state, false);
+        #endif
+
+        cout << endl << "Deepening to " << depth << " half moves " << "out of " << maximum_depth;
+
+        move_scores_table.clear();   // before calling store_board_values_negamax for a new depth
+
+        top_depth = depth;
+        auto ret_val = store_board_values_negamax(depth, -HUGE_SCORE, HUGE_SCORE
+                                                , move_scores_table
+                                                , null_move
+                                                , (nPly+1)
+                                               );
+
+        // ret_val is a tuple of the score and the move.
+        d_best_move_value = get<0>(ret_val);
+        best_move = get<1>(ret_val);
+
+        engine.result_to_string(d_best_move_value, best_move);
+
+        cout << " Best is:" << engine.move_string;
+
+        depth++;
+
+    //} while (chrono::high_resolution_clock::now() <= required_end_time);
+    } while (depth < (maximum_depth+1));
+
+    cout << "\nWent to depth " << (depth - 1) << endl;
+
+    string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
+
+    // Convert to absolute score
+    double d_best_move_value_abs = d_best_move_value;
+    if (engine.game_board.turn == Color::BLACK) d_best_move_value_abs = -d_best_move_value_abs;
+    
+    if (std::fabs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;        // avoid negative zero
+    string abs_score_string = to_string(d_best_move_value_abs);
+
+
+    engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                , (GameState::INPROGRESS)
+                //, NULL
+                , false
+                , false
+                , engine.move_string);    // Output
+
+    cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
+
+
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
+    abs_score_string = buf;
+
+    cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
+    cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total" + " ---- " + format_with_commas(evals_visited) + " Evals") << endl;
+    chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time;
+    cout << colorize(AColor::BRIGHT_GREEN, (static_cast<std::ostringstream&&>(std::ostringstream() << "Total time: " << std::fixed << std::setprecision(2) << total_time.count() << " sec")).str());
+
+    assert (total_time.count() > 0);
+    //cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total" + " ---- " + format_with_commas(evals_visited) + " Evals") << endl;
+    double nodes_per_sec = nodes_visited / total_time.count();
+    double evals_per_sec = evals_visited / total_time.count();
+    cout << colorize(AColor::BRIGHT_GREEN, "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
+
+  
+    // Debug
+    // isOK = engine.game_board.king_anti_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
+    // assert (isOK);
+    // cout << "wht " << centerness << endl;
+   
+    // isOK = engine.game_board.king_anti_centerness(Color::BLACK, centerness);  // Gets smaller closer to center.
+    // assert (isOK);
+    // cout << "blk " << centerness << endl;
+
+    // double connectiveness;
+    // bool bStatus;
+    // bStatus  = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
+    // cout << "wht " << connectiveness << endl;
+    // bStatus = engine.game_board.rook_connectiveness(Color::BLACK, connectiveness);
+    // cout << "blk " << connectiveness << endl;
+
+
+	#ifdef IS_CALLBACK_THREAD
+    	stop_callback_thread();
+    #endif
+
+    return best_move;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Choose the "minimax" AI move.
 // Returns a tuple of:
 //    the score value
 //
-
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 tuple<double, Move> MinimaxAI::store_board_values_negamax(
                     int depth, double alpha, double beta
-                    ,unordered_map<std::string, unordered_map<Move, double, MoveHash>> &move_scores
+                    ,unordered_map<std::string, unordered_map<Move, double, MoveHash>> &move_scores_table
                     ,ShumiChess::Move& move_last
                     ,int nPly)
 {
@@ -392,7 +549,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         constexpr int MAX_QPLY = 24;        
         if (nPly >= MAX_QPLY) {
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPly << "\x1b[0m\n";
-            std::cout << "\x1b[31m!" << "\x1b[0m";
+            //std::cout << "\x1b[31m!" << "\x1b[0m";
             auto tup = best_move_static(engine.game_board.turn, moves_to_loop_over, in_check);
             double scoreMe = std::get<0>(tup);
             ShumiChess::Move moveMe = std::get<1>(tup);
@@ -417,7 +574,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
 
         // (optional) move ordering
-        sort_moves_by_score(sorted_moves, move_scores, true);
+        sort_moves_by_score(sorted_moves, move_scores_table, true);
 
         d_end_score = -HUGE_SCORE;
         the_best_move = sorted_moves[0];
@@ -441,7 +598,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             auto ret_val = store_board_values_negamax(
                 (depth > 0 ? depth - 1 : 0),                // Refuse to allow negative depth
                 -beta, -alpha,
-                move_scores,
+                move_scores_table,
                 m, (nPly+1)
             );
 
@@ -462,11 +619,11 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
             // Store score
             std::string temp_fen_now = engine.game_board.to_fen();
-            move_scores[temp_fen_now][m] = d_score_value;
+            move_scores_table[temp_fen_now][m] = d_score_value;
 
             #ifndef NDEBUG
             {
-                auto& row = move_scores[temp_fen_now];
+                auto& row = move_scores_table[temp_fen_now];
                 auto it = row.find(m);
                 assert(it != row.end());
                 assert(std::fabs(it->second - d_score_value) <= VERY_SMALL_SCORE);
@@ -505,179 +662,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 }
 
 
-int g_iMove = 0;
-
-//////////////////////////////////////////////////////////////////////////////////
-//
-// NOTE: This the entry point into the C to get a minimax AI move.
-//   It does "Iterative deepening".
-//
-//////////////////////////////////////////////////////////////////////////////////
-
-Move MinimaxAI::get_move_iterative_deepening(double time) {
-
-    seen_zobrist.clear();
-    nodes_visited = 0;
-
-    uint64_t zobrist_key_start = engine.game_board.zobrist_key;
-    //cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
-
-    auto start_time = chrono::high_resolution_clock::now();
-    auto required_end_time = start_time + chrono::duration<double>(time);
-
-	#ifdef IS_CALLBACK_THREAD
-    	start_callback_thread();
-    #endif
-
-    
-    // Results of previous searches
-    //unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> move_scores;
-    unordered_map<std::string, unordered_map<Move, double, MoveHash>> move_scores;
-
-    size_t nFENS = move_scores.size();    // This returns the number of FEN rows.
-    assert(nFENS == 0);
-    
-    int this_depth;
-
-    Move best_move = {};
-    double d_best_move_value;
-
-    g_iMove++;
-    cout << "\nMove: " << g_iMove << endl;
-
-    //Move null_move = Move{};
-    Move null_move = engine.users_last_move;
-
-    this_depth = 4;        // Note: because i said so.
-    int maximum_depth = this_depth;
-
-    //int maximum_depth = this_depth;
-    //maximum_depth = this_depth - (int)(g_iMove/10);
-    //if (maximum_depth < 4) maximum_depth = 4;
-    assert(maximum_depth>=1);
-
-    // NOTE: there should be an option: depth .vs. time.
-    int depth = 1;
-    int nPly = 0;
-
-    do {
-
-        #ifdef _DEBUGGING_TO_FILE 
-            //clear_stats_file(fpStatistics, "C:\\programming\\shumi-chess\\debug.dat");
-        #endif
-
-        #ifdef _DEBUGGING_MOVE_TREE
-            fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
-            print_move_to_file(null_move, nPly, state, false);
-        #endif
-
-        cout << "Deepening to " << depth << " half moves " << "out of " << maximum_depth << "->";
-
-        move_scores.clear();   // before calling store_board_values_negamax for a new depth
-
-        top_depth = depth;
-        auto ret_val = store_board_values_negamax(depth, -HUGE_SCORE, HUGE_SCORE
-                                                , move_scores
-                                                , null_move
-                                                , (nPly+1)
-                                               );
-
-        // ret_val is a tuple of the score and the move.
-        d_best_move_value = get<0>(ret_val);
-        best_move = get<1>(ret_val);
-
-        engine.result_to_string(d_best_move_value, best_move);
-
-        cout << " Best is:" << engine.move_string << endl;
-
-        depth++;
-
-    //} while (chrono::high_resolution_clock::now() <= required_end_time);
-    } while (depth < (maximum_depth+1));
-
-    cout << "Went to depth " << (depth - 1) << endl;
-
-    //vector<Move> top_level_moves = engine.get_legal_moves();
-    //Move move_chosen = top_level_moves[0];     // Note: Assumes the moves are sorted?
-
-    //cout << "Found " << move_scores.size() << " items inside of move_scores" << endl;
-
-    // if (move_scores.find(engine.game_board.zobrist_key) == move_scores.end()) {
-    //     cout << "Did not find zobrist key in move_scores, this is bad" << endl;
-    //     exit(1);
-    // }
-
-    // auto stored_move_values = move_scores[engine.game_board.zobrist_key];
-    // for (Move& m : top_level_moves) {
-    //     if (stored_move_values.find(m) == stored_move_values.end()) {
-    //         cout << "did not find move " << move_to_string(m) << " in the stored moves. this is probably bad" << endl;
-    //         exit(1);
-    //     }
-    // }
-    string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
-
-    // Convert to absolute score
-    double d_best_move_value_abs = d_best_move_value;
-    if (engine.game_board.turn == Color::BLACK) d_best_move_value_abs = -d_best_move_value_abs;
-    
-    if (std::fabs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;        // avoid negative zero
-    string abs_score_string = to_string(d_best_move_value_abs);
-
-
-    engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-                , (GameState::INPROGRESS)
-                //, NULL
-                , false
-                , false
-                , engine.move_string);    // Output
-
-    cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
-
-
-    char buf[32];
-    std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
-    abs_score_string = buf;
-
-    cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
-    cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " nodes total" + " ---- " + format_with_commas(g_evals) + " Evals") << endl;
-    // cout << colorize(AColor::BRIGHT_GREEN, "Time it was supposed to take: " + to_string(time) + " s") << endl;
-    // cout << colorize(AColor::BRIGHT_GREEN, "Actual time taken: " + to_string(chrono::duration<double>(chrono::high_resolution_clock::now() - start_time).count()) + " s") << endl;
-    //cout << "get_move_iterative_deepening zobrist_key at begining: " << zobrist_key_start << ", at end: " << engine.game_board.zobrist_key << endl;
-    
-    //cout << "bc=" << (int)engine.game_board.black_castle << endl;
-
-    // double row, col, centerness, connectiveness;
-    // bool isOK;
-
-    // isOK = engine.game_board.king_anti_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
-    // assert (isOK);
-    // cout << "wht " << centerness << endl;
-   
-    // isOK = engine.game_board.king_anti_centerness(Color::BLACK, centerness);  // Gets smaller closer to center.
-    // assert (isOK);
-    // cout << "blk " << centerness << endl;
-
-    // double connectiveness;
-    // bool bStatus;
-    // bStatus  = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
-    // cout << "wht " << connectiveness << endl;
-    // bStatus = engine.game_board.rook_connectiveness(Color::BLACK, connectiveness);
-    // cout << "blk " << connectiveness << endl;
-
-
-	#ifdef IS_CALLBACK_THREAD
-    	stop_callback_thread();
-    #endif
-
-    return best_move;
-}
-
-
-
-
-
-
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 // === straight forward minimax below ===
@@ -711,7 +696,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
 
     }
     //
-    // Otherwise dive down one more level.
+    // Otherwise dive down one more ply.
     //
     if (color_multiplier == 1) {  // Maximizing player
         double dMax_move_value = -DBL_MAX;
@@ -826,14 +811,14 @@ void MinimaxAI::sort_moves_by_score(
     std::vector<ShumiChess::Move>& moves,  // reorder this in place
     const std::unordered_map<std::string,
         std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>
-    >& move_scores,
+    >& move_scores_table,
     bool sort_descending  // true = highest score first
 )
 
 {
     const std::string fen = engine.game_board.to_fen();
-    auto row_it = move_scores.find(fen);  // don't create if missing
-    if (row_it != move_scores.end() && !row_it->second.empty()) {
+    auto row_it = move_scores_table.find(fen);  // don't create if missing
+    if (row_it != move_scores_table.end() && !row_it->second.empty()) {
         const auto& row = row_it->second; // unordered_map<Move,double,...>
 
         // Pair up each current legal move with its stored score (or a tiny fallback)
@@ -996,12 +981,12 @@ void MinimaxAI::Add_result_to_print_tree(FILE* fpStatistics
                                     , ShumiChess::Move& move_last
                                     ,std::tuple<double, ShumiChess::Move> final_result
                                     , GameState state
-                                    ,int level
+                                    ,int iPly
                                     ,int depth
                                     )
 {
 
-    assert(level>=0);
+    assert(iPly>=0);
     const char* sz_move_text;
 
     double d_end_score = std::get<0>(final_result);                 // first element
@@ -1021,7 +1006,7 @@ void MinimaxAI::Add_result_to_print_tree(FILE* fpStatistics
                                         , engine.move_string);  // output
         // sz_move_text = engine.move_string.c_str();
 
-        // print_move_to_file_from_string(sz_move_text, engine.game_board.turn, level, false);
+        // print_move_to_file_from_string(sz_move_text, engine.game_board.turn, iPly, false);
 
         // Print the rest of the crap
         strcpy(szValue, "");
@@ -1052,8 +1037,8 @@ void MinimaxAI::Add_result_to_print_tree(FILE* fpStatistics
         }
         strcat(szValue, szScore);
 
-        // Add the "level
-        snprintf(szScore, sizeof(szScore), " lev= %-4d %-4d", level, depth);
+        // Add the iPly
+        snprintf(szScore, sizeof(szScore), " iPly= %-4d %-4d", iPly, depth);
         strcat(szValue, szScore);
 
         // Print the mess.
@@ -1067,23 +1052,23 @@ void MinimaxAI::Add_result_to_print_tree(FILE* fpStatistics
 
 void MinimaxAI::print_move_scores_to_file(
     FILE* fpStatistics,
-    const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores
+    const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores_table
 )
 {
 
     // sprintf(szValue, "\n---------------------------------------------------------------------------");
     // fprintf(fpStatistics, "%s", szValue);
-    // size_t iFENS = move_scores.size();    // This returns the number of FEN rows.
+    // size_t iFENS = move_scores_table.size();    // This returns the number of FEN rows.
     // sprintf(szValue, "\n\n  nFENS = %i", (int)iFENS);
     // fprintf(fpStatistics, "%s", szValue);
 
     fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
-    fprintf(fpStatistics, "\n  nFENS = %zu\n", move_scores.size());  // %zu for size_t
+    fprintf(fpStatistics, "\n  nFENS = %zu\n", move_scores_table.size());  // %zu for size_t
 
     // cout << endl;
     // print_gameboard(engine.game_board);
 
-    for (const auto& fen_row : move_scores) {
+    for (const auto& fen_row : move_scores_table) {
         const auto& moves_map = fen_row.second;
 
         // Optional: print the FEN once per block

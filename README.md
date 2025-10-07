@@ -27,11 +27,9 @@ This project has AI to make intelligent chess moves. There is another repo writt
 
 
 ## current bug log (unless otherwise specified, happens in minimax AI)
-  * I think that the pawn masks for check when the king is on the left and right columns is busted (you can move into check)
-  * Edge and king bug. White king cannot take pawn. see FEN: 5r1k/1Q5p/8/p2P3B/1KP1P3/1P6/P7/8 w - a6 0 42  
-  * Edge of the board false checkmates. Checkmate piece is queen with no support, Kxq not allowed as king move. Happens occasionally. Related to above? This one seems to always be in left and right columns also.  
   * Doesnt recognize three fold position repitition. 50 move rule is tested! stalemate works fine.
   * Doesnt recognize Enpassent (disallowed)
+  * Transposition table not complete. (uses FEN not zobrist, and does not detect transpositions)
   
 ## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)

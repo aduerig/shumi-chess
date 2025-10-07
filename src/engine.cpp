@@ -50,7 +50,7 @@ void Engine::reset_engine() {
 
     // You can override the gameboard setup with fen positions as in: (enter FEN here)
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
-    //game_board = GameBoard("5r1k/1R5p/8/p2P4/K1P1P3/1P6/P7/8 w - a6 0 42");      // good
+    //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
     game_board = GameBoard();
 
@@ -62,6 +62,9 @@ void Engine::reset_engine() {
     en_passant_history.push(0);
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
+
+    //std::cout << "\x1b[94m    hello world() I'm the engine! \x1b[0m";
+
 }
 
 void Engine::reset_engine(const string& fen) {
@@ -74,6 +77,9 @@ void Engine::reset_engine(const string& fen) {
     en_passant_history.push(0);
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
+
+    std::cout << "\x1b[94m    hello world(FEN) I'm the engine! \x1b[0m";
+
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
@@ -183,9 +189,11 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
             (reachable_kings & game_board.get_pieces_template<Piece::KING>(enemy_color)));
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
 // TODO should this check for draws by internally calling get legal moves and caching that and 
 //      returning on the actual call?, very slow calling get_legal_moves again
 // NOTE: I complely agree this is wastefull. But it is not called in the "main line", the one below is.
+//   This one is called only during testing?
 GameState Engine::game_over() {
     vector<Move> legal_moves = get_legal_moves();
     return game_over(legal_moves);
@@ -203,7 +211,6 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
-    // TODO check if this is off by one or something Or Note: off by two ?
     else if (game_board.halfmove >= 50) {
         //  After fifty "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;
@@ -211,6 +218,8 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
     }
     return GameState::INPROGRESS;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // takes a move, but tracks it so pop() can undo
 void Engine::pushMove(const Move& move) {

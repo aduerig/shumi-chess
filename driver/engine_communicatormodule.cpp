@@ -119,7 +119,6 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
                                         , false
                                         , tempString);      // Output
     python_engine.users_last_move = found_move;
-    cout << tempString << endl;
 
 
     python_engine.pushMove(found_move);

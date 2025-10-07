@@ -27,7 +27,7 @@ class MinimaxAI {
 public:
 
     int nodes_visited = 0;
-    int g_evals = 0;
+    int evals_visited = 0;
     
     int top_depth = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
 
@@ -57,8 +57,8 @@ public:
     ShumiChess::Move get_move_iterative_deepening(double);
 
     std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta
-                                            //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores
-                                            , unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores
+                                            //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
+                                            , unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
                                             , ShumiChess::Move& move_last
                                             , int nPly);
 
@@ -72,7 +72,7 @@ public:
         std::vector<ShumiChess::Move>& moves,  // reorder this in place
         const std::unordered_map<std::string,
             std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>
-        >& move_scores,
+        >& move_scores_table,
         bool sort_descending  // true = highest relative score first
     );
 
@@ -88,7 +88,7 @@ public:
                                     ,ShumiChess::Move& move_last
                                     ,std::tuple<double, ShumiChess::Move> final_result
                                     , ShumiChess::GameState state
-                                    ,int level
+                                    ,int iPly
                                     ,int depth);
 
     void clear_stats_file(FILE*& fpStatistics, const char* path);
@@ -106,7 +106,7 @@ public:
 
     void print_move_scores_to_file(
         FILE* fpStatistics,
-        const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores
+        const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores_table
     );
 
 
