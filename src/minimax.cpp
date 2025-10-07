@@ -257,12 +257,13 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     #endif
 
     
-    // Results of previous searches
-    //unordered_map<uint64_t, unordered_map<Move, double, MoveHash>> move_scores_table;
+    // Results of previous iterave searches
     unordered_map<std::string, unordered_map<Move, double, MoveHash>> move_scores_table;
 
     size_t nFENS = move_scores_table.size();    // This returns the number of FEN rows.
     assert(nFENS == 0);
+    vector<double> move_scores;
+
     
     int this_depth;
 
@@ -574,12 +575,17 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
 
         // (optional) move ordering
-        sort_moves_by_score(sorted_moves, move_scores_table, true);
+        //sort_moves_by_score(sorted_moves, move_scores_table, true);
 
         d_end_score = -HUGE_SCORE;
         the_best_move = sorted_moves[0];
 
+        //for (std::size_t i = 0; i < sorted_moves.size(); ++i) {
+        //    Move& m = sorted_moves[i];
+
         for (Move &m : sorted_moves) {
+
+
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_before = engine.game_board.to_fen();
             #endif
@@ -621,15 +627,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             std::string temp_fen_now = engine.game_board.to_fen();
             move_scores_table[temp_fen_now][m] = d_score_value;
 
-            #ifndef NDEBUG
-            {
-                auto& row = move_scores_table[temp_fen_now];
-                auto it = row.find(m);
-                assert(it != row.end());
-                assert(std::fabs(it->second - d_score_value) <= VERY_SMALL_SCORE);
-            }
-            #endif
-
+            //move_scores[i] = d_score_value;
 
             // Note: this should be done as a real random choice. (random over the moves possible). 
             // This dumb approach favors moves near the end of the list
@@ -650,6 +648,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                 the_best_move = m;
             }
 
+            // Alpha beta break the analysis
             alpha = std::max(alpha, d_end_score);
             if (alpha >= beta + VERY_SMALL_SCORE) {
                 break;
@@ -816,31 +815,7 @@ void MinimaxAI::sort_moves_by_score(
 )
 
 {
-    const std::string fen = engine.game_board.to_fen();
-    auto row_it = move_scores_table.find(fen);  // don't create if missing
-    if (row_it != move_scores_table.end() && !row_it->second.empty()) {
-        const auto& row = row_it->second; // unordered_map<Move,double,...>
 
-        // Pair up each current legal move with its stored score (or a tiny fallback)
-        std::vector<std::pair<Move,double>> a;
-        a.reserve(moves.size());
-        for (const Move& m : moves) {
-            auto it = row.find(m);
-            double s = (it != row.end()) ? it->second : std::numeric_limits<double>::lowest();
-            a.emplace_back(m, s);  // unscored moves will end up last
-        }
-
-        // Insertion sort by score (descending)
-        for (size_t i = 1; i < a.size(); ++i) {
-            auto key = a[i];
-            size_t j = i;
-            while (j > 0 && a[j-1].second < key.second) { a[j] = a[j-1]; --j; }
-            a[j] = key;
-        }
-
-        // Write back just the moves, to sorted_moves, in the new order
-        for (size_t i = 0; i < a.size(); ++i) moves[i] = a[i].first;
-    }
 }
 
 

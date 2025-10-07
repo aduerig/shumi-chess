@@ -35,6 +35,10 @@ crash positions
 rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play h3.
 rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play Bd2.
 
+trap #2 node horrible move (after Qe3), level 5.
+r3q2k/pppbb2p/2n1p1p1/3pPr2/3P1P2/2P1QN2/PPBN3P/R4R1K b - - 1 19
+
+
 
 not so bad fens   good games
 ===============

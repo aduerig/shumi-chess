@@ -30,7 +30,9 @@ This project has AI to make intelligent chess moves. There is another repo writt
   * Doesnt recognize three fold position repitition. 50 move rule is tested! stalemate works fine.
   * Doesnt recognize Enpassent (disallowed)
   * Transposition table not complete. (uses FEN not zobrist, and does not detect transpositions)
-  
+  * Sort of iteravive deepining is commented out (defective, under test).
+  * The trap: "! NODES VISITED trap#2 50000043dep=4  0 ! NODES VISITED trap#2 50000044dep=4" is horrible in its chioce of move.
+
 ## change log
   * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
   * Farnsworth 8/15/2025    Fixed "rook promotion bug" (pawn now always promotes to queen). Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up around castling. Seperated out board initial setup.
