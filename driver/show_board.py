@@ -168,8 +168,13 @@ def clicked_reset_button(button_obj):
 
 
 def load_game(button_obj):
-    file_path = filedialog.askopenfilename()
-    print('you selected this path:', file_path)
+    engine_communicator.print_from_c()
+    
+
+
+# def load_game(button_obj):
+#     file_path = filedialog.askopenfilename()
+#     print('you selected this path:', file_path)
 
 
 def get_fen(button_obj):

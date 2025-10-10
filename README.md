@@ -18,28 +18,28 @@ we're back
 ## intro
 This project is a hobby C++ engine written by OhMesch and I. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
 
-This project has AI to make intelligent chess moves. There is another repo written by OhMesch and I that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
+This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, PV ordering (at root), acquiescence. 
+
+There is another repo written by OhMesch and I that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
 * https://github.com/aduerig/chess-ai
 
+See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "AI", as far as speed or "intelligence"
+
 ## todo
-* i disabled enpassant and ~~castling~~ temporarily until zobrist hashing works
 * See [brainStorm](doc/brainStorm.md) for more future directions.
 
 
 ## current bug log (unless otherwise specified, happens in minimax AI)
   * Doesnt recognize three fold position repitition. 50 move rule is tested! stalemate works fine.
   * Doesnt recognize Enpassent (disallowed)
-  * Transposition table not complete. (uses FEN not zobrist, and does not detect transpositions)
-  * Sort of iteravive deepining is commented out (defective, under test).
-  * The trap: "! NODES VISITED trap#2 50000043dep=4  0 ! NODES VISITED trap#2 50000044dep=4" is horrible in its chioce of move.
+  * No Transposition table (TT).
+  * The trap: "! NODES VISITED trap#2 50000043dep=4  0 ! NODES VISITED trap#2 50000044dep=4" is horrible in its choice of best move. 
+  * Should use "Anytime behavior" of iterive deepinging, to make a "hurry up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.
+  * Use other "speedups", that result from iterive deepening. (Killer moves + History heuristic, aspiration)
 
 ## change log
-  * Farnsworth 8/14/2025    Reallowed castling so as to play it. Fixes some tests. (not sure of the fate of enpassent)
-  * Farnsworth 8/15/2025    Fixed "rook promotion bug" (pawn now always promotes to queen). Increased baseline minimax time. Commented out "Move shouldnt be legal" logic. so as to play it. This always comes up around castling. Seperated out board initial setup.
-  * Farnsworth 8/20/2025    BASELINE 1.  All tests now pass. Most castle bugs now fixed. Updated bug log. Refactored.  NOTE: This means the tests don't test enpassant, nor do they test "magical rook appearence3" bug.
-  * Farnsworth 8/22/2025     Jailed the "Magical rook appearence3" By disabling zobrist code, see: "if (move_scores.find(engine.game_board.zobrist_key) != move_scores.end()) {". Simplfied the evaluator to just
- see material. Did not yet remove the ""Magical rook appearence3" bug debug code, awaiting more testing.
-  * Farnsworth 7/13/2025     Fixed "Edge and king bug"
+  * Abandoned 10/11/2025
+  * see 
 
 ## building
 This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.

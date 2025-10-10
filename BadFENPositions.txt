@@ -26,7 +26,8 @@ rnbqk2r/1pppp1bp/6pn/p3p3/2PP1P2/2NB1N2/PP4PP/R1BQK2R w KQkq - 0 9
 Fen is now r4r1k/p2nb1pp/b1pppp2/1p5q/3PP3/1P1B1N2/PBP1QPRP/6RK b - - 5 19
 
 
-
+// doubled rook pawn
+rnk2b1r/pppqp2p/4bp1p/3pP3/3P4/2PB1N2/PP3PPP/RN1Q1RK1 w - - 0 9
 
 crash positions
 ==================

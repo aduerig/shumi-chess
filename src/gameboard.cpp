@@ -352,60 +352,109 @@ bool GameBoard::knights_centerness(Color c, double& centerness) const
 }
 
 
-
 bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
 {
     using ull = unsigned long long;
 
     const ull rooks = (c == Color::WHITE) ? white_rooks : black_rooks;
-    const ull my_pieces =
-        (c == Color::WHITE)
-        ? (white_pawns | white_knights | white_bishops | white_rooks | white_queens | white_king)
-        : (black_pawns | black_knights | black_bishops | black_rooks | black_queens | black_king);
 
-    const int back_rank = (c == Color::WHITE) ? 0 : 7;          // rank 1 (white) or rank 8 (black)
-    const ull back_mask = 0xFFULL << (back_rank * 8);
-    ull back_rooks = rooks & back_mask;                         // only rooks on the back rank
-
-    // Need at least two rooks on the back rank
-    if (back_rooks == 0 || (back_rooks & (back_rooks - 1)) == 0) {
+    // Need at least two rooks of this color
+    if ((rooks == 0) || ((rooks & (rooks - 1)) == 0)) {
         connectiveness = 0.0;
         return false;
     }
 
-    // Copy the mask; we will *extract* two rook squares from this temporary.
-    // lsb_and_pop_to_square(tmp) returns the index (0..63) of the least-significant 1 bit
-    // and clears that bit in 'tmp'. We use a temp so the real board state is untouched.
-    ull tmp = back_rooks;
-    int s1 = utility::bit::lsb_and_pop_to_square(tmp);          // first rook square (by lowest bit)
-    int s2 = utility::bit::lsb_and_pop_to_square(tmp);          // second rook square
+    // Occupancy of all pieces (both sides)
+    const ull occupancy =
+        white_pawns | white_knights | white_bishops | white_rooks | white_queens | white_king |
+        black_pawns | black_knights | black_bishops | black_rooks | black_queens | black_king;
 
-    // Convert to files (0=a .. 7=h)
-    int f1 = s1 % 8;
-    int f2 = s2 % 8;
+    // Collect squares of this side's rooks
+    int sqs[8]; // promotion could make more than 2, but 8 is plenty
+    int n = 0;
+    ull tmp = rooks;
+    while (tmp) {
+        sqs[n++] = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+    }
 
-    // Ensure f1 <= f2 so f1 is the left rook and f2 is the right rook on the back rank.
-    // (This just normalizes order; it does not change the position.)
-    if (f1 > f2) std::swap(f1, f2);
-
-    int files_between = f2 - f1 - 1;                            // squares strictly between
-    if (files_between <= 0) {                                   // adjacent rooks ⇒ fully connected
-        connectiveness = 1.0;
+    auto clear_between_rank = [&](int a, int b) -> bool {
+        const int ra = a / 8;               // same rank as b
+        int fa = a % 8, fb = b % 8;
+        if (fa > fb) std::swap(fa, fb);
+        for (int f = fa + 1; f < fb; ++f) {
+            const int sq = ra * 8 + f;
+            if (occupancy & (1ULL << sq)) return false;
+        }
         return true;
+    };
+
+    auto clear_between_file = [&](int a, int b) -> bool {
+        const int fa = a % 8;               // same file as b
+        int ra = a / 8, rb = b / 8;
+        if (ra > rb) std::swap(ra, rb);
+        for (int r = ra + 1; r < rb; ++r) {
+            const int sq = r * 8 + fa;
+            if (occupancy & (1ULL << sq)) return false;
+        }
+        return true;
+    };
+
+    // Check all rook pairs: same rank OR same file, with empty squares between
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            const int s1 = sqs[i], s2 = sqs[j];
+            if ((s1 / 8 == s2 / 8) && clear_between_rank(s1, s2)) {
+                connectiveness = 1.0;
+                return true;
+            }
+            if ((s1 % 8 == s2 % 8) && clear_between_file(s1, s2)) {
+                connectiveness = 1.0;
+                return true;
+            }
+        }
     }
 
-    // Count OWN pieces strictly between the two rooks on the back rank
-    int base = back_rank * 8;
-    int own_between = 0;
-    for (int f = f1 + 1; f <= f2 - 1; ++f) {
-        ull bit = 1ULL << (base + f);
-        if (my_pieces & bit) ++own_between;
-    }
-
-    connectiveness = 1.0 - (static_cast<double>(own_between) / files_between);
-    if (connectiveness < 0.0) connectiveness = 0.0;             // clamp
-    return true;
+    connectiveness = 0.0;
+    return false;
 }
+
+// Count isolated doubled/tripled pawns for side c.
+// For each file with k>=2 pawns and no friendly pawns on adjacent files,
+// add (k-1). Triples add 2, etc.
+int GameBoard::count_isolated_doubled_pawns(Color c) const
+{
+    using ull = unsigned long long;
+
+    const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
+    if (!P) return 0;
+
+    int file_count[8] = {0};   // file index: 0..7 per your s%8 convention
+    unsigned files_present = 0;
+
+    ull tmp = P;
+    while (tmp) {
+        const int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        const int f = s % 8;                                    // file index
+        ++file_count[f];
+        files_present |= (1u << f);
+    }
+
+    int isolations = 0;
+    for (int f = 0; f < 8; ++f) {
+        const int k = file_count[f];
+        if (k < 2) continue;  // not doubled/tripled
+
+        const bool left  = (f < 7) && (files_present & (1u << (f + 1)));
+        const bool right = (f > 0) && (files_present & (1u << (f - 1)));
+
+        if (!left && !right)
+            isolations += (k - 1);  // count the "extras" on that isolated file
+    }
+
+    return isolations;
+}
+
+
 
 
 

@@ -169,5 +169,8 @@ class GameBoard {
 
         bool rook_connectiveness(Color c, double& connectiveness) const;
 
+
+        int count_isolated_doubled_pawns(Color c) const;
+
 };
 } // end namespace ShumiChess

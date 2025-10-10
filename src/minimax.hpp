@@ -10,6 +10,14 @@
 #include <string>
 #include <limits>
 
+
+
+using MoveScore     = std::pair<ShumiChess::Move, double>;
+using MoveScoreList = std::vector<MoveScore>;
+
+
+
+
 class RandomAI {
 public:
     ShumiChess::Engine engine;
@@ -31,19 +39,12 @@ public:
     
     int top_depth = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
 
+    ShumiChess::Move prev_root_best_{};  // best root move from the last *completed* iteration   PV PUSH
+
+
     // The chess engine
     ShumiChess::Engine& engine;
 
-    // NOTE: Can these be more accurate (i.e. decimals like 2.8 for knight)
-    // NOTE: Can these be more accurate as to "2 bishops" etc.
-    // std::array<std::tuple<ShumiChess::Piece, double>, 6> piece_values = {
-    //     make_tuple(ShumiChess::Piece::PAWN, 1),
-    //     make_tuple(ShumiChess::Piece::ROOK, 5),
-    //     make_tuple(ShumiChess::Piece::KNIGHT, 3.2),
-    //     make_tuple(ShumiChess::Piece::BISHOP, 3.3),
-    //     make_tuple(ShumiChess::Piece::QUEEN, 9),
-    //     make_tuple(ShumiChess::Piece::KING, 0),
-    // };
 
     unordered_map<uint64_t, std::string> seen_zobrist;
 
@@ -58,7 +59,8 @@ public:
 
     std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta
                                             //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
-                                            , unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
+                                            //, unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
+                                            //, MoveScoreList& move_and_scores_list
                                             , ShumiChess::Move& move_last
                                             , int nPly);
 
@@ -69,11 +71,8 @@ public:
 
 
     void sort_moves_by_score(
-        std::vector<ShumiChess::Move>& moves,  // reorder this in place
-        const std::unordered_map<std::string,
-            std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>
-        >& move_scores_table,
-        bool sort_descending  // true = highest relative score first
+                        MoveScoreList& moves_and_scores_list,  // note: pass by reference so we sort in place
+                        bool sort_descending  
     );
 
     std::tuple<double, ShumiChess::Move>

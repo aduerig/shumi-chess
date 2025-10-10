@@ -990,6 +990,16 @@ char Engine::file_from_move(const Move& m)
 }
 
 
+
+
+void Engine::hurryUpGrampa() {
+    bHurryUpGrampa = true;
+}
+
+
+
+
+
 void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 {
     int nChars;
@@ -1006,12 +1016,43 @@ void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 
 }
 
-// Puts best move and absolute score. 
-void Engine::result_to_string(double d_best_move_value, const ShumiChess::Move& best_move)
+void Engine::moves_and_scores_to_file(const MoveScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp)
+{
+    for (const MoveScore& ms : move_and_scores_list) {
+        move_and_score_to_file(ms, b_convert_to_abs_score, fp);
+    }
+}
+
+
+void Engine::move_and_score_to_file(const MoveScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
 {
 
-    if (game_board.turn == ShumiChess::BLACK) d_best_move_value = -d_best_move_value;  // Convert relative score to abs score
+    // MoveScore mTemp;   
+    // mTemp.first  = best_move;
+    // mTemp.second = d_best_move_value;
 
+    move_and_score_to_string(move_and_score, b_convert_to_abs_score);
+
+    int nChars = fputc('\n', fp);
+    if (nChars == EOF) assert(0);
+
+    nChars = fputs(move_string.c_str(), fp);
+    if (nChars == EOF) assert(0);
+
+}
+
+// Puts best move and absolute score. 
+void Engine::move_and_score_to_string(const MoveScore move_and_score, bool b_convert_to_abs_score)
+{
+
+    const ShumiChess::Move& best_move = move_and_score.first;
+    double d_best_move_value = move_and_score.second;   
+
+    // Convert relative score to abs score
+    if (b_convert_to_abs_score) {
+        if (game_board.turn == ShumiChess::BLACK) d_best_move_value = -d_best_move_value;  
+    }
+    
     if (std::fabs(d_best_move_value) < VERY_SMALL_SCORE) d_best_move_value = 0.0;        // avoid negative zero
 
     bitboards_to_algebraic(game_board.turn, best_move

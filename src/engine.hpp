@@ -13,6 +13,10 @@
 using namespace std;
 
 
+using MoveScore     = std::pair<ShumiChess::Move, double>;
+using MoveScoreList = std::vector<MoveScore>;
+
+
 #define VERY_SMALL_SCORE 1.0e-9     // 10 micro centipawns?
 #define HUGE_SCORE 10000            // A million centipawns!       //  DBL_MAX    // A relative score
 
@@ -158,8 +162,15 @@ class Engine {
         char rank_to_move(const Move& m);
 
 
-        void result_to_string(double d_best_move_value, const ShumiChess::Move& best_move);
+        bool bHurryUpGrampa = false;
+        void hurryUpGrampa();
 
+        
+        void moves_and_scores_to_file(const MoveScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
+        void move_and_score_to_file(const MoveScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
+
+        void move_and_score_to_string(const MoveScore move_and_score, bool b_convert_to_abs_score);
+      
         void print_bitboard_to_file(ull bb, FILE* fp);
         void print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp);
 

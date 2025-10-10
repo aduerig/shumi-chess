@@ -27,11 +27,7 @@ engine_communicator_systemcall(PyObject* self, PyObject* args) {
     return PyLong_FromLong(sts);
 }
 
-static PyObject*
-engine_communicator_print_from_c(PyObject* self, PyObject* args) {
-    cout << "this is from C" << endl;
-    return Py_BuildValue(""); // this is None in Python
-}
+
 
 
 ShumiChess::Engine python_engine;
@@ -57,6 +53,20 @@ engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
     }
     return python_move_list;
 }
+
+
+static PyObject*
+engine_communicator_print_from_c(PyObject* self, PyObject* args) {
+
+    cout << "hurryUpGrampa!" << endl;
+    //python_engine.       
+    python_engine.hurryUpGrampa();
+    
+    return Py_BuildValue(""); // this is None in Python
+
+}
+
+
 
 static PyObject*
 engine_communicator_get_piece_positions(PyObject* self, PyObject* args) {
