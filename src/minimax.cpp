@@ -50,7 +50,7 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 
 #define RANDOMIZING_EQUAL_MOVES         // Uncomment to move equal moves randomly
 
-#define IS_CALLBACK_THREAD              // Uncomment to enable the callback to show "nPly".
+#define IS_CALLBACK_THREAD              // Uncomment to enable the callback to show "nPly", real time.
 
 #ifdef IS_CALLBACK_THREAD
     #include <thread>
@@ -130,7 +130,9 @@ string format_with_commas(T value) {
 // Absolute score is always positive for great positions for white.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//
+// returns a positive score, if "for_color" is ahead.
+//
 double MinimaxAI::evaluate_board(Color for_color)
                                    //, ShumiChess::Move& last_move
                                    // , vector<ShumiChess::Move>& moves)
@@ -138,12 +140,15 @@ double MinimaxAI::evaluate_board(Color for_color)
 
     evals_visited++;
 
-    double d_board_val_adjusted = 0.0;
+    int cp_score_adjusted = 0;
 
+    int cp_score_pieces_only = 0;        // Pieces only
+    //
+    // Pieces only
+    //
+    for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
-    // Loop over the two colors
-    for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
-         int cp_board_score_sum = 0;
+        int cp_score_pieces_only_temp = 0;
 
         // Add up the scores for each piece
         //for (const auto& i : piece_values) {
@@ -154,50 +159,51 @@ double MinimaxAI::evaluate_board(Color for_color)
             
             // Since the king can never leave the board (engine does not allow), 
             // and there is a huge score checked earlier we can just skip kings.
-            if (piece_type == Piece::KING) continue;
+            // NOTE: ineffecient. Should put king last in piece enum. King IS the last in the enum. This line is useless!
+            //if (piece_type == Piece::KING) continue;
 
 
             // Get bitboard of all pieces on board of this type and color
-            ull pieces_bitboard = engine.game_board.get_pieces(color, piece_type);
+            ull pieces_bitboard = engine.game_board.get_pieces(color1, piece_type);
 
             // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
             int cp_board_score = engine.centipawn_score_of(piece_type);
             int nPieces = engine.bits_in(pieces_bitboard);
-            cp_board_score_sum += (nPieces * cp_board_score);
+            cp_score_pieces_only_temp += (nPieces * cp_board_score);
 
-
-                // // Add a small bonus for pawns and knights in the middle of the board
-                // if ( (piece_type == Piece::PAWN) || (piece_type == Piece::KNIGHT)) {
-                //     ull center_squares = (0b00000000'00000000'00000000'00011000'00011000'00000000'00000000'00000000);
-                //     ull middle_place = pieces_bitboard & center_squares;
-                //     d_board_val +=  0.1 * engine.bits_in(middle_place);
-                //     // cout << "adding up " << color_str(color) << endl;
-                // }
- 
+            assert (cp_score_pieces_only_temp>=0);
 
         }
 
-        #ifdef DADS_CRAZY_EVALUATION_CHANGES
+        if (color1 != for_color) cp_score_pieces_only_temp *= -1;
+        cp_score_pieces_only += cp_score_pieces_only_temp;
+    }
+    //
+    // positional considerations only
+    //
+    int cp_score_position = 0;
 
-            // Add code to make king shy from center.
+    #ifdef DADS_CRAZY_EVALUATION_CHANGES
+   
+        for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
+
+            int cp_score_position_temp = 0;        // positional considerations only
+
+            // // Add code to make king shy from center.
             double anti_centerness;
             bool isOK = engine.game_board.king_anti_centerness(color, anti_centerness);
-            //assert (isOK);
-            if (isOK) { // NOTE: why does this "isOK" have to be there? Why isnt it always OK?
-                cp_board_score_sum += anti_centerness*80;   // centipawns
-            }
+            assert (isOK);     // isOK just means that there wasnt a king
+            cp_score_position_temp += std::lround(anti_centerness*80);   // centipawns
 
             // Add code to encourage rook connections on back rank.
             double connectiveness;
             isOK = engine.game_board.rook_connectiveness(color, connectiveness);
-            //assert (isOK);
-            if (isOK) { // NOTE: why does this "isOK" have to be there? Why isnt it always OK?
-                cp_board_score_sum += connectiveness*20;   // centipawns
-            }
+            //assert (isOK);    // isOK just means that there werent two rooks to connect
+            cp_score_position_temp += std::lround(connectiveness*20);   // centipawns
 
-
+            // Add code to discourage isolated doubled or tripled pawns.
             int isolanis =  engine.game_board.count_isolated_doubled_pawns(color);
-            cp_board_score_sum -= isolanis*20;   // centipawns
+            cp_score_position_temp -= isolanis*20;   // centipawns
 
 
             // Add code to encourage knights in the center
@@ -205,42 +211,39 @@ double MinimaxAI::evaluate_board(Color for_color)
             // isOK = engine.game_board.knights_centerness(color, centerness);
             // //assert (isOK);
             // if (isOK) { // NOTE: why does this "isOK" have to be there? Why isnt it always OK?
-            //     cp_board_score_sum += centerness*0.0;  // centipawns
+            //     cp_score_position += centerness*0.0;  // centipawns
             // }
 
-        #endif
 
-        // Convert sum from centipawns.
-        double d_board_score = cp_board_score_sum / 100.0;
+            // Add code to promote trading, if ahead. 
+            //cp_score_position += cp_score_pieces_only
 
-        // Make the "absolute score" an "relative (negamax) score".
-        assert (d_board_score>=0);
-        //assert (d_board_val==d_board_score);
-
-        // Sum the values for the two colors.
-        if (color != for_color) {
-            d_board_score *= -1;
+            if (color != for_color) cp_score_position_temp *= -1;
+            cp_score_position += cp_score_position_temp;
         }
-        d_board_val_adjusted += d_board_score;
-    }
 
-    // Favor for most moves from this position, divided by arbitrary constant "80" 
-    // NOTE: But we already adusted for color,  didnt we just above?  
-    //     HAS THIS BEEN "play tested"
-    //d_board_val_adjusted += (moves.size() / 80);
+        // Add positional stuff to score (score is positive at this point for for_color)
+        cp_score_position += cp_score_pieces_only*0.1;
+
+    #endif
+
+    // Both position and pieces are now signed properly for the side.
+    cp_score_adjusted = cp_score_pieces_only + cp_score_position;
 
 
     #ifdef _DEBUGGING_MOVE_TREE
-        fprintf(fpStatistics, " ev=%.3f", d_board_val_adjusted);
+        fprintf(fpStatistics, " ev=%i", cp_score_adjusted);
     #endif
 
-
-    return d_board_val_adjusted;
+     // Convert sum (for both colors) from centipawns to double.
+    return (cp_score_adjusted * 0.01);
 }
 
+//////////////////////////////////////////////////////////////////////////////////
 
 
 int g_iMove = 0;
+int g_this_depth = 6;
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -266,10 +269,10 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
     
     // Results of previous iterave searches
-    unordered_map<std::string, unordered_map<Move, double, MoveHash>> move_scores_table;
+    //unordered_map<std::string, unordered_map<Move, double, MoveHash>> move_scores_table;
 
-    size_t nFENS = move_scores_table.size();    // This returns the number of FEN rows.
-    assert(nFENS == 0);
+    // size_t nFENS = move_scores_table.size();    // This returns the number of FEN rows.
+    // assert(nFENS == 0);
  
     //MoveScoreList move_and_scores_list;
 
@@ -286,11 +289,11 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 5;        // Note: because i said so.
+    this_depth = 6;        // Note: because i said so.
     int maximum_depth = this_depth;
 
-    maximum_depth = this_depth - (int)(g_iMove/10);
-    if (maximum_depth < 4) maximum_depth = 4;
+    // maximum_depth = this_depth - (int)(g_iMove/10);
+    // if (maximum_depth < 4) maximum_depth = 4;
     assert(maximum_depth>=1);
 
     // NOTE: there should be an option: depth .vs. time.
@@ -305,12 +308,12 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
         #ifdef _DEBUGGING_MOVE_TREE
             fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
-            print_move_to_file(null_move, nPly, state, false);
+            print_move_to_file(null_move, nPly, state, false, true);
         #endif
 
         cout << endl << "Deepening to " << depth << " half moves " << "out of " << maximum_depth;
 
-        move_scores_table.clear();
+        //move_scores_table.clear();
         //move_and_scores_list.clear();
 
         top_depth = depth;
@@ -397,12 +400,12 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     // // assert (isOK);
     // cout << "blk " << isolanis << endl;
 
-    double connectiveness;
-    bool bStatus;
-    bStatus  = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
-    cout << "wht " << connectiveness << endl;
-    bStatus = engine.game_board.rook_connectiveness(Color::BLACK, connectiveness);
-    cout << "blk " << connectiveness << endl;
+    // double connectiveness;
+    // bool bStatus;
+    // bStatus  = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
+    // cout << "wht " << connectiveness << endl;
+    // bStatus = engine.game_board.rook_connectiveness(Color::BLACK, connectiveness);
+    // cout << "blk " << connectiveness << endl;
 
 
 	#ifdef IS_CALLBACK_THREAD
@@ -425,7 +428,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                     int depth, double alpha, double beta
                     //,unordered_map<std::string, unordered_map<Move, double, MoveHash>> &move_scores_table
                     //,MoveScoreList& move_and_scores_list
-                    ,ShumiChess::Move& move_last
+                    ,const ShumiChess::Move& move_last
                     ,int nPly)
 {
 
@@ -435,8 +438,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     std::tuple<double, ShumiChess::Move> final_result;
 
     
-    std::vector<Move> moves_to_loop_over;
-    std::vector<Move> unquiet_moves;
+    vector<Move> moves_to_loop_over;
+    vector<Move> unquiet_moves;
 
     nodes_visited++;
 
@@ -447,9 +450,13 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     bool in_check = engine.is_king_in_check(engine.game_board.turn);
 
 
+    // communications from 
     if (engine.bHurryUpGrampa) {
-        cout << "\n ...take it easy ..." << endl;
+        g_this_depth--;
+        if (g_this_depth <= 3) g_this_depth = 6;
+        cout << "\n ...take it easy ..." << g_this_depth << endl;
         engine.bHurryUpGrampa = false;
+
     }
 
 
@@ -465,10 +472,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     constexpr int MAX_PLY = 32;
     if (nPly > MAX_PLY) {
 
-
-
         assert(0);
-
 
         std::cout << "\n\x1b[31m! MAX PLY  trap#1 " << nPly << "\x1b[0m\n";
         #ifdef _DEBUGGING_TO_FILE 
@@ -504,7 +508,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     GameState state = engine.game_over(legal_moves);
 
     #ifdef _DEBUGGING_MOVE_CHAIN
-        print_move_to_file(move_last, nPly, state, in_check);
+        print_move_to_file(move_last, nPly, state, in_check, true);
     #endif
 
 
@@ -598,7 +602,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         // Static board evaluation
         d_best_score = evaluate_board(engine.game_board.turn);     // , move_last, legal_moves);
 
-        unquiet_moves = engine.reduce_to_unquiet_moves3(legal_moves);
+        unquiet_moves = engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves);
 
         // If quiet (not in check & no tactics), just return stand-pat
         if (!in_check && unquiet_moves.empty()) {
@@ -652,15 +656,11 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     // =====================================================================
     if (!moves_to_loop_over.empty()) {
 
-        std::vector<Move> sorted_moves = moves_to_loop_over;
-
+        const vector<Move>& sorted_moves = moves_to_loop_over;
 
         MoveScoreList move_and_scores_list_new;
         
-
         bool b_use_this_move;
-
-
 
         // MoveScoreList move_and_scores_listSave = move_and_scores_list;
 
@@ -684,11 +684,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         d_best_score = -HUGE_SCORE;
         the_best_move = sorted_moves[0];
 
-        //for (std::size_t i = 0; i < sorted_moves.size(); ++i) {
-        //    Move& m = sorted_moves[i];
-
-        for (Move &m : sorted_moves) {
-
+         for (const Move& m : sorted_moves) {
 
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_before = engine.game_board.to_fen();
@@ -697,7 +693,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             engine.pushMove(m);
 
             #ifdef _DEBUGGING_MOVE_TREE
-                print_move_to_file(m, nPly, state, false);
+                print_move_to_file(m, nPly, state, false, true);
             #endif
                
             #ifdef IS_CALLBACK_THREAD
@@ -763,12 +759,22 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             // Think of alpha as “best score found so far at this node.”
             alpha = std::max(alpha, d_best_score);
 
-            // Alpha/beta "cutoff", break the analysis
+            // Alpha/beta "cutoff", (fail high), break the analysis
             if (alpha >= beta + VERY_SMALL_SCORE) {
 
-                #ifdef _DEBUGGING_MOVE_CHAIN
-                    fputs("Beta cutoff", fpStatistics);
+                #ifdef _DEBUGGING_MOVE_CHAIN3
+                    char szTemp[64];
+                    sprintf(szTemp, " Beta cutoff %f %f",  alpha, beta);
+                    fputs(szTemp, fpStatistics);
                 #endif
+                if (!engine.is_unquiet_move(m)){
+                    #ifdef _DEBUGGING_MOVE_CHAIN
+                        char szTemp[64];
+                        sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
+                        fputs(szTemp, fpStatistics);
+                        print_move_to_file(m, nPly, state, false, false);
+                    #endif
+                }
 
                 break;
             }
@@ -1035,7 +1041,7 @@ void MinimaxAI::clear_stats_file(FILE*& fpStatistics, const char* path) {
 
 
 // Tabs over based on ply. Pass in nPly=-2 for no tabs
-void MinimaxAI::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs, bool isInCheck) {
+void MinimaxAI::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs, bool isInCheck, bool bFormated) {
     // Get algebriac (SAN) text form of the last move.
 
     engine.bitboards_to_algebraic(engine.game_board.turn, m
@@ -1043,8 +1049,14 @@ void MinimaxAI::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs, b
                                 , isInCheck
                                 , false
                                 , engine.move_string);
-    print_move_to_file_from_string(engine.move_string.c_str(), engine.game_board.turn, nPly
-                                    , '\n', ',', false);
+
+    if (bFormated) { 
+        print_move_to_file_from_string(engine.move_string.c_str(), engine.game_board.turn, nPly
+                                        , '\n', ',', false);
+    } else {
+        print_move_to_file_from_string(engine.move_string.c_str(), engine.game_board.turn, nPly
+                                        , ' ', ' ', false); 
+    }
 
 }
 

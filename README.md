@@ -16,35 +16,38 @@ we're back
 
 
 ## intro
-This project is a hobby C++ engine written by OhMesch and I. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
+This project is a hobby C++ engine written by OhMesch and ADuerig, and later refined and maintained by PDuerig. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
 
-This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, PV ordering (at root), acquiescence. 
+This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering (at root). 
 
-There is another repo written by OhMesch and I that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
+**OLDER COMMENT**
+There is another repo written by OhMesch and ADuerig that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
 * https://github.com/aduerig/chess-ai
 
-See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "AI", as far as speed or "intelligence"
+See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence"
 
 ## todo
 * See [brainStorm](doc/brainStorm.md) for more future directions.
 
 
-## current bug log (unless otherwise specified, happens in minimax AI)
-  * Doesnt recognize three fold position repitition. 50 move rule is tested! stalemate works fine.
-  * Doesnt recognize Enpassent (disallowed)
-  * No Transposition table (TT).
-  * The trap: "! NODES VISITED trap#2 50000043dep=4  0 ! NODES VISITED trap#2 50000044dep=4" is horrible in its choice of best move. 
-  * Should use "Anytime behavior" of iterive deepinging, to make a "hurry up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.
-  * Use other "speedups", that result from iterive deepening. (Killer moves + History heuristic, aspiration)
+## current issue log 
+    All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown)
+
+  * Failure: Doesnt recognize three fold position repitition. (50 move rule is tested, Stalemate works fine). This is a problem in the engine.
+  * Failure: Doesnt recognize Enpassent (its not implemented). This is a problem in the engine.
+  * Sloth: No Transposition table (TT) implemented. No Zobrist keys. This is a problem in MinimaxAI.
+  * Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa" functionality. This is a problem in MinimaxAI.
+  * Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.
+  * Sloth: Use other "speedups", that result from iterive deepening. (Killer moves + History heuristic, aspiration).  This is a problem in MinimaxAI.
 
 ## change log
   * Abandoned 10/11/2025
-  * see 
+  * see ...
 
 ## building
-This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and simple engine commands for the purposes of a GUI.
+This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and several simple engine commands for the purposes of a GUI (a somewhat simple GUI is provided). There is also two AI's builty on the engine: a. RandomAI, and MinimaxAI. RandomAI is what you think, looks at all legal moves and selects a random response. MinimaxAI is much different using many technologies such as alpha/beta, iterive deepening, and so on, for move choice.
 
-* use the files in the `scripts/` folder
+* use the python files in the `scripts/` folder
 * Run before compilation to compile with clang
 ```
 export CXX=/usr/bin/clang++

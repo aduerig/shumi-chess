@@ -295,13 +295,16 @@ bool GameBoard::are_bit_boards_valid() const {
     return true; // no overlaps found
 }
 
+// Return false if king does not exist. But in any case, returns the correct connectiveness.
+// connectiveness gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
 bool GameBoard::king_anti_centerness(Color c, double& centerness) const {
     double row; 
     double col;
     ull bb = (c == Color::WHITE) ? white_king : black_king;
     if (!bb) return false;
 
-    ull tmp = bb; // don’t mutate the real bitboard
+    // Finds the index (0–63) of the least-significant 1-bit in bitboard, and returns the index.
+    ull tmp = bb; // don’t mutate (pop) the real bitboard
     int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
 
     int row_idx = s / 8;            // 0..7
@@ -331,6 +334,7 @@ bool GameBoard::knights_centerness(Color c, double& centerness) const
     ull tmp = bb; // don’t mutate the real bitboard
     while (tmp)
     {
+        // Finds the index (0–63) of the least-significant 1-bit in bitboard, and returns the index.
         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
 
         int row_idx = s / 8;           // 0..7
@@ -351,7 +355,7 @@ bool GameBoard::knights_centerness(Color c, double& centerness) const
     return true;
 }
 
-
+// return false if two rooks dont exist. But in any case, returns the correct connectiveness.
 bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
 {
     using ull = unsigned long long;
@@ -418,7 +422,7 @@ bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
     return false;
 }
 
-// Count isolated doubled/tripled pawns for side c.
+// Count isolated doubled/tripled pawns for side c. DOES not flag regular (single) isolanis
 // For each file with k>=2 pawns and no friendly pawns on adjacent files,
 // add (k-1). Triples add 2, etc.
 int GameBoard::count_isolated_doubled_pawns(Color c) const

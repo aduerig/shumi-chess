@@ -61,7 +61,7 @@ public:
                                             //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
                                             //, unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
                                             //, MoveScoreList& move_and_scores_list
-                                            , ShumiChess::Move& move_last
+                                            , const ShumiChess::Move& move_last
                                             , int nPly);
 
 
@@ -92,7 +92,7 @@ public:
 
     void clear_stats_file(FILE*& fpStatistics, const char* path);
 
-    void print_move_to_file(ShumiChess::Move m, int nPly, ShumiChess::GameState gs, bool isInCheck);
+    void print_move_to_file(ShumiChess::Move m, int nPly, ShumiChess::GameState gs, bool isInCheck, bool bFormated);
 
     void print_move_to_file_from_string(const char* p_move_text, ShumiChess::Color turn, int nPly
                                             , char preCharacter

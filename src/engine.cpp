@@ -1119,14 +1119,16 @@ void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTab
 }
 
 
+
 // Have an object? push_back(obj) / push_back(std::move(obj)).
 // Have constructor args? emplace_back(args...).
 vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves) {
 
     vector<ShumiChess::Move> vReturn;
     for (const ShumiChess::Move& mv : moves) {
-        if (mv.capture != ShumiChess::Piece::NONE
-            || mv.promotion != ShumiChess::Piece::NONE)  // include promotions too if you want
+        if (is_unquiet_move(mv))
+        //if (mv.capture != ShumiChess::Piece::NONE
+        //    || mv.promotion != ShumiChess::Piece::NONE)  // include promotions too if you want
         {
             vReturn.push_back(mv); // or: vReturn.emplace_back(mv);
         }
@@ -1135,13 +1137,17 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
 }
 
 
-vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves3(const vector<ShumiChess::Move>& moves)
+
+// Using MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
+// biggest victim with the smallest attacker.
+vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves)
 {
     vector<ShumiChess::Move> vReturn;
     vReturn.reserve(moves.size());
 
     for (const ShumiChess::Move& mv : moves) {
-        if (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE) {
+        if (is_unquiet_move(mv)) {
+        //if (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE) {
 
             // If it's a capture, insert in descending MVV-LVA order
             if (mv.capture != ShumiChess::Piece::NONE) {
@@ -1150,14 +1156,14 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves3(const vector<ShumiChes
                 auto it = vReturn.begin();
                 for (; it != vReturn.end(); ++it) {
                     // Only compare against other captures; promos-without-capture stay after captures
-                    if (it->capture != ShumiChess::Piece::NONE &&
-                        key > mvv_lva_key(*it)) {
+                    if ((it->capture != ShumiChess::Piece::NONE) && (key > mvv_lva_key(*it))) {
                         break;
                     }
                 }
                 vReturn.insert(it, mv);
+            
+            // If its Promotion (without capture): append after all captures
             } else {
-                // Promotion without capture: append after all captures
                 vReturn.push_back(mv);
             }
         }

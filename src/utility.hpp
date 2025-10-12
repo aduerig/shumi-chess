@@ -85,6 +85,7 @@ inline ull lsb_and_pop(ull& bitboard) {
     return lsb_fast;
 };
 
+// It finds the index (0–63) of the least-significant 1-bit in bitboard, clears that bit in the original variable, and returns the index.
 inline ull lsb_and_pop_to_square(ull& bitboard) {
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     int square = __builtin_ctzll(bitboard);

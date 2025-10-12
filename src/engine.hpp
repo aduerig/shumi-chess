@@ -174,11 +174,12 @@ class Engine {
         void print_bitboard_to_file(ull bb, FILE* fp);
         void print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp);
 
-
-
-
+        //bool is_unquiet_move(ShumiChess::Move mv);
+        bool inline is_unquiet_move(ShumiChess::Move mv) {
+           return (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE); 
+        }
         vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
-        vector<ShumiChess::Move> reduce_to_unquiet_moves3(const vector<ShumiChess::Move>& moves);
+        vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves);
 
 
         int centipawn_score_of(ShumiChess::Piece p);
