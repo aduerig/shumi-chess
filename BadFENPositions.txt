@@ -25,16 +25,14 @@ rnbqk2r/1pppp1bp/6pn/p3p3/2PP1P2/2NB1N2/PP4PP/R1BQK2R w KQkq - 0 9
 // ???
 Fen is now r4r1k/p2nb1pp/b1pppp2/1p5q/3PP3/1P1B1N2/PBP1QPRP/6RK b - - 5 19
 
+// Black way over values his position
+Fen is now r1b2nk1/pp1q1p1p/2pb1pp1/8/3P4/2PB1N1P/PP2QPP1/2B1R1K1 b - - 4 16
 
 // doubled rook pawn
 rnk2b1r/pppqp2p/4bp1p/3pP3/3P4/2PB1N2/PP3PPP/RN1Q1RK1 w - - 0 9
 
 crash positions
 ==================
-
-
-rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play h3.
-rnbq1rk1/1pppp1bp/6p1/p3P3/2PP2n1/2NB1N2/PP4PP/R1BQ1RK1 w - - 3 11   then play Bd2.
 
 trap #2 node horrible move (after Qe3), level 5.
 r3q2k/pppbb2p/2n1p1p1/3pPr2/3P1P2/2P1QN2/PPBN3P/R4R1K b - - 1 19
@@ -53,9 +51,12 @@ Edge bugs with king and pawn? (Edge and king bug)
 5r1k/1Q5p/8/p2P3B/2P1P3/1PK5/P7/8 w - a6 0 42
 
 
-3 time repetation draw
+3 time repetation draw test
 ==============================
 r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17
 
 
+Move chain histories:
 
+Very long (10). 
+ ...Kg8  g3  ...h5  gxf4  ...Rxf4  Qxh5  ...Bxd4  cxd4  ...Rxf3  Qxf3 

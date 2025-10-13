@@ -166,11 +166,44 @@ class GameBoard {
         
         bool king_anti_centerness(Color c, double& centerness) const;
         bool knights_centerness(Color c, double& centerness) const;
-
+        bool bishops_centerness(Color c, double& centerness) const;
         bool rook_connectiveness(Color c, double& connectiveness) const;
 
 
         int count_isolated_doubled_pawns(Color c) const;
+
+
+static constexpr int knight_powers[8][8] = {
+                                            {2, 3, 4, 4, 4, 4, 3, 2},
+                                            {3, 4, 6, 6, 6, 6, 4, 3},
+                                            {4, 6, 8, 8, 8, 8, 6, 4},
+                                            {4, 6, 8, 8, 8, 8, 6, 4},
+                                            {4, 6, 8, 8, 8, 8, 6, 4},
+                                            {4, 6, 8, 8, 8, 8, 6, 4},
+                                            {3, 4, 6, 6, 6, 6, 4, 3},
+                                            {2, 3, 4, 4, 4, 4, 3, 2},
+                                        };
+static constexpr int bishop_powers[8][8] = {
+                                            {7, 7, 7, 7, 7, 7, 7, 7},
+                                            {7, 9, 9, 9, 9, 9, 9, 7},
+                                            {7, 9,11,11,11,11, 9, 7},
+                                            {7, 9,11,13,13,11, 9, 7},
+                                            {7, 9,11,13,13,11, 9, 7},
+                                            {7, 9,11,11,11,11, 9, 7},
+                                            {7, 9, 9, 9, 9, 9, 9, 7},
+                                            {7, 7, 7, 7, 7, 7, 7, 7},
+                                        };
+
+static constexpr int king_danger[8][8] = {
+                                            {1, 1, 1, 3, 3, 3, 1, 1},
+                                            {2, 3, 3, 4, 4, 3, 3, 2},
+                                            {3, 4, 4, 5, 5, 4, 3, 3},
+                                            {4, 5, 5, 6, 6, 5, 4, 4},
+                                            {4, 5, 5, 6, 6, 5, 4, 4},
+                                            {3, 4, 4, 5, 5, 4, 3, 3},
+                                            {2, 3, 3, 4, 4, 3, 3, 2},
+                                            {1, 1, 1, 3, 3, 3, 1, 1},
+                                        };
 
 };
 } // end namespace ShumiChess

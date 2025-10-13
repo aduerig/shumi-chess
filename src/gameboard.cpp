@@ -294,14 +294,14 @@ bool GameBoard::are_bit_boards_valid() const {
     }
     return true; // no overlaps found
 }
-
+//
 // Return false if king does not exist. But in any case, returns the correct connectiveness.
 // connectiveness gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
 bool GameBoard::king_anti_centerness(Color c, double& centerness) const {
     double row; 
     double col;
     ull bb = (c == Color::WHITE) ? white_king : black_king;
-    if (!bb) return false;
+    if (!bb) return false;  // No king on board
 
     // Finds the index (0–63) of the least-significant 1-bit in bitboard, and returns the index.
     ull tmp = bb; // don’t mutate (pop) the real bitboard
@@ -309,53 +309,59 @@ bool GameBoard::king_anti_centerness(Color c, double& centerness) const {
 
     int row_idx = s / 8;            // 0..7
     int col_idx = 7 - (s % 8);      // 0..7 (a..h)
+    assert(row_idx<=7);
+    assert(col_idx<=7);
+    assert(row_idx>=0);
+    assert(col_idx>=0);
 
-    row = static_cast<double>(row_idx) - 3.5;  // -3.5 .. 3.5
-    col = static_cast<double>(col_idx) - 3.5;  // -3.5 .. 3.5
-
-
-    centerness = ((fabs(row)/3.5) + (fabs(col)/3.5)) / 2.0; 
     // Gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
+    centerness = (double)(7 - king_danger[row_idx][col_idx]);    // 1 is minimum danger, 7 is maximum danger
 
     return true;
 }
-
-
-
 
 bool GameBoard::knights_centerness(Color c, double& centerness) const
 {
     ull bb = (c == Color::WHITE) ? white_knights : black_knights;
-    if (!bb) return false;
+    if (!bb) { centerness = 0.0; return false; }   // no knights
 
     double sum = 0.0;
     int count = 0;
-
-    ull tmp = bb; // don’t mutate the real bitboard
-    while (tmp)
-    {
-        // Finds the index (0–63) of the least-significant 1-bit in bitboard, and returns the index.
+    ull tmp = bb;                                   // don't mutate the real bitboard
+    while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-
-        int row_idx = s / 8;           // 0..7
-        int col_idx = 7 - (s % 8);     // 0..7 (a..h)
-
-        double row = static_cast<double>(row_idx) - 3.5;  // -3.5 .. 3.5
-        double col = static_cast<double>(col_idx) - 3.5;  // -3.5 .. 3.5
-
-        // 0 at corners, 1.0 at center (inverted from the king version)
-        double away   = ((fabs(row)/3.5) + (fabs(col)/3.5)) / 2.0; // 0 center, 1 corner
-        double toward = 1.0 - away;                                // 1 center, 0 corner
-
-        sum += toward;
+        int row_idx = s / 8;                         // 0..7
+        int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
+        sum += static_cast<double>(knight_powers[row_idx][col_idx]);
         ++count;
     }
 
-    centerness = sum / static_cast<double>(count);
+    centerness = (count ? (sum / count) : 0.0);
+    return true;
+}
+
+bool GameBoard::bishops_centerness(Color c, double& centerness) const
+{
+    ull bb = (c == Color::WHITE) ? white_bishops : black_bishops;
+    if (!bb) { centerness = 0.0; return false; }   // no bishops
+
+    double sum = 0.0;
+    int count = 0;
+    ull tmp = bb;                                   // don't mutate the real bitboard
+    while (tmp) {
+        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        int row_idx = s / 8;                         // 0..7
+        int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
+        sum += static_cast<double>(bishop_powers[row_idx][col_idx]);
+        ++count;
+    }
+
+    centerness = (count ? (sum / count) : 0.0);
     return true;
 }
 
 // return false if two rooks dont exist. But in any case, returns the correct connectiveness.
+// Note sure what happens with three or more rooks.
 bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
 {
     using ull = unsigned long long;
@@ -421,7 +427,7 @@ bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
     connectiveness = 0.0;
     return false;
 }
-
+//
 // Count isolated doubled/tripled pawns for side c. DOES not flag regular (single) isolanis
 // For each file with k>=2 pawns and no friendly pawns on adjacent files,
 // add (k-1). Triples add 2, etc.

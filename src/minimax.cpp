@@ -6,6 +6,8 @@
 #include <string>
 #include <tuple>
 #include <algorithm>  // at top
+#include <set>
+#include <cstdint>
 
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
@@ -133,10 +135,18 @@ string format_with_commas(T value) {
 //
 // returns a positive score, if "for_color" is ahead.
 //
-double MinimaxAI::evaluate_board(Color for_color)
-                                   //, ShumiChess::Move& last_move
-                                   // , vector<ShumiChess::Move>& moves)
+double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>& legal_moves)
 {
+    // move_history
+    #ifdef _DEBUGGING_MOVE_CHAIN
+        if (engine.move_history.size() > 11) {
+        //if (look_for_king_moves()) {
+        //if (has_repeated_move()) {
+        //if (alternating_repeat_prefix_exact(2)) {
+            print_move_history_to_file();    // debug only
+        }
+        
+    #endif
 
     evals_visited++;
 
@@ -151,7 +161,6 @@ double MinimaxAI::evaluate_board(Color for_color)
         int cp_score_pieces_only_temp = 0;
 
         // Add up the scores for each piece
-        //for (const auto& i : piece_values) {
         for (Piece piece_type = Piece::PAWN;
             piece_type <= Piece::QUEEN;
             piece_type = static_cast<Piece>(static_cast<int>(piece_type) + 1))
@@ -189,45 +198,50 @@ double MinimaxAI::evaluate_board(Color for_color)
 
             int cp_score_position_temp = 0;        // positional considerations only
 
-            // // Add code to make king shy from center.
-            double anti_centerness;
+            // Add code to make king shy from center.
+            double anti_centerness;     // larger when closer to edges, small when king in center
             bool isOK = engine.game_board.king_anti_centerness(color, anti_centerness);
             assert (isOK);     // isOK just means that there wasnt a king
-            cp_score_position_temp += std::lround(anti_centerness*80);   // centipawns
+            cp_score_position_temp += static_cast<int>(std::lround(anti_centerness*80));   // centipawns
 
             // Add code to encourage rook connections on back rank.
             double connectiveness;
             isOK = engine.game_board.rook_connectiveness(color, connectiveness);
             //assert (isOK);    // isOK just means that there werent two rooks to connect
-            cp_score_position_temp += std::lround(connectiveness*20);   // centipawns
+            //cp_score_position_temp += std::lround(connectiveness*40);   // centipawns
+            cp_score_position_temp += static_cast<int>(std::lround(connectiveness*50));
 
             // Add code to discourage isolated doubled or tripled pawns.
             int isolanis =  engine.game_board.count_isolated_doubled_pawns(color);
             cp_score_position_temp -= isolanis*20;   // centipawns
 
 
-            // Add code to encourage knights in the center
-            // double centerness;
-            // isOK = engine.game_board.knights_centerness(color, centerness);
-            // //assert (isOK);
-            // if (isOK) { // NOTE: why does this "isOK" have to be there? Why isnt it always OK?
-            //     cp_score_position += centerness*0.0;  // centipawns
-            // }
+            // Add code to encourage minor piece mobility
+            //int imobility = engine.get_minor_piece_move_number (legal_moves);
 
 
-            // Add code to promote trading, if ahead. 
-            //cp_score_position += cp_score_pieces_only
+            // Add code to encourage knights in the center (average)
+            double centerness;
+            isOK = engine.game_board.knights_centerness(color, centerness);
+            //assert (isOK); bOK of false just means no knights on board.
+            cp_score_position += centerness*4;  // centipawns
 
+            // // // Add code to encourage bishops in the center (average)
+            // isOK = engine.game_board.bishops_centerness(color, centerness);
+            // //assert (isOK); bOK of false just means no bishops on board.
+            // cp_score_position += centerness*5;  // centipawns
+            
+            // Add positional stuff to score (score is positive at this point for for_color)
             if (color != for_color) cp_score_position_temp *= -1;
             cp_score_position += cp_score_position_temp;
         }
 
-        // Add positional stuff to score (score is positive at this point for for_color)
+        // Add code to promote/discourage trading, depending on who is ahead.
         cp_score_position += cp_score_pieces_only*0.1;
 
     #endif
 
-    // Both position and pieces are now signed properly for the side.
+    // Both position and pieces are now signed properly to be positive for the "for_color" side.
     cp_score_adjusted = cp_score_pieces_only + cp_score_position;
 
 
@@ -267,6 +281,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     	start_callback_thread();
     #endif
 
+    engine.move_history = stack<Move>();     // print_move_history_to_file
+
     
     // Results of previous iterave searches
     //unordered_map<std::string, unordered_map<Move, double, MoveHash>> move_scores_table;
@@ -292,13 +308,17 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     this_depth = 6;        // Note: because i said so.
     int maximum_depth = this_depth;
 
-    // maximum_depth = this_depth - (int)(g_iMove/10);
-    // if (maximum_depth < 4) maximum_depth = 4;
+    // code to make it speed up (lower) depth as the game goes on. (never lower than 4 though)
+    // maximum_depth = this_depth - (int)(g_iMove/5);
+    // if (maximum_depth < 5) maximum_depth = 5;
     assert(maximum_depth>=1);
 
     // NOTE: there should be an option: depth .vs. time.
     int depth = 1;
     int nPly = 0;
+
+
+    //print_move_history_to_file();    // debug only
 
     do {
 
@@ -308,7 +328,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
 
         #ifdef _DEBUGGING_MOVE_TREE
             fputs("\n\n---------------------------------------------------------------------------", fpStatistics);
-            print_move_to_file(null_move, nPly, state, false, true);
+            print_move_to_file(null_move, nPly, state, false, true, false);
         #endif
 
         cout << endl << "Deepening to " << depth << " half moves " << "out of " << maximum_depth;
@@ -371,6 +391,9 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
 
+    //print_move_history_to_file();
+
+
     char buf[32];
     std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
     abs_score_string = buf;
@@ -389,12 +412,15 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
   
     // Debug only
     // int isolanis;
+    bool isOK;
+    double centerness;
 
     // isolanis =  engine.game_board.count_isolated_doubled_pawns(Color::WHITE);
-    // // isOK = engine.game_board.king_anti_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
-    // // assert (isOK);
-    // cout << "wht " << isolanis << endl;
-   
+    isOK = engine.game_board.knights_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
+    cout << "wht " << centerness << endl;
+
+    isOK = engine.game_board.knights_centerness(Color::BLACK, centerness);  // Gets smaller closer to center. 
+    cout << "blk " << centerness << endl;   
     // isolanis =  engine.game_board.count_isolated_doubled_pawns(Color::BLACK);
     // // isOK = engine.game_board.king_anti_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
     // // assert (isOK);
@@ -403,6 +429,10 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     // double connectiveness;
     // bool bStatus;
     // bStatus  = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
+    
+    
+    
+    //int imobility = engine.get_minor_piece_move_number (legal_moves);
     // cout << "wht " << connectiveness << endl;
     // bStatus = engine.game_board.rook_connectiveness(Color::BLACK, connectiveness);
     // cout << "blk " << connectiveness << endl;
@@ -428,14 +458,14 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                     int depth, double alpha, double beta
                     //,unordered_map<std::string, unordered_map<Move, double, MoveHash>> &move_scores_table
                     //,MoveScoreList& move_and_scores_list
-                    ,const ShumiChess::Move& move_last
+                    ,const ShumiChess::Move& move_last      // seems to be used for debug only...
                     ,int nPly)
 {
 
     // Initialize return 
     double d_best_score = 0.0;
     Move the_best_move = {};
-    std::tuple<double, ShumiChess::Move> final_result;
+    //std::tuple<double, ShumiChess::Move> final_result;
 
     
     vector<Move> moves_to_loop_over;
@@ -468,7 +498,34 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
     //if (alpha > beta) assert(0);
 
-    // Over analysis sentinal Sorry, I should not be this large <- NOTE:
+
+    // =====================================================================
+
+    #ifdef _DEBUGGING_MOVE_CHAIN1
+        engine.bitboards_to_algebraic(engine.game_board.turn, move_last
+                                , (GameState::INPROGRESS)
+                                , false
+                                , false
+                                , engine.move_string);
+
+    #endif
+
+
+
+    //  If mover is in check, this routine returns all check escapes and only the check escapes.
+    std::vector<Move> legal_moves = engine.get_legal_moves();
+
+    GameState state = engine.game_over(legal_moves);
+
+    #ifdef _DEBUGGING_MOVE_CHAIN1
+        print_move_to_file(move_last, nPly, state, in_check, false, false);
+    #endif
+
+
+    // NOTE: can this be made more effecient?
+    moves_to_loop_over = legal_moves;
+
+        // Over analysis sentinal Sorry, I should not be this large <- NOTE:
     constexpr int MAX_PLY = 32;
     if (nPly > MAX_PLY) {
 
@@ -486,33 +543,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         ShumiChess::Move moveMe = std::get<1>(tup);
         return { scoreMe, moveMe };
 
-
     }
 
-    // =====================================================================
-
-    #ifdef _DEBUGGING_MOVE_CHAIN
-        engine.bitboards_to_algebraic(engine.game_board.turn, move_last
-                                , (GameState::INPROGRESS)
-                                , false
-                                , false
-                                , engine.move_string);
-
-    #endif
-
-
-
-    //  If mover is in check, this routine returns all check escapes and only check escapes.
-    std::vector<Move> legal_moves = engine.get_legal_moves();
-
-    GameState state = engine.game_over(legal_moves);
-
-    #ifdef _DEBUGGING_MOVE_CHAIN
-        print_move_to_file(move_last, nPly, state, in_check, true);
-    #endif
-
-
-    moves_to_loop_over = legal_moves;
 
     //assert(nPly < 22); // runaway recursion stop
 
@@ -521,12 +553,13 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     // ✅ INSERT PV ordering (at the root) here — only if this is the root node
     if (depth == top_depth) {
 
-       #ifdef _DEBUGGING_PV_ORDERING
+        #ifdef _DEBUGGING_PV_ORDERING
             std::vector<Move> moves_to_loop_overtemp = moves_to_loop_over;
         #endif
 
+        // Start with the last deepenings best move first
         for (size_t i = 0; i < moves_to_loop_over.size(); ++i) {
-            if (moves_to_loop_over[i] == prev_root_best_) {  // equality you already have
+            if (moves_to_loop_over[i] == prev_root_best_) {
                 if (i != 0) std::swap(moves_to_loop_over[0], moves_to_loop_over[i]);
                 break;
             }
@@ -550,6 +583,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
     }
 
+    
 
 
     // =====================================================================
@@ -575,8 +609,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             assert(0);
         }
 
-        final_result = std::make_tuple(d_best_score, the_best_move);
-        return final_result; // FIX: return here
+        // final_result = std::make_tuple(d_best_score, the_best_move);
+        // return final_result;
+        return {d_best_score, the_best_move};
+
     }
 
     // =====================================================================
@@ -586,10 +622,11 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         std::cout << "\x1b[31m! NODES VISITED trap#2 " << nodes_visited << "dep=" << depth << "  " << d_best_score << "\x1b[0m\n";
 
         // Static board evaluation
-        d_best_score = evaluate_board(engine.game_board.turn);     // , move_last, legal_moves);
+        d_best_score = evaluate_board(engine.game_board.turn, legal_moves);
 
-        final_result = std::make_tuple(d_best_score, the_best_move);
-        return final_result;
+        //final_result = std::make_tuple(d_best_score, the_best_move);
+        //return final_result;
+        return {d_best_score, the_best_move};
     }
 
 
@@ -600,13 +637,13 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     if (depth == 0) {
 
         // Static board evaluation
-        d_best_score = evaluate_board(engine.game_board.turn);     // , move_last, legal_moves);
+        d_best_score = evaluate_board(engine.game_board.turn, legal_moves);
 
         unquiet_moves = engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves);
 
         // If quiet (not in check & no tactics), just return stand-pat
         if (!in_check && unquiet_moves.empty()) {
-            return { d_best_score, Move{} }; // FIX: actual return. Note: Yes.
+            return { d_best_score, Move{} };
         }
 
         if (!in_check) {
@@ -618,6 +655,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             alpha = std::max(alpha, d_best_score);
 
             // Extend on captures/promotions only
+            // Ineffecient??
             moves_to_loop_over = unquiet_moves;
 
             #ifdef _DEBUGGING_MOVE_TREE
@@ -630,7 +668,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         } else {
             // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
             // to the set of all check escapes. By definition.
-            moves_to_loop_over = legal_moves;
+            //moves_to_loop_over = legal_moves;  // not needed as its done ealier above. Sorry.
         }
 
 		// Pick best static evaluation among all legal moves if hit the over ply
@@ -652,14 +690,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
 
     // =====================================================================
-    // Recurse over selected move set
+    // Recurse over selected move set "moves_to_loop_over"
     // =====================================================================
     if (!moves_to_loop_over.empty()) {
 
         const vector<Move>& sorted_moves = moves_to_loop_over;
 
-        MoveScoreList move_and_scores_list_new;
-        
         bool b_use_this_move;
 
         // MoveScoreList move_and_scores_listSave = move_and_scores_list;
@@ -692,8 +728,15 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
             engine.pushMove(m);
 
+            //GameState state_repeat =  draw_by_twofold();
+            //GameState state_repeat =  draw_by_repetition();
+            // if (state_repeat == GameState::DRAW) {
+            //     cout << "!!!!!!!!!draw!!!!!!\n" << endl;
+            // }
+
+
             #ifdef _DEBUGGING_MOVE_TREE
-                print_move_to_file(m, nPly, state, false, true);
+                print_move_to_file(m, nPly, state, false, false);
             #endif
                
             #ifdef IS_CALLBACK_THREAD
@@ -768,11 +811,11 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                     fputs(szTemp, fpStatistics);
                 #endif
                 if (!engine.is_unquiet_move(m)){
-                    #ifdef _DEBUGGING_MOVE_CHAIN
+                    #ifdef _DEBUGGING_MOVE_CHAIN1
                         char szTemp[64];
                         sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
                         fputs(szTemp, fpStatistics);
-                        print_move_to_file(m, nPly, state, false, false);
+                        print_move_to_file(m, nPly, state, false, false,false);
                     #endif
                 }
 
@@ -782,8 +825,123 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         }   // End loop over all moves to look at
     }
 
-    final_result = std::make_tuple(d_best_score, the_best_move);
-    return final_result;
+    //final_result = std::make_tuple(d_best_score, the_best_move);
+    //return final_result;
+    return {d_best_score, the_best_move};
+}
+
+ShumiChess::GameState MinimaxAI::draw_by_repetition() const
+{
+    const std::stack<ShumiChess::Move>& hist = engine.move_history;
+    if (hist.size() < 6) return GameState::INPROGRESS;
+
+    std::stack<ShumiChess::Move> tmp = hist;
+    const ShumiChess::Move m6 = tmp.top(); tmp.pop();
+    const ShumiChess::Move m5 = tmp.top(); tmp.pop();
+    const ShumiChess::Move m4 = tmp.top(); tmp.pop();
+    const ShumiChess::Move m3 = tmp.top(); tmp.pop();
+    const ShumiChess::Move m2 = tmp.top(); tmp.pop();
+    const ShumiChess::Move m1 = tmp.top();
+
+    auto same_move = [](const ShumiChess::Move& a, const ShumiChess::Move& b) {
+        return (a.from == b.from) && (a.to == b.to);
+    };
+
+    if (same_move(m1, m3) && same_move(m1, m5) &&
+        same_move(m2, m4) && same_move(m2, m6))
+        return GameState::DRAW;
+
+    return GameState::INPROGRESS;
+}
+
+ShumiChess::GameState MinimaxAI::draw_by_twofold() const
+{
+    const std::stack<ShumiChess::Move>& hist = engine.move_history;
+    if (hist.size() < 4) return GameState::INPROGRESS;
+
+    std::stack<ShumiChess::Move> tmp = hist;
+    const ShumiChess::Move m4 = tmp.top(); tmp.pop(); // newest
+    const ShumiChess::Move m3 = tmp.top(); tmp.pop();
+    const ShumiChess::Move m2 = tmp.top(); tmp.pop();
+    const ShumiChess::Move m1 = tmp.top();            // oldest of these four
+
+    auto same_move = [](const ShumiChess::Move& a, const ShumiChess::Move& b) {
+        return (a.from == b.from) && (a.to == b.to);
+    };
+
+    // Detect A,B,A,B over the last four half-moves
+    if (same_move(m1, m3) && same_move(m2, m4))
+        return GameState::DRAW;
+
+    return GameState::INPROGRESS;
+}
+
+bool MinimaxAI::look_for_king_moves() const
+{
+    int king_moves = 0;
+    std::stack<ShumiChess::Move> tmp = engine.move_history; // copy; don't mutate engine
+
+    while (!tmp.empty()) {
+        ShumiChess::Move m = tmp.top(); tmp.pop();
+        if (m.piece_type == ShumiChess::Piece::KING) {
+            if (++king_moves >= 2) return true;
+        }
+    }
+    return false;
+}
+bool MinimaxAI::has_repeated_move() const
+{
+    // Flatten stack → vector (order doesn’t matter for “any duplicate”)
+    std::stack<ShumiChess::Move> tmp = engine.move_history;
+    std::vector<ShumiChess::Move> seq;
+    seq.reserve(tmp.size());
+    while (!tmp.empty()) { seq.push_back(tmp.top()); tmp.pop(); }
+
+    // O(n^2) duplicate check on (from,to,promotion); ignore null moves
+    for (size_t i = 0; i < seq.size(); ++i) {
+        const auto& a = seq[i];
+        if (a.from == 0ULL && a.to == 0ULL) continue;
+        for (size_t j = i + 1; j < seq.size(); ++j) {
+            const auto& b = seq[j];
+            
+            if ( (a.from == b.from) && (a.to == b.to) && (a.piece_type == b.piece_type) && (a.promotion == b.promotion) )
+                return true;
+        }
+    }
+    return false;
+}
+bool MinimaxAI::alternating_repeat_prefix_exact(int pairs) const
+{
+    if (pairs < 2 || pairs > 3) return false;
+
+    // stack -> vector oldest→newest
+    std::stack<ShumiChess::Move> tmp = engine.move_history;
+    std::vector<ShumiChess::Move> seq; seq.reserve(tmp.size());
+    while (!tmp.empty()) { seq.push_back(tmp.top()); tmp.pop(); }
+    std::reverse(seq.begin(), seq.end());
+
+    const size_t need = static_cast<size_t>(2 * pairs);
+    if (seq.size() < need) return false;
+
+    const auto& A = seq[0];
+    const auto& B = seq[1];
+
+    auto eq_exact = [](const ShumiChess::Move& a, const ShumiChess::Move& b){
+        return (a.from == b.from) &&
+               (a.to == b.to) &&
+               (a.piece_type == b.piece_type) &&
+               (a.promotion == b.promotion);
+    };
+
+    // verify prefix A,B,A,B,(A,B) over the first `need` moves
+    for (size_t i = 2; i < need; ++i) {
+        if ((i % 2 == 0)) { // even index → must match A
+            if (!eq_exact(seq[i], A)) return false;
+        } else {            // odd index  → must match B
+            if (!eq_exact(seq[i], B)) return false;
+        }
+    }
+    return true;
 }
 
 
@@ -817,7 +975,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
             color_perspective = Color::WHITE;
         }
         Move mvdefault = Move{};
-        return evaluate_board(color_perspective) * color_multiplier;
+        return evaluate_board(color_perspective, moves) * color_multiplier;
 
     }
     //
@@ -989,15 +1147,15 @@ void MinimaxAI::sort_moves_by_score(
 
 std::tuple<double, ShumiChess::Move>
 MinimaxAI::best_move_static(ShumiChess::Color color,
-                            const std::vector<ShumiChess::Move>& moves,
+                            const std::vector<ShumiChess::Move>& legal_moves,
                             bool in_Check)
 {
     // If there are no moves:
     // - not in check: return a single static (stand-pat) eval
     // - in check: treat as losing (no legal escapes here)
-    if (moves.empty()) {
+    if (legal_moves.empty()) {
         if (!in_Check) {
-            double stand_pat = evaluate_board(color);         // positive is good for 'color'
+            double stand_pat = evaluate_board(color, legal_moves);         // positive is good for 'color'
             return { stand_pat, ShumiChess::Move{} };
         }
         return { -HUGE_SCORE, ShumiChess::Move{} };
@@ -1006,11 +1164,11 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
     double d_best = -HUGE_SCORE;
     ShumiChess::Move bestMove = ShumiChess::Move{};
 
-    for (const auto& m : moves) {
+    for (const auto& m : legal_moves) {
 
         engine.pushMove(m);
         
-        double d_score = evaluate_board(color);  // positive is good for 'color'
+        double d_score = evaluate_board(color, legal_moves);  // positive is good for 'color'
         
         engine.popMove();
 
@@ -1039,22 +1197,52 @@ void MinimaxAI::clear_stats_file(FILE*& fpStatistics, const char* path) {
     std::fflush(fpStatistics);
 }
 
+// Prints the move history from oldest → most recent using print_move_to_file(...)
+// Uses: nPly = -2, isInCheck = false, bFormated = false
+void MinimaxAI::print_move_history_to_file() {
+    bool bFlipColor = false;
+    int ierr = fputs("\nhistory:\n", fpStatistics);
+    assert (ierr!=EOF);
+
+    // copy stack so we don't mutate Engine's history
+    std::stack<ShumiChess::Move> tmp = engine.move_history;
+
+    // collect in a vector (top = newest), then reverse to oldest → newest
+    std::vector<ShumiChess::Move> seq;
+    seq.reserve(tmp.size());
+    while (!tmp.empty()) {
+        seq.push_back(tmp.top());
+        tmp.pop();
+    }
+    std::reverse(seq.begin(), seq.end());
+
+    // print each move
+    for (const ShumiChess::Move& m : seq) {
+        bFlipColor = !bFlipColor;
+        print_move_to_file(m, -2, (GameState::INPROGRESS), false, false, bFlipColor);
+    }
+}
+
 
 // Tabs over based on ply. Pass in nPly=-2 for no tabs
-void MinimaxAI::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs, bool isInCheck, bool bFormated) {
-    // Get algebriac (SAN) text form of the last move.
+void MinimaxAI::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs
+                                    , bool isInCheck, bool bFormated, bool bFlipColor) {
 
-    engine.bitboards_to_algebraic(engine.game_board.turn, m
+    // Get algebriac (SAN) text form of the last move.
+    Color aColor = engine.game_board.turn;
+    if (bFlipColor) aColor = utility::representation::opposite_color(aColor);
+
+    engine.bitboards_to_algebraic(aColor, m
                                 , gs
                                 , isInCheck
                                 , false
                                 , engine.move_string);
 
     if (bFormated) { 
-        print_move_to_file_from_string(engine.move_string.c_str(), engine.game_board.turn, nPly
+        print_move_to_file_from_string(engine.move_string.c_str(), aColor, nPly
                                         , '\n', ',', false);
     } else {
-        print_move_to_file_from_string(engine.move_string.c_str(), engine.game_board.turn, nPly
+        print_move_to_file_from_string(engine.move_string.c_str(), aColor, nPly
                                         , ' ', ' ', false); 
     }
 
@@ -1108,7 +1296,7 @@ void MinimaxAI::print_moves_to_print_tree(std::vector<Move> mvs, int depth, char
     if (szHeader != NULL) {int ierr = fprintf(fpStatistics, szHeader);}
     
      for (Move &m : mvs) {
-        print_move_to_file(m, depth, state, false);
+        print_move_to_file(m, depth, state, false, false);
      }
 
     if (szTrailer != NULL) {int ierr = fprintf(fpStatistics, szTrailer);}

@@ -63,13 +63,14 @@ void Engine::reset_engine() {
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    //std::cout << "\x1b[94m    hello world() I'm the engine! \x1b[0m";
+    std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
 
 }
 
 void Engine::reset_engine(const string& fen) {
     game_board = GameBoard(fen);
-    // ! is reinitalize these stacks the right way to clear the previous entries?
+
+    // ! NOTE: is reinitalize these stacks the right way to clear the previous entries?
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
@@ -78,8 +79,7 @@ void Engine::reset_engine(const string& fen) {
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    std::cout << "\x1b[94m    hello world(FEN) I'm the engine! \x1b[0m";
-
+    std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
@@ -130,6 +130,17 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     return all_psuedo_legal_moves;
 }
 
+int Engine::get_minor_piece_move_number (const vector <Move> mvs)
+{
+    int iReturn = 0;
+    for (Move m : mvs) {
+
+        if  ( (m.piece_type == KNIGHT) ||  (m.piece_type == BISHOP) ) {
+            iReturn++;
+        }
+    }
+    return iReturn;
+}
 
 
 
@@ -339,6 +350,7 @@ void Engine::pushMove(const Move& move) {
 // NOTE: Ummm, how does it return an error?
 // 
 void Engine::popMove() {
+
     const Move move = this->move_history.top();
     this->move_history.pop();
 
@@ -1127,8 +1139,6 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
     vector<ShumiChess::Move> vReturn;
     for (const ShumiChess::Move& mv : moves) {
         if (is_unquiet_move(mv))
-        //if (mv.capture != ShumiChess::Piece::NONE
-        //    || mv.promotion != ShumiChess::Piece::NONE)  // include promotions too if you want
         {
             vReturn.push_back(mv); // or: vReturn.emplace_back(mv);
         }
@@ -1147,8 +1157,6 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<Sh
 
     for (const ShumiChess::Move& mv : moves) {
         if (is_unquiet_move(mv)) {
-        //if (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE) {
-
             // If it's a capture, insert in descending MVV-LVA order
             if (mv.capture != ShumiChess::Piece::NONE) {
                 int key = mvv_lva_key(mv);  // uses your static function (captures only)

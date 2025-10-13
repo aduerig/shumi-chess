@@ -52,8 +52,7 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    double evaluate_board(ShumiChess::Color);     // ShumiChess::Move& last_move, 
-                                                  // ,vector<ShumiChess::Move>&);   // Output
+    double evaluate_board(ShumiChess::Color for_color, const vector<ShumiChess::Move>& legal_moves);
 
     ShumiChess::Move get_move_iterative_deepening(double);
 
@@ -64,7 +63,13 @@ public:
                                             , const ShumiChess::Move& move_last
                                             , int nPly);
 
+    ShumiChess::GameState draw_by_repetition() const;
+    ShumiChess::GameState draw_by_twofold() const;
+    bool look_for_king_moves() const;
+    bool has_repeated_move() const;
+    bool alternating_repeat_prefix_exact(int pairs) const;
 
+    // oLD CHESS engine
     double get_value(int depth, int color_multiplier, double alpha, double beta);
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
@@ -92,7 +97,10 @@ public:
 
     void clear_stats_file(FILE*& fpStatistics, const char* path);
 
-    void print_move_to_file(ShumiChess::Move m, int nPly, ShumiChess::GameState gs, bool isInCheck, bool bFormated);
+    void print_move_history_to_file();
+
+    void print_move_to_file(ShumiChess::Move m, int nPly, ShumiChess::GameState gs
+                            , bool isInCheck, bool bFormated, bool bFlipColor);
 
     void print_move_to_file_from_string(const char* p_move_text, ShumiChess::Color turn, int nPly
                                             , char preCharacter
