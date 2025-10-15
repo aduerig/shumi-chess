@@ -9,13 +9,6 @@
 #undef NDEBUG
 #include <assert.h>
 
-#define _DEBUGGING_ENGINE
-
-#ifdef _DEBUGGING_ENGINE
-    extern FILE *fpStatistics;
-    extern char szValue[256];
-#endif
-
 // bool bMoreDebug = false;
 // string debugMove;
 
@@ -636,10 +629,10 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             // Move dog = makeMoveFromBitBoards( Piece::PAWN, origin_pawn_square, dest_pawn_square);
            
             // // dog
-            // fpDebug
-            // print_move_history_to_file();    // debug only
-            // print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false);          
+            // print_move_history_to_file(fpDebug);    // debug only
+            // print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false, fpDebug);          
             // string strboard = utility::representation::gameboard_to_string(game_board);
+            // fputs(strbord.cstr(), fdDebug)
             
 
 
