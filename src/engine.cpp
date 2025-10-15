@@ -2,6 +2,7 @@
 
 #include "engine.hpp"
 #include "utility"
+#include <cmath>
 
 
 // NOTE: How is NDEBUG being defined by someone (CMAKE?). I would rather do it in the make apparutus than in source files.

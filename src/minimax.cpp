@@ -8,6 +8,7 @@
 #include <algorithm>  // at top
 #include <set>
 #include <cstdint>
+#include <cmath>
 
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
