@@ -288,13 +288,18 @@ void Engine::pushMove(const Move& move) {
 
         if (move.is_en_passent_capture) {
             // Enpassent capture
-            ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
+            
+            // Looks at the rank just "forward" of this pawn, on the same file?
+            ull target_pawn_bitboard = (move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8);
+
+            // Gets the number of leading zeros in the pawn butboard. So this is the first pawn in the list?
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
             //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
         } else {
             // Regular capture
 
+            // remove piece from where it was.
             ull& where_I_was = access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color));
             where_I_was &= ~move.to;
             //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
@@ -389,7 +394,9 @@ void Engine::popMove() {
     if (move.capture != Piece::NONE) {
 
         if (move.is_en_passent_capture) {
+            // Looks at the rank just "forward" of this pawn, on the same file?
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
+
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             // NOTE: here the statements are reversed from the else. What gives?
             //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
@@ -506,7 +513,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
             }
         }
 
-        Move new_move;
+        Move new_move = {};
         new_move.color = color;
         new_move.piece_type = piece;
         new_move.from = single_bitboard_from;
@@ -537,6 +544,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
             moves.emplace_back(new_move);
         }
         else {
+            // A promotion
             for (auto& promo_piece : promotion_values) {
                 Move promo_move = new_move;
                 promo_move.promotion = promo_piece;
@@ -572,37 +580,43 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
 
     while (pawns) {
-        // pop and get one pawn bitboard
+        // pop and get one pawn bitboard. This gets the pawn, but also removes it from "pawns" but who cares.
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         
-        // single moves forward, don't check for promotions
-        // NOTE: What happens during promotion then?
-        ull move_forward = utility::bit::bitshift_by_color(single_pawn & ~pawn_enemy_starting_rank_mask, color, 8); 
-        ull move_forward_not_blocked = move_forward & ~all_pieces;
-        ull spaces_to_move = move_forward_not_blocked;
+        // Look to see if square just forward of me is empty.
+        ull one_move_forward = utility::bit::bitshift_by_color(single_pawn & ~pawn_enemy_starting_rank_mask, color, 8); 
+        ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
+        ull spaces_to_move = one_move_forward_not_blocked;
+
         add_move_to_vector(all_psuedo_legal_moves, single_pawn, spaces_to_move, Piece::PAWN, color, false, false, 0ULL, false, false);
 
-        // move up two ranks
+        // Look for (and add if its there), a move up two ranks
         ull is_doublable = single_pawn & pawn_starting_rank_mask;
         if (is_doublable) {
-            // TODO share more code with single pushes above
+           
+            // Look to see both squares just forward of me is empty. (TODO share more code with single pushes above)
             ull move_forward_one = utility::bit::bitshift_by_color(single_pawn, color, 8);
             ull move_forward_one_blocked = move_forward_one & ~all_pieces;
+
             ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
             ull move_forward_two_blocked = move_forward_two & ~all_pieces;
+
             add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN, color, false, false, move_forward_one_blocked, false, false);
         }
 
-        // promotions
+        // Look for (and add if its there), promotions
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
         ull promo_squares = promotion_not_blocked;
         add_move_to_vector(all_psuedo_legal_moves, single_pawn, promo_squares, Piece::PAWN, color, 
                 false, true, 0ULL, false, false);
 
-        // attacks forward left and forward right, also includes promotions like this
+        // Look for (and add if its there), attacks forward left and forward right, also includes promotions like this
+        // "Forward" means away from the pawns' back or "1st" rank.
         ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
         ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row, color, 7);
+        
+        // normal attacks is set to nonzero if enemy pieces are in the pawns "crosshairs"
         ull normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
         add_move_to_vector(all_psuedo_legal_moves, single_pawn, normal_attacks, Piece::PAWN, color, 
@@ -611,8 +625,25 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         // NOTE: enpassent is not allowed 
         // enpassant attacks
         // TODO improvement here, because we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
-        //      of code here to get the speed upgrade. Words fine as is
-        // ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
+        //      of code here to get the speed upgrade. Works fine as is
+
+        ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
+        if (enpassant_end_location) {
+
+            int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
+            int dest_pawn_square = utility::bit::bitboard_to_lowest_square(enpassant_end_location);
+
+            // Move dog = makeMoveFromBitBoards( Piece::PAWN, origin_pawn_square, dest_pawn_square);
+           
+            // // dog
+            // fpDebug
+            // print_move_history_to_file();    // debug only
+            // print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false);          
+            // string strboard = utility::representation::gameboard_to_string(game_board);
+            
+
+
+        }
         // add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
         //              true, false, 0ULL, true, false);
     }
@@ -1226,8 +1257,25 @@ int Engine::bits_in(ull bitboard) {
 
 
 
+ShumiChess::Move Engine::makeMoveFromBitBoards(Piece p, ull bitTo, ull bitFrom)
+{
+    Move new_move = {};
 
+    new_move.piece_type = p;
+    new_move.from = bitFrom;
+    new_move.to = bitTo;
 
+    return new_move;
+}
+
+void Engine::move_into_string(ShumiChess::Move m) {
+    bitboards_to_algebraic(game_board.turn, m
+                , (GameState::INPROGRESS)
+                //, NULL
+                , false
+                , false
+                , move_string);    // Output
+}
 
 
 } // end namespace ShumiChess

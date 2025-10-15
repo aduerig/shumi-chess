@@ -147,6 +147,8 @@ class Engine {
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
+        FILE* fpDebug = nullptr;
+        void setDebugFilePointer(FILE* fp) {fpDebug = fp;}
 
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move
                                     , GameState state 
@@ -188,6 +190,9 @@ class Engine {
 
         int bits_in(ull);
         bool flip_a_coin(void);
+
+        void move_into_string(ShumiChess::Move m);
+        ShumiChess::Move makeMoveFromBitBoards( Piece p, ull bitTo, ull bitFrom);
 
     };
 } // end namespace ShumiChess

@@ -56,6 +56,10 @@ Edge bugs with king and pawn? (Edge and king bug)
 r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17
 
 
+enpassent test
+========================
+r1bq1rk1/pppp2pn/2n1p2p/4Pp2/2PP4/2BB4/PPQ2PPP/R3K1NR w KQ f6 0 10
+
 Move chain histories:
 
 Very long (10). 

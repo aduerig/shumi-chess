@@ -105,8 +105,13 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
         }    
         //fprintf(fpStatistics, "opening debug.dat file!");
 
+        
+        e.setDebugFilePointer(fpStatistics);
+
     #endif
 }
+
+
 
 MinimaxAI::~MinimaxAI() { 
     #ifdef _DEBUGGING_TO_FILE
@@ -305,7 +310,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 6;        // Note: because i said so.
+    this_depth = 5;        // Note: because i said so.
     int maximum_depth = this_depth;
 
     // code to make it speed up (lower) depth as the game goes on. (never lower than 4 though)
@@ -467,8 +472,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     Move the_best_move = {};
     //std::tuple<double, ShumiChess::Move> final_result;
 
-    
-    vector<Move> moves_to_loop_over;
+
+    vector<Move> *p_moves_to_loop_over = 0;
     vector<Move> unquiet_moves;
 
     nodes_visited++;
@@ -522,8 +527,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     #endif
 
 
-    // NOTE: can this be made more effecient?
-    moves_to_loop_over = legal_moves;
+    p_moves_to_loop_over = &legal_moves;
+    assert(p_moves_to_loop_over);
 
         // Over analysis sentinal Sorry, I should not be this large <- NOTE:
     constexpr int MAX_PLY = 32;
@@ -538,7 +543,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             std::fflush(fpStatistics);
         #endif
 
-        auto tup = best_move_static(engine.game_board.turn, moves_to_loop_over, in_check);
+        assert(p_moves_to_loop_over);
+        auto tup = best_move_static(engine.game_board.turn, *p_moves_to_loop_over, in_check);
         double scoreMe = std::get<0>(tup);
         ShumiChess::Move moveMe = std::get<1>(tup);
         return { scoreMe, moveMe };
@@ -553,20 +559,24 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     // ✅ INSERT PV ordering (at the root) here — only if this is the root node
     if (depth == top_depth) {
 
+        assert(p_moves_to_loop_over);
         #ifdef _DEBUGGING_PV_ORDERING
-            std::vector<Move> moves_to_loop_overtemp = moves_to_loop_over;
+            std::vector<Move> moves_to_loop_overtemp = *p_moves_to_loop_over;  // snapshot current underlying list
         #endif
 
         // Start with the last deepenings best move first
-        for (size_t i = 0; i < moves_to_loop_over.size(); ++i) {
-            if (moves_to_loop_over[i] == prev_root_best_) {
-                if (i != 0) std::swap(moves_to_loop_over[0], moves_to_loop_over[i]);
+         for (size_t i = 0; i < p_moves_to_loop_over->size(); ++i) {
+            if ( (*p_moves_to_loop_over)[i] == prev_root_best_ ) {
+                if (i != 0) {
+                    std::swap( (*p_moves_to_loop_over)[0], (*p_moves_to_loop_over)[i] );
+                }
                 break;
             }
         }
 
         #ifdef _DEBUGGING_PV_ORDERING
-            if (moves_to_loop_overtemp != moves_to_loop_over) {
+            //if (moves_to_loop_overtemp != moves_to_loop_over) {
+            if (moves_to_loop_overtemp != *p_moves_to_loop_over) {
 
                 fputs("\n\n-1+++++++++++++\n", fpStatistics);
                 //engine.moves_and_scores_to_file(move_and_scores_listSave, false, fpStatistics);
@@ -655,8 +665,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             alpha = std::max(alpha, d_best_score);
 
             // Extend on captures/promotions only
-            // Ineffecient??
-            moves_to_loop_over = unquiet_moves;
+            p_moves_to_loop_over = &unquiet_moves; 
 
             #ifdef _DEBUGGING_MOVE_TREE
                 int ierr = sprintf( szValue, "\nonquiet=%zu ", unquiet_moves.size());
@@ -676,7 +685,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         if (nPly >= MAX_QPLY) {
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPly << "\x1b[0m\n";
             //std::cout << "\x1b[31m!" << "\x1b[0m";
-            auto tup = best_move_static(engine.game_board.turn, moves_to_loop_over, in_check);
+            auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), in_check);
             double scoreMe = std::get<0>(tup);
             ShumiChess::Move moveMe = std::get<1>(tup);
             return { scoreMe, moveMe };
@@ -692,9 +701,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     // =====================================================================
     // Recurse over selected move set "moves_to_loop_over"
     // =====================================================================
-    if (!moves_to_loop_over.empty()) {
+    
+    if (!p_moves_to_loop_over->empty()) {
 
-        const vector<Move>& sorted_moves = moves_to_loop_over;
+        const std::vector<Move>& sorted_moves = *p_moves_to_loop_over;
 
         bool b_use_this_move;
 

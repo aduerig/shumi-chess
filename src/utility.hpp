@@ -9,6 +9,7 @@
 // __builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
 inline int __builtin_ctzll(unsigned long long x) {
     unsigned long index;
+    // Finds the index (0–63) of the least-significant set bit in a 64-bit mask (i.e., count of trailing zeros until the first 1).
     if (_BitScanForward64(&index, x)) {
         return (int)index;
     }
