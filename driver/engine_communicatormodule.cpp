@@ -130,8 +130,12 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
                                         , tempString);      // Output
     python_engine.users_last_move = found_move;
 
+    python_engine.move_history = stack<ShumiChess::Move>();
+    //python_engine.move_history.push(found_move);
 
+    // Tell the engine the move
     python_engine.pushMove(found_move);
+    
 
     return Py_BuildValue("");
 }

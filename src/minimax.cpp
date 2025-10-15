@@ -43,11 +43,10 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 // extern bool bMoreDebug;
 // extern string debugMove;
 
-#ifdef _DEBUGGING_TO_FILE
+//#ifdef _DEBUGGING_TO_FILE
     FILE *fpDebug = NULL;
-    char szValue[256];
-    char szScore[256];
-#endif
+    char szValue1[256];
+//#endif
 
 #define DADS_CRAZY_EVALUATION_CHANGES   // Not so crazy.
 
@@ -97,7 +96,7 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
      // Open a file for debug writing
 
-    #ifdef _DEBUGGING_TO_FILE 
+    #ifdef _DEBUGGING_TO_FILE
         fpDebug = fopen("C:\\programming\\shumi-chess\\debug.dat", "w");
         if(fpDebug == NULL)    // Check if file was opened successfully
         {
@@ -144,12 +143,12 @@ string format_with_commas(T value) {
 double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>& legal_moves)
 {
     // move_history
-    #ifdef _DEBUGGING_MOVE_CHAIN
+    #ifdef _DEBUGGING_MOVE_CHAIN2
         if (engine.move_history.size() > 7) {
         //if (look_for_king_moves()) {
         //if (has_repeated_move()) {
         //if (alternating_repeat_prefix_exact(2)) {
-            print_move_history_to_file(fpDebug);    // debug only
+            engine.print_move_history_to_file(fpDebug);    // debug only
         }
         
     #endif
@@ -287,7 +286,6 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     	start_callback_thread();
     #endif
 
-    engine.move_history = stack<Move>();
 
     
     // Results of previous iterave searches
@@ -311,7 +309,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 6;        // Note: because i said so.
+    this_depth = 5;        // Note: because i said so.
     int maximum_depth = this_depth;
 
     // code to make it speed up (lower) depth as the game goes on. (never lower than 4 though)
@@ -324,17 +322,17 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     int nPly = 0;
 
 
-    //print_move_history_to_file(fpDebug);    // debug only
+    //engine.print_move_history_to_file(fpDebug);    // debug only
 
     do {
 
-        #ifdef _DEBUGGING_TO_FILE 
+        #ifdef _DEBUGGING_TO_FILE1 
             //clear_stats_file(fpDebug, "C:\\programming\\shumi-chess\\debug.dat");
         #endif
 
         #ifdef _DEBUGGING_MOVE_TREE
             fputs("\n\n---------------------------------------------------------------------------", fpDebug);
-            print_move_to_file(null_move, nPly, state, false, true, false, fpDebug);
+            engine.print_move_to_file(null_move, nPly, state, false, true, false, fpDebug);
         #endif
 
         cout << endl << "Deepening to " << depth << " half moves " << "out of " << maximum_depth;
@@ -397,7 +395,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
 
-    //print_move_history_to_file(fpDebug);
+    //engine.print_move_history_to_file(fpDebug);
 
 
     char buf[32];
@@ -524,7 +522,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     GameState state = engine.game_over(legal_moves);
 
     #ifdef _DEBUGGING_MOVE_CHAIN1
-        print_move_to_file(move_last, nPly, state, in_check, false, false, fpDebug);
+       engine.print_move_to_file (move_last, nPly, state, in_check, false, false, fpDebug);
     #endif
 
 
@@ -538,7 +536,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         assert(0);
 
         std::cout << "\n\x1b[31m! MAX PLY  trap#1 " << nPly << "\x1b[0m\n";
-        #ifdef _DEBUGGING_TO_FILE 
+        #ifdef _DEBUGGING_TO_FILE1 
 
             fprintf(fpDebug, "crap!");
             std::fflush(fpDebug);
@@ -669,10 +667,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             p_moves_to_loop_over = &unquiet_moves; 
 
             #ifdef _DEBUGGING_MOVE_TREE
-                int ierr = sprintf( szValue, "\nonquiet=%zu ", unquiet_moves.size());
+                int ierr = sprintf( szValue1, "\nonquiet=%zu ", unquiet_moves.size());
                 assert (ierr!=EOF);
 
-                print_moves_to_print_tree(unquiet_moves, depth, szValue, "\n");
+                print_moves_to_print_tree(unquiet_moves, depth, szValue1, "\n");
             #endif
 
         } else {
@@ -747,7 +745,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
 
             #ifdef _DEBUGGING_MOVE_TREE
-                print_move_to_file(m, nPly, state, false, false, fpDebug);
+                engine.print_move_to_file(m, nPly, state, false, false, fpDebug);
             #endif
                
             #ifdef IS_CALLBACK_THREAD
@@ -826,7 +824,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                         char szTemp[64];
                         sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
                         fputs(szTemp, fpDebug);
-                        print_move_to_file(m, nPly, state, false, false,false, fpDebug);
+                        engine.print_move_to_file(m, nPly, state, false, false,false, fpDebug);
                     #endif
                 }
 
@@ -1199,104 +1197,13 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
 /////////////////////////////////////////////////////////////////////
 
-#ifdef _DEBUGGING_TO_FILE
+#ifdef _DEBUGGING_TO_FILE1
 
-void MinimaxAI::clear_stats_file(FILE*& fpDebug, const char* path) {
+void MinimaxAI::clear_stats_file(const char* path, FILE*& fpDebug) {
     if (fpDebug) { fclose(fpDebug); fpDebug = nullptr; }
     fpDebug = std::fopen(path, "w");        // truncates the file
     assert(fpDebug != nullptr);
     std::fflush(fpDebug);
-}
-
-// Prints the move history from oldest → most recent using print_move_to_file(...)
-// Uses: nPly = -2, isInCheck = false, bFormated = false
-void MinimaxAI::print_move_history_to_file(FILE* fp) {
-    bool bFlipColor = false;
-    int ierr = fputs("\nhistory:\n", fpDebug);
-    assert (ierr!=EOF);
-
-    // copy stack so we don't mutate Engine's history
-    std::stack<ShumiChess::Move> tmp = engine.move_history;
-
-    // collect in a vector (top = newest), then reverse to oldest → newest
-    std::vector<ShumiChess::Move> seq;
-    seq.reserve(tmp.size());
-    while (!tmp.empty()) {
-        seq.push_back(tmp.top());
-        tmp.pop();
-    }
-    std::reverse(seq.begin(), seq.end());
-
-    // print each move
-    for (const ShumiChess::Move& m : seq) {
-        bFlipColor = !bFlipColor;
-        print_move_to_file(m, -2, (GameState::INPROGRESS), false, false, bFlipColor, fp);
-    }
-}
-
-
-// Tabs over based on ply. Pass in nPly=-2 for no tabs
-void MinimaxAI::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs
-                                    , bool isInCheck, bool bFormated, bool bFlipColor
-                                    , FILE* fp
-                                ) {
-
-    // Get algebriac (SAN) text form of the last move.
-    Color aColor = engine.game_board.turn;
-    if (bFlipColor) aColor = utility::representation::opposite_color(aColor);
-
-    engine.bitboards_to_algebraic(aColor, m
-                                , gs
-                                , isInCheck
-                                , false
-                                , engine.move_string);
-
-    if (bFormated) { 
-        print_move_to_file_from_string(engine.move_string.c_str(), aColor, nPly
-                                        , '\n', ',', false
-                                        , fp);
-    } else {
-        print_move_to_file_from_string(engine.move_string.c_str(), aColor, nPly
-                                        , ' ', ' ', false
-                                        , fp); 
-    }
-
-}
-
-// Tabs over based on ply. Pass in nPly=-2 for no tabs
-void MinimaxAI::print_move_to_file_from_string(const char* p_move_text, Color turn, int nPly
-                                            , char preCharacter
-                                            , char postCharacter
-                                            , bool b_right_Pad
-                                            , FILE* fp)
-{
-
-    int ierr = fputc(preCharacter, fp);
-    assert (ierr!=EOF);
-
-    // Indent the whole thing over based on depth level
-    int nTabs = nPly+2;
-    
-    if (nTabs<0) nTabs=0;
-
-    int nSpaces = nTabs*4;
-    int nChars = fprintf(fp, "%*s", nSpaces, "");
-
-    // compose "..."+move (for Black) or just move (for White)
-    if (turn == opposite_color(ShumiChess::BLACK)) snprintf(szValue, sizeof(szValue), "...%s", p_move_text);
-    else                                           snprintf(szValue, sizeof(szValue), "%s",    p_move_text);
-
-    // print as a single left-justified 8-char field: "...e4   " or "e4     "
-    //                                                 12345678
-    
-    if (b_right_Pad) fprintf(fp, "%-10.8s", szValue);  // option 1
-    else             fprintf(fp, "%.8s", szValue);     // option 2
-
-    ierr = fputc(postCharacter, fp);
-    assert (ierr!=EOF);
-
-    int ferr = fflush(fp);
-    assert(ferr == 0);
 }
 
 
@@ -1312,7 +1219,7 @@ void MinimaxAI::print_moves_to_print_tree(std::vector<Move> mvs, int depth, char
     if (szHeader != NULL) {int ierr = fprintf(fpDebug, szHeader);}
     
      for (Move &m : mvs) {
-        print_move_to_file(m, depth, state, false, false, fpDebug);
+        engine.print_move_to_file(m, depth, state, false, false, fpDebug);
      }
 
     if (szTrailer != NULL) {int ierr = fprintf(fpDebug, szTrailer);}
@@ -1328,10 +1235,10 @@ void MinimaxAI::print_move_scores_to_file(
 )
 {
 
-    // sprintf(szValue, "\n---------------------------------------------------------------------------");
-    // fprintf(fpDebug, "%s", szValue);
+    // sprintf(szValue1, "\n---------------------------------------------------------------------------");
+    // fprintf(fpDebug, "%s", szValue1);
     // size_t iFENS = move_scores_table.size();    // This returns the number of FEN rows.
-    // sprintf(szValue, "\n\n  nFENS = %i", (int)iFENS);
+    // sprintf(szValue1, "\n\n  nFENS = %i", (int)iFENS);
     // fprintf(fpDebug, "%s", szValue);
 
     fputs("\n\n---------------------------------------------------------------------------", fpDebug);

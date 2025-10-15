@@ -87,18 +87,7 @@ public:
                             );
 
 
-    void clear_stats_file(FILE*& fp, const char* path);
-
-    void print_move_history_to_file(FILE* fp);
-
-    void print_move_to_file(ShumiChess::Move m, int nPly, ShumiChess::GameState gs
-                            , bool isInCheck, bool bFormated, bool bFlipColor, FILE* fp);
-
-    void print_move_to_file_from_string(const char* p_move_text, ShumiChess::Color turn, int nPly
-                                            , char preCharacter
-                                            , char postCharacter
-                                            , bool b_right_Pad
-                                            , FILE* fp);
+    void clear_stats_file(const char* path, FILE*& fp);
 
 
     void print_moves_to_print_tree(std::vector<ShumiChess::Move> mvs, int depth, char* szHeader, char* szTrailer);

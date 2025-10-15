@@ -13,6 +13,9 @@
 // bool bMoreDebug = false;
 // string debugMove;
 
+char szValue[256];
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -575,6 +578,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
     while (pawns) {
         // pop and get one pawn bitboard. This gets the pawn, but also removes it from "pawns" but who cares.
+        // "pawns" is not an original
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         
         // Look to see if square just forward of me is empty.
@@ -624,19 +628,26 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
         if (enpassant_end_location) {
 
+            // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
             int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
             int dest_pawn_square = utility::bit::bitboard_to_lowest_square(enpassant_end_location);
 
-            // Move dog = makeMoveFromBitBoards( Piece::PAWN, origin_pawn_square, dest_pawn_square);
-           
-            // // dog
-            // print_move_history_to_file(fpDebug);    // debug only
-            // print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false, fpDebug);          
-            // string strboard = utility::representation::gameboard_to_string(game_board);
-            // fputs(strbord.cstr(), fdDebug)
-            
+            #ifdef _DEBUGGING_TO_FILE
 
+                Move dog = makeMoveFromBitBoards( Piece::PAWN, single_pawn, enpassant_end_location);
+                fputc('\n', fpDebug);
+                fputc('\n', fpDebug);
+                fputc('\n', fpDebug);
+                print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+    
+                print_move_history_to_file(fpDebug);    // debug only
 
+                fputc('\n', fpDebug);
+                string strboard = utility::representation::gameboard_to_string(game_board);
+                fputc('\n', fpDebug);
+
+                fputs(strboard.c_str(), fpDebug);
+            #endif
         }
         // add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
         //              true, false, 0ULL, true, false);
@@ -1270,6 +1281,102 @@ void Engine::move_into_string(ShumiChess::Move m) {
                 , false
                 , move_string);    // Output
 }
+//
+// Prints the move history from oldest → most recent 
+// Uses: nPly = -2, isInCheck = false, bFormated = false
+void Engine::print_move_history_to_file(FILE* fp) {
+    bool bFlipColor = false;
+    int ierr = fputs("\n\nhistory:\n", fpDebug);
+    assert (ierr!=EOF);
+
+    // copy stack so we don't mutate Engine's history
+    std::stack<ShumiChess::Move> tmp = move_history;
+
+    // collect in a vector (top = newest), then reverse to oldest → newest
+    std::vector<ShumiChess::Move> seq;
+    seq.reserve(tmp.size());
+    while (!tmp.empty()) {
+        seq.push_back(tmp.top());
+        tmp.pop();
+    }
+    std::reverse(seq.begin(), seq.end());
+
+    // print each move
+    for (const ShumiChess::Move& m : seq) {
+        bFlipColor = !bFlipColor;
+        print_move_to_file(m, -2, (GameState::INPROGRESS), false, false, bFlipColor, fp);
+    }
+}
+//
+// Get algebriac (SAN) text form of the last move.
+// Tabs over based on ply. Pass in nPly=-2 for no tabs. 
+// The formatted version does one move per line. 
+// The unformatted version puts them all on one line.
+void Engine::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs
+                                    , bool isInCheck, bool bFormated, bool bFlipColor
+                                    , FILE* fp
+                                ) {
+    // NOTE: Here I am assumming the "human" player is white
+    Color aColor = ShumiChess::WHITE;  //engine.game_board.turn;
+
+    if (bFlipColor) aColor = utility::representation::opposite_color(aColor);
+
+    bitboards_to_algebraic(aColor, m
+                                , gs
+                                , isInCheck
+                                , false
+                                , move_string);
+
+    if (bFormated) { 
+        print_move_to_file_from_string(move_string.c_str(), aColor, nPly
+                                        , '\n', ',', false
+                                        , fp);
+    } else {
+        print_move_to_file_from_string(move_string.c_str(), aColor, nPly
+                                        , ' ', ',', false
+                                        , fp); 
+    }
+
+}
+
+
+
+// Tabs over based on ply. Pass in nPly=-2 for no tabs
+void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn, int nPly
+                                            , char preCharacter
+                                            , char postCharacter
+                                            , bool b_right_Pad
+                                            , FILE* fp) {
+    int ierr = fputc(preCharacter, fp);
+    assert (ierr!=EOF);
+
+    // Indent the whole thing over based on depth level
+    int nTabs = nPly+2;
+    
+    if (nTabs<0) nTabs=0;
+
+    int nSpaces = nTabs*4;
+    int nChars = fprintf(fp, "%*s", nSpaces, "");
+
+    // compose "..."+move (for Black) or just move (for White)
+    if (turn == utility::representation::opposite_color(ShumiChess::BLACK)) {
+        snprintf(szValue, sizeof(szValue), "...%s", p_move_text);
+    } else {
+        snprintf(szValue, sizeof(szValue), "%s",    p_move_text);
+    }
+
+    // print as a single left-justified 8-char field: "...e4   " or "e4     "
+    //                                                 12345678
+    if (b_right_Pad) fprintf(fp, "%-10.8s", szValue);  // option 1
+    else             fprintf(fp, "%.8s", szValue);     // option 2
+
+    ierr = fputc(postCharacter, fp);
+    assert (ierr!=EOF);
+
+    int ferr = fflush(fp);
+    assert(ferr == 0);
+}
+
 
 
 } // end namespace ShumiChess
