@@ -11,7 +11,7 @@ from helpers import *
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--debug', dest='release', default=False, action='store_true')
+parser.add_argument('--debug', dest='release', default=True, action='store_false')
 parser.add_argument('--time_to_run', dest='time_to_run', default=1)
 args = parser.parse_args()
 
