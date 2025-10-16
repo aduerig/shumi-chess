@@ -27,12 +27,12 @@ int main(int argc, char** argv) {
     // Create the chess engine
     Engine engine;
 
-    assert(0);   // NOTE: I dont get here?
+    // assert(0);   // NOTE: I dont get here?
     
     // Create the AI player (minnimax)
     MinimaxAI minimax_ai(engine);
 
-    double time_to_use = 1;
+    double time_to_use = 2;
     if (argc < 2) {
         cout << "You entered no argument for 'time_to_use', using default value of 1" << endl;
     }

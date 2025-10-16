@@ -13,7 +13,8 @@ from helpers import *
 build_c_module_for_python_path = root_of_project_directory.joinpath('driver', 'build_c_module_for_python.py')
 show_board_path = root_of_project_directory.joinpath('driver', 'show_board.py')
 bin_dir = root_of_project_directory.joinpath('build').joinpath('bin')
-
+release_bin_dir = bin_dir.joinpath('Release')
+debug_bin_dir = bin_dir.joinpath('Debug')
 
 print_cyan(f'{show_board_path=}, {build_c_module_for_python_path=}')
 def build_shumi_chess(release, build_tests):
@@ -55,7 +56,7 @@ def build_python_gui_module(release):
     if release:
         build_type_str = 'Release'
 
-    print_cyan('==== BULIDING PYTHON GUI MODULE =====')
+    print_cyan(f'==== BULIDING PYTHON GUI MODULE for {build_type_str} =====')
     cmd_options = [
         'python',
         str(build_c_module_for_python_path),

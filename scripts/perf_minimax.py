@@ -11,21 +11,23 @@ from helpers import *
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--debug', dest='release', default=True, action='store_false')
+parser.add_argument('--debug', dest='release', default=False, action='store_true')
 parser.add_argument('--time_to_run', dest='time_to_run', default=1)
 args = parser.parse_args()
 
 shared_build_code.build_shumi_chess(args.release, build_tests=False)
 shared_build_code.build_python_gui_module(args.release)
 
+dir_to_use = shared_build_code.release_bin_dir if args.release else shared_build_code.debug_bin_dir
+
 print_blue(f'Running perf test with time_to_run {args.time_to_run}')
 processcode, _stdout, _stderr = run_command_blocking([
     'perf',
     'record',
     '-o', 
-    str(shared_build_code.bin_dir.joinpath('minimax_perf.data')),
+    str(dir_to_use.joinpath('minimax_perf.data')),
     '-g', # measures callgraphs
-    str(shared_build_code.bin_dir.joinpath('run_minimax_time')),
+    str(dir_to_use.joinpath('run_minimax_time')),
     str(args.time_to_run),
 ], debug=True, stdout_pipe=None, stderr_pipe=None)
 if processcode:
@@ -39,5 +41,5 @@ run_command_blocking([
     'report',
     '-g', # measures callgraphs
     '-i',
-    str(shared_build_code.bin_dir.joinpath('minimax_perf.data')),
+    str(dir_to_use.joinpath('minimax_perf.data')),
 ], debug=True, stdout_pipe=None, stderr_pipe=None)
