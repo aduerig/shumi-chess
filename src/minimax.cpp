@@ -138,6 +138,8 @@ string format_with_commas(T value) {
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
+
 // returns a positive score, if "for_color" is ahead.
 //
 double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>& legal_moves)
@@ -159,41 +161,19 @@ double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>
 
     int cp_score_pieces_only = 0;        // Pieces only
     //
-    // Pieces only
+    // Piece considerations only
     //
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
-        int cp_score_pieces_only_temp = 0;
+        // Get the centipawn value for this color
+        int cp_score_pieces_only_temp = engine.game_board.get_material_for_color(color1);
 
-        // Add up the scores for each piece
-        for (Piece piece_type = Piece::PAWN;
-            piece_type <= Piece::QUEEN;
-            piece_type = static_cast<Piece>(static_cast<int>(piece_type) + 1))
-        {    
-            
-            // Since the king can never leave the board (engine does not allow), 
-            // and there is a huge score checked earlier we can just skip kings.
-            // NOTE: ineffecient. Should put king last in piece enum. King IS the last in the enum. This line is useless!
-            //if (piece_type == Piece::KING) continue;
-
-
-            // Get bitboard of all pieces on board of this type and color
-            ull pieces_bitboard = engine.game_board.get_pieces(color1, piece_type);
-
-            // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
-            int cp_board_score = engine.centipawn_score_of(piece_type);
-            int nPieces = engine.bits_in(pieces_bitboard);
-            cp_score_pieces_only_temp += (nPieces * cp_board_score);
-
-            assert (cp_score_pieces_only_temp>=0);
-
-        }
-
+        // Take color into acccount
         if (color1 != for_color) cp_score_pieces_only_temp *= -1;
         cp_score_pieces_only += cp_score_pieces_only_temp;
     }
     //
-    // positional considerations only
+    // Positional considerations only
     //
     int cp_score_position = 0;
 
@@ -258,6 +238,15 @@ double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>
     return (cp_score_adjusted * 0.01);
 }
 
+
+
+
+
+
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -309,7 +298,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 5;        // Note: because i said so.
+    this_depth = 6;        // Note: because i said so.
     int maximum_depth = this_depth;
 
     // code to make it speed up (lower) depth as the game goes on. (never lower than 4 though)
@@ -420,11 +409,15 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     double centerness;
 
     // isolanis =  engine.game_board.count_isolated_doubled_pawns(Color::WHITE);
-    isOK = engine.game_board.knights_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
+    //isOK = engine.game_board.knights_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
+    
+    centerness = engine.game_board.get_material_for_color(Color::WHITE) * 0.01;
     cout << "wht " << centerness << endl;
 
-    isOK = engine.game_board.knights_centerness(Color::BLACK, centerness);  // Gets smaller closer to center. 
-    cout << "blk " << centerness << endl;   
+    centerness = engine.game_board.get_material_for_color(Color::BLACK) * 0.01;
+    //isOK = engine.game_board.knights_centerness(Color::BLACK, centerness);  // Gets smaller closer to center. 
+    cout << "blk " << centerness << endl; 
+
     // isolanis =  engine.game_board.count_isolated_doubled_pawns(Color::BLACK);
     // // isOK = engine.game_board.king_anti_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
     // // assert (isOK);
@@ -1189,10 +1182,6 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
     return { d_best, bestMove };
 }
-
-
-
-
 
 
 /////////////////////////////////////////////////////////////////////

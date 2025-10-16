@@ -185,14 +185,13 @@ class Engine {
         vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves);
 
 
-        int centipawn_score_of(ShumiChess::Piece p);
+
         int mvv_lva_key(const ShumiChess::Move& m);
 
-        int bits_in(ull);
         bool flip_a_coin(void);
 
         void move_into_string(ShumiChess::Move m);
-        ShumiChess::Move makeMoveFromBitBoards( Piece p, ull bitTo, ull bitFrom);
+        ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
 
 
         void print_move_history_to_file(FILE* fp);

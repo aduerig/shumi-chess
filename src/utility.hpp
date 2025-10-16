@@ -79,6 +79,9 @@ inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) 
     return bitboard >> amount;
 };
 
+// This function does 2 things:
+//    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
+//    2. The lsb is zeroed on the input "bitboard"
 inline ull lsb_and_pop(ull& bitboard) {
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);

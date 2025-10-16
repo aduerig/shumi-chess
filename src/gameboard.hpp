@@ -164,7 +164,7 @@ class GameBoard {
 
         bool are_bit_boards_valid() const;
         
-        bool king_anti_centerness(Color c, double& centerness) const;
+        bool king_anti_centerness(Color c, double& centerness);
         bool knights_centerness(Color c, double& centerness) const;
         bool bishops_centerness(Color c, double& centerness) const;
         bool rook_connectiveness(Color c, double& connectiveness) const;
@@ -172,6 +172,9 @@ class GameBoard {
 
         int count_isolated_doubled_pawns(Color c) const;
 
+        int get_material_for_color(ShumiChess::Color color1);
+        int centipawn_score_of(ShumiChess::Piece p);
+        int bits_in(ull);
 
 static constexpr int knight_powers[8][8] = {
                                             {2, 3, 4, 4, 4, 4, 3, 2},
@@ -194,7 +197,7 @@ static constexpr int bishop_powers[8][8] = {
                                             {7, 7, 7, 7, 7, 7, 7, 7},
                                         };
 
-static constexpr int king_danger[8][8] = {
+static constexpr int king_danger_opening[8][8] = {
                                             {1, 1, 1, 3, 3, 3, 1, 1},
                                             {2, 3, 3, 4, 4, 3, 3, 2},
                                             {3, 4, 4, 5, 5, 4, 3, 3},
@@ -204,6 +207,18 @@ static constexpr int king_danger[8][8] = {
                                             {2, 3, 3, 4, 4, 3, 3, 2},
                                             {1, 1, 1, 3, 3, 3, 1, 1},
                                         };
+
+static constexpr int king_danger_ending[8][8] = {
+                                            {6, 6, 6, 4, 4, 4, 6, 6},
+                                            {5, 4, 4, 3, 3, 4, 4, 6},
+                                            {4, 3, 3, 2, 2, 3, 4, 4},
+                                            {3, 2, 2, 1, 1, 2, 3, 3},
+                                            {3, 2, 2, 1, 1, 5, 3, 3},
+                                            {4, 3, 2, 2, 2, 3, 4, 4},
+                                            {5, 4, 4, 3, 3, 4, 4, 6},
+                                            {6, 6, 6, 4, 4, 4, 6, 6},                       };
+
+
 
 };
 } // end namespace ShumiChess

@@ -13,8 +13,9 @@
 // bool bMoreDebug = false;
 // string debugMove;
 
-char szValue[256];
+char szValue[256];   // Note: make me go away
 
+//#define _DEBUGGING_TO_FILE
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -578,7 +579,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
     while (pawns) {
         // pop and get one pawn bitboard. This gets the pawn, but also removes it from "pawns" but who cares.
-        // "pawns" is not an original
+        // "pawns" is not an original.
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         
         // Look to see if square just forward of me is empty.
@@ -630,27 +631,32 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
             // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
             int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
-            int dest_pawn_square = utility::bit::bitboard_to_lowest_square(enpassant_end_location);
+            int dest_pawn_square = utility::bit::bitboard_to_lowest_square(one_move_forward);
 
             #ifdef _DEBUGGING_TO_FILE
+                if (fpDebug) {
 
-                Move dog = makeMoveFromBitBoards( Piece::PAWN, single_pawn, enpassant_end_location);
-                fputc('\n', fpDebug);
-                fputc('\n', fpDebug);
-                fputc('\n', fpDebug);
-                print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-    
-                print_move_history_to_file(fpDebug);    // debug only
+                    ull one_rank_forward = utility::bit::bitshift_by_color(single_pawn, color, 8); 
 
-                fputc('\n', fpDebug);
-                string strboard = utility::representation::gameboard_to_string(game_board);
-                fputc('\n', fpDebug);
+                    Move dog = make_enpassant_move_from_bit_boards( Piece::PAWN, single_pawn, one_rank_forward, color);
+                    fputc('\n', fpDebug);
+                    fputc('\n', fpDebug);
+                    fputc('\n', fpDebug);
+                    print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+        
+                    print_move_history_to_file(fpDebug);    // debug only
 
-                fputs(strboard.c_str(), fpDebug);
+                    fputc('\n', fpDebug);
+                    string strboard = utility::representation::gameboard_to_string(game_board);
+                    fputc('\n', fpDebug);
+
+                    fputs(strboard.c_str(), fpDebug);
+                }
             #endif
+
+            // add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
+            //              true, false, 0ULL, true, false);
         }
-        // add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
-        //              true, false, 0ULL, true, false);
     }
 }
 
@@ -1216,32 +1222,19 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<Sh
     return vReturn;
 }
 
-
-int Engine::centipawn_score_of(ShumiChess::Piece p) {
-    switch (p) {
-        case ShumiChess::Piece::PAWN:   return 100;
-        case ShumiChess::Piece::KNIGHT: return 320;
-        case ShumiChess::Piece::BISHOP: return 330;
-        case ShumiChess::Piece::ROOK:   return 500;
-        case ShumiChess::Piece::QUEEN:  return 900;
-        case ShumiChess::Piece::KING:   return 0;   // king is infinite in theory; keep 0 for material sums
-        default:                        {assert(0);return 0;}
-    }
-}
-
 // MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
 // biggest victim with the smallest attacker.
 int Engine::mvv_lva_key(const Move& m) {
     if (m.capture == ShumiChess::Piece::NONE) assert(0);    // non-captures (shouldn't be in quiescence list)
-    int victim  = centipawn_score_of(m.capture);
-    int attacker= centipawn_score_of(m.piece_type);
+    int victim  = game_board.centipawn_score_of(m.capture);
+    int attacker= game_board.centipawn_score_of(m.piece_type);
 
     // Victim dominates (shift by a few bits, note: a few?, 10?), attacker is a tiebreaker penalty
     int key = (victim << 10) - attacker;
 
     // Promotions: capturing + promoting should go even earlier
     if (m.promotion != ShumiChess::Piece::NONE) {
-        key += centipawn_score_of(m.promotion) - centipawn_score_of(ShumiChess::Piece::PAWN);
+        key += game_board.centipawn_score_of(m.promotion) - game_board.centipawn_score_of(ShumiChess::Piece::PAWN);
     }
 
     // En passant: treat as a pawn capture
@@ -1255,20 +1248,24 @@ bool Engine::flip_a_coin(void) {
     return (rand() & 1) != 0;   // 0 or 1 ? false or true
 }
 
-int Engine::bits_in(ull bitboard) {
-    auto bs = bitset<64>(bitboard);
-    return (int) bs.count();
-}
 
 
 
-ShumiChess::Move Engine::makeMoveFromBitBoards(Piece p, ull bitTo, ull bitFrom)
+ShumiChess::Move Engine::make_enpassant_move_from_bit_boards(Piece p, ull bitTo, ull bitFrom, Color color)
 {
     Move new_move = {};
 
     new_move.piece_type = p;
+
     new_move.from = bitFrom;
     new_move.to = bitTo;
+
+    new_move.capture = Piece::PAWN;
+
+    new_move.en_passant = 1;
+    new_move.is_en_passent_capture = true;
+
+    new_move.color = color;
 
     return new_move;
 }

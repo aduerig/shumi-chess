@@ -54,6 +54,7 @@ public:
 
     double evaluate_board(ShumiChess::Color for_color, const vector<ShumiChess::Move>& legal_moves);
 
+
     ShumiChess::Move get_move_iterative_deepening(double);
 
     std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta

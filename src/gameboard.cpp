@@ -296,31 +296,125 @@ bool GameBoard::are_bit_boards_valid() const {
     }
     return true; // no overlaps found
 }
+
+
+//
+// Returns centipawns. Always positive. 
+int GameBoard::get_material_for_color(Color color1) {
+
+    int cp_score_pieces_only_temp = 0;
+
+    // Add up the scores for each piece
+    for (Piece piece_type = Piece::PAWN;
+        piece_type <= Piece::QUEEN;
+        piece_type = static_cast<Piece>(static_cast<int>(piece_type) + 1))
+    {    
+        
+        // Get bitboard of all pieces on board of this type and color
+        ull pieces_bitboard = get_pieces(color1, piece_type);
+
+        // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
+        int cp_board_score = centipawn_score_of(piece_type);
+        int nPieces = bits_in(pieces_bitboard);
+        cp_score_pieces_only_temp += (int)(((double)nPieces * (double)cp_board_score));
+
+        // This return must alwasy be positive.
+        assert (cp_score_pieces_only_temp>=0);
+
+    }
+
+    return cp_score_pieces_only_temp;
+}
+
+
+// Total of 4000 centipawns for each side.
+int GameBoard::centipawn_score_of(ShumiChess::Piece p) {
+    switch (p) {
+        case ShumiChess::Piece::PAWN:   return 100;
+        case ShumiChess::Piece::KNIGHT: return 320;
+        case ShumiChess::Piece::BISHOP: return 330;
+        case ShumiChess::Piece::ROOK:   return 500;
+        case ShumiChess::Piece::QUEEN:  return 900;
+        case ShumiChess::Piece::KING:   return 0;   // king is infinite in theory; keep 0 for material sums
+        default:                        {assert(0);return 0;}
+    }
+}
+
+
+int GameBoard::bits_in(ull bitboard) {
+    auto bs = bitset<64>(bitboard);
+    return (int) bs.count();
+}
+
+// “lerp” stands for Linear intERPolation.
+// Linear interpolation: t=0 → a, t=1 → b
+inline double lerp(double a, double b, double t) { return a + (b - a) * t; }
+
 //
 // Return false if king does not exist. But in any case, returns the correct connectiveness.
 // connectiveness gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
-bool GameBoard::king_anti_centerness(Color c, double& centerness) const {
+bool GameBoard::king_anti_centerness(Color c, double& centerness)  {
+   
     double row; 
     double col;
-    ull bb = (c == Color::WHITE) ? white_king : black_king;
-    if (!bb) return false;  // No king on board
+    int row_idx;
+    int col_idx;
 
-    // Finds the index (0–63) of the least-significant 1-bit in bitboard, and returns the index.
-    ull tmp = bb; // don’t mutate (pop) the real bitboard
-    int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
 
-    int row_idx = s / 8;            // 0..7
-    int col_idx = 7 - (s % 8);      // 0..7 (a..h)
-    assert(row_idx<=7);
-    assert(col_idx<=7);
-    assert(row_idx>=0);
-    assert(col_idx>=0);
+        ull bb = (c == Color::WHITE) ? white_king : black_king;
+        if (!bb) return false;  // No king on board
 
-    // Gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
-    centerness = (double)(7 - king_danger[row_idx][col_idx]);    // 1 is minimum danger, 7 is maximum danger
+        // Finds the index (0–63) of the least-significant 1-bit in bitboard, and returns the index.
+        ull tmp = bb; // don’t mutate (pop) the real bitboard
+        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+
+        row_idx = s / 8;            // 0..7
+        col_idx = 7 - (s % 8);      // 0..7 (a..h)
+        assert(row_idx<=7);
+        assert(col_idx<=7);
+        assert(row_idx>=0);
+        assert(col_idx>=0);
+
+        // double centerness2;
+    
+        // // ...
+        // const int open_val = king_danger_opening[row_idx][col_idx];
+        // const int end_val  = king_danger_ending [row_idx][col_idx];
+
+        // // average material of both sides (kings already 0 in your values)
+        // double mat_w  = (double)(get_material_for_color(ShumiChess::WHITE));
+        // double mat_b  = (double)(get_material_for_color(ShumiChess::BLACK));
+        // double avg_cp = 0.5 * (mat_w + mat_b);   // 0 .. 4000
+
+        // // ratio over 0..4000: 0 → ending, 1 → opening
+        // const double t = avg_cp / 4000.0;
+
+        // // blended table value
+        // const double blended = lerp((double)end_val, (double)open_val, t);
+
+        // // if you map to "centerness" as before:
+        // centerness2 = 7.0 - blended;
+
+
+
+        //int c_avg_material =  (get_material_for_color(Color::WHITE) + get_material_for_color(Color::BLACK))/2;    
+
+   
+
+        // Gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
+        centerness = (double)(7 - king_danger_opening[row_idx][col_idx]);    // 1 is minimum danger, 7 is maximum danger
+    
+       // assert (fabs(centerness == centerness2) < 0.001);
 
     return true;
 }
+
+
+
+
+
+
+
 
 bool GameBoard::knights_centerness(Color c, double& centerness) const
 {
