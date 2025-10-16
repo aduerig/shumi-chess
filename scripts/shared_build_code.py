@@ -1,5 +1,6 @@
 import sys
 import pathlib
+import signal
 
 this_file_directory = pathlib.Path(__file__).parent.resolve()
 root_of_project_directory = this_file_directory.parent
@@ -80,4 +81,18 @@ def run_python_gui(fen, human):
         cmd_line.extend(['--fen', fen])
     if human:
         cmd_line.extend(['--human'])
-    _return_code, _stdout, _stderr = run_command_blocking(cmd_line, stdout_pipe=None, stderr_pipe=None)
+
+    process = run_command_async(cmd_line, stdout=None, stderr=None)
+
+    try:
+        process.wait()
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt received in launcher. Killing child process group...")
+        if process:
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        raise
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        if process:
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        raise

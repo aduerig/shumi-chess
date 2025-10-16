@@ -138,6 +138,10 @@ string format_with_commas(T value) {
 }
 
 
+void MinimaxAI::wakeup() {
+    stop_calculation = true;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -269,7 +273,7 @@ int g_this_depth = 6;
 //////////////////////////////////////////////////////////////////////////////////
 
 Move MinimaxAI::get_move_iterative_deepening(double time) {
-
+    stop_calculation = false;
     seen_zobrist.clear();
     nodes_visited = 0;
 
@@ -484,6 +488,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
     bool in_check = engine.is_king_in_check(engine.game_board.turn);
 
+    if (stop_calculation) {
+        cout << "\n! STOP CALCULATION requested, currently just going to set stop_calculation back to false, needs implementation\n";
+        stop_calculation = false;
+    }
 
     // communications from 
     if (engine.bHurryUpGrampa) {

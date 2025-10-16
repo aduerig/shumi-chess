@@ -7,6 +7,7 @@
 #include <ostream>
 #include <iostream>
 #include <utility>
+#include <string>
 
 #include <globals.hpp>
 #include <engine.hpp>
@@ -195,13 +196,29 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
 
 static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
-    double depth;
-    if (!PyArg_ParseTuple(args, "d", &depth))
+    double seconds; // Changed from 'depth' to match your Python code's variable
+    if (!PyArg_ParseTuple(args, "d", &seconds))
         return NULL;
-    ShumiChess::Move gotten_move = minimax_ai->get_move_iterative_deepening(depth);
-    string move_in_acn_notation = utility::representation::move_to_string(gotten_move);
+
+    ShumiChess::Move gotten_move;
+    std::string move_in_acn_notation;
+
+    Py_BEGIN_ALLOW_THREADS;
+
+    gotten_move = minimax_ai->get_move_iterative_deepening(seconds);
+    move_in_acn_notation = utility::representation::move_to_string(gotten_move);
+
+    Py_END_ALLOW_THREADS;
+
     return Py_BuildValue("s", move_in_acn_notation.c_str());
 }
+
+static PyObject*
+engine_communicator_wakeup(PyObject* self, PyObject* args) {
+    minimax_ai->wakeup();
+    return Py_BuildValue(""); // this is None in Python
+}
+
 
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
@@ -217,6 +234,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
     {"pop",  engine_communicator_pop, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
+    {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
