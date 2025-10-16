@@ -5,6 +5,8 @@ from tkinter import filedialog
 import time
 import pathlib
 import argparse
+import threading
+import queue
 
 # same directory
 from modified_graphics import *
@@ -19,6 +21,10 @@ script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
 
 temp_folder = script_file_dir.joinpath('temp')
 temp_folder.mkdir(exist_ok=True)
+
+# Globals for multithreaded AI
+ai_move_queue = queue.Queue()
+ai_is_thinking = False
 
 def get_temp_file(suffix=''):
     return temp_folder.joinpath(f'temp_file_{time.time()}{suffix}')
@@ -37,9 +43,21 @@ for key, val in imported_ais.items():
 
 
 def reset_board(fen=""):
-    global curr_game, legal_moves, game_state_might_change, last_move_indicator
+    global curr_game, legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index
 
     print('reset_board called from python')
+    
+    # If AI is thinking, cancel it
+    if ai_is_thinking:
+        print("Board reset during AI turn, cancelling computation.")
+        ai_is_thinking = False
+        # Clear the queue of any potential stale moves
+        while not ai_move_queue.empty():
+            try:
+                ai_move_queue.get_nowait()
+            except queue.Empty:
+                break
+
     # Remove the last move indicator on board reset
     if last_move_indicator:
         last_move_indicator.undraw()
@@ -50,6 +68,9 @@ def reset_board(fen=""):
     else:
         print('Resetting to basic position because FEN string is empty')
         engine_communicator.reset_engine()
+    
+    # Resetting the board always sets the turn to white
+    player_index = 0
     undraw_pieces()
     render_all_pieces_and_assign(board)
     curr_game += 1
@@ -63,14 +84,22 @@ def get_random_move(legal_moves):
     return choice[0:2], choice[2:4]
 
 
-def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
+def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
+    """
+    This function runs in a separate thread to calculate the AI's move without
+    blocking the main GUI thread. The result is put into a queue.
+    """
     if name_of_ai.lower() == 'random_ai':
-        return get_random_move(legal_moves)
-    # move = engine_communicator.minimax_ai_get_move()
-    # NOTE: this is where you can control total time.
-    seconds = 1.0
-    move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
-    return move[0:2], move[2:4]
+        from_acn, to_acn = get_random_move(legal_moves)
+    else:
+        # NOTE: this is the blocking call to the C++ engine
+        seconds = 1.0
+        move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
+        from_acn, to_acn = move[0:2], move[2:4]
+
+    # Put the result in the queue for the main thread to pick up
+    if ai_is_thinking: # Check if the computation is still relevant
+      ai_move_queue.put((from_acn, to_acn))
 
 
 ai_default = 'minimax_ai'
@@ -129,8 +158,24 @@ class Button:
 
 
 def clicked_pop_button(button_obj):
-    global game_state_might_change, last_move_indicator
+    global game_state_might_change, last_move_indicator, ai_is_thinking, player_index
+    
+    # If AI is thinking, cancel it.
+    if ai_is_thinking:
+        print("Pop called during AI turn, cancelling computation.")
+        ai_is_thinking = False
+        # Clear the queue
+        while not ai_move_queue.empty():
+            try:
+                ai_move_queue.get_nowait()
+            except queue.Empty:
+                break
+    
     engine_communicator.pop()
+    
+    # A pop reverts the turn, so we must revert our player index tracker
+    player_index = 1 - player_index
+    
     game_state_might_change = True
     undraw_pieces()
     render_all_pieces_and_assign(board)
@@ -515,126 +560,136 @@ acn_focused = None
 drawn_potential = []
 avail_moves = []
 fps = 60.0
-last_frame = 0
 
 last_move_indicator = None
 if args.fen is not None:
     reset_board(args.fen)
 legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
+ai_is_thinking = False
 try:
     while True:
 
         game_over_text.undraw()
         while game_over_cache() == -1: # stuff to do every frame no matter what
 
+            # Update GUI text elements that change every turn
             current_turn_text.setText(turn_text_values[player_index])
             curr_game_text.setText('Game {}'.format(curr_game))
             curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
 
-            raw_position_left_click = win.checkMouse()
-            user_left_clicked = False
-            if raw_position_left_click:
-                user_left_clicked = True
-                raw_left_clicked_x, raw_left_clicked_y = raw_position_left_click.x, raw_position_left_click.y
-                left_clicked_x, left_clicked_y = int(raw_left_clicked_x * 10), int(raw_left_clicked_y * 10)
+            curr_player = both_players[player_index]
 
-            # if is AIs turn and the user hasn't clicked
-            if not user_left_clicked:
-                curr_player = both_players[player_index]
-                if 'ai' in curr_player:
-                    from_acn, to_acn = get_ai_move(legal_moves, curr_player)
+            # --- AI TURN LOGIC ---
+            if 'ai' in curr_player and not ai_is_thinking:
+                # It's the AI's turn and it's not thinking, so start the thread.
+                ai_thread = threading.Thread(target=get_ai_move_threaded, args=(legal_moves, curr_player), daemon=True)
+                ai_thread.start()
+                ai_is_thinking = True
+
+            # Always check if the AI has finished, regardless of user interaction
+            if ai_is_thinking:
+                try:
+                    from_acn, to_acn = ai_move_queue.get_nowait()
+                    # A move is ready!
                     # print('AI has come up with move: {} to {}'.format(from_acn, to_acn))
                     make_move(from_acn, to_acn)
                     game_state_might_change = True
+                    ai_is_thinking = False
+                    continue # Restart loop to re-evaluate game state
+                except queue.Empty:
+                    # AI is still thinking, let the GUI loop run to stay responsive
+                    pass
+
+            # --- HUMAN/GUI INTERACTION LOGIC ---
+            # This part runs every frame to keep the GUI responsive.
+
+            # Check for left clicks
+            raw_position_left_click = win.checkMouse()
+            if raw_position_left_click:
+                print('clicked')
+                raw_left_clicked_x, raw_left_clicked_y = raw_position_left_click.x, raw_position_left_click.y
+                left_clicked_x, left_clicked_y = int(raw_left_clicked_x * 10), int(raw_left_clicked_y * 10)
+
+                # First, check for clicks on the GUI buttons on the right
+                if raw_left_clicked_x > square_size * 8:
+                    gui_click_choices()
                     continue
 
-            # if human
-            if curr_player == 'human':
-                if time.time() < (last_frame + 1/fps):
-                    time.sleep(time.time() - (last_frame + 1/fps))
-                    last_frame = time.time()
+                # If it's a human's turn, process clicks on the board
+                if curr_player == 'human':
+                    for i in drawn_potential: i.undraw()
+                    drawn_potential = []
 
-                # code for releasing dragging if right click
-                raw_position_right_click = win.checkRightClick()
-                if acn_focused and raw_position_right_click:
+                    if (left_clicked_x, left_clicked_y) in x_y_to_acn:
+                        acn_clicked = x_y_to_acn[(left_clicked_x, left_clicked_y)]
+
+                        if acn_clicked in avail_moves:
+                            temp = acn_focused
+                            unfocus_and_stop_dragging()
+                            make_move(temp, acn_clicked)
+                            game_state_might_change = True
+                            avail_moves = []
+                            continue
+                        elif not board[acn_clicked]:
+                            unfocus_and_stop_dragging()
+                        elif acn_clicked == acn_focused:
+                            unfocus_and_stop_dragging()
+                        else:
+                            unfocus_and_stop_dragging()
+                            is_dragging = True
+                            acn_focused = acn_clicked
+
+                        # draw potential moves
+                        if acn_focused:
+                            avail_moves = []
+                            for move in legal_moves:
+                                from_square, to_square = move[:2], move[2:]
+                                if acn_focused == from_square:
+                                    focused_x, focused_y = acn_to_x_y[to_square]
+                                    avail_moves.append(to_square)
+                                    render_x = (focused_x * square_size) + square_size / 2
+                                    render_y = (focused_y * square_size) + square_size / 2
+                                    potential_move = Circle(
+                                        Point(render_x, render_y),
+                                        potential_move_circle_radius
+                                    )
+                                    potential_move.setFill(color_rgb(170, 170, 170))
+                                    potential_move.draw(win)
+                                    drawn_potential.append(potential_move)
+
+            # Handle dragging and releasing, only if it's a human's turn
+            if curr_player == 'human' and acn_focused:
+                # Right click to cancel
+                if win.checkRightClick():
                     unfocus_and_stop_dragging()
 
-                # code for releasing dragging if left click release
+                # Left click release to make a move
                 raw_position_left_release = win.checkLeftRelease()
-                if acn_focused and raw_position_left_release:
+                if raw_position_left_release:
+                    print('released')
                     raw_left_released_x, raw_left_released_y = raw_position_left_release.x, raw_position_left_release.y
                     left_released_x, left_released_y = int(raw_left_released_x * 10), int(raw_left_released_y * 10)
-                    # mouse was released on an avaliable square, make move there
                     if (left_released_x, left_released_y) in list(map(lambda x: acn_to_x_y[x], avail_moves)):
                         temp = acn_focused
                         unfocus_and_stop_dragging()
                         make_move(temp, x_y_to_acn[(left_released_x, left_released_y)])
                         game_state_might_change = True
                         avail_moves = []
-                    # mouse was released on the same square as it was clicked on
                     elif (left_released_x, left_released_y) != acn_to_x_y[acn_focused]:
                         unfocus_and_stop_dragging()
 
-                # code for dragging
-                elif is_dragging or acn_focused:
+                # Dragging piece with mouse
+                elif is_dragging:
                     dragged_piece = board[acn_focused][2]
                     scaledMouseX, scaledMouseY = win.toWorld(win.newmouseX, win.newmouseY)
-
                     deltX = scaledMouseX - dragged_piece.anchor.x
                     deltY = scaledMouseY - dragged_piece.anchor.y
                     dragged_piece.move(deltX, deltY)
 
-
-            if user_left_clicked:
-                # undraw potentials no matter what
-                for i in drawn_potential:
-                    i.undraw()
-                drawn_potential = []
-
-                # get square_clicked_on in the gui
-                if (left_clicked_x, left_clicked_y) not in x_y_to_acn:
-                    gui_click_choices()
-                    continue
-                acn_clicked = x_y_to_acn[(left_clicked_x, left_clicked_y)]
-
-                if curr_player == 'human':
-                    if acn_clicked in avail_moves: # if user inputs a valid move
-                        temp = acn_focused
-                        unfocus_and_stop_dragging()
-                        make_move(temp, acn_clicked)
-                        game_state_might_change = True
-                        avail_moves = []
-                        continue
-                    # if clicking on a piece that cannot be moved to
-                    elif not board[acn_clicked]:
-                        unfocus_and_stop_dragging()
-                    # if clicking on the same square, defocus
-                    elif acn_clicked == acn_focused:
-                        unfocus_and_stop_dragging()
-                    # else, it focuses in on the square clicked
-                    else:
-                        unfocus_and_stop_dragging()
-                        is_dragging = True
-                        acn_focused = acn_clicked
-
-                    # draw draw potential moves
-                    if acn_focused:
-                        avail_moves = []
-                        for move in legal_moves:
-                            from_square, to_square = move[:2], move[2:]
-                            if acn_focused == from_square:
-                                focused_x, focused_y = acn_to_x_y[to_square]
-                                avail_moves.append(to_square)
-                                render_x = (focused_x * square_size) + square_size / 2
-                                render_y = (focused_y * square_size) + square_size / 2
-                                potential_move = Circle(
-                                    Point(render_x, render_y),
-                                    potential_move_circle_radius
-                                )
-                                potential_move.setFill(color_rgb(170, 170, 170))
-                                potential_move.draw(win)
-                                drawn_potential.append(potential_move)
+            # Pause briefly to prevent the loop from using 100% CPU and to update the window
+            win.update()
+            time.sleep(1/fps)
 
         # winner determinations
         winner = 'draw'
