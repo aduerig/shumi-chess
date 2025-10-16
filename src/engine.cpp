@@ -15,7 +15,7 @@
 
 char szValue[256];   // Note: make me go away
 
-//#define _DEBUGGING_TO_FILE
+// #define _DEBUGGING_TO_FILE
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -654,8 +654,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 }
             #endif
 
-            // add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
-            //              true, false, 0ULL, true, false);
+            add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
+                         true, false, 0ULL, true, false);
         }
     }
 }

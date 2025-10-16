@@ -12,10 +12,12 @@ from helpers import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug', dest='release', default=True, action='store_false')
+parser.add_argument('--fen', default=None)
+parser.add_argument('--human', default=False, action='store_true')
 args = parser.parse_args()
 
 print('Building for:', 'debug' if not args.release else 'release')
 
 shared_build_code.build_shumi_chess(args.release, build_tests=False)
 shared_build_code.build_python_gui_module(args.release)
-shared_build_code.run_python_gui()
+shared_build_code.run_python_gui(fen=args.fen, human=args.human)

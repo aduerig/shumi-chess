@@ -71,8 +71,13 @@ def build_python_gui_module(release):
     if return_code:
         sys.exit(1)
 
-def run_python_gui():
-    _return_code, _stdout, _stderr = run_command_blocking([
+def run_python_gui(fen, human):
+    cmd_line = [
         'python',
-        str(show_board_path),
-    ], stdout_pipe=None, stderr_pipe=None)
+        str(show_board_path)
+    ]
+    if fen is not None:
+        cmd_line.extend(['--fen', fen])
+    if human:
+        cmd_line.extend(['--human'])
+    _return_code, _stdout, _stderr = run_command_blocking(cmd_line, stdout_pipe=None, stderr_pipe=None)

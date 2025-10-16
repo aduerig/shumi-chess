@@ -97,7 +97,15 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
      // Open a file for debug writing
 
     #ifdef _DEBUGGING_TO_FILE
-        fpDebug = fopen("C:\\programming\\shumi-chess\\debug.dat", "w");
+        #ifdef __linux__
+            fpDebug = fopen("/tmp/shumi-chess-debug.dat", "w");
+            if (fpDebug) {
+                int ierr = fputs("Opened /tmp/shumi-chess-debug.dat for debug output\n", fpDebug);
+                assert (ierr!=EOF);
+            }
+        #else
+            fpDebug = fopen("C:\\programming\\shumi-chess\\debug.dat", "w");
+        #endif
         if(fpDebug == NULL)    // Check if file was opened successfully
         {
             printf("Error opening debug.dat file!");

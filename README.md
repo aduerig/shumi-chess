@@ -21,9 +21,6 @@ This project is a hobby C++ engine written by OhMesch and ADuerig, and later ref
 This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering (at root). 
 
 **OLDER COMMENT**
-There is another repo written by OhMesch and ADuerig that consumes this library to write both a Minimax based AI and a Montecarlo AI based on Deepmind's AlphaZero:
-* https://github.com/aduerig/chess-ai
-
 See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence"
 
 ## todo
@@ -53,6 +50,11 @@ This project uses CMAKE for C++ parts of the engine. It also exposes a python mo
 export CXX=/usr/bin/clang++
 export CC=/usr/bin/clang
 ```
+
+## useful argument examples
+* `python scripts/run_tests.py "LegalPositionsByDepthParam/LegalPositionsByDepth.LegalPositionsByDepth/5"`
+* `python scripts/run_gui.py --human --fen "4k3/pp1p1ppp/8/4pP2/1Pp1P3/8/P1PP2PP/4K3 w - - 0 1"`
+
 
 ## benchmarking
 * note only works if you have callgrind / perf installed

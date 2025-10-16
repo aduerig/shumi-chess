@@ -4,10 +4,16 @@ import random
 from tkinter import filedialog
 import time
 import pathlib
+import argparse
 
 # same directory
 from modified_graphics import *
 import engine_communicator
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--fen', default=None)
+parser.add_argument('--human', default=False, action='store_true')
+args = parser.parse_args()
 
 script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
 
@@ -69,6 +75,8 @@ def get_ai_move(legal_moves: list[str], name_of_ai: str) -> None:
 
 ai_default = 'minimax_ai'
 both_players = ['human', ai_default]
+if args.human:
+    both_players = ['human', 'human']
 
 # ! drawing GUI elements
 screen_width = 800
@@ -508,9 +516,12 @@ drawn_potential = []
 avail_moves = []
 fps = 60.0
 last_frame = 0
+
+last_move_indicator = None
+if args.fen is not None:
+    reset_board(args.fen)
 legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
-last_move_indicator = None
 try:
     while True:
 
