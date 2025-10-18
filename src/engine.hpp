@@ -15,13 +15,16 @@ using namespace std;
 
 using MoveScore     = std::pair<ShumiChess::Move, double>;
 using MoveScoreList = std::vector<MoveScore>;
-
+   
 
 #define VERY_SMALL_SCORE 1.0e-9     // 10 micro centipawns?
 #define HUGE_SCORE 10000            // A million centipawns!       //  DBL_MAX    // A relative score
 
+#define ABORT_SCORE (HUGE_SCORE+1)  // Used only to abort the analysis
+
 #define _MAX_ALGEBRIAC_SIZE 16        // longest SAN text possible? -> "exd8=Q#" or "axb8=R+"
 #define _MAX_MOVE_PLUS_SCORE_SIZE (_MAX_ALGEBRIAC_SIZE+32)        // Move text plus a score
+
 
 namespace ShumiChess {
 class Engine {
@@ -150,6 +153,8 @@ class Engine {
         FILE* fpDebug = nullptr;
         void setDebugFilePointer(FILE* fp) {fpDebug = fp;}
 
+        int bishops_attacking_center_squares(Color c);
+        int bishops_attacking_square(Color c, int sq);    
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move
                                     , GameState state 
                                     , bool isCheck
@@ -165,10 +170,6 @@ class Engine {
         char rank_to_move(const Move& m);
 
 
-        bool bHurryUpGrampa = false;
-        void hurryUpGrampa();
-
-        
         void moves_and_scores_to_file(const MoveScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
         void move_and_score_to_file(const MoveScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
 
@@ -183,7 +184,6 @@ class Engine {
         }
         vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
         vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves);
-
 
 
         int mvv_lva_key(const ShumiChess::Move& m);

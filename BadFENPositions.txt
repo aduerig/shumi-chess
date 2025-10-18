@@ -1,26 +1,12 @@
 
 
-this is a mate in three!, (after Ng5) it does not see it UNTIL depth=6!
+// this is a mate in three!, (after Ng5) it does not see it UNTIL depth=6!
 1rbqkb1r/pppppppp/8/3NP3/2B1P3/5N2/PPP2PPP/R1BQK2R w KQk - 6 8
 
 
 
 
-
-
-
-rnbr2k1/pppp1ppp/4pn2/8/3Pq3/B1P2N2/P1P1BPPP/R2Q1RK1 w - - 5 9 then Be7
-
-
-
-r1bqkbnr/pppp1ppp/2n5/4p2Q/8/8/PPP2PPP/RNB1KBNR w KQkq - 0 4
-
-
-
-
-rnbqk2r/1pppp1bp/6pn/p3p3/2PP1P2/2NB1N2/PP4PP/R1BQK2R w KQkq - 0 9
-
-
+Current FEN: rn3rk1/pb1p1ppp/1p2pn2/q7/2P5/2PBPN2/P1QB1PPP/R4RK1 w - - 2 12
 
 // ???
 Fen is now r4r1k/p2nb1pp/b1pppp2/1p5q/3PP3/1P1B1N2/PBP1QPRP/6RK b - - 5 19
@@ -30,6 +16,7 @@ Fen is now r1b2nk1/pp1q1p1p/2pb1pp1/8/3P4/2PB1N1P/PP2QPP1/2B1R1K1 b - - 4 16
 
 // doubled rook pawn
 rnk2b1r/pppqp2p/4bp1p/3pP3/3P4/2PB1N2/PP3PPP/RN1Q1RK1 w - - 0 9
+
 
 crash positions
 ==================
@@ -43,6 +30,10 @@ not so bad fens   good games
 ===============
 
 r1bq1rk1/pp3npp/2pp1p2/8/4PP2/2NQB3/PPP3PP/3R1R1K w - - 4 17
+
+// Long term level 7 games
+Current FEN: rnbq1rk1/ppp3pp/1n2pp2/3pP3/1bPP4/2N2NB1/PP3PPP/R2QKB1R w KQ d6 0 9
+
 
 
 Edge bugs with king and pawn? (Edge and king bug)

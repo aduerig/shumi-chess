@@ -56,12 +56,9 @@ engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
 }
 
 
-static PyObject*
-engine_communicator_print_from_c(PyObject* self, PyObject* args) {
+static PyObject* engine_communicator_print_from_c(PyObject* self, PyObject* args) {
 
-    cout << "hurryUpGrampa!" << endl;
     //python_engine.       
-    python_engine.hurryUpGrampa();
     
     return Py_BuildValue(""); // this is None in Python
 

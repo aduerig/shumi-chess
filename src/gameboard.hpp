@@ -37,7 +37,7 @@ class GameBoard {
         // other information about the board state
         Color turn;
 
-        //1<<1 for queenside, 1<<0 for kingside (other bits not used)
+        //Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
         uint8_t black_castle = 0b00000000;
         uint8_t white_castle = 0b00000000;
 
@@ -63,6 +63,11 @@ class GameBoard {
         const std::string to_fen();
 
         void set_zobrist();
+
+        // Castled status. This is different than castle priviledge, this tracks wether it actully happens.
+        bool bCastledWhite;
+        bool bCastledBlack;
+
 
         template <Piece p>
         inline ull get_pieces_template() {
@@ -164,59 +169,66 @@ class GameBoard {
 
         bool are_bit_boards_valid() const;
         
-        bool king_anti_centerness(Color c, double& centerness);
-        bool knights_centerness(Color c, double& centerness) const;
-        bool bishops_centerness(Color c, double& centerness) const;
-        bool rook_connectiveness(Color c, double& connectiveness) const;
+        int pawns_attacking_square(Color c, int sq);
+        int pawns_attacking_center_squares(Color c);
 
+        int knights_attacking_square(Color c, int sq);
+        int knights_attacking_center_squares(Color for_color);
 
-        int count_isolated_doubled_pawns(Color c) const;
+        void king_castle_happiness(Color c, int& centerness) const;
+        // bool knights_centerness(Color c, double& centerness) const;
+        // bool bishops_centerness(Color c, double& centerness) const;
 
+        bool rook_connectiveness(Color c, int& connectiveness) const;
+        int rook_file_status(Color c) const;
+        int count_isolated_pawns(Color c) const;
+
+        int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1);
         int centipawn_score_of(ShumiChess::Piece p);
         int bits_in(ull);
 
-static constexpr int knight_powers[8][8] = {
-                                            {2, 3, 4, 4, 4, 4, 3, 2},
-                                            {3, 4, 6, 6, 6, 6, 4, 3},
-                                            {4, 6, 8, 8, 8, 8, 6, 4},
-                                            {4, 6, 8, 8, 8, 8, 6, 4},
-                                            {4, 6, 8, 8, 8, 8, 6, 4},
-                                            {4, 6, 8, 8, 8, 8, 6, 4},
-                                            {3, 4, 6, 6, 6, 6, 4, 3},
-                                            {2, 3, 4, 4, 4, 4, 3, 2},
-                                        };
-static constexpr int bishop_powers[8][8] = {
-                                            {7, 7, 7, 7, 7, 7, 7, 7},
-                                            {7, 9, 9, 9, 9, 9, 9, 7},
-                                            {7, 9,11,11,11,11, 9, 7},
-                                            {7, 9,11,13,13,11, 9, 7},
-                                            {7, 9,11,13,13,11, 9, 7},
-                                            {7, 9,11,11,11,11, 9, 7},
-                                            {7, 9, 9, 9, 9, 9, 9, 7},
-                                            {7, 7, 7, 7, 7, 7, 7, 7},
-                                        };
+// static constexpr int knight_powers[8][8] = {
+//                                             {2, 3, 4, 4, 4, 4, 3, 2},
+//                                             {3, 4, 6, 6, 6, 6, 4, 3},
+//                                             {4, 6, 8, 8, 8, 8, 6, 4},
+//                                             {4, 6, 8, 8, 8, 8, 6, 4},
+//                                             {4, 6, 8, 8, 8, 8, 6, 4},
+//                                             {4, 6, 8, 8, 8, 8, 6, 4},
+//                                             {3, 4, 6, 6, 6, 6, 4, 3},
+//                                             {2, 3, 4, 4, 4, 4, 3, 2},
+//                                         };
+// static constexpr int bishop_powers[8][8] = {
+//                                             {7, 7, 7, 7, 7, 7, 7, 7},
+//                                             {7, 9, 9, 9, 9, 9, 9, 7},
+//                                             {7, 9,11,11,11,11, 9, 7},
+//                                             {7, 9,11,13,13,11, 9, 7},
+//                                             {7, 9,11,13,13,11, 9, 7},
+//                                             {7, 9,11,11,11,11, 9, 7},
+//                                             {7, 9, 9, 9, 9, 9, 9, 7},
+//                                             {7, 7, 7, 7, 7, 7, 7, 7},
+//                                         };
 
-static constexpr int king_danger_opening[8][8] = {
-                                            {1, 1, 1, 3, 3, 3, 1, 1},
-                                            {2, 3, 3, 4, 4, 3, 3, 2},
-                                            {3, 4, 4, 5, 5, 4, 3, 3},
-                                            {4, 5, 5, 6, 6, 5, 4, 4},
-                                            {4, 5, 5, 6, 6, 5, 4, 4},
-                                            {3, 4, 4, 5, 5, 4, 3, 3},
-                                            {2, 3, 3, 4, 4, 3, 3, 2},
-                                            {1, 1, 1, 3, 3, 3, 1, 1},
-                                        };
+// static constexpr int king_danger_opening[8][8] = {
+//                                             {1, 1, 1, 3, 3, 3, 1, 1},
+//                                             {2, 3, 3, 4, 4, 3, 3, 2},
+//                                             {3, 4, 4, 5, 5, 4, 3, 3},
+//                                             {4, 5, 5, 6, 6, 5, 4, 4},
+//                                             {4, 5, 5, 6, 6, 5, 4, 4},
+//                                             {3, 4, 4, 5, 5, 4, 3, 3},
+//                                             {2, 3, 3, 4, 4, 3, 3, 2},
+//                                             {1, 1, 1, 3, 3, 3, 1, 1},
+//                                         };
 
-static constexpr int king_danger_ending[8][8] = {
-                                            {6, 6, 6, 4, 4, 4, 6, 6},
-                                            {5, 4, 4, 3, 3, 4, 4, 6},
-                                            {4, 3, 3, 2, 2, 3, 4, 4},
-                                            {3, 2, 2, 1, 1, 2, 3, 3},
-                                            {3, 2, 2, 1, 1, 5, 3, 3},
-                                            {4, 3, 2, 2, 2, 3, 4, 4},
-                                            {5, 4, 4, 3, 3, 4, 4, 6},
-                                            {6, 6, 6, 4, 4, 4, 6, 6},                       };
+// static constexpr int king_danger_ending[8][8] = {
+//                                             {6, 6, 6, 4, 4, 4, 6, 6},
+//                                             {5, 4, 4, 3, 3, 4, 4, 6},
+//                                             {4, 3, 3, 2, 2, 3, 4, 4},
+//                                             {3, 2, 2, 1, 1, 2, 3, 3},
+//                                             {3, 2, 2, 1, 1, 5, 3, 3},
+//                                             {4, 3, 2, 2, 2, 3, 4, 4},
+//                                             {5, 4, 4, 3, 3, 4, 4, 6},
+//                                             {6, 6, 6, 4, 4, 4, 6, 6},                       };
 
 
 

@@ -62,6 +62,8 @@ void Engine::reset_engine() {
     castle_opportunity_history.push(0b1111);
 
     std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
+    game_board.bCastledWhite = false;  // I dont care which side i castled.
+    game_board.bCastledBlack = false;  // I dont care which side i castled.
 
 }
 
@@ -78,6 +80,8 @@ void Engine::reset_engine(const string& fen) {
     castle_opportunity_history.push(0b1111);
 
     std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
+    game_board.bCastledWhite = false;  // I dont care which side i castled.
+    game_board.bCastledBlack = false;  // I dont care which side i castled.
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
@@ -304,6 +308,12 @@ void Engine::pushMove(const Move& move) {
         }
     } else if (move.is_castle_move) {
 
+        if (move.color == ShumiChess::Color::WHITE) {
+           game_board.bCastledWhite = true;  // I dont care which side i castled.
+        } else {
+           game_board.bCastledBlack = true;  // I dont care which side i castled.
+        }
+
         // !TODO zobrist update for castling
 
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
@@ -408,6 +418,13 @@ void Engine::popMove() {
         }
     } else if (move.is_castle_move) {
         
+
+        if (move.color == ShumiChess::Color::WHITE) {
+           game_board.bCastledWhite = false;  // I dont care which side i castled.
+        } else {
+           game_board.bCastledBlack = false;  // I dont care which side i castled.
+        }
+
         // get pointer to the rook? Which rook?
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         // ! Bet we can make this part of push a func and do something fancy with to and from
@@ -441,11 +458,11 @@ void Engine::popMove() {
         }
     }
 
-    // pop enpassent status off the top of the stack
+    // pop enpassent privledge off the top of the stack
     this->game_board.en_passant = this->en_passant_history.top();
     this->en_passant_history.pop();
     
-    // pop castle status off the top of the stack (after merging)
+    // pop castle privledges off the top of the stack (after merging)
     this->game_board.black_castle = this->castle_opportunity_history.top() >> 2;      // shift 
     this->game_board.white_castle = this->castle_opportunity_history.top() & 0b0011;  // remove black castle bits
     
@@ -762,6 +779,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     
     if (color == Color::WHITE) {
         if (game_board.white_castle & (0b00000001)) {
+            //assert(!game_board.bCastledWhite);
             // Move is a White king side castle
             squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
             if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
@@ -778,6 +796,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         }
         if (game_board.white_castle & (0b00000010)) {
             // Move is a White queen side castle
+            //assert(!game_board.bCastledWhite);
             squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
             if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
                     !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
@@ -792,6 +811,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         }
     } else if (color == Color::BLACK) {
         if (game_board.black_castle & (0b00000001)) {
+            //assert(!game_board.bCastledBlack);
             // Move is a black king side castle
             squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
             if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
@@ -808,6 +828,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         }
         if (game_board.black_castle & (0b00000010)) {
             // Move is a Black queen side castle
+            //assert(!game_board.bCastledBlack);
             squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
             if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
                     !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
@@ -828,6 +849,30 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 }
 
 //
+// engine.cpp
+int Engine::bishops_attacking_square(Color c, int sq)
+{
+    ull bit_target = (1ULL << sq);
+    ull rays       = get_diagonal_attacks(bit_target);  // your existing diagonal (bishop) attack generator
+    ull bishops    = game_board.get_pieces_template<Piece::BISHOP>(c);
+    return game_board.bits_in(rays & bishops);
+}
+
+int Engine::bishops_attacking_center_squares(Color c)
+{
+    int square_e4 = 27;
+    int square_d4 = 28;
+    int square_e5 = 35;
+    int square_d5 = 36;
+    int itemp = 0;
+    itemp += bishops_attacking_square(c, square_e4);
+    itemp += bishops_attacking_square(c, square_d4);
+    itemp += bishops_attacking_square(c, square_e5);
+    itemp += bishops_attacking_square(c, square_d5);
+    return itemp;
+}
+
+
 
 // inline void safe_push_back(std::string &s, char c) {
 //     if (s.size() < s.capacity()) s.push_back(c); else assert(0);
@@ -1042,14 +1087,6 @@ char Engine::file_from_move(const Move& m)
     file      = 7 - file;      // mirror because bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
 }
-
-
-
-
-void Engine::hurryUpGrampa() {
-    bHurryUpGrampa = true;
-}
-
 
 
 

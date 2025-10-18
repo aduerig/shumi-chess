@@ -89,7 +89,7 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
         from_acn, to_acn = get_random_move(legal_moves)
     else:
         # NOTE: this is the blocking call to the C++ engine
-        seconds = 1.0
+        seconds = 1.0      # because i said so.
         move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
         from_acn, to_acn = move[0:2], move[2:4]
 
@@ -117,7 +117,7 @@ win.master.geometry(f"+{int(x)}+{int(y)}")
 win.master.deiconify()
 
 def escape_program(event):
-    print('Trying to escape program!')
+    ##print('Trying to escape program!')
     win.close()
     os._exit(0)
 
@@ -512,7 +512,7 @@ def unfocus_and_stop_dragging():
     y_pos_to_move_to = (y_coord_to_move_to / 10) + (square_size / 2)
 
     dragged_piece.move(x_pos_to_move_to - dragged_piece.anchor.x, y_pos_to_move_to - dragged_piece.anchor.y)
-    print('Unfocusing from', acn_focused)
+    ##print('Unfocusing from', acn_focused)
     acn_focused = None
     is_dragging = False
 
@@ -601,7 +601,7 @@ try:
 
             raw_position_left_click = win.checkMouse()
             if raw_position_left_click:
-                print('clicked')
+                ##print('clicked')
                 raw_left_clicked_x, raw_left_clicked_y = raw_position_left_click.x, raw_position_left_click.y
                 left_clicked_x, left_clicked_y = int(raw_left_clicked_x * 10), int(raw_left_clicked_y * 10)
 
@@ -615,7 +615,7 @@ try:
 
                     if (left_clicked_x, left_clicked_y) in x_y_to_acn:
                         acn_clicked = x_y_to_acn[(left_clicked_x, left_clicked_y)]
-                        print(f'clicked on {acn_clicked}')
+                        ##print(f'clicked on {acn_clicked}')
 
                         if acn_clicked in avail_moves:
                             temp = acn_focused
@@ -626,13 +626,13 @@ try:
                             avail_moves = []
                             continue
                         elif not board[acn_clicked]:
-                            print('clicked on empty square, unfocusing')
+                            ##print('clicked on empty square, unfocusing')
                             unfocus_and_stop_dragging()
                         else:
                             unfocus_and_stop_dragging()
                             is_dragging = True
                             acn_focused = acn_clicked
-                            print('focusing on', acn_focused)
+                            ##print('focusing on', acn_focused)
 
                         # draw potential moves
                         if acn_focused:
@@ -648,7 +648,7 @@ try:
                                         Point(render_x, render_y),
                                         potential_move_circle_radius
                                     )
-                                    print('Potential move at', to_square, 'which is', (render_x, render_y))
+                                    ##print('Potential move at', to_square, 'which is', (render_x, render_y))
                                     potential_move.setFill(color_rgb(170, 170, 170))
                                     potential_move.draw(win)
                                     drawn_potential.append(potential_move)

@@ -29,13 +29,14 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 
 ## current issue log 
     All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown)
+  ~~Crossed out~~ items are done, but under testing.
 
-  * Failure: Doesnt recognize three fold position repitition. (50 move rule is tested, Stalemate works fine). This is a problem in the engine.
-  * Failure: Doesnt recognize Enpassent (its not implemented). This is a problem in the engine.
+  * Failure: Doesnt recognize three fold position repitition. (50 move rule is tested, Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. 
+  * ~~Failure: Doesnt recognize Enpassent (its not implemented). This is a problem in the engine.~~
   * Sloth: No Transposition table (TT) implemented. No Zobrist keys. This is a problem in MinimaxAI.
   * Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa" functionality. This is a problem in MinimaxAI.
-  * Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.
-  * Sloth: Use other "speedups", that result from iterive deepening. (Killer moves + History heuristic, aspiration).  This is a problem in MinimaxAI.
+  * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
+  * Sloth: Use other "speedups", that result from iterive deepening. (Killer moves + History heuristic, aspiration). These are best dome after TT implementation.  This is a problem in MinimaxAI.
 
 ## change log
   * Abandoned 10/11/2025

@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include "gameboard.hpp"
+#include "move_tables.hpp"
 #include "utility.hpp"
 
 using namespace std;
@@ -296,6 +297,26 @@ bool GameBoard::are_bit_boards_valid() const {
     }
     return true; // no overlaps found
 }
+//
+// Two things (bools) about castling. 
+//    1. Can yu castle or not?  (do you have the priviledge)  
+//    2. Whether YOU have castled or not. The latter IS NOT stored in a FEN by the way. It has to be a bollean 
+//       maintained by the push/pop.
+//
+int GameBoard::get_castle_status_for_color(Color color1) const {
+    bool b_can_castle;
+    bool b_has_castled;
+    if (color1 == ShumiChess::WHITE) {
+        b_can_castle = (white_castle != 0); 
+        b_has_castled = bCastledWhite;
+    } else {
+        b_can_castle = (black_castle != 0); 
+        b_has_castled = bCastledBlack;
+    }
+
+    int icode = (int)(b_has_castled)*2.0 + (int)(b_can_castle);
+    return icode;
+}
 
 
 //
@@ -318,7 +339,7 @@ int GameBoard::get_material_for_color(Color color1) {
         int nPieces = bits_in(pieces_bitboard);
         cp_score_pieces_only_temp += (int)(((double)nPieces * (double)cp_board_score));
 
-        // This return must alwasy be positive.
+        // This return must always be positive.
         assert (cp_score_pieces_only_temp>=0);
 
     }
@@ -351,114 +372,129 @@ int GameBoard::bits_in(ull bitboard) {
 inline double lerp(double a, double b, double t) { return a + (b - a) * t; }
 
 //
-// Return false if king does not exist. But in any case, returns the correct connectiveness.
 // connectiveness gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
-bool GameBoard::king_anti_centerness(Color c, double& centerness)  {
+void GameBoard::king_castle_happiness(Color c, int& centerness) const {
    
-    double row; 
-    double col;
-    int row_idx;
-    int col_idx;
 
-
-        ull bb = (c == Color::WHITE) ? white_king : black_king;
-        if (!bb) return false;  // No king on board
-
-        // Finds the index (0–63) of the least-significant 1-bit in bitboard, and returns the index.
-        ull tmp = bb; // don’t mutate (pop) the real bitboard
-        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-
-        row_idx = s / 8;            // 0..7
-        col_idx = 7 - (s % 8);      // 0..7 (a..h)
-        assert(row_idx<=7);
-        assert(col_idx<=7);
-        assert(row_idx>=0);
-        assert(col_idx>=0);
-
-        // double centerness2;
-    
-        // // ...
-        // const int open_val = king_danger_opening[row_idx][col_idx];
-        // const int end_val  = king_danger_ending [row_idx][col_idx];
-
-        // // average material of both sides (kings already 0 in your values)
-        // double mat_w  = (double)(get_material_for_color(ShumiChess::WHITE));
-        // double mat_b  = (double)(get_material_for_color(ShumiChess::BLACK));
-        // double avg_cp = 0.5 * (mat_w + mat_b);   // 0 .. 4000
-
-        // // ratio over 0..4000: 0 → ending, 1 → opening
-        // const double t = avg_cp / 4000.0;
-
-        // // blended table value
-        // const double blended = lerp((double)end_val, (double)open_val, t);
-
-        // // if you map to "centerness" as before:
-        // centerness2 = 7.0 - blended;
-
-
-
-        //int c_avg_material =  (get_material_for_color(Color::WHITE) + get_material_for_color(Color::BLACK))/2;    
-
+    centerness = (double)(get_castle_status_for_color(c));
+    assert(centerness>=0);
    
 
         // Gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
-        centerness = (double)(7 - king_danger_opening[row_idx][col_idx]);    // 1 is minimum danger, 7 is maximum danger
+       // centerness = (double)(7 - king_danger_opening[row_idx][col_idx]);    // 1 is minimum danger, 7 is maximum danger
     
        // assert (fabs(centerness == centerness2) < 0.001);
 
-    return true;
+    return;
 }
 
 
 
 
+// int square_e4 = 27;
+// int square_d4 = 28;
+// int square_e5 = 35;
+// int square_d5 = 36;
 
-
-
-
-bool GameBoard::knights_centerness(Color c, double& centerness) const
+int GameBoard::pawns_attacking_square(Color c, int sq)
 {
-    ull bb = (c == Color::WHITE) ? white_knights : black_knights;
-    if (!bb) { centerness = 0.0; return false; }   // no knights
+    ull bit = (1ULL << sq);
+    const ull FILE_A = col_masks[Col::COL_A];
+    const ull FILE_H = col_masks[Col::COL_H];
 
-    double sum = 0.0;
-    int count = 0;
-    ull tmp = bb;                                   // don't mutate the real bitboard
-    while (tmp) {
-        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        int row_idx = s / 8;                         // 0..7
-        int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
-        sum += static_cast<double>(knight_powers[row_idx][col_idx]);
-        ++count;
+    ull origins;
+    if (c == Color::WHITE) {
+        // white pawn origins that attack sq: from (sq-7) and (sq-9)
+        origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
+    } else {
+        // black pawn origins that attack sq: from (sq+7) and (sq+9)
+        origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
     }
 
-    centerness = (count ? (sum / count) : 0.0);
-    return true;
+    ull pawns = get_pieces_template<Piece::PAWN>(c);
+    return bits_in(origins & pawns);
 }
 
-bool GameBoard::bishops_centerness(Color c, double& centerness) const
+
+int GameBoard::pawns_attacking_center_squares(Color c)
 {
-    ull bb = (c == Color::WHITE) ? white_bishops : black_bishops;
-    if (!bb) { centerness = 0.0; return false; }   // no bishops
-
-    double sum = 0.0;
-    int count = 0;
-    ull tmp = bb;                                   // don't mutate the real bitboard
-    while (tmp) {
-        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        int row_idx = s / 8;                         // 0..7
-        int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
-        sum += static_cast<double>(bishop_powers[row_idx][col_idx]);
-        ++count;
-    }
-
-    centerness = (count ? (sum / count) : 0.0);
-    return true;
+    // h1=0 layout: e4=27, d4=28, e5=35, d5=36
+    return  pawns_attacking_square(c, 27)
+          + pawns_attacking_square(c, 28)
+          + pawns_attacking_square(c, 35)
+          + pawns_attacking_square(c, 36);
 }
 
+
+
+
+int GameBoard::knights_attacking_square(Color c, int sq)
+{
+    ull targets = tables::movegen::knight_attack_table[sq];
+    ull knights = get_pieces_template<Piece::KNIGHT>(c);
+    return bits_in(targets & knights);  // count the 1-bits
+}
+
+int GameBoard::knights_attacking_center_squares(Color for_color)
+{
+    int square_e4 = 27;
+    int square_d4 = 28;
+    int square_e5 = 35;
+    int square_d5 = 36;
+    int itemp = 0;
+    itemp += knights_attacking_square(for_color, square_e4);
+    itemp += knights_attacking_square(for_color, square_d4);
+    itemp += knights_attacking_square(for_color, square_e5);
+    itemp += knights_attacking_square(for_color, square_d5);
+    return itemp;
+}
+
+
+
+// bool GameBoard::knights_centerness(Color c, double& centerness) const
+// {
+//     ull bb = (c == Color::WHITE) ? white_knights : black_knights;
+//     if (!bb) { centerness = 0.0; return false; }   // no knights
+
+//     double sum = 0.0;
+//     int count = 0;
+//     ull tmp = bb;                                   // don't mutate the real bitboard
+//     while (tmp) {
+//         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+//         int row_idx = s / 8;                         // 0..7
+//         int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
+//         sum += static_cast<double>(knight_powers[row_idx][col_idx]);
+//         ++count;
+//     }
+
+//     centerness = (count ? (sum / count) : 0.0);
+//     return true;
+// }
+
+// bool GameBoard::bishops_centerness(Color c, double& centerness) const
+// {
+//     ull bb = (c == Color::WHITE) ? white_bishops : black_bishops;
+//     if (!bb) { centerness = 0.0; return false; }   // no bishops
+
+//     double sum = 0.0;
+//     int count = 0;
+//     ull tmp = bb;                                   // don't mutate the real bitboard
+//     while (tmp) {
+//         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+//         int row_idx = s / 8;                         // 0..7
+//         int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
+//         sum += static_cast<double>(bishop_powers[row_idx][col_idx]);
+//         ++count;
+//     }
+
+//     centerness = (count ? (sum / count) : 0.0);
+//     return true;
+// }
+//
+// One if rooks connected. 0 if not.
 // return false if two rooks dont exist. But in any case, returns the correct connectiveness.
 // Note sure what happens with three or more rooks.
-bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
+bool GameBoard::rook_connectiveness(Color c, int& connectiveness) const
 {
     using ull = unsigned long long;
 
@@ -466,7 +502,7 @@ bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
 
     // Need at least two rooks of this color
     if ((rooks == 0) || ((rooks & (rooks - 1)) == 0)) {
-        connectiveness = 0.0;
+        connectiveness = 0;
         return false;
     }
 
@@ -510,54 +546,94 @@ bool GameBoard::rook_connectiveness(Color c, double& connectiveness) const
         for (int j = i + 1; j < n; ++j) {
             const int s1 = sqs[i], s2 = sqs[j];
             if ((s1 / 8 == s2 / 8) && clear_between_rank(s1, s2)) {
-                connectiveness = 1.0;
+                connectiveness = 1;
                 return true;
             }
             if ((s1 % 8 == s2 % 8) && clear_between_file(s1, s2)) {
-                connectiveness = 1.0;
+                connectiveness = 1;
                 return true;
             }
         }
     }
 
-    connectiveness = 0.0;
+    connectiveness = 0;
     return false;
 }
+
+
+// Return 2 if any friendly rook is on an OPEN file (no pawns on that file).
+// Return 1 if any friendly rook is on a SEMI-OPEN file (no friendly pawns on that file, but at least one enemy pawn).
+// Return 0 otherwise.
+int GameBoard::rook_file_status(Color c) const
+{
+    using ull = unsigned long long;
+
+    const ull rooks     = (c == Color::WHITE) ? white_rooks : black_rooks;
+    const ull own_pawns = (c == Color::WHITE) ? white_pawns  : black_pawns;
+    const ull opp_pawns = (c == Color::WHITE) ? black_pawns  : white_pawns;
+    const ull all_pawns = own_pawns | opp_pawns;
+
+    if (!rooks) return 0;
+
+    int score = 0;  // +2 per rook on open file, +1 per rook on semi-open
+
+    ull tmp = rooks;
+    while (tmp) {
+        int s  = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        int f  = s % 8;            // 0=H ... 7=A in h1=0 layout
+        int fi = 7 - f;            // map to col_masks index: 0=A ... 7=H
+        ull file_mask = col_masks[fi];
+
+        if ( (all_pawns & file_mask) == 0ULL ) {
+            score += 2;                                    // open file
+        } else if ( (own_pawns & file_mask) == 0ULL &&
+                    (opp_pawns & file_mask) != 0ULL ) {
+            score += 1;                                    // semi-open
+        }
+    }
+
+    return score;  // 0..4 (two rooks)
+}
+
+
+
+
 //
-// Count isolated doubled/tripled pawns for side c. DOES not flag regular (single) isolanis
-// For each file with k>=2 pawns and no friendly pawns on adjacent files,
-// add (k-1). Triples add 2, etc.
-int GameBoard::count_isolated_doubled_pawns(Color c) const
+// counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
+// One count for each instance.
+//
+int GameBoard::count_isolated_pawns(Color c) const
 {
     using ull = unsigned long long;
 
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
     if (!P) return 0;
 
-    int file_count[8] = {0};   // file index: 0..7 per your s%8 convention
+    int file_count[8] = {0};
     unsigned files_present = 0;
 
     ull tmp = P;
     while (tmp) {
-        const int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        const int f = s % 8;                                    // file index
+        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        int f = s % 8;                                    // 0..7
         ++file_count[f];
         files_present |= (1u << f);
     }
 
-    int isolations = 0;
+    int total = 0;
     for (int f = 0; f < 8; ++f) {
-        const int k = file_count[f];
-        if (k < 2) continue;  // not doubled/tripled
+        int k = file_count[f];            // pawns on this file
+        if (k == 0) continue;
 
-        const bool left  = (f < 7) && (files_present & (1u << (f + 1)));
-        const bool right = (f > 0) && (files_present & (1u << (f - 1)));
+        bool left  = (f < 7) && (files_present & (1u << (f + 1)));
+        bool right = (f > 0) && (files_present & (1u << (f - 1)));
 
-        if (!left && !right)
-            isolations += (k - 1);  // count the "extras" on that isolated file
+        if (!left && !right) {
+            // isolated file: single→1, double→2, triple→3, etc.
+            total += k;
+        }
     }
-
-    return isolations;
+    return total;
 }
 
 

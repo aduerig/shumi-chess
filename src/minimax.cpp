@@ -150,91 +150,109 @@ void MinimaxAI::wakeup() {
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-
-
+// Follows the negamax convention, so a positive value at a leaf is “good for the side to move.” 
 // returns a positive score, if "for_color" is ahead.
 //
 double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>& legal_moves)
 {
     // move_history
-    #ifdef _DEBUGGING_MOVE_CHAIN2
-        if (engine.move_history.size() > 7) {
+    #ifdef _DEBUGGING_MOVE_CHAIN
+        //if (engine.move_history.size() > 7) {
         //if (look_for_king_moves()) {
         //if (has_repeated_move()) {
-        //if (alternating_repeat_prefix_exact(2)) {
+        if (alternating_repeat_prefix_exact(1)) {
             engine.print_move_history_to_file(fpDebug);    // debug only
         }
-        
     #endif
 
+
+    
     evals_visited++;
 
-    int cp_score_adjusted = 0;
+    int cp_score_adjusted = 0;  // Total score, centipawns.
 
+    //
+    // Material considerations only
+    //
     int cp_score_pieces_only = 0;        // Pieces only
-    //
-    // Piece considerations only
-    //
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
         int cp_score_pieces_only_temp = engine.game_board.get_material_for_color(color1);
+        assert (cp_score_pieces_only_temp>=0);    // no negative value pieces
 
         // Take color into acccount
         if (color1 != for_color) cp_score_pieces_only_temp *= -1;
         cp_score_pieces_only += cp_score_pieces_only_temp;
     }
+
     //
     // Positional considerations only
     //
     int cp_score_position = 0;
+    bool isOK;
 
     #ifdef DADS_CRAZY_EVALUATION_CHANGES
    
         for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
+            int iZeroToThree;
+            int iZeroToFour;
             int cp_score_position_temp = 0;        // positional considerations only
 
-            // Add code to make king shy from center.
-            double anti_centerness;     // larger when closer to edges, small when king in center
-            bool isOK = engine.game_board.king_anti_centerness(color, anti_centerness);
-            assert (isOK);     // isOK just means that there wasnt a king
-            cp_score_position_temp += static_cast<int>(std::lround(anti_centerness*80));   // centipawns
+            /////////////// start positional evals /////////////////
+
+            // Add code to make king: 1. want to retain caslting privledge, and 2. get castled. (this one more important)
+            engine.game_board.king_castle_happiness(color, iZeroToThree);
+            assert (iZeroToThree>=0);
+            assert (iZeroToThree<3);
+            cp_score_position_temp += iZeroToThree*80;   // centipawns
 
             // Add code to encourage rook connections on back rank.
-            double connectiveness;
+            int connectiveness;     // One if rooks connected. 0 if not.
             isOK = engine.game_board.rook_connectiveness(color, connectiveness);
+            assert (connectiveness>=0);
             //assert (isOK);    // isOK just means that there werent two rooks to connect
             //cp_score_position_temp += std::lround(connectiveness*40);   // centipawns
-            cp_score_position_temp += static_cast<int>(std::lround(connectiveness*50));
+            cp_score_position_temp += connectiveness*150;
 
-            // Add code to discourage isolated doubled or tripled pawns.
-            int isolanis =  engine.game_board.count_isolated_doubled_pawns(color);
-            cp_score_position_temp -= isolanis*20;   // centipawns
+            // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
+            int isolanis =  engine.game_board.count_isolated_pawns(color);
+            assert (isolanis>=0);
+            cp_score_position_temp -= (isolanis*isolanis)*10;   // centipawns
 
+            // Add code to encourage knights attacking the 4-square center 
+            iZeroToFour = engine.game_board.knights_attacking_center_squares(color);
+            assert (iZeroToFour>=0);
+            cp_score_position_temp += iZeroToFour*20;  // centipawns
 
-            // Add code to encourage minor piece mobility
-            //int imobility = engine.get_minor_piece_move_number (legal_moves);
+            // Add code to encourage bishops attacking the 4-square center
+            // (cannot see through pieces, but will include "captures" of friendly pieces) 
+            iZeroToFour = engine.bishops_attacking_center_squares(color);
+            assert (iZeroToFour>=0);
+            cp_score_position_temp += iZeroToFour*20;  // centipawns
 
-
-            // Add code to encourage knights in the center (average)
-            double centerness;
-            isOK = engine.game_board.knights_centerness(color, centerness);
-            //assert (isOK); bOK of false just means no knights on board.
-            cp_score_position += centerness*4;  // centipawns
-
-            // // // Add code to encourage bishops in the center (average)
-            // isOK = engine.game_board.bishops_centerness(color, centerness);
-            // //assert (isOK); bOK of false just means no bishops on board.
-            // cp_score_position += centerness*5;  // centipawns
+            // Add code to encourage pawns attacking the 4-square center 
+            iZeroToFour = engine.game_board.pawns_attacking_center_squares(color);
+            assert (iZeroToFour>=0);
+            cp_score_position_temp += iZeroToFour*20;  // centipawns    
             
-            // Add positional stuff to score (score is positive at this point for for_color)
+            // Add code to encourage occupation of open and semi open files
+            iZeroToFour = engine.game_board.rook_file_status(color);
+            assert (iZeroToFour>=0);
+            cp_score_position_temp += iZeroToFour*20;  // centipawns           
+
+            /////////////// end positional evals /////////////////
+
+            // Add positional eval to score
             if (color != for_color) cp_score_position_temp *= -1;
             cp_score_position += cp_score_position_temp;
         }
 
         // Add code to promote/discourage trading, depending on who is ahead.
-        cp_score_position += cp_score_pieces_only*0.1;
+        // (note. At beginning of game, there are 4000 centipawns of material.
+        // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns if Im a pawn ahead.)
+        cp_score_position += (cp_score_pieces_only / 10);
 
     #endif
 
@@ -247,7 +265,7 @@ double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>
     #endif
 
      // Convert sum (for both colors) from centipawns to double.
-    return (cp_score_adjusted * 0.01);
+    return ((double)cp_score_adjusted * 0.01);
 }
 
 
@@ -257,6 +275,10 @@ double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>
 
 
 
+void MinimaxAI::do_a_deepening() {
+
+
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -302,7 +324,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     int this_depth;
 
     Move best_move = {};
-    double d_best_move_value;
+    double d_best_move_value = 0.0;
 
     g_iMove++;
     cout << "\nMove: " << g_iMove << endl;
@@ -310,22 +332,27 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 6;        // Note: because i said so.
+    this_depth = 8;        // Note: because i said so.
     int maximum_depth = this_depth;
 
-    // code to make it speed up (lower) depth as the game goes on. (never lower than 4 though)
-    // maximum_depth = this_depth - (int)(g_iMove/5);
-    // if (maximum_depth < 5) maximum_depth = 5;
-    assert(maximum_depth>=1);
+    int now_s;
+    int end_s;
+    int diff_s;     // Holds (actual time - requested time). This is positive if we are past due. Negative if we are sonner than expected
+
 
     // NOTE: there should be an option: depth .vs. time.
     int depth = 1;
     int nPly = 0;
-
+    bool bThinkingOver = false;
+    bool bThinkingOverByTime = false;
+    bool bThinkingOverByDepth = false;
+    int elapsed_time = 0;
 
     //engine.print_move_history_to_file(fpDebug);    // debug only
 
     do {
+
+        do_a_deepening();
 
         #ifdef _DEBUGGING_TO_FILE1 
             //clear_stats_file(fpDebug, "C:\\programming\\shumi-chess\\debug.dat");
@@ -336,7 +363,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
             engine.print_move_to_file(null_move, nPly, state, false, true, false, fpDebug);
         #endif
 
-        cout << endl << "Deepening to " << depth << " half moves " << "out of " << maximum_depth;
+        cout << endl << "Deeping to " << depth << " ply " << "of " << maximum_depth << " sec=" 
+                << elapsed_time << " ";
 
         //move_scores_table.clear();
         //move_and_scores_list.clear();
@@ -352,10 +380,16 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
                                                );
 
         // ret_val is a tuple of the score and the move.
-        d_best_move_value = get<0>(ret_val);
-        best_move = get<1>(ret_val);
+        double d_Return_value = get<0>(ret_val);
 
-        
+
+        if (d_Return_value == ABORT_SCORE) {
+            cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
+            break;   // Stop deepining, no more depths.
+        } else {
+            d_best_move_value = d_Return_value;
+            best_move = get<1>(ret_val);
+        }
 
         // publish PV for the *next* iteration:   PV PUSH
         prev_root_best_ = best_move;
@@ -367,14 +401,32 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
                                 
         engine.move_and_score_to_string(mTemp, true);
 
-        cout << " Best is:" << engine.move_string;
+        cout << " Best: " << engine.move_string;
 
         depth++;
 
-    //} while (chrono::high_resolution_clock::now() <= required_end_time);
-    } while (depth < (maximum_depth+1));
+        // time based
+        now_s = (int)chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
+        end_s = (int)chrono::duration_cast<chrono::seconds>(required_end_time.time_since_epoch()).count();
+        diff_s = now_s - end_s;
 
-    cout << "\nWent to depth " << (depth - 1) << endl;
+        elapsed_time = now_s - (int)chrono::duration_cast<chrono::seconds>(start_time.time_since_epoch()).count();
+
+        bThinkingOverByTime = (diff_s > 0);
+        //bTimeOver = (chrono::high_resolution_clock::now() > required_end_time);
+
+        // depth based
+        bThinkingOverByDepth = (depth >= (maximum_depth+1));
+
+        bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
+
+        //if (depth > 7) bThinkingOver = true;       // Hard depth limit on 7
+
+    } while (!bThinkingOver);
+
+    cout << "\x1b[33m\nWent to depth " << (depth - 1) << " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth  
+        << " elapsed time= " << elapsed_time << " requested time= " << time << "\x1b[0m" << endl;
+
 
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
 
@@ -415,38 +467,49 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     cout << colorize(AColor::BRIGHT_GREEN, "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
 
   
-    // Debug only
+    // Debug only  playground   sandbox for testing evaluation functions
     // int isolanis;
     bool isOK;
     double centerness;
 
-    // isolanis =  engine.game_board.count_isolated_doubled_pawns(Color::WHITE);
+    // isolanis =  engine.game_board.count_isolated_pawns(Color::WHITE);
     //isOK = engine.game_board.knights_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
     
-    centerness = engine.game_board.get_material_for_color(Color::WHITE) * 0.01;
-    cout << "wht " << centerness << endl;
+    //centerness = engine.game_board.get_material_for_color(Color::WHITE) * 0.01;
+    //centerness = (double)engine.game_board.get_castle_status_for_color(Color::WHITE);
 
-    centerness = engine.game_board.get_material_for_color(Color::BLACK) * 0.01;
-    //isOK = engine.game_board.knights_centerness(Color::BLACK, centerness);  // Gets smaller closer to center. 
-    cout << "blk " << centerness << endl; 
+    int square_e4 = 27;
+    int square_d4 = 28;
+    int square_e5 = 35;
+    int square_d5 = 36;
+    //int itemp = engine.game_board.knights_attacking_square(Color::WHITE, square_d4);
+    //int itemp = engine.game_board.knights_attacking_center_squares(Color::WHITE);
+    //int itemp = engine.bishops_attacking_center_squares(Color::WHITE);
+    //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
+    //int itemp = engine.game_board. pawns_attacking_center_squares(Color::WHITE);
+    //int itemp = engine.game_board.count_isolated_pawns(Color::WHITE);
+    int itemp = engine.game_board.rook_file_status(Color::WHITE);
+    cout << "wht " << itemp << endl;
+    
+    //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
+    //itemp = engine.bishops_attacking_center_squares(Color::BLACK);
+    //itemp = engine.game_board.knights_attacking_center_squares(Color::BLACK)
+    //itemp = engine.game_board.pawns_attacking_square(Color::BLACK, square_d5);
+    //itemp = engine.game_board. pawns_attacking_center_squares(Color::BLACK);
+    //itemp = engine.game_board.count_isolated_pawns(Color::BLACK);
+    itemp = engine.game_board.rook_file_status(Color::BLACK);
+    cout << "blk " << itemp << endl;
+ 
 
-    // isolanis =  engine.game_board.count_isolated_doubled_pawns(Color::BLACK);
-    // // isOK = engine.game_board.king_anti_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
-    // // assert (isOK);
+    // isolanis =  engine.game_board.count_isolated_pawns(Color::BLACK);
+    // // engine.game_board.king_castle_happiness(Color::WHITE, centerness);  // Gets smaller closer to center.
     // cout << "blk " << isolanis << endl;
 
     // double connectiveness;
     // bool bStatus;
     // bStatus  = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
     
-    
-    
-    //int imobility = engine.get_minor_piece_move_number (legal_moves);
-    // cout << "wht " << connectiveness << endl;
-    // bStatus = engine.game_board.rook_connectiveness(Color::BLACK, connectiveness);
-    // cout << "blk " << connectiveness << endl;
-
-
+  
 	#ifdef IS_CALLBACK_THREAD
     	stop_callback_thread();
     #endif
@@ -486,21 +549,13 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     //bMoreDebug = true;
     //debugMove = engine.move_string;
 
-    bool in_check = engine.is_king_in_check(engine.game_board.turn);
 
     if (stop_calculation) {
-        cout << "\n! STOP CALCULATION requested, currently just going to set stop_calculation back to false, needs implementation\n";
+        cout << "\n! STOP CALCULATION requested, needs implementation\n";
         stop_calculation = false;
+        return { ABORT_SCORE, the_best_move };
     }
 
-    // communications from 
-    if (engine.bHurryUpGrampa) {
-        g_this_depth--;
-        if (g_this_depth <= 3) g_this_depth = 6;
-        cout << "\n ...take it easy ..." << g_this_depth << endl;
-        engine.bHurryUpGrampa = false;
-
-    }
 
 
     //bMoreDebug = false;
@@ -530,10 +585,6 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
     GameState state = engine.game_over(legal_moves);
 
-    #ifdef _DEBUGGING_MOVE_CHAIN1
-       engine.print_move_to_file (move_last, nPly, state, in_check, false, false, fpDebug);
-    #endif
-
 
     p_moves_to_loop_over = &legal_moves;
     assert(p_moves_to_loop_over);
@@ -544,15 +595,17 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         assert(0);
 
+        bool in_check1 = engine.is_king_in_check(engine.game_board.turn);
+
+
         std::cout << "\n\x1b[31m! MAX PLY  trap#1 " << nPly << "\x1b[0m\n";
         #ifdef _DEBUGGING_TO_FILE1 
-
             fprintf(fpDebug, "crap!");
             std::fflush(fpDebug);
         #endif
 
         assert(p_moves_to_loop_over);
-        auto tup = best_move_static(engine.game_board.turn, *p_moves_to_loop_over, in_check);
+        auto tup = best_move_static(engine.game_board.turn, *p_moves_to_loop_over, in_check1);
         double scoreMe = std::get<0>(tup);
         ShumiChess::Move moveMe = std::get<1>(tup);
         return { scoreMe, moveMe };
@@ -654,6 +707,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     assert (depth >= 0);
     if (depth == 0) {
 
+        bool in_check = engine.is_king_in_check(engine.game_board.turn);
+
         // Static board evaluation
         d_best_score = evaluate_board(engine.game_board.turn, legal_moves);
 
@@ -691,6 +746,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 		// Pick best static evaluation among all legal moves if hit the over ply
         constexpr int MAX_QPLY = 24;        
         if (nPly >= MAX_QPLY) {
+            bool in_check = engine.is_king_in_check(engine.game_board.turn);
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPly << "\x1b[0m\n";
             //std::cout << "\x1b[31m!" << "\x1b[0m";
             auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), in_check);
@@ -761,8 +817,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             	g_live_ply = nPly;
             #endif
 
-            // Two parts 1. in negamax, (relative scores) the alpha betas are reversed in sign
-            //           2. The beta and alpha arguments are staggered, or reversed. 
+            // Two parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
+            //                       2. The beta and alpha arguments are staggered, or reversed. 
             auto ret_val = store_board_values_negamax(
                 (depth > 0 ? depth - 1 : 0),                // Refuse to allow negative depth
                 -beta, -alpha,      // reverse in sign and order at the same time
@@ -772,7 +828,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             );
 
             // The third part of negamax: negate the score to keep it relative.
-            double d_score_value = -std::get<0>(ret_val);
+            double d_return_value = get<0>(ret_val);
 
             engine.popMove();
 
@@ -787,8 +843,13 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                 }
             #endif
 
+            // negamax, reverse returned score.  
+            double d_score_value = -d_return_value;
 
-
+            if (d_return_value == ABORT_SCORE) {
+                //cout << "\n! STOP CALCULATION now \n" << endl;
+                return {ABORT_SCORE, the_best_move};
+            }
 
             // Store score
             //std::string temp_fen_now = engine.game_board.to_fen();
@@ -928,39 +989,33 @@ bool MinimaxAI::has_repeated_move() const
     }
     return false;
 }
-bool MinimaxAI::alternating_repeat_prefix_exact(int pairs) const
-{
-    if (pairs < 2 || pairs > 3) return false;
 
-    // stack -> vector oldest→newest
+bool MinimaxAI::alternating_repeat_prefix_exact(int /*pairs*/) const
+{
+    // Need at least three plies: a, b, a
+    if (engine.move_history.size() < 3) return false;
+
+    // stack -> vector oldest → newest
     std::stack<ShumiChess::Move> tmp = engine.move_history;
     std::vector<ShumiChess::Move> seq; seq.reserve(tmp.size());
     while (!tmp.empty()) { seq.push_back(tmp.top()); tmp.pop(); }
     std::reverse(seq.begin(), seq.end());
 
-    const size_t need = static_cast<size_t>(2 * pairs);
-    if (seq.size() < need) return false;
+    const ShumiChess::Move& A1 = seq[seq.size() - 3];
+    const ShumiChess::Move& B  = seq[seq.size() - 2];
+    const ShumiChess::Move& A2 = seq[seq.size() - 1];
 
-    const auto& A = seq[0];
-    const auto& B = seq[1];
-
-    auto eq_exact = [](const ShumiChess::Move& a, const ShumiChess::Move& b){
-        return (a.from == b.from) &&
-               (a.to == b.to) &&
-               (a.piece_type == b.piece_type) &&
-               (a.promotion == b.promotion);
+    auto eq_exact = [](const ShumiChess::Move& x, const ShumiChess::Move& y){
+        return (x.from == y.from) &&
+               (x.to == y.to) &&
+               (x.piece_type == y.piece_type) &&
+               (x.promotion == y.promotion);
     };
 
-    // verify prefix A,B,A,B,(A,B) over the first `need` moves
-    for (size_t i = 2; i < need; ++i) {
-        if ((i % 2 == 0)) { // even index → must match A
-            if (!eq_exact(seq[i], A)) return false;
-        } else {            // odd index  → must match B
-            if (!eq_exact(seq[i], B)) return false;
-        }
-    }
-    return true;
+    // Match exactly: a, b, a  with a != b
+    return eq_exact(A1, A2) && !eq_exact(A1, B);
 }
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

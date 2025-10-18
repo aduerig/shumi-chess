@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     // Create the chess engine
     Engine engine;
 
-    // assert(0);   // NOTE: I dont get here?
+    assert(0);   // NOTE: I dont get here?
     
     // Create the AI player (minnimax)
     MinimaxAI minimax_ai(engine);
