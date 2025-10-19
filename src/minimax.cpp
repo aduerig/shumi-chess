@@ -153,7 +153,7 @@ void MinimaxAI::wakeup() {
 // Follows the negamax convention, so a positive value at a leaf is “good for the side to move.” 
 // returns a positive score, if "for_color" is ahead.
 //
-double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>& legal_moves)
+double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::Move>& legal_moves)
 {
     // move_history
     #ifdef _DEBUGGING_MOVE_CHAIN
@@ -696,7 +696,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         std::cout << "\x1b[31m! NODES VISITED trap#2 " << nodes_visited << "dep=" << depth << "  " << d_best_score << "\x1b[0m\n";
 
         // Static board evaluation
-        d_best_score = evaluate_board(engine.game_board.turn, legal_moves);
+        d_best_score = evaluate_board(engine.game_board.turn); //, legal_moves);
 
         //final_result = std::make_tuple(d_best_score, the_best_move);
         //return final_result;
@@ -713,7 +713,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         bool in_check = engine.is_king_in_check(engine.game_board.turn);
 
         // Static board evaluation
-        d_best_score = evaluate_board(engine.game_board.turn, legal_moves);
+        d_best_score = evaluate_board(engine.game_board.turn);  //, legal_moves);
 
         unquiet_moves = engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves);
 
@@ -1051,7 +1051,8 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
             color_perspective = Color::WHITE;
         }
         Move mvdefault = Move{};
-        return evaluate_board(color_perspective, moves) * color_multiplier;
+        //return evaluate_board(color_perspective, moves) * color_multiplier;
+        return evaluate_board(color_perspective) * color_multiplier;
 
     }
     //
@@ -1231,7 +1232,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
     // - in check: treat as losing (no legal escapes here)
     if (legal_moves.empty()) {
         if (!in_Check) {
-            double stand_pat = evaluate_board(color, legal_moves);         // positive is good for 'color'
+            double stand_pat = evaluate_board(color);  //, legal_moves);         // positive is good for 'color'
             return { stand_pat, ShumiChess::Move{} };
         }
         return { -HUGE_SCORE, ShumiChess::Move{} };
@@ -1244,7 +1245,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
         engine.pushMove(m);
         
-        double d_score = evaluate_board(color, legal_moves);  // positive is good for 'color'
+        double d_score = evaluate_board(color); //, legal_moves);  // positive is good for 'color'
         
         engine.popMove();
 

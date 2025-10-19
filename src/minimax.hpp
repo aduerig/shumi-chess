@@ -53,7 +53,7 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    double evaluate_board(ShumiChess::Color for_color, const vector<ShumiChess::Move>& legal_moves);
+    double evaluate_board(ShumiChess::Color for_color); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
 
     void do_a_deepening();
