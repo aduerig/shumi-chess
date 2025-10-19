@@ -180,3 +180,8 @@ someone joins
 GET: {"status":"joined","data":{"fen":"7q/4pnk1/4prn1/5pp1/1PP5/1NRP4/1KNP4/Q7 b - - 0 1","key":"8p2Lt1nEgcwclSeWQ2XQQ","id":"j2CENKH6XNcmUDtu72VTS","names":["idk","lmfao"],"times":[180000,180000],"index":1,"color":"b"}}
 GET: {"status":"games","data":{"games":[],"nConnections":3}}
 ```
+
+
+
+
+

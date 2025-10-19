@@ -860,15 +860,11 @@ int Engine::bishops_attacking_square(Color c, int sq)
 
 int Engine::bishops_attacking_center_squares(Color c)
 {
-    int square_e4 = 27;
-    int square_d4 = 28;
-    int square_e5 = 35;
-    int square_d5 = 36;
     int itemp = 0;
-    itemp += bishops_attacking_square(c, square_e4);
-    itemp += bishops_attacking_square(c, square_d4);
-    itemp += bishops_attacking_square(c, square_e5);
-    itemp += bishops_attacking_square(c, square_d5);
+    itemp += bishops_attacking_square(c, game_board.square_e4);
+    itemp += bishops_attacking_square(c, game_board.square_d4);
+    itemp += bishops_attacking_square(c, game_board.square_e5);
+    itemp += bishops_attacking_square(c, game_board.square_d5);
     return itemp;
 }
 

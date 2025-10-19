@@ -160,7 +160,10 @@ void GameBoard::set_zobrist() {
 //
 // fields for fen are:
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
-const string GameBoard::to_fen() {
+
+const string GameBoard::to_fen(bool bFullFEN) {
+
+    //cout << "\x1b[34mto_fen!\x1b[0m" << endl;
     vector<string> fen_components;
 
     unordered_map<ull, char> piece_to_letter = {
@@ -211,7 +214,7 @@ const string GameBoard::to_fen() {
 
     // TODO: castling
     // NOTE: What do you mean, TODO. here and below, What's to do? Is this an unfinished project?
-    // I think the TODOs are outdated.
+    // I think the TODOs are outdated. The below code works great, and makes great fens.
     string castlestuff;
     if (0b00000001 & white_castle) {
         castlestuff += 'K';
@@ -236,12 +239,16 @@ const string GameBoard::to_fen() {
         enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant);
     }
     fen_components.push_back(enpassant_info);
-    
-    // TODO: halfmove number (fifty move rule)
-    fen_components.push_back(to_string(halfmove));
 
-    // TODO: total moves
-    fen_components.push_back(to_string(fullmove));
+    if (bFullFEN) {
+    
+        // TODO: halfmove number (fifty move rule)
+        fen_components.push_back(to_string(halfmove));
+
+        // TODO: total moves
+        fen_components.push_back(to_string(fullmove));
+
+    }
 
     // returns string joined by spaces
     return utility::our_string::join(fen_components, " ");
@@ -261,20 +268,9 @@ Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
 Color GameBoard::get_color_on_bitboard(ull bitboard) {
     if (get_pieces(Color::WHITE) & bitboard) {
         return Color::WHITE;
+    } else {
+        return Color::BLACK;
     }
-    return Color::BLACK;
-    // vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
-    // vector<Color> all_colors = {Color::WHITE, Color::BLACK};
-    // for (auto piece_type : all_piece_types) {
-    //     for (auto color : all_colors) {
-    //         if (get_pieces(color, piece_type) & bitboard) {
-    //             return color;
-    //         }
-    //     }
-    // }
-    // assert(false);
-    // // TODO remove this, i'm just putting it here because it prevents a warning
-    // return Color::WHITE;
 }
 
 // Is there only zero or one pieces on eacxh square?
@@ -349,7 +345,7 @@ int GameBoard::get_material_for_color(Color color1) {
 
 
 // Total of 4000 centipawns for each side.
-int GameBoard::centipawn_score_of(ShumiChess::Piece p) {
+int GameBoard::centipawn_score_of(ShumiChess::Piece p) const {
     switch (p) {
         case ShumiChess::Piece::PAWN:   return 100;
         case ShumiChess::Piece::KNIGHT: return 320;
@@ -362,7 +358,7 @@ int GameBoard::centipawn_score_of(ShumiChess::Piece p) {
 }
 
 
-int GameBoard::bits_in(ull bitboard) {
+int GameBoard::bits_in(ull bitboard) const {
     auto bs = bitset<64>(bitboard);
     return (int) bs.count();
 }
@@ -389,13 +385,6 @@ void GameBoard::king_castle_happiness(Color c, int& centerness) const {
 }
 
 
-
-
-// int square_e4 = 27;
-// int square_d4 = 28;
-// int square_e5 = 35;
-// int square_d5 = 36;
-
 int GameBoard::pawns_attacking_square(Color c, int sq)
 {
     ull bit = (1ULL << sq);
@@ -418,14 +407,11 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 
 int GameBoard::pawns_attacking_center_squares(Color c)
 {
-    // h1=0 layout: e4=27, d4=28, e5=35, d5=36
-    return  pawns_attacking_square(c, 27)
-          + pawns_attacking_square(c, 28)
-          + pawns_attacking_square(c, 35)
-          + pawns_attacking_square(c, 36);
+    return  pawns_attacking_square(c, square_e4)
+          + pawns_attacking_square(c, square_d4)
+          + pawns_attacking_square(c, square_e5)
+          + pawns_attacking_square(c, square_d5);
 }
-
-
 
 
 int GameBoard::knights_attacking_square(Color c, int sq)
@@ -449,47 +435,6 @@ int GameBoard::knights_attacking_center_squares(Color for_color)
     return itemp;
 }
 
-
-
-// bool GameBoard::knights_centerness(Color c, double& centerness) const
-// {
-//     ull bb = (c == Color::WHITE) ? white_knights : black_knights;
-//     if (!bb) { centerness = 0.0; return false; }   // no knights
-
-//     double sum = 0.0;
-//     int count = 0;
-//     ull tmp = bb;                                   // don't mutate the real bitboard
-//     while (tmp) {
-//         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-//         int row_idx = s / 8;                         // 0..7
-//         int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
-//         sum += static_cast<double>(knight_powers[row_idx][col_idx]);
-//         ++count;
-//     }
-
-//     centerness = (count ? (sum / count) : 0.0);
-//     return true;
-// }
-
-// bool GameBoard::bishops_centerness(Color c, double& centerness) const
-// {
-//     ull bb = (c == Color::WHITE) ? white_bishops : black_bishops;
-//     if (!bb) { centerness = 0.0; return false; }   // no bishops
-
-//     double sum = 0.0;
-//     int count = 0;
-//     ull tmp = bb;                                   // don't mutate the real bitboard
-//     while (tmp) {
-//         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-//         int row_idx = s / 8;                         // 0..7
-//         int col_idx = 7 - (s % 8);                   // 0..7 (flip for h1=0 layout)
-//         sum += static_cast<double>(bishop_powers[row_idx][col_idx]);
-//         ++count;
-//     }
-
-//     centerness = (count ? (sum / count) : 0.0);
-//     return true;
-// }
 //
 // One if rooks connected. 0 if not.
 // return false if two rooks dont exist. But in any case, returns the correct connectiveness.
@@ -560,7 +505,7 @@ bool GameBoard::rook_connectiveness(Color c, int& connectiveness) const
     return false;
 }
 
-
+//
 // Return 2 if any friendly rook is on an OPEN file (no pawns on that file).
 // Return 1 if any friendly rook is on a SEMI-OPEN file (no friendly pawns on that file, but at least one enemy pawn).
 // Return 0 otherwise.
@@ -591,11 +536,29 @@ int GameBoard::rook_file_status(Color c) const
             score += 1;                                    // semi-open
         }
     }
-
     return score;  // 0..4 (two rooks)
 }
 
 
+
+int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on enemy 7th */
+{
+    using ull = unsigned long long;
+
+    const ull rooks  = (c == Color::WHITE) ? white_rooks  : black_rooks;
+    const ull queens = (c == Color::WHITE) ? white_queens : black_queens;
+    ull rq = rooks | queens;
+    if (!rq) return 0;
+
+    const int target_rank = (c == Color::WHITE) ? 6 : 1; // enemy 7th rank: White→6, Black→1
+
+    int score = 0; // +1 per rook or queen on enemy 7th (max 2 if both R+Q there)
+    while (rq) {
+        int s = utility::bit::lsb_and_pop_to_square(rq); // 0..63
+        if ((s / 8) == target_rank) ++score;
+    }
+    return score;
+}
 
 
 //

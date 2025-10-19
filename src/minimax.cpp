@@ -205,7 +205,7 @@ double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>
             // Add code to make king: 1. want to retain caslting privledge, and 2. get castled. (this one more important)
             engine.game_board.king_castle_happiness(color, iZeroToThree);
             assert (iZeroToThree>=0);
-            assert (iZeroToThree<3);
+            assert (iZeroToThree<=3);
             cp_score_position_temp += iZeroToThree*80;   // centipawns
 
             // Add code to encourage rook connections on back rank.
@@ -240,7 +240,13 @@ double MinimaxAI::evaluate_board(Color for_color, const vector<ShumiChess::Move>
             // Add code to encourage occupation of open and semi open files
             iZeroToFour = engine.game_board.rook_file_status(color);
             assert (iZeroToFour>=0);
-            cp_score_position_temp += iZeroToFour*20;  // centipawns           
+            cp_score_position_temp += iZeroToFour*20;  // centipawns       
+            
+            // Add code to encourage occupation of 7th rank by queens and rook
+            iZeroToFour = engine.game_board.rook_7th_rankness(color);
+            assert (iZeroToFour>=0);
+            cp_score_position_temp += iZeroToFour*20;  // centipawns    
+
 
             /////////////// end positional evals /////////////////
 
@@ -294,7 +300,7 @@ int g_this_depth = 6;
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-Move MinimaxAI::get_move_iterative_deepening(double time) {
+Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     stop_calculation = false;
     seen_zobrist.clear();
     nodes_visited = 0;
@@ -303,7 +309,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
 
     auto start_time = chrono::high_resolution_clock::now();
-    auto required_end_time = start_time + chrono::duration<double>(time);
+    auto required_end_time = start_time + chrono::duration<double>(timeRequested);
 
 	#ifdef IS_CALLBACK_THREAD
     	start_callback_thread();
@@ -332,7 +338,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 8;        // Note: because i said so.
+    this_depth = 7;        // Note: because i said so.
     int maximum_depth = this_depth;
 
     int now_s;
@@ -340,7 +346,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     int diff_s;     // Holds (actual time - requested time). This is positive if we are past due. Negative if we are sonner than expected
 
 
-    // NOTE: there should be an option: depth .vs. time.
+    // defaults
     int depth = 1;
     int nPly = 0;
     bool bThinkingOver = false;
@@ -363,7 +369,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
             engine.print_move_to_file(null_move, nPly, state, false, true, false, fpDebug);
         #endif
 
-        cout << endl << "Deeping to " << depth << " ply " << "of " << maximum_depth << " sec=" 
+        cout << endl << "Deeping " << depth << " ply " << "of " << maximum_depth << " sec=" 
                 << elapsed_time << " ";
 
         //move_scores_table.clear();
@@ -425,7 +431,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     } while (!bThinkingOver);
 
     cout << "\x1b[33m\nWent to depth " << (depth - 1) << " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth  
-        << " elapsed time= " << elapsed_time << " requested time= " << time << "\x1b[0m" << endl;
+        << " elapsed time= " << elapsed_time << " requested time= " << timeRequested << "\x1b[0m" << endl;
 
 
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
@@ -478,17 +484,13 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //centerness = engine.game_board.get_material_for_color(Color::WHITE) * 0.01;
     //centerness = (double)engine.game_board.get_castle_status_for_color(Color::WHITE);
 
-    int square_e4 = 27;
-    int square_d4 = 28;
-    int square_e5 = 35;
-    int square_d5 = 36;
     //int itemp = engine.game_board.knights_attacking_square(Color::WHITE, square_d4);
     //int itemp = engine.game_board.knights_attacking_center_squares(Color::WHITE);
     //int itemp = engine.bishops_attacking_center_squares(Color::WHITE);
     //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
     //int itemp = engine.game_board. pawns_attacking_center_squares(Color::WHITE);
     //int itemp = engine.game_board.count_isolated_pawns(Color::WHITE);
-    int itemp = engine.game_board.rook_file_status(Color::WHITE);
+    int itemp = engine.game_board.rook_7th_rankness(Color::WHITE);
     cout << "wht " << itemp << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
@@ -497,7 +499,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time) {
     //itemp = engine.game_board.pawns_attacking_square(Color::BLACK, square_d5);
     //itemp = engine.game_board. pawns_attacking_center_squares(Color::BLACK);
     //itemp = engine.game_board.count_isolated_pawns(Color::BLACK);
-    itemp = engine.game_board.rook_file_status(Color::BLACK);
+    itemp = engine.game_board.rook_7th_rankness(Color::BLACK);
     cout << "blk " << itemp << endl;
  
 
@@ -621,6 +623,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     if (depth == top_depth) {
 
         assert(p_moves_to_loop_over);
+        
         #ifdef _DEBUGGING_PV_ORDERING
             std::vector<Move> moves_to_loop_overtemp = *p_moves_to_loop_over;  // snapshot current underlying list
         #endif

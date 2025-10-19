@@ -104,17 +104,31 @@ if args.human:
     both_players = ['human', 'human']
 
 # ! drawing GUI elements
-screen_width = 800
-screen_height = 900
+screen_width = 700
+screen_height = 800
 win = GraphWin(width = screen_width, height = screen_height)
 
 # 2. Start the GUI in the middle of the screen
+# win.master.withdraw()
+# win.master.update_idletasks()  # Update "requested size"
+# x = (win.master.winfo_screenwidth() - win.master.winfo_reqwidth()) / 2
+# y = (win.master.winfo_screenheight() - win.master.winfo_reqheight()) / 2
+# win.master.geometry(f"+{int(x)}+{int(y)}")
+# win.master.deiconify()
+
+
+# 2. Start the GUI in the upper right corner of the screen
 win.master.withdraw()
-win.master.update_idletasks()  # Update "requested size"
-x = (win.master.winfo_screenwidth() - win.master.winfo_reqwidth()) / 2
-y = (win.master.winfo_screenheight() - win.master.winfo_reqheight()) / 2
+win.master.update_idletasks()  # ensure reqwidth/reqheight are set
+margin = 20  # pixels from screen edges
+x = win.master.winfo_screenwidth() - win.master.winfo_reqwidth() - margin
+y = margin
+if x < 0: x = 0
+if y < 0: y = 0
 win.master.geometry(f"+{int(x)}+{int(y)}")
 win.master.deiconify()
+
+
 
 def escape_program(event):
     ##print('Trying to escape program!')
@@ -342,7 +356,7 @@ for button_obj in button_holder:
 # current turn text
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
-    Point(square_size * .5, square_size * 9),
+    Point(square_size * 0.85, square_size * 9),
     turn_text_values[0]
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
@@ -364,10 +378,10 @@ curr_move_text = Text(
 curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
 
-
+# set fen text
 set_fen_text = Entry(
-    Point(square_size * 6.5, square_size * 9),
-    60
+    Point(square_size * 3.8, square_size * 8.5),
+    55
 )
 set_fen_text.setFill(color_rgb(200, 200, 200))
 set_fen_text.draw(win)

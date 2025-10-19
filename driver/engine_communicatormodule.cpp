@@ -193,7 +193,7 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
 
 static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
-    double seconds; // Changed from 'depth' to match your Python code's variable
+    double seconds; // requested time
     if (!PyArg_ParseTuple(args, "d", &seconds))
         return NULL;
 

@@ -34,6 +34,8 @@ r1bq1rk1/pp3npp/2pp1p2/8/4PP2/2NQB3/PPP3PP/3R1R1K w - - 4 17
 // Long term level 7 games
 Current FEN: rnbq1rk1/ppp3pp/1n2pp2/3pP3/1bPP4/2N2NB1/PP3PPP/R2QKB1R w KQ d6 0 9
 
+// two rooks endgame
+Current FEN: rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
 
 
 Edge bugs with king and pawn? (Edge and king bug)
@@ -55,3 +57,9 @@ Move chain histories:
 
 Very long (10). 
  ...Kg8  g3  ...h5  gxf4  ...Rxf4  Qxh5  ...Bxd4  cxd4  ...Rxf3  Qxf3 
+
+
+endgames
+========
+
+Fen is now 8/p1r1k3/8/8/8/3K4/5RP1/8 b KQkq - 1 1            // endgame lab1 : rook and single pawmn endgame

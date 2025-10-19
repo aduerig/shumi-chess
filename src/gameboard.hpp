@@ -60,7 +60,7 @@ class GameBoard {
         explicit GameBoard(const std::string&);
 
         // Member methods
-        const std::string to_fen();
+        const std::string to_fen(bool bFullFEN=true);
 
         void set_zobrist();
 
@@ -181,55 +181,20 @@ class GameBoard {
 
         bool rook_connectiveness(Color c, int& connectiveness) const;
         int rook_file_status(Color c) const;
+        int rook_7th_rankness(Color c) const;
         int count_isolated_pawns(Color c) const;
 
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1);
-        int centipawn_score_of(ShumiChess::Piece p);
-        int bits_in(ull);
 
-// static constexpr int knight_powers[8][8] = {
-//                                             {2, 3, 4, 4, 4, 4, 3, 2},
-//                                             {3, 4, 6, 6, 6, 6, 4, 3},
-//                                             {4, 6, 8, 8, 8, 8, 6, 4},
-//                                             {4, 6, 8, 8, 8, 8, 6, 4},
-//                                             {4, 6, 8, 8, 8, 8, 6, 4},
-//                                             {4, 6, 8, 8, 8, 8, 6, 4},
-//                                             {3, 4, 6, 6, 6, 6, 4, 3},
-//                                             {2, 3, 4, 4, 4, 4, 3, 2},
-//                                         };
-// static constexpr int bishop_powers[8][8] = {
-//                                             {7, 7, 7, 7, 7, 7, 7, 7},
-//                                             {7, 9, 9, 9, 9, 9, 9, 7},
-//                                             {7, 9,11,11,11,11, 9, 7},
-//                                             {7, 9,11,13,13,11, 9, 7},
-//                                             {7, 9,11,13,13,11, 9, 7},
-//                                             {7, 9,11,11,11,11, 9, 7},
-//                                             {7, 9, 9, 9, 9, 9, 9, 7},
-//                                             {7, 7, 7, 7, 7, 7, 7, 7},
-//                                         };
+        int centipawn_score_of(ShumiChess::Piece p) const;
+        int bits_in(ull) const;
 
-// static constexpr int king_danger_opening[8][8] = {
-//                                             {1, 1, 1, 3, 3, 3, 1, 1},
-//                                             {2, 3, 3, 4, 4, 3, 3, 2},
-//                                             {3, 4, 4, 5, 5, 4, 3, 3},
-//                                             {4, 5, 5, 6, 6, 5, 4, 4},
-//                                             {4, 5, 5, 6, 6, 5, 4, 4},
-//                                             {3, 4, 4, 5, 5, 4, 3, 3},
-//                                             {2, 3, 3, 4, 4, 3, 3, 2},
-//                                             {1, 1, 1, 3, 3, 3, 1, 1},
-//                                         };
-
-// static constexpr int king_danger_ending[8][8] = {
-//                                             {6, 6, 6, 4, 4, 4, 6, 6},
-//                                             {5, 4, 4, 3, 3, 4, 4, 6},
-//                                             {4, 3, 3, 2, 2, 3, 4, 4},
-//                                             {3, 2, 2, 1, 1, 2, 3, 3},
-//                                             {3, 2, 2, 1, 1, 5, 3, 3},
-//                                             {4, 3, 2, 2, 2, 3, 4, 4},
-//                                             {5, 4, 4, 3, 3, 4, 4, 6},
-//                                             {6, 6, 6, 4, 4, 4, 6, 6},                       };
-
+        // Square identities (in h1=0 bit board lingo)
+        int square_e4 = 27;
+        int square_d4 = 28;
+        int square_e5 = 35;
+        int square_d5 = 36;
 
 
 };

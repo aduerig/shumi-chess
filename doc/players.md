@@ -12,4 +12,4 @@
    isolated pawns sadness (single, double and triple)
    attacking of 4-center squares by knights, bishops, or pawns.
    rook occuption of open and semi open files.
-The uncle is even faster, about 350,000 nodes per second on my laptop.
+The uncle is even faster, about 350,000 nodes per second on my laptop. Uncle shumi also has a "Wake up" button! Works magnicantly!
