@@ -600,6 +600,47 @@ int GameBoard::count_isolated_pawns(Color c) const
 }
 
 
+int GameBoard::count_passed_pawns(Color c)
+{
+    const ull my_pawns  = get_pieces(c, Piece::PAWN);
+    const ull his_pawns = get_pieces(utility::representation::opposite_color(c), Piece::PAWN);
+    if (!my_pawns) return 0;
+
+    int count = 0;
+    ull tmp = my_pawns;
+
+    while (tmp) {
+        const int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        const int f = s % 8;            // in h1=0: 0=H ... 7=A
+        const int r = s / 8;            // 0..7 (rank1..rank8)
+
+        // Map to A..H index used by col_masks
+        const int fi = 7 - f;
+
+        // Same + adjacent file mask
+        ull files_mask = col_masks[fi];
+        if (fi > 0) files_mask |= col_masks[fi - 1];
+        if (fi < 7) files_mask |= col_masks[fi + 1];
+
+        // Ranks "ahead" toward promotion
+        ull ranks_ahead;
+        if (c == Color::WHITE) {
+            // bits at ranks (r+1 .. 7)
+            const int start_bit = (r + 1) * 8;
+            ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
+        } else {
+            // bits at ranks (0 .. r-1)
+            const int end_bit = r * 8;
+            ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1);
+        }
+
+        // Any enemy pawn ahead on same/adjacent files?
+        const ull blockers = his_pawns & files_mask & ranks_ahead;
+        if (blockers == 0ULL) ++count;
+    }
+    return count;
+}
+
 
 
 

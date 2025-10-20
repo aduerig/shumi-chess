@@ -156,7 +156,7 @@ void MinimaxAI::wakeup() {
 double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::Move>& legal_moves)
 {
     // move_history
-    #ifdef _DEBUGGING_MOVE_CHAIN
+    #ifdef _DEBUGGING_MOVE_CHAIN1
         //if (engine.move_history.size() > 7) {
         //if (look_for_king_moves()) {
         //if (has_repeated_move()) {
@@ -198,9 +198,15 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
 
             int iZeroToThree;
             int iZeroToFour;
+            int iZeroToEight;
             int cp_score_position_temp = 0;        // positional considerations only
 
             /////////////// start positional evals /////////////////
+
+
+            // bishop pair bonus (very small)
+            int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(for_color));
+            if (bishops >= 2) cp_score_position += 5;   // +0.05 pawns
 
             // Add code to make king: 1. want to retain caslting privledge, and 2. get castled. (this one more important)
             engine.game_board.king_castle_happiness(color, iZeroToThree);
@@ -208,7 +214,7 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
             assert (iZeroToThree<=3);
             cp_score_position_temp += iZeroToThree*80;   // centipawns
 
-            // Add code to encourage rook connections on back rank.
+            // Add code to encourage rook connections on back rank. (i wish, its just rook connections)
             int connectiveness;     // One if rooks connected. 0 if not.
             isOK = engine.game_board.rook_connectiveness(color, connectiveness);
             assert (connectiveness>=0);
@@ -245,7 +251,18 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
             // Add code to encourage occupation of 7th rank by queens and rook
             iZeroToFour = engine.game_board.rook_7th_rankness(color);
             assert (iZeroToFour>=0);
-            cp_score_position_temp += iZeroToFour*20;  // centipawns    
+            cp_score_position_temp += iZeroToFour*20;  // centipawns  
+            
+            // Add code to encourage passed pawns. (1 for each passed pawn)
+            //    TODO: does not see wether passed pawns are protected
+            //    TODO: does not see wether passed pawns are isolated
+            //    TODO: does not see wether passed pawns are on open enemy files
+            iZeroToEight = engine.game_board.count_passed_pawns(color);
+            assert (iZeroToEight>=0);
+            cp_score_position_temp += iZeroToEight*10;   // centipawns
+
+
+
 
 
             /////////////// end positional evals /////////////////
@@ -257,7 +274,7 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
 
         // Add code to promote/discourage trading, depending on who is ahead.
         // (note. At beginning of game, there are 4000 centipawns of material.
-        // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns if Im a pawn ahead.)
+        // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns to trade if Im a pawn ahead.)
         cp_score_position += (cp_score_pieces_only / 10);
 
     #endif
@@ -270,6 +287,13 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
         fprintf(fpDebug, " ev=%i", cp_score_adjusted);
     #endif
 
+    #ifdef _DEBUGGING_MOVE_CHAIN1
+        engine.print_move_to_file(move_last, nPly, (GameState::INPROGRESS), false, true, true, fpDebug); 
+    #endif
+
+
+
+
      // Convert sum (for both colors) from centipawns to double.
     return ((double)cp_score_adjusted * 0.01);
 }
@@ -277,7 +301,7 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
 
 
 
-
+///////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -287,7 +311,6 @@ void MinimaxAI::do_a_deepening() {
 }
 
 
-//////////////////////////////////////////////////////////////////////////////////
 
 
 int g_iMove = 0;
@@ -323,7 +346,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     // size_t nFENS = move_scores_table.size();    // This returns the number of FEN rows.
     // assert(nFENS == 0);
  
-    //MoveScoreList move_and_scores_list;
+    //MoveAndScoreList move_and_scores_list;
 
 
     
@@ -338,7 +361,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth = 7;        // Note: because i said so.
+    this_depth =5;        // Note: because i said so.
     int maximum_depth = this_depth;
 
     int now_s;
@@ -364,9 +387,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
             //clear_stats_file(fpDebug, "C:\\programming\\shumi-chess\\debug.dat");
         #endif
 
-        #ifdef _DEBUGGING_MOVE_TREE
+        #ifdef _DEBUGGING_MOVE_CHAIN
             fputs("\n\n---------------------------------------------------------------------------", fpDebug);
-            engine.print_move_to_file(null_move, nPly, state, false, true, false, fpDebug);
+            engine.print_move_to_file(null_move, nPly, (GameState::INPROGRESS), false, true, false, fpDebug);
         #endif
 
         cout << endl << "Deeping " << depth << " ply " << "of " << maximum_depth << " sec=" 
@@ -375,7 +398,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
         //move_scores_table.clear();
         //move_and_scores_list.clear();
 
-        top_depth = depth;
+        top_depth = depth;      // deepening starts at this depth
         double alpha = -HUGE_SCORE;
         double beta = HUGE_SCORE;
         auto ret_val = store_board_values_negamax(depth, alpha, beta
@@ -398,14 +421,16 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
         }
 
         // publish PV for the *next* iteration:   PV PUSH
-        prev_root_best_ = best_move;
+        assert (depth >=0);
+        prev_root_best_[depth] = best_move;
 
 
-        MoveScore mTemp;   
-        mTemp.first  = best_move;
-        mTemp.second = d_best_move_value;
+        // MoveAndScore mTemp;   
+        // mTemp.first  = best_move;
+        // mTemp.second = d_best_move_value;
                                 
-        engine.move_and_score_to_string(mTemp, true);
+        // engine.move_and_score_to_string(mTemp, true);
+        engine.move_and_score_to_string(best_move, d_best_move_value , true);
 
         cout << " Best: " << engine.move_string;
 
@@ -490,7 +515,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
     //int itemp = engine.game_board. pawns_attacking_center_squares(Color::WHITE);
     //int itemp = engine.game_board.count_isolated_pawns(Color::WHITE);
-    int itemp = engine.game_board.rook_7th_rankness(Color::WHITE);
+    int itemp = engine.game_board.count_passed_pawns(Color::WHITE);
     cout << "wht " << itemp << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
@@ -499,7 +524,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //itemp = engine.game_board.pawns_attacking_square(Color::BLACK, square_d5);
     //itemp = engine.game_board. pawns_attacking_center_squares(Color::BLACK);
     //itemp = engine.game_board.count_isolated_pawns(Color::BLACK);
-    itemp = engine.game_board.rook_7th_rankness(Color::BLACK);
+    itemp = engine.game_board.count_passed_pawns(Color::BLACK);
     cout << "blk " << itemp << endl;
  
 
@@ -531,7 +556,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
 tuple<double, Move> MinimaxAI::store_board_values_negamax(
                     int depth, double alpha, double beta
                     //,unordered_map<std::string, unordered_map<Move, double, MoveHash>> &move_scores_table
-                    //,MoveScoreList& move_and_scores_list
+                    //,MoveAndScoreList& move_and_scores_list
                     ,const ShumiChess::Move& move_last      // seems to be used for debug only...
                     ,int nPly)
 {
@@ -572,17 +597,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     // =====================================================================
 
     #ifdef _DEBUGGING_MOVE_CHAIN1
-        engine.bitboards_to_algebraic(engine.game_board.turn, move_last
-                                , (GameState::INPROGRESS)
-                                , false
-                                , false
-                                , engine.move_string);
-
+        engine.print_move_to_file(move_last, nPly, (GameState::INPROGRESS), false, true, true, fpDebug); 
     #endif
 
 
 
-    //  If mover is in check, this routine returns all check escapes and only the check escapes.
+    // If mover is in check, this routine returns all check escapes and only the check escapes.
     std::vector<Move> legal_moves = engine.get_legal_moves();
 
     GameState state = engine.game_over(legal_moves);
@@ -591,7 +611,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     p_moves_to_loop_over = &legal_moves;
     assert(p_moves_to_loop_over);
 
-        // Over analysis sentinal Sorry, I should not be this large <- NOTE:
+    // Over analysis sentinal Sorry, I should not be this large
+    assert(nPly >= 0);
     constexpr int MAX_PLY = 32;
     if (nPly > MAX_PLY) {
 
@@ -614,25 +635,24 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
     }
 
-
-    //assert(nPly < 22); // runaway recursion stop
-
-
-
-    // ✅ INSERT PV ordering (at the root) here — only if this is the root node
-    if (depth == top_depth) {
-
+    // PV ordering (at the root only,
+    // because PV ordering gives diminishing returns further down the tree).
+    assert (top_depth>0);
+    if (depth == top_depth) {    // This is a "root node", or the "exterior" call.
         assert(p_moves_to_loop_over);
         
         #ifdef _DEBUGGING_PV_ORDERING
-            std::vector<Move> moves_to_loop_overtemp = *p_moves_to_loop_over;  // snapshot current underlying list
+            std::vector<Move> moves_to_loop_overtemp = *p_moves_to_loop_over;
+            MoveAndScoreList debug_move_scores;
+            debug_move_scores.reserve(p_moves_to_loop_over->size());           
         #endif
 
-        // Start with the last deepenings best move first
-         for (size_t i = 0; i < p_moves_to_loop_over->size(); ++i) {
-            if ( (*p_moves_to_loop_over)[i] == prev_root_best_ ) {
+        // Rearrange list so it starts with the last deepenings best move first
+        for (size_t i = 0; i < p_moves_to_loop_over->size(); ++i) {
+            if ( (*p_moves_to_loop_over)[i] == prev_root_best_[top_depth-1] ) {
                 if (i != 0) {
                     std::swap( (*p_moves_to_loop_over)[0], (*p_moves_to_loop_over)[i] );
+                    //assert(0);
                 }
                 break;
             }
@@ -642,15 +662,15 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             //if (moves_to_loop_overtemp != moves_to_loop_over) {
             if (moves_to_loop_overtemp != *p_moves_to_loop_over) {
 
-                fputs("\n\n-1+++++++++++++\n", fpDebug);
-                //engine.moves_and_scores_to_file(move_and_scores_listSave, false, fpDebug);
+                fputs("\n-1+++++++++++++\n", fpDebug);
+                //engine.print_moves_and_scores_to_file(move_and_scores_listSave, false, fpDebug);
                 engine.print_moves_to_file(moves_to_loop_overtemp, 0, fpDebug);
-                fputs("-1---------------\n", fpDebug);
+                fputs("-1+++++++++++++++++\n", fpDebug);
 
 
-                fputs("-2+++++++++++++\n", fpDebug);
-                //engine.moves_and_scores_to_file(move_and_scores_list, false, fpDebug);
-                engine.print_moves_to_file(moves_to_loop_over, 0, fpDebug);
+                fputs("\n-2----------------\n", fpDebug);
+                //engine.print_moves_and_scores_to_file(move_and_scores_list, false, fpDebug);
+                engine.print_moves_to_file(*p_moves_to_loop_over, 0, fpDebug);
                 fputs("-2---------------\n", fpDebug);
             }
         #endif
@@ -667,6 +687,8 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         int level = (top_depth - depth);
         assert(level >= 0);
+        assert(nPly >= level);     // NOTE: we should use nPly here, simpler.
+
         double d_level = static_cast<double>(level);
 
         if (state == GameState::WHITEWIN) {
@@ -714,6 +736,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         // Static board evaluation
         d_best_score = evaluate_board(engine.game_board.turn);  //, legal_moves);
+
+
+        #ifdef _DEBUGGING_MOVE_CHAIN2
+            engine.print_move_to_file(move_last, nPly, (GameState::INPROGRESS), false, true, true, fpDebug); 
+        #endif
+
 
         unquiet_moves = engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves);
 
@@ -775,7 +803,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         bool b_use_this_move;
 
-        // MoveScoreList move_and_scores_listSave = move_and_scores_list;
+        // MoveAndScoreList move_and_scores_listSave = move_and_scores_list;
 
         // // (optional) move ordering
         //sort_moves_by_score(move_and_scores_list, true);
@@ -784,12 +812,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         //     #ifdef _DEBUGGING_PV_ORDERING
         //         fputs("\n\n-1+++++++++++++", fpDebug);
-        //         engine.moves_and_scores_to_file(move_and_scores_listSave, false, fpDebug);
+        //         engine.print_moves_and_scores_to_file(move_and_scores_listSave, false, fpDebug);
         //         fputs("\n-1---------------", fpDebug);
         //     #endif
         //     #ifdef _DEBUGGING_PV_ORDERING
         //         fputs("\n\n-2+++++++++++++", fpDebug);
-        //         engine.moves_and_scores_to_file(move_and_scores_list, false, fpDebug);
+        //         engine.print_moves_and_scores_to_file(move_and_scores_list, false, fpDebug);
         //         fputs("\n-2---------------", fpDebug);
         //     #endif
         // }
@@ -813,7 +841,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
 
             #ifdef _DEBUGGING_MOVE_TREE
-                engine.print_move_to_file(m, nPly, state, false, false, fpDebug);
+                engine.print_move_to_file(m, nPly, state, false, false, false, fpDebug);
             #endif
                
             #ifdef IS_CALLBACK_THREAD
@@ -854,6 +882,14 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                 return {ABORT_SCORE, the_best_move};
             }
 
+
+            #ifdef _DEBUGGING_MOVE_CHAIN1
+                char szTempo1[256];
+                sprintf(szTempo1, " %f ", d_score_value);
+                int nChars = fputs(szTempo1, fpDebug);
+                if (nChars == EOF) assert(0);
+            #endif
+
             // Store score
             //std::string temp_fen_now = engine.game_board.to_fen();
             //move_scores_table[temp_fen_now][m] = d_score_value;
@@ -864,13 +900,17 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
              // Note: this should be done as a real random choice. (random over the moves possible). 
             // This dumb approach favors moves near the end of the list
             #ifdef RANDOMIZING_EQUAL_MOVES
-                // Hey, randomize the choice (sort of).
-                if (d_score_value == d_best_score) {
-                //if ( (d_score_value - d_best_score) < VERY_SMALL_SCORE) {
+                // Only randomize near-equal scores at the top level
+                double delta_score = ((top_depth - depth) == 0) ? 0.01 : 0.0;
+                delta_score = 0.0;
+
+                double d_difference_in_score = std::fabs(d_score_value - d_best_score);
+                if (d_difference_in_score <= (delta_score + VERY_SMALL_SCORE)) {
+                    // tie (within delta): flip a coin at root; never inside the tree
                     b_use_this_move = engine.flip_a_coin();
                 } else {
                     b_use_this_move = (d_score_value > d_best_score);
-            }
+                }
             #else
                 b_use_this_move = (d_score_value > d_best_score);
             #endif
@@ -1171,18 +1211,18 @@ Move MinimaxAI::get_move() {
 
 
 void MinimaxAI::sort_moves_by_score(
-    MoveScoreList& moves_and_scores_list,
+    MoveAndScoreList& moves_and_scores_list,
     bool sort_descending
 )
 {
     if (sort_descending) {
         std::sort(moves_and_scores_list.begin(), moves_and_scores_list.end(),
-                  [](const MoveScore& a, const MoveScore& b) {
+                  [](const MoveAndScore& a, const MoveAndScore& b) {
                       return a.second > b.second;
                   });
     } else {
         std::sort(moves_and_scores_list.begin(), moves_and_scores_list.end(),
-                  [](const MoveScore& a, const MoveScore& b) {
+                  [](const MoveAndScore& a, const MoveAndScore& b) {
                       return a.second < b.second;
                   });
     }
@@ -1191,13 +1231,13 @@ void MinimaxAI::sort_moves_by_score(
 
 
 // void MinimaxAI::sort_moves_by_score(
-//     MoveScoreList& moves_and_scores_list,  // note: pass by reference so we sort in place
+//     MoveAndScoreList& moves_and_scores_list,  // note: pass by reference so we sort in place
 //     bool sort_descending                   // true = highest score first
 // )
 // {
 //     const size_t n = moves_and_scores_list.size();
 //     for (size_t i = 1; i < n; ++i) {
-//         MoveScore key = moves_and_scores_list[i];
+//         MoveAndScore key = moves_and_scores_list[i];
 //         double key_score = key.second;
 //         size_t j = i;
 
@@ -1283,7 +1323,7 @@ void MinimaxAI::print_moves_to_print_tree(std::vector<Move> mvs, int depth, char
     if (szHeader != NULL) {int ierr = fprintf(fpDebug, szHeader);}
     
      for (Move &m : mvs) {
-        engine.print_move_to_file(m, depth, state, false, false, fpDebug);
+        engine.print_move_to_file(m, depth, (GameState::INPROGRESS), false, false, false, fpDebug);
      }
 
     if (szTrailer != NULL) {int ierr = fprintf(fpDebug, szTrailer);}

@@ -13,8 +13,8 @@
 using namespace std;
 
 
-using MoveScore     = std::pair<ShumiChess::Move, double>;
-using MoveScoreList = std::vector<MoveScore>;
+using MoveAndScore     = std::pair<ShumiChess::Move, double>;
+using MoveAndScoreList = std::vector<MoveAndScore>;
    
 
 #define VERY_SMALL_SCORE 1.0e-9     // 10 micro centipawns?
@@ -170,10 +170,10 @@ class Engine {
         char rank_to_move(const Move& m);
 
 
-        void moves_and_scores_to_file(const MoveScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
-        void move_and_score_to_file(const MoveScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
+        void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
+        void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
 
-        void move_and_score_to_string(const MoveScore move_and_score, bool b_convert_to_abs_score);
+        void move_and_score_to_string(const Move best_move, double d_best_move_value, bool b_convert_to_abs_score);
       
         void print_bitboard_to_file(ull bb, FILE* fp);
         void print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp);
@@ -191,7 +191,7 @@ class Engine {
         bool flip_a_coin(void);
 
         void move_into_string(ShumiChess::Move m);
-        ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
+        //ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
 
 
         void print_move_history_to_file(FILE* fp);

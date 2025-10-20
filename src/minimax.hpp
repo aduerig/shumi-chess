@@ -12,14 +12,15 @@
 
 
 
-using MoveScore     = std::pair<ShumiChess::Move, double>;
-using MoveScoreList = std::vector<MoveScore>;
+using MoveAndScore     = std::pair<ShumiChess::Move, double>;
+using MoveAndScoreList = std::vector<MoveAndScore>;
 
 
 
 
 class RandomAI {
 public:
+
     ShumiChess::Engine engine;
     
     //unordered_map<ull, int> piece_values;
@@ -40,7 +41,10 @@ public:
     
     int top_depth = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
 
-    ShumiChess::Move prev_root_best_{};  // best root move from the last *completed* iteration   PV PUSH
+
+    static constexpr int MAX_PLY_PV = 256;
+    array<ShumiChess::Move, MAX_PLY_PV> prev_root_best_{};   
+    //ShumiChess::Move prev_root_best_{};  // best root move from the last *completed* iteration   PV PUSH
 
 
     // The chess engine
@@ -63,7 +67,7 @@ public:
     std::tuple<double, ShumiChess::Move> store_board_values_negamax(int depth, double alpha, double beta
                                             //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
                                             //, unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
-                                            //, MoveScoreList& move_and_scores_list
+                                            //, MoveAndScoreList& move_and_scores_list
                                             , const ShumiChess::Move& move_last
                                             , int nPly);
 
@@ -80,7 +84,7 @@ public:
 
 
     void sort_moves_by_score(
-                        MoveScoreList& moves_and_scores_list,  // note: pass by reference so we sort in place
+                        MoveAndScoreList& moves_and_scores_list,  // note: pass by reference so we sort in place
                         bool sort_descending  
     );
 

@@ -183,6 +183,7 @@ class GameBoard {
         int rook_file_status(Color c) const;
         int rook_7th_rankness(Color c) const;
         int count_isolated_pawns(Color c) const;
+        int count_passed_pawns(Color c);
 
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1);

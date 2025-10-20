@@ -46,10 +46,11 @@ void Engine::reset_engine() {
 
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 
-    // You can override the gameboard setup with fen positions as in: (enter FEN here)
+    // You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. FEN setup. Setup the FEN
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
+    //game_board = GameBoard("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
     game_board = GameBoard();
 
     // ! is reinitalize these stacks the right way to clear the previous entries?
@@ -1103,38 +1104,39 @@ void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 
 }
 
-void Engine::moves_and_scores_to_file(const MoveScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp)
-{
-    for (const MoveScore& ms : move_and_scores_list) {
-        move_and_score_to_file(ms, b_convert_to_abs_score, fp);
-    }
+///////////////////////////////////////////////////////////
+
+
+
+void makeMoveScoreList(const Move ) {
+
 }
 
 
-void Engine::move_and_score_to_file(const MoveScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
+void Engine::print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp)
 {
+    for (const MoveAndScore& ms : move_and_scores_list) {
+        print_move_and_score_to_file(ms, b_convert_to_abs_score, fp);
+    }
+}
 
-    // MoveScore mTemp;   
-    // mTemp.first  = best_move;
-    // mTemp.second = d_best_move_value;
+void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
+{
+    const ShumiChess::Move& best_move = move_and_score.first;
+    double d_best_move_value = move_and_score.second;   
 
-    move_and_score_to_string(move_and_score, b_convert_to_abs_score);
+    move_and_score_to_string(best_move, d_best_move_value, b_convert_to_abs_score);
 
     int nChars = fputc('\n', fp);
     if (nChars == EOF) assert(0);
 
     nChars = fputs(move_string.c_str(), fp);
     if (nChars == EOF) assert(0);
-
 }
 
 // Puts best move and absolute score. 
-void Engine::move_and_score_to_string(const MoveScore move_and_score, bool b_convert_to_abs_score)
+void Engine::move_and_score_to_string(const Move best_move, double d_best_move_value, bool b_convert_to_abs_score)
 {
-
-    const ShumiChess::Move& best_move = move_and_score.first;
-    double d_best_move_value = move_and_score.second;   
-
     // Convert relative score to abs score
     if (b_convert_to_abs_score) {
         if (game_board.turn == ShumiChess::BLACK) d_best_move_value = -d_best_move_value;  
@@ -1162,49 +1164,7 @@ void Engine::move_and_score_to_string(const MoveScore move_and_score, bool b_con
 
 }
 
-
-// NO disambiguation
-void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp) {
-    // 
-    int nChars;
-    std::string a_move_string;
-    a_move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
-
-    for (const auto& move : moves) {
-
-        bitboards_to_algebraic(Color::BLACK, move
-                            , GameState::INPROGRESS
-                            //, NULL                      // NO disambiguation
-                            , false
-                            , false
-                            , a_move_string);            // output
-
-        const char* sz_move_text = a_move_string.c_str();
-
-
-        assert (nTabs>=0);
-        for (int i = 0; i < nTabs; ++i) {
-            if (fputc('\t', fp) == EOF) assert(0);
-        }
-
-        nChars = fputs(sz_move_text, fp);
-        if (nChars == EOF) assert(0);
-
-        nChars = fputc('\n', fp);
-        if (nChars == EOF) assert(0);
-        
-        //     ull check_test = ( (move.to & game_board.white_king) || (move.to & game_board.black_king) );
-        //     if (check_test != 0ull) {
-        //         assert(0);
-        //         safe_push_back(MoveText,'+';             // Its a check.
-        //     }
-    }
-    nChars = fputs("\n", fp);
-    if (nChars == EOF) assert(0);
-
-
-}
-
+//////////////////////////////////////////////////////////////////
 
 
 // Have an object? push_back(obj) / push_back(std::move(obj)).
@@ -1284,24 +1244,24 @@ bool Engine::flip_a_coin(void) {
 
 
 
-ShumiChess::Move Engine::make_enpassant_move_from_bit_boards(Piece p, ull bitTo, ull bitFrom, Color color)
-{
-    Move new_move = {};
+// ShumiChess::Move Engine::make_enpassant_move_from_bit_boards(Piece p, ull bitTo, ull bitFrom, Color color)
+// {
+//     Move new_move = {};
 
-    new_move.piece_type = p;
+//     new_move.piece_type = p;
 
-    new_move.from = bitFrom;
-    new_move.to = bitTo;
+//     new_move.from = bitFrom;
+//     new_move.to = bitTo;
 
-    new_move.capture = Piece::PAWN;
+//     new_move.capture = Piece::PAWN;
 
-    new_move.en_passant = 1;
-    new_move.is_en_passent_capture = true;
+//     new_move.en_passant = 1;
+//     new_move.is_en_passent_capture = true;
 
-    new_move.color = color;
+//     new_move.color = color;
 
-    return new_move;
-}
+//     return new_move;
+// }
 
 void Engine::move_into_string(ShumiChess::Move m) {
     bitboards_to_algebraic(game_board.turn, m
@@ -1311,6 +1271,50 @@ void Engine::move_into_string(ShumiChess::Move m) {
                 , false
                 , move_string);    // Output
 }
+
+
+
+// NO disambiguation
+void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp) {
+    // 
+    int nChars;
+    std::string a_move_string;
+    a_move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
+
+    for (const auto& move : moves) {
+
+        bitboards_to_algebraic(Color::BLACK, move
+                            , GameState::INPROGRESS
+                            //, NULL                      // NO disambiguation
+                            , false
+                            , false
+                            , a_move_string);            // output
+
+        const char* sz_move_text = a_move_string.c_str();
+
+
+        assert (nTabs>=0);
+        for (int i = 0; i < nTabs; ++i) {
+            if (fputc('\t', fp) == EOF) assert(0);
+        }
+
+        nChars = fputs(sz_move_text, fp);
+        if (nChars == EOF) assert(0);
+
+        nChars = fputc('\n', fp);
+        if (nChars == EOF) assert(0);
+        
+        //     ull check_test = ( (move.to & game_board.white_king) || (move.to & game_board.black_king) );
+        //     if (check_test != 0ull) {
+        //         assert(0);
+        //         safe_push_back(MoveText,'+';             // Its a check.
+        //     }
+    }
+    nChars = fputs("\n", fp);
+    if (nChars == EOF) assert(0);
+
+}
+
 //
 // Prints the move history from oldest → most recent 
 // Uses: nPly = -2, isInCheck = false, bFormated = false
