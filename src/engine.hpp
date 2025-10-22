@@ -65,8 +65,11 @@ class Engine {
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
         vector<Move> get_legal_moves();
-        vector<Move> get_psuedo_legal_moves(Color);
-        int get_minor_piece_move_number (const vector <Move> mvs);
+        void get_psuedo_legal_moves(Color, vector<Move>& all_psuedo_legal_moves);
+        vector<Move> psuedo_legal_moves; 
+        vector<Move> all_legal_moves;
+
+        int get_minor_piece_move_number (const vector <Move> mvs);       
 
         inline bool in_check_after_move(Color color, const Move move) {
             // NOTE: is this the most effecient way to do this (push()/pop())?

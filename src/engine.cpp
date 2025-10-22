@@ -45,6 +45,8 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 void Engine::reset_engine() {
 
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
+    psuedo_legal_moves.reserve(128); 
+    all_legal_moves.reserve(128);
 
     // You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. FEN setup. Setup the FEN
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
@@ -69,6 +71,11 @@ void Engine::reset_engine() {
 }
 
 void Engine::reset_engine(const string& fen) {
+
+    move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
+    psuedo_legal_moves.reserve(128); 
+    all_legal_moves.reserve(128);
+
     game_board = GameBoard(fen);
 
     // ! NOTE: is reinitalize these stacks the right way to clear the previous entries?
@@ -88,19 +95,26 @@ void Engine::reset_engine(const string& fen) {
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
 // https://stackoverflow.com/questions/15704565/efficient-way-to-return-a-stdvector-in-c
 vector<Move> Engine::get_legal_moves() {
-    vector<Move> all_legal_moves;
+
+    // These are kept as class members, rather than local vriables, for speed reasons only.
+    // No need for benchmarks, its plain faster.
+    psuedo_legal_moves.clear(); 
+    all_legal_moves.clear();
+
     Color color = game_board.turn;
     //
     // Get "psuedo_legal" moves. Those that does not put the king in check, and do not 
     // cross the king over a "checked square".
-    vector<Move> psuedo_legal_moves; 
-    psuedo_legal_moves = get_psuedo_legal_moves(color);
+
+    get_psuedo_legal_moves(color, psuedo_legal_moves);
     //
     // Ensure the output array is big enough (NOTE:could this be done as a constant allocation?)
     // Smart idea, we should calculate a sane max and run it through benchmarks
-    all_legal_moves.reserve(psuedo_legal_moves.size());
+    // Not needed anymore since this is a class member and allocated in the ctor. 
+    // No need for benchmarks, its plain faster.
+    //all_legal_moves.reserve(psuedo_legal_moves.size());
 
-    for (Move move : psuedo_legal_moves) {
+    for (const Move& move : psuedo_legal_moves) {
 
         // NOTE: is this the most effecient way to do this (push()/pop())?
         bool bKingInCheck = in_check_after_move(color, move);
@@ -119,9 +133,9 @@ vector<Move> Engine::get_legal_moves() {
     return all_legal_moves;
 }
 
-// Doesn't factor in check
-vector<Move> Engine::get_psuedo_legal_moves(Color color) {
-    vector<Move> all_psuedo_legal_moves;
+// Doesn't factor in check 
+ void Engine::get_psuedo_legal_moves(Color color, vector<Move>& all_psuedo_legal_moves) {
+    //vector<Move> all_psuedo_legal_moves;
     
     add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
     add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
@@ -130,7 +144,7 @@ vector<Move> Engine::get_psuedo_legal_moves(Color color) {
     add_king_moves_to_vector(all_psuedo_legal_moves, color); 
     add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
 
-    return all_psuedo_legal_moves;
+    return;  // all_psuedo_legal_moves;
 }
 
 int Engine::get_minor_piece_move_number (const vector <Move> mvs)
