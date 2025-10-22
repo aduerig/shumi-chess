@@ -600,47 +600,66 @@ int GameBoard::count_isolated_pawns(Color c) const
 }
 
 
+
+// Passed pawns bonus in centipawns:
+//  - 10 cp on 3rd/4th rank (from that side's perspective)
+//  - 20 cp on 5th/6th rank
+//  - 30 cp on 7th rank
 int GameBoard::count_passed_pawns(Color c)
 {
+
     const ull my_pawns  = get_pieces(c, Piece::PAWN);
     const ull his_pawns = get_pieces(utility::representation::opposite_color(c), Piece::PAWN);
     if (!my_pawns) return 0;
 
-    int count = 0;
+    int bonus = 0;
     ull tmp = my_pawns;
 
     while (tmp) {
         const int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        const int f = s % 8;            // in h1=0: 0=H ... 7=A
-        const int r = s / 8;            // 0..7 (rank1..rank8)
+        const int f = s % 8;            // h1=0 → 0=H ... 7=A
+        const int r = s / 8;            // rank index 0..7 (White's view)
 
         // Map to A..H index used by col_masks
         const int fi = 7 - f;
 
-        // Same + adjacent file mask
+        // Same + adjacent files
         ull files_mask = col_masks[fi];
         if (fi > 0) files_mask |= col_masks[fi - 1];
         if (fi < 7) files_mask |= col_masks[fi + 1];
 
-        // Ranks "ahead" toward promotion
+        // Ranks ahead toward promotion
         ull ranks_ahead;
         if (c == Color::WHITE) {
-            // bits at ranks (r+1 .. 7)
             const int start_bit = (r + 1) * 8;
             ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
         } else {
-            // bits at ranks (0 .. r-1)
             const int end_bit = r * 8;
             ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1);
         }
 
-        // Any enemy pawn ahead on same/adjacent files?
+        // Passed?
         const ull blockers = his_pawns & files_mask & ranks_ahead;
-        if (blockers == 0ULL) ++count;
+        if (blockers == 0ULL) {
+            // advancement from that side's perspective (2..6 typical for passers)
+            const int adv = (c == Color::WHITE) ? r : (7 - r);
+            if      (adv == 6) bonus += 30;      // 7th rank
+            else if (adv >= 4) bonus += 20;      // 5th/6th
+            else if (adv == 3) bonus += 15;      // 4th
+            
+            else if (adv >= 1) bonus += 10;      // 2cnd/3rd
+            // (adv < 2 → no bonus; tweak if you want a small 2nd-rank bonus)
+        }
     }
-    return count;
+    return bonus;
 }
 
+
+ double GameBoard::openingness_of(int avg_cp) {
+    if (avg_cp <= 3000) return 0.0;   // fully "not opening"
+    if (avg_cp >= 4000) return 1.0;   // fully opening
+    return ( (double)(avg_cp - 3000) ) / 1000.0;  // linear between
+}
 
 
 

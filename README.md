@@ -21,7 +21,7 @@ This project is a hobby C++ engine written by OhMesch and ADuerig, and later ref
 This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering (at root). 
 
 **OLDER COMMENT**
-See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence"
+See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence".
 
 ## todo
 * See [brainStorm](doc/brainStorm.md) for more future directions.
@@ -34,9 +34,10 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Failure: Doesnt recognize three fold position repitition. (50 move rule is tested, Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. 
   * ~~Failure: Doesnt recognize Enpassent (its not implemented). This is a problem in the engine.~~
   * Sloth: No Transposition table (TT) implemented. No Zobrist keys. This is a problem in MinimaxAI.
-  * Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa" functionality. This is a problem in MinimaxAI.
+  * ~~Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa"~~ ~~functionality. This is a problem in MinimaxAI.~~
+  * Bug: Forces promotions for the human to be to a queen (the AI is not so handicapped and has been proven to be able to promote to anything). Problem with the interface I suppose.
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
-  * Sloth: Use other "speedups", that result from iterive deepening. (Killer moves + History heuristic, aspiration). These are best dome after TT implementation.  This is a problem in MinimaxAI.
+  * Sloth: Use other "speedups", that result from iterive deepening. (Killer moves + History heuristics, aspiration). These are best dome after TT implementation. This is a problem in MinimaxAI.
 
 ## change log
   * Abandoned 10/11/2025

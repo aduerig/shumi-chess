@@ -66,7 +66,7 @@ def reset_board(fen=""):
     if fen:
         engine_communicator.reset_engine(fen)
     else:
-        print('Resetting to basic position because FEN string is empty')
+        print('Resetting to basic position cause FEN string is empty')
         engine_communicator.reset_engine()
     
     # Resetting the board always sets the turn to white
@@ -79,7 +79,7 @@ def reset_board(fen=""):
 
 
 def get_random_move(legal_moves):
-    # ! if this line errors it is because random.choice(moves) returns 0, which shouldn't really be possible in a completed engine
+    # ! if this line errors it is cause random.choice(moves) returns 0, which shouldn't really be possible in a completed engine
     choice = random.choice(legal_moves)
     return choice[0:2], choice[2:4]
 
@@ -89,7 +89,7 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
         from_acn, to_acn = get_random_move(legal_moves)
     else:
         # NOTE: this is the blocking call to the C++ engine
-        seconds = 0.1      # because i said so.
+        seconds = 1.0      # because i said so.
         move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
         from_acn, to_acn = move[0:2], move[2:4]
 
@@ -568,7 +568,7 @@ def game_over_cache():
     return game_state_result
 
 
-# we need to do this for some strange reason, I think because there's been a click since the last run of the program?
+# we need to do this for some strange reason, I think cause there's been a click since the last run of the program?
 win.checkLeftRelease()
 win.checkRightClick()
 # ! playing loop for players

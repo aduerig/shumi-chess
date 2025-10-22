@@ -26,6 +26,8 @@ r1b2rk1/p1p2ppp/2p2n2/4p3/2p1P3/2N2N2/PP2BbPP/R1BK3R w - - 0 117
 // horrible deep=1 results this FEN then d4
 rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2
 
+// horrrible error 
+Fen is now 4rrk1/ppp1qppp/2np1n2/2b2b2/2P1p3/P1NPP1P1/1P3PBP/R1BQNRK1 w - - 1 11
 
 
 // infinite draw?
@@ -40,7 +42,7 @@ occcupying your oewn 7th rank? defensivly? Comnnecting rooks vertically?
 // computers (and me) cant find a way forward.
 Current FEN: 1rr3k1/4bppp/p1qp1n2/2P5/4PB2/3P4/2P1QPPP/1N1R1K2 b - - 0 26
 
-
+Current FEN: 2kr3r/pp1b2pp/4p3/1Bb5/3nN1n1/5N2/PPPBKPPP/R3R3 w - - 12 15
 
 
 
@@ -60,8 +62,13 @@ r1bq1rk1/pp3npp/2pp1p2/8/4PP2/2NQB3/PPP3PP/3R1R1K w - - 4 17
 // Long term level 7 games
 Current FEN: rnbq1rk1/ppp3pp/1n2pp2/3pP3/1bPP4/2N2NB1/PP3PPP/R2QKB1R w KQ d6 0 9
 
-// two rooks endgame
+// two rooks endgame (good start position)
 Current FEN: rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
+
+// passed pawn testing
+rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
+rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/8/R5R1 w - - 0 27
+8/p1r1k3/8/8/8/3K4/5RP1/8 w KQkq - 1 1
 
 
 Edge bugs with king and pawn? (Edge and king bug)
@@ -88,4 +95,4 @@ Very long (10).
 endgames
 ========
 
-Fen is now 8/p1r1k3/8/8/8/3K4/5RP1/8 b KQkq - 1 1            // endgame lab1 : rook and single pawmn endgame
+Fen is now 8/p1r1k3/8/8/8/3K4/5RP1/8 w KQkq - 1 1            // endgame lab1 : rook and single pawmn endgame

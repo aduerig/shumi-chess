@@ -197,6 +197,7 @@ class GameBoard {
         int square_e5 = 35;
         int square_d5 = 36;
 
+        double openingness_of(int avg_cp);
 
 };
 } // end namespace ShumiChess

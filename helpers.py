@@ -534,7 +534,7 @@ def copy_file_locally(file_path, output_directory=get_temp_dir()):
 
     dest_path = output_directory.joinpath(file_path.name)
     if not dest_path.exists() and file_path.exists():
-        print_yellow(f'WARNING: Copying {file_path.name} locally. This is for speedup because networking is slow. Copying {file_path} to {dest_path}')
+        print_yellow(f'WARNING: Copying {file_path.name} locally. This is for speedup cause networking is slow. Copying {file_path} to {dest_path}')
         shutil.copy(file_path, dest_path)
         print_green('Finished copying file')
     return dest_path

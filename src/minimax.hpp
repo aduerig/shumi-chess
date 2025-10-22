@@ -40,7 +40,7 @@ public:
     int evals_visited = 0;
     
     int top_depth = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
-
+    int maximum_depth = 0;
 
     static constexpr int MAX_PLY_PV = 256;
     array<ShumiChess::Move, MAX_PLY_PV> prev_root_best_{};   
@@ -57,7 +57,7 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    double evaluate_board(ShumiChess::Color for_color); //, const vector<ShumiChess::Move>& legal_moves);
+    double evaluate_board(ShumiChess::Color for_color, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
 
     void do_a_deepening();

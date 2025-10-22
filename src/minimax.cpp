@@ -48,7 +48,9 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
     char szValue1[256];
 //#endif
 
-#define DADS_CRAZY_EVALUATION_CHANGES   // Not so crazy.
+// Speedups?
+#define FAST_EVALUATIONS
+#define DELTA_PRUNING
 
 #define RANDOMIZING_EQUAL_MOVES         // Uncomment to move equal moves randomly
 
@@ -153,7 +155,7 @@ void MinimaxAI::wakeup() {
 // Follows the negamax convention, so a positive value at a leaf is “good for the side to move.” 
 // returns a positive score, if "for_color" is ahead.
 //
-double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::Move>& legal_moves)
+double MinimaxAI::evaluate_board(Color for_color, bool is_fast_style) //, const vector<ShumiChess::Move>& legal_moves)
 {
     // move_history
     #ifdef _DEBUGGING_MOVE_CHAIN1
@@ -192,13 +194,13 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
     int cp_score_position = 0;
     bool isOK;
 
-    #ifdef DADS_CRAZY_EVALUATION_CHANGES
-   
+    
+    if (!is_fast_style) {
+
         for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
-            int iZeroToThree;
-            int iZeroToFour;
-            int iZeroToEight;
+            int iZeroToThree, iZeroToThirty;
+            int iZeroToFour, iZeroToEight;
             int cp_score_position_temp = 0;        // positional considerations only
 
             /////////////// start positional evals /////////////////
@@ -257,10 +259,11 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
             //    TODO: does not see wether passed pawns are protected
             //    TODO: does not see wether passed pawns are isolated
             //    TODO: does not see wether passed pawns are on open enemy files
-            iZeroToEight = engine.game_board.count_passed_pawns(color);
-            assert (iZeroToEight>=0);
-            cp_score_position_temp += iZeroToEight*10;   // centipawns
+            iZeroToThirty = engine.game_board.count_passed_pawns(color);
+            assert (iZeroToThirty>=0);
+            cp_score_position_temp += iZeroToThirty;   // centipawns
 
+            //}
 
 
 
@@ -277,7 +280,7 @@ double MinimaxAI::evaluate_board(Color for_color) //, const vector<ShumiChess::M
         // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns to trade if Im a pawn ahead.)
         cp_score_position += (cp_score_pieces_only / 10);
 
-    #endif
+    }
 
     // Both position and pieces are now signed properly to be positive for the "for_color" side.
     cp_score_adjusted = cp_score_pieces_only + cp_score_position;
@@ -361,8 +364,8 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth =5;        // Note: because i said so.
-    int maximum_depth = this_depth;
+    this_depth =7;        // Note: because i said so.
+    maximum_depth = this_depth;
 
     int now_s;
     int end_s;
@@ -371,6 +374,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
 
     // defaults
     int depth = 1;
+    
     int nPly = 0;
     bool bThinkingOver = false;
     bool bThinkingOverByTime = false;
@@ -436,19 +440,19 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
 
         depth++;
 
-        // time based
+        // time based ending of thinking
         now_s = (int)chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
         end_s = (int)chrono::duration_cast<chrono::seconds>(required_end_time.time_since_epoch()).count();
         diff_s = now_s - end_s;
-
         elapsed_time = now_s - (int)chrono::duration_cast<chrono::seconds>(start_time.time_since_epoch()).count();
 
         bThinkingOverByTime = (diff_s > 0);
         //bTimeOver = (chrono::high_resolution_clock::now() > required_end_time);
 
-        // depth based
+        // depth based ending of thinking
         bThinkingOverByDepth = (depth >= (maximum_depth+1));
 
+        // we are done thinking if both time and depth is ended.
         bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
 
         //if (depth > 7) bThinkingOver = true;       // Hard depth limit on 7
@@ -475,11 +479,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
                 , false
                 , false
                 , engine.move_string);    // Output
-
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
-
-
-    //engine.print_move_history_to_file(fpDebug);
 
 
     char buf[32];
@@ -635,8 +635,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
     }
 
-    // PV ordering (at the root only,
-    // because PV ordering gives diminishing returns further down the tree).
+    // PV ordering (at the root only, cause PV ordering gives diminishing returns further down the tree).
     assert (top_depth>0);
     if (depth == top_depth) {    // This is a "root node", or the "exterior" call.
         assert(p_moves_to_loop_over);
@@ -717,25 +716,30 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
     if (nodes_visited > 5.0e8) {    // 10,000,000 a good number here
         std::cout << "\x1b[31m! NODES VISITED trap#2 " << nodes_visited << "dep=" << depth << "  " << d_best_score << "\x1b[0m\n";
 
-        // Static board evaluation
-        d_best_score = evaluate_board(engine.game_board.turn); //, legal_moves);
+        return { ABORT_SCORE, the_best_move };
 
-        //final_result = std::make_tuple(d_best_score, the_best_move);
-        //return final_result;
-        return {d_best_score, the_best_move};
     }
 
 
     // =====================================================================
-    // Quiescence entry when depth <= 0
+    // Quiescence entry when depth == 0
     // =====================================================================
     assert (depth >= 0);
+    bool in_check = false;
     if (depth == 0) {
 
-        bool in_check = engine.is_king_in_check(engine.game_board.turn);
-
         // Static board evaluation
-        d_best_score = evaluate_board(engine.game_board.turn);  //, legal_moves);
+        // do "fast eval if nPly too high"
+        bool bFast = false;
+        #ifdef FAST_EVALUATIONS    
+            if (nPly > (maximum_depth*2)) // because    (14 or so)
+            {
+                //cout << " beeep ";
+                bFast = true;
+            }
+        #endif
+
+        d_best_score = evaluate_board(engine.game_board.turn, bFast);  //, legal_moves);
 
 
         #ifdef _DEBUGGING_MOVE_CHAIN2
@@ -745,11 +749,14 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         unquiet_moves = engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves);
 
+        in_check = engine.is_king_in_check(engine.game_board.turn);
+
         // If quiet (not in check & no tactics), just return stand-pat
         if (!in_check && unquiet_moves.empty()) {
             return { d_best_score, Move{} };
         }
 
+        // So "d_best_score" is my "stand pat value."
         if (!in_check) {
 
             // Stand-pat cutoff
@@ -775,11 +782,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         }
 
 		// Pick best static evaluation among all legal moves if hit the over ply
-        constexpr int MAX_QPLY = 24;        
+        constexpr int MAX_QPLY = 20;        // because i said so
         if (nPly >= MAX_QPLY) {
-            bool in_check = engine.is_king_in_check(engine.game_board.turn);
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPly << "\x1b[0m\n";
-            //std::cout << "\x1b[31m!" << "\x1b[0m";
+            std::cout << "\x1b[31m!" << "\x1b[0m";
             auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), in_check);
             double scoreMe = std::get<0>(tup);
             ShumiChess::Move moveMe = std::get<1>(tup);
@@ -825,11 +831,72 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         d_best_score = -HUGE_SCORE;
         the_best_move = sorted_moves[0];
 
-         for (const Move& m : sorted_moves) {
+        for (const Move& m : sorted_moves) {
 
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_before = engine.game_board.to_fen();
             #endif
+
+
+
+
+
+            #ifdef DELTA_PRUNING
+                // --- Delta pruning (qsearch only) ---
+                if (depth == 0 && !in_check) {
+                    int ub = 0;
+                    if (m.capture != ShumiChess::Piece::NONE) {
+                        ub += engine.game_board.centipawn_score_of(m.capture); // victim value
+                    }
+                    if (m.promotion != ShumiChess::Piece::NONE) {
+                        ub += engine.game_board.centipawn_score_of(m.promotion)
+                            - engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN); // promo gain
+                    }
+                    const bool recapture = (!engine.move_history.empty() && (m.to == engine.move_history.top().to));
+                    constexpr int DELTA_MARGIN_CP = 80; // tune 60..100
+                    if (!recapture && (d_best_score + ub + DELTA_MARGIN_CP < alpha)) {
+                        continue;   // skip this move
+                    }
+
+                    // Pawn-victim futility (beyond delta): skip far-below-alpha pawn grabs (non-recapture)
+                    if (!recapture &&
+                        m.capture == ShumiChess::Piece::PAWN &&
+                        (d_best_score + engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN) + 60) < alpha) {
+                        continue;
+                    }
+                }
+                // --- end Delta pruning ---
+            #endif
+
+            // #ifdef DELTA_PRUNING
+            //     // --- Delta pruning (qsearch only) ---
+            //     if (depth == 0) {
+            //         int ub = 0;
+            //         if (m.capture != ShumiChess::Piece::NONE) {
+            //             ub += engine.game_board.centipawn_score_of(m.capture);               // victim value
+            //         }
+            //         if (m.promotion != ShumiChess::Piece::NONE) {
+            //             ub += engine.game_board.centipawn_score_of(m.promotion)
+            //                 - engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN); // promo gain
+            //         }
+            //         bool recapture = (!engine.move_history.empty() && (m.to == engine.move_history.top().to));
+            //         // 60→100 cp; pick the smallest that still gives you most of the speedup.
+            //         constexpr int DELTA_MARGIN_CP = 80; // tune 60..100
+            //         if (!recapture && (d_best_score + ub + DELTA_MARGIN_CP < alpha)) {
+            //             continue;   // skip this move
+            //         }
+            //     }
+            //     // --- end Delta pruning ---
+          
+            //     // right before pushMove(m) at depth==0, after delta prune:
+            //     if (!engine.move_history.empty()
+            //         && m.capture == ShumiChess::Piece::PAWN
+            //         && (d_best_score + 100 + 60) < alpha)   // 100=pawn value, 60 margin
+            //     {
+            //         continue; // skip low-impact pawn grabs far below alpha (not a recapture)
+            //     }
+            // #endif
+
 
             engine.pushMove(m);
 
@@ -1092,7 +1159,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         }
         Move mvdefault = Move{};
         //return evaluate_board(color_perspective, moves) * color_multiplier;
-        return evaluate_board(color_perspective) * color_multiplier;
+        return evaluate_board(color_perspective, false) * color_multiplier;
 
     }
     //
@@ -1272,7 +1339,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
     // - in check: treat as losing (no legal escapes here)
     if (legal_moves.empty()) {
         if (!in_Check) {
-            double stand_pat = evaluate_board(color);  //, legal_moves);         // positive is good for 'color'
+            double stand_pat = evaluate_board(color, false);  //, legal_moves);         // positive is good for 'color'
             return { stand_pat, ShumiChess::Move{} };
         }
         return { -HUGE_SCORE, ShumiChess::Move{} };
@@ -1285,7 +1352,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
         engine.pushMove(m);
         
-        double d_score = evaluate_board(color); //, legal_moves);  // positive is good for 'color'
+        double d_score = evaluate_board(color, false); //, legal_moves);  // positive is good for 'color'
         
         engine.popMove();
 

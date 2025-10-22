@@ -146,7 +146,7 @@ int Engine::get_minor_piece_move_number (const vector <Move> mvs)
 }
 
 
-
+// NOTE: This is a very wasteful way to do this. It has to go.
 // Does not take into account castling crossing a checked square? Yes, is_square_in_check() does this.
 bool Engine::is_king_in_check(const ShumiChess::Color& color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
@@ -162,7 +162,7 @@ bool Engine::is_king_in_check(const ShumiChess::Color& color) {
 bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square) {
     Color enemy_color = utility::representation::opposite_color(color);
 
-    // Note: ? probably don't need knights here because pins cannot happen with knights, but 
+    // Note: ? probably don't need knights here cause pins cannot happen with knights, but 
     //   we don't check if king is in check yet
     ull straight_attacks_from_king = get_straight_attacks(square);
     // cout << "diagonal_attacks_from_king: " << square << endl;
@@ -641,7 +641,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         // NOTE: enpassent is not allowed 
         // enpassant attacks
-        // TODO improvement here, because we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
+        // TODO improvement here, cause we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
         //      of code here to get the speed upgrade. Works fine as is
 
         ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
@@ -972,7 +972,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
             // }
         }
 
-        // Note: disambiguation. Fix this. Doesnt work because the legal_moves passed inare of the wrong color!
+        // Note: disambiguation. Fix this. Doesnt work cause the legal_moves passed in are of the wrong color!
         // if (0) {  // p_legal_moves) {
 
         //     for (const Move& m : *p_legal_moves) {
@@ -1065,7 +1065,7 @@ char Engine::file_to_move(const Move& m)
 {
     int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 0..63
     int file  = to_sq & 7;     // within-rank index 0..7
-    file      = 7 - file;      // mirror because bit 0 = h1 in your layout
+    file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
 }
 
@@ -1081,7 +1081,7 @@ char Engine::file_from_move(const Move& m)
 {
     int from_sq = utility::bit::bitboard_to_lowest_square(m.from); // 0..63
     int file  = from_sq & 7;     // within-rank index 0..7
-    file      = 7 - file;      // mirror because bit 0 = h1 in your layout
+    file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
 }
 
@@ -1181,21 +1181,34 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
     return vReturn;
 }
 
-
-
-// Using MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
-// biggest victim with the smallest attacker.
+//
+// Reduce to tactical (“unquiet”) moves and orders them.
+//    Input:   a moves vector
+//    Returns: ordered vector of unquiet moves (captures first, promotions second).
+//      • Captures: sorted by MVV-LVA (bigger victim, smaller attacker = higher).
+//      • Small recapture bonus in sort if mv.to == opponent’s last “to” square.
+//      • Non-capture promotions: keep only QUEEN promotions; appended after captures.
+// Notes: O(U^2) sort due to linear insertion; U is usually small. (<5)
+//
 vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves)
 {
     vector<ShumiChess::Move> vReturn;
     vReturn.reserve(moves.size());
 
+    // recapture bias: if a capture lands on opponent's last-to square, try it earlier
+    const bool have_last = !move_history.empty();
+    const ull  last_to   = have_last ? move_history.top().to : 0ULL;
+
     for (const ShumiChess::Move& mv : moves) {
         if (is_unquiet_move(mv)) {
+            // its either a capture or a promotion (or both)
+
             // If it's a capture, insert in descending MVV-LVA order
             if (mv.capture != ShumiChess::Piece::NONE) {
-                int key = mvv_lva_key(mv);  // uses your static function (captures only)
 
+                int key = mvv_lva_key(mv);  // uses your static function (captures only)
+                if (have_last && mv.to == last_to) key += 800;  // small recapture bump
+ 
                 auto it = vReturn.begin();
                 for (; it != vReturn.end(); ++it) {
                     // Only compare against other captures; promos-without-capture stay after captures
@@ -1205,13 +1218,17 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<Sh
                 }
                 vReturn.insert(it, mv);
             
-            // If its Promotion (without capture): append after all captures
+            // Its a Promotion (without capture)
             } else {
-                vReturn.push_back(mv);
+                assert (mv.promotion != Piece::NONE);
+
+                if (mv.promotion != Piece::QUEEN)
+                    continue;
+                else
+                    vReturn.push_back(mv);
             }
         }
     }
-
     return vReturn;
 }
 

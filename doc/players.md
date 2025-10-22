@@ -11,5 +11,8 @@
    connected rooks
    isolated pawns sadness (single, double and triple)
    attacking of 4-center squares by knights, bishops, or pawns.
-   rook occuption of open and semi open files.
+   rook (or queen) occuption of open and semi open files.
 The uncle is even faster, about 350,000 nodes per second on my laptop. Uncle shumi also has a "Wake up" button! Works magnicantly!
+
+
+* "Brother shumi" is significantly faster, using "quiescence delta pruning", and "depth==0" does not force non-queen promotions in reduce_to_unquiet_moves_MVV_LVA(). Brother shumi realized through testing that 85% of all nodes are in "quiescence", or "depth==0" territory, so speedups are there. Also, the brother has a better understanding of passed pawns: brother shumi believes passed pawns should be pushed. Tried "FAST_EVALUATIONS", but no help in speed, so didnt do it. 
