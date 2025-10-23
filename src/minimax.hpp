@@ -57,6 +57,10 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
+    int cp_score_positional_get_opening(ShumiChess::Color color); 
+    int cp_score_positional_get_middle(ShumiChess::Color color); 
+    int cp_score_positional_get_end(ShumiChess::Color color); 
+
     double evaluate_board(ShumiChess::Color for_color, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
 

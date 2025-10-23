@@ -65,7 +65,11 @@ Current FEN: rnbq1rk1/ppp3pp/1n2pp2/3pP3/1bPP4/2N2NB1/PP3PPP/R2QKB1R w KQ d6 0 9
 // two rooks endgame (good start position)
 Current FEN: rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
 
+
+
 // passed pawn testing
+===========================
+
 rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
 rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/8/R5R1 w - - 0 27
 8/p1r1k3/8/8/8/3K4/5RP1/8 w KQkq - 1 1
@@ -86,13 +90,32 @@ enpassent test
 ========================
 r1bq1rk1/pppp2pn/2n1p2p/4Pp2/2PP4/2BB4/PPQ2PPP/R3K1NR w KQ f6 0 10
 
-Move chain histories:
 
-Very long (10). 
- ...Kg8  g3  ...h5  gxf4  ...Rxf4  Qxh5  ...Bxd4  cxd4  ...Rxf3  Qxf3 
 
+late middlegames
+=================
+
+// Halowween gambit (after Nxe5)
+r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4
+
+1r1q1r2/p4kpp/3p1n2/5pB1/8/3P2P1/P3PPKP/R2Q1R2 w - - 1 18
+8/p2q2pp/r2p1nk1/5p2/3Q1B2/3P2P1/P1R1PPKP/8 w - - 3 25
+
+
+// test of trades? (take away white rooks see if the blocks with queen
+1r3r2/p2q1kpp/3p1n2/5pB1/8/3P2P1/P1Q1PPKP/R4R2 w - - 3 19
 
 endgames
 ========
 
 Fen is now 8/p1r1k3/8/8/8/3K4/5RP1/8 w KQkq - 1 1            // endgame lab1 : rook and single pawmn endgame
+
+
+
+
+
+Move chain histories:
+=====================
+
+Very long (10). 
+ ...Kg8  g3  ...h5  gxf4  ...Rxf4  Qxh5  ...Bxd4  cxd4  ...Rxf3  Qxf3 

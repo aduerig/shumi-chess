@@ -176,17 +176,23 @@ double MinimaxAI::evaluate_board(Color for_color, bool is_fast_style) //, const 
     //
     // Material considerations only
     //
+    int cp_score_pieces_only_avg;
+    int tempsum = 0.0;
     int cp_score_pieces_only = 0;        // Pieces only
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
         int cp_score_pieces_only_temp = engine.game_board.get_material_for_color(color1);
+
         assert (cp_score_pieces_only_temp>=0);    // no negative value pieces
+        tempsum += cp_score_pieces_only_temp;
 
         // Take color into acccount
         if (color1 != for_color) cp_score_pieces_only_temp *= -1;
         cp_score_pieces_only += cp_score_pieces_only_temp;
+     
     }
+    cp_score_pieces_only_avg = tempsum / 2.0;
 
     //
     // Positional considerations only
@@ -199,75 +205,23 @@ double MinimaxAI::evaluate_board(Color for_color, bool is_fast_style) //, const 
 
         for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
-            int iZeroToThree, iZeroToThirty;
-            int iZeroToFour, iZeroToEight;
             int cp_score_position_temp = 0;        // positional considerations only
 
             /////////////// start positional evals /////////////////
 
+            // Note this return is in centpawns, and can be negative
+            int test = cp_score_positional_get_opening(color);
+            cp_score_position_temp += test;
 
-            // bishop pair bonus (very small)
-            int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(for_color));
-            if (bishops >= 2) cp_score_position += 5;   // +0.05 pawns
-
-            // Add code to make king: 1. want to retain caslting privledge, and 2. get castled. (this one more important)
-            engine.game_board.king_castle_happiness(color, iZeroToThree);
-            assert (iZeroToThree>=0);
-            assert (iZeroToThree<=3);
-            cp_score_position_temp += iZeroToThree*80;   // centipawns
-
-            // Add code to encourage rook connections on back rank. (i wish, its just rook connections)
-            int connectiveness;     // One if rooks connected. 0 if not.
-            isOK = engine.game_board.rook_connectiveness(color, connectiveness);
-            assert (connectiveness>=0);
-            //assert (isOK);    // isOK just means that there werent two rooks to connect
-            //cp_score_position_temp += std::lround(connectiveness*40);   // centipawns
-            cp_score_position_temp += connectiveness*150;
-
-            // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
-            int isolanis =  engine.game_board.count_isolated_pawns(color);
-            assert (isolanis>=0);
-            cp_score_position_temp -= (isolanis*isolanis)*10;   // centipawns
-
-            // Add code to encourage knights attacking the 4-square center 
-            iZeroToFour = engine.game_board.knights_attacking_center_squares(color);
-            assert (iZeroToFour>=0);
-            cp_score_position_temp += iZeroToFour*20;  // centipawns
-
-            // Add code to encourage bishops attacking the 4-square center
-            // (cannot see through pieces, but will include "captures" of friendly pieces) 
-            iZeroToFour = engine.bishops_attacking_center_squares(color);
-            assert (iZeroToFour>=0);
-            cp_score_position_temp += iZeroToFour*20;  // centipawns
-
-            // Add code to encourage pawns attacking the 4-square center 
-            iZeroToFour = engine.game_board.pawns_attacking_center_squares(color);
-            assert (iZeroToFour>=0);
-            cp_score_position_temp += iZeroToFour*20;  // centipawns    
+            // Note this return is in centpawns, and can be negative
+            test = cp_score_positional_get_middle(color);
+            cp_score_position_temp += test;         
             
-            // Add code to encourage occupation of open and semi open files
-            iZeroToFour = engine.game_board.rook_file_status(color);
-            assert (iZeroToFour>=0);
-            cp_score_position_temp += iZeroToFour*20;  // centipawns       
-            
-            // Add code to encourage occupation of 7th rank by queens and rook
-            iZeroToFour = engine.game_board.rook_7th_rankness(color);
-            assert (iZeroToFour>=0);
-            cp_score_position_temp += iZeroToFour*20;  // centipawns  
-            
-            // Add code to encourage passed pawns. (1 for each passed pawn)
-            //    TODO: does not see wether passed pawns are protected
-            //    TODO: does not see wether passed pawns are isolated
-            //    TODO: does not see wether passed pawns are on open enemy files
-            iZeroToThirty = engine.game_board.count_passed_pawns(color);
-            assert (iZeroToThirty>=0);
-            cp_score_position_temp += iZeroToThirty;   // centipawns
+            // Note this return is in centpawns, and can be negative
+            test = cp_score_positional_get_end(color);
+            cp_score_position_temp += test;      
 
-            //}
-
-
-
-
+    
             /////////////// end positional evals /////////////////
 
             // Add positional eval to score
@@ -294,15 +248,92 @@ double MinimaxAI::evaluate_board(Color for_color, bool is_fast_style) //, const 
         engine.print_move_to_file(move_last, nPly, (GameState::INPROGRESS), false, true, true, fpDebug); 
     #endif
 
-
-
-
-     // Convert sum (for both colors) from centipawns to double.
+    // Convert sum (for both colors) from centipawns to double.
     return ((double)cp_score_adjusted * 0.01);
 }
 
 
 
+
+int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
+
+    int cp_score_position_temp = 0;
+
+    int iZeroToThree, iZeroToThirty;
+    int iZeroToFour, iZeroToEight;
+
+    // Add code to make king: 1. want to retain castling privledge, and 2. get castled. (this one more important)
+    engine.game_board.king_castle_happiness(color, iZeroToThree);
+    assert (iZeroToThree>=0);
+    assert (iZeroToThree<=3);
+    cp_score_position_temp += iZeroToThree*80;   // centipawns
+
+    // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
+    int isolanis =  engine.game_board.count_isolated_pawns(color);
+    assert (isolanis>=0);
+    cp_score_position_temp -= (isolanis*isolanis)*10;   // centipawns
+
+    // Add code to encourage knights attacking the 4-square center 
+    iZeroToFour = engine.game_board.knights_attacking_center_squares(color);
+    assert (iZeroToFour>=0);
+    cp_score_position_temp += iZeroToFour*20;  // centipawns
+
+    // Add code to encourage bishops attacking the 4-square center
+    // (cannot see through pieces, but will include "captures" of friendly pieces) 
+    iZeroToFour = engine.bishops_attacking_center_squares(color);
+    assert (iZeroToFour>=0);
+    cp_score_position_temp += iZeroToFour*20;  // centipawns
+
+    // Add code to encourage pawns attacking the 4-square center 
+    iZeroToFour = engine.game_board.pawns_attacking_center_squares(color);
+    assert (iZeroToFour>=0);
+    cp_score_position_temp += iZeroToFour*20;  // centipawns    
+    
+    // Add code to encourage occupation of open and semi open files
+    iZeroToFour = engine.game_board.rook_file_status(color);
+    assert (iZeroToFour>=0);
+    cp_score_position_temp += iZeroToFour*20;  // centipawns       
+
+    // Add code to encourage rook connections
+    int connectiveness;     // One if rooks connected. 0 if not.
+    bool isOK = engine.game_board.rook_connectiveness(color, connectiveness);
+    assert (connectiveness>=0);
+    //assert (isOK);    // isOK just means that there werent two rooks to connect
+    //cp_score_position_temp += std::lround(connectiveness*40);   // centipawns
+    cp_score_position_temp += connectiveness*150;
+
+
+    // bishop pair bonus (very small)
+    int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(color));
+    if (bishops >= 2) cp_score_position_temp += 5;   // +0.05 pawns
+
+    return cp_score_position_temp;
+
+}
+
+int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
+    int cp_score_position_temp = 0;
+
+    // Add code to encourage occupation of 7th rank by queens and rook
+    int iZeroToFour = engine.game_board.rook_7th_rankness(color);
+    assert (iZeroToFour>=0);
+    cp_score_position_temp += iZeroToFour*20;  // centipawns  
+    
+    // Add code to encourage passed pawns. (1 for each passed pawn)
+    //    TODO: does not see wether passed pawns are protected
+    //    TODO: does not see wether passed pawns are isolated
+    //    TODO: does not see wether passed pawns are on open enemy files
+    int iZeroToThirty = engine.game_board.count_passed_pawns(color);
+    assert (iZeroToThirty>=0);
+    cp_score_position_temp += iZeroToThirty;   // centipawns
+
+
+    return cp_score_position_temp;
+}
+
+int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color) {
+    return 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -515,7 +546,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
     //int itemp = engine.game_board. pawns_attacking_center_squares(Color::WHITE);
     //int itemp = engine.game_board.count_isolated_pawns(Color::WHITE);
-    int itemp = engine.game_board.count_passed_pawns(Color::WHITE);
+    int itemp = cp_score_positional_get_opening(Color::WHITE);
     cout << "wht " << itemp << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
@@ -524,7 +555,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //itemp = engine.game_board.pawns_attacking_square(Color::BLACK, square_d5);
     //itemp = engine.game_board. pawns_attacking_center_squares(Color::BLACK);
     //itemp = engine.game_board.count_isolated_pawns(Color::BLACK);
-    itemp = engine.game_board.count_passed_pawns(Color::BLACK);
+    itemp = cp_score_positional_get_opening(Color::BLACK);
     cout << "blk " << itemp << endl;
  
 
