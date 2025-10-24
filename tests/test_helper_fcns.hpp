@@ -18,8 +18,8 @@ bool operator==(const ShumiChess::GameBoard& a, const ShumiChess::GameBoard& b) 
             a.black_king == b.black_king &&
             a.white_king == b.white_king &&
             a.turn == b.turn &&
-            a.black_castle == b.black_castle &&
-            a.white_castle == b.white_castle &&
+            a.black_castle_rights == b.black_castle_rights &&
+            a.white_castle_rights == b.white_castle_rights &&
             a.en_passant == b.en_passant &&
             a.halfmove == b.halfmove &&
             a.fullmove == b.fullmove);
@@ -128,13 +128,13 @@ void highlight_board_differences(const ShumiChess::GameBoard& a, const ShumiChes
         cout << "Board 1 Turn: " << a.turn << endl;
         cout << "Board 2 Turn: " << b.turn << endl;
     }
-    if (a.black_castle != b.black_castle) {
-        cout << "Board 1 Black Castle: " << static_cast<int>(a.black_castle) << endl;
-        cout << "Board 2 Black Castle: " << static_cast<int>(b.black_castle) << endl;
+    if (a.black_castle_rights != b.black_castle_rights) {
+        cout << "Board 1 Black Castle: " << static_cast<int>(a.black_castle_rights) << endl;
+        cout << "Board 2 Black Castle: " << static_cast<int>(b.black_castle_rights) << endl;
     }
-    if (a.white_castle != b.white_castle) {
-        cout << "Board 1 White Castle: " << static_cast<int>(a.white_castle) << endl;
-        cout << "Board 2 White Castle: " << static_cast<int>(b.white_castle) << endl;
+    if (a.white_castle_rights != b.white_castle_rights) {
+        cout << "Board 1 White Castle: " << static_cast<int>(a.white_castle_rights) << endl;
+        cout << "Board 2 White Castle: " << static_cast<int>(b.white_castle_rights) << endl;
     }
     if (a.en_passant != b.en_passant) {
         cout << "Board 1 EnPassant: " << a.en_passant << endl;

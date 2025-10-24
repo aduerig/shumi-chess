@@ -262,7 +262,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
     int iZeroToThree, iZeroToThirty;
     int iZeroToFour, iZeroToEight;
 
-    // Add code to make king: 1. want to retain castling privledge, and 2. get castled. (this one more important)
+    // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
     engine.game_board.king_castle_happiness(color, iZeroToThree);
     assert (iZeroToThree>=0);
     assert (iZeroToThree<=3);

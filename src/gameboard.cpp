@@ -90,16 +90,16 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         switch (token)
         {
         case 'k':
-            this->black_castle |= 1;
+            this->black_castle_rights |= 1;
             break;
         case 'q':
-            this->black_castle |= 2;
+            this->black_castle_rights |= 2;
             break;
         case 'K':
-            this->white_castle |= 1;
+            this->white_castle_rights |= 1;
             break;
         case 'Q':
-            this->white_castle |= 2; 
+            this->white_castle_rights |= 2; 
             break;
         default:        // Note: skipping a default is illegal in some states.
             // std::cout << "Unexpected castling rights token: " << token << std::endl;
@@ -217,16 +217,16 @@ const string GameBoard::to_fen(bool bFullFEN) {
     // NOTE: What do you mean, TODO. here and below, What's to do? Is this an unfinished project?
     // I think the TODOs are outdated. The below code works great, and makes great fens.
     string castlestuff;
-    if (0b00000001 & white_castle) {
+    if (0b00000001 & white_castle_rights) {
         castlestuff += 'K';
     }
-    if (0b00000010 & white_castle) {
+    if (0b00000010 & white_castle_rights) {
         castlestuff += 'Q';
     }
-    if (0b00000001 & black_castle) {
+    if (0b00000001 & black_castle_rights) {
         castlestuff += 'k';
     }
-    if (0b00000010 & black_castle) {
+    if (0b00000010 & black_castle_rights) {
         castlestuff += 'q';
     }
     if (castlestuff.empty()) {
@@ -304,10 +304,10 @@ int GameBoard::get_castle_status_for_color(Color color1) const {
     bool b_can_castle;
     bool b_has_castled;
     if (color1 == ShumiChess::WHITE) {
-        b_can_castle = (white_castle != 0); 
+        b_can_castle = (white_castle_rights != 0); 
         b_has_castled = bCastledWhite;
     } else {
-        b_can_castle = (black_castle != 0); 
+        b_can_castle = (black_castle_rights != 0); 
         b_has_castled = bCastledBlack;
     }
 

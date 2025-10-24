@@ -204,8 +204,8 @@ inline void cout_move_info(const ShumiChess::Move& move) {
 
     // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)
     // Assumes bit 1 is Kingside and bit 0 is Queenside
-    std::cout << "White Castle Rights (KQ): " << std::bitset<2>(move.white_castle) << std::endl;
-    std::cout << "Black Castle Rights (kq): " << std::bitset<2>(move.black_castle) << std::endl;
+    std::cout << "White Castle Rights (KQ): " << std::bitset<2>(move.white_castle_rights) << std::endl;
+    std::cout << "Black Castle Rights (kq): " << std::bitset<2>(move.black_castle_rights) << std::endl;
     std::cout << "----------------------------------" << std::endl;
 }
 

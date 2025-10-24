@@ -44,8 +44,8 @@ TEST_P(tGameboardFenNotation, FenBoardMatchesExpected) {
     EXPECT_EQ(fen_board.black_king, get<10>(test_pair.first));
     EXPECT_EQ(fen_board.white_king, get<11>(test_pair.first));
     EXPECT_EQ(fen_board.turn, get<12>(test_pair.first));
-    EXPECT_EQ(fen_board.black_castle, get<13>(test_pair.first));
-    EXPECT_EQ(fen_board.white_castle, get<14>(test_pair.first));
+    EXPECT_EQ(fen_board.black_castle_rights, get<13>(test_pair.first));
+    EXPECT_EQ(fen_board.white_castle_rights, get<14>(test_pair.first));
     EXPECT_EQ(fen_board.en_passant, get<15>(test_pair.first));
     EXPECT_EQ(fen_board.halfmove, get<16>(test_pair.first));
     EXPECT_EQ(fen_board.fullmove, get<17>(test_pair.first));
@@ -92,8 +92,8 @@ TEST_P(tGameboardToFenNotation, ToFenBoardMatchesExpected) {
     // EXPECT_EQ(fen_board.black_king, get<10>(test_pair.second));
     // EXPECT_EQ(fen_board.white_king, get<11>(test_pair.second));
     // EXPECT_EQ(fen_board.turn, get<12>(test_pair.second));
-    // EXPECT_EQ(fen_board.black_castle, get<13>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_castle, get<14>(test_pair.second));
+    // EXPECT_EQ(fen_board.black_castle_rights, get<13>(test_pair.second));
+    // EXPECT_EQ(fen_board.white_castle_rights, get<14>(test_pair.second));
     // EXPECT_EQ(fen_board.en_passant, get<15>(test_pair.second));
     // EXPECT_EQ(fen_board.halfmove, get<16>(test_pair.second));
     // EXPECT_EQ(fen_board.fullmove, get<17>(test_pair.second));

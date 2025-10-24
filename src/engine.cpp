@@ -252,6 +252,9 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 // takes a move, but tracks it so pop() can undo
 void Engine::pushMove(const Move& move) {
 
+    int rook_from_sq = -1;
+    int rook_to_sq = -1;
+
     assert(move.piece_type != NONE);
 
     move_history.push(move);
@@ -335,8 +338,6 @@ void Engine::pushMove(const Move& move) {
            game_board.bCastledBlack = true;  // I dont care which side i castled.
         }
 
-        // !TODO zobrist update for castling
-
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         // cout << "PUSHING: Friendly rooks are:";
@@ -345,20 +346,28 @@ void Engine::pushMove(const Move& move) {
             //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
+                rook_from_sq = 7;
+                rook_to_sq = 4;
                 friendly_rooks &= ~(1ULL<<7);
                 friendly_rooks |= (1ULL<<4);
             } else {
+                rook_from_sq = 63;
+                rook_to_sq = 60;               
                 friendly_rooks &= ~(1ULL<<63);
                 friendly_rooks |= (1ULL<<60);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
              //                rnbqkbnr                                                       RNBQKBNR
-            // Kingside castle
+            // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
+                rook_from_sq = 0;
+                rook_to_sq = 2;
                 friendly_rooks &= ~(1ULL<<0);
                 friendly_rooks |= (1ULL<<2);
-                //assert (this->game_board.white_castle);
+                //assert (this->game_board.white_castle_rights);
             } else {
+                rook_from_sq = 56;
+                rook_to_sq = 58;                
                 friendly_rooks &= ~(1ULL<<56);
                 friendly_rooks |= (1ULL<<58);
             }
@@ -372,12 +381,22 @@ void Engine::pushMove(const Move& move) {
     this->game_board.en_passant = move.en_passant;
     
     // Manage castling rights
-    uint8_t castle_opp = (this->game_board.black_castle << 2) | this->game_board.white_castle;
+    uint8_t castle_opp = (this->game_board.black_castle_rights << 2) | this->game_board.white_castle_rights;
     this->castle_opportunity_history.push(castle_opp);
     
     // Manage castling status
-    this->game_board.black_castle &= move.black_castle;
-    this->game_board.white_castle &= move.white_castle;
+    this->game_board.black_castle_rights &= move.black_castle_rights;
+    this->game_board.white_castle_rights &= move.white_castle_rights;
+
+    if (move.is_castle_move) {
+             // ---- Zobrist update for the rook hop in castling ----
+        // King squares were already XORed earlier in pushMove(), so we ONLY fix the rook here.
+        // index into zobrist_piece_square is (piece_type + color*6)
+        assert(rook_from_sq >= 0 && rook_to_sq >= 0);
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_from_sq);
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_to_sq);
+    }
+
 }
 
 // undos last move, errors if no move was made before
@@ -385,8 +404,22 @@ void Engine::pushMove(const Move& move) {
 // 
 void Engine::popMove() {
 
+    int rook_from_sq = -1;
+    int rook_to_sq = -1;
+
     const Move move = this->move_history.top();
     this->move_history.pop();
+
+    // pop enpassent rights off the top of the stack
+    this->game_board.en_passant = this->en_passant_history.top();
+    this->en_passant_history.pop();
+    
+    // pop castle rights off the top of the stack (after merging)
+    this->game_board.black_castle_rights = this->castle_opportunity_history.top() >> 2;      // shift 
+    this->game_board.white_castle_rights = this->castle_opportunity_history.top() & 0b0011;  // remove black castle bits
+    
+    // pop castle opportunity history
+    this->castle_opportunity_history.pop();
 
     game_board.zobrist_key ^= zobrist_side;
 
@@ -442,7 +475,6 @@ void Engine::popMove() {
         }
     } else if (move.is_castle_move) {
         
-
         if (move.color == ShumiChess::Color::WHITE) {
            game_board.bCastledWhite = false;  // I dont care which side i castled.
         } else {
@@ -459,9 +491,13 @@ void Engine::popMove() {
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
+                rook_from_sq = 4;
+                rook_to_sq = 7;
                 friendly_rooks &= ~(1ULL<<4);
                 friendly_rooks |= (1ULL<<7);
             } else {
+                rook_from_sq = 60;
+                rook_to_sq = 63;
                 friendly_rooks &= ~(1ULL<<60);
                 friendly_rooks |= (1ULL<<63);
             }
@@ -469,29 +505,29 @@ void Engine::popMove() {
             //                 rnbqkbnr                                                       rnbqkbnr
             // Popping a Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
+                rook_from_sq = 2;
+                rook_to_sq = 0;
                 friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
                 friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
             } else {
+                rook_from_sq = 58;
+                rook_to_sq = 56;
                 friendly_rooks &= ~(1ULL<<58);
                 friendly_rooks |= (1ULL<<56);
             }
+
             
         } else {
             // Something wrong, its not a castle
             assert(0);
         }
+
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_from_sq);
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_to_sq);
+
     }
 
-    // pop enpassent privledge off the top of the stack
-    this->game_board.en_passant = this->en_passant_history.top();
-    this->en_passant_history.pop();
-    
-    // pop castle privledges off the top of the stack (after merging)
-    this->game_board.black_castle = this->castle_opportunity_history.top() >> 2;      // shift 
-    this->game_board.white_castle = this->castle_opportunity_history.top() & 0b0011;  // remove black castle bits
-    
-    // pop castle opportunity history
-    this->castle_opportunity_history.pop();
+
 }
 
 
@@ -565,16 +601,16 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         // castling rights
         ull from_or_to = (single_bitboard_from | single_bitboard_to);
         if (from_or_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000) {
-            new_move.white_castle &= 0b00000001;
+            new_move.white_castle_rights &= 0b00000001;
         }
         if (from_or_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001) {
-            new_move.white_castle &= 0b00000010;
+            new_move.white_castle_rights &= 0b00000010;
         }
         if (from_or_to & 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
-            new_move.black_castle &= 0b00000001;
+            new_move.black_castle_rights &= 0b00000001;
         }
         if (from_or_to & 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
-            new_move.black_castle &= 0b00000010;
+            new_move.black_castle_rights &= 0b00000010;
         }
 
         if (!promotion) {
@@ -802,7 +838,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull king_origin_square;
     
     if (color == Color::WHITE) {
-        if (game_board.white_castle & (0b00000001)) {
+        if (game_board.white_castle_rights & (0b00000001)) {
             //assert(!game_board.bCastledWhite);
             // Move is a White king side castle
             squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
@@ -818,7 +854,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 }
             }
         }
-        if (game_board.white_castle & (0b00000010)) {
+        if (game_board.white_castle_rights & (0b00000010)) {
             // Move is a White queen side castle
             //assert(!game_board.bCastledWhite);
             squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
@@ -834,7 +870,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             }
         }
     } else if (color == Color::BLACK) {
-        if (game_board.black_castle & (0b00000001)) {
+        if (game_board.black_castle_rights & (0b00000001)) {
             //assert(!game_board.bCastledBlack);
             // Move is a black king side castle
             squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
@@ -850,7 +886,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 }
             }
         }
-        if (game_board.black_castle & (0b00000010)) {
+        if (game_board.black_castle_rights & (0b00000010)) {
             // Move is a Black queen side castle
             //assert(!game_board.bCastledBlack);
             squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;

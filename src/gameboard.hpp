@@ -38,8 +38,8 @@ class GameBoard {
         Color turn;
 
         //Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
-        uint8_t black_castle = 0b00000000;
-        uint8_t white_castle = 0b00000000;
+        uint8_t black_castle_rights = 0b00000000;
+        uint8_t white_castle_rights = 0b00000000;
 
         //square behind enpassantable pawn after moving
         //0 is impossible state in conventional game

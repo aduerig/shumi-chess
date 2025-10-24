@@ -82,7 +82,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard("rQbqk2r/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 5"), test_engine.game_board);
 
     auto temp_move_2 = Move{BLACK, KING, 1ULL<<59, 1ULL<<57};
-    temp_move_2.black_castle = 0;
+    temp_move_2.black_castle_rights = 0;
     temp_move_2.is_castle_move = true;
     test_engine.pushMove(temp_move_2);
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR w KQ - 1 6"), test_engine.game_board);
@@ -100,7 +100,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/P2P4/1PP2PPP/RNBQKBNR w KQ - 1 8"), test_engine.game_board);
 
     auto temp_move_3 = Move{WHITE, ROOK, 1ULL<<7, 1ULL<<15};
-    temp_move_3.white_castle = 1;
+    temp_move_3.white_castle_rights = 1;
     test_engine.pushMove(temp_move_3);
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/P2P4/RPP2PPP/1NBQKBNR b K - 2 8"), test_engine.game_board);
 
@@ -138,7 +138,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/4Q3/8/P1BP3P/RPP2PP1/1N2KBNR w K - 1 14"), test_engine.game_board);
     
     auto temp_move_4 = Move{WHITE, KING, 1ULL<<3, 1ULL<<11};
-    temp_move_4.white_castle = 0;
+    temp_move_4.white_castle_rights = 0;
     test_engine.pushMove(temp_move_4);
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/4Q3/8/P1BP3P/RPP1KPP1/1N3BNR b - - 2 14"), test_engine.game_board);
 
@@ -166,7 +166,7 @@ TEST(EngineMoveStorage, PushPopMini) {
     EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
 
     auto temp_move_1 = Move{WHITE, KING, 1ULL<<3, 1ULL<<11};
-    temp_move_1.white_castle = 0;
+    temp_move_1.white_castle_rights = 0;
     test_engine.pushMove(temp_move_1);
     expected_game_history.emplace("rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 2 2");
     EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
@@ -241,7 +241,7 @@ TEST(EngineMoveStorage, PoppingMoves) {
     expected_game_history.emplace("rQbqk2r/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 5");
 
     auto temp_move_2 = Move{BLACK, KING, 1ULL<<59, 1ULL<<57};
-    temp_move_2.black_castle = 0;
+    temp_move_2.black_castle_rights = 0;
     temp_move_2.is_castle_move = true;
     test_engine.pushMove(temp_move_2);
     expected_game_history.emplace("rQbq1rk1/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR w KQ - 1 6");
@@ -259,7 +259,7 @@ TEST(EngineMoveStorage, PoppingMoves) {
     expected_game_history.emplace("rQbq1rk1/pp2pp1p/5npb/8/8/P2P4/1PP2PPP/RNBQKBNR w KQ - 1 8");
 
     auto temp_move_3 = Move{WHITE, ROOK, 1ULL<<7, 1ULL<<15};
-    temp_move_3.white_castle = 1;
+    temp_move_3.white_castle_rights = 1;
     test_engine.pushMove(temp_move_3);
     expected_game_history.emplace("rQbq1rk1/pp2pp1p/5npb/8/8/P2P4/RPP2PPP/1NBQKBNR b K - 2 8");
 
@@ -297,7 +297,7 @@ TEST(EngineMoveStorage, PoppingMoves) {
     expected_game_history.emplace("rQbq1rk1/pp2pp1p/5npb/4Q3/8/P1BP3P/RPP2PP1/1N2KBNR w K - 1 14");
     
     auto temp_move_4 = Move{WHITE, KING, 1ULL<<3, 1ULL<<11};
-    temp_move_4.white_castle = 0;
+    temp_move_4.white_castle_rights = 0;
     test_engine.pushMove(temp_move_4);
     expected_game_history.emplace("rQbq1rk1/pp2pp1p/5npb/4Q3/8/P1BP3P/RPP1KPP1/1N3BNR b - - 2 14");
 

@@ -144,8 +144,8 @@
     // white_king   (0b00000000'00000000'00000000'00000000'00000000'00000000'00001000'00000000),  
 
     turn(WHITE),
-    black_castle(0b00000011),
-    white_castle(0b00000011),
+    black_castle_rights(0b00000011),
+    white_castle_rights(0b00000011),
     en_passant(1),
     halfmove(0),
     fullmove(1) 
