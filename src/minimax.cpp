@@ -395,7 +395,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth =7;        // Note: because i said so.
+    this_depth =6;        // Note: because i said so.
     maximum_depth = this_depth;
 
     int now_s;
@@ -866,12 +866,10 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_before = engine.game_board.to_fen();
+                ull zobrist_save = engine.game_board.zobrist_key;
             #endif
 
-
-
-
-
+  
             #ifdef DELTA_PRUNING
                 // --- Delta pruning (qsearch only) ---
                 if (depth == 0 && !in_check) {
@@ -898,36 +896,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                 }
                 // --- end Delta pruning ---
             #endif
-
-            // #ifdef DELTA_PRUNING
-            //     // --- Delta pruning (qsearch only) ---
-            //     if (depth == 0) {
-            //         int ub = 0;
-            //         if (m.capture != ShumiChess::Piece::NONE) {
-            //             ub += engine.game_board.centipawn_score_of(m.capture);               // victim value
-            //         }
-            //         if (m.promotion != ShumiChess::Piece::NONE) {
-            //             ub += engine.game_board.centipawn_score_of(m.promotion)
-            //                 - engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN); // promo gain
-            //         }
-            //         bool recapture = (!engine.move_history.empty() && (m.to == engine.move_history.top().to));
-            //         // 60→100 cp; pick the smallest that still gives you most of the speedup.
-            //         constexpr int DELTA_MARGIN_CP = 80; // tune 60..100
-            //         if (!recapture && (d_best_score + ub + DELTA_MARGIN_CP < alpha)) {
-            //             continue;   // skip this move
-            //         }
-            //     }
-            //     // --- end Delta pruning ---
-          
-            //     // right before pushMove(m) at depth==0, after delta prune:
-            //     if (!engine.move_history.empty()
-            //         && m.capture == ShumiChess::Piece::PAWN
-            //         && (d_best_score + 100 + 60) < alpha)   // 100=pawn value, 60 margin
-            //     {
-            //         continue; // skip low-impact pawn grabs far below alpha (not a recapture)
-            //     }
-            // #endif
-
+    
 
             engine.pushMove(m);
 
@@ -964,11 +933,19 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_after = engine.game_board.to_fen();
                 if (temp_fen_before != temp_fen_after) {
+                    std::cout << "\x1b[31m";
                     std::cout << "PROBLEM WITH PUSH POP!!!!!" << std::endl;
                     cout_move_info(m);
                     std::cout << "FEN before  push/pop: " << temp_fen_before  << std::endl;
                     std::cout << "FEN after   push/pop: " << temp_fen_after   << std::endl;
+                    std::cout << "\x1b[0m";
                     assert(0);
+                }
+                if (zobrist_save != engine.game_board.zobrist_key) {
+                    std::cout << "\x1b[31m";
+                    std::cout << "PROBLEM WITH PUSH POP zobrist!!!!!" << std::endl;
+                    std::cout << "\x1b[0m";
+                    assert(0);        
                 }
             #endif
 

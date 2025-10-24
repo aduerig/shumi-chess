@@ -1,6 +1,10 @@
 #include <globals.hpp>
 #include <limits>
 
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
+
 using namespace std;
 
 namespace ShumiChess {
@@ -52,11 +56,14 @@ public:
 };
 
 
-// !TODO: Make this the same as array probably
+// !TODO: Make this the same as array probably. Single dimensional array? This is unprotected!
+// needs an assert at least!
 uint64_t zobrist_piece_square[12][64];
 uint64_t zobrist_enpassant[8];
 uint64_t zobrist_castling[16];
 uint64_t zobrist_side;
+
+
 
 // One number for each piece at each square
 // One number to indicate the side to move is black

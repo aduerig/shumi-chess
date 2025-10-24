@@ -31,9 +31,12 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
     All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown)
   ~~Crossed out~~ items are done, but under testing.
 
-  * Failure: Doesnt recognize three fold position repitition. (50 move rule is tested, Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. 
+  * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
+  * Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. 
+  * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. 
   * ~~Failure: Doesnt recognize Enpassent (its not implemented). This is a problem in the engine.~~
-  * Sloth: No Transposition table (TT) implemented. No Zobrist keys. This is a problem in MinimaxAI.
+  * Sloth: No Transposition table (TT) implemented. This is a problem in MinimaxAI.
+  * Sloth: Zobrist is not maintained for castling or en passant.
   * ~~Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa"~~ ~~functionality. This is a problem in MinimaxAI.~~
   * Bug: Forces promotions for the human to be to a queen (the AI is not so handicapped and has been proven to be able to promote to anything). Problem with the interface I suppose.
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~

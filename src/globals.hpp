@@ -10,6 +10,11 @@
 #include <cstdlib>
 // #include <random>
 
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#undef NDEBUG
+#include <assert.h>
+
+
 typedef unsigned long long ull;
 
 namespace ShumiChess {
@@ -99,11 +104,18 @@ extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
 
 extern uint64_t zobrist_piece_square[12][64];
-extern uint64_t zobrist_enpassant[8];
-extern uint64_t zobrist_castling[16];
+extern uint64_t zobrist_enpassant[8];           // not used yet
+extern uint64_t zobrist_castling[16];           // not used yet
 extern uint64_t zobrist_side;
 
 void initialize_zobrist();
+inline uint64_t zobrist_piece_square_get(int i, int j) {
+    assert (i>= 0);
+    assert (i< 12);
+    assert (j>= 0);
+    assert (j< 64);
+    return zobrist_piece_square[i][j];
+}
 
 extern std::array<ull, 64> square_to_y;
 extern std::array<ull, 64> square_to_x;

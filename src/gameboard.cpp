@@ -22,10 +22,11 @@ namespace ShumiChess {
 
     {
 
-        // !TODO doesn't belong here i don't think.
+        // !TODO doesn't belong here i don't think. I think it does.
         ShumiChess::initialize_zobrist();
         set_zobrist();
  
+        // No multiple pieces on the same square.
         bool no_pieces_on_same_square = are_bit_boards_valid();
         assert(no_pieces_on_same_square);
 
@@ -118,7 +119,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     this->fullmove = std::stoi(fen_components[5]);
 
 
-
+    
     bool no_pieces_on_same_square = are_bit_boards_valid();
     assert(no_pieces_on_same_square);
 

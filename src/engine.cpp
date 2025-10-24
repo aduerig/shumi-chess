@@ -259,7 +259,8 @@ void Engine::pushMove(const Move& move) {
     // Switch color
     this->game_board.turn = utility::representation::opposite_color(move.color);
 
-    //game_board.zobrist_key ^= zobrist_side;
+    // zobrist_key "push" update (side to move)
+    game_board.zobrist_key ^= zobrist_side;
 
     // Update full move "clock" (used for display)
     this->game_board.fullmove += static_cast<int>(move.color == ShumiChess::Color::BLACK); //Fullmove incs on white only
@@ -281,22 +282,24 @@ void Engine::pushMove(const Move& move) {
     int square_from = utility::bit::bitboard_to_lowest_square(move.from);
     int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
 
-    // zobrist_key update (for normal moves)
-    //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
+      // zobrist_key "push" update (for normal moves, remove piece from from square)
+      game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_from);
 
     // Put the piece where it will go.
     if (move.promotion == Piece::NONE) {
 
         moving_piece |= move.to;
 
-        //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
+        // zobrist_key "push" update (for promotions, new piece on square)
+        game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_to);
     }
     else {
         // Promote the piece
         ull& promoted_piece = access_pieces_of_color(move.promotion, move.color);
         promoted_piece |= move.to;
 
-        //game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
+        // zobrist_key "push" update (for promotions, new piece on square)
+        game_board.zobrist_key ^= zobrist_piece_square_get(move.promotion + move.color * 6, square_to);
     }
 
     if (move.capture != Piece::NONE) {
@@ -312,14 +315,17 @@ void Engine::pushMove(const Move& move) {
             // Gets the number of leading zeros in the pawn butboard. So this is the first pawn in the list?
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
-            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
+
+            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, target_pawn_square);
+
         } else {
             // Regular capture
 
             // remove piece from where it was.
             ull& where_I_was = access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color));
             where_I_was &= ~move.to;
-            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
+            
+            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, square_to);
         }
     } else if (move.is_castle_move) {
 
@@ -382,7 +388,7 @@ void Engine::popMove() {
     const Move move = this->move_history.top();
     this->move_history.pop();
 
-    //game_board.zobrist_key ^= zobrist_side;
+    game_board.zobrist_key ^= zobrist_side;
 
     this->game_board.turn = move.color;
 
@@ -399,19 +405,22 @@ void Engine::popMove() {
     moving_piece &= ~move.to;
     moving_piece |= move.from;
 
-    //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_from];
+    assert((move.piece_type + move.color * 6) < 12);
+    game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_from);
 
     // pop pawn promotions
     if (move.promotion == Piece::NONE) {
         // Not a pawn promotion
-        //game_board.zobrist_key ^= zobrist_piece_square[move.piece_type + move.color * 6][square_to];
+        assert((move.piece_type + move.color * 6) < 12);
+        game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_to);
     }
     else {
         // Is a pawn promotion
         ull& promoted_piece = access_pieces_of_color(move.promotion, move.color);
         promoted_piece &= ~move.to;
 
-        //game_board.zobrist_key ^= zobrist_piece_square[move.promotion + move.color * 6][square_to];
+        assert((move.piece_type + move.color * 6) < 12);
+        game_board.zobrist_key ^= zobrist_piece_square_get(move.promotion + move.color * 6, square_to);
     }
 
     if (move.capture != Piece::NONE) {
@@ -422,14 +431,14 @@ void Engine::popMove() {
 
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
             // NOTE: here the statements are reversed from the else. What gives?
-            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][target_pawn_square];
+            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, target_pawn_square);
           
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
      
         } else {
 
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
-            //game_board.zobrist_key ^= zobrist_piece_square[move.capture + utility::representation::opposite_color(move.color) * 6][square_to];
+            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, square_to);
         }
     } else if (move.is_castle_move) {
         
