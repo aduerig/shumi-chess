@@ -109,7 +109,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     }
 
     if (fen_components[3] != "-") { 
-        this->en_passant = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
+        this->en_passant_rights = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
     }
 
     // halfmove is used to apply the "fifty-move draw" rule in chess
@@ -236,8 +236,8 @@ const string GameBoard::to_fen(bool bFullFEN) {
 
     // TODO: enpassant
     string enpassant_info = "-";
-    if (en_passant != 0) {
-        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant);
+    if (en_passant_rights != 0) {
+        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant_rights);
     }
     fen_components.push_back(enpassant_info);
 

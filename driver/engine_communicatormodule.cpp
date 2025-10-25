@@ -134,6 +134,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     // Tell the engine the move
     python_engine.pushMove(found_move);
     
+    ++python_engine.repetition_table[python_engine.game_board.zobrist_key];
 
     return Py_BuildValue("");
 }

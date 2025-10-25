@@ -47,7 +47,7 @@ class GameBoard {
         // ? do we care about non standard gameboards / moves
         // ? would one consider an extra bit for if we should look at this val
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
-        ull en_passant {0}; 
+        ull en_passant_rights {0}; 
 
         uint64_t zobrist_key {0};
 

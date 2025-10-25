@@ -195,7 +195,10 @@ class Engine {
 
         void move_into_string(ShumiChess::Move m);
         //ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
+    
+        std::unordered_map<uint64_t, int> repetition_table;
 
+        void debug_print_repetition_table() const;
 
         void print_move_history_to_file(FILE* fp);
 

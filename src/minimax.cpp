@@ -96,8 +96,12 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 //////////////////////////////////////////////////////////////////////////////////////
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
-     // Open a file for debug writing
 
+
+    engine.repetition_table.clear();
+    //repetition_table.reserve(128);
+
+    // Open a file for debug writing
     #ifdef _DEBUGGING_TO_FILE
         #ifdef __linux__
             fpDebug = fopen("/tmp/shumi-chess-debug.dat", "w");
@@ -358,8 +362,12 @@ int g_this_depth = 6;
 //////////////////////////////////////////////////////////////////////////////////
 
 Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
+    
     stop_calculation = false;
+    
     seen_zobrist.clear();
+
+    //repetition_table.clear();    //     //repetition_table[game_board.zobrist_key] = 1; 
     nodes_visited = 0;
 
     uint64_t zobrist_key_start = engine.game_board.zobrist_key;
@@ -371,7 +379,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
 	#ifdef IS_CALLBACK_THREAD
     	start_callback_thread();
     #endif
-
 
     
     // Results of previous iterave searches
@@ -417,10 +424,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     do {
 
         do_a_deepening();
-
-        #ifdef _DEBUGGING_TO_FILE1 
-            //clear_stats_file(fpDebug, "C:\\programming\\shumi-chess\\debug.dat");
-        #endif
 
         #ifdef _DEBUGGING_MOVE_CHAIN
             fputs("\n\n---------------------------------------------------------------------------", fpDebug);
@@ -546,8 +549,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
     //int itemp = engine.game_board. pawns_attacking_center_squares(Color::WHITE);
     //int itemp = engine.game_board.count_isolated_pawns(Color::WHITE);
-    int itemp = cp_score_positional_get_opening(Color::WHITE);
-    cout << "wht " << itemp << endl;
+    //int itemp = cp_score_positional_get_opening(Color::WHITE);
+    int itemp;
+    cout << "wht " << engine.repetition_table.size() << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
     //itemp = engine.bishops_attacking_center_squares(Color::BLACK);
@@ -558,6 +562,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     itemp = cp_score_positional_get_opening(Color::BLACK);
     cout << "blk " << itemp << endl;
  
+    engine.debug_print_repetition_table();
 
     // isolanis =  engine.game_board.count_isolated_pawns(Color::BLACK);
     // // engine.game_board.king_castle_happiness(Color::WHITE, centerness);  // Gets smaller closer to center.
@@ -649,21 +654,6 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         assert(0);
 
-        bool in_check1 = engine.is_king_in_check(engine.game_board.turn);
-
-
-        std::cout << "\n\x1b[31m! MAX PLY  trap#1 " << nPly << "\x1b[0m\n";
-        #ifdef _DEBUGGING_TO_FILE1 
-            fprintf(fpDebug, "crap!");
-            std::fflush(fpDebug);
-        #endif
-
-        assert(p_moves_to_loop_over);
-        auto tup = best_move_static(engine.game_board.turn, *p_moves_to_loop_over, in_check1);
-        double scoreMe = std::get<0>(tup);
-        ShumiChess::Move moveMe = std::get<1>(tup);
-        return { scoreMe, moveMe };
-
     }
 
     // PV ordering (at the root only, cause PV ordering gives diminishing returns further down the tree).
@@ -738,6 +728,20 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         // final_result = std::make_tuple(d_best_score, the_best_move);
         // return final_result;
         return {d_best_score, the_best_move};
+
+        // repetition draw check
+        // {
+        //     auto it = engine.repetition_table.find(engine.game_board.zobrist_key);
+        //     if (it != engine.repetition_table.end()) {
+        //         assert(0);
+        //         if (it->second >= 2) {
+        //             // We've seen this exact position (same zobrist) at least twice already
+        //             // along the current line. That means we are in a repetition loop.
+        //             assert(0);
+        //             return {d_best_score, the_best_move};
+        //         }
+        //     }
+        // }
 
     }
 
@@ -840,24 +844,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
         bool b_use_this_move;
 
-        // MoveAndScoreList move_and_scores_listSave = move_and_scores_list;
 
-        // // (optional) move ordering
-        //sort_moves_by_score(move_and_scores_list, true);
-
-        // if (move_and_scores_list != move_and_scores_listSave) {
-
-        //     #ifdef _DEBUGGING_PV_ORDERING
-        //         fputs("\n\n-1+++++++++++++", fpDebug);
-        //         engine.print_moves_and_scores_to_file(move_and_scores_listSave, false, fpDebug);
-        //         fputs("\n-1---------------", fpDebug);
-        //     #endif
-        //     #ifdef _DEBUGGING_PV_ORDERING
-        //         fputs("\n\n-2+++++++++++++", fpDebug);
-        //         engine.print_moves_and_scores_to_file(move_and_scores_list, false, fpDebug);
-        //         fputs("\n-2---------------", fpDebug);
-        //     #endif
-        // }
 
         d_best_score = -HUGE_SCORE;
         the_best_move = sorted_moves[0];
@@ -867,11 +854,14 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_before = engine.game_board.to_fen();
                 ull zobrist_save = engine.game_board.zobrist_key;
+                auto ep_history_saveb = engine.game_board.black_castle_rights;
+                auto ep_history_savew = engine.game_board.white_castle_rights;
+                auto enpassant_save = engine.game_board.en_passant_rights;
             #endif
 
   
             #ifdef DELTA_PRUNING
-                // --- Delta pruning (qsearch only) ---
+                // --- Delta pruning (qsearch only)
                 if (depth == 0 && !in_check) {
                     int ub = 0;
                     if (m.capture != ShumiChess::Piece::NONE) {
@@ -894,17 +884,12 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                         continue;
                     }
                 }
-                // --- end Delta pruning ---
+                // --- end Delta pruning
             #endif
     
 
             engine.pushMove(m);
 
-            //GameState state_repeat =  draw_by_twofold();
-            //GameState state_repeat =  draw_by_repetition();
-            // if (state_repeat == GameState::DRAW) {
-            //     cout << "!!!!!!!!!draw!!!!!!\n" << endl;
-            // }
 
 
             #ifdef _DEBUGGING_MOVE_TREE
@@ -915,6 +900,9 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
             	g_live_ply = nPly;
             #endif
 
+            ++engine.repetition_table[engine.game_board.zobrist_key];
+
+            //
             // Two parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
             //                       2. The beta and alpha arguments are staggered, or reversed. 
             auto ret_val = store_board_values_negamax(
@@ -927,6 +915,11 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
 
             // The third part of negamax: negate the score to keep it relative.
             double d_return_value = get<0>(ret_val);
+
+            --engine.repetition_table[engine.game_board.zobrist_key];
+            if (engine.repetition_table[engine.game_board.zobrist_key] == 0) {
+                engine.repetition_table.erase(engine.game_board.zobrist_key);
+            }
 
             engine.popMove();
 
@@ -947,6 +940,25 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
                     std::cout << "\x1b[0m";
                     assert(0);        
                 }
+                if (ep_history_saveb != engine.game_board.black_castle_rights) {
+                    std::cout << "\x1b[31m";
+                    std::cout << "PROBLEM WITH PUSH POP B !!!!!" << std::endl;
+                    std::cout << "\x1b[0m";
+                    assert(0);   
+                }
+                if (ep_history_savew != engine.game_board.white_castle_rights) {
+                    std::cout << "\x1b[31m";
+                    std::cout << "PROBLEM WITH PUSH POP A !!!!!" << std::endl;
+                    std::cout << "\x1b[0m";
+                    assert(0);   
+                }
+                if (enpassant_save != engine.game_board.en_passant_rights) {
+                    std::cout << "\x1b[31m";
+                    std::cout << "PROBLEM WITH PUSH POP P !!!!!" << std::endl;
+                    std::cout << "\x1b[0m";
+                    assert(0);   
+                }
+                        
             #endif
 
             // negamax, reverse returned score.  
@@ -1166,7 +1178,6 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
             color_perspective = Color::WHITE;
         }
         Move mvdefault = Move{};
-        //return evaluate_board(color_perspective, moves) * color_multiplier;
         return evaluate_board(color_perspective, false) * color_multiplier;
 
     }
@@ -1260,31 +1271,6 @@ Move MinimaxAI::get_move() {
 }
 
 
-// uint64_t starting_zobrist_key = engine.game_board.zobrist_key;
-
-// if (seen_zobrist.find(starting_zobrist_key) != seen_zobrist.end()) {
-//     if (seen_zobrist[starting_zobrist_key] != gameboard_to_string(engine.game_board)) {
-//         cout << "Zobrist collision!" << endl;
-//         cout << "Zobrist key: " << starting_zobrist_key << endl;
-//         cout << "Seen zobrist:\n" << seen_zobrist[starting_zobrist_key] << endl;
-//         cout << "Current zobrist:\n" << gameboard_to_string(engine.game_board) << endl;
-//         exit(1);
-//     }
-// }
-// else {
-//     seen_zobrist[starting_zobrist_key] = gameboard_to_string(engine.game_board);
-// }
-
-
-// if (engine.game_board.zobrist_key != starting_zobrist_key) {
-//     print_gameboard(engine.game_board);
-//     cout << "zobrist key doesn't match for: " << move_to_string(m) << endl;
-//     exit(1);
-// }
-
-
-
-
 void MinimaxAI::sort_moves_by_score(
     MoveAndScoreList& moves_and_scores_list,
     bool sort_descending
@@ -1376,17 +1362,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
 /////////////////////////////////////////////////////////////////////
 
-#ifdef _DEBUGGING_TO_FILE1
 
-void MinimaxAI::clear_stats_file(const char* path, FILE*& fpDebug) {
-    if (fpDebug) { fclose(fpDebug); fpDebug = nullptr; }
-    fpDebug = std::fopen(path, "w");        // truncates the file
-    assert(fpDebug != nullptr);
-    std::fflush(fpDebug);
-}
-
-
-#endif
 
 
 #ifdef _DEBUGGING_MOVE_TREE

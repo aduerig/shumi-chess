@@ -44,7 +44,7 @@ struct Move {
     Piece promotion = Piece::NONE;
     uint8_t black_castle_rights = 0b00000011;
     uint8_t white_castle_rights = 0b00000011;
-    ull en_passant = 0;
+    ull en_passant_rights = 0;
     bool is_en_passent_capture = false;
     bool is_castle_move = false;
 
@@ -52,7 +52,7 @@ struct Move {
     // NOTE: Is this right ? It only checks the squares, not the pieces on the square.
     // But wait, the piece on the square, and the rest of the board already encoded in the FEN 
     // which is the "outer map" of the hashTable? I have no idea what im talking about. In any case,
-    // the promotion piece must be added to the equality. Not sure about the "en_passant"?
+    // the promotion piece must be added to the equality. Not sure about the "en_passant_rights"?
 
     bool operator==(const Move &other) const {
         //return ((from == other.from) && (to == other.to));

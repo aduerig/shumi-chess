@@ -376,22 +376,48 @@ void Engine::pushMove(const Move& move) {
         }
     }
 
-    this->en_passant_history.push(this->game_board.en_passant);
-    // !TODO zobrist update for en_passant
-    this->game_board.en_passant = move.en_passant;
+    this->en_passant_history.push(this->game_board.en_passant_rights);
+
+    // !TODO zobrist update for en_passant_rights history
+
+    // Zobrist: remove old en passant (if any)
+    if (this->game_board.en_passant_rights) {
+        int old_ep_sq   = utility::bit::bitboard_to_lowest_square(this->game_board.en_passant_rights);
+        int old_ep_file = old_ep_sq & 7;  // file index 0..7
+        game_board.zobrist_key ^= zobrist_enpassant[old_ep_file];
+    }
+
+    this->game_board.en_passant_rights = move.en_passant_rights;
+
+    // Zobrist: add new en passant (if any)
+    if (this->game_board.en_passant_rights) {
+        int new_ep_sq   = utility::bit::bitboard_to_lowest_square(this->game_board.en_passant_rights);
+        int new_ep_file = new_ep_sq & 7;
+        game_board.zobrist_key ^= zobrist_enpassant[new_ep_file];
+    }
+
+
     
     // Manage castling rights
-    uint8_t castle_opp = (this->game_board.black_castle_rights << 2) | this->game_board.white_castle_rights;
-    this->castle_opportunity_history.push(castle_opp);
+    uint8_t castle_rights = (this->game_board.black_castle_rights << 2) | this->game_board.white_castle_rights;
+    this->castle_opportunity_history.push(castle_rights);
     
-    // Manage castling status
     this->game_board.black_castle_rights &= move.black_castle_rights;
     this->game_board.white_castle_rights &= move.white_castle_rights;
 
+    uint8_t castle_new = (this->game_board.black_castle_rights << 2) | this->game_board.white_castle_rights;
+
+    // Zobrist castle rights
+    if (castle_new != castle_rights)
+    {
+        game_board.zobrist_key ^= zobrist_castling[castle_rights];
+        game_board.zobrist_key ^= zobrist_castling[castle_new];
+    }
+
+    // ---- Zobrist update for the rook hop in castling ----
+    // (has to happen after updating the castle rights, just above)
     if (move.is_castle_move) {
-             // ---- Zobrist update for the rook hop in castling ----
         // King squares were already XORed earlier in pushMove(), so we ONLY fix the rook here.
-        // index into zobrist_piece_square is (piece_type + color*6)
         assert(rook_from_sq >= 0 && rook_to_sq >= 0);
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_from_sq);
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_to_sq);
@@ -399,6 +425,8 @@ void Engine::pushMove(const Move& move) {
 
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+//
 // undos last move, errors if no move was made before
 // NOTE: Ummm, how does it return an error?
 // 
@@ -411,13 +439,44 @@ void Engine::popMove() {
     this->move_history.pop();
 
     // pop enpassent rights off the top of the stack
-    this->game_board.en_passant = this->en_passant_history.top();
+
+    // --- undo zobrist for en passant rights ---
+    // 1. XOR out the current en passant (the one set by the move we're undoing)
+    if (this->game_board.en_passant_rights) {
+        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square(this->game_board.en_passant_rights);
+        int cur_ep_file = cur_ep_sq & 7;
+        game_board.zobrist_key ^= zobrist_enpassant[cur_ep_file];
+    }
+
+    // 2. Peek at the previous en passant square from history (do NOT pop yet)
+    ull prev_ep_bb = this->en_passant_history.top();
+    if (prev_ep_bb) {
+        int prev_ep_sq   = utility::bit::bitboard_to_lowest_square(prev_ep_bb);
+        int prev_ep_file = prev_ep_sq & 7;
+        game_board.zobrist_key ^= zobrist_enpassant[prev_ep_file];
+    }
+
+    // 3. Now actually restore en_passant_rights and pop the stack
+    this->game_board.en_passant_rights = this->en_passant_history.top();
     this->en_passant_history.pop();
-    
+
+    // Zobrist undo for castling rights
+    uint8_t castle_current =
+        (this->game_board.black_castle_rights << 2) |
+        this->game_board.white_castle_rights;          // rights AFTER the move (what the board has now)
+    uint8_t castle_prev = this->castle_opportunity_history.top();  // rights BEFORE the move (what we saved in push)
+
+    if (castle_current != castle_prev)
+    {
+        game_board.zobrist_key ^= zobrist_castling[castle_current]; // xor OUT current rights
+        game_board.zobrist_key ^= zobrist_castling[castle_prev];    // xor IN previous rights
+    }
+
     // pop castle rights off the top of the stack (after merging)
     this->game_board.black_castle_rights = this->castle_opportunity_history.top() >> 2;      // shift 
     this->game_board.white_castle_rights = this->castle_opportunity_history.top() & 0b0011;  // remove black castle bits
     
+
     // pop castle opportunity history
     this->castle_opportunity_history.pop();
 
@@ -467,7 +526,7 @@ void Engine::popMove() {
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, target_pawn_square);
           
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
-     
+    
         } else {
 
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
@@ -484,7 +543,7 @@ void Engine::popMove() {
         // get pointer to the rook? Which rook?
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         // ! Bet we can make this part of push a func and do something fancy with to and from
-        // TODO at least keep standard with push implimentation.
+        //  at least keep standard with push implimentation.
 
         // NOTE: the castles move has not been popped yet
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
@@ -522,6 +581,7 @@ void Engine::popMove() {
             assert(0);
         }
 
+        // Put the rook back (in the Zobrist)
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_from_sq);
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_to_sq);
 
@@ -573,7 +633,7 @@ ull& Engine::access_pieces_of_color(Piece piece, Color color) {
 
 
 void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color
-    , bool capture, bool promotion, ull en_passant, bool is_en_passent_capture, bool is_castle) {
+    , bool capture, bool promotion, ull en_passant_rights, bool is_en_passent_capture, bool is_castle) {
 
     // code to actually pop all the potential squares and add them as moves
     while (bitboard_to) {
@@ -594,7 +654,7 @@ void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, u
         new_move.from = single_bitboard_from;
         new_move.to = single_bitboard_to;
         new_move.capture = piece_captured;
-        new_move.en_passant = en_passant;
+        new_move.en_passant_rights = en_passant_rights;
         new_move.is_en_passent_capture = is_en_passent_capture;
         new_move.is_castle_move = is_castle;
 
@@ -703,7 +763,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         // TODO improvement here, cause we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
         //      of code here to get the speed upgrade. Works fine as is
 
-        ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant;
+        ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant_rights;
         if (enpassant_end_location) {
 
             // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
@@ -1145,7 +1205,17 @@ char Engine::file_from_move(const Move& m)
 }
 
 
-
+void Engine::debug_print_repetition_table() const {
+    std::cout << "=== repetition_table dump ===\n";
+    for (const auto& entry : repetition_table) {
+        uint64_t key   = entry.first;
+        int      count = entry.second;
+        std::cout << "key 0x" << std::hex << key
+                  << "  count " << std::dec << count
+                  << "\n";
+    }
+    std::cout << "=== end dump (" << repetition_table.size() << " entries) ===\n";
+}
 
 void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 {
@@ -1331,7 +1401,7 @@ bool Engine::flip_a_coin(void) {
 
 //     new_move.capture = Piece::PAWN;
 
-//     new_move.en_passant = 1;
+//     new_move.en_passant_rights = 1;
 //     new_move.is_en_passent_capture = true;
 
 //     new_move.color = color;

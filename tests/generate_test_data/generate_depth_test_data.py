@@ -6,7 +6,7 @@ import time
 # Treat as BFS problem
 def generateMoveTestDataFileSpeedEfficient(base_board, depth, out_file):
     with open(out_file, 'w+') as file:
-        file.write('Starting Fen: {}\n'.format(base_board.fen(en_passant="fen")))
+        file.write('Starting Fen: {}\n'.format(base_board.fen(en_passant_rights="fen")))
 
         curr_depth = 0
         curr_board_queue = [base_board]
@@ -17,7 +17,7 @@ def generateMoveTestDataFileSpeedEfficient(base_board, depth, out_file):
                 for move in curr_board.legal_moves:
                     curr_board.push(move)
                     if curr_depth == depth - 1:
-                        file.write(curr_board.fen(en_passant="fen") + '\n')
+                        file.write(curr_board.fen(en_passant_rights="fen") + '\n')
                     if curr_depth + 1 < depth:
                         child_board_queue.append(curr_board.copy(stack=0))
                     curr_board.pop()
@@ -53,7 +53,7 @@ def generateMoveTestDataFileMemEfficient(board, depth, out_file):
         for board_generator in legal_board_generators_by_depth:
             file.write('DEPTH: ' + str(curr_depth) + '\n')
             for board in board_generator:
-                file.write(board.fen(en_passant="fen") + '\n')
+                file.write(board.fen(en_passant_rights="fen") + '\n')
             curr_depth+=1
 
 

@@ -48,7 +48,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard(), test_engine.game_board);
 
     auto temp_move_0 = (Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
-    temp_move_0.en_passant = 1ULL<<19;
+    temp_move_0.en_passant_rights = 1ULL<<19;
     test_engine.pushMove(temp_move_0);
     EXPECT_EQ(GameBoard("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"), test_engine.game_board);
 
@@ -60,7 +60,7 @@ TEST(EngineMoveStorage, PushingMoves) {
     EXPECT_EQ(GameBoard("rnbqkb1r/pppppppp/5n2/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2"), test_engine.game_board);
 
     auto temp_move_1 = Move{BLACK, PAWN, 1ULL<<52, 1ULL<<36};
-    temp_move_1.en_passant = 1ULL<<44;
+    temp_move_1.en_passant_rights = 1ULL<<44;
     test_engine.pushMove(temp_move_1);
     EXPECT_EQ(GameBoard("rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"), test_engine.game_board);
     
@@ -156,7 +156,7 @@ TEST(EngineMoveStorage, PushPopMini) {
     std::stack<GameBoard> expected_game_history;
 
     auto temp_move_0 = (Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
-    temp_move_0.en_passant = 1ULL<<19;
+    temp_move_0.en_passant_rights = 1ULL<<19;
     test_engine.pushMove(temp_move_0);
     expected_game_history.emplace("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
     EXPECT_EQ(expected_game_history.top(), test_engine.game_board);
@@ -208,7 +208,7 @@ TEST(EngineMoveStorage, PoppingMoves) {
     std::stack<GameBoard> expected_game_history;
 
     auto temp_move_0 = (Move{WHITE, PAWN, 1ULL<<11, 1ULL<<27});
-    temp_move_0.en_passant = 1ULL<<19;
+    temp_move_0.en_passant_rights = 1ULL<<19;
     test_engine.pushMove(temp_move_0);
     expected_game_history.emplace("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
 
@@ -219,7 +219,7 @@ TEST(EngineMoveStorage, PoppingMoves) {
     expected_game_history.emplace("rnbqkb1r/pppppppp/5n2/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2");
 
     auto temp_move_1 = Move{BLACK, PAWN, 1ULL<<52, 1ULL<<36};
-    temp_move_1.en_passant = 1ULL<<44;
+    temp_move_1.en_passant_rights = 1ULL<<44;
     test_engine.pushMove(temp_move_1);
     expected_game_history.emplace("rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3");
     

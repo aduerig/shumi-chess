@@ -284,7 +284,7 @@ def output_fens_depth_1(button_obj):
             print(f'Tried to make move: {from_acn} to {to_acn}')
             return
         python_chess_engine_board.push_san(from_acn + to_acn)
-        python_fens.append(python_chess_engine_board.fen(en_passant="fen"))
+        python_fens.append(python_chess_engine_board.fen(en_passant_rights="fen"))
         python_chess_engine_board.pop()
 
     legal_moves = engine_communicator.get_legal_moves()

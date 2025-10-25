@@ -97,11 +97,7 @@ public:
                                 const std::vector<ShumiChess::Move>& moves,
                                 bool in_Check
                             );
-
-
-    void clear_stats_file(const char* path, FILE*& fp);
-
-
+               
     void print_moves_to_print_tree(std::vector<ShumiChess::Move> mvs, int depth, char* szHeader, char* szTrailer);
 
 

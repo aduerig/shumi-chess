@@ -95,7 +95,7 @@ r1bq1rk1/pppp2pn/2n1p2p/4Pp2/2PP4/2BB4/PPQ2PPP/R3K1NR w KQ f6 0 10
 late middlegames
 =================
 
-// Halowween gambit (after Nxe5)
+// Halloween gambit (after Nxe5)
 r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4
 
 1r1q1r2/p4kpp/3p1n2/5pB1/8/3P2P1/P3PPKP/R2Q1R2 w - - 1 18
