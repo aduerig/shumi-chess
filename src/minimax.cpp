@@ -100,6 +100,10 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     engine.repetition_table.clear();
     //repetition_table.reserve(128);
+    
+    // add the current position
+    uint64_t key_now = engine.game_board.zobrist_key;
+    engine.repetition_table[key_now] = 1;
 
     // Open a file for debug writing
     #ifdef _DEBUGGING_TO_FILE
@@ -402,7 +406,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
 
-    this_depth =6;        // Note: because i said so.
+    this_depth =7;        // Note: because i said so.
     maximum_depth = this_depth;
 
     int now_s;
@@ -729,21 +733,9 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(
         // return final_result;
         return {d_best_score, the_best_move};
 
-        // repetition draw check
-        // {
-        //     auto it = engine.repetition_table.find(engine.game_board.zobrist_key);
-        //     if (it != engine.repetition_table.end()) {
-        //         assert(0);
-        //         if (it->second >= 2) {
-        //             // We've seen this exact position (same zobrist) at least twice already
-        //             // along the current line. That means we are in a repetition loop.
-        //             assert(0);
-        //             return {d_best_score, the_best_move};
-        //         }
-        //     }
-        // }
-
     }
+
+
 
     // =====================================================================
     // Hard node-limit sentinel fuse colorize(AColor::BRIGHT_CYAN,

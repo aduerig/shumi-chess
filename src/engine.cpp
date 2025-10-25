@@ -19,6 +19,9 @@ char szValue[256];   // Note: make me go away
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define THREE_TIME_REP           // I should always be defined
+
+
 using namespace std;
 
 namespace ShumiChess {
@@ -243,7 +246,26 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
         //  After fifty "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;
         return GameState::DRAW;
+
+    } else {
+        // Three move repetition draw
+        #ifdef THREE_TIME_REP
+            auto it = repetition_table.find(game_board.zobrist_key);
+            if (it != repetition_table.end()) {
+                //assert(0);
+                if (it->second >= 3) {
+                    // We've seen this exact position (same zobrist) at least twice already
+                    // along the current line. That means we are in a repetition loop.
+                    //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
+                    //assert(0);
+                    return GameState::DRAW;
+                }
+            }
+        #endif
     }
+
+
+
     return GameState::INPROGRESS;
 }
 
@@ -252,6 +274,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 // takes a move, but tracks it so pop() can undo
 void Engine::pushMove(const Move& move) {
 
+    // Used for castling only
     int rook_from_sq = -1;
     int rook_to_sq = -1;
 
