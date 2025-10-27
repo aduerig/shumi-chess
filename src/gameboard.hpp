@@ -185,6 +185,10 @@ class GameBoard {
         int count_isolated_pawns(Color c) const;
         int count_passed_pawns(Color c);
 
+        int get_king_near_squares(Color defender_color, int king_near_squares_out[9]) const;
+        int sliders_and_knights_attacking_square(Color attacker_color, int sq);
+        int attackers_on_enemy_king_near(Color attacker_color);
+
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1);
 

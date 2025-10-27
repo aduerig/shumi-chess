@@ -39,8 +39,8 @@ public:
     int nodes_visited = 0;
     int evals_visited = 0;
     
-    int top_depth = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
-    int maximum_depth = 0;
+    int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
+    int maximum_deepening = 0;
 
     static constexpr int MAX_PLY_PV = 256;
     array<ShumiChess::Move, MAX_PLY_PV> prev_root_best_{};   
@@ -58,13 +58,24 @@ public:
     ~MinimaxAI();
 
     int cp_score_positional_get_opening(ShumiChess::Color color); 
-    int cp_score_positional_get_middle(ShumiChess::Color color); 
+    int cp_score_positional_get_middle(ShumiChess::Color color, int nPly); 
     int cp_score_positional_get_end(ShumiChess::Color color); 
 
-    double evaluate_board(ShumiChess::Color for_color, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
+    double evaluate_board(ShumiChess::Color for_color, int nPly, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
 
     void do_a_deepening();
+    int g_iMove = 0;
+
+    struct TTEntry
+    {
+        int score_cp;            // evaluation in centipawns
+        ShumiChess::Move movee;  // best move found for this position
+    };
+
+    std::unordered_map<uint64_t, std::unordered_map<int, TTEntry>> transposition_table;
+   //std::unordered_map<uint64_t, std::unordered_map<int,int>> transposition_table;
+
 
     ShumiChess::Move get_move_iterative_deepening(double);
 
@@ -75,11 +86,7 @@ public:
                                             , const ShumiChess::Move& move_last
                                             , int nPly);
 
-    ShumiChess::GameState draw_by_repetition() const;
-    ShumiChess::GameState draw_by_twofold() const;
     bool look_for_king_moves() const;
-    bool has_repeated_move() const;
-    bool alternating_repeat_prefix_exact(int pairs) const;
 
     // oLD CHESS engine
     double get_value(int depth, int color_multiplier, double alpha, double beta);
@@ -95,7 +102,9 @@ public:
     std::tuple<double, ShumiChess::Move>
     best_move_static(ShumiChess::Color color,
                                 const std::vector<ShumiChess::Move>& moves,
-                                bool in_Check
+                                int nPly,
+                                bool in_Check,
+                                int depth
                             );
                
     void print_moves_to_print_tree(std::vector<ShumiChess::Move> mvs, int depth, char* szHeader, char* szTrailer);

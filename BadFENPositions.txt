@@ -61,9 +61,9 @@ r1bq1rk1/pp3npp/2pp1p2/8/4PP2/2NQB3/PPP3PP/3R1R1K w - - 4 17
 
 // Long term level 7 games
 Current FEN: rnbq1rk1/ppp3pp/1n2pp2/3pP3/1bPP4/2N2NB1/PP3PPP/R2QKB1R w KQ d6 0 9
+rnb1k2r/pp1pbppp/2p1pn2/q7/2PPP3/2N2P2/PP1B2PP/R2QKBNR w KQkq - 3 7
 
-// two rooks endgame (good start position)
-Current FEN: rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
+r1br2k1/ppqp1ppp/2p2n2/2b1p3/3nP3/1BNPBN1P/PPP2PP1/R2QR1K1 w - - 5 12
 
 
 
@@ -107,6 +107,11 @@ r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4
 
 endgames
 ========
+
+
+// two rooks endgame (good start position)
+Current FEN: rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
+
 
 Fen is now 8/p1r1k3/8/8/8/3K4/5RP1/8 w KQkq - 1 1            // endgame lab1 : rook and single pawmn endgame
 

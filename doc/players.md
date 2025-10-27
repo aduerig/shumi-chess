@@ -16,3 +16,5 @@ The uncle is even faster, about 350,000 nodes per second on my laptop. Uncle shu
 
 
 * "Brother shumi" is significantly faster, using "quiescence delta pruning", and "depth==0" does not force non-queen promotions in reduce_to_unquiet_moves_MVV_LVA(). Brother shumi realized through testing that 85% of all nodes are in "quiescence", or "depth==0" territory, so speedups are there. Also, the brother has a better understanding of passed pawns: brother shumi believes passed pawns should be pushed. Tried "FAST_EVALUATIONS", but no help in speed, so didnt do it. 
+
+* "Sister shumi" uses a transposition table to screen repeats, but does not seem much faster. Sister shumi does attack squares near the king, after the opening. Three time rep now operational.

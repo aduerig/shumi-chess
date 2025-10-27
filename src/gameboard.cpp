@@ -663,5 +663,252 @@ int GameBoard::count_passed_pawns(Color c)
 }
 
 
+// Fills an array of up to 9 squares around the king (including the king square).
+// Returns how many valid squares were written.
+// king_near_squares_out[i] are square indices 0..63.
+int GameBoard::get_king_near_squares(Color defender_color, int king_near_squares_out[9]) const
+{
+    int count = 0;
+
+    // find king square for defender_color
+    ull kbb = (defender_color == Color::WHITE) ? white_king : black_king;
+    assert(kbb != 0ULL);
+    ull tmp = kbb;
+    int king_sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
+
+    int king_row = king_sq / 8;
+    int king_col = king_sq % 8;
+
+    // collect king square and all neighbors in a 3x3 box
+    for (int dr = -1; dr <= 1; ++dr) {
+        for (int dc = -1; dc <= 1; dc++) {
+            int r = king_row + dr;
+            int c = king_col + dc;
+            if (r < 0 || r > 7 || c < 0 || c > 7)
+                continue;
+            king_near_squares_out[count++] = r * 8 + c;
+        }
+    }
+
+    return count;
+}
+
+int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq)
+{
+    // occupancy of all pieces on board
+    ull occ =
+        white_pawns   | white_knights | white_bishops | white_rooks |
+        white_queens  | white_king    |
+        black_pawns   | black_knights | black_bishops | black_rooks |
+        black_queens  | black_king;
+
+    // -----------------------
+    // Knights
+    // -----------------------
+    ull knight_attackers =
+        tables::movegen::knight_attack_table[sq] &
+        get_pieces_template<Piece::KNIGHT>(attacker_color);
+
+    // -----------------------
+    // Bishops / Queens on diagonals
+    // -----------------------
+    ull diag_attackers = 0ULL;
+    {
+        ull bishops = get_pieces_template<Piece::BISHOP>(attacker_color);
+        ull queens  = get_pieces_template<Piece::QUEEN >(attacker_color);
+
+        int r0 = sq / 8;
+        int c0 = sq % 8;
+
+        // NE (+1,+1)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                r += 1;
+                c += 1;
+                if (r > 7 || c > 7) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & bishops) || (bb & queens) ) {
+                        diag_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // NW (+1,-1)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                r += 1;
+                c -= 1;
+                if (r > 7 || c < 0) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & bishops) || (bb & queens) ) {
+                        diag_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // SE (-1,+1)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                r -= 1;
+                c += 1;
+                if (r < 0 || c > 7) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & bishops) || (bb & queens) ) {
+                        diag_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // SW (-1,-1)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                r -= 1;
+                c -= 1;
+                if (r < 0 || c < 0) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & bishops) || (bb & queens) ) {
+                        diag_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // -----------------------
+    // Rooks / Queens on ranks/files
+    // -----------------------
+    ull ortho_attackers = 0ULL;
+    {
+        ull rooks  = get_pieces_template<Piece::ROOK >(attacker_color);
+        ull queens = get_pieces_template<Piece::QUEEN>(attacker_color);
+
+        int r0 = sq / 8;
+        int c0 = sq % 8;
+
+        // North (+1,0)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                r += 1;
+                if (r > 7) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & rooks) || (bb & queens) ) {
+                        ortho_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // South (-1,0)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                r -= 1;
+                if (r < 0) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & rooks) || (bb & queens) ) {
+                        ortho_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // East (0,+1)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                c += 1;
+                if (c > 7) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & rooks) || (bb & queens) ) {
+                        ortho_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // West (0,-1)
+        {
+            int r = r0;
+            int c = c0;
+            while (true) {
+                c -= 1;
+                if (c < 0) break;
+                int s2 = r * 8 + c;
+                ull bb = 1ULL << s2;
+                if (occ & bb) {
+                    if ( (bb & rooks) || (bb & queens) ) {
+                        ortho_attackers |= bb;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // Combine everyone
+    ull any_attackers = knight_attackers | diag_attackers | ortho_attackers;
+
+    // Return number of attackers
+    return bits_in(any_attackers);
+}
+
+
+int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
+{
+    // enemy (the one whose king we are surrounding)
+    Color defender_color =
+        (attacker_color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+    // grab up to 9 squares around defender's king
+    int king_near_squares[9];
+    int count = get_king_near_squares(defender_color, king_near_squares);
+
+    int total = 0;
+
+    for (int i = 0; i < count; ++i) {
+        int sq = king_near_squares[i];
+        total += sliders_and_knights_attacking_square(attacker_color, sq);
+    }
+
+    return total;
+}
+
+
 
 } // end namespace ShumiChess
