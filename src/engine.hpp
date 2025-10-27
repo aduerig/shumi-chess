@@ -189,7 +189,26 @@ class Engine {
         vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves);
 
 
-        int mvv_lva_key(const ShumiChess::Move& m);
+        //int mvv_lva_key(const ShumiChess::Move& m);
+        // MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
+        // biggest victim with the smallest attacker.
+        inline int Engine::mvv_lva_key(const Move& m) {
+            if (m.capture == ShumiChess::Piece::NONE) assert(0);    // non-captures (shouldn't be in quiescence list)
+            int victim  = game_board.centipawn_score_of(m.capture);
+            int attacker= game_board.centipawn_score_of(m.piece_type);
+
+            // Victim dominates (shift by a few bits, note: a few?, 10?), attacker is a tiebreaker penalty
+            int key = (victim << 10) - attacker;
+
+            // Promotions: capturing + promoting should go even earlier
+            if (m.promotion != ShumiChess::Piece::NONE) {
+                key += game_board.centipawn_score_of(m.promotion) - game_board.centipawn_score_of(ShumiChess::Piece::PAWN);
+            }
+
+            // En passant: treat as a pawn capture
+            // (no extra handling needed if m.capture == Piece::PAWN is already set for EP)
+            return key;
+        }
 
         bool flip_a_coin(void);
 

@@ -105,6 +105,15 @@ r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4
 // test of trades? (take away white rooks see if the blocks with queen
 1r3r2/p2q1kpp/3p1n2/5pB1/8/3P2P1/P1Q1PPKP/R4R2 w - - 3 19
 
+
+r1bq1rk1/p2p1ppp/2p2nn1/8/1b2P3/2NB1N2/PP1B1PPP/R2QK2R w KQ - 7 11
+
+Fen is now r4rk1/pb1p1ppp/1qpb1nn1/8/4P3/P1NB1N2/1P1B1PPP/2RQ1RK1 w - - 5 14
+Fen is now rr5k/1b2qppp/3p1nn1/P1p5/4P3/P2B1N2/2RBQPPP/4R1K1 w - - 4 22
+
+// Test rooks doubled on 7th rank
+Fen is now r2r3k/1R4pp/4R3/2p2p2/8/5P2/3B1P1P/6K1 w - - 3 33
+
 endgames
 ========
 

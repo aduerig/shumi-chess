@@ -345,19 +345,6 @@ int GameBoard::get_material_for_color(Color color1) {
 }
 
 
-// Total of 4000 centipawns for each side.
-int GameBoard::centipawn_score_of(ShumiChess::Piece p) const {
-    switch (p) {
-        case ShumiChess::Piece::PAWN:   return 100;
-        case ShumiChess::Piece::KNIGHT: return 320;
-        case ShumiChess::Piece::BISHOP: return 330;
-        case ShumiChess::Piece::ROOK:   return 500;
-        case ShumiChess::Piece::QUEEN:  return 900;
-        case ShumiChess::Piece::KING:   return 0;   // king is infinite in theory; keep 0 for material sums
-        default:                        {assert(0);return 0;}
-    }
-}
-
 
 int GameBoard::bits_in(ull bitboard) const {
     auto bs = bitset<64>(bitboard);

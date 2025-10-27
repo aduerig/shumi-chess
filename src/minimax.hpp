@@ -64,17 +64,27 @@ public:
     double evaluate_board(ShumiChess::Color for_color, int nPly, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
 
+    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth);
     void do_a_deepening();
     int g_iMove = 0;
 
-    struct TTEntry
-    {
-        int score_cp;            // evaluation in centipawns
-        ShumiChess::Move movee;  // best move found for this position
+    // struct TTEntry
+    // {
+    //     int score_cp;            // evaluation in centipawns
+    //     ShumiChess::Move movee;  // best move found for this position
+    // };
+
+    // std::unordered_map<uint64_t, std::unordered_map<int, TTEntry>> transposition_table;
+
+    struct TTEntry {
+        int score_cp;
+        ShumiChess::Move movee;
+        int depth;
     };
 
-    std::unordered_map<uint64_t, std::unordered_map<int, TTEntry>> transposition_table;
-   //std::unordered_map<uint64_t, std::unordered_map<int,int>> transposition_table;
+    std::unordered_map<uint64_t, TTEntry> transposition_table;
+
+
 
 
     ShumiChess::Move get_move_iterative_deepening(double);
