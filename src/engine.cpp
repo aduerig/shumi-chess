@@ -55,7 +55,9 @@ void Engine::reset_engine() {
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
-    //game_board = GameBoard("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
+    //game_board = GameBoard("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
+    game_board = GameBoard("rnbqkb1r/pppp1ppp/4pn2/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 1 3");
+    
     game_board = GameBoard();
 
     // ! is reinitalize these stacks the right way to clear the previous entries?
@@ -613,6 +615,138 @@ void Engine::popMove() {
 
 }
 
+
+// ---------------------------------------------------------------------------
+// Fast push: inverse of popMoveFast()
+// Same as pushMove(), except no updates to castling, Zobrist, en passant, clocks, repetition, etc.
+// Designed for use to look for check. We really on the rest of the engine to prevent 
+// pushMoveFast() from seeing a position that castles into check.
+// ---------------------------------------------------------------------------
+
+void Engine::pushMoveFast(const Move& move)
+{
+    assert(move.piece_type != Piece::NONE);
+
+    // Use the same move_history as regular push
+    move_history.push(move);
+
+    // Flip side to move
+    game_board.turn = utility::representation::opposite_color(move.color);
+
+    ull from_mask = move.from;
+    ull to_mask   = move.to;
+
+    // --- 1. Remove moving piece from origin ---
+    ull& src_bb = access_pieces_of_color(move.piece_type, move.color);
+    src_bb &= ~from_mask;
+
+    // --- 2. Handle captures ---
+    if (move.capture != Piece::NONE)
+    {
+        ull& cap_bb = access_pieces_of_color(
+            move.capture,
+            utility::representation::opposite_color(move.color));
+
+        if (move.is_en_passent_capture)
+        {
+            ull behind_mask = (move.color == Color::WHITE)
+                                ? (to_mask >> 8)
+                                : (to_mask << 8);
+            cap_bb &= ~behind_mask;
+        }
+        else
+        {
+            cap_bb &= ~to_mask;
+        }
+    }
+
+    // --- 3. Handle promotion or normal placement ---
+    if (move.promotion != Piece::NONE)
+    {
+        ull& promo_bb = access_pieces_of_color(move.promotion, move.color);
+        promo_bb |= to_mask;
+    }
+    else
+    {
+        src_bb |= to_mask;
+    }
+
+    // --- 4. Castling should never occur in fast path ---
+    if (move.is_castle_move)
+    {
+        assert(0 && "pushMoveFast(): castling should never appear in fast path");
+    }
+
+    // No zobrist, no repetition, no rights, no clocks, etc.
+}
+
+// ---------------------------------------------------------------------------
+// Fast pop: inverse of pushMoveFast()
+//   - Undoes bitboard changes made by the last pushMoveFast()
+// Designed for use to look for check. We really on the rest of the engine to prevent 
+// pushMoveFast() from seeing a position that castles into check.
+// ---------------------------------------------------------------------------
+void Engine::popMoveFast()
+{
+    assert(!move_history.empty());
+    Move move = move_history.top();
+    move_history.pop();
+
+    // Flip side back
+    game_board.turn = move.color;
+
+    ull from_mask = move.from;
+    ull to_mask   = move.to;
+
+    // --- 1. Undo promotion or normal move ---
+    if (move.promotion != Piece::NONE)
+    {
+        ull& promo_bb = access_pieces_of_color(move.promotion, move.color);
+        promo_bb &= ~to_mask;
+
+        ull& pawn_bb = access_pieces_of_color(Piece::PAWN, move.color);
+        pawn_bb |= from_mask;
+    }
+    else
+    {
+        ull& piece_bb = access_pieces_of_color(move.piece_type, move.color);
+        piece_bb &= ~to_mask;
+        piece_bb |= from_mask;
+    }
+
+    // --- 2. Restore captured piece, if any ---
+    if (move.capture != Piece::NONE)
+    {
+        ull& cap_bb = access_pieces_of_color(
+            move.capture,
+            utility::representation::opposite_color(move.color));
+
+        if (move.is_en_passent_capture)
+        {
+            ull behind_mask = (move.color == Color::WHITE)
+                                ? (to_mask >> 8)
+                                : (to_mask << 8);
+            cap_bb |= behind_mask;
+        }
+        else
+        {
+            cap_bb |= to_mask;
+        }
+    }
+
+    // --- 3. Castling should never occur in fast path ---
+    if (move.is_castle_move)
+    {
+        assert(0 && "popMoveFast(): castling should never appear in fast path");
+    }
+
+    // No zobrist, no repetition, no rights, no clocks, etc.
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 ull& Engine::access_pieces_of_color(Piece piece, Color color) {
     switch (piece)
@@ -1228,6 +1362,15 @@ char Engine::file_from_move(const Move& m)
 }
 
 
+void Engine::setNextMovesDeepening() {
+    user_requested_next_move_deepening++;
+    if (user_requested_next_move_deepening > 10) {
+        user_requested_next_move_deepening = 7;
+    }
+    cout << "\x1b[31m nextMove->\x1b[0m" << user_requested_next_move_deepening << "\x1b[31m<-nextMove \x1b[0m" << endl;
+}
+
+
 void Engine::debug_print_repetition_table() const {
     std::cout << "=== repetition_table dump ===\n";
     for (const auto& entry : repetition_table) {
@@ -1374,7 +1517,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<Sh
             } else {
                 assert (mv.promotion != Piece::NONE);
 
-                if (mv.promotion != Piece::QUEEN)
+                if (mv.promotion != Piece::QUEEN)    // DO NOT push up in the list non queen promotions.
                     continue;
                 else
                     vReturn.push_back(mv);

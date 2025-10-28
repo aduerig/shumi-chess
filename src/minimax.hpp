@@ -64,9 +64,8 @@ public:
     double evaluate_board(ShumiChess::Color for_color, int nPly, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
 
-    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth);
+    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys);
     void do_a_deepening();
-    int g_iMove = 0;
 
     // struct TTEntry
     // {
@@ -94,7 +93,7 @@ public:
                                             //, unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
                                             //, MoveAndScoreList& move_and_scores_list
                                             , const ShumiChess::Move& move_last
-                                            , int nPly);
+                                            , int nPlys);
 
     bool look_for_king_moves() const;
 

@@ -179,6 +179,11 @@ class GameBoard {
         // bool knights_centerness(Color c, double& centerness) const;
         // bool bishops_centerness(Color c, double& centerness) const;
 
+        int bishop_pawn_pattern(Color color);       // Stupid bishop blocking pawn
+        int queen_still_home(Color color);          // Stupid queen move too early
+
+        bool is_king_in_check_new(Color color);
+
         bool rook_connectiveness(Color c, int& connectiveness) const;
         int rook_file_status(Color c) const;
         int rook_7th_rankness(Color c) const;
@@ -186,6 +191,7 @@ class GameBoard {
         int count_passed_pawns(Color c);
 
         int get_king_near_squares(Color defender_color, int king_near_squares_out[9]) const;
+        int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
         int attackers_on_enemy_king_near(Color attacker_color);
 

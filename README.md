@@ -20,7 +20,6 @@ This project is a hobby C++ engine written by OhMesch and ADuerig, and later ref
 
 This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering (at root). 
 
-**OLDER COMMENT**
 See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence".
 
 ## todo
@@ -31,8 +30,8 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
     All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown)
   ~~Crossed out~~ items are done, but under testing.
 
-  * Bug: Moveing Thread hangs after 15 moves or so. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. So what.
-  * Bug: crashes at 3 time rep? AT leasst at some of them. Oh well.
+  * Bug: 
+  ~~* Bug: Moveing Thread hangs after 15 moves or so. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. So what.~~
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * ~~Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. Wrong. uses the zobrist.~~ 
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. 

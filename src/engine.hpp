@@ -52,6 +52,10 @@ class Engine {
 
         void pushMove(const Move&);
         void popMove();
+
+        // Same as above, Omits castling, zobrist, history stacks, halfmove/fullmove counters, repetition, etc.
+        void pushMoveFast(const Move&);
+        void popMoveFast();
         
         GameState game_over();
         GameState game_over(vector<Move>&);
@@ -172,6 +176,9 @@ class Engine {
         char file_to_move(const Move& m);
         char rank_to_move(const Move& m);
 
+        void setNextMovesDeepening();
+        int user_requested_next_move_deepening = 7;
+
 
         void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
@@ -216,6 +223,8 @@ class Engine {
         //ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
     
         std::unordered_map<uint64_t, int> repetition_table;
+
+        int g_iMove = 0;       // real moves in whole game
 
         void debug_print_repetition_table() const;
 

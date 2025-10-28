@@ -176,30 +176,30 @@ def clicked_pop_button(button_obj):
     global game_state_might_change, last_move_indicator, ai_is_thinking, player_index, acn_focused, avail_moves
     
     # If AI is thinking, cancel it.
-    if ai_is_thinking:
-        print("Pop called during AI turn, cancelling computation.")
-        ai_is_thinking = False
-        # Clear the queue
-        while not ai_move_queue.empty():
-            try:
-                ai_move_queue.get_nowait()
-            except queue.Empty:
-                break
+    #if ai_is_thinking:
+    #    print("Pop called during AI turn, cancelling computation.")
+    #    ai_is_thinking = False
+    #    # Clear the queue
+    #    while not ai_move_queue.empty():
+    #        try:
+    #            ai_move_queue.get_nowait()
+    #        except queue.Empty:
+    #            break
     
     engine_communicator.pop()
     
     # A pop reverts the turn, so we must revert our player index tracker
-    player_index = 1 - player_index
+    # player_index = 1 - player_index
     
-    game_state_might_change = True
-    undraw_pieces()
-    render_all_pieces_and_assign(board)
-    acn_focused = None
-    avail_moves = []
-    # Remove the last move indicator since the move was undone
-    if last_move_indicator:
-        last_move_indicator.undraw()
-        last_move_indicator = None
+    # game_state_might_change = True
+    # undraw_pieces()
+    # render_all_pieces_and_assign(board)
+    # acn_focused = None
+    # avail_moves = []
+    # # Remove the last move indicator since the move was undone
+    # if last_move_indicator:
+    #     last_move_indicator.undraw()
+    #     last_move_indicator = None
 
 
 def get_next_player(player_name: str) -> str:

@@ -372,6 +372,74 @@ void GameBoard::king_castle_happiness(Color c, int& centerness) const {
     return;
 }
 
+int GameBoard::queen_still_home(Color color)
+{
+    // h1 = 0 indexing:
+    // d1 = 4
+    // d8 = 60
+    const int sq_d1 = 4;
+    const int sq_d8 = 60;
+
+    if (color == Color::WHITE)
+    {
+        // Is there still a white queen on d1?
+        ull mask = (1ULL << sq_d1);
+
+        // Return 1 if queen hasn't moved (still on d1),
+        // 0 if it has moved off d1.
+        return (white_queens & mask) ? 1 : 0;
+    }
+    else // BLACK
+    {
+        // Is there still a black queen on d8?
+        ull mask = (1ULL << sq_d8);
+
+        return (black_queens & mask) ? 1 : 0;
+    }
+}
+
+
+// Stupid bishop blocking pawn
+int GameBoard::bishop_pawn_pattern(Color color)
+{
+    // h1 = 0 indexing:
+    // d2 = 12
+    // d3 = 20
+    // d6 = 44
+    // d7 = 52
+    const int sq_d2 = 12;
+    const int sq_d3 = 20;
+    const int sq_d6 = 44;
+    const int sq_d7 = 52;
+
+    if (color == Color::WHITE)
+    {
+        // White: bishop on d3, pawn on d2
+        ull bishop_mask = (1ULL << sq_d3);
+        ull pawn_mask   = (1ULL << sq_d2);
+
+        if ( (white_bishops & bishop_mask) &&
+             (white_pawns   & pawn_mask) )
+        {
+            return 1;
+        }
+    }
+    else // color == BLACK
+    {
+        // Black: bishop on d6, pawn on d7
+        ull bishop_mask = (1ULL << sq_d6);
+        ull pawn_mask   = (1ULL << sq_d7);
+
+        if ( (black_bishops & bishop_mask) &&
+             (black_pawns   & pawn_mask) )
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 
 int GameBoard::pawns_attacking_square(Color c, int sq)
 {
@@ -409,17 +477,17 @@ int GameBoard::knights_attacking_square(Color c, int sq)
     return bits_in(targets & knights);  // count the 1-bits
 }
 
-int GameBoard::knights_attacking_center_squares(Color for_color)
+int GameBoard::knights_attacking_center_squares(Color c)
 {
     int square_e4 = 27;
     int square_d4 = 28;
     int square_e5 = 35;
     int square_d5 = 36;
     int itemp = 0;
-    itemp += knights_attacking_square(for_color, square_e4);
-    itemp += knights_attacking_square(for_color, square_d4);
-    itemp += knights_attacking_square(for_color, square_e5);
-    itemp += knights_attacking_square(for_color, square_d5);
+    itemp += knights_attacking_square(c, square_e4);
+    itemp += knights_attacking_square(c, square_d4);
+    itemp += knights_attacking_square(c, square_e5);
+    itemp += knights_attacking_square(c, square_d5);
     return itemp;
 }
 
@@ -429,8 +497,6 @@ int GameBoard::knights_attacking_center_squares(Color for_color)
 // Note sure what happens with three or more rooks.
 bool GameBoard::rook_connectiveness(Color c, int& connectiveness) const
 {
-    using ull = unsigned long long;
-
     const ull rooks = (c == Color::WHITE) ? white_rooks : black_rooks;
 
     // Need at least two rooks of this color
@@ -497,9 +563,7 @@ bool GameBoard::rook_connectiveness(Color c, int& connectiveness) const
 // Return 2 if any friendly rook is on an OPEN file (no pawns on that file).
 // Return 1 if any friendly rook is on a SEMI-OPEN file (no friendly pawns on that file, but at least one enemy pawn).
 // Return 0 otherwise.
-int GameBoard::rook_file_status(Color c) const
-{
-    using ull = unsigned long long;
+int GameBoard::rook_file_status(Color c) const {
 
     const ull rooks     = (c == Color::WHITE) ? white_rooks : black_rooks;
     const ull own_pawns = (c == Color::WHITE) ? white_pawns  : black_pawns;
@@ -531,8 +595,6 @@ int GameBoard::rook_file_status(Color c) const
 
 int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on enemy 7th */
 {
-    using ull = unsigned long long;
-
     const ull rooks  = (c == Color::WHITE) ? white_rooks  : black_rooks;
     const ull queens = (c == Color::WHITE) ? white_queens : black_queens;
     ull rq = rooks | queens;
@@ -553,10 +615,7 @@ int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on 
 // counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
 // One count for each instance.
 //
-int GameBoard::count_isolated_pawns(Color c) const
-{
-    using ull = unsigned long long;
-
+int GameBoard::count_isolated_pawns(Color c) const {
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
     if (!P) return 0;
 
@@ -593,8 +652,7 @@ int GameBoard::count_isolated_pawns(Color c) const
 //  - 10 cp on 3rd/4th rank (from that side's perspective)
 //  - 20 cp on 5th/6th rank
 //  - 30 cp on 7th rank
-int GameBoard::count_passed_pawns(Color c)
-{
+int GameBoard::count_passed_pawns(Color c) {
 
     const ull my_pawns  = get_pieces(c, Piece::PAWN);
     const ull his_pawns = get_pieces(utility::representation::opposite_color(c), Piece::PAWN);
@@ -679,6 +737,40 @@ int GameBoard::get_king_near_squares(Color defender_color, int king_near_squares
 
     return count;
 }
+
+
+int GameBoard::kings_in_opposition(Color color)
+{
+    assert(white_king && black_king);
+
+    ull wk_temp = white_king;
+    ull bk_temp = black_king;
+
+    int w_sq = utility::bit::lsb_and_pop_to_square(wk_temp);
+    int b_sq = utility::bit::lsb_and_pop_to_square(bk_temp);
+
+    int wr = w_sq / 8, wc = w_sq % 8;
+    int br = b_sq / 8, bc = b_sq % 8;
+
+    int dr = std::abs(wr - br);
+    int dc = std::abs(wc - bc);
+
+    bool in_opposition =
+        ((dr == 0 && dc == 2) ||
+         (dc == 0 && dr == 2) ||
+         (dr == 2 && dc == 2));
+
+    if (!in_opposition)
+        return 0;
+
+    // If it's White's move, Black holds opposition.
+    if (color == Color::WHITE)
+        return -1;  // reward Black
+    else
+        return +1;  // reward White
+}
+
+
 
 int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq)
 {
@@ -894,6 +986,117 @@ int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
     }
 
     return total;
+}
+
+
+
+bool GameBoard::is_king_in_check_new(Color color)
+{
+    // --- 1. find king square ---
+    ull king_bb = (color == Color::WHITE) ? white_king : black_king;
+    if (!king_bb) return false;  // should never happen
+    int king_sq = utility::bit::lsb_and_pop_to_square(king_bb);
+
+    // --- 2. occupancy of all pieces ---
+    const ull occ =
+        white_pawns | white_knights | white_bishops | white_rooks |
+        white_queens | white_king |
+        black_pawns | black_knights | black_bishops | black_rooks |
+        black_queens | black_king;
+
+    const Color enemy = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+    // --- 3. pawn attacks ---
+    const ull FILE_A = col_masks[Col::COL_A];
+    const ull FILE_H = col_masks[Col::COL_H];
+    ull bit = (1ULL << king_sq);
+    ull pawn_attackers;
+    if (color == Color::WHITE)
+    {
+        // enemy (black) pawns that attack downwards (south)
+        pawn_attackers = (((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9))
+                       & get_pieces_template<Piece::PAWN>(enemy);
+    }
+    else
+    {
+        // enemy (white) pawns that attack upwards (north)
+        pawn_attackers = (((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9))
+                       & get_pieces_template<Piece::PAWN>(enemy);
+    }
+
+    if (pawn_attackers) return true;
+
+    // --- 4. knight attacks ---
+    ull knight_attackers =
+        tables::movegen::knight_attack_table[king_sq] &
+        get_pieces_template<Piece::KNIGHT>(enemy);
+    if (knight_attackers) return true;
+
+    // --- 5. king adjacency (opposing king) ---
+    ull king_attackers =
+        tables::movegen::king_attack_table[king_sq] &
+        get_pieces_template<Piece::KING>(enemy);
+    if (king_attackers) return true;
+
+    // --- 6. bishop/queen diagonals ---
+    {
+        ull bishops = get_pieces_template<Piece::BISHOP>(enemy);
+        ull queens  = get_pieces_template<Piece::QUEEN >(enemy);
+
+        int r0 = king_sq / 8;
+        int c0 = king_sq % 8;
+
+        // 4 diagonal directions
+        const int dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
+        for (auto& d : dirs)
+        {
+            int r = r0, c = c0;
+            while (true)
+            {
+                r += d[0]; c += d[1];
+                if (r < 0 || r > 7 || c < 0 || c > 7) break;
+                int sq = r * 8 + c;
+                ull bb = 1ULL << sq;
+                if (occ & bb)
+                {
+                    if ((bb & bishops) || (bb & queens))
+                        return true;
+                    break;
+                }
+            }
+        }
+    }
+
+    // --- 7. rook/queen orthogonals ---
+    {
+        ull rooks  = get_pieces_template<Piece::ROOK >(enemy);
+        ull queens = get_pieces_template<Piece::QUEEN>(enemy);
+
+        int r0 = king_sq / 8;
+        int c0 = king_sq % 8;
+
+        const int dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
+        for (auto& d : dirs)
+        {
+            int r = r0, c = c0;
+            while (true)
+            {
+                r += d[0]; c += d[1];
+                if (r < 0 || r > 7 || c < 0 || c > 7) break;
+                int sq = r * 8 + c;
+                ull bb = 1ULL << sq;
+                if (occ & bb)
+                {
+                    if ((bb & rooks) || (bb & queens))
+                        return true;
+                    break;
+                }
+            }
+        }
+    }
+
+    // --- 8. if no attackers found ---
+    return false;
 }
 
 

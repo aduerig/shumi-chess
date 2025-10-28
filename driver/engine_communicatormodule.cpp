@@ -141,7 +141,9 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_pop(PyObject* self, PyObject* args) {
-    python_engine.popMove();
+    //python_engine.popMove();
+
+    python_engine.setNextMovesDeepening();
     return Py_BuildValue("");
 }
 
@@ -167,13 +169,15 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_fen(PyObject* self, PyObject* args) {
+    //python_engine.setNextMovesDeepening();
     return Py_BuildValue("s", python_engine.game_board.to_fen().c_str());
 }
 
 
 static PyObject*
 engine_communicator_get_move_number(PyObject* self, PyObject* args) {
-    return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
+    //return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
+    return Py_BuildValue("i", python_engine.g_iMove);    // real moves in whole game
 }
 
 static PyObject*
