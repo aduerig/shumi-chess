@@ -31,7 +31,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   ~~Crossed out~~ items are done, but under testing.
 
   * Bug: 
-  ~~* Bug: Moveing Thread hangs after 15 moves or so. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. So what.~~
+  * Bug: Moveing Thread hangs after 12-25 moves or so. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain.
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * ~~Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. Wrong. uses the zobrist.~~ 
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. 

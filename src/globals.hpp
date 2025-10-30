@@ -44,8 +44,8 @@ struct Move {
     Piece promotion = Piece::NONE;
     uint8_t black_castle_rights = 0b00000011;
     uint8_t white_castle_rights = 0b00000011;
-    ull en_passant_rights = 0;
-    bool is_en_passent_capture = false;
+    ull en_passant_rights = 0;              // Note this is a bitboard?
+    bool is_en_passent_capture = false;    // bools are hopefully 8 bits.
     bool is_castle_move = false;
 
     // This means two Moves are considered equal if they go from the same square to the same square.

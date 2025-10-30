@@ -12,7 +12,11 @@
 
 using namespace std;
 
+//#define _DEBUGGING_PUSH_POP_FAST
 
+
+
+// Note: make me go away.
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
    
@@ -62,6 +66,7 @@ class Engine {
 
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
+        //template <Piece P, Color C> ull& Engine::access_pieces_of_color()
 
         // void apply_en_passant_checks(const Move&);
         // void apply_castling_changes(const Move&);
@@ -75,16 +80,40 @@ class Engine {
 
         int get_minor_piece_move_number (const vector <Move> mvs);       
 
-        inline bool in_check_after_move(Color color, const Move move) {
+        inline bool in_check_after_move(Color color, const Move& move) {
             // NOTE: is this the most effecient way to do this (push()/pop())?
-            pushMove(move);        
+
+            #ifdef _DEBUGGING_PUSH_POP_FAST
+                std::string temp_fen_before = game_board.to_fen();
+            #endif
+
+            //if (move.is_castle_move) return false;
+
+            pushMoveFast(move);        
             
             bool bReturn = is_king_in_check(color);
             
-            popMove();
+            popMoveFast();
+
+            #ifdef _DEBUGGING_PUSH_POP_FAST
+                std::string temp_fen_after = game_board.to_fen();
+                if (temp_fen_before != temp_fen_after) {
+                    std::cout << "\x1b[31m";
+                    std::cout << "PROBLEM WITH PUSH POP FAST!!!!!" << std::endl;
+                    std::cout << "FEN before  push/pop: " << temp_fen_before  << std::endl;
+                    std::cout << "FEN after   push/pop: " << temp_fen_after   << std::endl;
+                    std::cout << "\x1b[0m";
+                    assert(0);
+                }
+           
+            #endif
+
             return bReturn;
         }
 
+        
+        inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
+        inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
 
         bool is_king_in_check(const Color&);
         bool is_square_in_check(const Color&, const ull&);

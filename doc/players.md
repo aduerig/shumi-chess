@@ -20,3 +20,5 @@ The uncle is even faster, about 350,000 nodes per second on my laptop. Uncle shu
 * "Sister shumi" uses a transposition table to screen repeats, but does not seem much faster. Sister shumi does attack squares near the king, after the opening. Three time rep now operational. Sister shumi has a dramatic difference: MVV_LVA sorting on (depth>0) nodes. This makes it MUCH faster, but it plays differently. I had to add two eval tricks 
 that are new, 1. Stop playing the Scandinavian as black, 2. Stop putting the bishop in front of the queeen pwn. But the speed is indispensible.
 You can now use deepening 7 to play rapid games for the first time. Deepening 8 is for long games. (used to be 6 and 7).
+
+* "Mr. Shumi" is significantly faster and better than his predesessors as he uses MVV-LVA, killer moves, and other things. I estimate USCF of 1550. Other internal speed imprevements, including using "fast" pushMove/popMove when filtering psuedo moves down to legal moves Also, he now is trained to attack the king, after develeopment. He is also specifically trained to 1. Not play the scandinavian, and 2. Not block the d-pawn with the king bishop.  

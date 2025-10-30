@@ -89,7 +89,7 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
         from_acn, to_acn = get_random_move(legal_moves)
     else:
         # NOTE: this is the blocking call to the C++ engine
-        seconds = 1.0      # because i said so.
+        seconds = 7.0      # because i said so.
         move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
         from_acn, to_acn = move[0:2], move[2:4]
 

@@ -15,7 +15,7 @@
 
 char szValue[256];   // Note: make me go away
 
-// #define _DEBUGGING_TO_FILE
+//#define _DEBUGGING_TO_FILE
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -179,7 +179,17 @@ bool Engine::is_king_in_check(const ShumiChess::Color& color) {
 // Determines if a square is in check.
 // All bitboards are asssummed to be "h1=0". 
 bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square) {
-    Color enemy_color = utility::representation::opposite_color(color);
+
+    //Color enemy_color = utility::representation::opposite_color(color);
+    Color enemy_color = (Color)(color ^ 1);   // faster than the above
+
+    const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
+    const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
+    const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
+    const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
+    const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
+    const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
+
 
     // Note: ? probably don't need knights here cause pins cannot happen with knights, but 
     //   we don't check if king is in check yet
@@ -188,8 +198,8 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     ull diagonal_attacks_from_king = get_diagonal_attacks(square);
 
     // bishop, rook, queens that can reach (capture to) this square
-    ull deadly_diags = game_board.get_pieces_template<Piece::QUEEN>(enemy_color) | game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
-    ull deadly_straight = game_board.get_pieces_template<Piece::QUEEN>(enemy_color) | game_board.get_pieces_template<Piece::ROOK>(enemy_color);
+    ull deadly_diags = themQueens | themBishops;
+    ull deadly_straight = themQueens| themRooks;
 
     // pawns that can reach (capture to) this square
     ull temp;
@@ -208,18 +218,35 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     ull reachable_pawns = (((temp & ~col_masks[0]) << 1) | 
                            ((temp & ~col_masks[7]) >> 1));                           
 
+    const int sq = utility::bit::bitboard_to_lowest_square(square);
 
     // knights that can reach (capture to) this square
-    ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_lowest_square(square)];
+    const ull reachable_knights = tables::movegen::knight_attack_table[sq];
 
     // kings that can reach (capture to) this square
-    ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(square)];
+    const ull reachable_kings   = tables::movegen::king_attack_table[sq];
 
-    return ((deadly_straight & straight_attacks_from_king) ||
-            (deadly_diags & diagonal_attacks_from_king) ||
-            (reachable_knights & game_board.get_pieces_template<Piece::KNIGHT>(enemy_color)) ||
-            (reachable_pawns & game_board.get_pieces_template<Piece::PAWN>(enemy_color)) ||
-            (reachable_kings & game_board.get_pieces_template<Piece::KING>(enemy_color)));
+    // // knights that can reach (capture to) this square
+    // ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_lowest_square(square)];
+
+    // // kings that can reach (capture to) this square
+    // ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(square)];
+
+
+    if (deadly_straight & straight_attacks_from_king) return true;    // for queen and rook straight attacks
+    if (deadly_diags    & diagonal_attacks_from_king) return true;    // for queen and bishop straight attacks
+    if (reachable_knights & themKnights) return true;
+    if (reachable_pawns   & themPawns)   return true;
+    if (reachable_kings   & themKing)    return true;
+    return false;
+
+    // return ((deadly_straight & straight_attacks_from_king) ||
+    //         (deadly_diags & diagonal_attacks_from_king) ||
+    //         (reachable_knights & game_board.get_pieces_template<Piece::KNIGHT>(enemy_color)) ||
+    //         (reachable_pawns & game_board.get_pieces_template<Piece::PAWN>(enemy_color)) ||
+    //         (reachable_kings & game_board.get_pieces_template<Piece::KING>(enemy_color)));
+
+            
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -402,8 +429,6 @@ void Engine::pushMove(const Move& move) {
     }
 
     this->en_passant_history.push(this->game_board.en_passant_rights);
-
-    // !TODO zobrist update for en_passant_rights history
 
     // Zobrist: remove old en passant (if any)
     if (this->game_board.en_passant_rights) {
@@ -641,40 +666,67 @@ void Engine::pushMoveFast(const Move& move)
     src_bb &= ~from_mask;
 
     // --- 2. Handle captures ---
-    if (move.capture != Piece::NONE)
-    {
+    if (move.capture != Piece::NONE) {
         ull& cap_bb = access_pieces_of_color(
             move.capture,
             utility::representation::opposite_color(move.color));
 
-        if (move.is_en_passent_capture)
-        {
+        if (move.is_en_passent_capture) {
             ull behind_mask = (move.color == Color::WHITE)
                                 ? (to_mask >> 8)
                                 : (to_mask << 8);
             cap_bb &= ~behind_mask;
-        }
-        else
-        {
+        } else {
             cap_bb &= ~to_mask;
         }
     }
 
     // --- 3. Handle promotion or normal placement ---
-    if (move.promotion != Piece::NONE)
-    {
+    if (move.promotion != Piece::NONE) {
         ull& promo_bb = access_pieces_of_color(move.promotion, move.color);
         promo_bb |= to_mask;
-    }
-    else
-    {
+    } else {
         src_bb |= to_mask;
     }
 
-    // --- 4. Castling should never occur in fast path ---
-    if (move.is_castle_move)
-    {
-        assert(0 && "pushMoveFast(): castling should never appear in fast path");
+    if (move.is_castle_move) {
+        // assert(0 && "pushMoveFast(): castling should never appear in fast path");
+        if (move.color == ShumiChess::Color::WHITE) {
+           game_board.bCastledWhite = true;  // I dont care which side i castled.
+        } else {
+           game_board.bCastledBlack = true;  // I dont care which side i castled.
+        }
+
+        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
+        //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
+        // cout << "PUSHING: Friendly rooks are:";
+        // utility::representation::print_bitboard(friendly_rooks);
+        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+            //          rnbqkbnr                                                       RNBQKBNR
+            // Queenside Castle (black or white)
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1ULL<<7);
+                friendly_rooks |= (1ULL<<4);
+            } else {           
+                friendly_rooks &= ~(1ULL<<63);
+                friendly_rooks |= (1ULL<<60);
+            }
+        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+             //                rnbqkbnr                                                       RNBQKBNR
+            // Kingside castle (black or white)
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1ULL<<0);
+                friendly_rooks |= (1ULL<<2);
+                //assert (this->game_board.white_castle_rights);
+            } else {
+                friendly_rooks &= ~(1ULL<<56);
+                friendly_rooks |= (1ULL<<58);
+            }
+        } else {        // Something wrong, its not a castle
+            assert(0);
+        }
+
+
     }
 
     // No zobrist, no repetition, no rights, no clocks, etc.
@@ -699,45 +751,69 @@ void Engine::popMoveFast()
     ull to_mask   = move.to;
 
     // --- 1. Undo promotion or normal move ---
-    if (move.promotion != Piece::NONE)
-    {
+    if (move.promotion != Piece::NONE) {
         ull& promo_bb = access_pieces_of_color(move.promotion, move.color);
         promo_bb &= ~to_mask;
 
         ull& pawn_bb = access_pieces_of_color(Piece::PAWN, move.color);
         pawn_bb |= from_mask;
-    }
-    else
-    {
+    } else {
         ull& piece_bb = access_pieces_of_color(move.piece_type, move.color);
         piece_bb &= ~to_mask;
         piece_bb |= from_mask;
     }
 
     // --- 2. Restore captured piece, if any ---
-    if (move.capture != Piece::NONE)
-    {
+    if (move.capture != Piece::NONE) {
         ull& cap_bb = access_pieces_of_color(
             move.capture,
             utility::representation::opposite_color(move.color));
 
-        if (move.is_en_passent_capture)
-        {
+        if (move.is_en_passent_capture) {
             ull behind_mask = (move.color == Color::WHITE)
                                 ? (to_mask >> 8)
                                 : (to_mask << 8);
             cap_bb |= behind_mask;
         }
-        else
-        {
+        else {
             cap_bb |= to_mask;
         }
     }
 
-    // --- 3. Castling should never occur in fast path ---
-    if (move.is_castle_move)
-    {
-        assert(0 && "popMoveFast(): castling should never appear in fast path");
+    if (move.is_castle_move) {
+        //assert(0 && "popMoveFast(): castling should never appear in fast path");
+        // get pointer to the rook? Which rook?
+        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
+        // ! Bet we can make this part of push a func and do something fancy with to and from
+        //  at least keep standard with push implimentation.
+
+        // NOTE: the castles move has not been popped yet
+        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+            //          rnbqkbnr                                                       rnbqkbnr   
+            // Popping a Queenside Castle
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1ULL<<4);
+                friendly_rooks |= (1ULL<<7);
+            } else {
+                friendly_rooks &= ~(1ULL<<60);
+                friendly_rooks |= (1ULL<<63);
+            }
+        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+            //                 rnbqkbnr                                                       rnbqkbnr
+            // Popping a Kingside Castle
+            if (move.color == ShumiChess::Color::WHITE) {
+                friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
+                friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
+            } else {
+                friendly_rooks &= ~(1ULL<<58);
+                friendly_rooks |= (1ULL<<56);
+            }
+
+        } else {
+            // Something wrong, its not a castle
+            assert(0);
+        }
+
     }
 
     // No zobrist, no repetition, no rights, no clocks, etc.
@@ -748,43 +824,196 @@ void Engine::popMoveFast()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ull& Engine::access_pieces_of_color(Piece piece, Color color) {
+
+
+ull& Engine::access_pieces_of_color(Piece piece, Color color)
+{
     switch (piece)
     {
         case Piece::PAWN:
-            if (color) {return this->game_board.black_pawns;}
-            else       {return this->game_board.white_pawns;}
-            break;
+            return (color != 0) ? this->game_board.black_pawns
+                                : this->game_board.white_pawns;
+
         case Piece::ROOK:
-            if (color) {return this->game_board.black_rooks;}
-            else       {return this->game_board.white_rooks;}
-            break;
+            return (color != 0) ? this->game_board.black_rooks
+                                : this->game_board.white_rooks;
+
         case Piece::KNIGHT:
-            if (color) {return this->game_board.black_knights;}
-            else       {return this->game_board.white_knights;}
-            break;
+            return (color != 0) ? this->game_board.black_knights
+                                : this->game_board.white_knights;
+
         case Piece::BISHOP:
-            if (color) {return this->game_board.black_bishops;}
-            else       {return this->game_board.white_bishops;}
-            break;
+            return (color != 0) ? this->game_board.black_bishops
+                                : this->game_board.white_bishops;
+
         case Piece::QUEEN:
-            if (color) {return this->game_board.black_queens;}
-            else       {return this->game_board.white_queens;}
-            break;
+            return (color != 0) ? this->game_board.black_queens
+                                : this->game_board.white_queens;
+
         case Piece::KING:
-            if (color) {return this->game_board.black_king;}
-            else       {return this->game_board.white_king;}
-            break;
+            return (color != 0) ? this->game_board.black_king
+                                : this->game_board.white_king;
 
         default:
-            cout << "Unexpected piece type in access_pieces_of_color: " << piece << endl;
+            std::cout << "Unexpected piece type in access_pieces_of_color: "
+                      << piece << std::endl;
             assert(0);
-            break;
+            return this->game_board.white_king;
     }
-
-    // Unreachable, but required to avoid warnings Note: Fix this.
-    return this->game_board.white_king;
 }
+
+
+
+// template <Piece P, Color C> ull& Engine::access_pieces_of_color()
+// {
+//     if constexpr (C == Color::WHITE)
+//     {
+//         if constexpr (P == Piece::PAWN)   return this->game_board.white_pawns;
+//         if constexpr (P == Piece::ROOK)   return this->game_board.white_rooks;
+//         if constexpr (P == Piece::KNIGHT) return this->game_board.white_knights;
+//         if constexpr (P == Piece::BISHOP) return this->game_board.white_bishops;
+//         if constexpr (P == Piece::QUEEN)  return this->game_board.white_queens;
+//         if constexpr (P == Piece::KING)   return this->game_board.white_king;
+//     }
+//     else // C == Color::BLACK
+//     {
+//         if constexpr (P == Piece::PAWN)   return this->game_board.black_pawns;
+//         if constexpr (P == Piece::ROOK)   return this->game_board.black_rooks;
+//         if constexpr (P == Piece::KNIGHT) return this->game_board.black_knights;
+//         if constexpr (P == Piece::BISHOP) return this->game_board.black_bishops;
+//         if constexpr (P == Piece::QUEEN)  return this->game_board.black_queens;
+//         if constexpr (P == Piece::KING)   return this->game_board.black_king;
+//     }
+
+//     static_assert(P != Piece::NONE, "Piece::NONE has no bitboard");
+// }
+
+
+// 
+
+
+// ull& Engine::access_pieces_of_color(Piece piece, Color color)
+// {
+//     // Treat nonzero as black like you already do
+//     bool is_black = (color != 0);
+
+//     if (!is_black)
+//     {
+//         switch (piece)
+//         {
+//             case Piece::PAWN:   return this->game_board.white_pawns;
+//             case Piece::ROOK:   return this->game_board.white_rooks;
+//             case Piece::KNIGHT: return this->game_board.white_knights;
+//             case Piece::BISHOP: return this->game_board.white_bishops;
+//             case Piece::QUEEN:  return this->game_board.white_queens;
+//             case Piece::KING:   return this->game_board.white_king;
+
+//             default:
+//                 std::cout << "Unexpected piece type in access_pieces_of_color: "
+//                           << piece << std::endl;
+//                 assert(0);
+//                 return this->game_board.white_king;
+//         }
+//     }
+//     else
+//     {
+//         switch (piece)
+//         {
+//             case Piece::PAWN:   return this->game_board.black_pawns;
+//             case Piece::ROOK:   return this->game_board.black_rooks;
+//             case Piece::KNIGHT: return this->game_board.black_knights;
+//             case Piece::BISHOP: return this->game_board.black_bishops;
+//             case Piece::QUEEN:  return this->game_board.black_queens;
+//             case Piece::KING:   return this->game_board.black_king;
+
+//             default:
+//                 std::cout << "Unexpected piece type in access_pieces_of_color: "
+//                           << piece << std::endl;
+//                 assert(0);
+//                 return this->game_board.black_king;
+//         }
+//     }
+// }
+
+
+// ull& Engine::access_pieces_of_color(Piece piece, Color color)
+// {
+//     // Decide which color's bitboards we're going to use
+//     bool is_black = (color != 0); // or (color == Color::BLACK), depending on your enum
+
+//     switch (piece)
+//     {
+//         case Piece::PAWN:
+//             if (is_black) { return this->game_board.black_pawns; }
+//             else          { return this->game_board.white_pawns; }
+
+//         case Piece::ROOK:
+//             if (is_black) { return this->game_board.black_rooks; }
+//             else          { return this->game_board.white_rooks; }
+
+//         case Piece::KNIGHT:
+//             if (is_black) { return this->game_board.black_knights; }
+//             else          { return this->game_board.white_knights; }
+
+//         case Piece::BISHOP:
+//             if (is_black) { return this->game_board.black_bishops; }
+//             else          { return this->game_board.white_bishops; }
+
+//         case Piece::QUEEN:
+//             if (is_black) { return this->game_board.black_queens; }
+//             else          { return this->game_board.white_queens; }
+
+//         case Piece::KING:
+//             if (is_black) { return this->game_board.black_king; }
+//             else          { return this->game_board.white_king; }
+
+//         default:
+//             std::cout << "Unexpected piece type in access_pieces_of_color: "
+//                       << piece << std::endl;
+//             assert(0);
+//             // Fallback to satisfy compiler in release builds
+//             return this->game_board.white_king;
+//     }
+// }
+
+
+// ull& Engine::access_pieces_of_color(Piece piece, Color color) {
+//     switch (piece)
+//     {
+//         case Piece::PAWN:
+//             if (color) {return this->game_board.black_pawns;}
+//             else       {return this->game_board.white_pawns;}
+//             break;
+//         case Piece::ROOK:
+//             if (color) {return this->game_board.black_rooks;}
+//             else       {return this->game_board.white_rooks;}
+//             break;
+//         case Piece::KNIGHT:
+//             if (color) {return this->game_board.black_knights;}
+//             else       {return this->game_board.white_knights;}
+//             break;
+//         case Piece::BISHOP:
+//             if (color) {return this->game_board.black_bishops;}
+//             else       {return this->game_board.white_bishops;}
+//             break;
+//         case Piece::QUEEN:
+//             if (color) {return this->game_board.black_queens;}
+//             else       {return this->game_board.white_queens;}
+//             break;
+//         case Piece::KING:
+//             if (color) {return this->game_board.black_king;}
+//             else       {return this->game_board.white_king;}
+//             break;
+
+//         default:
+//             cout << "Unexpected piece type in access_pieces_of_color: " << piece << endl;
+//             assert(0);
+//             break;
+//     }
+
+//     // Unreachable, but required to avoid warnings Note: Fix this.
+//     return this->game_board.white_king;
+// }
 
 
 
@@ -1367,7 +1596,7 @@ void Engine::setNextMovesDeepening() {
     if (user_requested_next_move_deepening > 10) {
         user_requested_next_move_deepening = 7;
     }
-    cout << "\x1b[31m nextMove->\x1b[0m" << user_requested_next_move_deepening << "\x1b[31m<-nextMove \x1b[0m" << endl;
+    cout << "\x1b[34m nextMove->\x1b[0m" << user_requested_next_move_deepening << "\x1b[34m<-nextMove \x1b[0m" << endl;
 }
 
 
