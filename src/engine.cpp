@@ -38,6 +38,8 @@ Engine::Engine() {
     // utility::representation::print_bitboard(south_west_square_ray[37]);
 
     srand((unsigned)time(NULL));
+
+
 }
 
 //TODO what is right way to handle popping past default state here?
@@ -56,7 +58,7 @@ void Engine::reset_engine() {
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
     //game_board = GameBoard("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
-    game_board = GameBoard("rnbqkb1r/pppp1ppp/4pn2/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 1 3");
+    //game_board = GameBoard("rnbqkb1r/pppp1ppp/4pn2/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 1 3");
     
     game_board = GameBoard();
 
@@ -72,6 +74,8 @@ void Engine::reset_engine() {
     std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
     game_board.bCastledWhite = false;  // I dont care which side i castled.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
+
+    g_iMove = 0;       // real moves in whole game
 
 }
 
@@ -95,6 +99,8 @@ void Engine::reset_engine(const string& fen) {
     std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
     game_board.bCastledWhite = false;  // I dont care which side i castled.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
+
+    g_iMove = 0;       // real moves in whole game
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
@@ -1765,26 +1771,6 @@ bool Engine::flip_a_coin(void) {
 }
 
 
-
-
-// ShumiChess::Move Engine::make_enpassant_move_from_bit_boards(Piece p, ull bitTo, ull bitFrom, Color color)
-// {
-//     Move new_move = {};
-
-//     new_move.piece_type = p;
-
-//     new_move.from = bitFrom;
-//     new_move.to = bitTo;
-
-//     new_move.capture = Piece::PAWN;
-
-//     new_move.en_passant_rights = 1;
-//     new_move.is_en_passent_capture = true;
-
-//     new_move.color = color;
-
-//     return new_move;
-// }
 
 void Engine::move_into_string(ShumiChess::Move m) {
     bitboards_to_algebraic(game_board.turn, m

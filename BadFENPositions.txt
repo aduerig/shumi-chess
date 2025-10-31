@@ -69,6 +69,15 @@ rnbqk2r/pppp1ppp/3bpn2/8/2PP4/4P3/PP3PPP/RNBQKBNR w KQkq - 1 4
 
 
 
+r3r1k1/p1p3pp/3p1b2/5p2/1R1P4/1P1P4/1P2NPPP/4RK2 w - - 1 22
+
+
+r3k2r/pp1b2p1/2npp1q1/5pBp/2P5/3B1N2/PP3PPP/R2QR1K1 w kq - 4 20
+
+Fen is now 4k3/1p3r2/p2p1p1Q/3Pp3/4P1q1/1P6/5PPP/2R3K1 w - - 1 26
+
+
+Fen is now r1bqkbnr/1p4pp/2np4/pBp1pP2/8/2N2N2/PPPP1PPP/R1BQ1RK1 w kq - 0 8
 
 
 

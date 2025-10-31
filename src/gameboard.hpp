@@ -222,6 +222,10 @@ class GameBoard {
         int square_d4 = 28;
         int square_e5 = 35;
         int square_d5 = 36;
+        int square_e6 = 43;  // e4 + 16
+        int square_d6 = 44;  // d4 + 16
+        int square_e3 = 19;  // e4 - 8
+        int square_d3 = 20;  // d4 - 8
 
         double openingness_of(int avg_cp);
 

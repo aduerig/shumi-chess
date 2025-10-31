@@ -12,6 +12,18 @@ import queue
 from modified_graphics import *
 import engine_communicator
 
+
+
+# --- Game counters (global state) ---
+curr_game = 1
+curr_game_white = 0
+curr_game_black = 0
+curr_game_draw = 0
+# ------------------------------------
+
+
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--fen', default=None)
 parser.add_argument('--human', default=False, action='store_true')
@@ -42,8 +54,13 @@ for key, val in imported_ais.items():
     print('AI: {} imported, module is: {}'.format(key, val))
 
 
-def reset_board(fen=""):
-    global curr_game, legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index
+##def reset_board(fen=""):
+def reset_board(fen="", winner="draw"):
+
+
+    global curr_game_white, curr_game_black, curr_game_draw, curr_game
+
+    global legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index
 
     print('reset_board called from python')
     
@@ -73,7 +90,24 @@ def reset_board(fen=""):
     player_index = 0
     undraw_pieces()
     render_all_pieces_and_assign(board)
+
+
+    # Update the game counters
     curr_game += 1
+    if winner == 'white':
+        curr_game_white += 1
+    elif winner == 'black':
+        curr_game_black += 1
+    else:
+        curr_game_draw += 1
+
+    curr_game_text.setText(f'Game {curr_game}')
+    white_wins_text.setText(f'W {curr_game_white}')
+    black_wins_text.setText(f'B {curr_game_black}')
+    draw_wins_text.setText(f'D {curr_game_draw}')
+
+
+
     legal_moves = engine_communicator.get_legal_moves()
     game_state_might_change = True
 
@@ -89,8 +123,8 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
         from_acn, to_acn = get_random_move(legal_moves)
     else:
         # NOTE: this is the blocking call to the C++ engine
-        seconds = 7.0      # because i said so.
-        move = engine_communicator.minimax_ai_get_move_iterative_deepening(seconds)
+        milliseconds = 5000;   # because i said so.
+        move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds)
         from_acn, to_acn = move[0:2], move[2:4]
 
     # Put the result in the queue for the main thread to pick up
@@ -248,6 +282,7 @@ def wake_up(button_obj):
 def get_fen(button_obj):
     fen = engine_communicator.get_fen()
     print(f'Current FEN: {fen}')
+    set_fen_text.setText(fen)      # <-- put FEN into the entry box
 
 
 # def get_random_move(legal_moves):
@@ -319,11 +354,11 @@ button_holder = [
     Button(clicked_pop_button, lambda: "pop!", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_white_button, lambda: "White\n{}".format(both_players[0]), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
     Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1]), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
-    Button(clicked_reset_button, lambda: "Reset (to fen above)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(clicked_autoreset, lambda: "Autoreset board on\ndraw: {}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(clicked_reset_button, lambda: "Reset\n(to FEN above)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(clicked_autoreset, lambda: "Autoreset board\n{}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(wake_up, lambda: "Wake up", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(get_fen, lambda: "Get Fen", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(output_fens_depth_1, lambda: "Depth 1 fens + test", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
+    Button(get_fen, lambda: "Get FEN", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(output_fens_depth_1, lambda: "Depth 1 FENs + test", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
 
 def gui_click_choices():
@@ -362,15 +397,27 @@ current_turn_text = Text(
 current_turn_text.setFill(color_rgb(200, 200, 200))
 current_turn_text.draw(win)
 
-# curr game text
-global curr_game; curr_game = 1
+
+# current game text (plus small W/B/D counters to the left)
+white_wins_text = Text(Point(square_size * 5.9, square_size * 9), f'W {curr_game_white}')
+black_wins_text = Text(Point(square_size * 6.5, square_size * 9), f'B {curr_game_black}')
+draw_wins_text  = Text(Point(square_size * 7.1, square_size * 9), f'D {curr_game_draw}')
+
+
+for t in (white_wins_text, black_wins_text, draw_wins_text):
+    t.setFill(color_rgb(200, 200, 200))
+    t.setSize(8)
+    t.draw(win)
+
 curr_game_text = Text(
     Point(square_size * 2.5, square_size * 9),
-    'Game {}'.format(curr_game)
+    f'Game {curr_game}'
 )
 curr_game_text.setFill(color_rgb(200, 200, 200))
 curr_game_text.draw(win)
 
+
+# set current move text
 curr_move_text = Text(
     Point(square_size * 4.5, square_size * 9),
     'Move {}'.format(engine_communicator.get_move_number())
@@ -378,17 +425,20 @@ curr_move_text = Text(
 curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
 
-# set fen text
+
+# small static label to the left of the FEN box
+fen_label = Text(Point(square_size * 0.4, square_size * 8.5), "FEN:")
+fen_label.setFill(color_rgb(200, 200, 200))
+fen_label.setSize(8)   # small
+fen_label.draw(win)
+
+# set fen entry text box 
 set_fen_text = Entry(
-    Point(square_size * 3.8, square_size * 8.5),
+    Point(square_size * 4.25, square_size * 8.5),
     55
 )
 set_fen_text.setFill(color_rgb(200, 200, 200))
 set_fen_text.draw(win)
-
-
-
-
 
 
 
@@ -707,9 +757,10 @@ try:
         game_over_text.setText(winner_text.format(winner))
         game_over_text.draw(win)
 
-        if winner == 'draw' and autoreset_toggle:
-            print('RESETTING BOARD CAUSE DRAW AND TOGGLE')
-            reset_board()
+        if autoreset_toggle:
+        ##if winner == 'draw' and autoreset_toggle:
+            print('RESETTING BOARD TOGGLE')
+            reset_board("", winner)
             game_state_might_change = True
             continue
 

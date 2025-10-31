@@ -1,3 +1,5 @@
+
+
 #include <float.h>
 #include <bitset>
 #include <iomanip>
@@ -164,6 +166,8 @@ void MinimaxAI::wakeup() {
 }
 
 
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Returns " relative (negamax) score". Relative score is positive for great positions for the specified player. 
@@ -243,15 +247,19 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     
             /////////////// end positional evals /////////////////
 
+            // Add code to promote/discourage trading, depending on who is ahead.
+            // (note. At beginning of game, there are 4000 centipawns of material.
+            // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns to trade if Im a pawn ahead.)
+            cp_score_position_temp += (cp_score_pieces_only / 20);
+
+
+
             // Add positional eval to score
             if (color != for_color) cp_score_position_temp *= -1;
             cp_score_position += cp_score_position_temp;
-        }
 
-        // Add code to promote/discourage trading, depending on who is ahead.
-        // (note. At beginning of game, there are 4000 centipawns of material.
-        // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns to trade if Im a pawn ahead.)
-        cp_score_position += (cp_score_pieces_only / 10);
+
+        }
 
     }
 
@@ -275,6 +283,21 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
 
 
 
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// personalities
+// 
+#define MAX_personalities 50
+
+struct person {
+    int constants[MAX_personalities];   
+};
+
+person TheShumiFamily[20];
+
+person MrShumi = {100, -10, -30, +14, 20, 20, 20};  // All of these are integer and are applied in centipawns
+int pers_index = 0;
+
 int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
 
     int cp_score_position_temp = 0;
@@ -289,18 +312,24 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
         // cp_score_position_temp += iZeroToThirty*100;   // centipawns
      //}
 
+    // personalities
+
     // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
+
+    pers_index = 0;
     engine.game_board.king_castle_happiness(color, iZeroToThree);
     assert (iZeroToThree>=0);
     assert (iZeroToThree<=3);
     cp_score_position_temp += iZeroToThree*100;   // centipawns
 
     // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
+    pers_index = 1;
     int isolanis =  engine.game_board.count_isolated_pawns(color);
     assert (isolanis>=0);
     cp_score_position_temp -= (isolanis*isolanis)*10;   // centipawns
 
     // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
+    pers_index = 2;
     iZeroToThirty = engine.game_board.bishop_pawn_pattern(color);
     assert (iZeroToThirty>=0);
     cp_score_position_temp -= iZeroToThirty*30;   // centipawns
@@ -308,7 +337,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
     // Add code to encourage pawns attacking the 4-square center 
     iZeroToFour = engine.game_board.pawns_attacking_center_squares(color);
     assert (iZeroToFour>=0);
-    cp_score_position_temp += iZeroToFour*22;  // centipawns    
+    cp_score_position_temp += iZeroToFour*14;  // centipawns    
 
     // Add code to encourage knights attacking the 4-square center 
     iZeroToFour = engine.game_board.knights_attacking_center_squares(color);
@@ -415,37 +444,43 @@ int g_this_depth = 6;
 
 
 // This is a "root position". The next human move triggers a new root position
-Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
+Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {  // timeRequested now in *milliseconds*
     
+
+    cout << "\x1b[94mtime requested (msec) =" << timeRequested << "\x1b[0m" << endl;
+
     stop_calculation = false;
     
-    seen_zobrist.clear();
+    
+    auto start_time = chrono::high_resolution_clock::now();
+    // CHANGED: interpret timeRequestedMsec as milliseconds
+    auto required_end_time = start_time + chrono::duration<double, std::milli>(timeRequested);
+
+	#ifdef IS_CALLBACK_THREAD
+    	start_callback_thread();
+    #endif
+
+    engine.g_iMove++;                      // Increment real moves in whole game
+    cout << "\x1b[94m\nMove: " << engine.g_iMove << "\x1b[0m" << endl;
+
+    if (engine.g_iMove) timeRequested = 1000.0;    // HAck kto allow user to hit "autplay" button before Shumi moves
 
     nodes_visited = 0;
     nodes_visited_depth_zero = 0;
 
-
+    seen_zobrist.clear();
     uint64_t zobrist_key_start = engine.game_board.zobrist_key;
     //cout << "zobrist_key at start of get_move_iterative_deepening is: " << zobrist_key_start << endl;
 
     transposition_table.clear();
    
 
-    auto start_time = chrono::high_resolution_clock::now();
-    auto required_end_time = start_time + chrono::duration<double>(timeRequested);
-
-	#ifdef IS_CALLBACK_THREAD
-    	start_callback_thread();
-    #endif
-
-    
     int this_deepening;
 
     Move best_move = {};
     double d_best_move_value = 0.0;
 
-    engine.g_iMove++;                      // Increment real moves in whole game
-    cout << "\nMove: " << engine.g_iMove << endl;
+
 
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;
@@ -453,14 +488,16 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
 
 
     this_deepening = engine.user_requested_next_move_deepening;
-    //this_deepening =7;        // Note: because i said so.
+    this_deepening = 8;        // Note: because i said so.
 
     maximum_deepening = this_deepening;
     
 
-    int now_s;
-    int end_s;
-    int diff_s;     // Holds (actual time - requested time). This is positive if we are past due. Negative if we are sonner than expected
+    // CHANGED: milliseconds instead of seconds; use wider integer
+    long long now_s;
+    long long end_s;
+    long long diff_s;     // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
+    long long elapsed_time = 0; // in msec
 
 
     // defaults
@@ -470,7 +507,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     bool bThinkingOver = false;
     bool bThinkingOverByTime = false;
     bool bThinkingOverByDepth = false;
-    int elapsed_time = 0;
 
     for (int ii=0;ii<MAX_PLY;ii++) {
         killer1[ii] = {}; 
@@ -488,16 +524,23 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
             engine.print_move_to_file(null_move, nPly, (GameState::INPROGRESS), false, true, false, fpDebug);
         #endif
 
-        cout << endl << "Deeping " << depth << " ply " << "of " << maximum_deepening << " sec=" 
-                << elapsed_time << " ";
+        // cout << endl << "Deeping " << depth << " ply " << "of " << maximum_deepening << " msec=" 
+        //         << elapsed_time << " ";
+        cout << endl << "Deeping " << depth << " ply of " << maximum_deepening
+                << " msec=" << std::setw(6) << elapsed_time << ' ';
+
 
         //move_scores_table.clear();
         //move_and_scores_list.clear();
 
         nPlys = 0;
         top_deepening = depth;      // deepening starts at this depth
+
+
         double alpha = -HUGE_SCORE;
         double beta = HUGE_SCORE;
+
+
         auto ret_val = recursive_negamax(depth, alpha, beta
                                                 //, move_scores_table
                                                 //, move_and_scores_list
@@ -505,27 +548,25 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
                                                 , (nPlys+1)
                                                );
 
+
         // ret_val is a tuple of the score and the move.
-        double d_Return_value = get<0>(ret_val);
+        double d_Return_score = get<0>(ret_val);
 
 
-        if (d_Return_value == ABORT_SCORE) {
+        if (d_Return_score == ABORT_SCORE) {
             cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
-            break;   // Stop deepining, no more depths.
+            break;   // Stop deepening, no more depths.
         } else {
-            d_best_move_value = d_Return_value;
+            d_best_move_value = d_Return_score;
             best_move = get<1>(ret_val);
         }
+
+        assert ((alpha <= d_Return_score) && (d_Return_score <= beta));
 
         // publish PV for the *next* iteration:   PV PUSH
         assert (depth >=0);
         prev_root_best_[depth] = best_move;
 
-
-        // MoveAndScore mTemp;   
-        // mTemp.first  = best_move;
-        // mTemp.second = d_best_move_value;
-                                
         // engine.move_and_score_to_string(mTemp, true);
         engine.move_and_score_to_string(best_move, d_best_move_value , true);
 
@@ -533,11 +574,11 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
 
         depth++;
 
-        // time based ending of thinking
-        now_s = (int)chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
-        end_s = (int)chrono::duration_cast<chrono::seconds>(required_end_time.time_since_epoch()).count();
+        // CHANGED: time based ending of thinking to use milliseconds
+        now_s = (long long)chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
+        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(required_end_time.time_since_epoch()).count();
         diff_s = now_s - end_s;
-        elapsed_time = now_s - (int)chrono::duration_cast<chrono::seconds>(start_time.time_since_epoch()).count();
+        elapsed_time = now_s - (long long)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
 
         bThinkingOverByTime = (diff_s > 0);
         //bTimeOver = (chrono::high_resolution_clock::now() > required_end_time);
@@ -553,7 +594,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     } while (!bThinkingOver);
 
     cout << "\x1b[33m\nWent to depth " << (depth - 1) << " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth  
-        << " elapsed time= " << elapsed_time << " requested time= " << timeRequested << "\x1b[0m" << endl;
+        << " elapsed msec= " << elapsed_time << " requested msec= " << timeRequested << "\x1b[0m" << endl;
 
 
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
@@ -580,8 +621,25 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
     abs_score_string = buf;
 
     cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
-    cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " / " + format_with_commas(nodes_visited_depth_zero) + " nodes total" + " ---- " + format_with_commas(evals_visited) + " Evals") << endl;
-    chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time;
+
+    double percent_depth_zero = nodes_visited ? ( (double)nodes_visited_depth_zero / (double)nodes_visited ) : 0.0;
+
+
+
+    char pct[32];
+    snprintf(pct, sizeof(pct), "%.0f", percent_depth_zero * 100.0);
+
+    cout << colorize(
+        AColor::BRIGHT_YELLOW,
+        "Visited: " + format_with_commas(nodes_visited) +
+        " / " + std::string(pct) + "% nodes total" +
+        " ---- " + format_with_commas(evals_visited) + " Evals"
+    ) << endl;
+
+    //cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " / " + percent_depth_zero + " nodes total" + " ---- " + format_with_commas(evals_visited) + " Evals") << endl;
+    
+    
+    chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time; // still prints seconds
     cout << colorize(AColor::BRIGHT_GREEN, (static_cast<std::ostringstream&&>(std::ostringstream() << "Total time: " << std::fixed << std::setprecision(2) << total_time.count() << " sec")).str());
 
     assert (total_time.count() > 0);
@@ -655,6 +713,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested) {
 
     return best_move;
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1051,8 +1110,12 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             // This dumb approach favors moves near the end of the list
             #ifdef RANDOMIZING_EQUAL_MOVES
                 // Only randomize near-equal scores at the top level
-                double delta_score = ((top_deepening - depth) == 0) ? 0.01 : 0.0;
-                delta_score = 0.0;
+                //bool is_at_bottom_root = ((top_deepening - depth) == 0);
+                bool is_at_end_of_the_line = (depth == maximum_deepening);
+                //assert (!is_at_bottom_root);
+
+                double delta_score = (is_at_end_of_the_line ? 0.01 : 0.0);
+                delta_score = 0.0;     // personalities
 
                 double d_difference_in_score = std::fabs(d_score_value - d_best_score);
                 if (d_difference_in_score <= (delta_score + VERY_SMALL_SCORE)) {

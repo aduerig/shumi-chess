@@ -39,6 +39,8 @@ namespace ShumiChess {
 GameBoard::GameBoard(const std::string& fen_notation) {
     const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
     
+    //cout << "\x1b[33mrestart from fen " << fen_notation << "\x1b[0m" << endl;
+
     // Make sure FEN components are valid
     assert(fen_components.size() == 6);
     assert(fen_components[1].size() == 1);
@@ -461,12 +463,28 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 }
 
 
-int GameBoard::pawns_attacking_center_squares(Color c)
-{
-    return  pawns_attacking_square(c, square_e4)
-          + pawns_attacking_square(c, square_d4)
-          + pawns_attacking_square(c, square_e5)
-          + pawns_attacking_square(c, square_d5);
+
+int GameBoard::pawns_attacking_center_squares(Color c) {
+    
+    constexpr int CENTER_W = 2;   // weight for e4,d4,e5,d5
+    constexpr int ADV_W    = 1;   // weight for e6,d6 (White) or e3,d3 (Black)
+
+    int sum = 0;
+
+    sum += CENTER_W * (  pawns_attacking_square(c, square_e4)
+                    + pawns_attacking_square(c, square_d4)
+                    + pawns_attacking_square(c, square_e5)
+                    + pawns_attacking_square(c, square_d5));
+
+    if (c == Color::WHITE)
+        sum += ADV_W * (  pawns_attacking_square(c, square_e6)
+                        + pawns_attacking_square(c, square_d6));
+    else
+        sum += ADV_W * (  pawns_attacking_square(c, square_e3)
+                        + pawns_attacking_square(c, square_d3));
+
+    return sum;
+
 }
 
 

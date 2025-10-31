@@ -18,7 +18,7 @@ we're back
 ## intro
 This project is a hobby C++ engine written by OhMesch and ADuerig, and later refined and maintained by PDuerig. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
 
-This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering (at root). 
+This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering (at root), killer moves. 
 
 See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence".
 
@@ -27,11 +27,13 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 
 
 ## current issue log 
-    All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown)
-  ~~Crossed out~~ items are done, but under testing.
+    All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown) or d. feature to add. ~~Crossed out~~ items are done, but under testing.
 
-  * Bug: 
-  * Bug: Moveing Thread hangs after 12-25 moves or so. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain.
+  * Feature: Cant play black from bottom of board.
+  * Feature: Random AI seems broken (she stalls)
+  * Feature: Output or input .pgn files.
+  ~~* Feature: Interface needs better stuff for autoplay. Like a "current games won for both white and black", Also needs a "best absolute score" field.~~
+  * Bug: Moveing Thread hangs after 12-25 moves or so. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain. This does not happen in "sutoplay".
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * ~~Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. Wrong. uses the zobrist.~~ 
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. 
@@ -41,9 +43,9 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * ~~Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa"~~ ~~functionality. This is a problem in MinimaxAI.~~
   * Bug: Forces promotions for the human to be to a queen (the AI is not so handicapped and has been proven to be able to promote to anything). Problem with the interface I suppose.
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
-  * Sloth: Use other "speedups", that result from iterive deepening. (Killer moves + History heuristics, aspiration). These are best dome after TT implementation. This is a problem in MinimaxAI.
+  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration). These changes do not rely on TT or tranapsotion tables. This is a problem in MinimaxAI.
   * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, is the evaluation? can you present a move with no evaluation? ANd what about Zobrist?
-  * Bug: bitboards_to_algebriac() does not do disambiguation. Too hard for now. The function is debug for human consumption only.
+  * Bug: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not show checks either. The function is debug for human consumption only.
 
 
 ## change log
