@@ -246,6 +246,8 @@ class Engine {
             return key;
         }
 
+
+        int rand_int(int, int);
         bool flip_a_coin(void);
 
         void move_into_string(ShumiChess::Move m);

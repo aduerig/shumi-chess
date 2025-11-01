@@ -23,10 +23,14 @@ curr_game_draw = 0
 
 
 
-
+# Python arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--fen', default=None)
 parser.add_argument('--human', default=False, action='store_true')
+parser.add_argument('-d', '--depth', type=int, default=7, help='Maximum deepening')
+parser.add_argument('-t', '--time', type=int, default=2000, help='Time per move in ms')
+
+
 args = parser.parse_args()
 
 script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
@@ -117,19 +121,24 @@ def get_random_move(legal_moves):
     choice = random.choice(legal_moves)
     return choice[0:2], choice[2:4]
 
-
 def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
-    if name_of_ai.lower() == 'random_ai':
-        from_acn, to_acn = get_random_move(legal_moves)
-    else:
-        # NOTE: this is the blocking call to the C++ engine
-        milliseconds = 5000;   # because i said so.
-        move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds)
-        from_acn, to_acn = move[0:2], move[2:4]
+    try:
+        if name_of_ai.lower() == 'random_ai':
+            from_acn, to_acn = get_random_move(legal_moves)
+        else:
+            # Run engine with CLI knobs (time & max depth)
+            milliseconds   = args.time  if args.time  is not None else 2000
+            max_deepening  = args.depth if args.depth is not None else 7
+            move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening)
+            from_acn, to_acn = move[0:2], move[2:4]
 
-    # Put the result in the queue for the main thread to pick up
-    if ai_is_thinking: # Check if the computation is still relevant
-      ai_move_queue.put((from_acn, to_acn))
+        # Only post if the result is still relevant
+        if ai_is_thinking:
+            ai_move_queue.put((from_acn, to_acn))
+    except Exception:
+        # Keep the main loop resilient if the worker hits an error
+        if ai_is_thinking:
+            ai_move_queue.put(None)
 
 
 ai_default = 'minimax_ai'
@@ -285,10 +294,6 @@ def get_fen(button_obj):
     set_fen_text.setText(fen)      # <-- put FEN into the entry box
 
 
-# def get_random_move(legal_moves):
-#     choice = random.choice(legal_moves)
-#     return choice[0:2], choice[2:4]
-
 # engine_communicator.make_move_two_acn(from_acn, to_acn)
 # legal_moves = engine_communicator.get_legal_moves()
 
@@ -426,16 +431,16 @@ curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
 
 
-# small static label to the left of the FEN box
-fen_label = Text(Point(square_size * 0.4, square_size * 8.5), "FEN:")
+# small static label "FEN:" to the left of the FEN box
+fen_label = Text(Point(square_size * 0.25, square_size * 8.5), "FEN:")
 fen_label.setFill(color_rgb(200, 200, 200))
 fen_label.setSize(8)   # small
 fen_label.draw(win)
 
 # set fen entry text box 
 set_fen_text = Entry(
-    Point(square_size * 4.25, square_size * 8.5),
-    55
+    Point(square_size * 5.0, square_size * 8.5),
+    70
 )
 set_fen_text.setFill(color_rgb(200, 200, 200))
 set_fen_text.draw(win)
@@ -649,6 +654,7 @@ try:
             curr_player = both_players[player_index]
 
             if 'ai' in curr_player and not ai_is_thinking:
+                # start thread
                 ai_thread = threading.Thread(target=get_ai_move_threaded, args=(legal_moves, curr_player), daemon=True)
                 ai_thread.start()
                 ai_is_thinking = True
@@ -757,12 +763,15 @@ try:
         game_over_text.setText(winner_text.format(winner))
         game_over_text.draw(win)
 
+        # Only auto-reset if the game did NOT end in a draw. Otherwise we just stop and die and show the board
+        #if autoreset_toggle and winner != 'draw':
         if autoreset_toggle:
-        ##if winner == 'draw' and autoreset_toggle:
             print('RESETTING BOARD TOGGLE')
             reset_board("", winner)
             game_state_might_change = True
             continue
+
+        # skip the blocking getMouse()
 
         # get raw positions
         raw_position_left_click = win.getMouse()

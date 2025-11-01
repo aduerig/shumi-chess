@@ -23,4 +23,5 @@ You can now use deepening 7 to play rapid games for the first time. Deepening 8 
 
 * "Mr. Shumi" is significantly faster and better than his predesessors as he uses MVV-LVA, killer moves, and other things. I estimate USCF of 1550. Other internal speed imprevements, including using "fast" pushMove/popMove when filtering psuedo moves down to legal moves Also, he now is trained to attack the king, after develeopment. He is also specifically trained to 1. Not play the scandinavian, and 2. Not block the d-pawn with the king bishop.  
 
-* Mr. Shumi's friend has killer moves. which improve speed and chess ability significanlty.
+* Mr. Shumi's friends have killer moves. which improve speed and chess ability significanlty. Most imporant I call this "friend(s), because ther is now a clver randomization here. Only randomizes a small amount, over a move list formed (and sorted) on the root node, when at maxiumu deepeing, AND 
+when on first move. This simple diversity opens up hundreds of new lines for study and play. Thus calling them "friends"

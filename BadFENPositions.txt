@@ -129,8 +129,14 @@ Fen is now rr5k/1b2qppp/3p1nn1/P1p5/4P3/P2B1N2/2RBQPPP/4R1K1 w - - 4 22
 // Test rooks doubled on 7th rank
 Fen is now r2r3k/1R4pp/4R3/2p2p2/8/5P2/3B1P1P/6K1 w - - 3 33
 
+
+
 endgames
 ========
+
+// Test of underpromotion (to knight)
+"1r6/8/8/8/8/2k5/2p5/K7 w - - 0 1"      then Kb8. Black should not promote to  queen
+""
 
 
 // two rooks endgame (good start position)

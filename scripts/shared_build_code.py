@@ -73,7 +73,9 @@ def build_python_gui_module(release):
     if return_code:
         sys.exit(1)
 
-def run_python_gui(fen, human):
+# def run_python_gui(fen, human):
+def run_python_gui(fen=None, human=False, depth=None, time=None):
+
     cmd_line = [
         'python',
         str(show_board_path)
@@ -82,6 +84,13 @@ def run_python_gui(fen, human):
         cmd_line.extend(['--fen', fen])
     if human:
         cmd_line.extend(['--human'])
+
+    # NEW: forward time to the GUI
+    if time is not None:
+        cmd_line.extend(['-t', str(time)])
+    if depth is not None:
+        cmd_line.extend(['-d', str(depth)])
+
 
     process = run_command_async(cmd_line, stdout=None, stderr=None)
 

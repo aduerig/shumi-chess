@@ -169,6 +169,10 @@ class GameBoard {
 
         bool are_bit_boards_valid() const;
         
+        bool insufficient_material_simple();
+
+        int king_center_weight(Color color);
+
         int pawns_attacking_square(Color c, int sq);
         int pawns_attacking_center_squares(Color c);
 

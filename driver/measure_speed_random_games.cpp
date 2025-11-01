@@ -36,6 +36,8 @@ GameState play_game(Engine& engine, int& total_moves) {
 
     assert(0);
 
+    ///////////////////////////// I AM NOT SUPPORTED //////////////////////////////////
+
     while (result == GameState::INPROGRESS) {
         vector<Move> all_moves = engine.get_legal_moves();
         // checking for draws manually

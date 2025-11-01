@@ -26,7 +26,6 @@ public:
     //unordered_map<ull, int> piece_values;
 
     RandomAI(ShumiChess::Engine&);
-    int rand_int(int, int);
     ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
 
@@ -48,6 +47,8 @@ public:
     
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;
+
+    int cp_score_pieces_only_avg = 0;
 
     static constexpr int MAX_PLY_PV = 256;
     array<ShumiChess::Move, MAX_PLY_PV> prev_root_best_{};   
@@ -71,10 +72,12 @@ public:
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
 
+    double d_random_delta = 0.0;
+
 
     int cp_score_positional_get_opening(ShumiChess::Color color); 
     int cp_score_positional_get_middle(ShumiChess::Color color, int nPly); 
-    int cp_score_positional_get_end(ShumiChess::Color color); 
+    int cp_score_positional_get_end(ShumiChess::Color color, int mat_avg); 
 
     int evaluate_board(ShumiChess::Color for_color, int nPly, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
@@ -83,11 +86,14 @@ public:
     void do_a_deepening();
 
 
- 
+    std::vector<std::pair<ShumiChess::Move, double>> MovesFromRoot;
 
+    ShumiChess::Move pick_random_within_delta_rand(
+                    std::vector<MoveAndScore>& MovesFromRoot,
+                    double delta_pawns);
 
-
-    ShumiChess::Move get_move_iterative_deepening(double);
+    //ShumiChess::Move get_move_iterative_deepening(double timeRequested);
+    ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
                                             //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table

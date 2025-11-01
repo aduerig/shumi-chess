@@ -28,25 +28,37 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 
 ## current issue log 
     All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown) or d. feature to add. ~~Crossed out~~ items are done, but under testing.
-
+  * Bug: Serious after one game, (human .vs. shumi, how do you start the next game) (reuse the "pop!" button).
+  * Bug:  Forces promotions for the human to be to a queen. Problem with the interface I suppose.
+  * Bug: Weird interface bug prevents AI from underpromotion to queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". The AI and engine come up with (after white moves Ka2) c1=N. c1=Q leads to a stalemate and is not considered by the engine. At every depth, the AI and engine correctly choses c1=N which is checkmate.This is correct, but the interface when it makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
+  ~~* Feature: No ability to truely randomize response without ruining capability. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.~~
+  * Bug: "Some time repetition" (when playing in the game) crashes the system. Over leveling, runs off to the 256 level trap. Only seen in autoplay. Not always seen., not frequent.
   * Feature: Cant play black from bottom of board.
-  * Feature: Random AI seems broken (she stalls)
-  * Feature: Output or input .pgn files.
+  * Feature: A "best score" field up in top of the showboard.py. Connect it to the double field used for root PV?
+  ~~* Failure: does not recognize draw by insuffecent material.~~
+  * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the random move. Maybe easy change See get_ai_move_threaded().
+  * Feature: Output or matybe input .pgn files. Most important is output.
+  * Sloth: Scores still handles as double, outside of evaluation. This is a more serious problem than it appears, as the TT has to convert and uncovert (it stores in centipawns like it should, and has to. I know, just double multiplies and divides, but All scores should be int, in centipawns unless its display. Big job, but not hard, some gain in speed and cleaner code for sure).
   ~~* Feature: Interface needs better stuff for autoplay. Like a "current games won for both white and black", Also needs a "best absolute score" field.~~
-  * Bug: Moveing Thread hangs after 12-25 moves or so. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain. This does not happen in "sutoplay".
+  * Bug: Moveing Thread hangs after 12-25 moves or so, in long chess game. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain. This does not happen in "autoplay". Does not always happen.
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * ~~Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. Wrong. uses the zobrist.~~ 
-  * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. 
+  * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. Its now 20, for testing only.
   * ~~Failure: Doesnt recognize Enpassent (its not implemented). This is a problem in the engine.~~
-  * Sloth: No Transposition table (TT) implemented. This is a problem in MinimaxAI. Wrong its "slightly" implemented.
+  * Sloth: No Transposition table (TT) implemented. This is a problem in MinimaxAI. Comment: Wrong its "slightly" implemented. Its used for repeat position ID, but not for move sorting. 
   * ~~Sloth: Zobrist is not maintained for castling or en passant.~~
   * ~~Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa"~~ ~~functionality. This is a problem in MinimaxAI.~~
-  * Bug: Forces promotions for the human to be to a queen (the AI is not so handicapped and has been proven to be able to promote to anything). Problem with the interface I suppose.
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
   * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration). These changes do not rely on TT or tranapsotion tables. This is a problem in MinimaxAI.
-  * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, is the evaluation? can you present a move with no evaluation? ANd what about Zobrist?
+  * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? And what about Zobrist?
   * Bug: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not show checks either. The function is debug for human consumption only.
 
+## recommended usage (for python scripts/run_tests.py -dD and -tT)
+  fast 5 minute play: -d=4 -t=10
+  for half hour game: -d=6 -t=1000
+  for long game     : -d=8 -t=2000
+  for end games     : -d=10 -t=2000   (takes too long unless matrial very small)
+   
 
 ## change log
   * Abandoned 10/11/2025

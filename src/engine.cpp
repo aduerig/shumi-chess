@@ -37,7 +37,7 @@ Engine::Engine() {
     // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[37]") << endl;
     // utility::representation::print_bitboard(south_west_square_ray[37]);
 
-    srand((unsigned)time(NULL));
+    //srand((unsigned)time(NULL));
 
 
 }
@@ -58,7 +58,7 @@ void Engine::reset_engine() {
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
     //game_board = GameBoard("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
-    //game_board = GameBoard("rnbqkb1r/pppp1ppp/4pn2/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 1 3");
+    //game_board = GameBoard("7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1");
     
     game_board = GameBoard();
 
@@ -71,7 +71,7 @@ void Engine::reset_engine() {
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
+    //std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
     game_board.bCastledWhite = false;  // I dont care which side i castled.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
@@ -277,9 +277,9 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
-    else if (game_board.halfmove >= 50) {
-        //  After fifty "ply" or half moves, without a pawn move or capture, its a draw.
-        //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;
+    else if (game_board.halfmove >= 20) {     // NOTE: debug only
+        //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
+        //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
         return GameState::DRAW;
 
     } else {
@@ -297,8 +297,12 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
                 }
             }
         #endif
+    
+        bool isOverThatWay = game_board.insufficient_material_simple();
+        if (isOverThatWay) {
+            return GameState::DRAW;
+        }
     }
-
 
 
     return GameState::INPROGRESS;
@@ -1770,7 +1774,9 @@ bool Engine::flip_a_coin(void) {
     return (rand() & 1) != 0;   // 0 or 1 ? false or true
 }
 
-
+int Engine::rand_int(int min, int max) {
+    return min + (rand() % static_cast<int>(max - min + 1));
+}
 
 void Engine::move_into_string(ShumiChess::Move m) {
     bitboards_to_algebraic(game_board.turn, m

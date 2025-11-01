@@ -627,6 +627,36 @@ int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on 
     }
     return score;
 }
+//
+// returns true only if "insufficient material
+// NOTE: known errors here: this logic declares the follwing positions drawn, when they are not:
+//      two bishops on one side
+//      
+//     
+bool GameBoard::insufficient_material_simple()
+{
+    // 1) No pawns anywhere
+    ull pawns = white_pawns | black_pawns;
+    if (pawns) return false;
+
+    // 2) No queens or rooks anywhere
+    ull majors = (white_rooks | black_rooks | white_queens | black_queens);
+    if (majors) return false;
+
+    // 3) Count total minor pieces (knights + bishops), both colors
+    auto popcount = [](ull x) {
+        int c = 0;
+        while (x) { x &= (x - 1); ++c; }   // Kernighan’s bit count
+        return c;
+    };
+
+    int n_knights = popcount(white_knights | black_knights);
+    int n_bishops = popcount(white_bishops | black_bishops);
+    int minors = n_knights + n_bishops;
+
+    // Your rule: if total minors ≤ 2, it's insufficient
+    return (minors <= 2);
+}
 
 
 //
@@ -665,6 +695,22 @@ int GameBoard::count_isolated_pawns(Color c) const {
 }
 
 
+int GameBoard::king_center_weight(Color color) {
+    ull kbb = (color == Color::WHITE) ? white_king : black_king;
+    assert(kbb != 0ULL);
+    int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63 (local copy, ok)
+
+    int r = sq / 8;              // 0..7
+    int f = sq % 8;              // 0..7
+    int dr = std::min(std::abs(r - 3), std::abs(r - 4));
+    int df = std::min(std::abs(f - 3), std::abs(f - 4));
+    int ring = std::max(dr, df); // 0..3
+
+    static const int W[4] = {4, 3, 2, 1};  // 2.0, 1.5, 1.0, 0.5 times 2
+    if (ring < 0) ring = 0;
+    if (ring > 3) ring = 3;
+    return W[ring];
+}
 
 // Passed pawns bonus in centipawns:
 //  - 10 cp on 3rd/4th rank (from that side's perspective)

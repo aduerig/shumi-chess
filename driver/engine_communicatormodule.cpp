@@ -176,7 +176,6 @@ engine_communicator_get_fen(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_move_number(PyObject* self, PyObject* args) {
-    //return Py_BuildValue("i", (int) python_engine.game_board.fullmove);
     return Py_BuildValue("i", python_engine.g_iMove);    // real moves in whole game
 }
 
@@ -196,18 +195,23 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
     return Py_BuildValue("s", move_in_acn_notation.c_str());
 }
 
+
+
+
 static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
-    double milliseconds; // requested time
-    if (!PyArg_ParseTuple(args, "d", &milliseconds))
-        return NULL;
+    double milliseconds;          // required
+    int max_deepening = 7;        // default to 7
+
+    // parse: required double, optional int
+    if (!PyArg_ParseTuple(args, "d|i", &milliseconds, &max_deepening)) return NULL;
 
     ShumiChess::Move gotten_move;
     std::string move_in_acn_notation;
 
     Py_BEGIN_ALLOW_THREADS;
 
-    gotten_move = minimax_ai->get_move_iterative_deepening(milliseconds);
+    gotten_move = minimax_ai->get_move_iterative_deepening(milliseconds, max_deepening);
     move_in_acn_notation = utility::representation::move_to_string(gotten_move);
 
     Py_END_ALLOW_THREADS;
@@ -251,6 +255,7 @@ static struct PyModuleDef engine_communicatormodule = {
 
 PyMODINIT_FUNC
 PyInit_engine_communicator(void) {
+    std::srand(static_cast<unsigned>(std::time(nullptr)));  // seed once
     return PyModule_Create(&engine_communicatormodule);
 }
 
