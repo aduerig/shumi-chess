@@ -51,8 +51,7 @@ public:
     int cp_score_pieces_only_avg = 0;
 
     static constexpr int MAX_PLY_PV = 256;
-    array<ShumiChess::Move, MAX_PLY_PV> prev_root_best_{};   
-    //ShumiChess::Move prev_root_best_{};  // best root move from the last *completed* iteration   PV PUSH
+    std::pair<ShumiChess::Move, double> prev_root_best_[MAX_PLY_PV + 2];
 
     // The chess engine
     ShumiChess::Engine& engine;
@@ -75,6 +74,7 @@ public:
     double d_random_delta = 0.0;
 
 
+
     int cp_score_positional_get_opening(ShumiChess::Color color); 
     int cp_score_positional_get_middle(ShumiChess::Color color, int nPly); 
     int cp_score_positional_get_end(ShumiChess::Color color, int mat_avg); 
@@ -83,7 +83,7 @@ public:
     void wakeup();
 
     void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys);
-    void do_a_deepening();
+    tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time);
 
 
     std::vector<std::pair<ShumiChess::Move, double>> MovesFromRoot;

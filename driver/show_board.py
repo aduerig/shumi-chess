@@ -283,11 +283,6 @@ def wake_up(button_obj):
     
 
 
-# def wake_up(button_obj):
-#     file_path = filedialog.askopenfilename()
-#     print('you selected this path:', file_path)
-
-
 def get_fen(button_obj):
     fen = engine_communicator.get_fen()
     print(f'Current FEN: {fen}')
@@ -393,10 +388,20 @@ for button_obj in button_holder:
     button_obj.text_graphics_object = new_button_text
     curr_y_cell -= 1
 
+# small field left of the turn label
+material_text = Text(Point(square_size * 0.30, square_size * 9), '1234')
+material_text.setFill(color_rgb(200, 200, 200))
+material_text.setSize(8)
+material_text.draw(win)
+
+score = 4321 
+material_text.setText(str(score))
+
+
 # current turn text
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
-    Point(square_size * 0.85, square_size * 9),
+    Point(square_size * 1.25, square_size * 9),
     turn_text_values[0]
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
@@ -404,9 +409,14 @@ current_turn_text.draw(win)
 
 
 # current game text (plus small W/B/D counters to the left)
-white_wins_text = Text(Point(square_size * 5.9, square_size * 9), f'W {curr_game_white}')
-black_wins_text = Text(Point(square_size * 6.5, square_size * 9), f'B {curr_game_black}')
-draw_wins_text  = Text(Point(square_size * 7.1, square_size * 9), f'D {curr_game_draw}')
+# white_wins_text = Text(Point(square_size * 5.9, square_size * 9), f'W {curr_game_white}')
+# black_wins_text = Text(Point(square_size * 6.5, square_size * 9), f'B {curr_game_black}')
+# draw_wins_text  = Text(Point(square_size * 7.1, square_size * 9), f'D {curr_game_draw}')
+white_wins_text = Text(Point(square_size * 7.0, square_size * 9), f'W {curr_game_white}')
+black_wins_text = Text(Point(square_size * 7.5, square_size * 9), f'B {curr_game_black}')
+draw_wins_text  = Text(Point(square_size * 8.1, square_size * 9), f'D {curr_game_draw}')
+
+
 
 
 for t in (white_wins_text, black_wins_text, draw_wins_text):
@@ -446,7 +456,7 @@ set_fen_text.setFill(color_rgb(200, 200, 200))
 set_fen_text.draw(win)
 
 
-
+# set the winner text
 winner_text = 'GAME OVER: {} wins'
 game_over_text = Text(
     Point(square_size * 4.5, square_size * 9.5),
@@ -465,9 +475,9 @@ for y in range(8):
             Point(location_x + square_size, location_y + square_size)
         )
         if every_other:
-            square_to_draw.setFill(color_rgb(65, 65, 65))
+            square_to_draw.setFill(color_rgb(60, 80, 60))      # black squares
         else:
-            square_to_draw.setFill(color_rgb(125, 125, 125))
+            square_to_draw.setFill(color_rgb(145, 145, 145))   # white squares
         square_to_draw.draw(win)
         every_other = 1 - every_other
     every_other = 1 - every_other
@@ -585,6 +595,11 @@ def unfocus_and_stop_dragging():
     acn_focused = None
     is_dragging = False
 
+
+
+
+
+
 def make_move(from_acn, to_acn):
     global legal_moves, player_index, last_move_indicator
 
@@ -632,7 +647,7 @@ player_index = 0
 acn_focused = None
 drawn_potential = []
 avail_moves = []
-fps = 20.0
+fps = 5.0               # Make pretty samlsmalll, the display dont need to do anything that fast
 
 last_move_indicator = None
 if args.fen is not None:
@@ -648,8 +663,10 @@ try:
             # print(f'Loop: {acn_focused}')
 
             current_turn_text.setText(turn_text_values[player_index])
-            curr_game_text.setText('Game {}'.format(curr_game))
-            curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
+            curr_game_text.setText('Gamee {}'.format(curr_game))
+            curr_move_text.setText('Movee {}'.format(engine_communicator.get_move_number()))
+
+            material_text.setText(str(engine_communicator.get_draw_status()))
 
             curr_player = both_players[player_index]
 

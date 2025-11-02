@@ -21,8 +21,8 @@ using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
    
 
-#define VERY_SMALL_SCORE 1.0e-9     // 10 micro centipawns?
-#define HUGE_SCORE 10000            // A million centipawns!       //  DBL_MAX    // A relative score
+#define VERY_SMALL_SCORE 1.0e-9     // In pawns. (its 10 micro centipawns?)
+#define HUGE_SCORE 10000            // In pawns. (its a million centipawns!)       //  DBL_MAX    // A relative score
 
 #define ABORT_SCORE (HUGE_SCORE+1)  // Used only to abort the analysis
 
@@ -49,6 +49,7 @@ class Engine {
         //? Should engine functions act independently and take board objects?
         explicit Engine();
         explicit Engine(const string&);
+
 
         // Member methods
         void reset_engine();
@@ -208,7 +209,6 @@ class Engine {
         void setNextMovesDeepening();
         int user_requested_next_move_deepening = 7;
 
-
         void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
 
@@ -246,6 +246,9 @@ class Engine {
             return key;
         }
 
+        string reason_for_draw = "------------";
+        int get_draw_status();
+        int material_centPawns = 0;
 
         int rand_int(int, int);
         bool flip_a_coin(void);

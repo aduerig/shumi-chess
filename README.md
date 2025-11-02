@@ -30,7 +30,9 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
     All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown) or d. feature to add. ~~Crossed out~~ items are done, but under testing.
   * Bug: Serious after one game, (human .vs. shumi, how do you start the next game) (reuse the "pop!" button).
   * Bug:  Forces promotions for the human to be to a queen. Problem with the interface I suppose.
-  * Bug: Weird interface bug prevents AI from underpromotion to queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". The AI and engine come up with (after white moves Ka2) c1=N. c1=Q leads to a stalemate and is not considered by the engine. At every depth, the AI and engine correctly choses c1=N which is checkmate.This is correct, but the interface when it makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
+  * Bug: Weird interface bug prevents AI from underpromotion to queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2).  The AI and engine come up with c1=N. c1=Q leads to a stalemate and is not considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
+  * Bug: cant seem to get evaluator to want to trade when it should.
+  * Feature: Ability to set one minimaxai to a different setup than the other. Very useful feature. Excellent for testing.
   ~~* Feature: No ability to truely randomize response without ruining capability. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.~~
   * Bug: "Some time repetition" (when playing in the game) crashes the system. Over leveling, runs off to the 256 level trap. Only seen in autoplay. Not always seen., not frequent.
   * Feature: Cant play black from bottom of board.
@@ -49,7 +51,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * ~~Sloth: Zobrist is not maintained for castling or en passant.~~
   * ~~Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa"~~ ~~functionality. This is a problem in MinimaxAI.~~
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
-  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration). These changes do not rely on TT or tranapsotion tables. This is a problem in MinimaxAI.
+  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration). These changes do not rely on TT or transposition tables. This is a problem in MinimaxAI.
   * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? And what about Zobrist?
   * Bug: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not show checks either. The function is debug for human consumption only.
 

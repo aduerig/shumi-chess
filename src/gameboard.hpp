@@ -37,7 +37,7 @@ class GameBoard {
         // other information about the board state
         Color turn;
 
-        //Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
+        // Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
         uint8_t black_castle_rights = 0b00000000;
         uint8_t white_castle_rights = 0b00000000;
 

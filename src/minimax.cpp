@@ -7,10 +7,11 @@
 #include <locale>
 #include <string>
 #include <tuple>
-#include <algorithm>  // at top
+#include <algorithm>
 #include <set>
 #include <cstdint>
 #include <cmath>
+#include <utility>
 
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
@@ -64,7 +65,7 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 // Only randomizes a small amount a list formed on the root node, when at maxiumu deepeing, AND 
 // on first move. This simple diversity opens up hundreds of new lines for study and play.
 #define RANDOMIZING_EQUAL_MOVES         // THIS IS REQUIRED TO BE DEFINED 
-
+#define RANDOMIZING_EQUAL_MOVES_DELTA 0.02
 
 
 #ifdef IS_CALLBACK_THREAD
@@ -168,8 +169,6 @@ void MinimaxAI::wakeup() {
 }
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Returns " relative (negamax) score". Relative score is positive for great positions for the specified player. 
@@ -211,22 +210,23 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
-        int cp_score_pieces_only_temp = engine.game_board.get_material_for_color(color1);
-        assert (cp_score_pieces_only_temp>=0);    // no negative value pieces
+        int cp_score_temp = engine.game_board.get_material_for_color(color1);
+        assert (cp_score_temp>=0);    // no negative value pieces
 
-        if (for_color == ShumiChess::WHITE) mat_cp_white = cp_score_pieces_only_temp;
-        else                                mat_cp_black = cp_score_pieces_only_temp;
+        if (for_color == ShumiChess::WHITE) mat_cp_white = cp_score_temp;
+        else                                mat_cp_black = cp_score_temp;
 
-        tempsum += cp_score_pieces_only_temp;
+        tempsum += cp_score_temp;
 
         // Take color into acccount
-        if (color1 != for_color) cp_score_pieces_only_temp *= -1;
-        cp_score_pieces_only += cp_score_pieces_only_temp;
+        if (color1 != for_color) cp_score_temp *= -1;
+        cp_score_pieces_only += cp_score_temp;
 
     }
 
     assert (tempsum>=0);
     cp_score_pieces_only_avg = tempsum / 2.0;
+    engine.material_centPawns = cp_score_pieces_only;
 
     //
     // Positional considerations only
@@ -261,18 +261,16 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
             // Add code to promote/discourage trading, depending on who is ahead.
             // (note. At beginning of game, there are 4000 centipawns of material.
             // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns to trade if Im a pawn ahead.)
-            int materialIAmPositive;
-            if (color == ShumiChess::WHITE) materialIAmPositive = mat_cp_white;
-            else                            materialIAmPositive = mat_cp_black;
-            assert (materialIAmPositive>=0);
-
-            cp_score_position_temp += (materialIAmPositive / 10);
+            // int materialIAmPositive;
+            // if (color == ShumiChess::WHITE) materialIAmPositive = mat_cp_white;
+            // else                            materialIAmPositive = mat_cp_black;
+            // assert (materialIAmPositive>=0);
+            // cp_score_position_temp += (materialIAmPositive / 10);
 
 
             // Add positional eval to score
             if (color != for_color) cp_score_position_temp *= -1;
             cp_score_position += cp_score_position_temp;
-
 
         }
 
@@ -337,7 +335,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
     engine.game_board.king_castle_happiness(color, iZeroToThree);
     assert (iZeroToThree>=0);
     assert (iZeroToThree<=3);
-    cp_score_position_temp += iZeroToThree*92;   // centipawns
+    cp_score_position_temp += iZeroToThree*90;   // centipawns
 
     // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
     pers_index = 1;
@@ -457,9 +455,128 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int mat_avg)
 ///////////////////////////////////////////////////////////////////////////////////
 
 
+//
+// Only returns false is if user aborts.
+//
+tuple<double, Move> MinimaxAI::do_a_deepening(int depth, long long elapsed_time) {
 
-void MinimaxAI::do_a_deepening() {
+    tuple<double, Move> ret_val;
 
+    // We are local to here
+    double alpha;
+    double beta;
+
+
+    //Move null_move = Move{};
+    Move null_move = engine.users_last_move;    // Just to make the move history work?
+
+    int nPlys = 0;
+    top_deepening = depth;      // deepening starts at this depth
+    int aspiration_tries = 0;   // safety fuse
+    double widen = 0.5;         // example margin (in pawns)
+
+
+    alpha = -HUGE_SCORE;
+    beta = HUGE_SCORE;
+
+    // assume: prevScore holds last iteration's exact root score (in pawns)
+     
+    double w = 0.20;                 // ≈20 centipawns
+    if (0) {  // (depth > 1) {
+        double prevScore;
+        prevScore = prev_root_best_[depth - 1].second;   // score in pawns
+        alpha = prevScore - widen;
+        beta  = prevScore + widen;
+    } else {
+        alpha = -HUGE_SCORE;         // d == 1 → full window
+        beta  =  HUGE_SCORE;
+    }
+
+
+    bool bStillAspiring  = false;
+    do {
+
+        cout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
+                    << " msec=" << std::setw(6) << elapsed_time << ' ';
+
+        ret_val = recursive_negamax(depth, alpha, beta
+                                                //, move_scores_table
+                                                //, move_and_scores_list
+                                                , null_move
+                                                , (nPlys+1)
+                                                );
+
+        // ret_val is a tuple of the score and the move.
+        double d_Return_score = get<0>(ret_val);
+        if (d_Return_score == ABORT_SCORE) return ret_val;
+        
+
+        
+        // Aspiration (just a guard right now)
+        //assert ((alpha <= d_Return_score) && (d_Return_score <= beta));
+        //printf("alpha, this, beta %f  %f  %f", alpha, d_Return_score, beta);
+        assert((alpha <= d_Return_score) && (d_Return_score <= beta));
+   
+
+        // --- What WOULD happen if the score were outside [alpha, beta] ---
+        // With an infinite window these branches are unreachable right now,
+        // but this is the template you’ll use once you narrow the window.
+
+        if (alpha > d_Return_score) {
+            // Fail-low: score came in at or below alpha
+            std::cout << "\x1b[38;2;255;165;0mfail low\x1b[0m" << std::endl;
+            double widened = alpha - widen;
+            alpha = (widened < -HUGE_SCORE) ? -HUGE_SCORE : widened;
+            //double newBeta  = beta; // keep upper bound
+            widen *= 2.0;  // widen window on fail-low
+
+            // log_fail_low(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
+            // d_Return_score = search(position, depth, newAlpha, newBeta);
+            bStillAspiring  = true;
+        }
+        else if (d_Return_score > beta) {
+            // Fail-high: score came in at or above beta
+            std::cout << "\x1b[38;2;255;165;0mfail high\x1b[0m" << std::endl;
+            double widened = beta + widen;
+            //double newAlpha = alpha; // keep lower bound
+            beta  = (widened >  HUGE_SCORE) ?  HUGE_SCORE : widened;
+            widen *= 2.0;  // widen window on fail-high
+
+            // log_fail_high(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
+            // d_Return_score = search(position, depth, newAlpha, newBeta);
+            bStillAspiring  = true;
+
+        }
+        else {
+
+            // Continue with d_Return_score (exact if it fit; bound if you decide to flag it)
+            bStillAspiring  = false;
+        }
+
+        aspiration_tries++;
+        if (bStillAspiring && aspiration_tries >= 5) {
+             std::cout << "\x1b[38;2;255;165;0m\n[aspiration] giving up after 5 tries\x1b[0m\n";
+             bStillAspiring  = false;
+             break;
+        }
+
+
+        // std::cout << "\x1b[38;2;255;165;0m[aspiration] fail "
+        //         << (alpha >= d_Return_score ? "low " : "high ")
+        //         << "α=" << alpha << " β=" << beta
+        //         << " score=" << d_Return_score
+        //         << " widen→" << widen * 2.0
+        //         << "\x1b[0m\n";
+
+
+
+
+    } while (bStillAspiring );
+
+
+
+
+    return ret_val;
 
 }
 
@@ -518,10 +635,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
  
 
 
-    //Move null_move = Move{};
-    Move null_move = engine.users_last_move;
-
-
 
     this_deepening = engine.user_requested_next_move_deepening;
     //this_deepening = 5;        // Note: because i said so.
@@ -559,48 +672,29 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
     do {
 
-        do_a_deepening();
-
+        tuple<double, Move> ret_val;
+        
         #ifdef _DEBUGGING_MOVE_CHAIN
             fputs("\n\n---------------------------------------------------------------------------", fpDebug);
             engine.print_move_to_file(null_move, nPly, (GameState::INPROGRESS), false, true, false, fpDebug);
         #endif
 
-        cout << endl << "Deeping " << depth << " ply of " << maximum_deepening
-                << " msec=" << std::setw(6) << elapsed_time << ' ';
-
-        nPlys = 0;
-        top_deepening = depth;      // deepening starts at this depth
-
-        double alpha = -HUGE_SCORE;
-        double beta = HUGE_SCORE;
-
-        auto ret_val = recursive_negamax(depth, alpha, beta
-                                                //, move_scores_table
-                                                //, move_and_scores_list
-                                                , null_move
-                                                , (nPlys+1)
-                                               );
-
-        // ret_val is a tuple of the score and the move.
+        ret_val = do_a_deepening(depth, elapsed_time);
         double d_Return_score = get<0>(ret_val);
 
         if (d_Return_score == ABORT_SCORE) {
             cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
             break;   // Stop deepening, no more depths.
+            
         } else {
             d_best_move_value = d_Return_score;
             best_move = get<1>(ret_val);
         }
 
 
-
-        assert ((alpha <= d_Return_score) && (d_Return_score <= beta));
-
-        // publish PV for the *next* iteration (the next root):   PV PUSH
+        // publish PV for the *next* iteration (the next root):   PV at the root     prevScore
         assert (depth >=0);
-        prev_root_best_[depth] = best_move;
-
+        prev_root_best_[depth] = std::make_pair(best_move, d_best_move_value);   // move + score (pawns)
 
         engine.move_and_score_to_string(best_move, d_best_move_value , true);
 
@@ -645,7 +739,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
 
         #ifdef RANDOMIZING_EQUAL_MOVES
-            d_random_delta = 0.2;
+            d_random_delta = RANDOMIZING_EQUAL_MOVES_DELTA;
         #else
             d_random_delta = 0.0;
         #endif
@@ -655,11 +749,12 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         engine.move_into_string(best_move);
         std::cout << engine.move_string << std::endl;
    
+        // print moves and scores (debug only)
         for ( auto& ms : MovesFromRoot) {
             Move& m = ms.first;
             double sc = ms.second;
             engine.move_into_string(m);
-           // std::cout << engine.move_string << " ; " << std::fixed << std::setprecision(2) << sc << "\n";
+            std::cout << engine.move_string << " ; " << std::fixed << std::setprecision(2) << sc << "\n";
         }
     }
     MovesFromRoot.clear();
@@ -897,6 +992,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                             : (-HUGE_SCORE + d_level);
         } else if (state == GameState::DRAW) {
             d_best_score = 0.0;          // Stalemate
+            engine.reason_for_draw = "stalemate";
         } else {
             assert(0);
         }
@@ -1269,7 +1365,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_loop_over   // input/output
                             , int depth, int nPlys)
 {
-    assert(top_deepening > 0);
+
     assert(p_moves_to_loop_over);
     auto& moves = *p_moves_to_loop_over;
     if (moves.empty()) return;
@@ -1282,10 +1378,13 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
     // It really is the last deepening, the opposite of the real root, which is the first deepening.
     if (nPlys == 1)
     {
-        const ShumiChess::Move pv_move = prev_root_best_[top_deepening - 1];
+        assert(top_deepening > 0);
+
+        const ShumiChess::Move pv_move = prev_root_best_[top_deepening - 1].first;
+
         for (size_t i = 0; i < moves.size(); ++i)
         {
-            if (moves[i] == pv_move)
+            if (moves[i] == pv_move)    // if this move is the previous best move (from previous deepenings root)
             {
                 if (i != 0)
                     std::swap(moves[0], moves[i]);
@@ -1361,6 +1460,8 @@ bool MinimaxAI::look_for_king_moves() const
     }
     return false;
 }
+
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

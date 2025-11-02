@@ -322,7 +322,7 @@ int GameBoard::get_castle_status_for_color(Color color1) const {
 // Returns centipawns. Always positive. 
 int GameBoard::get_material_for_color(Color color1) {
 
-    int cp_score_pieces_only_temp = 0;
+    int cp_score_temp = 0;
 
     // Add up the scores for each piece
     for (Piece piece_type = Piece::PAWN;
@@ -336,14 +336,14 @@ int GameBoard::get_material_for_color(Color color1) {
         // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
         int cp_board_score = centipawn_score_of(piece_type);
         int nPieces = bits_in(pieces_bitboard);
-        cp_score_pieces_only_temp += (int)(((double)nPieces * (double)cp_board_score));
+        cp_score_temp += (int)(((double)nPieces * (double)cp_board_score));
 
         // This return must always be positive.
-        assert (cp_score_pieces_only_temp>=0);
+        assert (cp_score_temp>=0);
 
     }
 
-    return cp_score_pieces_only_temp;
+    return cp_score_temp;
 }
 
 

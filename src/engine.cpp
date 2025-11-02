@@ -96,7 +96,7 @@ void Engine::reset_engine(const string& fen) {
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
+    //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
     game_board.bCastledWhite = false;  // I dont care which side i castled.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
@@ -274,12 +274,14 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
             return GameState::WHITEWIN;     // Checkmate
         }
         else {
+            reason_for_draw = "stalemate";
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
-    else if (game_board.halfmove >= 20) {     // NOTE: debug only
+    else if (game_board.halfmove >= 50) {     // NOTE: debug only
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
+        reason_for_draw = "50 move rule";
         return GameState::DRAW;
 
     } else {
@@ -293,6 +295,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
                     // along the current line. That means we are in a repetition loop.
                     //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
                     //assert(0);
+                    reason_for_draw = "3 time rep";
                     return GameState::DRAW;
                 }
             }
@@ -307,6 +310,31 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 
     return GameState::INPROGRESS;
 }
+
+
+int Engine::get_draw_status() {
+    //cout << reason_for_draw << endl;
+    //cout << "ouch" << endl;
+
+    int material_centPawns = 0;
+
+    Color for_color = Color::WHITE;     // This makes the score absolute
+
+    for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
+
+        // Get the centipawn value for this color
+        int cp_score_temp = game_board.get_material_for_color(color1);
+        assert (cp_score_temp>=0);    // no negative value pieces
+        if (color1 != for_color) cp_score_temp *= -1;
+
+        material_centPawns += cp_score_temp;
+
+    }
+
+
+    return (material_centPawns/100);  // 1357;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 

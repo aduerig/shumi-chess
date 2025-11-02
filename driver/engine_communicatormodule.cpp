@@ -169,14 +169,19 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_fen(PyObject* self, PyObject* args) {
-    //python_engine.setNextMovesDeepening();
+    int ijunk = python_engine.get_draw_status();
+    //cout << ijunk << "<-junk" << endl;
     return Py_BuildValue("s", python_engine.game_board.to_fen().c_str());
 }
 
-
 static PyObject*
 engine_communicator_get_move_number(PyObject* self, PyObject* args) {
-    return Py_BuildValue("i", python_engine.g_iMove);    // real moves in whole game
+    //int score = 1212;
+    //material_text.setText(str(score));
+    //return Py_BuildValue("i", python_engine.g_iMove);    // real moves in whole game
+    PyObject* ret = Py_BuildValue("i", python_engine.g_iMove);    // real moves in whole game
+    //material_text.setText(str(python_engine.g_iMove));
+    return ret;
 }
 
 static PyObject*
@@ -225,6 +230,13 @@ engine_communicator_wakeup(PyObject* self, PyObject* args) {
     return Py_BuildValue(""); // this is None in Python
 }
 
+static PyObject*
+engine_communicator_get_draw_status(PyObject* self, PyObject* args)
+{
+    int ijunk = python_engine.get_draw_status();
+    return Py_BuildValue("i", ijunk);
+}
+
 
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
@@ -241,6 +253,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"pop",  engine_communicator_pop, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
+    {"get_draw_status",  engine_communicator_get_draw_status, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
