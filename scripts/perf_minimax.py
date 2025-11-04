@@ -21,7 +21,7 @@ shared_build_code.build_python_gui_module(args.release)
 dir_to_use = shared_build_code.release_bin_dir if args.release else shared_build_code.debug_bin_dir
 
 print_blue(f'Running perf test with time_to_run {args.time_to_run}')
-processcode, _stdout, _stderr = run_command_blocking([
+cmds = [
     'perf',
     'record',
     '-o', 
@@ -29,7 +29,8 @@ processcode, _stdout, _stderr = run_command_blocking([
     '-g', # measures callgraphs
     str(dir_to_use.joinpath('run_minimax_time')),
     str(args.time_to_run),
-], debug=True, stdout_pipe=None, stderr_pipe=None)
+]
+processcode, _stdout, _stderr = run_command_blocking(cmds, debug=True, stdout_pipe=None, stderr_pipe=None)
 if processcode:
     print_red('perf failed')
     sys.exit(1)

@@ -204,7 +204,7 @@ class GameBoard {
 
         //int centipawn_score_of(ShumiChess::Piece p) const;
         // Total of 4000 centipawns for each side.
-        inline int GameBoard::centipawn_score_of(ShumiChess::Piece p) const {
+        inline int centipawn_score_of(ShumiChess::Piece p) const {
             switch (p) {
                 case ShumiChess::Piece::PAWN:   return 100;
                 case ShumiChess::Piece::KNIGHT: return 320;

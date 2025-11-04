@@ -1,17 +1,18 @@
 
-#include <cstdio>
-#include <ostream>
-#include <iostream>
-#include <chrono> 
 #include <math.h>
+
+#include <chrono>
+#include <cstdio>
+#include <iostream>
+#include <ostream>
 #include <sstream>
 
-//#define NDEBUG         // Define (uncomment) this to disable asserts
+// #define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
 #include <assert.h>
 
-#include <globals.hpp>
 #include <engine.hpp>
+#include <globals.hpp>
 #include <utility.hpp>
 
 #include "minimax.hpp"
@@ -23,23 +24,16 @@ using namespace std::chrono;
 ////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv) {
-    
     // Create the chess engine
     Engine engine;
 
-    assert(0);   // NOTE: I dont get here?
-    ////////////////////////////////////////////////////////////
-    //  NO LONGER SUPPORTED !!!
-    ////////////////////////////////////////////////////////////
-    
     // Create the AI player (minnimax)
     MinimaxAI minimax_ai(engine);
 
-    double time_to_use = 2;
+    double time_to_use = 5;
     if (argc < 2) {
         cout << "You entered no argument for 'time_to_use', using default value of 1" << endl;
-    }
-    else {
+    } else {
         time_to_use = atoi(argv[1]);
         cout << "You entered time_to_use of: " << time_to_use << endl;
     }
