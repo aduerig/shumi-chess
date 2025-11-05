@@ -112,7 +112,7 @@ class Engine {
             return bReturn;
         }
 
-        
+        // Centipawn to pawn conversions
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
 
@@ -126,7 +126,7 @@ class Engine {
         void add_king_moves_to_vector(vector<Move>&, Color);
         void add_rook_moves_to_vector(vector<Move>&, Color);
 
-        // helpers for move generation
+        // helpers for move generation (inlined)
         // ull get_diagonal_attacks(ull);
         // ull get_straight_attacks(ull);
 
@@ -206,8 +206,9 @@ class Engine {
         char file_to_move(const Move& m);
         char rank_to_move(const Move& m);
 
-        void setNextMovesDeepening();
-        int user_requested_next_move_deepening = 7;
+        void doPopThingee();
+        int user_request_next_move = 7;
+        void killTheKing(Color color);
 
         void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);

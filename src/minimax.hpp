@@ -109,12 +109,6 @@ public:
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
 
-
-    void sort_moves_by_score(
-                        MoveAndScoreList& moves_and_scores_list,  // note: pass by reference so we sort in place
-                        bool sort_descending  
-    );
-
     std::tuple<double, ShumiChess::Move>
     best_move_static(ShumiChess::Color color,
                                 const std::vector<ShumiChess::Move>& moves,

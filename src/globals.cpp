@@ -1,8 +1,8 @@
 #include <globals.hpp>
 #include <limits>
 
-//#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
+//#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
 using namespace std;

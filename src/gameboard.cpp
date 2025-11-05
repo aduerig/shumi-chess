@@ -3,8 +3,8 @@
 #include <math.h>
 #include <vector>
 
-//#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
+//#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
 #include "gameboard.hpp"
@@ -833,6 +833,208 @@ int GameBoard::kings_in_opposition(Color color)
     else
         return +1;  // reward White
 }
+
+
+
+
+//
+// Chebyshev distance  (D(x,y)=\max (|x_{1}-x_{2}|,|y_{1}-y_{2}|)\)
+// It is also known as "chessboard distance".
+// A cheap distance with integers, that avoids sqrt()
+//
+int GameBoard::get_Chebyshev_distance(int x1, int y1, int x2, int y2) {
+
+    int dx = x1 > x2 ? x1 - x2 : x2 - x1;
+    int dy = y1 > y2 ? y1 - y2 : y2 - y1;
+    int iDist = (dx > dy) ? dx : dy;
+    return iDist;
+}
+
+
+double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
+{
+    int dx = x1 - x2; if (dx < 0) dx = -dx;
+    int dy = y1 - y2; if (dy < 0) dy = -dy;
+    assert(dx>=0);
+    assert(dy>=0);
+    assert(dx<=7);
+    assert(dx<=7);
+    int d2 = dx*dx + dy*dy;   // 0..98
+
+    struct Pt { int d2; double v; };
+    static const Pt table[] = {
+        {  0, 0.00 },
+        {  1, 1.00 },
+        {  2, 1.41 },
+        {  4, 2.00 },
+        {  5, 2.24 },
+        {  8, 2.83 },
+        { 10, 3.16 },
+        { 13, 3.61 },
+        { 17, 4.12 },
+        { 20, 4.47 },
+        { 25, 5.00 },
+        { 29, 5.39 },
+        { 34, 5.83 },
+        { 40, 6.32 },
+        { 45, 6.71 },
+        { 52, 7.21 },
+        { 58, 7.62 },
+        { 65, 8.06 },
+        { 73, 8.54 },
+        { 82, 9.06 },
+        { 90, 9.49 },
+        { 98, 9.90 }  // max we care about
+    };
+
+    // exact or below first
+    if (d2 <= table[0].d2)
+        return table[0].v;
+
+    // find segment
+    const int N = sizeof(table)/sizeof(table[0]);
+    for (int i = 1; i < N; ++i) {
+        if (d2 <= table[i].d2) {
+            int d2_lo   = table[i-1].d2;
+            int d2_hi   = table[i].d2;
+            double v_lo = table[i-1].v;
+            double v_hi = table[i].v;
+
+            // linear interpolation
+            double t = (d2_hi == d2_lo)
+                     ? 0.0
+                     : (double)(d2 - d2_lo) / (double)(d2_hi - d2_lo);
+            return v_lo + t * (v_hi - v_lo);
+        }
+    }
+
+    // if somehow above max, just clamp
+    return table[N-1].v;
+}
+
+// double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
+// {
+//     int dx = x1 - x2; if (dx < 0) dx = -dx;
+//     int dy = y1 - y2; if (dy < 0) dy = -dy;
+//     int d2 = dx*dx + dy*dy;   // 0..98
+
+//     if (d2 <= 0)  return 0.00;
+//     if (d2 <= 1)  return 1.00;
+//     if (d2 <= 2)  return 1.41;  // sqrt(2)
+//     if (d2 <= 4)  return 2.00;
+//     if (d2 <= 5)  return 2.24;  // sqrt(5)
+//     if (d2 <= 8)  return 2.83;  // sqrt(8)
+//     if (d2 <= 10) return 3.16;  // sqrt(10)
+//     if (d2 <= 13) return 3.61;  // sqrt(13)
+//     if (d2 <= 17) return 4.12;  // sqrt(17)
+//     if (d2 <= 20) return 4.47;  // sqrt(20)
+//     if (d2 <= 25) return 5.00;
+//     if (d2 <= 29) return 5.39;  // sqrt(29)
+//     if (d2 <= 34) return 5.83;  // sqrt(34)
+//     if (d2 <= 40) return 6.32;  // sqrt(40)
+//     if (d2 <= 45) return 6.71;  // sqrt(45)
+//     if (d2 <= 52) return 7.21;  // sqrt(52)
+//     if (d2 <= 58) return 7.62;  // sqrt(58)
+//     if (d2 <= 65) return 8.06;  // sqrt(65)
+//     if (d2 <= 73) return 8.54;  // sqrt(73)
+//     if (d2 <= 82) return 9.06;  // sqrt(82)
+//     if (d2 <= 90) return 9.49;  // sqrt(90)
+//     return 9.90;                // sqrt(98) ≈ 9.90
+// }
+
+
+
+//
+// Returns "distance" between squares:
+//    0 - same square  
+//    2 - if opposition (but not diagonal)
+//    
+//   14 - if full distance of the board
+//
+double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
+    int iFakeDist;
+    double dfakeDist;
+
+    // Get coordinates of the square numbers
+    int xEnemy = enemyKingSq % 8;
+    int yEnemy = enemyKingSq / 8;
+    int xFrien = frienKingSq % 8;
+    int yFrien = frienKingSq / 8;
+   
+    // Method 1 (it stinks)
+    //double dfakeDist = (double)(abs(xEnemy - xFrien) +  abs(yEnemy - yFrien));
+    //double dfakeDist = (double)iFakeDist;
+
+    // Method 2 Chebyshev. Better but
+    // iFakeDist = get_Chebyshev_distance(xEnemy, yEnemy, xFrien, yFrien);
+    // double dfakeDist = (double)iFakeDist;
+
+    // Method 3. Best ? (table driven)
+    dfakeDist = get_board_distance(xEnemy, yEnemy, xFrien, yFrien);
+    
+    //dfakeDist = (double)xFrien;     // debug only
+
+    assert (dfakeDist >= 0.0);
+    //assert (dfakeDist <= 14.0);
+   
+    return dfakeDist;
+}
+
+// Returns 0 to 6, if lone king of enemy
+int GameBoard::king_near_other_king(Color attacker_color)
+{
+    int iBonus = 0;
+    int enemyKingSq;
+    int frienKingSq;
+    ull enemyPieces;
+    ull tmpEnemy;
+    ull tmpFrien;
+
+
+    //if ( (white_king == 0ULL) || (black_king == 0ULL) ) return 0;
+    assert(white_king != 0ULL);
+    assert(black_king != 0ULL);
+
+
+    if (attacker_color == ShumiChess:: WHITE) {
+        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
+        tmpEnemy = black_king;         // don't mutate the bitboards
+        tmpFrien = white_king;         // don't mutate the bitboards
+
+    } else {
+        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
+        tmpEnemy = white_king;         // don't mutate the bitboards
+        tmpFrien = black_king;         // don't mutate the bitboards
+    }
+
+    enemyKingSq = utility::bit::lsb_and_pop_to_square(tmpEnemy); // 0..63
+    assert(enemyKingSq <= 63);
+    frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
+    assert(frienKingSq >= 0);
+
+
+    // Bring friendly king near enemy king (reward small distances to other king)
+    if (enemyPieces == 0) { // enemy has king only
+
+        // 7 (furthest), to 1 (adjacent), to 0 (identical)
+        double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
+        //assert (dFakeDist >= 2.0);      // Kings cant touch
+        //assert (dFakeDist <= 7.0);      // Board is only so big
+
+        // Bonus higher if friendly king closer to enemy king
+        //dFakeDist -= 2.0;
+        //iBonus = (int)(10 - dFakeDist);   // 0 (furthest) to 5 (closest)
+        iBonus = (int)(dFakeDist);
+        assert (iBonus >= 0); 
+        //assert (iBonus <= 5); 
+
+        return (iBonus);
+
+    }
+
+    return iBonus;
+}
+
 
 
 

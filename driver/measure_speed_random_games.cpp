@@ -14,8 +14,8 @@ using namespace ShumiChess;
 using namespace std::chrono;
 
 
-//#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
+//#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
 /////////////////////////////////////////////////////////////////////////////////

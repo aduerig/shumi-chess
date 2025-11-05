@@ -24,7 +24,11 @@ engine_communicator_systemcall(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    sts = system(command);
+    // return of 0 is success, else error.
+    sts = system(&command[1]);      // First character is a singling character (used by python)
+
+    //cout << " sts " << sts;
+    
     return PyLong_FromLong(sts);
 }
 
@@ -141,9 +145,10 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_pop(PyObject* self, PyObject* args) {
-    //python_engine.popMove();
+    //python_engine.popMove();   pop!
 
-    python_engine.setNextMovesDeepening();
+    cout << "pop!" << endl;
+    python_engine.doPopThingee();
     return Py_BuildValue("");
 }
 
@@ -155,6 +160,7 @@ engine_communicator_game_over(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_reset_engine(PyObject* self, PyObject* args) {
+    cout << "reset_engine" << endl;
     const char* fen_string = nullptr;
     if (!PyArg_ParseTuple(args, "|s", &fen_string)) {
         return nullptr; 

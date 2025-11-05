@@ -79,7 +79,7 @@ Fen is now 4k3/1p3r2/p2p1p1Q/3Pp3/4P1q1/1P6/5PPP/2R3K1 w - - 1 26
 
 Fen is now r1bqkbnr/1p4pp/2np4/pBp1pP2/8/2N2N2/PPPP1PPP/R1BQ1RK1 w kq - 0 8
 
-
+r1bqkbnr/pp4pp/2np4/1B2pp2/3P4/8/PPP2PPP/RNBQK1NR w KQkq e6 0 6
 
 
 // passed pawn testing
@@ -134,21 +134,31 @@ Fen is now r2r3k/1R4pp/4R3/2p2p2/8/5P2/3B1P1P/6K1 w - - 3 33
 endgames
 ========
 
-// Test of underpromotion (to knight)
-"1r6/8/8/8/8/2k5/2p5/K7 w - - 0 1"      then Kb8. Black should not promote to  queen
-""
+// Test that 2 bishops is not a draw
+b7/b7/1k6/8/2R5/8/4K3/8 w - - 1 5
+n7/b7/1k6/8/2R5/8/4K3/8 w - - 1 5
+n7/n7/1k6/8/2R5/8/4K3/8 w - - 1 5
 
+
+// Test of underpromotion (to knight)
+1r6/8/8/8/8/2k5/2p5/K7 w - - 0 1      then Kb8. Black should not promote to  queen
+
+// 50 move rule test
+8/8/1k6/8/2R5/8/4K3/8 w - - 41 52
 
 // two rooks endgame (good start position)
-Current FEN: rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
+rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
 
+// endgame lab1 : rook and single pawn endgame
+8/p1r1k3/8/8/8/3K4/5RP1/8 w KQkq - 1 1            
 
-Fen is now 8/p1r1k3/8/8/8/3K4/5RP1/8 w KQkq - 1 1            // endgame lab1 : rook and single pawmn endgame
-
-// Classic k/k/p endgame
+// Classic K/k/P endgame
 4k3/8/8/8/8/8/4P3/4K3 w - - 0 1
 
-
+// Classic K/k/q endgame
+k7/q7/8/8/8/8/7K/8 w - - 0 1
+4k3/q7/5K2/8/8/8/8/8 w - - 0 1
+8/q7/5K2/8/8/8/8/6k1 w - - 0 1
 
 Move chain histories:
 =====================

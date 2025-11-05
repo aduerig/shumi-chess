@@ -10,8 +10,8 @@
 #include <cstdlib>
 // #include <random>
 
-//#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
+#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
 
@@ -19,6 +19,7 @@ typedef unsigned long long ull;
 
 namespace ShumiChess {
 enum Color {
+//enum Color : std::uint8_t {
     WHITE = 0,
     BLACK,
 };
@@ -62,8 +63,9 @@ struct Move {
 };
 
 // ? is this best way to number
-// NOTE: cant we just renumber it from 0 ?
-// ? Should we try to make most checked things = 0 for magical compiler iszero optimizations? (applies to piece enum as well)
+// NOTE: cant we just renumber it from 0 ? NO, somehow the python requires this.
+//   Wait I think its just the line "game_over_cache() == -1:" in show_board.py.
+// ? Should we try to make most checked things = 0 for magical compiler is zero optimizations? 
 enum GameState {
     INPROGRESS = -1,
     WHITEWIN = 0,

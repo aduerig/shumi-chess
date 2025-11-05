@@ -6,16 +6,13 @@
 
 
 // NOTE: How is NDEBUG being defined by someone (CMAKE?). I would rather do it in the make apparutus than in source files.
-//#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
+//#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
-// bool bMoreDebug = false;
-// string debugMove;
-
-char szValue[256];   // Note: make me go away
 
 //#define _DEBUGGING_TO_FILE
+bool debugNow = false;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -48,6 +45,7 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 }
 
 void Engine::reset_engine() {
+    //std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
 
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
     psuedo_legal_moves.reserve(128); 
@@ -58,7 +56,7 @@ void Engine::reset_engine() {
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
     //game_board = GameBoard("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
-    //game_board = GameBoard("7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1");
+    //game_board = GameBoard("4k3/q7/5K2/8/8/8/8/8 w - - 0 1");
     
     game_board = GameBoard();
 
@@ -71,15 +69,18 @@ void Engine::reset_engine() {
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    //std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
     game_board.bCastledWhite = false;  // I dont care which side i castled.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     g_iMove = 0;       // real moves in whole game
 
+    repetition_table.clear();
+
 }
 
 void Engine::reset_engine(const string& fen) {
+
+    //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
 
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
     psuedo_legal_moves.reserve(128); 
@@ -87,7 +88,7 @@ void Engine::reset_engine(const string& fen) {
 
     game_board = GameBoard(fen);
 
-    // ! NOTE: is reinitalize these stacks the right way to clear the previous entries?
+    // ! NOTE: is reinitalize these stacks the right way to clear the previous entries? I think it is.
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
@@ -101,6 +102,9 @@ void Engine::reset_engine(const string& fen) {
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     g_iMove = 0;       // real moves in whole game
+
+    repetition_table.clear();
+    
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
@@ -127,7 +131,6 @@ vector<Move> Engine::get_legal_moves() {
 
     for (const Move& move : psuedo_legal_moves) {
 
-        // NOTE: is this the most effecient way to do this (push()/pop())?
         bool bKingInCheck = in_check_after_move(color, move);
         
         if (!bKingInCheck) {
@@ -267,14 +270,14 @@ GameState Engine::game_over() {
 
 GameState Engine::game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
-        if (is_square_in_check(Color::WHITE, game_board.white_king)) {
+        if ( (!game_board.white_king) || (is_square_in_check(Color::WHITE, game_board.white_king)) ) {
             return GameState::BLACKWIN;     // Checkmate
-        }
-        else if (is_square_in_check(Color::BLACK, game_board.black_king)) {
+        } else if ( (!game_board.black_king) || (is_square_in_check(Color::BLACK, game_board.black_king)) ) {
             return GameState::WHITEWIN;     // Checkmate
         }
         else {
             reason_for_draw = "stalemate";
+            if (debugNow) cout<<"stalemate" << endl;
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
@@ -282,7 +285,8 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
         reason_for_draw = "50 move rule";
-        return GameState::DRAW;
+        if (debugNow) cout<<"50 move rule" << endl;
+        return GameState::DRAW;           // draw by 50 move rule
 
     } else {
         // Three move repetition draw
@@ -296,13 +300,16 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
                     //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
                     //assert(0);
                     reason_for_draw = "3 time rep";
+                    if (debugNow) cout<<"3-time-rep"<< endl;
                     return GameState::DRAW;
                 }
             }
         #endif
     
+        // Insuffecient material
         bool isOverThatWay = game_board.insufficient_material_simple();
         if (isOverThatWay) {
+            if (debugNow) cout<<"no material" << endl;
             return GameState::DRAW;
         }
     }
@@ -515,8 +522,7 @@ void Engine::pushMove(const Move& move) {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
-// undos last move, errors if no move was made before
-// NOTE: Ummm, how does it return an error?
+// undos last move   (the opposite of "pushMove()")
 // 
 void Engine::popMove() {
 
@@ -633,7 +639,7 @@ void Engine::popMove() {
         // ! Bet we can make this part of push a func and do something fancy with to and from
         //  at least keep standard with push implimentation.
 
-        // NOTE: the castles move has not been popped yet
+        // the castles move has not been popped yet
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
@@ -681,7 +687,7 @@ void Engine::popMove() {
 
 // ---------------------------------------------------------------------------
 // Fast push: inverse of popMoveFast()
-// Same as pushMove(), except no updates to castling, Zobrist, en passant, clocks, repetition, etc.
+// Same as pushMove(), except no updates to castling, Zobrist, en passant, move clocks, repetition, etc.
 // Designed for use to look for check. We really on the rest of the engine to prevent 
 // pushMoveFast() from seeing a position that castles into check.
 // ---------------------------------------------------------------------------
@@ -736,6 +742,7 @@ void Engine::pushMoveFast(const Move& move)
         }
 
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
+        //
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         // cout << "PUSHING: Friendly rooks are:";
         // utility::representation::print_bitboard(friendly_rooks);
@@ -773,7 +780,7 @@ void Engine::pushMoveFast(const Move& move)
 // ---------------------------------------------------------------------------
 // Fast pop: inverse of pushMoveFast()
 //   - Undoes bitboard changes made by the last pushMoveFast()
-// Designed for use to look for check. We really on the rest of the engine to prevent 
+// Designed for use to look for check. We really depend on the rest of the engine to prevent 
 // pushMoveFast() from seeing a position that castles into check.
 // ---------------------------------------------------------------------------
 void Engine::popMoveFast()
@@ -825,7 +832,7 @@ void Engine::popMoveFast()
         // ! Bet we can make this part of push a func and do something fancy with to and from
         //  at least keep standard with push implimentation.
 
-        // NOTE: the castles move has not been popped yet
+        // the castles move has not been popped yet
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
@@ -871,187 +878,27 @@ ull& Engine::access_pieces_of_color(Piece piece, Color color)
         case Piece::PAWN:
             return (color != 0) ? this->game_board.black_pawns
                                 : this->game_board.white_pawns;
-
         case Piece::ROOK:
             return (color != 0) ? this->game_board.black_rooks
                                 : this->game_board.white_rooks;
-
         case Piece::KNIGHT:
             return (color != 0) ? this->game_board.black_knights
                                 : this->game_board.white_knights;
-
         case Piece::BISHOP:
             return (color != 0) ? this->game_board.black_bishops
                                 : this->game_board.white_bishops;
-
         case Piece::QUEEN:
             return (color != 0) ? this->game_board.black_queens
                                 : this->game_board.white_queens;
-
         case Piece::KING:
             return (color != 0) ? this->game_board.black_king
                                 : this->game_board.white_king;
-
         default:
-            std::cout << "Unexpected piece type in access_pieces_of_color: "
-                      << piece << std::endl;
+            std::cout << "Unexpected piece type in access_pieces_of_color: " << piece << std::endl;
             assert(0);
             return this->game_board.white_king;
     }
 }
-
-
-
-// template <Piece P, Color C> ull& Engine::access_pieces_of_color()
-// {
-//     if constexpr (C == Color::WHITE)
-//     {
-//         if constexpr (P == Piece::PAWN)   return this->game_board.white_pawns;
-//         if constexpr (P == Piece::ROOK)   return this->game_board.white_rooks;
-//         if constexpr (P == Piece::KNIGHT) return this->game_board.white_knights;
-//         if constexpr (P == Piece::BISHOP) return this->game_board.white_bishops;
-//         if constexpr (P == Piece::QUEEN)  return this->game_board.white_queens;
-//         if constexpr (P == Piece::KING)   return this->game_board.white_king;
-//     }
-//     else // C == Color::BLACK
-//     {
-//         if constexpr (P == Piece::PAWN)   return this->game_board.black_pawns;
-//         if constexpr (P == Piece::ROOK)   return this->game_board.black_rooks;
-//         if constexpr (P == Piece::KNIGHT) return this->game_board.black_knights;
-//         if constexpr (P == Piece::BISHOP) return this->game_board.black_bishops;
-//         if constexpr (P == Piece::QUEEN)  return this->game_board.black_queens;
-//         if constexpr (P == Piece::KING)   return this->game_board.black_king;
-//     }
-
-//     static_assert(P != Piece::NONE, "Piece::NONE has no bitboard");
-// }
-
-
-// 
-
-
-// ull& Engine::access_pieces_of_color(Piece piece, Color color)
-// {
-//     // Treat nonzero as black like you already do
-//     bool is_black = (color != 0);
-
-//     if (!is_black)
-//     {
-//         switch (piece)
-//         {
-//             case Piece::PAWN:   return this->game_board.white_pawns;
-//             case Piece::ROOK:   return this->game_board.white_rooks;
-//             case Piece::KNIGHT: return this->game_board.white_knights;
-//             case Piece::BISHOP: return this->game_board.white_bishops;
-//             case Piece::QUEEN:  return this->game_board.white_queens;
-//             case Piece::KING:   return this->game_board.white_king;
-
-//             default:
-//                 std::cout << "Unexpected piece type in access_pieces_of_color: "
-//                           << piece << std::endl;
-//                 assert(0);
-//                 return this->game_board.white_king;
-//         }
-//     }
-//     else
-//     {
-//         switch (piece)
-//         {
-//             case Piece::PAWN:   return this->game_board.black_pawns;
-//             case Piece::ROOK:   return this->game_board.black_rooks;
-//             case Piece::KNIGHT: return this->game_board.black_knights;
-//             case Piece::BISHOP: return this->game_board.black_bishops;
-//             case Piece::QUEEN:  return this->game_board.black_queens;
-//             case Piece::KING:   return this->game_board.black_king;
-
-//             default:
-//                 std::cout << "Unexpected piece type in access_pieces_of_color: "
-//                           << piece << std::endl;
-//                 assert(0);
-//                 return this->game_board.black_king;
-//         }
-//     }
-// }
-
-
-// ull& Engine::access_pieces_of_color(Piece piece, Color color)
-// {
-//     // Decide which color's bitboards we're going to use
-//     bool is_black = (color != 0); // or (color == Color::BLACK), depending on your enum
-
-//     switch (piece)
-//     {
-//         case Piece::PAWN:
-//             if (is_black) { return this->game_board.black_pawns; }
-//             else          { return this->game_board.white_pawns; }
-
-//         case Piece::ROOK:
-//             if (is_black) { return this->game_board.black_rooks; }
-//             else          { return this->game_board.white_rooks; }
-
-//         case Piece::KNIGHT:
-//             if (is_black) { return this->game_board.black_knights; }
-//             else          { return this->game_board.white_knights; }
-
-//         case Piece::BISHOP:
-//             if (is_black) { return this->game_board.black_bishops; }
-//             else          { return this->game_board.white_bishops; }
-
-//         case Piece::QUEEN:
-//             if (is_black) { return this->game_board.black_queens; }
-//             else          { return this->game_board.white_queens; }
-
-//         case Piece::KING:
-//             if (is_black) { return this->game_board.black_king; }
-//             else          { return this->game_board.white_king; }
-
-//         default:
-//             std::cout << "Unexpected piece type in access_pieces_of_color: "
-//                       << piece << std::endl;
-//             assert(0);
-//             // Fallback to satisfy compiler in release builds
-//             return this->game_board.white_king;
-//     }
-// }
-
-
-// ull& Engine::access_pieces_of_color(Piece piece, Color color) {
-//     switch (piece)
-//     {
-//         case Piece::PAWN:
-//             if (color) {return this->game_board.black_pawns;}
-//             else       {return this->game_board.white_pawns;}
-//             break;
-//         case Piece::ROOK:
-//             if (color) {return this->game_board.black_rooks;}
-//             else       {return this->game_board.white_rooks;}
-//             break;
-//         case Piece::KNIGHT:
-//             if (color) {return this->game_board.black_knights;}
-//             else       {return this->game_board.white_knights;}
-//             break;
-//         case Piece::BISHOP:
-//             if (color) {return this->game_board.black_bishops;}
-//             else       {return this->game_board.white_bishops;}
-//             break;
-//         case Piece::QUEEN:
-//             if (color) {return this->game_board.black_queens;}
-//             else       {return this->game_board.white_queens;}
-//             break;
-//         case Piece::KING:
-//             if (color) {return this->game_board.black_king;}
-//             else       {return this->game_board.white_king;}
-//             break;
-
-//         default:
-//             cout << "Unexpected piece type in access_pieces_of_color: " << piece << endl;
-//             assert(0);
-//             break;
-//     }
-
-//     // Unreachable, but required to avoid warnings Note: Fix this.
-//     return this->game_board.white_king;
-// }
 
 
 
@@ -1182,7 +1029,6 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         add_move_to_vector(all_psuedo_legal_moves, single_pawn, normal_attacks, Piece::PAWN, color, 
                      true, (bool) (normal_attacks & enemy_starting_rank_mask), 0ULL, false, false);
 
-        // NOTE: enpassent is not allowed 
         // enpassant attacks
         // TODO improvement here, cause we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
         //      of code here to get the speed upgrade. Works fine as is
@@ -1507,9 +1353,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
                 safe_push_back(MoveText,'+');
             }
 
-
-            // Add a check character if needed (NOTE: This is very expensive!)
-            //  NOTE: this causes bugs if d4 from opening position
+            // Add a check character if needed (This is absurdly, ridicululy expensive!)
             // if (in_check_after_move(color_that_moved, the_move)) {
             //     safe_push_back(MoveText,'+');
             // }
@@ -1615,7 +1459,7 @@ char Engine::file_to_move(const Move& m)
 /// Returns character, for the rank of the "to" square
 char Engine::rank_to_move(const Move& m)
 {
-    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // <-- NOTE: m.to, not m.from
+    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 
     int rank  = to_sq / 8;   // 0=rank 1, 1=rank 2, ..., 7=rank 8
     return '1' + rank;       // convert to character '1'..'8'
 }
@@ -1629,14 +1473,26 @@ char Engine::file_from_move(const Move& m)
 }
 
 
-void Engine::setNextMovesDeepening() {
-    user_requested_next_move_deepening++;
-    if (user_requested_next_move_deepening > 10) {
-        user_requested_next_move_deepening = 7;
+// pop!
+void Engine::doPopThingee() {
+    user_request_next_move++;
+    if (user_request_next_move > 10) {
+        user_request_next_move = 7;
     }
-    cout << "\x1b[34m nextMove->\x1b[0m" << user_requested_next_move_deepening << "\x1b[34m<-nextMove \x1b[0m" << endl;
+    // cout << "\x1b[34m nextMove->\x1b[0m" << user_request_next_move 
+    //      << "\x1b[34m<-nextMove \x1b[0m" << endl;
+
+    debugNow = !debugNow;
+
+    cout << "debugnow" << debugNow;
+
+    //killTheKing(ShumiChess::BLACK);
 }
 
+
+void Engine::killTheKing(Color color) {
+    game_board.black_king = 0;
+}
 
 void Engine::debug_print_repetition_table() const {
     std::cout << "=== repetition_table dump ===\n";
@@ -1926,6 +1782,9 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
                                             , FILE* fp) {
     int ierr = fputc(preCharacter, fp);
     assert (ierr!=EOF);
+
+    
+    char szValue[_MAX_ALGEBRIAC_SIZE+8];
 
     // Indent the whole thing over based on depth level
     int nTabs = nPly+2;

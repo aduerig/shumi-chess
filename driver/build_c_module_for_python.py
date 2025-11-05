@@ -3,6 +3,10 @@ import sys
 import pathlib
 import os
 
+# force a valid Windows platform name so Python 3.13 doesn't error
+if not any(arg.startswith("--plat-name") for arg in sys.argv):
+    sys.argv.append("--plat-name=win-amd64")
+
 this_file_directory = pathlib.Path(__file__).parent.resolve()
 root_of_project_directory = this_file_directory.parent
 

@@ -3,8 +3,8 @@
 #include <string>
 #include <iostream>
 
-//#define NDEBUG         // Define (uncomment) this to disable asserts
 #undef NDEBUG
+//#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
 #include "globals.hpp"
@@ -198,9 +198,15 @@ class GameBoard {
         int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
         int attackers_on_enemy_king_near(Color attacker_color);
+        double distance_between_squares(int enemySq, int frienSq);
+        int get_Chebyshev_distance(int x1, int y1, int x2, int y2);
+        double get_board_distance(int x1, int y1, int x2, int y2);
+        int king_near_other_king(Color attacker_color);
 
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1);
+
+        int SEE(Color side, int sq);
 
         //int centipawn_score_of(ShumiChess::Piece p) const;
         // Total of 4000 centipawns for each side.
@@ -219,9 +225,11 @@ class GameBoard {
 
 
 
-        int bits_in(ull) const;
+        int bits_in(ull x) const;
+        int bits_in0(ull x) const;
 
         // Square identities (in h1=0 bit board lingo)
+        int square_h1 = 0;
         int square_e4 = 27;
         int square_d4 = 28;
         int square_e5 = 35;
@@ -230,6 +238,10 @@ class GameBoard {
         int square_d6 = 44;  // d4 + 16
         int square_e3 = 19;  // e4 - 8
         int square_d3 = 20;  // d4 - 8
+        int square_f3 = 18;  // e3 - 1
+        int square_g3 = 17;  // e3 - 2
+        int square_h3 = 16;  // e3 - 3
+        int square_a8 = 63;
 
         double openingness_of(int avg_cp);
 
