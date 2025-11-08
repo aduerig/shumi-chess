@@ -64,3 +64,6 @@ target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 add_executable(run_minimax_time src/run_minimax_time.cpp)
 target_link_libraries(run_minimax_time PUBLIC ${project_name})
+
+add_executable(shumi_driver driver/driver.cpp)
+target_link_libraries(shumi_driver PUBLIC ${project_name})

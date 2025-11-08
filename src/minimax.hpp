@@ -50,6 +50,7 @@ public:
 
     int cp_score_pieces_only_avg = 0;
 
+    // For PV at root
     static constexpr int MAX_PLY_PV = 256;
     std::pair<ShumiChess::Move, double> prev_root_best_[MAX_PLY_PV + 2];
 
@@ -71,28 +72,29 @@ public:
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
 
-    double d_random_delta = 0.0;
+    double d_random_delta = 0.0;    // note: what am I
 
 
+    // Storage buffers (they live here to avoid extra allocation during the game)
+    //vector<ShumiChess::Move> unquiet_moves;
 
     int cp_score_positional_get_opening(ShumiChess::Color color); 
     int cp_score_positional_get_middle(ShumiChess::Color color, int nPly); 
-    int cp_score_positional_get_end(ShumiChess::Color color, int mat_avg); 
+    int cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg); 
 
     int evaluate_board(ShumiChess::Color for_color, int nPly, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
     void wakeup();
 
     void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys);
-    tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time);
+    tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time, const ShumiChess::Move& null_move);
 
-
+    // Note: what am i?
     std::vector<std::pair<ShumiChess::Move, double>> MovesFromRoot;
 
     ShumiChess::Move pick_random_within_delta_rand(
                     std::vector<MoveAndScore>& MovesFromRoot,
                     double delta_pawns);
 
-    //ShumiChess::Move get_move_iterative_deepening(double timeRequested);
     ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
@@ -109,21 +111,15 @@ public:
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
 
-    std::tuple<double, ShumiChess::Move>
-    best_move_static(ShumiChess::Color color,
+    std::tuple<double, ShumiChess::Move> best_move_static(ShumiChess::Color color,
                                 const std::vector<ShumiChess::Move>& moves,
                                 int nPly,
                                 bool in_Check,
                                 int depth
                             );
                
-    void print_moves_to_print_tree(std::vector<ShumiChess::Move> mvs, int depth, char* szHeader, char* szTrailer);
+    void print_moves_to_file(const vector<ShumiChess::Move> &mvs, int depth, char* szHeader, char* szTrailer);
 
-
-    void print_move_scores_to_file(
-        FILE* fpDebug,
-        const std::unordered_map<std::string,std::unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>>& move_scores_table
-    );
 
 
 

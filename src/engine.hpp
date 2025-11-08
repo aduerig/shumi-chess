@@ -14,14 +14,14 @@ using namespace std;
 
 //#define _DEBUGGING_PUSH_POP_FAST
 
-
+#define MAX_MOVES 128
 
 // Note: make me go away.
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
    
 
-#define VERY_SMALL_SCORE 1.0e-9     // In pawns. (its 10 micro centipawns?)
+#define VERY_SMALL_SCORE 1.0e-5     // In pawns. (its 0.001 centipawns)
 #define HUGE_SCORE 10000            // In pawns. (its a million centipawns!)       //  DBL_MAX    // A relative score
 
 #define ABORT_SCORE (HUGE_SCORE+1)  // Used only to abort the analysis
@@ -64,18 +64,18 @@ class Engine {
         
         GameState game_over();
         GameState game_over(vector<Move>&);
+        bool b_randomize_next_move = false;
 
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
         //template <Piece P, Color C> ull& Engine::access_pieces_of_color()
 
-        // void apply_en_passant_checks(const Move&);
-        // void apply_castling_changes(const Move&);
-
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
         vector<Move> get_legal_moves();
         void get_psuedo_legal_moves(Color, vector<Move>& all_psuedo_legal_moves);
+
+        // Storage buffers (they live here to avoid extra allocation during the game)        
         vector<Move> psuedo_legal_moves; 
         vector<Move> all_legal_moves;
 
@@ -83,19 +83,12 @@ class Engine {
 
         inline bool in_check_after_move(Color color, const Move& move) {
             // NOTE: is this the most effecient way to do this (push()/pop())?
-
             #ifdef _DEBUGGING_PUSH_POP_FAST
                 std::string temp_fen_before = game_board.to_fen();
             #endif
-
-            //if (move.is_castle_move) return false;
-
-            pushMoveFast(move);        
-            
+            pushMoveFast(move);           
             bool bReturn = is_king_in_check(color);
-            
             popMoveFast();
-
             #ifdef _DEBUGGING_PUSH_POP_FAST
                 std::string temp_fen_after = game_board.to_fen();
                 if (temp_fen_before != temp_fen_after) {
@@ -106,9 +99,7 @@ class Engine {
                     std::cout << "\x1b[0m";
                     assert(0);
                 }
-           
             #endif
-
             return bReturn;
         }
 
@@ -187,8 +178,6 @@ class Engine {
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
-        FILE* fpDebug = nullptr;
-        void setDebugFilePointer(FILE* fp) {fpDebug = fp;}
 
         int bishops_attacking_center_squares(Color c);
         int bishops_attacking_square(Color c, int sq);    
@@ -206,9 +195,9 @@ class Engine {
         char file_to_move(const Move& m);
         char rank_to_move(const Move& m);
 
-        void doPopThingee();
-        int user_request_next_move = 7;
-        void killTheKing(Color color);
+        void set_random_on_next_move();
+        int user_request_next_move = 7;    // Note: make me go aways
+        void killTheKing(Color color);      // The idea. is that you can resign by deleting your king. Sort of works.
 
         void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
@@ -216,14 +205,17 @@ class Engine {
         void move_and_score_to_string(const Move best_move, double d_best_move_value, bool b_convert_to_abs_score);
       
         void print_bitboard_to_file(ull bb, FILE* fp);
-        void print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp);
 
         //bool is_unquiet_move(ShumiChess::Move mv);
         bool inline is_unquiet_move(ShumiChess::Move mv) {
            return (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE); 
         }
         vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
-        vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves);
+        vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(
+                                        const vector<ShumiChess::Move>& moves,      // Input
+                                        const Move& move_last,                      // input
+                                        vector<ShumiChess::Move>& vReturn           // output
+                                    );
 
 
         //int mvv_lva_key(const ShumiChess::Move& m);
@@ -265,7 +257,7 @@ class Engine {
 
         void print_move_history_to_file(FILE* fp);
 
-        void print_move_to_file(ShumiChess::Move m, int nPly, ShumiChess::GameState gs
+        void print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
                             , bool isInCheck, bool bFormated, bool bFlipColor, FILE* fp);
 
         void print_move_to_file_from_string(const char* p_move_text, ShumiChess::Color turn, int nPly

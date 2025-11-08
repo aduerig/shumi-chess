@@ -144,11 +144,12 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 }
 
 static PyObject*
-engine_communicator_pop(PyObject* self, PyObject* args) {
+engine_communicator_set_random(PyObject* self, PyObject* args) {
     //python_engine.popMove();   pop!
 
-    cout << "pop!" << endl;
-    python_engine.doPopThingee();
+    //cout << "random!" << endl;
+    python_engine.set_random_on_next_move();
+    
     return Py_BuildValue("");
 }
 
@@ -211,10 +212,10 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
 
 static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
-    double milliseconds;          // required
+    double milliseconds;          // required   , NOTE: why no default
     int max_deepening = 7;        // default to 7
 
-    // parse: required double, optional int
+    // parse arguments: required double, optional int
     if (!PyArg_ParseTuple(args, "d|i", &milliseconds, &max_deepening)) return NULL;
 
     ShumiChess::Move gotten_move;
@@ -256,7 +257,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},
     {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
-    {"pop",  engine_communicator_pop, METH_VARARGS, ""},
+    {"pop",  engine_communicator_set_random, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
     {"get_draw_status",  engine_communicator_get_draw_status, METH_VARARGS, ""},

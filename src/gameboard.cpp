@@ -13,6 +13,11 @@
 
 using namespace std;
 
+
+
+
+
+
 namespace ShumiChess {
 
     GameBoard::GameBoard() : 
@@ -103,7 +108,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         case 'Q':
             this->white_castle_rights |= 2; 
             break;
-        default:        // Note: skipping a default is illegal in some states.
+        default:
             // std::cout << "Unexpected castling rights token: " << token << std::endl;
             // assert(0);  // Note: this fires in some test, is it ok? What is the default case?
             break;
@@ -215,9 +220,7 @@ const string GameBoard::to_fen(bool bFullFEN) {
     }
     fen_components.push_back(color_rep);
 
-    // TODO: castling
-    // NOTE: What do you mean, TODO. here and below, What's to do? Is this an unfinished project?
-    // I think the TODOs are outdated. The below code works great, and makes great fens.
+    // castling
     string castlestuff;
     if (0b00000001 & white_castle_rights) {
         castlestuff += 'K';
@@ -694,7 +697,8 @@ int GameBoard::count_isolated_pawns(Color c) const {
     return total;
 }
 
-
+//
+// Rewards king near the center.
 int GameBoard::king_center_weight(Color color) {
     ull kbb = (color == Color::WHITE) ? white_king : black_king;
     assert(kbb != 0ULL);
@@ -980,10 +984,25 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     return dfakeDist;
 }
 
+
+bool GameBoard::bIsOnlyKing(Color attacker_color) {
+    ull enemyPieces;
+    if (attacker_color == ShumiChess:: WHITE) {
+        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
+    } else {
+        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);  
+    }
+    return (enemyPieces == 0); // enemy has king only
+}
+
+
+
+
 // Returns 0 to 6, if lone king of enemy
-int GameBoard::king_near_other_king(Color attacker_color)
+double GameBoard::king_near_other_king(Color attacker_color)
 {
-    int iBonus = 0;
+    double dBonus = 0;
+
     int enemyKingSq;
     int frienKingSq;
     ull enemyPieces;
@@ -1022,17 +1041,17 @@ int GameBoard::king_near_other_king(Color attacker_color)
         //assert (dFakeDist <= 7.0);      // Board is only so big
 
         // Bonus higher if friendly king closer to enemy king
-        //dFakeDist -= 2.0;
-        //iBonus = (int)(10 - dFakeDist);   // 0 (furthest) to 5 (closest)
-        iBonus = (int)(dFakeDist);
-        assert (iBonus >= 0); 
-        //assert (iBonus <= 5); 
+        assert (dFakeDist >= 0.0); 
+        dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
 
-        return (iBonus);
+
+        //// dBonus = 63.0 - (double)(frienKingSq*10);      // debug only
+
+        return dBonus;
 
     }
 
-    return iBonus;
+    return dBonus;
 }
 
 
@@ -1363,6 +1382,134 @@ bool GameBoard::is_king_in_check_new(Color color)
 
     // --- 8. if no attackers found ---
     return false;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+static bool kings_adjacent(const std::string &a, const std::string &b)
+{
+    int f1 = a[0] - 'a';
+    int r1 = a[1] - '1';
+    int f2 = b[0] - 'a';
+    int r2 = b[1] - '1';
+    return std::abs(f1 - f2) <= 1 && std::abs(r1 - r2) <= 1;
+}
+
+static bool queen_attacks(const std::string &q, const std::string &k)
+{
+    int f1 = q[0] - 'a';
+    int r1 = q[1] - '1';
+    int f2 = k[0] - 'a';
+    int r2 = k[1] - '1';
+    return (f1 == f2) || (r1 == r2) || (std::abs(f1 - f2) == std::abs(r1 - r2));
+}
+
+////////////////////////////////////////////////////////////////
+std::string GameBoard::random_kqk_fen(bool doQueen)
+{
+    // make all 64 squares in h1=0 order: h1,g1,...,a1, h2,...,a8
+    std::vector<std::string> squares;
+    for (int r = 1; r <= 8; ++r)
+    {
+        for (int fi = 0; fi < 8; ++fi)
+        {
+            char f = char('h' - fi);   // h,g,f,e,d,c,b,a
+            std::string sq;
+            sq += f;
+            sq += char('0' + r);
+            squares.push_back(sq);
+        }
+    }
+
+retry_all:
+    // 1) pick white king
+    std::string wk = squares[std::rand() % 64];
+
+    // 2) pick black king not adjacent
+    std::vector<std::string> bk_choices;
+    for (const auto &sq : squares)
+    {
+        if (sq != wk && !kings_adjacent(wk, sq))
+        {
+            bk_choices.push_back(sq);
+        }
+    }
+    if (bk_choices.empty())
+        goto retry_all;
+    std::string bk = bk_choices[std::rand() % bk_choices.size()];
+
+    // helper: rook attacks (orthogonal only)
+    auto rook_attacks = [](const std::string &r, const std::string &k) -> bool
+    {
+        int f1 = r[0] - 'a';
+        int r1 = r[1] - '1';
+        int f2 = k[0] - 'a';
+        int r2 = k[1] - '1';
+        return (f1 == f2) || (r1 == r2);
+    };
+
+    // 3) pick black Q or R that does NOT give check to WK
+    std::vector<std::string> bX_choices;
+    for (const auto &sq : squares)
+    {
+        if (sq == wk || sq == bk)
+            continue;
+
+        bool attacks =
+            doQueen
+            ? queen_attacks(sq, wk)
+            : rook_attacks(sq, wk);
+
+        if (!attacks)
+            bX_choices.push_back(sq);
+    }
+    if (bX_choices.empty())
+        goto retry_all;
+    std::string bX = bX_choices[std::rand() % bX_choices.size()];
+
+    // 4) build board [row 8 → row 1], still standard FEN layout
+    char board[8][8] = { 0 };
+    auto place = [&](char piece, const std::string &sq)
+    {
+        int f = sq[0] - 'a';     // 0..7
+        int r = sq[1] - '1';     // 0..7
+        board[7 - r][f] = piece; // FEN row order
+    };
+    place('K', wk);
+    place('k', bk);
+    place(doQueen ? 'q' : 'r', bX);
+
+    // 5) make FEN ranks
+    std::string fen;
+    for (int row = 0; row < 8; ++row)
+    {
+        int empty = 0;
+        for (int col = 0; col < 8; ++col)
+        {
+            char c = board[row][col];
+            if (c == 0)
+            {
+                ++empty;
+            }
+            else
+            {
+                if (empty)
+                {
+                    fen += char('0' + empty);
+                    empty = 0;
+                }
+                fen += c;
+            }
+        }
+        if (empty)
+            fen += char('0' + empty);
+        if (row != 7)
+            fen += '/';
+    }
+
+    fen += " w - - 0 1";
+    return fen;
 }
 
 

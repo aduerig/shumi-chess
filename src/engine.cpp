@@ -46,21 +46,32 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 
 void Engine::reset_engine() {
     //std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
+    
+    std::srand((unsigned)std::time(nullptr));
 
+    // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
-    psuedo_legal_moves.reserve(128); 
-    all_legal_moves.reserve(128);
+    psuedo_legal_moves.reserve(MAX_MOVES); 
+    all_legal_moves.reserve(MAX_MOVES);
 
+    ///////////////////////////////////////////////////////////////////////
+    //
     // You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. FEN setup. Setup the FEN
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
-    //game_board = GameBoard("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
-    //game_board = GameBoard("4k3/q7/5K2/8/8/8/8/8 w - - 0 1");
-    
+    //game_board = GameBoard("k7/8/8/8/8/8/5Q1K/8 w - - 0 1");
+    //game_board = GameBoard("k7/q7/8/8/8/8/7K/8 w - - 0 1");
+
+    // Or you can pick a random simple FEN. (maybe)
+    // string stemp = game_board.random_kqk_fen(true);
+    // game_board = GameBoard(stemp);
+
     game_board = GameBoard();
 
-    // ! is reinitalize these stacks the right way to clear the previous entries?
+    //////////////////////////////////////////////////////////////////////.
+
+
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
@@ -82,13 +93,15 @@ void Engine::reset_engine(const string& fen) {
 
     //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
 
+    std::srand((unsigned)std::time(nullptr));
+
+    // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
-    psuedo_legal_moves.reserve(128); 
-    all_legal_moves.reserve(128);
+    psuedo_legal_moves.reserve(MAX_MOVES); 
+    all_legal_moves.reserve(MAX_MOVES);
 
     game_board = GameBoard(fen);
 
-    // ! NOTE: is reinitalize these stacks the right way to clear the previous entries? I think it is.
     move_history = stack<Move>();
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
@@ -122,13 +135,7 @@ vector<Move> Engine::get_legal_moves() {
     // cross the king over a "checked square".
 
     get_psuedo_legal_moves(color, psuedo_legal_moves);
-    //
-    // Ensure the output array is big enough (NOTE:could this be done as a constant allocation?)
-    // Smart idea, we should calculate a sane max and run it through benchmarks
-    // Not needed anymore since this is a class member and allocated in the ctor. 
-    // No need for benchmarks, its plain faster.
-    //all_legal_moves.reserve(psuedo_legal_moves.size());
-
+    
     for (const Move& move : psuedo_legal_moves) {
 
         bool bKingInCheck = in_check_after_move(color, move);
@@ -173,8 +180,6 @@ int Engine::get_minor_piece_move_number (const vector <Move> mvs)
     return iReturn;
 }
 
-
-// NOTE: This is a very wasteful way to do this. It has to go.
 // Does not take into account castling crossing a checked square? Yes, is_square_in_check() does this.
 bool Engine::is_king_in_check(const ShumiChess::Color& color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
@@ -199,16 +204,15 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
     const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
 
+    const int sq = utility::bit::bitboard_to_lowest_square(square);
 
-    // Note: ? probably don't need knights here cause pins cannot happen with knights, but 
-    //   we don't check if king is in check yet
-    ull straight_attacks_from_king = get_straight_attacks(square);
-    // cout << "diagonal_attacks_from_king: " << square << endl;
-    ull diagonal_attacks_from_king = get_diagonal_attacks(square);
+    // knights that can reach (capture to) this square
+    const ull reachable_knights = tables::movegen::knight_attack_table[sq];
+    if (reachable_knights & themKnights) return true;   // Knight attacks this square
 
-    // bishop, rook, queens that can reach (capture to) this square
-    ull deadly_diags = themQueens | themBishops;
-    ull deadly_straight = themQueens| themRooks;
+    // kings that can reach (capture to) this square
+    const ull reachable_kings   = tables::movegen::king_attack_table[sq];
+    if (reachable_kings   & themKing)    return true;   // King attacks this square
 
     // pawns that can reach (capture to) this square
     ull temp;
@@ -227,35 +231,24 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     ull reachable_pawns = (((temp & ~col_masks[0]) << 1) | 
                            ((temp & ~col_masks[7]) >> 1));                           
 
-    const int sq = utility::bit::bitboard_to_lowest_square(square);
+    if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square
 
-    // knights that can reach (capture to) this square
-    const ull reachable_knights = tables::movegen::knight_attack_table[sq];
 
-    // kings that can reach (capture to) this square
-    const ull reachable_kings   = tables::movegen::king_attack_table[sq];
+    // Note: ? probably don't need knights here cause pins cannot happen with knights, but 
+    //   we don't check if king is in check yet
+    ull straight_attacks_from_king = get_straight_attacks(square);
+    // cout << "diagonal_attacks_from_king: " << square << endl;
+    ull diagonal_attacks_from_king = get_diagonal_attacks(square);
 
-    // // knights that can reach (capture to) this square
-    // ull reachable_knights = tables::movegen::knight_attack_table[utility::bit::bitboard_to_lowest_square(square)];
-
-    // // kings that can reach (capture to) this square
-    // ull reachable_kings = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(square)];
-
+    // bishop, rook, queens that can reach (capture to) this square
+    ull deadly_diags = themQueens | themBishops;
+    ull deadly_straight = themQueens| themRooks;
 
     if (deadly_straight & straight_attacks_from_king) return true;    // for queen and rook straight attacks
     if (deadly_diags    & diagonal_attacks_from_king) return true;    // for queen and bishop straight attacks
-    if (reachable_knights & themKnights) return true;
-    if (reachable_pawns   & themPawns)   return true;
-    if (reachable_kings   & themKing)    return true;
+
     return false;
 
-    // return ((deadly_straight & straight_attacks_from_king) ||
-    //         (deadly_diags & diagonal_attacks_from_king) ||
-    //         (reachable_knights & game_board.get_pieces_template<Piece::KNIGHT>(enemy_color)) ||
-    //         (reachable_pawns & game_board.get_pieces_template<Piece::PAWN>(enemy_color)) ||
-    //         (reachable_kings & game_board.get_pieces_template<Piece::KING>(enemy_color)));
-
-            
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -290,6 +283,15 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 
     } else {
         // Three move repetition draw
+
+        // Insuffecient material   Note: what about two bishops and bishop and knight
+        bool isOverThatWay = game_board.insufficient_material_simple();
+        if (isOverThatWay) {
+            if (debugNow) cout<<"no material" << endl;
+            return GameState::DRAW;
+        }
+
+
         #ifdef THREE_TIME_REP
             auto it = repetition_table.find(game_board.zobrist_key);
             if (it != repetition_table.end()) {
@@ -306,12 +308,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
             }
         #endif
     
-        // Insuffecient material
-        bool isOverThatWay = game_board.insufficient_material_simple();
-        if (isOverThatWay) {
-            if (debugNow) cout<<"no material" << endl;
-            return GameState::DRAW;
-        }
+
     }
 
 
@@ -1039,28 +1036,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
             int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
             int dest_pawn_square = utility::bit::bitboard_to_lowest_square(one_move_forward);
-
-            #ifdef _DEBUGGING_TO_FILE
-                if (fpDebug) {
-
-                    ull one_rank_forward = utility::bit::bitshift_by_color(single_pawn, color, 8); 
-
-                    Move dog = make_enpassant_move_from_bit_boards( Piece::PAWN, single_pawn, one_rank_forward, color);
-                    fputc('\n', fpDebug);
-                    fputc('\n', fpDebug);
-                    fputc('\n', fpDebug);
-                    print_move_to_file(dog, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-        
-                    print_move_history_to_file(fpDebug);    // debug only
-
-                    fputc('\n', fpDebug);
-                    string strboard = utility::representation::gameboard_to_string(game_board);
-                    fputc('\n', fpDebug);
-
-                    fputs(strboard.c_str(), fpDebug);
-                }
-            #endif
-
+      
             add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
                          true, false, 0ULL, true, false);
         }
@@ -1289,7 +1265,6 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
     // MoveText += ']';
 
     if (the_move.piece_type == Piece::NONE) {
-        //MoveText += "???";
         MoveText += "none";
     } else {
 
@@ -1474,17 +1449,18 @@ char Engine::file_from_move(const Move& m)
 
 
 // pop!
-void Engine::doPopThingee() {
-    user_request_next_move++;
-    if (user_request_next_move > 10) {
-        user_request_next_move = 7;
-    }
+void Engine::set_random_on_next_move() {
+    // user_request_next_move++;
+    // if (user_request_next_move > 10) {
+    //     user_request_next_move = 7;
+    // }
     // cout << "\x1b[34m nextMove->\x1b[0m" << user_request_next_move 
     //      << "\x1b[34m<-nextMove \x1b[0m" << endl;
 
-    debugNow = !debugNow;
+    //debugNow = !debugNow;
+    b_randomize_next_move = true;
 
-    cout << "debugnow" << debugNow;
+    cout << "randomize_next_move: " << b_randomize_next_move << endl;
 
     //killTheKing(ShumiChess::BLACK);
 }
@@ -1585,8 +1561,7 @@ void Engine::move_and_score_to_string(const Move best_move, double d_best_move_v
 //////////////////////////////////////////////////////////////////
 
 
-// Have an object? push_back(obj) / push_back(std::move(obj)).
-// Have constructor args? emplace_back(args...).
+
 vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves) {
 
     vector<ShumiChess::Move> vReturn;
@@ -1594,6 +1569,8 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
         if (is_unquiet_move(mv))
         {
             vReturn.push_back(mv); // or: vReturn.emplace_back(mv);
+            // Have an object? push_back(obj) / push_back(std::move(obj)).
+            // Have constructor args? emplace_back(args...).
         }
     }
     return vReturn;
@@ -1608,14 +1585,19 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
 //      • Non-capture promotions: keep only QUEEN promotions; appended after captures.
 // Notes: O(U^2) sort due to linear insertion; U is usually small. (<5)
 //
-vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<ShumiChess::Move>& moves)
+vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
+                const vector<ShumiChess::Move>& moves,       // input
+                const Move& move_last,                       // input
+                vector<ShumiChess::Move>& vReturn            // output
+            )
 {
-    vector<ShumiChess::Move> vReturn;
-    vReturn.reserve(moves.size());
 
     // recapture bias: if a capture lands on opponent's last-to square, try it earlier
     const bool have_last = !move_history.empty();
     const ull  last_to   = have_last ? move_history.top().to : 0ULL;
+    // debug only
+    // const ull  last_to2  = move_last.to;
+    // assert(last_to==last_to2);
 
     for (const ShumiChess::Move& mv : moves) {
         if (is_unquiet_move(mv)) {
@@ -1625,7 +1607,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<Sh
             if (mv.capture != ShumiChess::Piece::NONE) {
 
                 int key = mvv_lva_key(mv);  // uses your static function (captures only)
-                if (have_last && mv.to == last_to) key += 800;  // small recapture bump
+                if (have_last && mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
  
                 auto it = vReturn.begin();
                 for (; it != vReturn.end(); ++it) {
@@ -1640,7 +1622,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(const vector<Sh
             } else {
                 assert (mv.promotion != Piece::NONE);
 
-                if (mv.promotion != Piece::QUEEN)    // DO NOT push up in the list non queen promotions.
+                if (mv.promotion != Piece::QUEEN)    // DO NOT push non queen promotions up in the list
                     continue;
                 else
                     vReturn.push_back(mv);
@@ -1672,54 +1654,12 @@ void Engine::move_into_string(ShumiChess::Move m) {
 }
 
 
-
-// NO disambiguation
-void Engine::print_moves_to_file(const vector<ShumiChess::Move>& moves, int nTabs, FILE* fp) {
-    // 
-    int nChars;
-    std::string a_move_string;
-    a_move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
-
-    for (const auto& move : moves) {
-
-        bitboards_to_algebraic(Color::BLACK, move
-                            , GameState::INPROGRESS
-                            //, NULL                      // NO disambiguation
-                            , false
-                            , false
-                            , a_move_string);            // output
-
-        const char* sz_move_text = a_move_string.c_str();
-
-
-        assert (nTabs>=0);
-        for (int i = 0; i < nTabs; ++i) {
-            if (fputc('\t', fp) == EOF) assert(0);
-        }
-
-        nChars = fputs(sz_move_text, fp);
-        if (nChars == EOF) assert(0);
-
-        nChars = fputc('\n', fp);
-        if (nChars == EOF) assert(0);
-        
-        //     ull check_test = ( (move.to & game_board.white_king) || (move.to & game_board.black_king) );
-        //     if (check_test != 0ull) {
-        //         assert(0);
-        //         safe_push_back(MoveText,'+';             // Its a check.
-        //     }
-    }
-    nChars = fputs("\n", fp);
-    if (nChars == EOF) assert(0);
-
-}
-
 //
 // Prints the move history from oldest → most recent 
 // Uses: nPly = -2, isInCheck = false, bFormated = false
 void Engine::print_move_history_to_file(FILE* fp) {
     bool bFlipColor = false;
-    int ierr = fputs("\n\nhistory:\n", fpDebug);
+    int ierr = fputs("\n\nhistory:\n", fp);
     assert (ierr!=EOF);
 
     // copy stack so we don't mutate Engine's history
@@ -1745,7 +1685,7 @@ void Engine::print_move_history_to_file(FILE* fp) {
 // Tabs over based on ply. Pass in nPly=-2 for no tabs. 
 // The formatted version does one move per line. 
 // The unformatted version puts them all on one line.
-void Engine::print_move_to_file(ShumiChess::Move m, int nPly, GameState gs
+void Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
                                     , bool isInCheck, bool bFormated, bool bFlipColor
                                     , FILE* fp
                                 ) {

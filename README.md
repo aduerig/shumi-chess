@@ -18,52 +18,49 @@ we're back
 ## intro
 This project is a hobby C++ engine written by OhMesch and ADuerig, and later refined and maintained by PDuerig. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
 
-This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering (at root), killer moves. 
+This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering at root, killer moves. 
 
 See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence".
 
-## todo
-* See [brainStorm](doc/brainStorm.md) for more future directions.
-
-
 ## current issue log 
     All issues classified as either: a. bug, or b. failure (to chess requirements), or c. sloth (slowdown) or d. feature to add. ~~Crossed out~~ items are done, but under testing.
-    
-  * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on
-  each file with a "#undef NDEBUG".
-  * Bug: Serious after one game, (human .vs. shumi, how do you start the next game) (reuse the "pop!" button).
-  * Bug:  Forces promotions for the human to be to a queen. Problem with the interface I suppose.
-  * Bug: Weird interface bug prevents AI from underpromotion to queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2).  The AI and engine come up with c1=N. c1=Q leads to a stalemate and is not considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
-  * Bug: cant seem to get evaluator to want to trade when it should.
-  * Feature: Ability to set one minimaxai to a different setup than the other. Very useful feature. Excellent for testing.
+
+  * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG".
+  * Bug: Forces promotions for the human to be to a queen. Problem with the interface I suppose. Need a new feature here.
+  * Bug: Weird interface bug prevents shumi from underpromotion to queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2). Shumi comes up with c1=N. c1=Q leads to a stalemate and is not even considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
+  * Bug: Can't seem to get evaluator to want to trade when it is ahead.
+  * Feature: Ability to set one minimaxAI to a different setup than the other. Very useful feature. Excellent for testing.
   ~~* Feature: No ability to truely randomize response without ruining capability. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.~~
-  * Bug: "Some time repetition" (when playing in the game) crashes the system. Over leveling, runs off to the 256 level trap. Only seen in autoplay. Not always seen., not frequent.
-  * Feature: Cant play black from bottom of board.
-  * Feature: A "best score" field up in top of the showboard.py. Connect it to the double field used for root PV?
+  * Bug: "Some time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. Not always seen, not frequent.
   ~~* Failure: does not recognize draw by insuffecent material.~~
   * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the random move. Maybe easy change See get_ai_move_threaded().
-  * Feature: Output or matybe input .pgn files. Most important is output.
-  * Sloth: Scores still handles as double, outside of evaluation. This is a more serious problem than it appears, as the TT has to convert and uncovert (it stores in centipawns like it should, and has to. I know, just double multiplies and divides, but All scores should be int, in centipawns unless its display. Big job, but not hard, some gain in speed and cleaner code for sure).
+  * Feature: Output or maybe input .pgn files. Most important is output.
+  * Sloth: Scores still handles as double, outside of evaluation. This is a more serious problem than it appears, as the TT has to convert and uncovert (it stores in centipawns like it should, and has to). I know, just double multiplies and divides, but All scores should be int, in centipawns unless its display. Big job, but not hard, some gain in speed and cleaner code for sure.
   ~~* Feature: Interface needs better stuff for autoplay. Like a "current games won for both white and black", Also needs a "best absolute score" field.~~
-  * Bug: Moveing Thread hangs after 12-25 moves or so, in long chess game. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 10 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain. This is rare, and does not seem to happen in autoplay.
+  ~~* Bug: Moveing Thread occasionlly hangs after 12-25 moves or so, in long chess game. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 20 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain. This is rare, and does not seem to happen in autoplay.~~
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * ~~Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. Wrong. uses the zobrist.~~ 
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. Its now 20, for testing only.
-  * ~~Failure: Doesnt recognize Enpassent (its not implemented). This is a problem in the engine.~~
   * Sloth: No Transposition table (TT) implemented. This is a problem in MinimaxAI. Comment: Wrong its "slightly" implemented. Its used for repeat position ID, but not for move sorting. 
   * ~~Sloth: Zobrist is not maintained for castling or en passant.~~
   * ~~Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa"~~ ~~functionality. This is a problem in MinimaxAI.~~
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
-  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration). These changes do not rely on TT or transposition tables. This is a problem in MinimaxAI.
-  * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? And what about Zobrist?
-  * Bug: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not show checks either. The function is debug for human consumption only.
+  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration, SEE). These changes do not rely on TT or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all.
+  * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? 
+  * Bug: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not postfix checks with a 
+  "+" either. The function is debug for human consumption only.
+
+## todo
+* See [brainStorm](doc/brainStorm.md) for more future directions.
 
 ## recommended usage (for python scripts/run_tests.py -dD and -tT)
-  fast 5 minute play: -d=4 -t=10
-  for half hour game: -d=6 -t=1000
-  for long game     : -d=8 -t=2000
-  for end games     : -d=10 -t=2000   (takes too long unless matrial very small)
-   
+  fast 5 minute play: -d6 -t10      (or autoplay of computers)
+  for half hour game: -d7 -t1000
+  for long game     : -d8 -t2000
+
+## Keystrokes active in app
+  esc  - exit app
+  1    - sets "randomize" next move. Usefull to play different games.
 
 ## change log
   * Abandoned 10/11/2025

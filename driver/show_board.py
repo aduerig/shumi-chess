@@ -59,14 +59,12 @@ for key, val in imported_ais.items():
 
 
 ##def reset_board(fen=""):
-def reset_board(fen="", winner="draw"):
-
+def reset_board(fen="", winner="????"):
 
     global curr_game_white, curr_game_black, curr_game_draw, curr_game
-
     global legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index
 
-    print('reset_board called from python')
+    #print('reset_board called from python')
     
     # If AI is thinking, cancel it
     if ai_is_thinking:
@@ -96,13 +94,13 @@ def reset_board(fen="", winner="draw"):
     render_all_pieces_and_assign(board)
 
 
-    # Update the game counters
+    # Update the match counters
     curr_game += 1
     if winner == 'white':
         curr_game_white += 1
     elif winner == 'black':
         curr_game_black += 1
-    else:
+    elif winner == 'draw':
         curr_game_draw += 1
 
     curr_game_text.setText(f'Game {curr_game}')
@@ -173,13 +171,22 @@ win.master.deiconify()
 
 
 
-def escape_program(event):
+def on_esc_key_hit(event):
     ##print('Trying to escape program!')
     win.close()
     os._exit(0)
 
 # 1. Pressing escape closes out of the program
-win.master.bind("<Escape>", escape_program)
+win.master.bind("<Escape>", on_esc_key_hit)
+
+
+def on_one_key_hit(event):
+    #print("hello world from 1 key")       # pop!
+    engine_communicator.pop()
+
+win.master.bind("1", on_one_key_hit)
+
+
 
 # set the coordinates of the window; bottom left is (0, 0) and top right is (1, 1)
 win.setCoords(0, 0, 1, 1)
@@ -215,22 +222,31 @@ class Button:
         self.text_graphics_object.setText(self.get_text())
 
 
-def clicked_pop_button(button_obj):
+def clicked_flip_button(button_obj):
     global game_state_might_change, last_move_indicator, ai_is_thinking, player_index, acn_focused, avail_moves
     
     # If AI is thinking, cancel it.
-    #if ai_is_thinking:
-    #    print("Pop called during AI turn, cancelling computation.")
-    #    ai_is_thinking = False
-    #    # Clear the queue
-    #    while not ai_move_queue.empty():
-    #        try:
-    #            ai_move_queue.get_nowait()
-    #        except queue.Empty:
-    #            break
+    if ai_is_thinking:
+       print("Flip Board called during AI turn, cancelling computation.")
+       ai_is_thinking = False
+       # Clear the queue
+       while not ai_move_queue.empty():
+           try:
+               ai_move_queue.get_nowait()
+           except queue.Empty:
+               break
     
-    engine_communicator.pop()
-    
+    global whiteOnBottom, acn_to_x_y, x_y_to_acn
+    # flip the flag
+    whiteOnBottom = not whiteOnBottom
+    # rebuild the two dicts based on new orientation
+    acn_to_x_y, x_y_to_acn = build_maps(whiteOnBottom)
+
+    # now force redraw
+    undraw_pieces()
+    render_all_pieces_and_assign(board)
+
+    #engine_communicator.pop()
     # A pop reverts the turn, so we must revert our player index tracker
     # player_index = 1 - player_index
     
@@ -274,7 +290,7 @@ def clicked_autoreset(button_obj):
 def clicked_reset_button(button_obj):
     # get stripped entry text
     fen_string = set_fen_text.getText().strip()
-    print(f'Got FEN string: {fen_string}')
+    #print(f'Got FEN string: {fen_string}')
     reset_board(fen_string)
 
 
@@ -351,7 +367,7 @@ def output_fens_depth_1(button_obj):
 
 # argument list: function to run on click, text, button_color, text color
 button_holder = [
-    Button(clicked_pop_button, lambda: "pop!", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(clicked_flip_button, lambda: "Flip Board", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_white_button, lambda: "White\n{}".format(both_players[0]), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
     Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1]), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
     Button(clicked_reset_button, lambda: "Reset\n(to FEN above)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
@@ -490,16 +506,29 @@ for file in os.listdir(os.path.join(script_file_dir, 'images')):
         just_piece = os.path.splitext(file)[0]
         chess_image_filepaths[just_piece] = filepath
 
+
+
+
 # precompute chess coordinate notation to x, y values
-acn_to_x_y = {
-    (str(chr(ord('a') + x)) + str(y+1)): (x, y) for y in range(8) for x in range(8)
-}
+whiteOnBottom = True
 
+def build_maps(whiteOnBottom: bool):
+    if whiteOnBottom:
+        acn_to_x_y = {
+            (chr(ord('a') + x) + str(y+1)): (x, y)
+            for y in range(8) for x in range(8)
+        }
+    else:
+        acn_to_x_y = {
+            (chr(ord('a') + x) + str(y+1)): (7 - x, 7 - y)
+            for y in range(8) for x in range(8)
+        }
+    x_y_to_acn = {v: k for k, v in acn_to_x_y.items()}
+    return acn_to_x_y, x_y_to_acn
 
-x_y_to_acn = {}
-# reversing dict
-for acn, coord in acn_to_x_y.items():
-    x_y_to_acn[coord] = acn
+# initial build
+acn_to_x_y, x_y_to_acn = build_maps(whiteOnBottom)
+
 
 
 # pythons representation of the board
@@ -772,13 +801,20 @@ try:
             win.update()
             time.sleep(1/fps)
 
-        winner = 'draw'
-        if engine_communicator.game_over() == 0:
+        winner = '????'
+        gamover = engine_communicator.game_over()
+        if gamover == 0:    # GameState::WHITEWIN    
             winner = 'white'
-        elif engine_communicator.game_over() == 2:
+        elif gamover == 2:  # GameState::BLACKWIN      
             winner = 'black'
-        game_over_text.setText(winner_text.format(winner))
-        game_over_text.draw(win)
+        elif gamover == 1:  # GameState::DRAW
+            winner = 'draw'
+        #print("dog",gamover, winner)
+
+        curr_game_text.setText(f'Game {curr_game}')
+        white_wins_text.setText(f'W {curr_game_white}')
+        black_wins_text.setText(f'B {curr_game_black}')
+        draw_wins_text.setText(f'D {curr_game_draw}')
 
         # Only auto-reset if the game did NOT end in a draw. Otherwise we just stop and die and show the board
         #if autoreset_toggle and winner != 'draw':
@@ -787,6 +823,21 @@ try:
             reset_board("", winner)
             game_state_might_change = True
             continue
+
+        # ----- autoreset is OFF: update counters right here -----
+        curr_game += 1
+        if winner == 'white':
+            curr_game_white += 1
+        elif winner == 'black':
+            curr_game_black += 1
+        elif winner == 'draw':
+            curr_game_draw += 1
+
+        curr_game_text.setText(f'Game {curr_game}')
+        white_wins_text.setText(f'W {curr_game_white}')
+        black_wins_text.setText(f'B {curr_game_black}')
+        draw_wins_text.setText(f'D {curr_game_draw}')
+
 
         # skip the blocking getMouse()
 
