@@ -11,11 +11,19 @@ from helpers import *
 
 # Python arguments
 parser = argparse.ArgumentParser()
+
 parser.add_argument('--debug', dest='release', default=True, action='store_false')
 parser.add_argument('--fen', default=None)
 parser.add_argument('--human', default=False, action='store_true')
-parser.add_argument('-d', '--depth', type=int, default=7, help='Maximum deepening')
-parser.add_argument('-t', '--time', type=int, default=2000, help='Time per move in ms')
+
+parser.add_argument('-d', '--depth', type=int, default=5, help='Max deepening')
+parser.add_argument('-t', '--time', type=int, default=99, help='Time per move in ms')
+
+parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')
+parser.add_argument('-wt', '--wt', type=int, default=None, help='white time ms')
+parser.add_argument('-bd', '--bd', type=int, default=None, help='black max deepening')
+parser.add_argument('-bt', '--bt', type=int, default=None, help='black time ms')
+
 
 
 args = parser.parse_args()
@@ -25,6 +33,16 @@ print('Building for:', 'debug' if not args.release else 'release')
 shared_build_code.build_shumi_chess(args.release, build_tests=False)
 shared_build_code.build_python_gui_module(args.release)
 
-# shared_build_code.run_python_gui(fen=args.fen, human=args.human)
-shared_build_code.run_python_gui(fen=args.fen, human=args.human, depth=args.depth, time=args.time)
+
+shared_build_code.run_python_gui(
+    fen=args.fen,
+    human=args.human,
+    depth=args.depth,
+    time=args.time,
+    wdepth=args.wd,
+    wtime=args.wt,
+    bdepth=args.bd,
+    btime=args.bt,
+)
+
 

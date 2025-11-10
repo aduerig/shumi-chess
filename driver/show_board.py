@@ -13,25 +13,48 @@ from modified_graphics import *
 import engine_communicator
 
 
-
 # --- Game counters (global state) ---
 curr_game = 1
-curr_game_white = 0
-curr_game_black = 0
+curr_game_bottom = 0
+curr_game_top = 0
 curr_game_draw = 0
 # ------------------------------------
-
-
+winner = '????'
 
 # Python arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--fen', default=None)
-parser.add_argument('--human', default=False, action='store_true')
-parser.add_argument('-d', '--depth', type=int, default=7, help='Maximum deepening')
-parser.add_argument('-t', '--time', type=int, default=2000, help='Time per move in ms')
 
+# Python arguments
+parser.add_argument('-fen', '--fen', default=None)
+parser.add_argument('-human', '--human', default=False, action='store_true')
 
+# common
+parser.add_argument('-d', '--depth', type=int, default=None, help='Maximum deepening')
+parser.add_argument('-t', '--time',  type=int, default=None, help='Time per move in ms')
+
+# per-side
+parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')
+parser.add_argument('-wt', '--wt', type=int, default=None, help='white time ms')
+parser.add_argument('-bd', '--bd', type=int, default=None, help='black max deepening')
+parser.add_argument('-bt', '--bt', type=int, default=None, help='black time ms')
+
+# parse arguments
 args = parser.parse_args()
+
+print("\nARGS:",
+      "  depth=", args.depth,
+      "  time=", args.time,
+      "  wdepth=", args.wd,
+      "  wtime=", args.wt,
+      "  bdepth=", args.bd,
+      "  btime=", args.bt)
+
+dpth_white = None
+time_white = None
+dpth_black = None
+time_black = None
+
+
 
 script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
 
@@ -61,7 +84,7 @@ for key, val in imported_ais.items():
 ##def reset_board(fen=""):
 def reset_board(fen="", winner="????"):
 
-    global curr_game_white, curr_game_black, curr_game_draw, curr_game
+    global curr_game_bottom, curr_game_top, curr_game_draw, curr_game
     global legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index
 
     #print('reset_board called from python')
@@ -87,7 +110,10 @@ def reset_board(fen="", winner="????"):
     else:
         print('Resetting to basic position cause FEN string is empty')
         engine_communicator.reset_engine()
-    
+
+    engine_communicator.one_Key_Hit()       #  To randomize first move
+    print("one key hit2");
+
     # Resetting the board always sets the turn to white
     player_index = 0
     undraw_pieces()
@@ -96,18 +122,24 @@ def reset_board(fen="", winner="????"):
 
     # Update the match counters
     curr_game += 1
+
     if winner == 'white':
-        curr_game_white += 1
+        if whiteOnBottom:
+            curr_game_bottom += 1
+        else:
+            curr_game_top += 1
     elif winner == 'black':
-        curr_game_black += 1
+        if whiteOnBottom:
+            curr_game_top += 1
+        else:
+            curr_game_bottom += 1        
     elif winner == 'draw':
         curr_game_draw += 1
 
     curr_game_text.setText(f'Game {curr_game}')
-    white_wins_text.setText(f'W {curr_game_white}')
-    black_wins_text.setText(f'B {curr_game_black}')
-    draw_wins_text.setText(f'D {curr_game_draw}')
-
+    bottom_wins_text.setText(f'Bot {curr_game_bottom}')
+    top_wins_text.setText(f'Top {curr_game_top}')
+    draw_wins_text.setText(f'Drw {curr_game_draw}')
 
 
     legal_moves = engine_communicator.get_legal_moves()
@@ -119,24 +151,60 @@ def get_random_move(legal_moves):
     choice = random.choice(legal_moves)
     return choice[0:2], choice[2:4]
 
+
 def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
+    import sys
+    global player_index, dpth_white, time_white, dpth_black, time_black
     try:
         if name_of_ai.lower() == 'random_ai':
             from_acn, to_acn = get_random_move(legal_moves)
         else:
-            # Run engine with CLI knobs (time & max depth)
-            milliseconds   = args.time  if args.time  is not None else 2000
-            max_deepening  = args.depth if args.depth is not None else 7
+            # did the user give global -t / -d ?
+            global_time_set  = ('-t' in sys.argv) or ('--time' in sys.argv)
+            global_depth_set = ('-d' in sys.argv) or ('--depth' in sys.argv)
+
+            side = player_index  # 0 = white, 1 = black
+
+            # TIME: per-side beats global
+            if side == 0 and args.wt is not None:
+                milliseconds = args.wt
+            elif side == 1 and args.bt is not None:
+                milliseconds = args.bt
+            elif global_time_set and args.time is not None:
+                milliseconds = args.time
+            else:
+                milliseconds = args.time if args.time is not None else 2000
+
+            # DEPTH: per-side beats global
+            if side == 0 and args.wd is not None:
+                max_deepening = args.wd
+            elif side == 1 and args.bd is not None:
+                max_deepening = args.bd
+            elif global_depth_set and args.depth is not None:
+                max_deepening = args.depth
+            else:
+                max_deepening = args.depth if args.depth is not None else 7
+
+            # debug print
+            print("\nmillsecs=    ", milliseconds)
+            print("max_deepening= ", max_deepening)
+            if side == 0:
+                time_white = milliseconds
+                dpth_white = max_deepening
+            else:
+                time_black = milliseconds
+                dpth_black = max_deepening
+           
             move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening)
             from_acn, to_acn = move[0:2], move[2:4]
 
-        # Only post if the result is still relevant
+
         if ai_is_thinking:
             ai_move_queue.put((from_acn, to_acn))
     except Exception:
-        # Keep the main loop resilient if the worker hits an error
         if ai_is_thinking:
             ai_move_queue.put(None)
+
 
 
 ai_default = 'minimax_ai'
@@ -182,7 +250,7 @@ win.master.bind("<Escape>", on_esc_key_hit)
 
 def on_one_key_hit(event):
     #print("hello world from 1 key")       # pop!
-    engine_communicator.pop()
+    engine_communicator.one_Key_Hit()
 
 win.master.bind("1", on_one_key_hit)
 
@@ -222,6 +290,26 @@ class Button:
         self.text_graphics_object.setText(self.get_text())
 
 
+def flip_sides():
+    global whiteOnBottom, acn_to_x_y, x_y_to_acn
+
+    # flip the flag
+    whiteOnBottom = not whiteOnBottom
+    # rebuild the two dicts based on new orientation
+    acn_to_x_y, x_y_to_acn = build_maps(whiteOnBottom)
+
+    # now force redraw
+    undraw_pieces()
+    render_all_pieces_and_assign(board)
+
+    if whiteOnBottom:
+        curr_whose_on_top_text.setText('Black on top')
+    else:
+        curr_whose_on_top_text.setText('White on top')
+
+    #print("cat ", whiteOnBottom)
+
+
 def clicked_flip_button(button_obj):
     global game_state_might_change, last_move_indicator, ai_is_thinking, player_index, acn_focused, avail_moves
     
@@ -235,30 +323,8 @@ def clicked_flip_button(button_obj):
                ai_move_queue.get_nowait()
            except queue.Empty:
                break
-    
-    global whiteOnBottom, acn_to_x_y, x_y_to_acn
-    # flip the flag
-    whiteOnBottom = not whiteOnBottom
-    # rebuild the two dicts based on new orientation
-    acn_to_x_y, x_y_to_acn = build_maps(whiteOnBottom)
 
-    # now force redraw
-    undraw_pieces()
-    render_all_pieces_and_assign(board)
-
-    #engine_communicator.pop()
-    # A pop reverts the turn, so we must revert our player index tracker
-    # player_index = 1 - player_index
-    
-    # game_state_might_change = True
-    # undraw_pieces()
-    # render_all_pieces_and_assign(board)
-    # acn_focused = None
-    # avail_moves = []
-    # # Remove the last move indicator since the move was undone
-    # if last_move_indicator:
-    #     last_move_indicator.undraw()
-    #     last_move_indicator = None
+    flip_sides()
 
 
 def get_next_player(player_name: str) -> str:
@@ -404,7 +470,7 @@ for button_obj in button_holder:
     button_obj.text_graphics_object = new_button_text
     curr_y_cell -= 1
 
-# small field left of the turn label
+# set small field left of the turn label
 material_text = Text(Point(square_size * 0.30, square_size * 9), '1234')
 material_text.setFill(color_rgb(200, 200, 200))
 material_text.setSize(8)
@@ -414,7 +480,7 @@ score = 4321
 material_text.setText(str(score))
 
 
-# current turn text
+# set current turn text
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
     Point(square_size * 1.25, square_size * 9),
@@ -425,21 +491,19 @@ current_turn_text.draw(win)
 
 
 # current game text (plus small W/B/D counters to the left)
-# white_wins_text = Text(Point(square_size * 5.9, square_size * 9), f'W {curr_game_white}')
-# black_wins_text = Text(Point(square_size * 6.5, square_size * 9), f'B {curr_game_black}')
-# draw_wins_text  = Text(Point(square_size * 7.1, square_size * 9), f'D {curr_game_draw}')
-white_wins_text = Text(Point(square_size * 7.0, square_size * 9), f'W {curr_game_white}')
-black_wins_text = Text(Point(square_size * 7.5, square_size * 9), f'B {curr_game_black}')
-draw_wins_text  = Text(Point(square_size * 8.1, square_size * 9), f'D {curr_game_draw}')
+bottom_wins_text = Text(Point(square_size * 6.75, square_size * 9.4), f'Bot {curr_game_bottom}')
+top_wins_text = Text(Point(square_size * 7.25, square_size * 9.4), f'Top {curr_game_top}')
+draw_wins_text  = Text(Point(square_size * 7.75, square_size * 9.4), f'Drw {curr_game_draw}')
 
-
-
-
-for t in (white_wins_text, black_wins_text, draw_wins_text):
+# set the win/loss/draw counters
+for t in (bottom_wins_text, top_wins_text, draw_wins_text):
     t.setFill(color_rgb(200, 200, 200))
     t.setSize(8)
     t.draw(win)
 
+
+
+# set game number
 curr_game_text = Text(
     Point(square_size * 2.5, square_size * 9),
     f'Game {curr_game}'
@@ -448,14 +512,42 @@ curr_game_text.setFill(color_rgb(200, 200, 200))
 curr_game_text.draw(win)
 
 
-# set current move text
+# set white flags
+white_flags_text = Text(
+    Point(square_size * 6.75, square_size * 9),
+    'wFlags -'
+)
+white_flags_text.setFill(color_rgb(200, 200, 200))
+white_flags_text.setSize(8)
+white_flags_text.draw(win)
+
+# set black flags
+black_flags_text = Text(
+    Point(square_size * 8.5, square_size * 9),
+    'bFlags - '
+)
+black_flags_text.setFill(color_rgb(200, 200, 200))
+black_flags_text.setSize(8)
+black_flags_text.draw(win)
+
+# set current move number
 curr_move_text = Text(
-    Point(square_size * 4.5, square_size * 9),
+    Point(square_size * 3.55, square_size * 9),
     'Move {}'.format(engine_communicator.get_move_number())
 )
 curr_move_text.setFill(color_rgb(200, 200, 200))
 curr_move_text.draw(win)
 
+# set whose on top/bottom of board
+curr_whose_on_top_text = Text(
+    Point(square_size * 5.0, square_size * 9),
+    'Black on top'
+)
+curr_whose_on_top_text.setFill(color_rgb(200, 200, 200))
+curr_whose_on_top_text.draw(win)
+
+engine_communicator.one_Key_Hit()       #  To randomize first move
+print("one key hit");
 
 # small static label "FEN:" to the left of the FEN box
 fen_label = Text(Point(square_size * 0.25, square_size * 8.5), "FEN:")
@@ -471,16 +563,19 @@ set_fen_text = Entry(
 set_fen_text.setFill(color_rgb(200, 200, 200))
 set_fen_text.draw(win)
 
-
 # set the winner text
-winner_text = 'GAME OVER: {} wins'
+if winner == 'draw':
+    winner_text = 'GAME OVER: DRAW'      
+else:
+    winner_text = 'GAME OVER: {} wins'
+
 game_over_text = Text(
-    Point(square_size * 4.5, square_size * 9.5),
+    Point(square_size * 2.0, square_size * 9.5),
     winner_text
 )
 game_over_text.setFill(color_rgb(255, 160, 122))
 
-# draws the squares of colors
+# draws the squares of the board
 every_other = 1
 for y in range(8):
     for x in range(8):
@@ -676,7 +771,7 @@ player_index = 0
 acn_focused = None
 drawn_potential = []
 avail_moves = []
-fps = 5.0               # Make pretty samlsmalll, the display dont need to do anything that fast
+fps = 5.0     # Make pretty small, the display dont need to do anything that fast is fine, (fps=5 is .2 sec)
 
 last_move_indicator = None
 if args.fen is not None:
@@ -692,8 +787,11 @@ try:
             # print(f'Loop: {acn_focused}')
 
             current_turn_text.setText(turn_text_values[player_index])
-            curr_game_text.setText('Gamee {}'.format(curr_game))
-            curr_move_text.setText('Movee {}'.format(engine_communicator.get_move_number()))
+            curr_game_text.setText('Game {}'.format(curr_game))
+            curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
+
+            white_flags_text.setText(f"wFlags d={dpth_white} t={time_white}")
+            black_flags_text.setText(f"bFlags d={dpth_black} t={time_black}")
 
             material_text.setText(str(engine_communicator.get_draw_status()))
 
@@ -735,7 +833,7 @@ try:
 
                         if acn_clicked in avail_moves:
                             temp = acn_focused
-                            print('making move', temp, 'to', acn_clicked)
+                            #print('making move', temp, 'to', acn_clicked)
                             unfocus_and_stop_dragging()
                             make_move(temp, acn_clicked)
                             game_state_might_change = True
@@ -801,42 +899,53 @@ try:
             win.update()
             time.sleep(1/fps)
 
+        # show the win/lose/draw banner
         winner = '????'
         gamover = engine_communicator.game_over()
-        if gamover == 0:    # GameState::WHITEWIN    
+        if gamover == 0:    # GameState::WHITEWIN
             winner = 'white'
-        elif gamover == 2:  # GameState::BLACKWIN      
+        elif gamover == 2:  # GameState::BLACKWIN
             winner = 'black'
         elif gamover == 1:  # GameState::DRAW
             winner = 'draw'
-        #print("dog",gamover, winner)
 
-        curr_game_text.setText(f'Game {curr_game}')
-        white_wins_text.setText(f'W {curr_game_white}')
-        black_wins_text.setText(f'B {curr_game_black}')
-        draw_wins_text.setText(f'D {curr_game_draw}')
 
-        # Only auto-reset if the game did NOT end in a draw. Otherwise we just stop and die and show the board
-        #if autoreset_toggle and winner != 'draw':
+        if winner == 'draw':
+            game_over_text.setText('GAME OVER: draw')
+        else:
+            game_over_text.setText(winner_text.format(winner))
+        game_over_text.draw(win)
+
+
+        # if autoreset is ON, do the old behavior (this also updates counters)
         if autoreset_toggle:
             print('RESETTING BOARD TOGGLE')
             reset_board("", winner)
             game_state_might_change = True
             continue
 
+
+
         # ----- autoreset is OFF: update counters right here -----
         curr_game += 1
+
         if winner == 'white':
-            curr_game_white += 1
+            if whiteOnBottom:
+                curr_game_bottom += 1
+            else:
+                curr_game_top += 1
         elif winner == 'black':
-            curr_game_black += 1
+            if whiteOnBottom:
+                curr_game_top += 1
+            else:
+                curr_game_bottom += 1        
         elif winner == 'draw':
             curr_game_draw += 1
 
         curr_game_text.setText(f'Game {curr_game}')
-        white_wins_text.setText(f'W {curr_game_white}')
-        black_wins_text.setText(f'B {curr_game_black}')
-        draw_wins_text.setText(f'D {curr_game_draw}')
+        bottom_wins_text.setText(f'Bot {curr_game_bottom}')
+        top_wins_text.setText(f'Top {curr_game_top}')
+        draw_wins_text.setText(f'Drw {curr_game_draw}')
 
 
         # skip the blocking getMouse()

@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     // defaults
     double time_to_use_msec = 1000.0;   // -t1000
     int    depth_limit      = 5;        // -d5
-    string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";  // -f
+    string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     // parse only attached forms: -t8  -d6  -f<fen>
     for (int i = 1; i < argc; ++i)
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
             depth_limit = std::atoi(argv[i] + 2);
         }
         // -f<string>
-        else if (std::strncmp(argv[i], "-f", 2) == 0 && argv[i][2] != '\0')
+        else if (std::strncmp(argv[i], "-fen", 2) == 0 && argv[i][2] != '\0')
         {
             fen = argv[i] + 2;
         }

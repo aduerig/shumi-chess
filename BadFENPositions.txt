@@ -136,11 +136,17 @@ Fen is now r2r3k/1R4pp/4R3/2p2p2/8/5P2/3B1P1P/6K1 w - - 3 33
 endgames
 ========
 
-// Test that 2 bishops is not a draw
+
+// stalemate
+k7/2Q5/8/8/8/8/8/K7 w - - 1 5
+
+// Test that 2 bishops is not a draw (move as white, throw away rook)
+r7/8/1k6/8/2R5/8/4K3/8 w - - 1 5
 b7/b7/1k6/8/2R5/8/4K3/8 w - - 1 5
 n7/b7/1k6/8/2R5/8/4K3/8 w - - 1 5
 n7/n7/1k6/8/2R5/8/4K3/8 w - - 1 5
-
+n7/8/1k6/8/2R5/8/4K3/8 w - - 1 5
+b7/8/1k6/8/2R5/8/4K3/8 w - - 1 5
 
 // Test of underpromotion (to knight)
 1r6/8/8/8/8/2k5/2p5/K7 w - - 0 1      then Kb8. Black should not promote to  queen

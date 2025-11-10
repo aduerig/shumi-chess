@@ -147,7 +147,7 @@ static PyObject*
 engine_communicator_set_random(PyObject* self, PyObject* args) {
     //python_engine.popMove();   pop!
 
-    //cout << "random!" << endl;
+    cout << "random!" << endl;
     python_engine.set_random_on_next_move();
     
     return Py_BuildValue("");
@@ -257,7 +257,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},
     {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
-    {"pop",  engine_communicator_set_random, METH_VARARGS, ""},
+    {"one_Key_Hit",  engine_communicator_set_random, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
     {"get_draw_status",  engine_communicator_get_draw_status, METH_VARARGS, ""},

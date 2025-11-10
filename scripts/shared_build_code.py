@@ -73,24 +73,75 @@ def build_python_gui_module(release):
     if return_code:
         sys.exit(1)
 
-# def run_python_gui(fen, human):
-def run_python_gui(fen=None, human=False, depth=None, time=None):
 
+# def run_python_gui(fen=None, human=False, depth=None, time=None):
+
+#     cmd_line = [
+#         'python',
+#         str(show_board_path)
+#     ]
+#     if fen is not None:
+#         cmd_line.extend(['--fen', fen])
+#     if human:
+#         cmd_line.extend(['--human'])
+
+#     # NEW: forward time to the GUI
+#     if time is not None:
+#         cmd_line.extend(['-t', str(time)])
+#     if depth is not None:
+#         cmd_line.extend(['-d', str(depth)])
+    # process = run_command_async(cmd_line, stdout=None, stderr=None)
+
+    # try:
+    #     process.wait()
+    # except KeyboardInterrupt:
+    #     print("\nKeyboard interrupt received in launcher. Killing child process group...")
+    #     if process:
+    #         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+    #     raise
+    # except Exception as e:
+    #     print(f"An error occurred: {e}")
+    #     if process:
+    #         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+    #     raise
+
+
+
+def run_python_gui(
+    fen=None,
+    human=False,
+    depth=None,
+    time=None,
+    wdepth=None,
+    wtime=None,
+    bdepth=None,
+    btime=None,
+):
     cmd_line = [
         'python',
         str(show_board_path)
     ]
+
     if fen is not None:
         cmd_line.extend(['--fen', fen])
     if human:
         cmd_line.extend(['--human'])
 
-    # NEW: forward time to the GUI
+    # common
     if time is not None:
         cmd_line.extend(['-t', str(time)])
     if depth is not None:
         cmd_line.extend(['-d', str(depth)])
 
+    # per-side
+    if wdepth is not None:
+        cmd_line.extend(['-wd', str(wdepth)])
+    if wtime is not None:
+        cmd_line.extend(['-wt', str(wtime)])
+    if bdepth is not None:
+        cmd_line.extend(['-bd', str(bdepth)])
+    if btime is not None:
+        cmd_line.extend(['-bt', str(btime)])
 
     process = run_command_async(cmd_line, stdout=None, stderr=None)
 
@@ -106,3 +157,4 @@ def run_python_gui(fen=None, human=False, depth=None, time=None):
         if process:
             os.killpg(os.getpgid(process.pid), signal.SIGTERM)
         raise
+

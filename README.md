@@ -31,7 +31,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Bug: Can't seem to get evaluator to want to trade when it is ahead.
   * Feature: Ability to set one minimaxAI to a different setup than the other. Very useful feature. Excellent for testing.
   ~~* Feature: No ability to truely randomize response without ruining capability. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.~~
-  * Bug: "Some time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. Not always seen, not frequent.
+  * Bug: "Some time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. Not always seen, not frequent. No error, just looks strange.
   ~~* Failure: does not recognize draw by insuffecent material.~~
   * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the random move. Maybe easy change See get_ai_move_threaded().
   * Feature: Output or maybe input .pgn files. Most important is output.
@@ -47,8 +47,9 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
   * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration, SEE). These changes do not rely on TT or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all.
   * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? 
-  * Bug: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not postfix checks with a 
-  "+" either. The function is debug for human consumption only.
+  * Failure: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not postfix checks with a "+" either. The function is debug for human consumption only.
+  * Bug: In auto play, ridiculus queen sacs. Does not happen in human play apparently.
+  * Sloth: SHould return immediatly when mate found.
 
 ## todo
 * See [brainStorm](doc/brainStorm.md) for more future directions.
@@ -58,9 +59,11 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   for half hour game: -d7 -t1000
   for long game     : -d8 -t2000
 
+  or you can use "-wd", "-wt", "bd", or "bt", to said the t and d arguments for one side only.
+
 ## Keystrokes active in app
-  esc  - exit app
-  1    - sets "randomize" next move. Usefull to play different games.
+  esc  - Exit app
+  1    - Sets "randomize" next move. Useful to play different games. But careful, it will play a lot worse if   you use this too much
 
 ## change log
   * Abandoned 10/11/2025
