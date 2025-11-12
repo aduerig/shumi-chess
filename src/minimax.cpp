@@ -62,8 +62,8 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 // Speedups?
 #define FAST_EVALUATIONS
 //#define DELTA_PRUNING
-#define DOING_TRANSPOSITION_TABLE
-#define DOING_TRANSPOSITION_TABLE2
+// #define DOING_TRANSPOSITION_TABLE
+// #define DOING_TRANSPOSITION_TABLE2
 #define UNQUIET_SORT
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumu deepeing, AND 
@@ -209,8 +209,8 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
         int cp_score_temp = engine.game_board.get_material_for_color(color1);
         assert (cp_score_temp>=0);    // no negative value pieces
 
-        if (for_color == ShumiChess::WHITE) mat_cp_white = cp_score_temp;
-        else                                mat_cp_black = cp_score_temp;
+        if (color1 == ShumiChess::WHITE) mat_cp_white = cp_score_temp;
+        else                             mat_cp_black = cp_score_temp;
 
         tempsum += cp_score_temp;
 
@@ -221,7 +221,7 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     }
 
     assert (tempsum>=0);
-    cp_score_pieces_only_avg = tempsum / 2.0;
+    cp_score_material_avg = tempsum / 2;
     engine.material_centPawns = cp_score_pieces_only;
 
     //
@@ -234,10 +234,14 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     
     if ( (!is_fast_style) ) {
 
-        int mat_avg = cp_score_pieces_only_avg;
+        int mat_avg = cp_score_material_avg;
 
-        bool bOnlyKing = engine.game_board.bIsOnlyKing(for_color);
 
+        // if either side has only a king, opening/middle terms are skipped for both WHITE and BLACK.
+        Color anti_color = ((for_color==ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE); 
+        bool bOnlyKingFriend = engine.game_board.bIsOnlyKing(for_color);
+        bool bOnlyKingEnemy  = engine.game_board.bIsOnlyKing(anti_color);
+        bool bOnlyKing = (bOnlyKingFriend || bOnlyKingEnemy);
 
         for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
             int cp_score_position_temp = 0;        // positional considerations only
@@ -261,14 +265,19 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     
             /////////////// end positional evals /////////////////
 
+
             // Add code to promote/discourage trading, depending on who is ahead.
             // (note. At beginning of game, there are 4000 centipawns of material.
-            // SO a pawn up, is 1000 centpawns, the below adds 100 centipawns to trade if Im a pawn ahead.)
-            // int materialIAmPositive;
-            // if (color == ShumiChess::WHITE) materialIAmPositive = mat_cp_white;
-            // else                            materialIAmPositive = mat_cp_black;
-            // assert (materialIAmPositive>=0);
-            // cp_score_position_temp += (materialIAmPositive / 10);
+            // int adv_for_this_color;
+            // if      (color == ShumiChess::WHITE) adv_for_this_color = (mat_cp_white - mat_cp_black);
+            // else if (color == ShumiChess::BLACK) adv_for_this_color = (mat_cp_black - mat_cp_white);
+
+            // double kCoeff = 0.01;
+            // int signOF = (adv_for_this_color > 0) - (adv_for_this_color < 0);   // signOF = sign(adv_for_this_color)
+            // double dtemp = - kCoeff*((double)signOF * (double)cp_score_material_avg);
+            // int simplification_term = round(dtemp);
+            // cp_score_position_temp += simplification_term;
+
 
 
             // Add positional eval to score
@@ -293,7 +302,7 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     #endif
 
     // Convert sum (for both colors) from centipawns to double.
-    return ((double)cp_score_adjusted);
+    return cp_score_adjusted;
 }
 
 
@@ -625,7 +634,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     engine.g_iMove++;                      // Increment real moves in whole game
     cout << "\x1b[94m\n\nMove: " << engine.g_iMove << "\x1b[0m";
 
-    if (engine.g_iMove) timeRequested = 1000.0;    // HAck kto allow user to hit "autplay" button before Shumi moves
+    //if (engine.g_iMove) timeRequested = 1000.0;    // HAck kto allow user to hit "autplay" button before Shumi moves
 
     nodes_visited = 0;
     nodes_visited_depth_zero = 0;
@@ -862,7 +871,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //isOK = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
     //utemp = engine.game_board.get_material_for_color(Color::WHITE);
     //utemp = (ull)engine.game_board.is_king_in_check_new(Color::WHITE);
-    //utemp = engine.game_board.SEE(ShumiChess::WHITE, engine.game_board.square_e4);   // engine.repetition_table.size();    //cp_score_pieces_only_avg;
+    //utemp = engine.game_board.SEE(ShumiChess::WHITE, engine.game_board.square_e4);   // engine.repetition_table.size();    //cp_score_material_avg;
     //dTemp = engine.convert_from_CP(utemp);
     //dTemp = engine.game_board.king_near_other_king(Color::WHITE);
     //itemp = sizeof(Move);
@@ -937,7 +946,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     Move the_best_move = {};
     //std::tuple<double, ShumiChess::Move> final_result;
 
-    int cp_score;
+    int cp_score_best;
 
     vector<Move> *p_moves_to_loop_over = 0;
    
@@ -983,7 +992,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
     #ifdef _DEBUGGING_MOVE_CHAIN1
-        engine.print_move_to_file(move_last, nPly, (GameState::INPROGRESS), false, true, true, fpDebug); 
+        engine.print_move_to_file(move_last, nPlys, (GameState::INPROGRESS), false, true, true, fpDebug); 
     #endif
 
 
@@ -1002,7 +1011,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
         int level = (top_deepening - depth);
         assert(level >= 0);
-        assert(nPlys >= level);     // NOTE: we should use nPly here, simpler.
+        assert(nPlys >= level);     // NOTE: we should use nPlys here, simpler.
 
         double d_level = static_cast<double>(level);
 
@@ -1069,9 +1078,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
         #endif
 
-        cp_score = evaluate_board(engine.game_board.turn, nPlys, bFast);  //, legal_moves);
+        cp_score_best = evaluate_board(engine.game_board.turn, nPlys, bFast);  //, legal_moves);
 
-        d_best_score = engine.convert_from_CP(cp_score);
+        d_best_score = engine.convert_from_CP(cp_score_best);
         
 
         #ifdef DOING_TRANSPOSITION_TABLE2
@@ -1081,7 +1090,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             // as whatever is already stored.
             if (top_deepening >= slot.depth)
             {
-                slot.score_cp = cp_score;
+                slot.score_cp = cp_score_best;
                 slot.movee    = the_best_move;
                 slot.depth    = top_deepening;
             }
@@ -1130,7 +1139,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 		// Pick best static evaluation among all legal moves if hit the over ply
         constexpr int MAX_QPLY = 15;        // because i said so
         if (nPlys >= MAX_QPLY) {
-            //std::cout << "\x1b[31m! MAX_QPLY trap " << nPly << "\x1b[0m\n";
+            //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
             //std::cout << "\x1b[31m!" << "\x1b[0m";
             auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), nPlys, in_check, depth);
             double scoreMe = std::get<0>(tup);
@@ -1156,7 +1165,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
         
         // Resort moves based on varoius things
-        // Fascinating tradeuoff. We could also call this if depth==0 and in check.
+        // Fascinating tradeoff. We could also call this if depth==0 and in check.
         // On one hand why not, becasuse there could be a lot of repsonses, But on 
         // the otherhand there wont be that many. ANf we must be super fast here.
         //if ( (depth > 0) || (depth==0 && in_check) ) {
@@ -1233,7 +1242,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
             #ifdef _DEBUGGING_MOVE_TREE
-                engine.print_move_to_file(m, nPly, state, false, false, false, fpDebug);
+                engine.print_move_to_file(m, nPlys, state, false, false, false, fpDebug);
             #endif
                
             #ifdef IS_CALLBACK_THREAD
@@ -1339,7 +1348,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             // #ifdef RANDOMIZING_EQUAL_MOVES
             // Only randomize near-equal scores at the top level
             //bool is_at_bottom_root = ((top_deepening - depth) == 0);    // (depth == maximum_deepening) && 
-            bool is_at_end_of_the_line = ( (engine.g_iMove==1) );
+            bool is_at_end_of_the_line = false;    //( (engine.g_iMove==1) );
             //assert (!is_at_bottom_root);
 
             //if (is_at_end_of_the_line) cout << "spud";
@@ -1366,7 +1375,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             // Alpha/beta "cutoff", (fail high), break the analysis
             // You just found a move so good that the opponent would never 
             // allow this position, because it already exceeds what they could tolerate.
-            if (alpha >= beta + VERY_SMALL_SCORE) {
+            if (alpha >= beta + TINY_SCORE) {
 
                 if ((depth > 0) && (!engine.is_unquiet_move(m))) {
                     // Quiet moves that "cut off" are notable.
@@ -1384,7 +1393,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                         char szTemp[64];
                         sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
                         fputs(szTemp, fpDebug);
-                        engine.print_move_to_file(m, nPly, state, false, false,false, fpDebug);
+                        engine.print_move_to_file(m, nPlys, state, false, false,false, fpDebug);
                     #endif
                 }
 
@@ -1638,8 +1647,7 @@ Move MinimaxAI::get_move() {
 
 
 // Loop over all passed moves, find the best move by static evaluation.
-
-
+// Returns a tuple of: best_score and best move
 std::tuple<double, ShumiChess::Move>
 MinimaxAI::best_move_static(ShumiChess::Color color,
                             const std::vector<ShumiChess::Move>& legal_moves,
@@ -1647,7 +1655,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
                             bool in_Check,
                             int depth)
 {
-    double d_best;
+    double d_best_pawns;
     ShumiChess::Move bestMove = ShumiChess::Move{};
 
   
@@ -1660,11 +1668,11 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
             // Optional: only trust entries from at least this depth
             if (entry.depth >= top_deepening) {
-                d_best = engine.convert_from_CP(entry.score_cp);
+                d_best_pawns = engine.convert_from_CP(entry.score_cp);
 
                 // Transposition table hit: reuse both score and move
                 //cout << "\x1b[33m&\x1b[0m";
-                return { d_best, entry.movee };
+                return { d_best_pawns, entry.movee };
             }
         }
     #endif
@@ -1685,7 +1693,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
         return { -HUGE_SCORE, ShumiChess::Move{} };
     }
 
-    d_best = -HUGE_SCORE;
+    d_best_pawns = -HUGE_SCORE;
     int cp_score = 0;
 
     for (const auto& m : legal_moves) {
@@ -1698,8 +1706,8 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
         
         engine.popMove();
 
-        if (d_score > d_best) {
-            d_best = d_score;
+        if (d_score > d_best_pawns) {
+            d_best_pawns = d_score;
             bestMove = m;
         }
     }
@@ -1710,16 +1718,16 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
         // Only overwrite if this result is from at least as deep a search
         // as whatever was stored before.
-        if (top_deepening >= slot.depth)
-        {
-            slot.score_cp = cp_score;
+        if (top_deepening >= slot.depth) {
+            int temp = engine.convert_to_CP(d_best_pawns);
+            slot.score_cp = temp;
             slot.movee    = bestMove;
             slot.depth    = top_deepening;
         }
     #endif
 
     
-    return { d_best, bestMove };
+    return { d_best_pawns, bestMove };
 }
 
 

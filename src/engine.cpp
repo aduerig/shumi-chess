@@ -56,7 +56,7 @@ void Engine::reset_engine() {
 
     ///////////////////////////////////////////////////////////////////////
     //
-    // You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. FEN setup. Setup the FEN
+    // You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. enter fen. FEN setup. Setup the FEN
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
@@ -1458,6 +1458,8 @@ void Engine::set_random_on_next_move() {
     //      << "\x1b[34m<-nextMove \x1b[0m" << endl;
 
     //debugNow = !debugNow;
+
+    // RANDOMIZING_EQUAL_MOVES
     b_randomize_next_move = true;
 
     cout << "randomize_next_move: " << b_randomize_next_move << endl;

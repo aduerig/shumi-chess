@@ -48,7 +48,7 @@ public:
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;
 
-    int cp_score_pieces_only_avg = 0;
+    int cp_score_material_avg = 0;
 
     // For PV at root
     static constexpr int MAX_PLY_PV = 256;

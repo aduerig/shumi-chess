@@ -20,7 +20,7 @@ using namespace std;
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
    
-
+#define TINY_SCORE 1.0e-15          // In pawns.
 #define VERY_SMALL_SCORE 1.0e-5     // In pawns. (its 0.001 centipawns)
 #define HUGE_SCORE 10000            // In pawns. (its a million centipawns!)       //  DBL_MAX    // A relative score
 
