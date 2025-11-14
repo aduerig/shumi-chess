@@ -49,6 +49,7 @@ public:
     int maximum_deepening = 0;
 
     int cp_score_material_avg = 0;
+    int cp_score_material_NP_avg = 0;
 
     // For PV at root
     static constexpr int MAX_PLY_PV = 256;
@@ -78,11 +79,19 @@ public:
     // Storage buffers (they live here to avoid extra allocation during the game)
     //vector<ShumiChess::Move> unquiet_moves;
 
+    int cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black
+                                        , int cp_score_material_NP_avg);
+
     int cp_score_positional_get_opening(ShumiChess::Color color); 
     int cp_score_positional_get_middle(ShumiChess::Color color, int nPly); 
-    int cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg); 
+    int cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg,
+                                    bool onlyKingFriend, bool onlyKingEnemy
+                                ); 
 
-    int evaluate_board(ShumiChess::Color for_color, int nPly, bool fast_style_eval); //, const vector<ShumiChess::Move>& legal_moves);
+    int evaluate_board(ShumiChess::Color for_color, int nPly, bool fast_style_eval,
+                   const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
+    );
+
     void wakeup();
 
     void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys);

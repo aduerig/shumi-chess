@@ -8,6 +8,7 @@
 #include <iostream>
 #include <utility>
 #include <string>
+#include <chrono>
 
 #include <globals.hpp>
 #include <engine.hpp>
@@ -147,7 +148,7 @@ static PyObject*
 engine_communicator_set_random(PyObject* self, PyObject* args) {
     //python_engine.popMove();   pop!
 
-    cout << "random!" << endl;
+    //cout << "random!" << endl;
     python_engine.set_random_on_next_move();
     
     return Py_BuildValue("");
@@ -273,9 +274,21 @@ static struct PyModuleDef engine_communicatormodule = {
     engine_communicator_methods
 };
 
+// PyMODINIT_FUNC
+// PyInit_engine_communicator(void) {
+//     std::srand(static_cast<unsigned>(std::time(nullptr)));  // seed once
+//     printf("\x1b[94mHello Im communicator\x1b[0m\n");
+//     return PyModule_Create(&engine_communicatormodule);
+// }
 PyMODINIT_FUNC
 PyInit_engine_communicator(void) {
-    std::srand(static_cast<unsigned>(std::time(nullptr)));  // seed once
+    using namespace std::chrono;
+    auto now = high_resolution_clock::now().time_since_epoch();
+    auto us  = duration_cast<microseconds>(now).count();
+    std::srand(static_cast<unsigned>(us));  // higher-resolution seed
+
+    printf("\x1b[94mHello Im communicator %ld\x1b[0m\n", us);
+
     return PyModule_Create(&engine_communicatormodule);
 }
 

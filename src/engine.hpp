@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stack>
 #include <vector>
+#include <random>
+#include <chrono>
 
 #include "globals.hpp"
 #include "gameboard.hpp"
@@ -64,7 +66,7 @@ class Engine {
         
         GameState game_over();
         GameState game_over(vector<Move>&);
-        bool b_randomize_next_move = false;
+        int i_randomize_next_move = 0;
 
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
@@ -206,7 +208,7 @@ class Engine {
       
         void print_bitboard_to_file(ull bb, FILE* fp);
 
-        //bool is_unquiet_move(ShumiChess::Move mv);
+        bool has_unquiet_move(const vector<ShumiChess::Move>& moves);
         bool inline is_unquiet_move(ShumiChess::Move mv) {
            return (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE); 
         }
@@ -255,9 +257,12 @@ class Engine {
 
         void debug_print_repetition_table() const;
 
+        std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
+
+
         void print_move_history_to_file(FILE* fp);
 
-        void print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
+        int print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
                             , bool isInCheck, bool bFormated, bool bFlipColor, FILE* fp);
 
         void print_move_to_file_from_string(const char* p_move_text, ShumiChess::Color turn, int nPly

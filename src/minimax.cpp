@@ -43,7 +43,6 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 //#define _DEBUGGING_PUSH_POP
 
 //#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
-//#define _DEBUGGING_MOVE_TREE
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 
@@ -53,6 +52,7 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 #ifdef _DEBUGGING_TO_FILE
     FILE *fpDebug = NULL;
     char szDebug[256];
+    bool bSuppressOutput = false;
 #endif
 
 #define IS_CALLBACK_THREAD              // Uncomment to enable the callback to show "nPly", real time.
@@ -179,7 +179,10 @@ void MinimaxAI::wakeup() {
 // Follows the negamax convention, so a positive value at a leaf is “good for the side to move.” (for_color)
 // returns a positive score, if "for_color" is ahead.
 //
-int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //, const vector<ShumiChess::Move>& legal_moves)
+int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style,
+                                const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
+                            )
+                                
 {
     // move_history
     #ifdef _DEBUGGING_MOVE_CHAIN1
@@ -200,29 +203,57 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     //
     int mat_cp_white = 0;
     int mat_cp_black = 0;
+    int pawns_cp_white = 0;
+    int pawns_cp_black = 0;
 
     int tempsum = 0.0;
-    int cp_score_pieces_only = 0;        // Pieces only
+    int tempsumNP = 0.0;
+    int cp_score_material_all = 0;
+    int cp_score_pawns_only = 0;
+    
+
+
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
-        int cp_score_temp = engine.game_board.get_material_for_color(color1);
-        assert (cp_score_temp>=0);    // no negative value pieces
+        int cp_pawns_only_temp;
+        int cp_score_mat_temp = engine.game_board.get_material_for_color(color1, cp_pawns_only_temp);
+        assert (cp_score_mat_temp>=0);    // there is no negative value material
+        assert (cp_pawns_only_temp>=0);   // there is no negative value material
 
-        if (color1 == ShumiChess::WHITE) mat_cp_white = cp_score_temp;
-        else                             mat_cp_black = cp_score_temp;
+        if (color1 == ShumiChess::WHITE) {
+            mat_cp_white = cp_score_mat_temp;
+            pawns_cp_white = cp_pawns_only_temp;
+        } else {
+            mat_cp_black = cp_score_mat_temp;
+            pawns_cp_black = cp_pawns_only_temp;
+        }
 
-        tempsum += cp_score_temp;
-
+        tempsum += cp_score_mat_temp;
+        tempsumNP += cp_score_mat_temp - cp_pawns_only_temp;
+   
         // Take color into acccount
-        if (color1 != for_color) cp_score_temp *= -1;
-        cp_score_pieces_only += cp_score_temp;
+        if (color1 != for_color) 
+        {
+            cp_score_mat_temp *= -1;
+            cp_pawns_only_temp *= -1;
+        }
+        cp_score_material_all += cp_score_mat_temp;
+        cp_score_pawns_only += cp_pawns_only_temp;
 
     }
 
-    assert (tempsum>=0);
+    assert(tempsum>=0);
+    assert(tempsumNP>=0);
     cp_score_material_avg = tempsum / 2;
-    engine.material_centPawns = cp_score_pieces_only;
+    cp_score_material_NP_avg = tempsumNP / 2;
+    int mat_np_white = mat_cp_white - pawns_cp_white;   // NEW
+    int mat_np_black = mat_cp_black - pawns_cp_black;   // NEW
+    cp_score_material_NP_avg = (mat_np_white + mat_np_black) / 2;   // NEW
+
+
+    // ??? display only
+    engine.material_centPawns = cp_score_material_all;
 
     //
     // Positional considerations only
@@ -234,22 +265,25 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
     
     if ( (!is_fast_style) ) {
 
-        int mat_avg = cp_score_material_avg;
-
-
         // if either side has only a king, opening/middle terms are skipped for both WHITE and BLACK.
-        Color anti_color = ((for_color==ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE); 
-        bool bOnlyKingFriend = engine.game_board.bIsOnlyKing(for_color);
-        bool bOnlyKingEnemy  = engine.game_board.bIsOnlyKing(anti_color);
-        bool bOnlyKing = (bOnlyKingFriend || bOnlyKingEnemy);
+        // Color anti_color = ((for_color==ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE); 
+        // //bool bOnlyKingFriend = engine.game_board.bIsOnlyKing(for_color);
+        // bool bOnlyKingEnemy  = engine.game_board.bIsOnlyKing(anti_color);
+        // bool bOnlyKing = (bOnlyKingEnemy);
+
+
 
         for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
             int cp_score_position_temp = 0;        // positional considerations only
 
+            Color enemy_of_color = (color == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
+            bool onlyKingEnemy   = engine.game_board.bIsOnlyKing(enemy_of_color);
+            bool onlyKingFriend  = engine.game_board.bIsOnlyKing(color);
+
             /////////////// start positional evals /////////////////
 
             // Note this return is in centpawns, and can be negative
-            if (!bOnlyKing) {
+            if (!onlyKingEnemy) {
                 test = cp_score_positional_get_opening(color);
                 cp_score_position_temp += test;
        
@@ -259,25 +293,31 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
             }     
             
             // Note this return is in centpawns, and can be negative
-            test = cp_score_positional_get_end(color, nPlys, mat_avg);
+            test = cp_score_positional_get_end(color, nPlys, cp_score_material_avg
+                                            ,onlyKingFriend, onlyKingEnemy);
             cp_score_position_temp += test;      
+
+
+            bool b_is_Quiet = (pLegal_moves != nullptr) && !engine.has_unquiet_move(*pLegal_moves);
+
+            //if (b_is_Quiet && color == engine.game_board.turn) {
+            if (b_is_Quiet && color == for_color) {
+                test = cp_score_get_trade_adjustment(color, mat_np_white, mat_np_black, cp_score_material_NP_avg);
+                cp_score_position_temp += test;
+            }
+
+            // if (b_is_Quiet) {
+            //     // cp_score_pawns_only
+            //     // Add code to promote/discourage trades depending on who is ahead.
+            //     // (note. At beginning of game, there are 4000 centipawns of material.
+            //     if (color == for_color) {
+            //         test = cp_score_get_trade_adjustment(color, mat_np_white, mat_np_black, cp_score_material_NP_avg);
+            //         cp_score_position_temp += test;
+            //     }
+            // }
 
     
             /////////////// end positional evals /////////////////
-
-
-            // Add code to promote/discourage trading, depending on who is ahead.
-            // (note. At beginning of game, there are 4000 centipawns of material.
-            // int adv_for_this_color;
-            // if      (color == ShumiChess::WHITE) adv_for_this_color = (mat_cp_white - mat_cp_black);
-            // else if (color == ShumiChess::BLACK) adv_for_this_color = (mat_cp_black - mat_cp_white);
-
-            // double kCoeff = 0.01;
-            // int signOF = (adv_for_this_color > 0) - (adv_for_this_color < 0);   // signOF = sign(adv_for_this_color)
-            // double dtemp = - kCoeff*((double)signOF * (double)cp_score_material_avg);
-            // int simplification_term = round(dtemp);
-            // cp_score_position_temp += simplification_term;
-
 
 
             // Add positional eval to score
@@ -288,15 +328,12 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style) //
 
     }
 
-    // Both position and pieces are now signed properly to be positive for the "for_color" side.
-    // "cp_score_pieces_only" has been adjusted to be both colors added in. So 
+    // Both position and material are now signed properly to be positive for the "for_color" side.
+    // "cp_score_material_all" has been adjusted to be both colors added in. So 
     // if the for_color is up a pawn, this will be 1."
-    cp_score_adjusted = cp_score_pieces_only + cp_score_position;
+    cp_score_adjusted = cp_score_material_all + cp_score_position;
 
 
-    #ifdef _DEBUGGING_MOVE_TREE
-        fprintf(fpDebug, " ev=%i", cp_score_adjusted);
-    #endif
     #ifdef _DEBUGGING_MOVE_CHAIN1
         engine.print_move_to_file(move_last, nPlys, (GameState::INPROGRESS), false, true, true, fpDebug); 
     #endif
@@ -371,7 +408,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
     cp_score_position_temp += iZeroToFour*20;  // centipawns
 
     // Add code to encourage bishops attacking the 4-square center
-    // (cannot see through pieces, but will include "captures" of friendly pieces) 
+    // (cannot see through material, but will include "captures" of friendly material) 
     iZeroToFour = engine.bishops_attacking_center_squares(color);
     assert (iZeroToFour>=0);
     cp_score_position_temp += iZeroToFour*20;  // centipawns
@@ -424,9 +461,26 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color, int nPly)
 
 
 
+int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black
+        ,int cp_score_material_NP_avg) {
+
+    int cp_score_position_temp = 0;
+
+    int adv_np_for_this_color = (color == ShumiChess::WHITE) ? (mat_np_white - mat_np_black) : (mat_np_black - mat_np_white);
+
+    int signNP = (adv_np_for_this_color > 0) - (adv_np_for_this_color < 0);    // fancy way to get the sign of adv_np_for_this_color
+
+    // fixed, tiny tie-breaker in centipawns (no kCoeff)    // trading
+    int cp_simplification_term = signNP * 3;   // try 6 cp; tune 4..8 cp
+
+    return cp_simplification_term;
 
 
-int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg) {
+}
+
+int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg,
+                                            bool onlyKingFriend, bool onlyKingEnemy
+                                            ) {
 
     int cp_score_position_temp = 0;
 
@@ -452,14 +506,24 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPly, in
         cp_score_position_temp += itemp*20;  // centipawns  
     }
 
+    // double dtemp = engine.game_board.king_near_other_king(color);      // 2 to 5
+    // cp_score_position_temp -= (int)(dtemp*10);  // centipawns  
 
 
-    double dtemp = engine.game_board.king_near_other_king(color);      // 2 to 5
 
+    if (onlyKingEnemy) {
 
-    if (dtemp <= 2.0) dtemp = 0.0;     // Favor opposition (2 is as close as you can get to a king)
+    //     double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..5
+    //     //if (dkk <= 2.0) dkk = 0.0;
 
-    cp_score_position_temp -= (int)(dtemp*10);  // centipawns  
+    //     // We have material; enemy is lone king → encourage closing in.
+    //     // Smaller distance should be better ⇒ subtract proportional to distance.
+    //     cp_score_position_temp -= (int)(dkk * 100);
+    // // } else if (onlyKingFriend && !onlyKingEnemy) {
+    // //     // We are the lone king → prefer being farther away.
+    // //     cp_score_position_temp += (int)(dkk * 10);
+    }
+
 
 
     return cp_score_position_temp;
@@ -613,6 +677,12 @@ int g_this_depth = 6;
 Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepening_requested) {  
     
 
+    using namespace std::chrono;
+    auto now = high_resolution_clock::now().time_since_epoch();
+    auto us  = duration_cast<microseconds>(now).count();
+    std::srand(static_cast<unsigned>(us));   // reseed once per search
+
+    
     // cout << "\x1b[94mtime requested (msec) =" << timeRequested << "\x1b[0m" << endl;
     // scout << "\x1b[94mdept requested (ply)  =" << max_deepening_requested << "\x1b[0m" << endl;
 
@@ -694,9 +764,10 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
         tuple<double, Move> ret_val;
         
-        #ifdef _DEBUGGING_MOVE_CHAIN
+        #ifdef _DEBUGGING_MOVE_CHAIN    // Start of a deepening
+            bool bSide = (engine.game_board.turn == ShumiChess::BLACK);
             fputs("\n\n---------------------------------------------------------------------------", fpDebug);
-            engine.print_move_to_file(null_move, nPlys, (GameState::INPROGRESS), false, true, false, fpDebug);
+            engine.print_move_to_file(null_move, nPlys, (GameState::INPROGRESS), false, true, bSide, fpDebug);
         #endif
 
         #define MAXIMUM_DEEPENING 100
@@ -762,16 +833,16 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         // Reassign best move, if randomizing        
         d_random_delta = 0.0;
         #ifdef RANDOMIZING_EQUAL_MOVES
-            if (engine.b_randomize_next_move) {
+            if (engine.i_randomize_next_move>0) {
                 d_random_delta = RANDOMIZING_EQUAL_MOVES_DELTA;
-                engine.b_randomize_next_move = false;
+                engine.i_randomize_next_move--;
             }
         #endif
         if (d_random_delta != 0.0) {
             auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::high_resolution_clock::now().time_since_epoch()
                     ).count();
-            std::srand(static_cast<unsigned>(ms));
+            //std::srand(static_cast<unsigned>(ms));
 
             best_move = pick_random_within_delta_rand(MovesFromRoot, d_random_delta);
         }
@@ -1078,7 +1149,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
         #endif
 
-        cp_score_best = evaluate_board(engine.game_board.turn, nPlys, bFast);  //, legal_moves);
+
+        cp_score_best = evaluate_board(engine.game_board.turn, nPlys, bFast, &legal_moves);
 
         d_best_score = engine.convert_from_CP(cp_score_best);
         
@@ -1096,9 +1168,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
         #endif
 
-        #ifdef _DEBUGGING_MOVE_CHAIN
-            engine.print_move_to_file(move_last, nPlys, (GameState::INPROGRESS), false, true, true, fpDebug); 
-        #endif
 
         in_check = engine.is_king_in_check(engine.game_board.turn);
 
@@ -1140,7 +1209,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         constexpr int MAX_QPLY = 15;        // because i said so
         if (nPlys >= MAX_QPLY) {
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
-            //std::cout << "\x1b[31m!" << "\x1b[0m";
+            std::cout << "\x1b[31m!" << "\x1b[0m";
             auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), nPlys, in_check, depth);
             double scoreMe = std::get<0>(tup);
             ShumiChess::Move moveMe = std::get<1>(tup);
@@ -1203,6 +1272,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 auto enpassant_save = engine.game_board.en_passant_rights;
             #endif
 
+            #ifdef _DEBUGGING_MOVE_CHAIN    // Print move we are going to analyze
+                bSuppressOutput = false;
+                bool bSide = (engine.game_board.turn == ShumiChess::WHITE);
+                int ichars = engine.print_move_to_file(m, nPlys, (GameState::INPROGRESS), false, true, bSide, fpDebug); 
+            #endif
+
+
             // Delta pruning (in qsearch at depth==0) estimates the most this capture/promotion could possibly 
             // improve the current stand-pat score (including material swing and a safety margin), and if 
             // even that optimistic bound still can't raise alpha, it just skips searching that move as futile. 
@@ -1239,11 +1315,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     
 
             engine.pushMove(m);
-
-
-            #ifdef _DEBUGGING_MOVE_TREE
-                engine.print_move_to_file(m, nPlys, state, false, false, false, fpDebug);
-            #endif
                
             #ifdef IS_CALLBACK_THREAD
             	g_live_ply = nPlys;
@@ -1327,11 +1398,18 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
 
 
-            #ifdef _DEBUGGING_MOVE_CHAIN
-                char szTempo1[256];
-                sprintf(szTempo1, " %f ", d_score_value);
-                int nChars = fputs(szTempo1, fpDebug);
-                if (nChars == EOF) assert(0);
+            #ifdef _DEBUGGING_MOVE_CHAIN    // Print negamax (relative) score of move
+
+                if (!bSuppressOutput) {
+                    //if (d_score_value<0.0) ichars++;
+                    fprintf(fpDebug, "%*s", (8-ichars), "");  // to line up for varing move size
+
+                    //sprintf(szDebug, " %f ", d_score_value);
+                    fprintf(fpDebug, "%8.3f", d_score_value);
+                }
+
+                // int nChars = fputs(szDebug, fpDebug);
+                // if (nChars == EOF) assert(0);
             #endif
 
             // Store score
@@ -1358,8 +1436,15 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
             double d_difference_in_score = std::fabs(d_score_value - d_best_score);
             if (d_difference_in_score <= (delta_score + VERY_SMALL_SCORE)) {
-                // tie (within delta): flip a coin at root; never inside the tree
+                // tie (within delta): flip a coin.
+
                 b_use_this_move = engine.flip_a_coin();
+                #ifdef _DEBUGGING_MOVE_CHAIN
+                    //sprintf (szDebug, "flip %ld", b_use_this_move);
+                    fputs(szDebug, fpDebug);
+                #endif
+
+  
             } else {
                 b_use_this_move = (d_score_value > d_best_score);
             }
@@ -1389,11 +1474,11 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     fputs(szTemp, fpDebug);
                 #endif
                 if (!engine.is_unquiet_move(m)){
-                    #ifdef _DEBUGGING_MOVE_CHAIN1
+                    #ifdef _DEBUGGING_MOVE_CHAIN3
                         char szTemp[64];
                         sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
                         fputs(szTemp, fpDebug);
-                        engine.print_move_to_file(m, nPlys, state, false, false,false, fpDebug);
+                        engine.print_move_to_file(m, nPlys, state, false, false, false, fpDebug);
                     #endif
                 }
 
@@ -1403,7 +1488,28 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }   // End loop over all moves to look at
     }
 
-    
+    #ifdef _DEBUGGING_MOVE_CHAIN   // Print move summary. best move and best score
+        int nChars;
+        bool bSide = (engine.game_board.turn == ShumiChess::BLACK);
+
+        engine.print_move_to_file(move_last, nPlys-1, (GameState::INPROGRESS), false, true, bSide, fpDebug);
+
+        nChars = fputs(" BST=", fpDebug);
+        if (nChars == EOF) assert(0);
+
+        bSide = !bSide;
+        engine.print_move_to_file(the_best_move, -2, (GameState::INPROGRESS), false, false, bSide, fpDebug);
+   
+        sprintf(szDebug, "%8.3f", d_best_score);
+        nChars = fputs(szDebug, fpDebug);
+        if (nChars == EOF) assert(0);
+
+        nChars = fputc('\n', fpDebug);
+        if (nChars == EOF) assert(0);
+
+        bSuppressOutput = true;
+
+    #endif
 
 
     //final_result = std::make_tuple(d_best_score, the_best_move);
@@ -1547,7 +1653,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
             color_perspective = Color::WHITE;
         }
         Move mvdefault = Move{};
-        int cp_score =  evaluate_board(color_perspective, 0, false) * color_multiplier;
+        int cp_score =  evaluate_board(color_perspective, 0, false, &moves) * color_multiplier;
 
         double d_best_score = engine.convert_from_CP(cp_score);
 
@@ -1658,7 +1764,6 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
     double d_best_pawns;
     ShumiChess::Move bestMove = ShumiChess::Move{};
 
-  
     #ifdef DOING_TRANSPOSITION_TABLE
         uint64_t zob = engine.game_board.zobrist_key;
 
@@ -1684,7 +1789,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
     if (legal_moves.empty()) {
         if (!in_Check) {
 
-            int cp_score = evaluate_board(color, nPly, false);  //, legal_moves);         // positive is good for 'color'
+            int cp_score = evaluate_board(color, nPly, false, nullptr);         // positive is good for 'color'
            
             double stand_pat = engine.convert_from_CP(cp_score);
 
@@ -1700,7 +1805,7 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
 
         engine.pushMove(m);
         
-        cp_score = evaluate_board(color, nPly, false); //, legal_moves);  // positive is good for 'color'
+        cp_score = evaluate_board(color, nPly, false, nullptr);  // positive is good for 'color'
         
         double d_score = engine.convert_from_CP(cp_score);
         

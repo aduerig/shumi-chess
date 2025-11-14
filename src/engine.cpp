@@ -1,5 +1,6 @@
 #include <functional>
 
+
 #include "engine.hpp"
 #include "utility"
 #include <cmath>
@@ -26,20 +27,18 @@ Engine::Engine() {
     reset_engine();
     ShumiChess::initialize_rays();
 
-    cout << "Created new engine" << endl;
-    // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[25]") << endl;
-    // utility::representation::print_bitboard(south_west_square_ray[25]);
-    // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[28]") << endl;
-    // utility::representation::print_bitboard(south_west_square_ray[28]);
-    // cout << utility::colorize(utility::AnsiColor::BRIGHT_BLUE, "south_west_square_ray[37]") << endl;
-    // utility::representation::print_bitboard(south_west_square_ray[37]);
+    using namespace std::chrono;
+    auto now = high_resolution_clock::now().time_since_epoch();
+    auto us  = duration_cast<microseconds>(now).count();
+    rng.seed(static_cast<unsigned>(us));
 
-    //srand((unsigned)time(NULL));
+    cout << "Created new engine" << us << endl;
 
 
 }
 
 //TODO what is right way to handle popping past default state here?
+// NOTE: what is this function?? Why is it so different than the default ctr?
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 }
@@ -47,7 +46,7 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 void Engine::reset_engine() {
     //std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
     
-    std::srand((unsigned)std::time(nullptr));
+    //std::srand((unsigned)std::time(nullptr));
 
     // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -60,10 +59,10 @@ void Engine::reset_engine() {
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
-    //game_board = GameBoard("k7/8/8/8/8/8/5Q1K/8 w - - 0 1");
-    //game_board = GameBoard("k7/q7/8/8/8/8/7K/8 w - - 0 1");
+    //game_board = GameBoard("3qkn2/4pp2/8/8/8/4P3/4P2P/3Q1K2 w KQkq - 0 1");
+    //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KB1R w KQkq - 0 1");
 
-    // Or you can pick a random simple FEN. (maybe)
+    // // Or you can pick a random simple FEN. (maybe)
     // string stemp = game_board.random_kqk_fen(true);
     // game_board = GameBoard(stemp);
 
@@ -93,7 +92,7 @@ void Engine::reset_engine(const string& fen) {
 
     //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
 
-    std::srand((unsigned)std::time(nullptr));
+    //std::srand((unsigned)std::time(nullptr));
 
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -321,24 +320,23 @@ int Engine::get_draw_status() {
     //cout << "ouch" << endl;
 
     int material_centPawns = 0;
+    int pawns_only_centPawns = 0;
 
     Color for_color = Color::WHITE;     // This makes the score absolute
 
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
-        int cp_score_temp = game_board.get_material_for_color(color1);
-        assert (cp_score_temp>=0);    // no negative value pieces
-        if (color1 != for_color) cp_score_temp *= -1;
+        int cp_score_mat_temp = game_board.get_material_for_color(color1, pawns_only_centPawns);
+        assert (cp_score_mat_temp>=0);    // no negative value pieces
+        if (color1 != for_color) cp_score_mat_temp *= -1;
 
-        material_centPawns += cp_score_temp;
+        material_centPawns += cp_score_mat_temp;
 
     }
 
-
-    return (material_centPawns/100);  // 1357;
+    return (material_centPawns/100);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1460,9 +1458,9 @@ void Engine::set_random_on_next_move() {
     //debugNow = !debugNow;
 
     // RANDOMIZING_EQUAL_MOVES
-    b_randomize_next_move = true;
+    i_randomize_next_move = 2;
 
-    cout << "randomize_next_move: " << b_randomize_next_move << endl;
+    cout << "randomize_next_move: " << i_randomize_next_move << endl;
 
     //killTheKing(ShumiChess::BLACK);
 }
@@ -1562,7 +1560,14 @@ void Engine::move_and_score_to_string(const Move best_move, double d_best_move_v
 
 //////////////////////////////////////////////////////////////////
 
+bool Engine::has_unquiet_move(const vector<ShumiChess::Move>& moves) {
 
+    bool bReturn = false;
+    for (const ShumiChess::Move& mv : moves) {
+        if (is_unquiet_move(mv)) return true;
+    }
+    return bReturn;
+}
 
 vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves) {
 
@@ -1635,16 +1640,27 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
 }
 
 
+// bool Engine::flip_a_coin(void) {
+//     return (rand() & 1) != 0;   // 0 or 1 ? false or true
+//}
+// bool Engine::flip_a_coin(void) {
 
-
-
+//     return std::rand() < (RAND_MAX / 2);
+// }
 bool Engine::flip_a_coin(void) {
-    return (rand() & 1) != 0;   // 0 or 1 ? false or true
+    std::uniform_int_distribution<int> dist(0,1);
+    return dist(rng) == 1;
 }
 
-int Engine::rand_int(int min, int max) {
-    return min + (rand() % static_cast<int>(max - min + 1));
+// int Engine::rand_int(int min, int max) {
+//     return min + (rand() % static_cast<int>(max - min + 1));
+// }
+int Engine::rand_int(int min_val, int max_val)
+{
+    std::uniform_int_distribution<int> dist(min_val, max_val);
+    return dist(rng);
 }
+
 
 void Engine::move_into_string(ShumiChess::Move m) {
     bitboards_to_algebraic(game_board.turn, m
@@ -1687,7 +1703,7 @@ void Engine::print_move_history_to_file(FILE* fp) {
 // Tabs over based on ply. Pass in nPly=-2 for no tabs. 
 // The formatted version does one move per line. 
 // The unformatted version puts them all on one line.
-void Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
+int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
                                     , bool isInCheck, bool bFormated, bool bFlipColor
                                     , FILE* fp
                                 ) {
@@ -1711,6 +1727,8 @@ void Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
                                         , ' ', ',', false
                                         , fp); 
     }
+
+    return move_string.length();
 
 }
 

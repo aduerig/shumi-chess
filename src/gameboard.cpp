@@ -323,30 +323,49 @@ int GameBoard::get_castle_status_for_color(Color color1) const {
 
 //
 // Returns centipawns. Always positive. 
-int GameBoard::get_material_for_color(Color color1) {
+int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
 
-    int cp_score_temp = 0;
+ 
+    //int cp_score_mat_temp_pawns;
+    ull pieces_bitboard;
+    int cp_board_score;
+    int nPieces;
+
+
+    // Pawns first
+    cp_pawns_only_temp = 0;
+    // Get bitboard of all pieces on board of this type and color
+    pieces_bitboard = get_pieces(color,  Piece::PAWN);
+    // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
+    cp_board_score = centipawn_score_of( Piece::PAWN);
+    nPieces = bits_in(pieces_bitboard);
+    cp_pawns_only_temp += (int)(((double)nPieces * (double)cp_board_score));
+    // This return must always be positive.
+    assert (cp_pawns_only_temp>=0);
+
 
     // Add up the scores for each piece
-    for (Piece piece_type = Piece::PAWN;
+    int cp_score_mat_temp = 0;                    // no pawns in this one
+    for (Piece piece_type = Piece::ROOK;
         piece_type <= Piece::QUEEN;
-        piece_type = static_cast<Piece>(static_cast<int>(piece_type) + 1))
+        piece_type = static_cast<Piece>(static_cast<int>(piece_type) + 1))     // increment
     {    
         
         // Get bitboard of all pieces on board of this type and color
-        ull pieces_bitboard = get_pieces(color1, piece_type);
-
+        pieces_bitboard = get_pieces(color, piece_type);
         // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
-        int cp_board_score = centipawn_score_of(piece_type);
-        int nPieces = bits_in(pieces_bitboard);
-        cp_score_temp += (int)(((double)nPieces * (double)cp_board_score));
-
+        cp_board_score = centipawn_score_of(piece_type);
+        nPieces = bits_in(pieces_bitboard);
+        cp_score_mat_temp += (int)(((double)nPieces * (double)cp_board_score));
         // This return must always be positive.
-        assert (cp_score_temp>=0);
+        assert (cp_score_mat_temp>=0);
 
     }
 
-    return cp_score_temp;
+    cp_score_mat_temp += cp_pawns_only_temp;
+
+
+    return cp_score_mat_temp;
 }
 
 
@@ -1037,15 +1056,15 @@ double GameBoard::king_near_other_king(Color attacker_color)
 
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
-        //assert (dFakeDist >= 2.0);      // Kings cant touch
+        assert (dFakeDist >= 2.0);      // Kings cant touch
         //assert (dFakeDist <= 7.0);      // Board is only so big
 
         // Bonus higher if friendly king closer to enemy king
         assert (dFakeDist >= 0.0); 
         dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
 
-
-        //// dBonus = 63.0 - (double)(frienKingSq*10);      // debug only
+        //dBonus = frienKingSq*10;
+        //dBonus = 63.0 - (double)(frienKingSq*10);      // debug only bonus
 
         return dBonus;
 

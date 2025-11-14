@@ -24,7 +24,7 @@ enum Color {
     BLACK,
 };
 
-enum Piece {
+enum Piece {     // Pieces must be in this order!
     PAWN = 0,
     ROOK,
     KNIGHT,
@@ -35,7 +35,7 @@ enum Piece {
 };
 
 // TODO think about if this is the right way to represent a move
-// NOTE: Can this be a class?
+// NOTE: Can this be a class? How would it help?
 struct Move {
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.

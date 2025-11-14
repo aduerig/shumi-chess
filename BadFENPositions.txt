@@ -119,11 +119,15 @@ r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4
 8/p2q2pp/r2p1nk1/5p2/3Q1B2/3P2P1/P1R1PPKP/8 w - - 3 25
 
 
-// test of trades? (take away white rooks see if the blocks with queen
+// test of trades (take rooks away as approriate to test)
+rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1
+
+3qk3/8/8/8/8/8/8/3QK2B w KQkq - 0 1
+
 1r3r2/p2q1kpp/3p1n2/5pB1/8/3P2P1/P1Q1PPKP/R4R2 w - - 3 19
-
-
 r1bq1rk1/p2p1ppp/2p2nn1/8/1b2P3/2NB1N2/PP1B1PPP/R2QK2R w KQ - 7 11
+rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+
 
 Fen is now r4rk1/pb1p1ppp/1qpb1nn1/8/4P3/P1NB1N2/1P1B1PPP/2RQ1RK1 w - - 5 14
 Fen is now rr5k/1b2qppp/3p1nn1/P1p5/4P3/P2B1N2/2RBQPPP/4R1K1 w - - 4 22

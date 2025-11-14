@@ -210,7 +210,7 @@ class GameBoard {
         bool bIsOnlyKing(Color attacker_color);
 
         int get_castle_status_for_color(Color color1) const;
-        int get_material_for_color(ShumiChess::Color color1);
+        int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
 
         int SEE(Color side, int sq);
 
