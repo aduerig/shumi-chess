@@ -27,14 +27,13 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 
   * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG".
   * Bug: Forces promotions for the human to be to a queen. Problem with the interface I suppose. Need a new feature here.
-  * Bug: Weird interface bug prevents shumi from underpromotion to queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2). Shumi comes up with c1=N. c1=Q leads to a stalemate and is not even considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
+  * Bug: Weird interface bug prevents shumi from promotion to other than queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2). Shumi comes up with c1=N. c1=Q leads to a stalemate and is not even considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
   * Bug: Can't seem to get evaluator to want to trade when it is ahead.
-  * Feature: Ability to set one minimaxAI to a different setup than the other. Very useful feature. Excellent for testing.
-  ~~* Feature: No ability to truely randomize response without ruining capability. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.~~
-  * Bug: "Fifty time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. No error, just looks strange. What is happening, is that each deepening retuns instantly, so
-  it obeys the -t paramater anf gets to 100 levels in no time!
+  ~~* Feature: Ability to set one minimaxAI to a different setup than the other. Very useful feature. Excellent for testing.~~
+  * Feature: No ability to truely randomize response without ruining play. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.
+  * Bug: "Some time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. Not always seen, not frequent. No error, just looks strange.
   ~~* Failure: does not recognize draw by insuffecent material.~~
-  * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the random move. Maybe easy change See get_ai_move_threaded().
+  * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the randomAI as opposed to minimaxAI move. Maybe easy change See get_ai_move_threaded().
   * Feature: Output or maybe input .pgn files. Most important is output.
   * Sloth: Scores still handles as double, outside of evaluation. This is a more serious problem than it appears, as the TT has to convert and uncovert (it stores in centipawns like it should, and has to). I know, just double multiplies and divides, but All scores should be int, in centipawns unless its display. Big job, but not hard, some gain in speed and cleaner code for sure.
   ~~* Feature: Interface needs better stuff for autoplay. Like a "current games won for both white and black", Also needs a "best absolute score" field.~~
@@ -42,15 +41,16 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * ~~Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. Wrong. uses the zobrist.~~ 
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. Its now 20, for testing only.
-  * Sloth: No Transposition table (TT) implemented. This is a problem in MinimaxAI. Comment: Some code is written but has bugs. Commented out right now.
+  * Sloth: No Transposition table (TT) implemented. This is a problem in MinimaxAI. Comment: Wrong, its "slightly" implemented. Its used for repeat position ID, but not for move sorting. The current transposition table stores
+  only positions, and not moves also. 
   * ~~Sloth: Zobrist is not maintained for castling or en passant.~~
-  * ~~Bug: The trap: "! NODES VISITED trap#2 ..." is horrible in its choice of best move. Needs a "Wake up grampa"~~ ~~functionality. This is a problem in MinimaxAI.~~
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
   * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration, SEE). These changes do not rely on TT or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all.
-  * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? What score do we give the zobrist? 
+  * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? 
   * Sloth: Should return immediatly when mate found.
-  * Bug: Move counter in front end is doubled, if two computers playing.
+  * Failure: Fifty move rule, and 3 time rep technically need a player to call it. Here the computer just calls it when it sees it. This is normal for chess engines and will never be fixed. 
   * Failure: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not postfix checks with a "+" either. The function is debug for human consumption only.
+ 
 
 ## todo
 * See [brainStorm](doc/brainStorm.md) for more future directions.

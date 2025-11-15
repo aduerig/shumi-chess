@@ -1020,7 +1020,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     int cp_score_best;
 
     vector<Move> *p_moves_to_loop_over = 0;
-   
+    vector<ShumiChess::Move> unquiet_moves;
 
     nodes_visited++;
     if (depth==0) nodes_visited_depth_zero++;
@@ -1180,7 +1180,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         } else {
 
             // Obtain moves to use in the limited search.
-            vector<ShumiChess::Move> unquiet_moves;
             unquiet_moves.reserve(MAX_MOVES);
             engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, move_last, unquiet_moves);
 
@@ -1209,7 +1208,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         constexpr int MAX_QPLY = 15;        // because i said so
         if (nPlys >= MAX_QPLY) {
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
-            std::cout << "\x1b[31m!" << "\x1b[0m";
+            //std::cout << "\x1b[31m!" << "\x1b[0m";
             auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), nPlys, in_check, depth);
             double scoreMe = std::get<0>(tup);
             ShumiChess::Move moveMe = std::get<1>(tup);

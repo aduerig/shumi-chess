@@ -1640,21 +1640,11 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
 }
 
 
-// bool Engine::flip_a_coin(void) {
-//     return (rand() & 1) != 0;   // 0 or 1 ? false or true
-//}
-// bool Engine::flip_a_coin(void) {
-
-//     return std::rand() < (RAND_MAX / 2);
-// }
 bool Engine::flip_a_coin(void) {
     std::uniform_int_distribution<int> dist(0,1);
     return dist(rng) == 1;
 }
 
-// int Engine::rand_int(int min, int max) {
-//     return min + (rand() % static_cast<int>(max - min + 1));
-// }
 int Engine::rand_int(int min_val, int max_val)
 {
     std::uniform_int_distribution<int> dist(min_val, max_val);
