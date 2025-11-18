@@ -31,6 +31,7 @@ parser.add_argument('-human', '--human', default=False, action='store_true')
 # common
 parser.add_argument('-d', '--depth', type=int, default=None, help='Maximum deepening')
 parser.add_argument('-t', '--time',  type=int, default=None, help='Time per move in ms')
+parser.add_argument('-r', '--rand',  type=int, default=None, help='Randomization')
 
 # per-side
 parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')
@@ -47,7 +48,9 @@ print("\nARGS:",
       "  wdepth=", args.wd,
       "  wtime=", args.wt,
       "  bdepth=", args.bd,
-      "  btime=", args.bt)
+      "  btime=", args.bt,
+      "  rand=", args.rand
+      )
 
 dpth_white = None
 time_white = None
@@ -111,8 +114,8 @@ def reset_board(fen="", winner="????"):
         print('Resetting to basic position cause FEN string is empty')
         engine_communicator.reset_engine()
 
-    engine_communicator.one_Key_Hit()       #  To randomize first move
-    print("one key hit2");
+    # engine_communicator.one_Key_Hit()       #  To randomize first move
+    # print("one key hit2");
 
     # Resetting the board always sets the turn to white
     player_index = 0
@@ -188,6 +191,7 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
             # debug print
             print("\nmillsecs=    ", milliseconds)
             print("max_deepening= ", max_deepening)
+            print("random= ", args.rand)      # -r
             if side == 0:
                 time_white = milliseconds
                 dpth_white = max_deepening
@@ -195,6 +199,11 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
                 time_black = milliseconds
                 dpth_black = max_deepening
            
+
+            # RANDOM
+            if args.rand:
+                engine_communicator.one_Key_Hit()       #  To randomize first move(s)
+
             move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening)
             from_acn, to_acn = move[0:2], move[2:4]
 
@@ -249,7 +258,7 @@ win.master.bind("<Escape>", on_esc_key_hit)
 
 
 def on_one_key_hit(event):
-    #print("hello world from 1 key")       # pop!
+    print("hello world from 1 key")       # pop!
     engine_communicator.one_Key_Hit()
 
 win.master.bind("1", on_one_key_hit)
@@ -546,8 +555,8 @@ curr_whose_on_top_text = Text(
 curr_whose_on_top_text.setFill(color_rgb(200, 200, 200))
 curr_whose_on_top_text.draw(win)
 
-engine_communicator.one_Key_Hit()       #  To randomize first move
-print("one key hit");
+#engine_communicator.one_Key_Hit()       #  To randomize first move(s)
+#print("one key hit");
 
 # small static label "FEN:" to the left of the FEN box
 fen_label = Text(Point(square_size * 0.25, square_size * 8.5), "FEN:")

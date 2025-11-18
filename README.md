@@ -28,9 +28,9 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG".
   * Bug: Forces promotions for the human to be to a queen. Problem with the interface I suppose. Need a new feature here.
   * Bug: Weird interface bug prevents shumi from promotion to other than queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2). Shumi comes up with c1=N. c1=Q leads to a stalemate and is not even considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw. 
-  * Bug: Can't seem to get evaluator to want to trade when it is ahead.
+  ~~* Bug: Can't seem to get evaluator to want to trade when it is ahead.~~
   ~~* Feature: Ability to set one minimaxAI to a different setup than the other. Very useful feature. Excellent for testing.~~
-  * Feature: No ability to truely randomize response without ruining play. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.
+  ~~* Feature: No ability to truely randomize response without ruining play. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.~~
   * Bug: "Some time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. Not always seen, not frequent. No error, just looks strange.
   ~~* Failure: does not recognize draw by insuffecent material.~~
   * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the randomAI as opposed to minimaxAI move. Maybe easy change See get_ai_move_threaded().

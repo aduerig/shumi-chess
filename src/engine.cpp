@@ -10,7 +10,7 @@
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
-
+//#define NO_CASTLING
 
 //#define _DEBUGGING_TO_FILE
 bool debugNow = false;
@@ -32,7 +32,7 @@ Engine::Engine() {
     auto us  = duration_cast<microseconds>(now).count();
     rng.seed(static_cast<unsigned>(us));
 
-    cout << "Created new engine" << us << endl;
+    //cout << "Created new engine" << us << endl;
 
 
 }
@@ -59,8 +59,13 @@ void Engine::reset_engine() {
     //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
-    //game_board = GameBoard("3qkn2/4pp2/8/8/8/4P3/4P2P/3Q1K2 w KQkq - 0 1");
-    //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KB1R w KQkq - 0 1");
+    //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
+    //game_board = GameBoard("8/4k3/6K1/8/8/1q6/8/8 w - - 0 1");
+
+    //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
+    //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
+    //game_board = GameBoard("3qk3/2p1p3/8/8/1P6/2P5/5P2/3Q1K2 w KQkq - 0 1");
+    //game_board = GameBoard("");
 
     // // Or you can pick a random simple FEN. (maybe)
     // string stemp = game_board.random_kqk_fen(true);
@@ -72,10 +77,13 @@ void Engine::reset_engine() {
 
 
     move_history = stack<Move>();
+
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
-    stack<ull> en_passant_history;
+
+    en_passant_history = stack<ull>();
     en_passant_history.push(0);
+
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
@@ -102,10 +110,13 @@ void Engine::reset_engine(const string& fen) {
     game_board = GameBoard(fen);
 
     move_history = stack<Move>();
+
     halfway_move_state = stack<int>();
     halfway_move_state.push(0);
-    stack<ull> en_passant_history;
+
+    en_passant_history = stack<ull>();
     en_passant_history.push(0);
+
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
@@ -1135,81 +1146,87 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
-    // castling, NOTE: a Rook must exist in the right place to castle the king.
-    ull squares_inbetween;
-    ull needed_rook_location;
-    ull actual_rooks_location;
-    ull king_origin_square;
-    
-    if (color == Color::WHITE) {
-        if (game_board.white_castle_rights & (0b00000001)) {
-            //assert(!game_board.bCastledWhite);
-            // Move is a White king side castle
-            squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
-            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                  !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {   
-                // King square, and squares inbetween are empty and not in check
-                needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
-                actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
-                if (actual_rooks_location & needed_rook_location) {
-                    // Rook is on correct square for castling
-                    king_origin_square = 1ULL<<1;
-                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+
+    #ifndef NO_CASTLING
+
+        // castling, NOTE: a Rook must exist in the right place to castle the king.
+        ull squares_inbetween;
+        ull needed_rook_location;
+        ull actual_rooks_location;
+        ull king_origin_square;
+        
+        if (color == Color::WHITE) {
+            if (game_board.white_castle_rights & (0b00000001)) {
+                //assert(!game_board.bCastledWhite);
+                // Move is a White king side castle
+                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
+                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                    !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {   
+                    // King square, and squares inbetween are empty and not in check
+                    needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
+                    actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                    if (actual_rooks_location & needed_rook_location) {
+                        // Rook is on correct square for castling
+                        king_origin_square = 1ULL<<1;
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                    }
                 }
             }
-        }
-        if (game_board.white_castle_rights & (0b00000010)) {
-            // Move is a White queen side castle
-            //assert(!game_board.bCastledWhite);
-            squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
-            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                    !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
-                needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
-                actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
-                if (actual_rooks_location & needed_rook_location) {
-                    // Rook is on correct square for castling
-                    king_origin_square = 1ULL<<5;
-                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+            if (game_board.white_castle_rights & (0b00000010)) {
+                // Move is a White queen side castle
+                //assert(!game_board.bCastledWhite);
+                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
+                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                        !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
+                    needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
+                    actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                    if (actual_rooks_location & needed_rook_location) {
+                        // Rook is on correct square for castling
+                        king_origin_square = 1ULL<<5;
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                    }
                 }
             }
-        }
-    } else if (color == Color::BLACK) {
-        if (game_board.black_castle_rights & (0b00000001)) {
-            //assert(!game_board.bCastledBlack);
-            // Move is a black king side castle
-            squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                    !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {
-                // King square, and squares inbetween are empty and not in check
-                needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
-                if (actual_rooks_location & needed_rook_location) {
-                    // Rook is on correct square for castling
-                    king_origin_square = 1ULL<<57;
-                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+        } else if (color == Color::BLACK) {
+            if (game_board.black_castle_rights & (0b00000001)) {
+                //assert(!game_board.bCastledBlack);
+                // Move is a black king side castle
+                squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                        !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {
+                    // King square, and squares inbetween are empty and not in check
+                    needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                    actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                    if (actual_rooks_location & needed_rook_location) {
+                        // Rook is on correct square for castling
+                        king_origin_square = 1ULL<<57;
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                    }
                 }
             }
-        }
-        if (game_board.black_castle_rights & (0b00000010)) {
-            // Move is a Black queen side castle
-            //assert(!game_board.bCastledBlack);
-            squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-            if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                    !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
-                // King square, and squares inbetween are empty and not in check
-                needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
-                if (actual_rooks_location & needed_rook_location) {
-                    // Rook is on correct square for castling
-                    king_origin_square = 1ULL<<61;
-                    add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+            if (game_board.black_castle_rights & (0b00000010)) {
+                // Move is a Black queen side castle
+                //assert(!game_board.bCastledBlack);
+                squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
+                        !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
+                    // King square, and squares inbetween are empty and not in check
+                    needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                    actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                    if (actual_rooks_location & needed_rook_location) {
+                        // Rook is on correct square for castling
+                        king_origin_square = 1ULL<<61;
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                    }
                 }
             }
+        } else {
+            cout << "Unexpected color in king moves: " << color << endl;
+            assert(0);
         }
-    } else {
-        cout << "Unexpected color in king moves: " << color << endl;
-        assert(0);
-    }
+
+    #endif
+
 }
 
 //
@@ -1455,6 +1472,7 @@ void Engine::set_random_on_next_move() {
     // cout << "\x1b[34m nextMove->\x1b[0m" << user_request_next_move 
     //      << "\x1b[34m<-nextMove \x1b[0m" << endl;
 
+    //assert(0);  // exploratory
     //debugNow = !debugNow;
 
     // RANDOMIZING_EQUAL_MOVES

@@ -287,7 +287,7 @@ PyInit_engine_communicator(void) {
     auto us  = duration_cast<microseconds>(now).count();
     std::srand(static_cast<unsigned>(us));  // higher-resolution seed
 
-    printf("\x1b[94mHello Im communicator %ld\x1b[0m\n", us);
+    //printf("\x1b[94mHello Im communicator %ld\x1b[0m\n", (int)us);
 
     return PyModule_Create(&engine_communicatormodule);
 }

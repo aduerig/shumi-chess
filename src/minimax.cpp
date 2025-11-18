@@ -31,6 +31,85 @@ using namespace utility::bit;
 static std::atomic<int> g_live_ply{0};   // value the callback prints
 
 
+static const uint64_t g_eval_salt[64] =
+{
+    0x8f3a2c9b1d07e4f1ULL,
+    0x4b7d91e2c3056a8fULL,
+    0xd2c4e9b8713f0c57ULL,
+    0x61ae58f3b29cd04bULL,
+    0xa17c3e54d9280fabULL,
+    0x3c9461bfe0275d92ULL,
+    0xf5812a9c43de70c1ULL,
+    0x09db7e36ac5418efULL,
+
+    0xbe324f80d197c263ULL,
+    0x7250c3ad9e8641b4ULL,
+    0xc9f60812b4735e0dULL,
+    0x14ae9dbf26c8f593ULL,
+    0x5e73c0a4891d3b76ULL,
+    0x8074d32e6fab9051ULL,
+    0x2bf1a697cde40838ULL,
+    0x9365e1c40b7a2dffULL,
+
+    0x1f06bca83e5d9472ULL,
+    0xe4c2d19f7a306b8dULL,
+    0x59ad8304cfe21931ULL,
+    0xb3f4892d0147c8eaULL,
+    0x6ad75c91b0e43f27ULL,
+    0x07c1ea5389d2f46cULL,
+    0xd8b930fe2146a5b3ULL,
+    0x4e3f75a0129bdc6fULL,
+
+    0xacf1d84765be9032ULL,
+    0x327e19c4fab0859dULL,
+    0x90d4a6b173e25f48ULL,
+    0xfb2a5e0c4d9317e5ULL,
+    0x684c3ab5e01f2c9aULL,
+    0x21b7d0f98653ae14ULL,
+    0xcd0f42a7b85973e0ULL,
+    0x73e9185c2b0467d9ULL,
+
+    0x0d962fe4c1b78a53ULL,
+    0xa8c573902e4df1bcULL,
+    0x5c1be7adf93420e7ULL,
+    0xe9f48036b5c27d10ULL,
+    0x468bd3fa912e6c2bULL,
+    0x19e75a0c7bf4d895ULL,
+    0xb7d2c58104ae39f2ULL,
+    0x82349f6dbac5106eULL,
+
+    0x3fa8d2145e7093c1ULL,
+    0x96b5e03847cf2ad8ULL,
+    0xde07c9b2f18a6543ULL,
+    0x2a5c1e90b7f3d8feULL,
+    0x7b9e40d6c2058134ULL,
+    0xc4f6183a9bed72a9ULL,
+    0x10a3f2c58e74d0b6ULL,
+    0x6f58ac9e31c9e547ULL,
+
+    0xf2c7b1840d9a3e6bULL,
+    0x8b0e5d23fa4168c2ULL,
+    0x35d9a7f0c2841bd5ULL,
+    0xaa72e59316bf40e8ULL,
+    0x413ef8c27b5096adULL,
+    0xdc85b09e2fa17350ULL,
+    0x27b6c4f1903d2e89ULL,
+    0x94e1da3685c74fb2ULL,
+
+    0x5af49c01d38b627cULL,
+    0xe16c3b7a4f25d9a3ULL,
+    0x62d8f4079be15c8fULL,
+    0x0b93a2de714f30d6ULL,
+    0xb9c0e58a2687f4e1ULL,
+    0x7842d3f51ac09b5aULL,
+    0xced1a9065384e72fULL,
+    0x13f7bc4890de3acdULL
+};
+
+
+
+
+
 // #if defined(NDEBUG)
 // #  pragma message("NDEBUG is STILL defined in minimax.cpp")
 // #endif
@@ -42,8 +121,8 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 // Debug
 //#define _DEBUGGING_PUSH_POP
 
-//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
-//#define _DEBUGGING_MOVE_CHAIN
+// #define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+// #define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 
 // extern bool bMoreDebug;
@@ -60,10 +139,11 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 ///////////////////////////////////////////////////////////////////////////
 
 // Speedups?
-#define FAST_EVALUATIONS
+//#define FAST_EVALUATIONS
 //#define DELTA_PRUNING
-// #define DOING_TRANSPOSITION_TABLE
-// #define DOING_TRANSPOSITION_TABLE2
+#define DOING_TRANSPOSITION_TABLE
+#define DOING_TRANSPOSITION_TABLE2
+//#define DOING_TRANSPOSITION_TABLE_DEBUG
 #define UNQUIET_SORT
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumu deepeing, AND 
@@ -179,8 +259,13 @@ void MinimaxAI::wakeup() {
 // Follows the negamax convention, so a positive value at a leaf is “good for the side to move.” (for_color)
 // returns a positive score, if "for_color" is ahead.
 //
-int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style,
-                                const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
+// nPhase 0 opening
+//        1 middle game
+//        2 endgame
+//        3 extreme endgame
+
+int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, bool isQuietPosition
+                                //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
                             )
                                 
 {
@@ -212,7 +297,9 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style,
     int cp_score_pawns_only = 0;
     
 
-
+    //
+    // Do material. Note we compute non-pawn (NP) quantities in parallel
+    //
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
@@ -246,10 +333,13 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style,
     assert(tempsum>=0);
     assert(tempsumNP>=0);
     cp_score_material_avg = tempsum / 2;
-    cp_score_material_NP_avg = tempsumNP / 2;
-    int mat_np_white = mat_cp_white - pawns_cp_white;   // NEW
-    int mat_np_black = mat_cp_black - pawns_cp_black;   // NEW
-    cp_score_material_NP_avg = (mat_np_white + mat_np_black) / 2;   // NEW
+    //cp_score_material_NP_avg = tempsumNP / 2;
+
+    int mat_np_white = mat_cp_white - pawns_cp_white;
+    int mat_np_black = mat_cp_black - pawns_cp_black;
+    assert(mat_np_white>=0);
+    assert(mat_np_black>=0);
+    //cp_score_material_NP_avg = (mat_np_white + mat_np_black) / 2;   // NEW
 
 
     // ??? display only
@@ -271,8 +361,6 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style,
         // bool bOnlyKingEnemy  = engine.game_board.bIsOnlyKing(anti_color);
         // bool bOnlyKing = (bOnlyKingEnemy);
 
-
-
         for (const auto& color : array<Color, 2>{Color::WHITE, Color::BLACK}) {
             int cp_score_position_temp = 0;        // positional considerations only
 
@@ -284,38 +372,35 @@ int MinimaxAI::evaluate_board(Color for_color, int nPlys, bool is_fast_style,
 
             // Note this return is in centpawns, and can be negative
             if (!onlyKingEnemy) {
+
                 test = cp_score_positional_get_opening(color);
                 cp_score_position_temp += test;
        
                 // Note this return is in centpawns, and can be negative
-                test = cp_score_positional_get_middle(color, nPlys);
+                test = cp_score_positional_get_middle(color);
                 cp_score_position_temp += test;    
             }     
             
             // Note this return is in centpawns, and can be negative
-            test = cp_score_positional_get_end(color, nPlys, cp_score_material_avg
+            test = cp_score_positional_get_end(color, nPhase, cp_score_material_avg
                                             ,onlyKingFriend, onlyKingEnemy);
             cp_score_position_temp += test;      
 
 
-            bool b_is_Quiet = (pLegal_moves != nullptr) && !engine.has_unquiet_move(*pLegal_moves);
+            //  = (pLegal_moves != nullptr) && !
 
             //if (b_is_Quiet && color == engine.game_board.turn) {
-            if (b_is_Quiet && color == for_color) {
-                test = cp_score_get_trade_adjustment(color, mat_np_white, mat_np_black, cp_score_material_NP_avg);
+            // trading
+            if ( (isQuietPosition) && (color == for_color) ) {
+                test = cp_score_get_trade_adjustment(color, mat_np_white, mat_np_black);
                 cp_score_position_temp += test;
+
+                #ifdef _DEBUGGING_MOVE_CHAIN1
+                    sprintf(szDebug, "trd %ld", test);
+                    fputs(szDebug, fpDebug);
+                #endif
+
             }
-
-            // if (b_is_Quiet) {
-            //     // cp_score_pawns_only
-            //     // Add code to promote/discourage trades depending on who is ahead.
-            //     // (note. At beginning of game, there are 4000 centipawns of material.
-            //     if (color == for_color) {
-            //         test = cp_score_get_trade_adjustment(color, mat_np_white, mat_np_black, cp_score_material_NP_avg);
-            //         cp_score_position_temp += test;
-            //     }
-            // }
-
     
             /////////////// end positional evals /////////////////
 
@@ -389,7 +474,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
     pers_index = 1;
     int isolanis =  engine.game_board.count_isolated_pawns(color);
     assert (isolanis>=0);
-    cp_score_position_temp -= (isolanis*isolanis)*9;   // centipawns
+    cp_score_position_temp -= (isolanis*isolanis)*8;   // centipawns
 
     // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
     pers_index = 2;
@@ -426,7 +511,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
 }
 //
 // should be called in middlegame, but tries to prepare for endgame.
-int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color, int nPly) {
+int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     int cp_score_position_temp = 0;
 
 
@@ -460,25 +545,37 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color, int nPly)
 }
 
 
+// trading "np" means "no pawns".
+int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color,
+                                             int mat_np_white,      // centipawns
+                                             int mat_np_black)      // centipawns
+{
 
-int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black
-        ,int cp_score_material_NP_avg) {
+    int cp_clamp = 500;
 
-    int cp_score_position_temp = 0;
+    // NP advantage (centipawns) from "color"'s point of view (positive, if good for color)
+    int np_adv_for_color =
+        (color == ShumiChess::WHITE) ? (mat_np_white - mat_np_black)
+                                     : (mat_np_black - mat_np_white);
 
-    int adv_np_for_this_color = (color == ShumiChess::WHITE) ? (mat_np_white - mat_np_black) : (mat_np_black - mat_np_white);
+    if (np_adv_for_color == 0) return 0;  // no NP edge, so no bonus
 
-    int signNP = (adv_np_for_this_color > 0) - (adv_np_for_this_color < 0);    // fancy way to get the sign of adv_np_for_this_color
 
-    // fixed, tiny tie-breaker in centipawns (no kCoeff)    // trading
-    int cp_simplification_term = signNP * 3;   // try 6 cp; tune 4..8 cp
+    int denominator =  (mat_np_black + mat_np_white);
+    assert (denominator > 0);                      // no peices?
 
-    return cp_simplification_term;
+    double dRatio = (double)np_adv_for_color / (double)denominator;
 
+    int iReturn = (int)(dRatio*700.0);
+    if (iReturn >  cp_clamp) iReturn =  cp_clamp;
+    if (iReturn < -cp_clamp) iReturn = -cp_clamp;
+
+    return iReturn;
 
 }
 
-int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg,
+
+int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, int mat_avg,
                                             bool onlyKingFriend, bool onlyKingEnemy
                                             ) {
 
@@ -497,34 +594,41 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPly, in
     // }
 
 
-    int i_castle_status = engine.game_board.get_castle_status_for_color(color);
+    //int i_castle_status = engine.game_board.get_castle_status_for_color(color);
 
-    if ( (i_castle_status >= 2) && ((engine.g_iMove+nPly)>17) ) { 
+    if ( nPhase > 0 ) { 
         // Add code to attack squares near the king
         int itemp = engine.game_board.attackers_on_enemy_king_near(color);
         assert (itemp>=0);
         cp_score_position_temp += itemp*20;  // centipawns  
     }
 
-    // double dtemp = engine.game_board.king_near_other_king(color);      // 2 to 5
-    // cp_score_position_temp -= (int)(dtemp*10);  // centipawns  
-
-
-
     if (onlyKingEnemy) {
 
-    //     double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..5
-    //     //if (dkk <= 2.0) dkk = 0.0;
+        //     if (color == ShumiChess::WHITE) assert(0);   // exploratory
 
-    //     // We have material; enemy is lone king → encourage closing in.
-    //     // Smaller distance should be better ⇒ subtract proportional to distance.
-    //     cp_score_position_temp -= (int)(dkk * 100);
-    // // } else if (onlyKingFriend && !onlyKingEnemy) {
-    // //     // We are the lone king → prefer being farther away.
-    // //     cp_score_position_temp += (int)(dkk * 10);
+        double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..7
+        //     //if (dkk <= 2.0) dkk = 0.0;
+
+        // //     // We have material; enemy is lone king → encourage closing in.
+        // //     // Smaller distance should be better ⇒ subtract proportional to distance.
+        // //     cp_score_position_temp -= (int)(dkk * 100);
+        // // // } else if (onlyKingFriend && !onlyKingEnemy) {
+        // // //     // We are the lone king → prefer being farther away.
+        // // //     cp_score_position_temp += (int)(dkk * 10);
+        double dcloseness = 7.0 - dkk;
+        if (dcloseness < 0.0) dcloseness = 0.0;
+
+        cp_score_position_temp += (int)(dcloseness * 50.0);
+
+
+    //     #ifdef _DEBUGGING_MOVE_CHAIN
+    //         sprintf(szDebug, "kclos %ld", cp_score_position_temp);
+    //         fputs(szDebug, fpDebug);
+    //     #endif
+
+
     }
-
-
 
     return cp_score_position_temp;
 }
@@ -944,11 +1048,11 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //utemp = (ull)engine.game_board.is_king_in_check_new(Color::WHITE);
     //utemp = engine.game_board.SEE(ShumiChess::WHITE, engine.game_board.square_e4);   // engine.repetition_table.size();    //cp_score_material_avg;
     //dTemp = engine.convert_from_CP(utemp);
-    //dTemp = engine.game_board.king_near_other_king(Color::WHITE);
+    dTemp = engine.game_board.king_near_other_king(Color::WHITE);
     //itemp = sizeof(Move);
     //dTemp = engine.game_board.distance_between_squares(engine.game_board.square_d3, engine.game_board.square_d3);
     //utemp = engine.repetition_table.size();
-    dTemp = engine.game_board.king_near_other_king(Color::WHITE);
+    //dTemp = engine.game_board.bIsOnlyKing(Color::WHITE);
     cout << "wht " << dTemp << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
@@ -962,13 +1066,14 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //iNearSquares = engine.game_board.get_king_near_squares(Color::BLACK, king_near_squares_out);
     //utemp = engine.game_board.sliders_and_knights_attacking_square(Color::BLACK, engine.game_board.square_d5);
     //utemp = engine.game_board.attackers_on_enemy_king_near(Color::BLACK);
-    //utemp = transposition_table.size();
+    utemp = transposition_table.size();
     //utemp = (ull)engine.game_board.is_king_in_check_new(Color::BLACK);
     // utemp = engine.game_board.SEE(ShumiChess::BLACK, engine.game_board.square_e4);   // transposition_table.size();    // (ull)(engine.game_board.insufficient_material_simple());
     // dTemp = engine.convert_from_CP(utemp);
     //dTemp = engine.game_board.distance_between_squares(engine.game_board.square_h1, engine.game_board.square_f3);
-    dTemp = engine.game_board.king_near_other_king(Color::BLACK);
-    cout << "blk " << dTemp << endl;
+    //dTemp = engine.game_board.bIsOnlyKing(Color::BLACK);
+    //dTemp = engine.game_board.king_near_other_king(Color::BLACK);
+    cout << "blk " << utemp << endl;
 
     cout << endl;
  
@@ -1130,44 +1235,68 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
         #endif
 
+        bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
 
-        #ifdef DOING_TRANSPOSITION_TABLE2
-            auto it = transposition_table.find(engine.game_board.zobrist_key);
+        int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
+        int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPlys)>17) );
+
+        // memoization
+        #ifdef DOING_TRANSPOSITION_TABLE
+            int  cp_from_tt   = 0;
+            bool have_tt_eval = false;
+
+            // Salt the entry
+            unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
+
+            uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
+
+            // Look for the entry in the TT
+            auto it = transposition_table.find(evalKey);
             if (it != transposition_table.end()) {
                 const TTEntry &entry = it->second;
-
-                // Only trust if this cached result was searched at least as deep
-                // as what we're currently doing (top_deepening).
-                if (entry.depth >= top_deepening) {
-                    d_best_score = engine.convert_from_CP(entry.score_cp);
-
-                    // Transposition table hit: reuse both score and move from table.
-                    // This skips evaluation.
-                    //cout << "\x1b[33m*\x1b[0m";
-                    return { d_best_score, entry.movee };
-                }
+                cp_from_tt   = entry.score_cp;
+                have_tt_eval = true;
             }
         #endif
 
+        //
+        // evaluate (main call)
+        //
+        if (have_tt_eval) {
+            TT_ntrys++;
+            #ifdef DOING_TRANSPOSITION_TABLE_DEBUG
+                cp_score_best = evaluate_board(engine.game_board.turn, nPhase, bFast, b_is_Quiet);
+                if (cp_from_tt != cp_score_best) {
+                    printf ("wrg %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
+                    assert(0);
+            }
+            #endif
+            cp_score_best = cp_from_tt;
 
-        cp_score_best = evaluate_board(engine.game_board.turn, nPlys, bFast, &legal_moves);
+        }
+        else {
+            cp_score_best = evaluate_board(engine.game_board.turn, nPhase, bFast, b_is_Quiet);
+        }
+
 
         d_best_score = engine.convert_from_CP(cp_score_best);
         
+        // memoization
+        #ifdef DOING_TRANSPOSITION_TABLE
+            if (!bFast) {
 
-        #ifdef DOING_TRANSPOSITION_TABLE2
-            TTEntry &slot = transposition_table[engine.game_board.zobrist_key];
+                // Salt the entry
+                unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
 
-            // Only overwrite if this result is from at least as deep
-            // as whatever is already stored.
-            if (top_deepening >= slot.depth)
-            {
-                slot.score_cp = cp_score_best;
-                slot.movee    = the_best_move;
+                uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
+
+                 // Store this position away into the TT
+                TTEntry &slot = transposition_table[evalKey];
+                slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
+                slot.movee    = the_best_move;   // or bestMove, etc.
                 slot.depth    = top_deepening;
             }
         #endif
-
 
         in_check = engine.is_king_in_check(engine.game_board.turn);
 
@@ -1209,7 +1338,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         if (nPlys >= MAX_QPLY) {
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
             //std::cout << "\x1b[31m!" << "\x1b[0m";
-            auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), nPlys, in_check, depth);
+            auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), nPlys, in_check, depth, bFast);
             double scoreMe = std::get<0>(tup);
             ShumiChess::Move moveMe = std::get<1>(tup);
             return { scoreMe, moveMe };
@@ -1403,8 +1532,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     //if (d_score_value<0.0) ichars++;
                     fprintf(fpDebug, "%*s", (8-ichars), "");  // to line up for varing move size
 
-                    //sprintf(szDebug, " %f ", d_score_value);
                     fprintf(fpDebug, "%8.3f", d_score_value);
+                    bSuppressOutput = true;
                 }
 
                 // int nChars = fputs(szDebug, fpDebug);
@@ -1438,7 +1567,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // tie (within delta): flip a coin.
 
                 b_use_this_move = engine.flip_a_coin();
-                #ifdef _DEBUGGING_MOVE_CHAIN
+                #ifdef _DEBUGGING_MOVE_CHAIN1
                     //sprintf (szDebug, "flip %ld", b_use_this_move);
                     fputs(szDebug, fpDebug);
                 #endif
@@ -1499,7 +1628,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         bSide = !bSide;
         engine.print_move_to_file(the_best_move, -2, (GameState::INPROGRESS), false, false, bSide, fpDebug);
    
-        sprintf(szDebug, "%8.3f", d_best_score);
+        sprintf(szDebug, "%8.3f", -d_best_score);
         nChars = fputs(szDebug, fpDebug);
         if (nChars == EOF) assert(0);
 
@@ -1652,7 +1781,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
             color_perspective = Color::WHITE;
         }
         Move mvdefault = Move{};
-        int cp_score =  evaluate_board(color_perspective, 0, false, &moves) * color_multiplier;
+        int cp_score =  evaluate_board(color_perspective, 0, false, false) * color_multiplier;
 
         double d_best_score = engine.convert_from_CP(cp_score);
 
@@ -1754,32 +1883,15 @@ Move MinimaxAI::get_move() {
 // Loop over all passed moves, find the best move by static evaluation.
 // Returns a tuple of: best_score and best move
 std::tuple<double, ShumiChess::Move>
-MinimaxAI::best_move_static(ShumiChess::Color color,
+MinimaxAI::best_move_static(ShumiChess::Color for_color,
                             const std::vector<ShumiChess::Move>& legal_moves,
                             int nPly,
                             bool in_Check,
-                            int depth)
+                            int depth,
+                            bool bFast)
 {
     double d_best_pawns;
     ShumiChess::Move bestMove = ShumiChess::Move{};
-
-    #ifdef DOING_TRANSPOSITION_TABLE
-        uint64_t zob = engine.game_board.zobrist_key;
-
-        auto it = transposition_table.find(zob);
-        if (it != transposition_table.end()) {
-            const TTEntry &entry = it->second;
-
-            // Optional: only trust entries from at least this depth
-            if (entry.depth >= top_deepening) {
-                d_best_pawns = engine.convert_from_CP(entry.score_cp);
-
-                // Transposition table hit: reuse both score and move
-                //cout << "\x1b[33m&\x1b[0m";
-                return { d_best_pawns, entry.movee };
-            }
-        }
-    #endif
 
 
     // If there are no moves:
@@ -1788,26 +1900,87 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
     if (legal_moves.empty()) {
         if (!in_Check) {
 
-            int cp_score = evaluate_board(color, nPly, false, nullptr);         // positive is good for 'color'
-           
-            double stand_pat = engine.convert_from_CP(cp_score);
+            bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
+            int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
+            int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPly)>17) );
 
-            return { stand_pat, ShumiChess::Move{} };
+            int cp_score = evaluate_board(for_color, nPhase, bFast, b_is_Quiet);         // positive is good for 'color'
+           
+            double best_score = engine.convert_from_CP(cp_score);
+
+            return { best_score, ShumiChess::Move{} };
         }
         return { -HUGE_SCORE, ShumiChess::Move{} };
     }
 
     d_best_pawns = -HUGE_SCORE;
-    int cp_score = 0;
+    int cp_score_best = 0;
 
     for (const auto& m : legal_moves) {
 
         engine.pushMove(m);
-        
-        cp_score = evaluate_board(color, nPly, false, nullptr);  // positive is good for 'color'
-        
-        double d_score = engine.convert_from_CP(cp_score);
-        
+
+        // memoization
+        #ifdef DOING_TRANSPOSITION_TABLE2
+
+            bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
+            int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
+            int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPly)>17) );
+
+            int  cp_from_tt   = 0;
+            bool have_tt_eval = false;
+
+            // Salt the entry
+            unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
+
+            uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
+
+            // Look for the entry in the TT
+            auto it = transposition_table.find(evalKey);
+            if (it != transposition_table.end()) {
+                const TTEntry &entry = it->second;
+                cp_from_tt   = entry.score_cp;
+                have_tt_eval = true;
+            }
+        #endif
+        //
+        // evaluate (side call)
+        //
+        if (have_tt_eval) {
+            TT_ntrys1++;
+            #ifdef DOING_TRANSPOSITION_TABLE_DEBUG
+                cp_score_best = evaluate_board(engine.game_board.turn, nPhase, bFast, b_is_Quiet);
+                if (cp_from_tt != cp_score_best) {
+                    printf ("wrg1 %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
+                    assert(0);
+                }
+            #endif
+            cp_score_best = cp_from_tt;
+
+        }
+        else {
+            cp_score_best = evaluate_board(engine.game_board.turn, nPhase, bFast, b_is_Quiet);
+        }
+
+
+
+        double d_score = engine.convert_from_CP(cp_score_best);
+    
+        #ifdef DOING_TRANSPOSITION_TABLE2
+            if (!bFast) {
+                // Salt the entry
+                unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
+
+                uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
+
+                 // Store this position away into the TT
+                TTEntry &slot = transposition_table[evalKey];
+                slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
+                slot.movee    = Move{};
+                slot.depth    = top_deepening;
+            }
+        #endif
+
         engine.popMove();
 
         if (d_score > d_best_pawns) {
@@ -1816,21 +1989,6 @@ MinimaxAI::best_move_static(ShumiChess::Color color,
         }
     }
 
-    #ifdef DOING_TRANSPOSITION_TABLE
-
-        TTEntry &slot = transposition_table[engine.game_board.zobrist_key];
-
-        // Only overwrite if this result is from at least as deep a search
-        // as whatever was stored before.
-        if (top_deepening >= slot.depth) {
-            int temp = engine.convert_to_CP(d_best_pawns);
-            slot.score_cp = temp;
-            slot.movee    = bestMove;
-            slot.depth    = top_deepening;
-        }
-    #endif
-
-    
     return { d_best_pawns, bestMove };
 }
 

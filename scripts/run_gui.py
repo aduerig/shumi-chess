@@ -18,6 +18,7 @@ parser.add_argument('--human', default=False, action='store_true')
 
 parser.add_argument('-d', '--depth', type=int, default=5, help='Max deepening')
 parser.add_argument('-t', '--time', type=int, default=99, help='Time per move in ms')
+parser.add_argument('-r', '--rand', type=int, default=0, help='Randomization')
 
 parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')
 parser.add_argument('-wt', '--wt', type=int, default=None, help='white time ms')
@@ -43,6 +44,7 @@ shared_build_code.run_python_gui(
     wtime=args.wt,
     bdepth=args.bd,
     btime=args.bt,
+    rand=args.rand,
 )
 
 

@@ -116,6 +116,7 @@ def run_python_gui(
     wtime=None,
     bdepth=None,
     btime=None,
+    rand=None,
 ):
     cmd_line = [
         'python',
@@ -132,6 +133,8 @@ def run_python_gui(
         cmd_line.extend(['-t', str(time)])
     if depth is not None:
         cmd_line.extend(['-d', str(depth)])
+    if rand is not None:
+        cmd_line.extend(['-r', str(rand)])
 
     # per-side
     if wdepth is not None:

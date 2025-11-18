@@ -4,6 +4,11 @@
 #ifdef _MSC_VER  // Check if we are using the Microsoft Visual C++ compiler
 #include <intrin.h> // Include the header for MSVC intrinsics
 
+
+inline int signOf(int x) {
+    return (x > 0) - (x < 0);
+}
+
 // MSVC doesn't have __builtin_ctzll, so we create our own version
 // using the _BitScanForward64 intrinsic.
 // __builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer

@@ -121,12 +121,8 @@ r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4
 
 // test of trades (take rooks away as approriate to test)
 rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1
-
-3qk3/8/8/8/8/8/8/3QK2B w KQkq - 0 1
-
-1r3r2/p2q1kpp/3p1n2/5pB1/8/3P2P1/P1Q1PPKP/R4R2 w - - 3 19
-r1bq1rk1/p2p1ppp/2p2nn1/8/1b2P3/2NB1N2/PP1B1PPP/R2QK2R w KQ - 7 11
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+3qk3/8/8/8/8/8/8/3Q1K1B w KQkq - 0 1
+3qk3/2p1p3/8/8/1P6/2P5/5P2/3Q1K2 w KQkq - 0 1
 
 
 Fen is now r4rk1/pb1p1ppp/1qpb1nn1/8/4P3/P1NB1N2/1P1B1PPP/2RQ1RK1 w - - 5 14
@@ -178,3 +174,23 @@ Move chain histories:
 
 Very long (10). 
  ...Kg8  g3  ...h5  gxf4  ...Rxf4  Qxh5  ...Bxd4  cxd4  ...Rxf3  Qxf3 
+
+
+
+
+
+
+
+
+ssssssssssssssss
+
+
+OK. Excellent. SO there are three separate calls to evaluate_board() that need "protected"
+ (by this is means avoiding extra computations in "identical" positions. You are right in getting
+  into what identical means. I agree that for_color" must be in the indentification. As to the "fast_sytle"
+   you are right also. I do not waht to reuse these. So only protect calls, if they are not fast sytle (and
+    not store positions from fast evaluations). As to the "pLegal_moves", you are right. Unfortunitly and 
+    terribly we just added this for trding. I have an idea. The TT I have (not the regular one) uses one 
+    zobrist of the porition. Howew about I add a second zobrist having these things (the moves) . So storage,
+     and later identification would require both keys. 
+But I donet want to puloote the intial key with thus one.

@@ -383,15 +383,8 @@ inline double lerp(double a, double b, double t) { return a + (b - a) * t; }
 // connectiveness gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
 void GameBoard::king_castle_happiness(Color c, int& centerness) const {
    
-
     centerness = (double)(get_castle_status_for_color(c));
     assert(centerness>=0);
-   
-
-        // Gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
-       // centerness = (double)(7 - king_danger_opening[row_idx][col_idx]);    // 1 is minimum danger, 7 is maximum danger
-    
-       // assert (fabs(centerness == centerness2) < 0.001);
 
     return;
 }
@@ -1006,7 +999,7 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 
 bool GameBoard::bIsOnlyKing(Color attacker_color) {
     ull enemyPieces;
-    if (attacker_color == ShumiChess:: WHITE) {
+    if (attacker_color == ShumiChess:: BLACK) {
         enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
     } else {
         enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);  
@@ -1017,9 +1010,8 @@ bool GameBoard::bIsOnlyKing(Color attacker_color) {
 
 
 
-// Returns 0 to 6, if lone king of enemy
-double GameBoard::king_near_other_king(Color attacker_color)
-{
+// Returns 0 to 7, if lone king of enemy
+double GameBoard::king_near_other_king(Color attacker_color) {
     double dBonus = 0;
 
     int enemyKingSq;
@@ -1027,7 +1019,6 @@ double GameBoard::king_near_other_king(Color attacker_color)
     ull enemyPieces;
     ull tmpEnemy;
     ull tmpFrien;
-
 
     //if ( (white_king == 0ULL) || (black_king == 0ULL) ) return 0;
     assert(white_king != 0ULL);
@@ -1057,14 +1048,15 @@ double GameBoard::king_near_other_king(Color attacker_color)
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
         assert (dFakeDist >= 2.0);      // Kings cant touch
-        //assert (dFakeDist <= 7.0);      // Board is only so big
+        assert (dFakeDist <= 7.0);      // Board is only so big
 
         // Bonus higher if friendly king closer to enemy king
         assert (dFakeDist >= 0.0); 
         dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
 
-        //dBonus = frienKingSq*10;
-        //dBonus = 63.0 - (double)(frienKingSq*10);      // debug only bonus
+        // Bonus debugs
+        //dBonus = (double)frienKingSq;               // enemy king is attracted to a8
+        //dBonus = 63.0 - (double)(frienKingSq);    // enemy king is attracted to h1
 
         return dBonus;
 

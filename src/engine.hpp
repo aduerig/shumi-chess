@@ -105,6 +105,9 @@ class Engine {
             return bReturn;
         }
 
+
+        int g_iMove = 0;       // real moves in whole game
+
         // Centipawn to pawn conversions
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
@@ -231,16 +234,17 @@ class Engine {
             // Victim dominates (shift by a few bits, note: a few?, 10?), attacker is a tiebreaker penalty
             int key = (victim << 10) - attacker;
 
-            // Promotions: capturing + promoting should go even earlier
+            // Promotions: capturing + promoting should go even earlier, but it doesnt now
             if (m.promotion != ShumiChess::Piece::NONE) {
                 key += game_board.centipawn_score_of(m.promotion) - game_board.centipawn_score_of(ShumiChess::Piece::PAWN);
             }
 
             // En passant: treat as a pawn capture
-            // (no extra handling needed if m.capture == Piece::PAWN is already set for EP)
+            // (no extra handling needed if m.capture == Piece::PAWN is already set for EP). Note: what?
             return key;
         }
 
+        // display crap
         string reason_for_draw = "------------";
         int get_draw_status();
         int material_centPawns = 0;
@@ -252,8 +256,6 @@ class Engine {
         //ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
     
         std::unordered_map<uint64_t, int> repetition_table;
-
-        int g_iMove = 0;       // real moves in whole game
 
         void debug_print_repetition_table() const;
 
