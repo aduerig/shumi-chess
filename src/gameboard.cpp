@@ -326,11 +326,9 @@ int GameBoard::get_castle_status_for_color(Color color1) const {
 int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
 
  
-    //int cp_score_mat_temp_pawns;
     ull pieces_bitboard;
     int cp_board_score;
     int nPieces;
-
 
     // Pawns first
     cp_pawns_only_temp = 0;
@@ -368,13 +366,12 @@ int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
     return cp_score_mat_temp;
 }
 
-
-
+//
 int GameBoard::bits_in(ull bitboard) const {
     auto bs = bitset<64>(bitboard);
     return (int) bs.count();
 }
-
+//
 // “lerp” stands for Linear intERPolation.
 // Linear interpolation: t=0 → a, t=1 → b
 inline double lerp(double a, double b, double t) { return a + (b - a) * t; }

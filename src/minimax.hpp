@@ -116,18 +116,14 @@ public:
 
     bool look_for_king_moves() const;
 
-    // Used for "evaluate_board" salting of te TT.
-    inline unsigned MinimaxAI::make_eval_salt(bool b_is_Quiet, int nPhase) const {
-        unsigned mode = 0u;
-        if (engine.game_board.turn == ShumiChess::BLACK) mode |= 1u;
-        if (b_is_Quiet)                                  mode |= 2u;
-        int phaseBits = (nPhase & 3);
-        mode |= (unsigned)(phaseBits << 2);
-        if (engine.game_board.bCastledWhite) mode |= (1u << 4);
-        if (engine.game_board.bCastledBlack) mode |= (1u << 5);
-        return mode;
-    }
 
+    // 0 - opening, 1- middle, 2- ending, 3 - ? extreme ending?
+    inline int phaseOfGame(int nPlys) {
+
+        int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
+        int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPlys)>17) ); 
+        return nPhase;
+    }
 
 
     // oLD CHESS engine

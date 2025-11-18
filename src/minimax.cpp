@@ -141,8 +141,8 @@ static const uint64_t g_eval_salt[64] =
 // Speedups?
 //#define FAST_EVALUATIONS
 //#define DELTA_PRUNING
-#define DOING_TRANSPOSITION_TABLE
-#define DOING_TRANSPOSITION_TABLE2
+//#define DOING_TRANSPOSITION_TABLE
+//#define DOING_TRANSPOSITION_TABLE2
 //#define DOING_TRANSPOSITION_TABLE_DEBUG
 #define UNQUIET_SORT
 
@@ -1048,12 +1048,14 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //utemp = (ull)engine.game_board.is_king_in_check_new(Color::WHITE);
     //utemp = engine.game_board.SEE(ShumiChess::WHITE, engine.game_board.square_e4);   // engine.repetition_table.size();    //cp_score_material_avg;
     //dTemp = engine.convert_from_CP(utemp);
-    dTemp = engine.game_board.king_near_other_king(Color::WHITE);
+    //dTemp = engine.game_board.king_near_other_king(Color::WHITE);
     //itemp = sizeof(Move);
     //dTemp = engine.game_board.distance_between_squares(engine.game_board.square_d3, engine.game_board.square_d3);
     //utemp = engine.repetition_table.size();
     //dTemp = engine.game_board.bIsOnlyKing(Color::WHITE);
-    cout << "wht " << dTemp << endl;
+    //utemp = sizeof(TTEntry);
+    utemp = phaseOfGame(nPlys); 
+    cout << "wht " << utemp << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
     //itemp = engine.bishops_attacking_center_squares(Color::BLACK);
@@ -1236,14 +1238,14 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         #endif
 
         bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
+        int nPhase = phaseOfGame(nPlys); 
 
-        int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
-        int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPlys)>17) );
+        int  cp_from_tt   = 0;
+        bool have_tt_eval = false;
 
         // memoization
         #ifdef DOING_TRANSPOSITION_TABLE
-            int  cp_from_tt   = 0;
-            bool have_tt_eval = false;
+
 
             // Salt the entry
             unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
@@ -1901,8 +1903,7 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
         if (!in_Check) {
 
             bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
-            int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
-            int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPly)>17) );
+            int nPhase = phaseOfGame(nPly); 
 
             int cp_score = evaluate_board(for_color, nPhase, bFast, b_is_Quiet);         // positive is good for 'color'
            
@@ -1921,15 +1922,14 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
         engine.pushMove(m);
 
         // memoization
+
+        bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
+        int nPhase = phaseOfGame(nPly); 
+
+        int  cp_from_tt   = 0;
+        bool have_tt_eval = false;
+
         #ifdef DOING_TRANSPOSITION_TABLE2
-
-            bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
-            int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
-            int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPly)>17) );
-
-            int  cp_from_tt   = 0;
-            bool have_tt_eval = false;
-
             // Salt the entry
             unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
 
