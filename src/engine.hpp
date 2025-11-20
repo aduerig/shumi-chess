@@ -12,6 +12,9 @@
 #include "move_tables.hpp"
 #include "utility.hpp"
 
+#include "endgameTables.hpp"
+
+
 using namespace std;
 
 //#define _DEBUGGING_PUSH_POP_FAST
@@ -26,7 +29,8 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 #define VERY_SMALL_SCORE 1.0e-5     // In pawns. (its 0.001 centipawns)
 #define HUGE_SCORE 10000            // In pawns. (its a million centipawns!)       //  DBL_MAX    // A relative score
 
-#define ABORT_SCORE (HUGE_SCORE+1)  // Used only to abort the analysis
+#define ABORT_SCORE (HUGE_SCORE+1)      // Used only to abort the analysis
+#define ONLY_MOVE_SCORE (HUGE_SCORE+2)  // Used to short circuit anlysis when only one legal move
 
 #define _MAX_ALGEBRIAC_SIZE 16        // longest SAN text possible? -> "exd8=Q#" or "axb8=R+"
 #define _MAX_MOVE_PLUS_SCORE_SIZE (_MAX_ALGEBRIAC_SIZE+32)        // Move text plus a score
@@ -105,6 +109,7 @@ class Engine {
             return bReturn;
         }
 
+        string syzygy_path = "C:\\tb\\syzygy\\";
 
         int g_iMove = 0;       // real moves in whole game
 

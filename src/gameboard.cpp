@@ -11,6 +11,8 @@
 #include "move_tables.hpp"
 #include "utility.hpp"
 
+#include "endgameTables.hpp"
+
 using namespace std;
 
 
@@ -169,11 +171,18 @@ void GameBoard::set_zobrist() {
 // fields for fen are:
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
 
+const endgameTablePos GameBoard::to_egt() {
+    endgameTablePos returnVar;
+    return returnVar;
+}
+
+
 const string GameBoard::to_fen(bool bFullFEN) {
 
     //cout << "\x1b[34mto_fen!\x1b[0m" << endl;
     vector<string> fen_components;
 
+    // the board
     unordered_map<ull, char> piece_to_letter = {
         {Piece::BISHOP, 'b'},
         {Piece::KING, 'k'},
@@ -707,11 +716,12 @@ int GameBoard::count_isolated_pawns(Color c) const {
 }
 
 //
-// Rewards king near the center.
-int GameBoard::king_center_weight(Color color) {
+// Returns smaller values near the center. 0 for the inner ring (center) 3 for outer ring (edge squares)
+int GameBoard::king_edge_weight(Color color)
+{
     ull kbb = (color == Color::WHITE) ? white_king : black_king;
     assert(kbb != 0ULL);
-    int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63 (local copy, ok)
+    int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63
 
     int r = sq / 8;              // 0..7
     int f = sq % 8;              // 0..7
@@ -719,11 +729,12 @@ int GameBoard::king_center_weight(Color color) {
     int df = std::min(std::abs(f - 3), std::abs(f - 4));
     int ring = std::max(dr, df); // 0..3
 
-    static const int W[4] = {4, 3, 2, 1};  // 2.0, 1.5, 1.0, 0.5 times 2
     if (ring < 0) ring = 0;
     if (ring > 3) ring = 3;
-    return W[ring];
+
+    return ring;  // 0 = center, 3 = edge
 }
+
 
 // Passed pawns bonus in centipawns:
 //  - 10 cp on 3rd/4th rank (from that side's perspective)
@@ -795,7 +806,7 @@ int GameBoard::get_king_near_squares(Color defender_color, int king_near_squares
     // find king square for defender_color
     ull kbb = (defender_color == Color::WHITE) ? white_king : black_king;
     assert(kbb != 0ULL);
-    ull tmp = kbb;
+    ull tmp = kbb;  // dont mutate the bitboards
     int king_sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
 
     int king_row = king_sq / 8;
@@ -988,7 +999,7 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     //dfakeDist = (double)xFrien;     // debug only
 
     assert (dfakeDist >= 0.0);
-    //assert (dfakeDist <= 14.0);
+    assert (dfakeDist <= 7.0);
    
     return dfakeDist;
 }
@@ -1007,7 +1018,7 @@ bool GameBoard::bIsOnlyKing(Color attacker_color) {
 
 
 
-// Returns 0 to 7, if lone king of enemy
+// Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.
 double GameBoard::king_near_other_king(Color attacker_color) {
     double dBonus = 0;
 
@@ -1045,10 +1056,9 @@ double GameBoard::king_near_other_king(Color attacker_color) {
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
         assert (dFakeDist >= 2.0);      // Kings cant touch
-        assert (dFakeDist <= 7.0);      // Board is only so big
+        assert (dFakeDist <= 8.0);      // Board is only so big
 
         // Bonus higher if friendly king closer to enemy king
-        assert (dFakeDist >= 0.0); 
         dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
 
         // Bonus debugs
@@ -1063,7 +1073,107 @@ double GameBoard::king_near_other_king(Color attacker_color) {
 }
 
 
+int GameBoard::king_sq_of(Color color) {
+    int frienKingSq;
+    ull tmpFrien;
+    if (color == ShumiChess:: WHITE) {
+        tmpFrien = white_king;         // don't mutate the bitboards
+    } else {
+        tmpFrien = black_king;         // don't mutate the bitboards
+    }
+    frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
+    assert(frienKingSq >= 0);
+    assert(frienKingSq <= 63);
 
+    return frienKingSq;
+}
+
+
+// Identifies if enemy king only, and friendy side has a lone queen or a lone rook
+bool GameBoard::IsSimpleEndGame(Color for_color)
+{
+    bool bReturn = false;
+    ull enemyPieces, myPieces, myQueens, myRooks;
+
+    if (for_color == ShumiChess:: WHITE) {
+        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
+        myPieces = (white_knights | white_bishops | white_pawns);
+        myQueens = white_queens;
+        myRooks = white_rooks;
+    } else {
+        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
+        myPieces = (black_knights | black_bishops | black_pawns);
+        myQueens = black_queens;
+        myRooks = black_rooks;
+    }
+
+    if ( ( enemyPieces == 0ULL) && (myPieces == 0ULL) ) {
+        int nQueens = bits_in(myQueens);
+        int nRooks = bits_in(myRooks);
+        if ( (nQueens == 1) && (nRooks == 0) ) {         
+           bReturn = true;
+        }
+        else if ( (nQueens == 0) && (nRooks == 1) ) {         
+           bReturn = true;
+        }
+    }
+
+    return bReturn;
+}
+
+// Returns 0 to 7, if lone king of enemy
+double GameBoard::king_near_sq(Color attacker_color, ull sq) {
+    double dBonus = 0;
+
+    int enemyKingSq;
+    int frienKingSq;
+    ull enemyPieces;
+    //ull tmpEnemy;
+    ull tmpFrien;
+
+    //if ( (white_king == 0ULL) || (black_king == 0ULL) ) return 0;
+    assert(white_king != 0ULL);
+    assert(black_king != 0ULL);
+
+
+    if (attacker_color == ShumiChess:: WHITE) {
+        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
+        //tmpEnemy = black_king;         // don't mutate the bitboards
+        tmpFrien = white_king;         // don't mutate the bitboards
+
+    } else {
+        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
+        //tmpEnemy = white_king;         // don't mutate the bitboards
+        tmpFrien = black_king;         // don't mutate the bitboards
+    }
+
+    enemyKingSq = sq;  //utility::bit::lsb_and_pop_to_square(tmpEnemy); // 0..63
+    assert(enemyKingSq <= 63);
+    frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
+    assert(frienKingSq >= 0);
+
+
+    // Bring friendly king near enemy king (reward small distances to other king)
+    if (enemyPieces == 0) { // enemy has king only
+
+        // 7 (furthest), to 1 (adjacent), to 0 (identical)
+        double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
+        assert (dFakeDist >= 2.0);      // Kings cant touch
+        assert (dFakeDist <= 8.0);      // Board is only so big
+
+        // Bonus higher if friendly king closer to enemy king
+        dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
+
+        // Bonus debugs
+        //dBonus = (double)frienKingSq;               // enemy king is attracted to a8
+        //dBonus = 63.0 - (double)(frienKingSq);    // enemy king is attracted to h1
+
+        return dBonus;
+
+    }
+
+    return dBonus;
+}
 
 int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq)
 {

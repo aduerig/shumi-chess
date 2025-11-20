@@ -298,7 +298,7 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
     
 
     //
-    // Do material. Note we compute non-pawn (NP) quantities in parallel
+    // Do material. Note we compute non-pawn (NP) quantities in parallel with the full quantities.
     //
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
@@ -585,12 +585,9 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
     //int iZeroToOne = engine.game_board.kings_in_opposition(color);
     //cp_score_position_temp += iZeroToOne*200;  // centipawns  
 
-
+    Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
     // if (mat_avg < 1000) {    // 10 pawns of material or less BRING KING TOWARDS CENTER
     //     //   cout << "fub";
-    //     int iZeroToOne = engine.game_board.king_center_weight(color);
-    //     cp_score_position_temp += iZeroToOne*20;  // centipawns  
-        
     // }
 
 
@@ -607,19 +604,24 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
 
         //     if (color == ShumiChess::WHITE) assert(0);   // exploratory
 
+        // Rewards king near other king
+        // Returns 2 to 10,. Zero if in opposition, 10 if in opposite corners.
         double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..7
-        //     //if (dkk <= 2.0) dkk = 0.0;
+        assert(dkk>=2);
+        if (dkk > 10) {
+            cout << "!!!" << dkk;
+            assert(0);
+        }
 
-        // //     // We have material; enemy is lone king → encourage closing in.
-        // //     // Smaller distance should be better ⇒ subtract proportional to distance.
-        // //     cp_score_position_temp -= (int)(dkk * 100);
-        // // // } else if (onlyKingFriend && !onlyKingEnemy) {
-        // // //     // We are the lone king → prefer being farther away.
-        // // //     cp_score_position_temp += (int)(dkk * 10);
-        double dcloseness = 7.0 - dkk;
-        if (dcloseness < 0.0) dcloseness = 0.0;
+        double dFarness = 10.0 - dkk;   // 8 if in opposition, 0, if in opposite corners
+        cp_score_position_temp += (int)(dFarness * 50.0);
 
-        cp_score_position_temp += (int)(dcloseness * 50.0);
+
+        // Rewards if enemy king ner corner. 0 for the inner ring (center) 3 for outer ring (edge squares)
+        enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
+        int edge_wght = engine.game_board.king_edge_weight(enemy_color);
+
+        cp_score_position_temp += (int)(edge_wght * 80.0);
 
 
     //     #ifdef _DEBUGGING_MOVE_CHAIN
@@ -694,6 +696,10 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, long long elapsed_time,
         double d_Return_score = get<0>(ret_val);
         if (d_Return_score == ABORT_SCORE) return ret_val;
         
+        if (d_Return_score == ONLY_MOVE_SCORE) {
+            return ret_val;
+            //continue;
+        }
         
         // Aspiration (just a guard right now)
         //assert ((alpha <= d_Return_score) && (d_Return_score <= beta));
@@ -820,6 +826,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     transposition_table.clear();
    
 
+
+
+
     int this_deepening;
 
     Move best_move = {};
@@ -850,6 +859,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     bool bThinkingOver = false;
     bool bThinkingOverByTime = false;
     bool bThinkingOverByDepth = false;
+    bool bThinkingOverByEnding = false;
 
     for (int ii=0;ii<MAX_PLY;ii++) {
         killer1[ii] = {}; 
@@ -886,10 +896,21 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         if (d_Return_score == ABORT_SCORE) {
             cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
             break;   // Stop deepening, no more depths.
-            
+        } else if (d_Return_score == ONLY_MOVE_SCORE) {
+            d_best_move_value = 0.0;
+            best_move = get<1>(ret_val);
+            break;   // Stop deepening, no more depths.
         } else {
             d_best_move_value = d_Return_score;
             best_move = get<1>(ret_val);
+
+            // Root sees a forced mate: no point deepening further.
+            if (std::fabs(d_best_move_value) >= HUGE_SCORE/2.0)
+            {
+                cout << "\x1b[31m !!!!!!!! mate at root (depth " << depth << ")\x1b[0m" << endl;
+                break;   // Stop iterative deepening immediately.
+            }
+
         }
 
 
@@ -909,15 +930,18 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         diff_s = now_s - end_s;
         elapsed_time = now_s - (long long)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
 
+        // Endgame based ending of thinking
+        bThinkingOverByEnding = (engine.game_board.IsSimpleEndGame(engine.game_board.turn) && depth >= 3) ;
+
+        // time based ending of thinking
         bThinkingOverByTime = (diff_s > 0);
 
         // depth based ending of thinking
         bThinkingOverByDepth = (depth >= (maximum_deepening+1));
 
-        // we are done thinking if both time and depth is ended.
-        bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
 
-        //if (depth > 7) bThinkingOver = true;       // Hard depth limit on 7
+        // we are done thinking if both time and depth is ended OR simple endgame is on.
+        bThinkingOver = bThinkingOverByEnding || (bThinkingOverByDepth && bThinkingOverByTime);
 
     } while (!bThinkingOver);
 
@@ -929,10 +953,8 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
     string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
 
-    // If the first move, randomize the response some.
-
-    //if ( (engine.g_iMove == 1) && (d_Return_score != ABORT_SCORE) ) {
-    if ( (d_Return_score != ABORT_SCORE) ) {
+    // If the first move, MAYBE randomize the response some.
+    if ( (d_Return_score != ABORT_SCORE) && (d_Return_score != ONLY_MOVE_SCORE) ) {
 
         // Reassign best move, if randomizing        
         d_random_delta = 0.0;
@@ -1053,8 +1075,12 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //dTemp = engine.game_board.distance_between_squares(engine.game_board.square_d3, engine.game_board.square_d3);
     //utemp = engine.repetition_table.size();
     //dTemp = engine.game_board.bIsOnlyKing(Color::WHITE);
-    //utemp = sizeof(TTEntry);
-    utemp = phaseOfGame(nPlys); 
+    utemp = sizeof(Move);
+    
+    //itemp = engine.game_board.king_edge_weight(Color::WHITE);
+    //sisOK = engine.game_board.IsSimpleEndGame(Color::WHITE);
+    utemp = Piece::NONE;
+    //utemp = phaseOfGame(nPlys); 
     cout << "wht " << utemp << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
@@ -1068,14 +1094,16 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //iNearSquares = engine.game_board.get_king_near_squares(Color::BLACK, king_near_squares_out);
     //utemp = engine.game_board.sliders_and_knights_attacking_square(Color::BLACK, engine.game_board.square_d5);
     //utemp = engine.game_board.attackers_on_enemy_king_near(Color::BLACK);
-    utemp = transposition_table.size();
+    //utemp = transposition_table.size();
     //utemp = (ull)engine.game_board.is_king_in_check_new(Color::BLACK);
     // utemp = engine.game_board.SEE(ShumiChess::BLACK, engine.game_board.square_e4);   // transposition_table.size();    // (ull)(engine.game_board.insufficient_material_simple());
     // dTemp = engine.convert_from_CP(utemp);
     //dTemp = engine.game_board.distance_between_squares(engine.game_board.square_h1, engine.game_board.square_f3);
     //dTemp = engine.game_board.bIsOnlyKing(Color::BLACK);
     //dTemp = engine.game_board.king_near_other_king(Color::BLACK);
-    cout << "blk " << utemp << endl;
+    //itemp = engine.game_board.king_edge_weight(Color::BLACK);
+    isOK = engine.game_board.IsSimpleEndGame(Color::BLACK);
+    cout << "blk " << isOK << endl;
 
     cout << endl;
  
@@ -1106,8 +1134,8 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 //
 // Choose the "minimax" AI move.
 // Returns a tuple of:
-//    the score value
-//    the move
+//    the best score (however, if this is ABORT_SCORE, its an abort)
+//    the best move
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1174,9 +1202,21 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     #endif
 
 
-    // If mover is in check, this routine returns all check escapes and only the check escapes.
+    // Get all egal moves. If mover is in check, this routine returns all check escapes and only the check escapes.
     std::vector<Move> legal_moves = engine.get_legal_moves();
     p_moves_to_loop_over = &legal_moves;
+
+    // Only one of me, per deepening.
+    bool first_node_in_deepening = (top_deepening == depth);
+    // bool check = (nPlys==1);
+    // assert(check == first_node_in_deepening);
+
+    if (first_node_in_deepening) {
+        if (legal_moves.size() == 1) {
+            cout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
+            return {ONLY_MOVE_SCORE, legal_moves[0]};
+        }
+    }
 
 
     GameState state = engine.game_over(legal_moves);
@@ -1443,7 +1483,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // --- end Delta pruning
             #endif
     
-
+            assert(m.piece_type != Piece::NONE);
             engine.pushMove(m);
                
             #ifdef IS_CALLBACK_THREAD
@@ -1797,6 +1837,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         double dMax_move_value = -DBL_MAX;
         for (Move& m : moves) {
 
+            assert(m.piece_type != Piece::NONE);
             engine.pushMove(m);
 
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
@@ -1815,6 +1856,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         double dMin_move_value = DBL_MAX;
         for (Move& m : moves) {
 
+            assert(m.piece_type != Piece::NONE);
             engine.pushMove(m);
 
             double score_value = -1 * get_value(depth - 1, color_multiplier * -1, alpha, beta);
@@ -1854,6 +1896,7 @@ Move MinimaxAI::get_move(int depth) {
     double dMax_move_value = -DBL_MAX;
     vector<Move> moves = engine.get_legal_moves();
     for (Move& m : moves) {
+        assert(m.piece_type != Piece::NONE);
         engine.pushMove(m);
         double score_value = get_value(depth - 1, color_multiplier * -1, -DBL_MAX, DBL_MAX);
         if (score_value * -1 > dMax_move_value) {
@@ -1919,6 +1962,7 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
 
     for (const auto& m : legal_moves) {
 
+        assert(m.piece_type != Piece::NONE);
         engine.pushMove(m);
 
         // memoization

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 set(project_name ShumiChess)
-project(${project_name} CXX)
+project(${project_name} C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # --- Set a default build type if none is specified (for single-config generators) ---
@@ -31,6 +31,7 @@ set(Headers
     src/move_tables.hpp
     src/utility.hpp
     src/minimax.hpp
+    src/endgameTables.hpp
 )
 
 set(Sources
@@ -40,6 +41,8 @@ set(Sources
     src/move_tables.cpp
     src/utility.cpp
     src/minimax.cpp
+    src/endgameTables.cpp
+
 )
 
 
@@ -56,7 +59,10 @@ add_library(${project_name} STATIC ${Sources} ${Headers})
 
 set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_include_directories(${project_name} PUBLIC src)
+target_include_directories(${project_name} PUBLIC
+    src
+    ${CMAKE_SOURCE_DIR}/extern/Fathom-master/src
+)
 
 
 add_executable(measure_speed_random_games driver/measure_speed_random_games.cpp)

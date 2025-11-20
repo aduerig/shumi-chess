@@ -10,9 +10,16 @@
 #include <string>
 #include <chrono>
 
-#include <globals.hpp>
+#include "globals.hpp"
 #include <engine.hpp>
 #include <minimax.hpp>
+
+#include <gameboard.hpp>
+
+#undef NDEBUG
+//#define NDEBUG         // Define (uncomment) this to disable asserts
+#include <assert.h>
+
 
 using namespace std;
 
@@ -126,21 +133,25 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     }
 
     // Get, and store in engine, the algebriac (SAN) text form of the user's move.
-    string tempString;
-    python_engine.bitboards_to_algebraic(ShumiChess::WHITE, found_move, ShumiChess::GameState::INPROGRESS
-                                        , false
-                                        , false
-                                        , tempString);      // Output
+    // string tempString;
+    // python_engine.bitboards_to_algebraic(ShumiChess::WHITE, found_move, ShumiChess::GameState::INPROGRESS
+    //                                     , false
+    //                                     , false
+    //                                     , tempString);      // Output
     python_engine.users_last_move = found_move;
 
     python_engine.move_history = stack<ShumiChess::Move>();
     //python_engine.move_history.push(found_move);
 
-    // Tell the engine the move
-    python_engine.pushMove(found_move);
-    
-    ++python_engine.repetition_table[python_engine.game_board.zobrist_key];
-
+    if (found_move.piece_type == 6)       // Piece::NONE is 6
+    {
+        cout << "\x1b[1;31m" << " you are full of it " << "\x1b[0m" << endl;
+    } else {
+        // Tell the engine the move
+        python_engine.pushMove(found_move);
+        
+        ++python_engine.repetition_table[python_engine.game_board.zobrist_key];
+    }
     return Py_BuildValue("");
 }
 

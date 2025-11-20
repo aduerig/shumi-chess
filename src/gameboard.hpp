@@ -8,7 +8,7 @@
 #include <assert.h>
 
 #include "globals.hpp"
-
+#include "endgameTables.hpp"
 
 
 
@@ -174,7 +174,7 @@ class GameBoard {
         
         bool insufficient_material_simple();
 
-        int king_center_weight(Color color);
+        int king_edge_weight(Color color);
 
         int pawns_attacking_square(Color c, int sq);
         int pawns_attacking_center_squares(Color c);
@@ -206,13 +206,20 @@ class GameBoard {
         double distance_between_squares(int enemySq, int frienSq);
         int get_Chebyshev_distance(int x1, int y1, int x2, int y2);
         double get_board_distance(int x1, int y1, int x2, int y2);
+
+        int king_sq_of(Color color);    
+        double king_near_sq(Color attacker_color, ull sq);    
         double king_near_other_king(Color attacker_color);
         bool bIsOnlyKing(Color attacker_color);
+        
+        bool IsSimpleEndGame(Color for_color);
 
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
 
         int SEE(Color side, int sq);
+
+        const endgameTablePos GameBoard::to_egt();
 
         //int centipawn_score_of(ShumiChess::Piece p) const;
         // Total of 4000 centipawns for each side.

@@ -115,6 +115,7 @@ public:
                                             , int nPlys);
 
     bool look_for_king_moves() const;
+    int enemyKingSquare; 
 
 
     // 0 - opening, 1- middle, 2- ending, 3 - ? extreme ending?

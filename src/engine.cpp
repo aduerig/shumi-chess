@@ -56,7 +56,7 @@ void Engine::reset_engine() {
     ///////////////////////////////////////////////////////////////////////
     //
     // You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. enter fen. FEN setup. Setup the FEN
-    //game_board = GameBoard("5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42");       // bad
+    //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
     //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
@@ -64,8 +64,8 @@ void Engine::reset_engine() {
 
     //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
     //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
-    //game_board = GameBoard("3qk3/2p1p3/8/8/1P6/2P5/5P2/3Q1K2 w KQkq - 0 1");
-    //game_board = GameBoard("");
+   // game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
+    //game_board = GamegBoard("");
 
     // // Or you can pick a random simple FEN. (maybe)
     // string stemp = game_board.random_kqk_fen(true);
@@ -156,8 +156,6 @@ vector<Move> Engine::get_legal_moves() {
             // Add this move to the list of legal moves.
             all_legal_moves.emplace_back(move);
         }
-
-        //pop();
 
     }
 
