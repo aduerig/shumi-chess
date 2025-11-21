@@ -3,6 +3,9 @@
 #include <math.h>
 #include <vector>
 
+#include <random>     // NEW
+#include <chrono>     // NEW
+
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
@@ -28,6 +31,13 @@ namespace ShumiChess {
     #include "gameboardSetup.hpp"
 
     {
+
+
+        using namespace std::chrono;
+        auto now = high_resolution_clock::now().time_since_epoch();
+        auto us  = duration_cast<microseconds>(now).count();
+        rng.seed(static_cast<unsigned>(us));
+
 
         // !TODO doesn't belong here i don't think. I think it does.
         ShumiChess::initialize_zobrist();
@@ -134,6 +144,13 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
 
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
+
+
+
+    using namespace std::chrono;
+    auto now = high_resolution_clock::now().time_since_epoch();
+    auto us  = duration_cast<microseconds>(now).count();
+    rng.seed(static_cast<unsigned>(us));
 
     ShumiChess::initialize_zobrist();
     set_zobrist();
@@ -1523,6 +1540,20 @@ static bool queen_attacks(const std::string &q, const std::string &k)
     return (f1 == f2) || (r1 == r2) || (std::abs(f1 - f2) == std::abs(r1 - r2));
 }
 
+// Returns an int in [0, RAND_MAX], just like std::rand().
+int GameBoard::rand_new()
+{
+    using namespace std;
+    using namespace std::chrono;
+
+    // Distribution that mimics rand(): 0 .. RAND_MAX
+    static uniform_int_distribution<int> dist(0, RAND_MAX);
+
+    // Generate and return a random int
+    return dist(rng);
+}
+
+// Black gets lone king. White gets queen or rook with his king.
 ////////////////////////////////////////////////////////////////
 std::string GameBoard::random_kqk_fen(bool doQueen)
 {
@@ -1542,7 +1573,7 @@ std::string GameBoard::random_kqk_fen(bool doQueen)
 
 retry_all:
     // 1) pick white king
-    std::string wk = squares[std::rand() % 64];
+    std::string wk = squares[rand_new() % 64];
 
     // 2) pick black king not adjacent
     std::vector<std::string> bk_choices;
@@ -1555,7 +1586,7 @@ retry_all:
     }
     if (bk_choices.empty())
         goto retry_all;
-    std::string bk = bk_choices[std::rand() % bk_choices.size()];
+    std::string bk = bk_choices[rand_new() % bk_choices.size()];
 
     // helper: rook attacks (orthogonal only)
     auto rook_attacks = [](const std::string &r, const std::string &k) -> bool
@@ -1584,7 +1615,7 @@ retry_all:
     }
     if (bX_choices.empty())
         goto retry_all;
-    std::string bX = bX_choices[std::rand() % bX_choices.size()];
+    std::string bX = bX_choices[rand_new() % bX_choices.size()];
 
     // 4) build board [row 8 → row 1], still standard FEN layout
     char board[8][8] = { 0 };

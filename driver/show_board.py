@@ -501,8 +501,8 @@ current_turn_text.draw(win)
 
 # current game text (plus small W/B/D counters to the left)
 bottom_wins_text = Text(Point(square_size * 6.75, square_size * 9.4), f'Bot {curr_game_bottom}')
-top_wins_text = Text(Point(square_size * 7.25, square_size * 9.4), f'Top {curr_game_top}')
-draw_wins_text  = Text(Point(square_size * 7.75, square_size * 9.4), f'Drw {curr_game_draw}')
+top_wins_text = Text(Point(square_size * 7.45, square_size * 9.4), f'Top {curr_game_top}')
+draw_wins_text  = Text(Point(square_size * 8.15, square_size * 9.4), f'Drw {curr_game_draw}')
 
 # set the win/loss/draw counters
 for t in (bottom_wins_text, top_wins_text, draw_wins_text):

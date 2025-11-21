@@ -79,6 +79,7 @@ class Engine {
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
         vector<Move> get_legal_moves();
+        vector<Move> get_legal_moves(Color);
         void get_psuedo_legal_moves(Color, vector<Move>& all_psuedo_legal_moves);
 
         // Storage buffers (they live here to avoid extra allocation during the game)        

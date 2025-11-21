@@ -34,7 +34,6 @@ Engine::Engine() {
 
     //cout << "Created new engine" << us << endl;
 
-
 }
 
 //TODO what is right way to handle popping past default state here?
@@ -68,8 +67,14 @@ void Engine::reset_engine() {
     //game_board = GamegBoard("");
 
     // // Or you can pick a random simple FEN. (maybe)
-    // string stemp = game_board.random_kqk_fen(true);
-    // game_board = GameBoard(stemp);
+    // vector<Move> v;
+    // do {  
+    //     string stemp = game_board.random_kqk_fen(false);
+    //     game_board = GameBoard(stemp);
+
+    //     v = get_legal_moves(ShumiChess::WHITE);
+    // } while (v.size() == 0);
+
 
     game_board = GameBoard();
 
@@ -132,14 +137,24 @@ void Engine::reset_engine(const string& fen) {
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
 // https://stackoverflow.com/questions/15704565/efficient-way-to-return-a-stdvector-in-c
+
+
+
 vector<Move> Engine::get_legal_moves() {
+    Color color = game_board.turn;
+    return get_legal_moves(color);
+}
+
+vector<Move> Engine::get_legal_moves(Color color) {
+
+    //Color color = game_board.turn;
 
     // These are kept as class members, rather than local vriables, for speed reasons only.
     // No need for benchmarks, its plain faster.
     psuedo_legal_moves.clear(); 
     all_legal_moves.clear();
 
-    Color color = game_board.turn;
+
     //
     // Get "psuedo_legal" moves. Those that does not put the king in check, and do not 
     // cross the king over a "checked square".
@@ -157,6 +172,7 @@ vector<Move> Engine::get_legal_moves() {
             all_legal_moves.emplace_back(move);
         }
 
+    
     }
 
     return all_legal_moves;

@@ -41,15 +41,15 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * ~~Failure: Doesn't recognize three fold position repitition. (Stalemate works fine). Note that the "move_history" should allow us to get this. This is a problem in the engine. Wrong. uses the zobrist.~~ 
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. Its now 20, for testing only.
-  * Sloth: No Transposition table (TT) implemented. This is a problem in MinimaxAI. Comment: Wrong, its "slightly" implemented. Its used for repeat position ID, but not for move sorting. The current transposition table stores
-  only positions, and not moves also. 
+  * Sloth: No true Transposition table (TT) implemented. This is a problem in MinimaxAI. Comment: Wrong, its "slightly" implemented. Its used for repeat position ID, but not for move sorting. The current transposition table stores only positions, and not moves also. 
   * ~~Sloth: Zobrist is not maintained for castling or en passant.~~
   * ~~Sloth: Should use "Anytime behavior" of iterive deepinging, to make a "Wake up grampa" button. (use last levels of deepeinings results.) Related to the above "trap #2", as both of these situations should do this.  This is a problem in MinimaxAI.~~
-  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration, SEE). These changes do not rely on TT or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all.
-  * Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation? 
-  * Sloth: Should return immediatly when mate found.
+  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + History heuristics, aspiration, SEE). These changes do not rely on TT or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all, disabled now.
+  ~~* Sloth: Does not move immediatly if only one legal move. Only problem in fixing it, what is the evaluation? can you present a move to the user, with no evaluation? Zero evaluation?~~ 
+  ~~* Sloth: Should return immediatly when mate found.~~
   * Failure: Fifty move rule, and 3 time rep technically need a player to call it. Here the computer just calls it when it sees it. This is normal for chess engines and will never be fixed. 
   * Failure: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not postfix checks with a "+" either. The function is debug for human consumption only.
+  * Failure: Trading motivator in eval only looks at pieces, not pawns.
  
 
 ## todo

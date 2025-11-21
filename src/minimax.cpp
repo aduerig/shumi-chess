@@ -677,7 +677,7 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, long long elapsed_time,
         beta  =  HUGE_SCORE;
     }
 
-
+// the beast (root node of root nodes)
     bool bStillAspiring  = false;
     do {
 
@@ -890,6 +890,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
             break;   // Stop deepening, no more depths.
         }
 
+        // the beast
         ret_val = do_a_deepening(depth, elapsed_time, null_move);
 
         d_Return_score = get<0>(ret_val);
@@ -931,7 +932,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         elapsed_time = now_s - (long long)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
 
         // Endgame based ending of thinking
-        bThinkingOverByEnding = (engine.game_board.IsSimpleEndGame(engine.game_board.turn) && depth >= 3) ;
+        #define MAX_DEEPENING_SIMPLE_ENDGAME 3
+        bThinkingOverByEnding = (engine.game_board.IsSimpleEndGame(engine.game_board.turn) 
+                                    && depth >= MAX_DEEPENING_SIMPLE_ENDGAME) ;
 
         // time based ending of thinking
         bThinkingOverByTime = (diff_s > 0);

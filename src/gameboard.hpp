@@ -2,6 +2,7 @@
 
 #include <string>
 #include <iostream>
+#include <random>
 
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
@@ -213,6 +214,9 @@ class GameBoard {
         bool bIsOnlyKing(Color attacker_color);
         
         bool IsSimpleEndGame(Color for_color);
+
+        std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
+        int GameBoard::rand_new();
 
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);

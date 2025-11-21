@@ -13,7 +13,7 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
 
 
-    vector<Move> legal_moves = engine.get_legal_moves();
+    // Distribution that mimics rand(): 0 .. RAND_MAX
 
     GameState state = engine.game_over(legal_moves);
 
