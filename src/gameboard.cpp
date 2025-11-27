@@ -10,11 +10,19 @@
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
+
 #include "gameboard.hpp"
+
+
 #include "move_tables.hpp"
 #include "utility.hpp"
-
 #include "endgameTables.hpp"
+
+#undef NDEBUG
+
+#ifdef NDEBUG
+# error "NDEBUG gggggggggis somehow still defined here!"
+#endif
 
 using namespace std;
 
@@ -56,6 +64,7 @@ namespace ShumiChess {
 GameBoard::GameBoard(const std::string& fen_notation) {
     const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
     
+
     //cout << "\x1b[33mrestart from fen " << fen_notation << "\x1b[0m" << endl;
 
     // Make sure FEN components are valid
@@ -326,26 +335,48 @@ bool GameBoard::are_bit_boards_valid() const {
     return true; // no overlaps found
 }
 //
-// Two things (bools) about castling. 
-//    1. Can yu castle or not?  (do you have the priviledge)  
-//    2. Whether YOU have castled or not. The latter IS NOT stored in a FEN by the way. It has to be a bollean 
-//       maintained by the push/pop.
+// Delevers bonus points based on castling.
+//  Two things (bools) about castling. 
+//      1. Can you castle or not?  (do you have the priviledge)  
+//      2. Whether YOU have castled or not. The latter IS NOT stored in a FEN by the way. It has to be a bollean 
+//          maintained by the push/pop.
+//  Results (bonus points):
+//    2 castled
+//    1 
+//    can still 
+//     
 //
+
 int GameBoard::get_castle_status_for_color(Color color1) const {
-    bool b_can_castle;
-    bool b_has_castled;
+    int i_can_castle = 0;
+    bool b_has_castled = false;
+
     if (color1 == ShumiChess::WHITE) {
-        b_can_castle = (white_castle_rights != 0); 
+        i_can_castle += (white_castle_rights & king_side_castle)  ? 1 : 0;
+        i_can_castle += (white_castle_rights & queen_side_castle) ? 1 : 0;
+
         b_has_castled = bCastledWhite;
     } else {
-        b_can_castle = (black_castle_rights != 0); 
+        i_can_castle += (black_castle_rights & king_side_castle)  ? 1 : 0;
+        i_can_castle += (black_castle_rights & queen_side_castle) ? 1 : 0;
+
         b_has_castled = bCastledBlack;
     }
 
-    int icode = (int)(b_has_castled)*2.0 + (int)(b_can_castle);
-    return icode;
+    int icode = (b_has_castled ? 130 : 0) + i_can_castle * 35;
+
+    return icode;  // "centipawns"
 }
 
+bool GameBoard::bHasCastled(Color color1) {
+    bool b_has_castled = false;
+    if (color1 == ShumiChess::WHITE) {
+        b_has_castled = bCastledWhite;
+    } else {
+        b_has_castled = bCastledBlack;
+    }
+    return b_has_castled;
+}
 
 //
 // Returns centipawns. Always positive. 
@@ -403,14 +434,16 @@ int GameBoard::bits_in(ull bitboard) const {
 inline double lerp(double a, double b, double t) { return a + (b - a) * t; }
 
 //
-// connectiveness gets smaller closer to center. (0 at dead center, 1.0 on furthest corners)
-void GameBoard::king_castle_happiness(Color c, int& centerness) const {
+// int GameBoard::king_castle_happiness(Color c) const {
    
-    centerness = (double)(get_castle_status_for_color(c));
-    assert(centerness>=0);
+//     int centerness = get_castle_status_for_color(c);
+//     assert(centerness>=0);
 
-    return;
-}
+//     assert(0);
+
+
+//     return (centerness);      // centipawns
+// }
 
 int GameBoard::queen_still_home(Color color)
 {
@@ -732,6 +765,29 @@ int GameBoard::count_isolated_pawns(Color c) const {
     return total;
 }
 
+int GameBoard::count_doubled_pawns(Color c) const {
+    const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
+    if (!P) return 0;
+
+    int file_count[8] = {0};
+
+    ull tmp = P;        // dont mutate bitboards
+    while (tmp) {
+        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        int f = s % 8;                                    // 0..7
+        ++file_count[f];
+    }
+
+    int total = 0;
+    for (int f = 0; f < 8; ++f) {
+        int k = file_count[f];    // pawns on this file
+        if (k >= 2) {
+            // doubled (or tripled) file: count all pawns on it
+            total += k;
+        }
+    }
+    return total;
+}
 
 
 // Identifies if enemy king only, and friendy side has a lone queen or a lone rook

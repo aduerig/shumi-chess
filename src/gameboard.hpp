@@ -16,6 +16,11 @@
 namespace ShumiChess {
 // TODO think about copy and move constructors.
 // ? Will we ever want to copy?
+
+// NOTE: Use us constants everywhere.
+constexpr uint8_t king_side_castle  = 0b00000001;
+constexpr uint8_t queen_side_castle = 0b00000010;
+
 class GameBoard {
     public:
 
@@ -183,7 +188,7 @@ class GameBoard {
         int knights_attacking_square(Color c, int sq);
         int knights_attacking_center_squares(Color for_color);
 
-        void king_castle_happiness(Color c, int& centerness) const;
+        // int king_castle_happiness(Color c) const;
         // bool knights_centerness(Color c, double& centerness) const;
         // bool bishops_centerness(Color c, double& centerness) const;
 
@@ -197,6 +202,7 @@ class GameBoard {
         int rook_7th_rankness(Color c) const;
         int count_isolated_pawns(Color c) const;
         int count_passed_pawns(Color c);
+        int count_doubled_pawns(Color c) const;
 
         std::string random_kqk_fen(bool doQueen);
 
@@ -226,6 +232,7 @@ class GameBoard {
 
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
+        bool bHasCastled(Color color1);
 
         int SEE(Color side, int sq);
 

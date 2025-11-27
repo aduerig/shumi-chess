@@ -449,6 +449,7 @@ void Engine::pushMove(const Move& move) {
         }
     } else if (move.is_castle_move) {
 
+        // if pushing a castle turn castling status on in gameboard.
         if (move.color == ShumiChess::Color::WHITE) {
            game_board.bCastledWhite = true;  // I dont care which side i castled.
         } else {
@@ -647,7 +648,8 @@ void Engine::popMove() {
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, square_to);
         }
     } else if (move.is_castle_move) {
-        
+       
+        // if popping a castle turn castling status off in gameboard.
         if (move.color == ShumiChess::Color::WHITE) {
            game_board.bCastledWhite = false;  // I dont care which side i castled.
         } else {
@@ -754,7 +756,8 @@ void Engine::pushMoveFast(const Move& move)
     }
 
     if (move.is_castle_move) {
-        // assert(0 && "pushMoveFast(): castling should never appear in fast path");
+
+        // if pushing a castle turn castling status on in gameboard.
         if (move.color == ShumiChess::Color::WHITE) {
            game_board.bCastledWhite = true;  // I dont care which side i castled.
         } else {
@@ -846,6 +849,14 @@ void Engine::popMoveFast()
     }
 
     if (move.is_castle_move) {
+
+        // if popping a castle turn castling status off in gameboard.
+        if (move.color == ShumiChess::Color::WHITE) {
+           game_board.bCastledWhite = false;  // I dont care which side i castled.
+        } else {
+           game_board.bCastledBlack = false;  // I dont care which side i castled.
+        }
+
         //assert(0 && "popMoveFast(): castling should never appear in fast path");
         // get pointer to the rook? Which rook?
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);

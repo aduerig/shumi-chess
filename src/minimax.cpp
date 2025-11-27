@@ -131,7 +131,6 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
     engine.repetition_table.clear();
     transposition_table.clear();
     transposition_table.reserve(10000000);    // NOTE: What size here?
-    //unquiet_moves.reserve(MAX_MOVES);
     
     // add the current position
     uint64_t key_now = engine.game_board.zobrist_key;
@@ -383,7 +382,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
 
     int cp_score_position_temp = 0;
 
-    int iZeroToThree, iZeroToThirty;
+    int icp_temp, iZeroToThree, iZeroToThirty;
     int iZeroToFour, iZeroToEight;
 
     //if (engine.g_iMove <= 2) {
@@ -393,22 +392,28 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
         // cp_score_position_temp += iZeroToThirty*100;   // centipawns
      //}
 
-     
     // personalities
 
     // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
 
     pers_index = 0;
-    engine.game_board.king_castle_happiness(color, iZeroToThree);
-    assert (iZeroToThree>=0);
-    assert (iZeroToThree<=3);
-    cp_score_position_temp += iZeroToThree*90;   // centipawns
+    //icp_temp = engine.game_board.king_castle_happiness(color);
+    icp_temp = engine.game_board.get_castle_status_for_color(color);
+
+    //cp_score_position_temp += iZeroToThree*90;   // centipawns
+    cp_score_position_temp += icp_temp;     // centipawns
 
     // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
     pers_index = 1;
     int isolanis =  engine.game_board.count_isolated_pawns(color);
     assert (isolanis>=0);
-    cp_score_position_temp -= (isolanis*isolanis)*8;   // centipawns
+    cp_score_position_temp -= isolanis*8;   // centipawns
+
+    // Note each pair of doubled pawns is 2.
+    pers_index = 1;
+    int doublees =  engine.game_board.count_doubled_pawns(color);
+    assert (doublees>=0);
+    cp_score_position_temp -= doublees*4;   // centipawns
 
     // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
     // Note: this is gross
@@ -450,7 +455,7 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     int cp_score_position_temp = 0;
 
 
-    // bishop pair bonus (very small)
+    // bishop pair bonus
     int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(color));
     if (bishops >= 2) cp_score_position_temp += 10;   // in centipawns
 
@@ -463,7 +468,7 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     cp_score_position_temp += iZeroToThirty*03;   // centipawns
    
 
-    // Add code to encourage rook connections
+    // Add code to encourage rook connections (files or ranks)
     int connectiveness;     // One if rooks connected. 0 if not.
     bool isOK = engine.game_board.rook_connectiveness(color, connectiveness);
     assert (connectiveness>=0);
@@ -524,9 +529,6 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
     // if (mat_avg < 1000) {    // 10 pawns of material or less BRING KING TOWARDS CENTER
     //     //   cout << "fub";
     // }
-
-
-    //int i_castle_status = engine.game_board.get_castle_status_for_color(color);
 
     if ( nPhase > 0 ) { 
         // Add code to attack squares near the king
@@ -980,11 +982,8 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     bool isOK;
     double centerness;
 
-    // isolanis =  engine.game_board.count_isolated_pawns(Color::WHITE);
-    //isOK = engine.game_board.knights_centerness(Color::WHITE, centerness);  // Gets smaller closer to center.
-    
-    //centerness = engine.game_board.get_material_for_color(Color::WHITE) * 0.01;
-    //centerness = (double)engine.game_board.get_castle_status_for_color(Color::WHITE);
+
+
 
     //int itemp = engine.game_board.knights_attacking_square(Color::WHITE, square_d4);
     //int itemp = engine.game_board.knights_attacking_center_squares(Color::WHITE);
@@ -1013,13 +1012,16 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //dTemp = engine.game_board.distance_between_squares(engine.game_board.square_d3, engine.game_board.square_d3);
     //utemp = engine.repetition_table.size();
     //dTemp = engine.game_board.bIsOnlyKing(Color::WHITE);
-    utemp = sizeof(Move);
+
+    //itemp = engine.game_board.get_castle_status_for_color(Color::WHITE);
+    itemp = engine.game_board.count_doubled_pawns(Color::WHITE);
+    //utemp = sizeof(Move);
     
     //itemp = engine.game_board.king_edge_weight(Color::WHITE);
     //sisOK = engine.game_board.IsSimpleEndGame(Color::WHITE);
-    utemp = Piece::NONE;
+    //utemp = Piece::NONE;
     //utemp = phaseOfGame(nPlys); 
-    cout << "wht " << utemp << endl;
+    cout << "wht " << itemp << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
     //itemp = engine.bishops_attacking_center_squares(Color::BLACK);
@@ -1040,8 +1042,11 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //dTemp = engine.game_board.bIsOnlyKing(Color::BLACK);
     //dTemp = engine.game_board.king_near_other_king(Color::BLACK);
     //itemp = engine.game_board.king_edge_weight(Color::BLACK);
-    isOK = engine.game_board.IsSimpleEndGame(Color::BLACK);
-    cout << "blk " << isOK << endl;
+    //isOK = engine.game_board.IsSimpleEndGame(Color::BLACK);
+
+    //itemp = engine.game_board.get_castle_status_for_color(Color::BLACK);
+    itemp = engine.game_board.count_doubled_pawns(Color::BLACK);
+    cout << "blk " << itemp << endl;
 
     utemp = transposition_table.size();
     cout << "TT sizes: " << utemp << " hits= " << NhitsTT << endl;
@@ -1049,13 +1054,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
  
     //engine.debug_print_repetition_table();
 
-    // isolanis =  engine.game_board.count_isolated_pawns(Color::BLACK);
-    // // engine.game_board.king_castle_happiness(Color::WHITE, centerness);  // Gets smaller closer to center.
-    // cout << "blk " << isolanis << endl;
-
-    // double connectiveness;
-    // bool bStatus;
-    // bStatus  = engine.game_board.rook_connectiveness(Color::WHITE, connectiveness);
  
 
 

@@ -125,7 +125,11 @@ public:
     inline int phaseOfGame(int nPlys) {
 
         int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
-        int nPhase = ( (i_castle_status >= 2) && ((engine.g_iMove+nPlys)>17) ); 
+
+
+        bool bHasCastled = engine.game_board.bHasCastled(engine.game_board.turn);
+
+        int nPhase = (bHasCastled && ((engine.g_iMove+nPlys)>17) ); 
         return nPhase;
     }
 

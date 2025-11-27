@@ -169,6 +169,11 @@ k7/q7/8/8/8/8/7K/8 w - - 0 1
 8/q7/5K2/8/8/8/8/6k1 w - - 0 1
 8/8/8/4K3/8/8/8/3k3q w - - 0 1
 
+
+// Terrible engame for shumi he plays like idiot. No sense of opposition 
+8/8/8/2kb4/8/7p/1K5P/2K5 b - - 27 76
+
+
 Move chain histories:
 =====================
 
