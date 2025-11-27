@@ -732,11 +732,46 @@ int GameBoard::count_isolated_pawns(Color c) const {
     return total;
 }
 
+
+
+// Identifies if enemy king only, and friendy side has a lone queen or a lone rook
+bool GameBoard::IsSimpleEndGame(Color for_color)
+{
+    bool bReturn = false;
+    ull enemyPieces, myPieces, myQueens, myRooks;
+
+    if (for_color == ShumiChess:: WHITE) {
+        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
+        myPieces = (white_knights | white_bishops | white_pawns);
+        myQueens = white_queens;
+        myRooks = white_rooks;
+    } else {
+        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
+        myPieces = (black_knights | black_bishops | black_pawns);
+        myQueens = black_queens;
+        myRooks = black_rooks;
+    }
+
+    if ( ( enemyPieces == 0ULL) && (myPieces == 0ULL) ) {
+        int nQueens = bits_in(myQueens);
+        int nRooks = bits_in(myRooks);
+        if ( (nQueens == 1) && (nRooks == 0) ) {         
+           bReturn = true;
+        }
+        else if ( (nQueens == 0) && (nRooks == 1) ) {         
+           bReturn = true;
+        }
+    }
+
+    return bReturn;
+}
+
+
 //
 // Returns smaller values near the center. 0 for the inner ring (center) 3 for outer ring (edge squares)
 int GameBoard::king_edge_weight(Color color)
 {
-    ull kbb = (color == Color::WHITE) ? white_king : black_king;
+    ull kbb = (color == Color::WHITE) ? white_king : black_king;   // dont mutate the bitboards
     assert(kbb != 0ULL);
     int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63
 
@@ -753,21 +788,24 @@ int GameBoard::king_edge_weight(Color color)
 }
 
 
-// Passed pawns bonus in centipawns:
-//  - 10 cp on 3rd/4th rank (from that side's perspective)
-//  - 20 cp on 5th/6th rank
+// Passed pawns bonus in centipawns: (from that side's perspective)
+//  - 10 cp on 2cnd/3rd rank
+//  - 15 cp on 4th
+//  - 20 cp on 5th
+//  - 25 co on 6th rank
 //  - 30 cp on 7th rank
 int GameBoard::count_passed_pawns(Color c) {
 
     const ull my_pawns  = get_pieces(c, Piece::PAWN);
     const ull his_pawns = get_pieces(utility::representation::opposite_color(c), Piece::PAWN);
-    if (!my_pawns) return 0;
+    if (!my_pawns) return 0;   // I have no pawns
 
     int bonus = 0;
-    ull tmp = my_pawns;
+    ull tmp = my_pawns;     // Dont mutate the bitboards
 
     while (tmp) {
         const int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+
         const int f = s % 8;            // h1=0 → 0=H ... 7=A
         const int r = s / 8;            // rank index 0..7 (White's view)
 
@@ -792,14 +830,17 @@ int GameBoard::count_passed_pawns(Color c) {
         // Passed?
         const ull blockers = his_pawns & files_mask & ranks_ahead;
         if (blockers == 0ULL) {
-            // advancement from that side's perspective (2..6 typical for passers)
+
+            // advancement from "c"" side's perspective (2..6 typical for passers)
             const int adv = (c == Color::WHITE) ? r : (7 - r);
+            assert(adv != 0);  // pawns can never be on 1st rank!
+            assert(adv != 7);  // pawns can never be on 8th rank (they promote)
             if      (adv == 6) bonus += 30;      // 7th rank
-            else if (adv >= 4) bonus += 20;      // 5th/6th
+            else if (adv == 5) bonus += 25;      // 6th
+            else if (adv == 4) bonus += 20;      // 5th
             else if (adv == 3) bonus += 15;      // 4th
-            
             else if (adv >= 1) bonus += 10;      // 2cnd/3rd
-            // (adv < 2 → no bonus; tweak if you want a small 2nd-rank bonus)
+           
         }
     }
     return bonus;
@@ -1022,6 +1063,7 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 }
 
 
+// Enemy has king only
 bool GameBoard::bIsOnlyKing(Color attacker_color) {
     ull enemyPieces;
     if (attacker_color == ShumiChess:: BLACK) {
@@ -1032,8 +1074,17 @@ bool GameBoard::bIsOnlyKing(Color attacker_color) {
     return (enemyPieces == 0); // enemy has king only
 }
 
+// Enemy has king only
+bool GameBoard::bNoPawns() {
+    return ( (white_pawns | black_pawns) == 0);
+}
 
+bool GameBoard::is_king_highest_piece() {
+    if (white_queens || black_queens) return false;
+    if (white_rooks || black_rooks) return false;
+    return true;
 
+}
 
 // Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.
 double GameBoard::king_near_other_king(Color attacker_color) {
@@ -1106,46 +1157,13 @@ int GameBoard::king_sq_of(Color color) {
 }
 
 
-// Identifies if enemy king only, and friendy side has a lone queen or a lone rook
-bool GameBoard::IsSimpleEndGame(Color for_color)
-{
-    bool bReturn = false;
-    ull enemyPieces, myPieces, myQueens, myRooks;
-
-    if (for_color == ShumiChess:: WHITE) {
-        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
-        myPieces = (white_knights | white_bishops | white_pawns);
-        myQueens = white_queens;
-        myRooks = white_rooks;
-    } else {
-        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
-        myPieces = (black_knights | black_bishops | black_pawns);
-        myQueens = black_queens;
-        myRooks = black_rooks;
-    }
-
-    if ( ( enemyPieces == 0ULL) && (myPieces == 0ULL) ) {
-        int nQueens = bits_in(myQueens);
-        int nRooks = bits_in(myRooks);
-        if ( (nQueens == 1) && (nRooks == 0) ) {         
-           bReturn = true;
-        }
-        else if ( (nQueens == 0) && (nRooks == 1) ) {         
-           bReturn = true;
-        }
-    }
-
-    return bReturn;
-}
-
-// Returns 0 to 7, if lone king of enemy
+// Returns 1 to 8. 1 if close to the passed sq. 8 if as far as possible from the passed sq.
 double GameBoard::king_near_sq(Color attacker_color, ull sq) {
     double dBonus = 0;
 
     int enemyKingSq;
     int frienKingSq;
     ull enemyPieces;
-    //ull tmpEnemy;
     ull tmpFrien;
 
     //if ( (white_king == 0ULL) || (black_king == 0ULL) ) return 0;
@@ -1155,16 +1173,13 @@ double GameBoard::king_near_sq(Color attacker_color, ull sq) {
 
     if (attacker_color == ShumiChess:: WHITE) {
         enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
-        //tmpEnemy = black_king;         // don't mutate the bitboards
         tmpFrien = white_king;         // don't mutate the bitboards
-
     } else {
         enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
-        //tmpEnemy = white_king;         // don't mutate the bitboards
         tmpFrien = black_king;         // don't mutate the bitboards
     }
 
-    enemyKingSq = sq;  //utility::bit::lsb_and_pop_to_square(tmpEnemy); // 0..63
+    enemyKingSq = sq;
     assert(enemyKingSq <= 63);
     frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
     assert(frienKingSq >= 0);
@@ -1175,11 +1190,11 @@ double GameBoard::king_near_sq(Color attacker_color, ull sq) {
 
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
-        assert (dFakeDist >= 2.0);      // Kings cant touch
+        assert (dFakeDist >= 1.0);
         assert (dFakeDist <= 8.0);      // Board is only so big
 
         // Bonus higher if friendly king closer to enemy king
-        dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
+        dBonus = dFakeDist;
 
         // Bonus debugs
         //dBonus = (double)frienKingSq;               // enemy king is attracted to a8
@@ -1387,7 +1402,7 @@ int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq
     return bits_in(any_attackers);
 }
 
-
+// Attackers are NOT kings or pawns.
 int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
 {
     // enemy (the one whose king we are surrounding)
@@ -1401,13 +1416,46 @@ int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
     int total = 0;
 
     for (int i = 0; i < count; ++i) {
+
         int sq = king_near_squares[i];
         total += sliders_and_knights_attacking_square(attacker_color, sq);
+
+        total += pawns_attacking_square(attacker_color,  sq);
+
     }
 
     return total;
 }
 
+// Counts sliders+knights attacking the enemy's passed pawns.
+// passed_white_pwns / passed_black_pwns are bitboards of all passed pawns.
+int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
+                                               ull passed_white_pwns,
+                                               ull passed_black_pwns)
+{
+    // enemy (the one who owns the passed pawns we are attacking)
+    Color defender_color =
+        (attacker_color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+    // pick the enemy passed pawns bitboard
+    ull enemy_passed =
+        (defender_color == Color::WHITE) ? passed_white_pwns
+                                         : passed_black_pwns;
+
+    if (!enemy_passed) return 0;
+
+    int total = 0;
+    ull tmp = enemy_passed;   // dont mutate input
+
+    while (tmp) {
+
+        int sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
+        total += sliders_and_knights_attacking_square(attacker_color, sq);
+
+    }
+
+    return total;
+}
 
 
 bool GameBoard::is_king_in_check_new(Color color)
@@ -1554,15 +1602,13 @@ int GameBoard::rand_new()
 }
 
 // Black gets lone king. White gets queen or rook with his king.
-////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
 std::string GameBoard::random_kqk_fen(bool doQueen)
 {
     // make all 64 squares in h1=0 order: h1,g1,...,a1, h2,...,a8
     std::vector<std::string> squares;
-    for (int r = 1; r <= 8; ++r)
-    {
-        for (int fi = 0; fi < 8; ++fi)
-        {
+    for (int r = 1; r <= 8; ++r) {
+        for (int fi = 0; fi < 8; ++fi) {
             char f = char('h' - fi);   // h,g,f,e,d,c,b,a
             std::string sq;
             sq += f;
@@ -1577,10 +1623,8 @@ retry_all:
 
     // 2) pick black king not adjacent
     std::vector<std::string> bk_choices;
-    for (const auto &sq : squares)
-    {
-        if (sq != wk && !kings_adjacent(wk, sq))
-        {
+    for (const auto &sq : squares) {
+        if (sq != wk && !kings_adjacent(wk, sq)) {
             bk_choices.push_back(sq);
         }
     }

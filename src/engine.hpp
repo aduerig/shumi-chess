@@ -224,7 +224,7 @@ class Engine {
         vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
         vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(
                                         const vector<ShumiChess::Move>& moves,      // Input
-                                        const Move& move_last,                      // input
+                                        //const Move& move_last,                      // input
                                         vector<ShumiChess::Move>& vReturn           // output
                                     );
 

@@ -204,6 +204,10 @@ class GameBoard {
         int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
         int attackers_on_enemy_king_near(Color attacker_color);
+        int attackers_on_enemy_passed_pawns(Color attacker_color,
+                                               ull passed_white_pwns,
+                                               ull passed_black_pswns);
+
         double distance_between_squares(int enemySq, int frienSq);
         int get_Chebyshev_distance(int x1, int y1, int x2, int y2);
         double get_board_distance(int x1, int y1, int x2, int y2);
@@ -212,8 +216,10 @@ class GameBoard {
         double king_near_sq(Color attacker_color, ull sq);    
         double king_near_other_king(Color attacker_color);
         bool bIsOnlyKing(Color attacker_color);
-        
+        bool bNoPawns();
+        bool is_king_highest_piece();
         bool IsSimpleEndGame(Color for_color);
+        
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int GameBoard::rand_new();

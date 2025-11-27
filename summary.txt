@@ -1,0 +1,52 @@
+
+
+1. Search Architecture
+Algorithm: recursive_negamax (Alpha-Beta).
+Pruning Strategy: "Pure" Alpha-Beta. You have explicitly disabled heuristic pruning techniques such as Late Move Reductions (LMR), Delta Pruning, and Null Move Pruning (implied).
+Search Window:
+
+Root: Fixed at [-infinity, +infinity].
+Aspiration Windows: Disabled.
+Constraint: You operate under the strict requirement that for a given Zobrist key and Depth, the search result should be deterministic.
+
+
+2. State Representation
+Board: Full Bitboard representation (verified by your debug output of wp, wn, bp, bn, etc.).
+Hashing: Zobrist Hashing.
+
+Scope: You assert the key uniquely encodes Piece positions, Side to move, Castling rights, and En-passant squares.
+Usage: The same key generation logic is used for both TT and TT2.
+
+
+3. Transposition Table (TT) Strategy
+Dual/Split Usage:
+
+TT: Likely used for evaluate_board() or similar static caching. You report this works "perfectly" and indefinitely.
+TT2: Used for the search/node caching. This is the component under test.
+
+
+Philosophy: You treat the TT not just as a search accelerator, but as a correctness oracle. You expect Store(Position) == Retrieve(Position) to hold true 100% of the time, provided the depth matches.
+4. The "Burp" Verification System (Debug Mode)
+Trigger: Compiled under #ifdef DOING_TT_NORM_DEBUG.
+Workflow:
+
+Execute the search/calculation for the current node (cp_score_temp).
+Probe TT2 using the current Zobrist key.
+Filter: Proceed only if an entry exists (foundPos) AND the stored depth matches the current depth (foundDepth == depth).
+Verification: Compare foundScore (stored) vs cp_score_temp (just calculated).
+Success: Increment NhitsTT2 (counter of successful matches).
+Failure ("Burp"): If scores differ, print a massive state dump (Scores, Plys, Alpha/Beta, Bitboards, Repetition counts) and trigger an assertion/halt.
+
+
+Current Status:
+
+The system works for hundreds/thousands of nodes (NhitsTT2 increments).
+Intermittent failures occur where bitboards and keys match, but scores and moves differ.
+You have ruled out simple repetition (via foundRepCount) and Zobrist state collisions.
+
+
+I STRONGLY DISAGREEE WITH THIS CONCLUSION
+The Core Conflict The tension in your debugging process lies here:
+You have proven that Static Evaluation (TT) is state-independent (Board -> Score).
+You are enforcing that Search Evaluation (TT2) must also be state-independent (Board + Depth -> Score).However, Search Evaluation is inherently Path Dependent due to the rules of chess (3-fold repetition and 50-move rule). While you store foundRepCount, if the path to the current node differs from the path when the TT entry was stored, the is_repetition() check inside the recursive_negamax 
+sub-tree can yield different results (Draw vs No Draw), changing the score even if the root board is identical.

@@ -50,6 +50,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Failure: Fifty move rule, and 3 time rep technically need a player to call it. Here the computer just calls it when it sees it. This is normal for chess engines and will never be fixed. 
   * Failure: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Does not postfix checks with a "+" either. The function is debug for human consumption only.
   * Failure: Trading motivator in eval only looks at pieces, not pawns.
+  * Failure: see to put rooks on passed pawn files. or maybe all pieces to put attack on passed pawns.
  
 
 ## todo

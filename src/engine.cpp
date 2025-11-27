@@ -1626,7 +1626,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
 //
 vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
                 const vector<ShumiChess::Move>& moves,       // input
-                const Move& move_last,                       // input
+                //const Move& move_last,                       // input
                 vector<ShumiChess::Move>& vReturn            // output
             )
 {
@@ -1634,9 +1634,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
     // recapture bias: if a capture lands on opponent's last-to square, try it earlier
     const bool have_last = !move_history.empty();
     const ull  last_to   = have_last ? move_history.top().to : 0ULL;
-    // debug only
-    // const ull  last_to2  = move_last.to;
-    // assert(last_to==last_to2);
+
 
     for (const ShumiChess::Move& mv : moves) {
         if (is_unquiet_move(mv)) {

@@ -61,6 +61,9 @@ public:
     // Zobrist
     unordered_map<uint64_t, std::string> seen_zobrist;
 
+    int NhitsTT = 0;
+    int NhitsTT2 = 0;
+    
     // Transition table (TT)
     struct TTEntry {
         int score_cp;

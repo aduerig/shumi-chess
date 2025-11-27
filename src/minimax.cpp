@@ -30,82 +30,7 @@ using namespace utility::bit;
 #include <atomic>
 static std::atomic<int> g_live_ply{0};   // value the callback prints
 
-
-static const uint64_t g_eval_salt[64] =
-{
-    0x8f3a2c9b1d07e4f1ULL,
-    0x4b7d91e2c3056a8fULL,
-    0xd2c4e9b8713f0c57ULL,
-    0x61ae58f3b29cd04bULL,
-    0xa17c3e54d9280fabULL,
-    0x3c9461bfe0275d92ULL,
-    0xf5812a9c43de70c1ULL,
-    0x09db7e36ac5418efULL,
-
-    0xbe324f80d197c263ULL,
-    0x7250c3ad9e8641b4ULL,
-    0xc9f60812b4735e0dULL,
-    0x14ae9dbf26c8f593ULL,
-    0x5e73c0a4891d3b76ULL,
-    0x8074d32e6fab9051ULL,
-    0x2bf1a697cde40838ULL,
-    0x9365e1c40b7a2dffULL,
-
-    0x1f06bca83e5d9472ULL,
-    0xe4c2d19f7a306b8dULL,
-    0x59ad8304cfe21931ULL,
-    0xb3f4892d0147c8eaULL,
-    0x6ad75c91b0e43f27ULL,
-    0x07c1ea5389d2f46cULL,
-    0xd8b930fe2146a5b3ULL,
-    0x4e3f75a0129bdc6fULL,
-
-    0xacf1d84765be9032ULL,
-    0x327e19c4fab0859dULL,
-    0x90d4a6b173e25f48ULL,
-    0xfb2a5e0c4d9317e5ULL,
-    0x684c3ab5e01f2c9aULL,
-    0x21b7d0f98653ae14ULL,
-    0xcd0f42a7b85973e0ULL,
-    0x73e9185c2b0467d9ULL,
-
-    0x0d962fe4c1b78a53ULL,
-    0xa8c573902e4df1bcULL,
-    0x5c1be7adf93420e7ULL,
-    0xe9f48036b5c27d10ULL,
-    0x468bd3fa912e6c2bULL,
-    0x19e75a0c7bf4d895ULL,
-    0xb7d2c58104ae39f2ULL,
-    0x82349f6dbac5106eULL,
-
-    0x3fa8d2145e7093c1ULL,
-    0x96b5e03847cf2ad8ULL,
-    0xde07c9b2f18a6543ULL,
-    0x2a5c1e90b7f3d8feULL,
-    0x7b9e40d6c2058134ULL,
-    0xc4f6183a9bed72a9ULL,
-    0x10a3f2c58e74d0b6ULL,
-    0x6f58ac9e31c9e547ULL,
-
-    0xf2c7b1840d9a3e6bULL,
-    0x8b0e5d23fa4168c2ULL,
-    0x35d9a7f0c2841bd5ULL,
-    0xaa72e59316bf40e8ULL,
-    0x413ef8c27b5096adULL,
-    0xdc85b09e2fa17350ULL,
-    0x27b6c4f1903d2e89ULL,
-    0x94e1da3685c74fb2ULL,
-
-    0x5af49c01d38b627cULL,
-    0xe16c3b7a4f25d9a3ULL,
-    0x62d8f4079be15c8fULL,
-    0x0b93a2de714f30d6ULL,
-    0xb9c0e58a2687f4e1ULL,
-    0x7842d3f51ac09b5aULL,
-    0xced1a9065384e72fULL,
-    0x13f7bc4890de3acdULL
-};
-
+#include "salt.h"
 
 
 
@@ -141,16 +66,24 @@ static const uint64_t g_eval_salt[64] =
 // Speedups?
 //#define FAST_EVALUATIONS
 //#define DELTA_PRUNING
-//#define DOING_TRANSPOSITION_TABLE
-//#define DOING_TRANSPOSITION_TABLE2
-//#define DOING_TRANSPOSITION_TABLE_DEBUG
+
+// Debug only TT2
 #define UNQUIET_SORT
+
+// #define DOING_TT_EVAL
+// #define DOING_TT_EVAL2
+// #define DOING_TT_EVAL_DEBUG
+
+//  #define DOING_TT_NORM
+//  #define DOING_TT_NORM_DEBUG
+
+
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumu deepeing, AND 
 // on first move. This simple diversity opens up hundreds of new lines for study and play.
-#define RANDOMIZING_EQUAL_MOVES         // THIS IS REQUIRED TO BE DEFINED 
-#define RANDOMIZING_EQUAL_MOVES_DELTA 0.05
-
+// #define RANDOMIZING_EQUAL_MOVES         // THIS IS REQUIRED TO BE DEFINED 
+// #define RANDOMIZING_EQUAL_MOVES_DELTA 0.05
+// #define RANDOM_FLIP_COIN
 
 #ifdef IS_CALLBACK_THREAD
     #include <thread>
@@ -413,6 +346,7 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
 
     }
 
+    //
     // Both position and material are now signed properly to be positive for the "for_color" side.
     // "cp_score_material_all" has been adjusted to be both colors added in. So 
     // if the for_color is up a pawn, this will be 1."
@@ -477,6 +411,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color) {
     cp_score_position_temp -= (isolanis*isolanis)*8;   // centipawns
 
     // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
+    // Note: this is gross
     pers_index = 2;
     iZeroToThirty = engine.game_board.bishop_pawn_pattern(color);
     assert (iZeroToThirty>=0);
@@ -605,7 +540,7 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
         //     if (color == ShumiChess::WHITE) assert(0);   // exploratory
 
         // Rewards king near other king
-        // Returns 2 to 10,. Zero if in opposition, 10 if in opposite corners.
+        // Returns 2 to 10,. 2 if in opposition, 10 if in opposite corners.
         double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..7
         assert(dkk>=2);
         if (dkk > 10) {
@@ -931,7 +866,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         diff_s = now_s - end_s;
         elapsed_time = now_s - (long long)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
 
-        // Endgame based ending of thinking
+        // Endgame based ending of thinking (done to avoid overthinking engames)
         #define MAX_DEEPENING_SIMPLE_ENDGAME 3
         bThinkingOverByEnding = (engine.game_board.IsSimpleEndGame(engine.game_board.turn) 
                                     && depth >= MAX_DEEPENING_SIMPLE_ENDGAME) ;
@@ -1108,7 +1043,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     isOK = engine.game_board.IsSimpleEndGame(Color::BLACK);
     cout << "blk " << isOK << endl;
 
-    cout << endl;
+    utemp = transposition_table.size();
+    cout << "TT sizes: " << utemp << " hits= " << NhitsTT << endl;
+
  
     //engine.debug_print_repetition_table();
 
@@ -1232,7 +1169,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
         int level = (top_deepening - depth);
         assert(level >= 0);
-        assert(nPlys >= level);     // NOTE: we should use nPlys here, simpler.
+        //assert(nPlys >= level);
 
         double d_level = static_cast<double>(level);
 
@@ -1287,7 +1224,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         bool have_tt_eval = false;
 
         // memoization
-        #ifdef DOING_TRANSPOSITION_TABLE
+        #ifdef DOING_TT_EVAL
 
 
             // Salt the entry
@@ -1309,11 +1246,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         //
         if (have_tt_eval) {
             TT_ntrys++;
-            #ifdef DOING_TRANSPOSITION_TABLE_DEBUG
+            #ifdef DOING_TT_EVAL_DEBUG
                 cp_score_best = evaluate_board(engine.game_board.turn, nPhase, bFast, b_is_Quiet);
                 if (cp_from_tt != cp_score_best) {
                     printf ("wrg %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
                     assert(0);
+                } else {
+                    NhitsTT++;
             }
             #endif
             cp_score_best = cp_from_tt;
@@ -1327,7 +1266,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         d_best_score = engine.convert_from_CP(cp_score_best);
         
         // memoization
-        #ifdef DOING_TRANSPOSITION_TABLE
+        #ifdef DOING_TT_EVAL
             if (!bFast) {
 
                 // Salt the entry
@@ -1355,7 +1294,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
             // Obtain moves to use in the limited search.
             unquiet_moves.reserve(MAX_MOVES);
-            engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, move_last, unquiet_moves);
+            engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, unquiet_moves);
 
             // If quiet (not in check & no tactics), just return stand-pat
             if (unquiet_moves.empty()) {
@@ -1486,6 +1425,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // --- end Delta pruning
             #endif
     
+
+
+
             assert(m.piece_type != Piece::NONE);
             engine.pushMove(m);
                
@@ -1608,7 +1550,15 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             delta_score = 0.0;     // personalities
 
             double d_difference_in_score = std::fabs(d_score_value - d_best_score);
-            if (d_difference_in_score <= (delta_score + VERY_SMALL_SCORE)) {
+
+
+            #ifdef RANDOM_FLIP_COIN
+                bool bUseMe = d_difference_in_score <= (delta_score + VERY_SMALL_SCORE);
+            #else
+                bool bUseMe = false;
+            #endif
+
+            if (bUseMe) {
                 // tie (within delta): flip a coin.
 
                 b_use_this_move = engine.flip_a_coin();
@@ -1684,9 +1634,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     #endif
 
-
-    //final_result = std::make_tuple(d_best_score, the_best_move);
-    //return final_result;
     return {d_best_score, the_best_move};
 }
 
@@ -1976,7 +1923,7 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
         int  cp_from_tt   = 0;
         bool have_tt_eval = false;
 
-        #ifdef DOING_TRANSPOSITION_TABLE2
+        #ifdef DOING_TT_EVAL2
             // Salt the entry
             unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
 
@@ -1995,7 +1942,7 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
         //
         if (have_tt_eval) {
             TT_ntrys1++;
-            #ifdef DOING_TRANSPOSITION_TABLE_DEBUG
+            #ifdef DOING_TT_EVAL_DEBUG
                 cp_score_best = evaluate_board(engine.game_board.turn, nPhase, bFast, b_is_Quiet);
                 if (cp_from_tt != cp_score_best) {
                     printf ("wrg1 %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
@@ -2013,7 +1960,7 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
 
         double d_score = engine.convert_from_CP(cp_score_best);
     
-        #ifdef DOING_TRANSPOSITION_TABLE2
+        #ifdef DOING_TT_EVAL2
             if (!bFast) {
                 // Salt the entry
                 unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
