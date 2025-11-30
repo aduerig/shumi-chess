@@ -36,6 +36,8 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 #define _MAX_MOVE_PLUS_SCORE_SIZE (_MAX_ALGEBRIAC_SIZE+32)        // Move text plus a score
 
 
+
+
 namespace ShumiChess {
 class Engine {
     public:
@@ -225,6 +227,7 @@ class Engine {
         vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(
                                         const vector<ShumiChess::Move>& moves,      // Input
                                         //const Move& move_last,                      // input
+                                        int qPlys,
                                         vector<ShumiChess::Move>& vReturn           // output
                                     );
 
@@ -279,6 +282,7 @@ class Engine {
                                             , bool b_right_Pad
                                             , FILE* fp);
 
+        void debug_SEE_for_all_captures(FILE* fp);
 
     };
 } // end namespace ShumiChess

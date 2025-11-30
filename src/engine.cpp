@@ -1638,6 +1638,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
 vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
                 const vector<ShumiChess::Move>& moves,       // input
                 //const Move& move_last,                       // input
+                int qPlys,
                 vector<ShumiChess::Move>& vReturn            // output
             )
 {
@@ -1650,6 +1651,14 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
     for (const ShumiChess::Move& mv : moves) {
         if (is_unquiet_move(mv)) {
             // its either a capture or a promotion (or both)
+
+            // Very late in analysis! So discard negaive SEE captures.
+            int testValue = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+            if (qPlys > MAX_QPLY2) {
+                if (testValue < -100) {     // centipawns
+                    continue;
+                }
+            }
 
             // If it's a capture, insert in descending MVV-LVA order
             if (mv.capture != ShumiChess::Piece::NONE) {
@@ -1766,6 +1775,8 @@ int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
 
 
 // Tabs over based on ply. Pass in nPly=-2 for no tabs
+// Prints the preCharacter, then the move, then the postCharacter. 
+// If b_right_pad is on, Will align, padding with trailing blanks.
 void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn, int nPly
                                             , char preCharacter
                                             , char postCharacter
@@ -1803,6 +1814,70 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
     int ferr = fflush(fp);
     assert(ferr == 0);
 }
+
+
+#undef NDEBUG
+
+
+
+// Debug helper: dump SEE for all capture moves in the current position.
+void Engine::debug_SEE_for_all_captures(FILE* fp)
+{
+    // All legal moves for the current side to move
+    std::vector<Move> moves = get_legal_moves();
+
+    fprintf(fp, "ddebug_SEE_for_all_captures: %ld\n", (int)moves.size());
+
+    for (const Move& mv : moves)
+    {
+        // Convert move to SAN using your existing helper
+        std::string san;
+        san.reserve(_MAX_ALGEBRIAC_SIZE);
+        bitboards_to_algebraic(
+            mv.color,
+            mv,
+            GameState::INPROGRESS,
+            false,          // isCheck (we don't care here)
+            false,          // bPadTrailing
+            san
+        );
+
+        // Only look at captures
+        if (mv.capture == Piece::NONE)
+            continue;
+
+        fprintf(fp, "\n%s  %llu  %llu \n", san.c_str(), mv.to, mv.from);
+
+        // SEE for this *specific* capture from the mover's point of view
+        int see_value = game_board.SEE_for_capture(mv.color, mv, fp);
+        //assert(see_value>=0);
+
+        // Flag clearly losing captures
+        if (see_value < 0)
+        {
+            int n = fprintf(
+                fp,
+                "*** NEG SEE ***  %s   SEE=%d\n",
+                san.c_str(),
+                see_value
+            );
+            if (n < 0) assert(0);
+        }
+        else
+        {
+            int n = fprintf(
+                fp,
+                "                %s   SEE=%d\n",
+                san.c_str(),
+                see_value
+            );
+            if (n < 0) assert(0);
+        }
+    }
+
+    fflush(fp);
+}
+
 
 
 

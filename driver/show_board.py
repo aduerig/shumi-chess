@@ -189,9 +189,9 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
                 max_deepening = args.depth if args.depth is not None else 7
 
             # debug print
-            print("\nmillsecs=    ", milliseconds)
-            print("max_deepening= ", max_deepening)
-            print("random= ", args.rand)      # -r
+            #print("\nmillsecs=    ", milliseconds)
+            #print("max_deepening= ", max_deepening)
+            #print("random= ", args.rand)      # -r
             if side == 0:
                 time_white = milliseconds
                 dpth_white = max_deepening

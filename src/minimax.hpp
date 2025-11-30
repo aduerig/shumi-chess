@@ -72,6 +72,41 @@ public:
     };
     std::unordered_map<uint64_t, TTEntry> transposition_table;
 
+
+    
+    // Transition table #2 (normal node-based TT)
+    enum class TTFlag : unsigned char {
+        EXACT,       // exact alpha–beta result
+        LOWER_BOUND, // fail-high node
+        UPPER_BOUND  // fail-low node
+    };
+
+    struct TTEntry2 {
+        int              score_cp;   // search score in centipawns
+        int              depth;      // depth this node was searched to
+        ShumiChess::Move best_move;  // move that produced score_cp
+        TTFlag           flag;       // EXACT / LOWER_BOUND / UPPER_BOUND
+        unsigned char    age;        // optional: for aging/replacement
+        int nPlysDebug;
+        bool drawDebug;  // 0 = not draw, 1 = draw
+        double dAlphaDebug;
+        double dBetaDebug;
+        bool bIsInCheckDebug;
+        int legalMovesSize;
+        int repCountDebug;
+        double dScoreDebug;
+
+        ull   bb_wp, bb_wn, bb_wb, bb_wr, bb_wq, bb_wk;
+        ull   bb_bp, bb_bn, bb_bb, bb_br, bb_bq, bb_bk;
+        
+    };
+
+    std::unordered_map<uint64_t, TTEntry2> transposition_table2;
+
+
+    ull passed_white_pawns = 0ULL; // im a bitmap
+    ull passed_black_pawns = 0ULL; // im a bitmap
+
     // Killer moves
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
@@ -81,8 +116,6 @@ public:
     int TT_ntrys = 0;
     int TT_ntrys1 = 0;
 
-    // Storage buffers (they live here to avoid extra allocation during the game)
-    //vector<ShumiChess::Move> unquiet_moves;
 
     int cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black);
 
@@ -98,7 +131,7 @@ public:
 
     void wakeup();
 
-    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys);
+    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool isRoot);
     tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time, const ShumiChess::Move& null_move);
 
     // Note: what am i?
@@ -111,25 +144,24 @@ public:
     ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
-                                            //, unordered_map<uint64_t, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
-                                            //, unordered_map<std::string, unordered_map<ShumiChess::Move, double, utility::representation::MoveHash>> &move_scores_table
-                                            //, MoveAndScoreList& move_and_scores_list
-                                            , const ShumiChess::Move& move_last
-                                            , int nPlys);
+                                            //, const ShumiChess::Move& move_last
+                                            , int nPlys
+                                            , int qPlys
+                                        );
 
     bool look_for_king_moves() const;
     int enemyKingSquare; 
 
 
     // 0 - opening, 1- middle, 2- ending, 3 - ? extreme ending?
-    inline int phaseOfGame(int nPlys) {
+    inline int phaseOfGame() {
 
         int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
 
 
         bool bHasCastled = engine.game_board.bHasCastled(engine.game_board.turn);
 
-        int nPhase = (bHasCastled && ((engine.g_iMove+nPlys)>17) ); 
+        int nPhase = (bHasCastled && ((engine.g_iMove)>17) ); 
         return nPhase;
     }
 
@@ -139,9 +171,13 @@ public:
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
 
+
+
+    int nFarts = 0;
+
     std::tuple<double, ShumiChess::Move> best_move_static(ShumiChess::Color for_color,
                                 const std::vector<ShumiChess::Move>& moves,
-                                int nPly,
+                                //int nPly,
                                 bool in_Check,
                                 int depth,
                                 bool isFast

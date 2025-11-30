@@ -12,6 +12,8 @@
 #include "endgameTables.hpp"
 
 
+#define MAX_QPLY  7        // because i said so
+#define MAX_QPLY2 4        // because i said so
 
 namespace ShumiChess {
 // TODO think about copy and move constructors.
@@ -234,7 +236,8 @@ class GameBoard {
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
         bool bHasCastled(Color color1);
 
-        int SEE(Color side, int sq);
+        // returns 0 if sq has no attackers. 
+        int SEE_for_capture(Color side, const Move &mv, FILE* fp);
 
         const endgameTablePos GameBoard::to_egt();
 
