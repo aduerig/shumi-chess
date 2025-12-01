@@ -7,9 +7,8 @@
 #include <ostream>
 #include <sstream>
 
-
 #undef NDEBUG
-//#define NDEBUG         // Define (uncomment) this to disable asserts
+// #define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
 #include <engine.hpp>
@@ -25,19 +24,19 @@ using namespace std::chrono;
 ////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv) {
-    
     // Create the chess engine
     Engine engine;
 
-    assert(0);   // NOTE: I dont get here?
+    // assert(0);   // NOTE: I dont get here?
     ////////////////////////////////////////////////////////////
     //  NO LONGER SUPPORTED !!!
     ////////////////////////////////////////////////////////////
-    
+
     // Create the AI player (minnimax)
     MinimaxAI minimax_ai(engine);
 
     double time_to_use = 2;
+    double time_to_use = 30;
     if (argc < 2) {
         cout << "You entered no argument for 'time_to_use', using default value of 1" << endl;
     } else {
@@ -45,7 +44,7 @@ int main(int argc, char** argv) {
         cout << "You entered time_to_use of: " << time_to_use << endl;
     }
     // minimax_ai.get_move(time_to_use);
-    minimax_ai.get_move_iterative_deepening(time_to_use, 0);
+    minimax_ai.get_move_iterative_deepening(time_to_use, 7);
     cout << "Got a move at time_to_use: " << time_to_use << endl;
     return 0;
 }
