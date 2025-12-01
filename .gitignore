@@ -1,3 +1,5 @@
+.pytest_cache
+*.pdb
 helpme.txt
 *.bak
 driver/games_log/

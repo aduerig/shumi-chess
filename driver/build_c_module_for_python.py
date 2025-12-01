@@ -10,7 +10,7 @@ if not any(arg.startswith("--plat-name") for arg in sys.argv):
 this_file_directory = pathlib.Path(__file__).parent.resolve()
 root_of_project_directory = this_file_directory.parent
 
-sys.path.insert(0, str(root_of_project_directory))
+sys.path.insert(0, str(root_of_project_directory.joinpath('scripts')))
 from helpers import *
 
 release_mode = 'release'
