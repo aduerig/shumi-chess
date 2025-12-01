@@ -24,15 +24,7 @@ using namespace std::chrono;
 ////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv) {
-    // Create the chess engine
     Engine engine;
-
-    // assert(0);   // NOTE: I dont get here?
-    ////////////////////////////////////////////////////////////
-    //  NO LONGER SUPPORTED !!!
-    ////////////////////////////////////////////////////////////
-
-    // Create the AI player (minnimax)
     MinimaxAI minimax_ai(engine);
 
     double time_to_use = 30;
