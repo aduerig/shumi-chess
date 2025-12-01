@@ -1,5 +1,0 @@
-graphics.py
-chess
-itertools
-os
-time

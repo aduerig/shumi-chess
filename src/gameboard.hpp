@@ -230,7 +230,7 @@ class GameBoard {
         
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
-        int GameBoard::rand_new();
+        int rand_new();
 
         int get_castle_status_for_color(Color color1) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
@@ -239,7 +239,7 @@ class GameBoard {
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);
 
-        const endgameTablePos GameBoard::to_egt();
+        const endgameTablePos to_egt();
 
         //int centipawn_score_of(ShumiChess::Piece p) const;
         // Total of 4000 centipawns for each side.
