@@ -14,17 +14,26 @@
 #define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
+//#define SHORT_SIZES
 
 typedef unsigned long long ull;
 
 namespace ShumiChess {
+
+#ifdef SHORT_SIZES
+enum Color : std::uint8_t {
+#else 
 enum Color {
-//enum Color : std::uint8_t {
+#endif
     WHITE = 0,
     BLACK,
 };
 
+#ifdef SHORT_SIZES
+enum Piece : std::uint8_t {
+#else
 enum Piece {     // Pieces must be in this order!
+#endif
     PAWN = 0,
     ROOK,
     KNIGHT,

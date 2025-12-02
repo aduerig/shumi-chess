@@ -145,7 +145,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 
     if (found_move.piece_type == 6)       // Piece::NONE is 6
     {
-        cout << "\x1b[1;31m" << " you are full of it " << "\x1b[0m" << endl;
+        cout << "\x1b[1;31m" << " You are full of it " << "\x1b[0m" << endl;
     } else {
         // Tell the engine the move
         python_engine.pushMove(found_move);
@@ -285,12 +285,7 @@ static struct PyModuleDef engine_communicatormodule = {
     engine_communicator_methods
 };
 
-// PyMODINIT_FUNC
-// PyInit_engine_communicator(void) {
-//     std::srand(static_cast<unsigned>(std::time(nullptr)));  // seed once
-//     printf("\x1b[94mHello Im communicator\x1b[0m\n");
-//     return PyModule_Create(&engine_communicatormodule);
-// }
+
 PyMODINIT_FUNC
 PyInit_engine_communicator(void) {
     using namespace std::chrono;

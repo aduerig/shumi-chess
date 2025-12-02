@@ -701,11 +701,9 @@ int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on 
 //
 // returns true only if "insufficient material
 // NOTE: known errors here: this logic declares the follwing positions drawn, when they are not:
-//      two bishops on one side
+//      two knights and pawn .vs. king. 
 //      
-//     
-bool GameBoard::insufficient_material_simple()
-{
+bool GameBoard::insufficient_material_simple() {
     // 1) No pawns anywhere
     ull pawns = white_pawns | black_pawns;
     if (pawns) return false;
@@ -715,18 +713,20 @@ bool GameBoard::insufficient_material_simple()
     if (majors) return false;
 
     // 3) Count total minor pieces (knights + bishops), both colors
-    auto popcount = [](ull x) {
-        int c = 0;
-        while (x) { x &= (x - 1); ++c; }   // Kernighan’s bit count
-        return c;
-    };
+    int n_knightsW = bits_in(white_knights);
+    int n_knightsB = bits_in(black_knights); 
 
-    int n_knights = popcount(white_knights | black_knights);
-    int n_bishops = popcount(white_bishops | black_bishops);
-    int minors = n_knights + n_bishops;
+    int n_bishopsW = bits_in(white_bishops);
+    int n_bishopsB = bits_in(black_bishops); 
 
-    // Your rule: if total minors ≤ 2, it's insufficient
-    return (minors <= 2);
+    int n_piecesW = n_knightsW + n_bishopsW;
+    int n_piecesB = n_knightsB + n_bishopsB;
+    if ( (n_piecesW <= 1) && (n_piecesB <= 1) ) return true;
+    if ( (n_piecesW <= 1) && (n_knightsB == 2) ) return true;
+    if ( (n_piecesB <= 1) && (n_knightsW == 2) ) return true;
+
+    return false;
+
 }
 
 
@@ -791,6 +791,7 @@ int GameBoard::count_doubled_pawns(Color c) const {
 
 
 // Identifies if enemy king only, and friendy side has a lone queen or a lone rook
+// Note: kill this function! Engine should have full range, even if in simple endgame.
 bool GameBoard::IsSimpleEndGame(Color for_color)
 {
     bool bReturn = false;
@@ -1119,15 +1120,20 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 }
 
 
-// Enemy has king only
+// Color has king only, or king with a single minor piece.
 bool GameBoard::bIsOnlyKing(Color attacker_color) {
-    ull enemyPieces;
+    ull enemyBigPieces;
+    ull enemySmallPieces;
     if (attacker_color == ShumiChess:: BLACK) {
-        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
+        enemyBigPieces = (black_pawns | black_rooks | black_queens);
+        enemySmallPieces = (black_knights | black_bishops);
     } else {
-        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);  
+        enemyBigPieces = (white_pawns | white_rooks | white_queens);  
+        enemySmallPieces = (white_knights | white_bishops);
     }
-    return (enemyPieces == 0); // enemy has king only
+    if (enemyBigPieces) return false;
+    if (bits_in(enemySmallPieces) > 1) return false;
+    return true;
 }
 
 // Enemy has king only
@@ -1141,6 +1147,8 @@ bool GameBoard::is_king_highest_piece() {
     return true;
 
 }
+
+#undef NDEBUG
 
 // Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.
 double GameBoard::king_near_other_king(Color attacker_color) {
@@ -1175,12 +1183,13 @@ double GameBoard::king_near_other_king(Color attacker_color) {
 
 
     // Bring friendly king near enemy king (reward small distances to other king)
-    if (enemyPieces == 0) { // enemy has king only
+    if (enemyPieces == 0) { // enemy has lone king only
 
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
         assert (dFakeDist >= 2.0);      // Kings cant touch
         assert (dFakeDist <= 8.0);      // Board is only so big
+        assert(0);
 
         // Bonus higher if friendly king closer to enemy king
         dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;

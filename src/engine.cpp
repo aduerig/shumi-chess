@@ -45,8 +45,6 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 void Engine::reset_engine() {
     //std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
     
-    //std::srand((unsigned)std::time(nullptr));
-
     // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
     psuedo_legal_moves.reserve(MAX_MOVES); 
@@ -66,7 +64,7 @@ void Engine::reset_engine() {
    // game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
     //game_board = GamegBoard("");
 
-    // // Or you can pick a random simple FEN. (maybe)
+    // Or you can pick a random simple FEN. (maybe)
     // vector<Move> v;
     // do {  
     //     string stemp = game_board.random_kqk_fen(false);
@@ -104,8 +102,6 @@ void Engine::reset_engine() {
 void Engine::reset_engine(const string& fen) {
 
     //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
-
-    //std::srand((unsigned)std::time(nullptr));
 
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -293,7 +289,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
             return GameState::WHITEWIN;     // Checkmate
         }
         else {
-            reason_for_draw = "stalemate";
+            //reason_for_draw = "stalemate";
             if (debugNow) cout<<"stalemate" << endl;
             return GameState::DRAW;    //  Draw by Stalemate
         }
@@ -301,8 +297,8 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
     else if (game_board.halfmove >= 50) {     // NOTE: debug only
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
-        reason_for_draw = "50 move rule";
-        if (debugNow) cout<<"50 move rule" << endl;
+        //reason_for_draw = "50 move rule";
+        //cout<<"50 move rule" << endl;
         return GameState::DRAW;           // draw by 50 move rule
 
     } else {
@@ -325,7 +321,7 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
                     // along the current line. That means we are in a repetition loop.
                     //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
                     //assert(0);
-                    reason_for_draw = "3 time rep";
+                    //reason_for_draw = "3 time rep";
                     if (debugNow) cout<<"3-time-rep"<< endl;
                     return GameState::DRAW;
                 }
@@ -1501,9 +1497,12 @@ void Engine::set_random_on_next_move() {
     //debugNow = !debugNow;
 
     // RANDOMIZING_EQUAL_MOVES
-    i_randomize_next_move = 2;
+    if (g_iMove==0) {
+        i_randomize_next_move = 1;
+        cout << "\033[1;31mrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
+    }
 
-    cout << "randomize_next_move: " << i_randomize_next_move << endl;
+
 
     //killTheKing(ShumiChess::BLACK);
 }

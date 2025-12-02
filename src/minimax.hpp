@@ -29,7 +29,7 @@ public:
     ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
 
-
+constexpr int MAXIMUM_DEEPENING = 50;
 constexpr int MAX_PLY = 32;     // Can never look ahead past this far.
 
 class MinimaxAI {
@@ -51,7 +51,7 @@ public:
     int cp_score_material_avg = 0;
     //int cp_score_material_NP_avg = 0;
 
-    // For PV at root
+    // For PV from previous iteration
     static constexpr int MAX_PLY_PV = 256;
     std::pair<ShumiChess::Move, double> prev_root_best_[MAX_PLY_PV + 2];
 
@@ -61,8 +61,9 @@ public:
     // Zobrist
     unordered_map<uint64_t, std::string> seen_zobrist;
 
-    int NhitsTT = 0;
-    int NhitsTT2 = 0;
+    ull NhitsTT = 0;
+    ull NhitsTT2 = 0;
+    ull nRandos = 0;
     
     // Transition table (TT)
     struct TTEntry {
@@ -122,7 +123,7 @@ public:
     int cp_score_positional_get_opening(ShumiChess::Color color); 
     int cp_score_positional_get_middle(ShumiChess::Color color); 
     int cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg,
-                                    bool onlyKingFriend, bool onlyKingEnemy
+                                    bool onlyKngFriend, bool onlyKngEnemy
                                 ); 
 
     int evaluate_board(ShumiChess::Color for_color, int nPhase, bool fast_style_eval, bool isQuietPosition
@@ -131,7 +132,7 @@ public:
 
     void wakeup();
 
-    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool isRoot);
+    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
     tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time, const ShumiChess::Move& null_move);
 
     // Note: what am i?
@@ -144,7 +145,7 @@ public:
     ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
-                                            //, const ShumiChess::Move& move_last
+                                            , const ShumiChess::Move& move_last
                                             , int nPlys
                                             , int qPlys
                                         );

@@ -120,8 +120,13 @@ r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4
 
 
 // test of trades (take rooks away as approriate to test)
-rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1
-3qk3/8/8/8/8/8/8/3Q1K1B w KQkq - 0 1
+rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1   // then move a3
+rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBN1 w KQkq - 0 1   // then move a3
+rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KB1R w KQkq - 0 1   // then move a3
+
+3qk3/8/8/8/8/8/8/3Q1K1R w KQkq - 0 1         // then move Ke1
+3qk2r/7p/8/8/8/8/8/3Q1K2 w KQkq - 0 1        // then move Ke1
+
 3qk3/2p1p3/8/8/1P6/2P5/5P2/3Q1K2 w KQkq - 0 1
 
 
@@ -136,11 +141,13 @@ Fen is now r2r3k/1R4pp/4R3/2p2p2/8/5P2/3B1P1P/6K1 w - - 3 33
 endgames
 ========
 
+// Simple 1 pawn endgame
+8/8/4k3/4P3/8/4K3/8/8 w KQk - 6 8
 
 // stalemate
-k7/2Q5/8/8/8/8/8/K7 w - - 1 5
+k7/2Q5/8/8/8/8/8/K7 w - - 1 5    // then move white king
 
-// Test that 2 bishops is not a draw (move as white, throw away rook)
+// Test of insufficent material, (move as white, throw away rook)
 r7/8/1k6/8/2R5/8/4K3/8 w - - 1 5
 b7/b7/1k6/8/2R5/8/4K3/8 w - - 1 5
 n7/b7/1k6/8/2R5/8/4K3/8 w - - 1 5
@@ -149,10 +156,12 @@ n7/8/1k6/8/2R5/8/4K3/8 w - - 1 5
 b7/8/1k6/8/2R5/8/4K3/8 w - - 1 5
 
 // Test of underpromotion (to knight)
-1r6/8/8/8/8/2k5/2p5/K7 w - - 0 1      then Kb8. Black should not promote to  queen
+1r6/8/8/8/8/2k5/2p5/K7 w - - 0 1      then Kb8. Black should not promote to queen
 
 // 50 move rule test
-8/8/1k6/8/2R5/8/4K3/8 w - - 41 52
+8/8/1k6/8/2R5/8/4K3/8 w - - 48 52
+8/8/1k6/8/2R5/8/4K3/8 w - - 58 52
+8/8/1k6/8/2R5/8/4K3/8 w - - 42 52
 
 // two rooks endgame (good start position)
 rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
@@ -163,12 +172,9 @@ rr3k2/pp3pp1/7p/2pPPK2/2P2P2/1P6/7P/R5R1 w - - 0 27
 // Classic K/k/P endgame
 4k3/8/8/8/8/8/4P3/4K3 w - - 0 1
 
-// Classic K/k/q endgame
-k7/q7/8/8/8/8/7K/8 w - - 0 1
-4k3/q7/5K2/8/8/8/8/8 w - - 0 1
-8/q7/5K2/8/8/8/8/6k1 w - - 0 1
-8/8/8/4K3/8/8/8/3k3q w - - 0 1
 
+// Two bishops .vs. lone king
+4kbb1/8/8/8/8/8/4K3/8 w - - 0 1
 
 // Terrible engame for shumi he plays like idiot. No sense of opposition 
 8/8/8/2kb4/8/7p/1K5P/2K5 b - - 27 76
@@ -182,20 +188,3 @@ Very long (10).
 
 
 
-
-
-
-
-
-ssssssssssssssss
-
-
-OK. Excellent. SO there are three separate calls to evaluate_board() that need "protected"
- (by this is means avoiding extra computations in "identical" positions. You are right in getting
-  into what identical means. I agree that for_color" must be in the indentification. As to the "fast_sytle"
-   you are right also. I do not waht to reuse these. So only protect calls, if they are not fast sytle (and
-    not store positions from fast evaluations). As to the "pLegal_moves", you are right. Unfortunitly and 
-    terribly we just added this for trding. I have an idea. The TT I have (not the regular one) uses one 
-    zobrist of the porition. Howew about I add a second zobrist having these things (the moves) . So storage,
-     and later identification would require both keys. 
-But I donet want to puloote the intial key with thus one.

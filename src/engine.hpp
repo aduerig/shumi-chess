@@ -254,7 +254,7 @@ class Engine {
         }
 
         // display crap
-        string reason_for_draw = "------------";
+        //string reason_for_draw = "------------";
         int get_draw_status();
         int material_centPawns = 0;
 
