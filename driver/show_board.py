@@ -482,7 +482,7 @@ for button_obj in button_holder:
 # set small field left of the turn label
 material_text = Text(Point(square_size * 0.30, square_size * 9), '1234')
 material_text.setFill(color_rgb(200, 200, 200))
-material_text.setSize(8)
+material_text.setSize(12)
 material_text.draw(win)
 
 score = 4321 

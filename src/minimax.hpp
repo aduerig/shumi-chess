@@ -64,6 +64,7 @@ public:
     ull NhitsTT = 0;
     ull NhitsTT2 = 0;
     ull nRandos = 0;
+
     
     // Transition table (TT)
     struct TTEntry {

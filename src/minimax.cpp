@@ -376,6 +376,7 @@ struct person {
     int constants[MAX_personalities];   
 };
 
+// NOte: what sort of nonsense is this? A family of evaluator's? Why not?
 person TheShumiFamily[20];
 
 person MrShumi = {100, -10, -30, +14, 20, 20, 20};  // All of these are integer and are applied in centipawns
@@ -988,14 +989,18 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
 
   
+
+
+    engine.d_bestScore_at_root = d_best_move_value_abs;
+
+    cout << "\n";
+
+    /////////////////////////////////////////////////////////////////////////////////
+    //
     // Debug only  playground   sandbox for testing evaluation functions
     // int isolanis;
     bool isOK;
     double centerness;
-
-
-
-    cout << "\n";
 
     //int itemp = engine.game_board.knights_attacking_square(Color::WHITE, square_d4);
     //int itemp = engine.game_board.knights_attacking_center_squares(Color::WHITE);
@@ -2016,19 +2021,23 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
         //         return keyA > keyB;
         //     });
 
+        // --- 2. Sort the unquiet prefix using MVV-LVA ---
         std::sort(moves.begin(), it_split,
             [&](const ShumiChess::Move& a, const ShumiChess::Move& b)
             {
-                int keyA = (a.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(a) : 0;
-                int keyB = (b.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(b) : 0;
+                // MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
+                // biggest victim with the smallest attackers.
+                // This establishs two top "tiers", Victim and -attacker.
+                int keyA = (a.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(a) << 10 : 0;
+                int keyB = (b.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(b) << 10 : 0;
 
                 // SEE: strongly penalize obviously losing captures
+                // This is the third tier", as in SEE is the third teir (centipawns)
                 if (a.capture != ShumiChess::Piece::NONE)
                 {
                     int seeA = engine.game_board.SEE_for_capture(engine.game_board.turn, a, nullptr);
                     if (seeA < 0) keyA += seeA * 100;   // negative pulls it way downc in the sort
                 }
-
                 if (b.capture != ShumiChess::Piece::NONE)
                 {
                     int seeB = engine.game_board.SEE_for_capture(engine.game_board.turn, b, nullptr);
@@ -2036,6 +2045,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 }
 
                 // If capture to the "from" square of last move, give it higher priority
+                // Fourth tier, so by default these are in centipawns ( as in 800 centipawns).
                 if (have_last && a.to == last_to) keyA += 800;
                 if (have_last && b.to == last_to) keyB += 800;
 

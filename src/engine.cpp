@@ -347,22 +347,33 @@ int Engine::get_draw_status() {
     //cout << "ouch" << endl;
 
     int material_centPawns = 0;
-    int pawns_only_centPawns = 0;
+    //int pawns_only_centPawns = 0;
 
     Color for_color = Color::WHITE;     // This makes the score absolute
 
-    for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
+    material_centPawns = (int)(d_bestScore_at_root*100.0);
+    return material_centPawns;
 
-        // Get the centipawn value for this color
-        int cp_score_mat_temp = game_board.get_material_for_color(color1, pawns_only_centPawns);
-        assert (cp_score_mat_temp>=0);    // no negative value pieces
-        if (color1 != for_color) cp_score_mat_temp *= -1;
 
-        material_centPawns += cp_score_mat_temp;
+    // for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
-    }
+    //     // Get the centipawn value for this color
+    //     int cp_score_mat_temp;
 
-    return (material_centPawns/100);
+    //     // cp_score_mat_temp = game_board.get_material_for_color(color1, pawns_only_centPawns);
+    //     // assert (cp_score_mat_temp>=0);    // no negative value pieces
+    //     // if (color1 != for_color) cp_score_mat_temp *= -1;
+
+
+
+
+
+
+    //     material_centPawns += cp_score_mat_temp;
+
+    // }
+
+    //return (material_centPawns/100);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1676,7 +1687,10 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
             // If it's a capture, insert in descending MVV-LVA order
             if (mv.capture != ShumiChess::Piece::NONE) {
 
-                int key = mvv_lva_key(mv);  // uses your static function (captures only)
+                // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
+                // biggest victim with the smallest attacker.
+                int key = mvv_lva_key(mv);  // (call me on captures only)
+
                 if (have_last && mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
  
                 auto it = vReturn.begin();

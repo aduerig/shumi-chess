@@ -230,12 +230,16 @@ class Engine {
                                         vector<ShumiChess::Move>& vReturn           // output
                                     );
 
-
-        //int mvv_lva_key(const ShumiChess::Move& m);
-        // MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
-        // biggest victim with the smallest attacker.
+        double d_bestScore_at_root = 0.0;
+        //
+        // Returns "an ordering key", for a capture, using MVV-LVA. "Top range" of key is the victim piece value,                          
+        // "Bottom range" is the negative of the attacker piece value. 
+        // Asserts it’s only used for captures.
+        // Based on the fact that we prefer taking the biggest victim with the smallest attacker.
         inline int mvv_lva_key(const Move& m) {
-            if (m.capture == ShumiChess::Piece::NONE) assert(0);    // non-captures (shouldn't be in quiescence list)
+
+            if (m.capture == ShumiChess::Piece::NONE) assert(0);    // non-captures
+
             int victim  = game_board.centipawn_score_of(m.capture);
             int attacker= game_board.centipawn_score_of(m.piece_type);
 

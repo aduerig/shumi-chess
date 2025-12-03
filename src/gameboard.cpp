@@ -1946,7 +1946,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         ull att_b0 = attackers_on_initial(Color::BLACK, occ);
 
         fprintf(fpDebug,
-                "SEE_for_capture debug (before forced capture): side=%s from_bb=0x%016llx to_bb=0x%016llx "
+                "debug (before forced capture): side=%s from_bb=0x%016llx to_bb=0x%016llx "
                 "from_sq=%d to_sq=%d victim=%d mover=%d\n",
                 (side == Color::WHITE ? "WHITE" : "BLACK"),
                 (unsigned long long)from_bb,
@@ -2251,7 +2251,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     if (fpDebug)
     {
         fprintf(fpDebug,
-                "SEE_for_capture final: move(from_sq=%d,to_sq=%d) side=%s SEE=%d\n",
+                "debug final: move(from_sq=%d,to_sq=%d) side=%s SEE=%d\n",
                 from_sq, to_sq,
                 (side == Color::WHITE ? "WHITE" : "BLACK"),
                 result);
