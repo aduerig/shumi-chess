@@ -3,31 +3,36 @@
 #include <math.h>
 #include <vector>
 
-#include <random>     // NEW
-#include <chrono>     // NEW
+#include <random>
+#include <chrono>  
 
+
+#include "gameboard.hpp"
+//
+// Note: Why this needs to be here is a complete mystery. If #include 
+// <assert.h> is done before, no asserts come out!
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 #undef NDEBUG
-
-#include "gameboard.hpp"
 
 
 #include "move_tables.hpp"
 #include "utility.hpp"
 #include "endgameTables.hpp"
 
-#undef NDEBUG
-
-#ifdef NDEBUG
-# error "NDEBUG gggggggggis somehow still defined here!"
-#endif
 
 using namespace std;
 
 
-
+// // Note: ABsolute mystery why this reenforces 
+// #ifdef NDEBUG
+// #  undef NDEBUG
+// #endif
+// #ifdef assert
+// #  undef assert
+// #endif
+// #include <assert.h>
 
 
 
@@ -57,6 +62,8 @@ namespace ShumiChess {
 
 
     }
+
+
 //
 // IN this constructer, the FEN is the input
 // Makes a "bitboard" Gameboard based on a FEN.
@@ -1088,7 +1095,7 @@ double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
 //    0 - same square  
 //    2 - if opposition (but not diagonal)
 //    
-//   14 - if full distance of the board
+//   10 - if full distance of the board
 //
 double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     int iFakeDist;
@@ -1113,8 +1120,8 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     
     //dfakeDist = (double)xFrien;     // debug only
 
-    assert (dfakeDist >= 0.0);
-    assert (dfakeDist <= 7.0);
+    assert (dfakeDist >=  0.0);
+    assert (dfakeDist <= 10.0);
    
     return dfakeDist;
 }
@@ -1147,8 +1154,6 @@ bool GameBoard::is_king_highest_piece() {
     return true;
 
 }
-
-#undef NDEBUG
 
 // Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.
 double GameBoard::king_near_other_king(Color attacker_color) {
@@ -1187,9 +1192,8 @@ double GameBoard::king_near_other_king(Color attacker_color) {
 
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
-        assert (dFakeDist >= 2.0);      // Kings cant touch
-        assert (dFakeDist <= 8.0);      // Board is only so big
-        assert(0);
+        assert (dFakeDist >=  2.0);      // Kings cant touch
+        assert (dFakeDist <= 10.0);      // Board is only so big
 
         // Bonus higher if friendly king closer to enemy king
         dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
@@ -1255,8 +1259,8 @@ double GameBoard::king_near_sq(Color attacker_color, ull sq) {
 
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
-        assert (dFakeDist >= 1.0);
-        assert (dFakeDist <= 8.0);      // Board is only so big
+        assert (dFakeDist >=  1.0);
+        assert (dFakeDist <= 10.0);      // Board is only so big
 
         // Bonus higher if friendly king closer to enemy king
         dBonus = dFakeDist;
@@ -1775,10 +1779,10 @@ retry_all:
 // Returns 0 if no piece on sq. IF piece on sq (not attacked) it returns the 
 //    value of the piece in centipawns. If piece on sq attacked, it "adds up" the attackers.  
 //    returns positive if the square is controller (attacked) by the passed side, negative otherwise.
-//    Returns in centipawns.
+//    Returns in centipawns. 
 //
+// Force asserts ON in this function, even in "release" builds.
 
-#undef NDEBUG
 
 int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 {
@@ -1786,15 +1790,8 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     ull from_bb = mv.from;
     ull to_bb   = mv.to;
 
-    if (from_bb == 0ULL || to_bb == 0ULL)
-    {
-        if (fpDebug)
-        {
-            fprintf(fpDebug,
-                    "SEE_for_capture: from_bb or to_bb is zero (from=0x%016llx to=0x%016llx)\n",
-                    (unsigned long long)from_bb,
-                    (unsigned long long)to_bb);
-        }
+    if (from_bb == 0ULL || to_bb == 0ULL) {   
+        assert(0);      // NULL bitboards, should never happen.
         return 0;
     }
 
@@ -1806,43 +1803,22 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
     // There must be an enemy victim on 'to_sq' for a normal capture
     Piece victim = get_piece_type_on_bitboard(to_bb);
-    if (victim == Piece::NONE)
-    {
-        if (fpDebug)
-        {
-            fprintf(fpDebug,
-                    "SEE_for_capture: no victim on to_sq=%d (from=0x%016llx to=0x%016llx)\n",
-                    to_sq,
-                    (unsigned long long)from_bb,
-                    (unsigned long long)to_bb);
-        }
+
+    if (victim == Piece::NONE) {
+        //assert(0);
         return 0;  // ignore en passant etc. for SEE for now
     }
 
     Color victim_color = get_color_on_bitboard(to_bb);
-    if (victim_color == side)
-    {
-        if (fpDebug)
-        {
-            fprintf(fpDebug,
-                    "SEE_for_capture: victim color == side (side=%s to_sq=%d)\n",
-                    (side == Color::WHITE ? "WHITE" : "BLACK"),
-                    to_sq);
-        }
+    if (victim_color == side) {   
+        assert(0);     // Caller should prevent this. Cant take your own piece!
         return 0;
     }
 
     // Identify the moving piece on 'from_sq'
     Piece mover = get_piece_type_on_bitboard(from_bb);
-    if (mover == Piece::NONE)
-    {
-        if (fpDebug)
-        {
-            fprintf(fpDebug,
-                    "SEE_for_capture: no mover on from_sq=%d (from_bb=0x%016llx)\n",
-                    from_sq,
-                    (unsigned long long)from_bb);
-        }
+    if (mover == Piece::NONE) {
+        assert(0);      // Caller should prevent this. Cant take nothing!
         return 0;
     }
 
@@ -1851,7 +1827,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         return centipawn_score_of(p);
     };
 
-    // Local mutable copies of all piece bitboards and occupancy
+    // Get local mutable copies of all piece bitboards and occupancy
     ull wp = white_pawns,   wn = white_knights, wb = white_bishops,
         wr = white_rooks,   wq = white_queens,  wk = white_king;
     ull bp = black_pawns,   bn = black_knights, bb = black_bishops,
@@ -1900,9 +1876,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         if (c == Color::WHITE)
         {
             origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
-        }
-        else
-        {
+        } else {
             origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
         }
         atk |= (origins & pawns);
@@ -1923,12 +1897,10 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         int c0 = to_sq % 8;
 
         const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
-        for (int k = 0; k < 4; ++k)
-        {
+        for (int k = 0; k < 4; ++k) {
             int r = r0;
             int f = c0;
-            while (true)
-            {
+            while (true) {
                 r += diag_dirs[k][0];
                 f += diag_dirs[k][1];
                 if (r < 0 || r > 7 || f < 0 || f > 7) break;
@@ -1946,12 +1918,10 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         // Rooks / Queens on ranks/files
         ull rooks = (c == Color::WHITE) ? wr : br;
         const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
-        for (int k = 0; k < 4; ++k)
-        {
+        for (int k = 0; k < 4; ++k) {
             int r = r0;
             int f = c0;
-            while (true)
-            {
+            while (true) {
                 r += ortho_dirs[k][0];
                 f += ortho_dirs[k][1];
                 if (r < 0 || r > 7 || f < 0 || f > 7) break;
@@ -2013,17 +1983,14 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     ull to_mask = (1ULL << to_sq);
 
     // Remove victim from its color's bitboard
-    if (victim_color == Color::WHITE)
-    {
+    if (victim_color == Color::WHITE) {
         if (victim == Piece::PAWN)   wp &= ~to_mask;
         else if (victim == Piece::KNIGHT) wn &= ~to_mask;
         else if (victim == Piece::BISHOP) wb &= ~to_mask;
         else if (victim == Piece::ROOK)   wr &= ~to_mask;
         else if (victim == Piece::QUEEN)  wq &= ~to_mask;
         else if (victim == Piece::KING)   wk &= ~to_mask;
-    }
-    else
-    {
+    } else {
         if (victim == Piece::PAWN)   bp &= ~to_mask;
         else if (victim == Piece::KNIGHT) bn &= ~to_mask;
         else if (victim == Piece::BISHOP) bb &= ~to_mask;
@@ -2033,17 +2000,14 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     }
 
     // Remove mover from its original square
-    if (side == Color::WHITE)
-    {
+    if (side == Color::WHITE) {
         if (mover == Piece::PAWN)   wp &= ~from_bb;
         else if (mover == Piece::KNIGHT) wn &= ~from_bb;
         else if (mover == Piece::BISHOP) wb &= ~from_bb;
         else if (mover == Piece::ROOK)   wr &= ~from_bb;
         else if (mover == Piece::QUEEN)  wq &= ~from_bb;
         else if (mover == Piece::KING)   wk &= ~from_bb;
-    }
-    else
-    {
+    } else {
         if (mover == Piece::PAWN)   bp &= ~from_bb;
         else if (mover == Piece::KNIGHT) bn &= ~from_bb;
         else if (mover == Piece::BISHOP) bb &= ~from_bb;
@@ -2053,17 +2017,14 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     }
 
     // Place mover on to_sq
-    if (side == Color::WHITE)
-    {
+    if (side == Color::WHITE) {
         if (mover == Piece::PAWN)   wp |= to_mask;
         else if (mover == Piece::KNIGHT) wn |= to_mask;
         else if (mover == Piece::BISHOP) wb |= to_mask;
         else if (mover == Piece::ROOK)   wr |= to_mask;
         else if (mover == Piece::QUEEN)  wq |= to_mask;
         else if (mover == Piece::KING)   wk |= to_mask;
-    }
-    else
-    {
+    } else {
         if (mover == Piece::PAWN)   bp |= to_mask;
         else if (mover == Piece::KNIGHT) bn |= to_mask;
         else if (mover == Piece::BISHOP) bb |= to_mask;
@@ -2104,12 +2065,10 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
             ull pawns = (c == Color::WHITE) ? wp_local : bp_local;
             ull origins;
-            if (c == Color::WHITE)
-            {
+            if (c == Color::WHITE) {
                 origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
             }
-            else
-            {
+            else {
                 origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
             }
             atk |= (origins & pawns);
@@ -2127,8 +2086,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             int c0 = to_sq % 8;
 
             const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
-            for (int k = 0; k < 4; ++k)
-            {
+            for (int k = 0; k < 4; ++k) {
                 int r = r0;
                 int f = c0;
                 while (true)
@@ -2138,8 +2096,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
                     if (r < 0 || r > 7 || f < 0 || f > 7) break;
                     int s2  = r * 8 + f;
                     ull bb2 = 1ULL << s2;
-                    if (occ_local & bb2)
-                    {
+                    if (occ_local & bb2) {
                         if ((bb2 & bishops) || (bb2 & queens))
                             atk |= bb2;
                         break;
@@ -2149,12 +2106,10 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
             ull rooks = (c == Color::WHITE) ? wr_local : br_local;
             const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
-            for (int k = 0; k < 4; ++k)
-            {
+            for (int k = 0; k < 4; ++k) {
                 int r = r0;
                 int f = c0;
-                while (true)
-                {
+                while (true) {
                     r += ortho_dirs[k][0];
                     f += ortho_dirs[k][1];
                     if (r < 0 || r > 7 || f < 0 || f > 7) break;
@@ -2179,8 +2134,8 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
         // Try every possible attacker
         ull tmp_atk = atk_side;
-        while (tmp_atk)
-        {
+        while (tmp_atk) {
+
             ull attacker_bb = tmp_atk & (~tmp_atk + 1ULL);  // extract LS1B
             tmp_atk &= ~attacker_bb;
 
@@ -2202,17 +2157,14 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             // Apply capture: remove target from its bitboard, move attacker to to_sq
             ull to_mask_local = (1ULL << to_sq);
 
-            if (target_color_local == Color::WHITE)
-            {
+            if (target_color_local == Color::WHITE) {
                 if (target_piece_local == Piece::PAWN)   wp2 &= ~to_mask_local;
                 else if (target_piece_local == Piece::KNIGHT) wn2 &= ~to_mask_local;
                 else if (target_piece_local == Piece::BISHOP) wb2 &= ~to_mask_local;
                 else if (target_piece_local == Piece::ROOK)   wr2 &= ~to_mask_local;
                 else if (target_piece_local == Piece::QUEEN)  wq2 &= ~to_mask_local;
                 else if (target_piece_local == Piece::KING)   wk2 &= ~to_mask_local;
-            }
-            else
-            {
+            } else {
                 if (target_piece_local == Piece::PAWN)   bp2 &= ~to_mask_local;
                 else if (target_piece_local == Piece::KNIGHT) bn2 &= ~to_mask_local;
                 else if (target_piece_local == Piece::BISHOP) bb2 &= ~to_mask_local;
@@ -2225,17 +2177,14 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             Piece attacker_piece = piece_type_of(stm, attacker_bb);
 
             // Remove attacker from its original square
-            if (stm == Color::WHITE)
-            {
+            if (stm == Color::WHITE) {
                 if (attacker_bb & wp2) wp2 &= ~attacker_bb;
                 else if (attacker_bb & wn2) wn2 &= ~attacker_bb;
                 else if (attacker_bb & wb2) wb2 &= ~attacker_bb;
                 else if (attacker_bb & wr2) wr2 &= ~attacker_bb;
                 else if (attacker_bb & wq2) wq2 &= ~attacker_bb;
                 else if (attacker_bb & wk2) wk2 &= ~attacker_bb;
-            }
-            else
-            {
+            } else {
                 if (attacker_bb & bp2) bp2 &= ~attacker_bb;
                 else if (attacker_bb & bn2) bn2 &= ~attacker_bb;
                 else if (attacker_bb & bb2) bb2 &= ~attacker_bb;
@@ -2245,17 +2194,14 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             }
 
             // Place attacker on to_sq
-            if (stm == Color::WHITE)
-            {
+            if (stm == Color::WHITE) {
                 if (attacker_piece == Piece::PAWN)   wp2 |= to_mask_local;
                 else if (attacker_piece == Piece::KNIGHT) wn2 |= to_mask_local;
                 else if (attacker_piece == Piece::BISHOP) wb2 |= to_mask_local;
                 else if (attacker_piece == Piece::ROOK)   wr2 |= to_mask_local;
                 else if (attacker_piece == Piece::QUEEN)  wq2 |= to_mask_local;
                 else if (attacker_piece == Piece::KING)   wk2 |= to_mask_local;
-            }
-            else
-            {
+            } else {
                 if (attacker_piece == Piece::PAWN)   bp2 |= to_mask_local;
                 else if (attacker_piece == Piece::KNIGHT) bn2 |= to_mask_local;
                 else if (attacker_piece == Piece::BISHOP) bb2 |= to_mask_local;
@@ -2283,15 +2229,11 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
                              bp2, bn2, bb2, br2, bq2, bk2,
                              new_balance);
 
-            if (stm == root_side)
-            {
-                if (child > best)
-                    best = child;
+            if (stm == root_side) {
+                if (child > best) best = child;
             }
-            else
-            {
-                if (child < best)
-                    best = child;
+            else {
+                if (child < best) best = child;
             }
         }
 

@@ -30,7 +30,7 @@ public:
 };
 
 constexpr int MAXIMUM_DEEPENING = 50;
-constexpr int MAX_PLY = 32;     // Can never look ahead past this far.
+constexpr int MAX_PLY = 49;     // Can never look ahead past this far.
 
 class MinimaxAI {
 public:

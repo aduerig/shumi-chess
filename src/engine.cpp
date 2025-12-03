@@ -13,6 +13,12 @@
 //#define NO_CASTLING
 
 //#define _DEBUGGING_TO_FILE
+
+#ifdef _DEBUGGING_TO_FILE
+    extern FILE *fpDebug;
+#endif
+
+
 bool debugNow = false;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1651,10 +1657,18 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
         if (is_unquiet_move(mv)) {
             // its either a capture or a promotion (or both)
 
-            // Very late in analysis! So discard negaive SEE captures.
+            // Very late in analysis! So discard negative SEE captures.
             int testValue = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
             if (qPlys > MAX_QPLY2) {
                 if (testValue < -100) {     // centipawns
+                    #ifdef _DEBUGGING_TO_FILE 
+                        fprintf(fpDebug,"\nSEE ELIM: ");
+                        
+                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                        
+                        print_move_history_to_file(fpDebug);
+                        fputc('\n', fpDebug);
+                    #endif
                     continue;
                 }
             }
@@ -1716,7 +1730,7 @@ void Engine::move_into_string(ShumiChess::Move m) {
 // Uses: nPly = -2, isInCheck = false, bFormated = false
 void Engine::print_move_history_to_file(FILE* fp) {
     bool bFlipColor = false;
-    int ierr = fputs("\n\nhistory:\n", fp);
+    int ierr = fputs("\nhistory: ", fp);
     assert (ierr!=EOF);
 
     // copy stack so we don't mutate Engine's history
@@ -1813,10 +1827,6 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
     int ferr = fflush(fp);
     assert(ferr == 0);
 }
-
-
-#undef NDEBUG
-
 
 
 // Debug helper: dump SEE for all capture moves in the current position.

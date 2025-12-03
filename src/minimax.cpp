@@ -43,7 +43,7 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
-// Debug
+// Debug   THESE SHOULD BE OFF only for debugging
 //#define _DEBUGGING_PUSH_POP
 
 //#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
@@ -84,7 +84,7 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 #define RANDOMIZING_EQUAL_MOVES
 #define RANDOMIZING_EQUAL_MOVES_DELTA 0.02
 //#define RANDOM_FLIP_COIN
-#define DEBUGGING_RANDOM
+#define DEBUGGING_RANDOM_DELTA
 
 #ifdef IS_CALLBACK_THREAD
     #include <thread>
@@ -1285,7 +1285,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         // If a draw by 50/3/insuffieceint time, then we can get in loop here, where each deepeining is only 
         // 1 msec so it runs off to many levels. 
         // 
-        cout << gameboard_to_string(engine.game_board) << endl;
+        //cout << gameboard_to_string(engine.game_board) << endl;
         assert(0);
     }
 
@@ -1967,14 +1967,13 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
     assert(p_moves_to_loop_over);
     assert(depth>0);
 
-
     auto& moves = *p_moves_to_loop_over;
     if (moves.empty()) return;
 
     const bool have_last = !engine.move_history.empty();
     const ull  last_to   = have_last ? engine.move_history.top().to : 0ULL;
 
-    // --- 1. PV from the previous iteration (previous deepening’s best). 
+    //       1. PV from the previous iteration (previous deepening’s best). 
     if (is_top_of_deepening) 
     {
         assert(top_deepening > 0);
@@ -1989,11 +1988,10 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
             }
         }
     }
-    //
     //      2. unquiet moves (captures/promotions, sorted by MVV-LVA).  Captures more importent than promotions.
     //         If capture to the "from" square of last move, give it higher priority.
     //      3. killer moves (quiet, bubbled to the front of the "cutoff" quiet slice)
-    //      4. remaining quiet moves
+    //      4. remaining quiet moves.
     //
     #ifdef UNQUIET_SORT
         // --- 1. Partition unquiet moves (captures/promotions) to the front ---
@@ -2004,18 +2002,51 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 return engine.is_unquiet_move(mv);
             });
 
+        // OLD code (no SEE_for_capture())
         // --- 2. Sort the unquiet prefix using MVV-LVA ---
+        // std::sort(moves.begin(), it_split,
+        //     [&](const ShumiChess::Move& a, const ShumiChess::Move& b)
+        //     {
+        //         int keyA = (a.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(a) : 0;
+        //         int keyB = (b.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(b) : 0;
+                
+        //         // If capture to the "from" square of last move, give it higher priority
+        //         if (have_last && a.to == last_to) keyA += 800;
+        //         if (have_last && b.to == last_to) keyB += 800;
+        //         return keyA > keyB;
+        //     });
+
         std::sort(moves.begin(), it_split,
             [&](const ShumiChess::Move& a, const ShumiChess::Move& b)
             {
                 int keyA = (a.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(a) : 0;
                 int keyB = (b.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(b) : 0;
-                
+
+                // SEE: strongly penalize obviously losing captures
+                if (a.capture != ShumiChess::Piece::NONE)
+                {
+                    int seeA = engine.game_board.SEE_for_capture(engine.game_board.turn, a, nullptr);
+                    if (seeA < 0) keyA += seeA * 100;   // negative pulls it way downc in the sort
+                }
+
+                if (b.capture != ShumiChess::Piece::NONE)
+                {
+                    int seeB = engine.game_board.SEE_for_capture(engine.game_board.turn, b, nullptr);
+                    if (seeB < 0) keyB += seeB * 100;
+                }
+
                 // If capture to the "from" square of last move, give it higher priority
                 if (have_last && a.to == last_to) keyA += 800;
                 if (have_last && b.to == last_to) keyB += 800;
+
                 return keyA > keyB;
             });
+
+
+
+
+
+
 
         // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
         auto quiet_begin = it_split;
@@ -2314,7 +2345,7 @@ Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>
     #ifdef _DEBUGGING_TO_FILE
         fprintf(fpDebug, "\n-===========================================\n");
 
-        #ifdef DEBUGGING_RANDOM
+        #ifdef DEBUGGING_RANDOM_DELTA
             engine.print_moves_and_scores_to_file(MovsFromRoot, false, fpDebug);
         #endif
 

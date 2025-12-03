@@ -4,10 +4,6 @@
 #include <iostream>
 #include <random>
 
-#undef NDEBUG
-//#define NDEBUG         // Define (uncomment) this to disable asserts
-#include <assert.h>
-
 #include "globals.hpp"
 #include "endgameTables.hpp"
 
