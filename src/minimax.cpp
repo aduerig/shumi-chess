@@ -33,15 +33,11 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 #include "salt.h"
 
 
-
-
-// #if defined(NDEBUG)
-// #  pragma message("NDEBUG is STILL defined in minimax.cpp")
-// #endif
-
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Debug   THESE SHOULD BE OFF only for debugging
 //#define _DEBUGGING_PUSH_POP
@@ -53,39 +49,52 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 // extern bool bMoreDebug;
 // extern string debugMove;
 
+//#define DEBUGGING_RANDOM_DELTA
+
 #ifdef _DEBUGGING_TO_FILE
     FILE *fpDebug = NULL;
     char szDebug[256];
     bool bSuppressOutput = false;
 #endif
 
-#define IS_CALLBACK_THREAD              // Uncomment to enable the callback to show "nPly", real time.
 
 ///////////////////////////////////////////////////////////////////////////
+
+// TT
+// #define DOING_TT_EVAL
+// #define DOING_TT_EVAL2
+// #define DOING_TT_EVAL_DEBUG
+
+// TT2
+// #define DOING_TT_NORM
+// #define DOING_TT_NORM_DEBUG
+// #define BURP2_THRESHOLD_CP 10
+
+/////////////////////////////////////////////////////////////////////////
 
 // Speedups?
 //#define FAST_EVALUATIONS
 //#define DELTA_PRUNING
 #define UNQUIET_SORT
-// Debug only TT2
 
-
-// #define DOING_TT_EVAL
-// #define DOING_TT_EVAL2
-//#define DOING_TT_EVAL_DEBUG
-
-//  #define DOING_TT_NORM
-//  #define DOING_TT_NORM_DEBUG
-
-
+// It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
+// later analysis is profited by these killer moves.
+#ifndef DOING_TT_NORM_DEBUG
+    #define KILLER_MOVES
+#endif
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening, AND 
-// on first move. This simple diversity opens up hundreds of new lines for study and play.
+// on first move.
 #define RANDOMIZING_EQUAL_MOVES
 #define RANDOMIZING_EQUAL_MOVES_DELTA 0.02
-//#define RANDOM_FLIP_COIN
-#define DEBUGGING_RANDOM_DELTA
 
+// Obviously TT2 debug breaks repeatibility if we flip coins in the anaylisis. So what. 
+#ifndef DOING_TT_NORM_DEBUG
+    //#define RANDOM_FLIP_COIN
+#endif
+
+
+#define IS_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef IS_CALLBACK_THREAD
     #include <thread>
     #include <cstdio>
@@ -748,6 +757,19 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //     engine.i_randomize_next_move = 1;
     // }
 
+    if (engine.g_iMove == 0) {
+        //
+        // Here we do stuff to be done at the beginning of a game. Terrible way to have to detect 
+        // this, but there it is.
+        //
+        transposition_table2.clear();
+
+        NhitsTT = 0;
+        NhitsTT2 = 0;
+        nRandos = 0;
+
+    }   
+
     engine.g_iMove++;                      // Increment real moves in whole game
     cout << "\x1b[94m\n\nMove: " << engine.g_iMove << "\x1b[0m";
 
@@ -761,6 +783,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     uint64_t zobrist_key_start = engine.game_board.zobrist_key;
     //cout << "zobrist_key at the root: " << zobrist_key_start << endl;
 
+    // Cleared on every move
     transposition_table.clear();
    
 
@@ -1144,7 +1167,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     double alpha_in = alpha;   //  save original alpha window lower bound
 
 
-    #ifdef DOING_TT_NORM
+    #ifdef DOING_TT_NORM        // debug for comparing recalled to actual
         bool   foundPos = false;
         int    foundScore = 0;
         Move   foundMove = {};
@@ -1820,7 +1843,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
             int cp_score_temp = engine.convert_to_CP(d_best_score);
 
-            // Rolling size cap for TT2
+            // Rolling size cap for TT2  (2 million?)
             static const std::size_t MAX_TT2_SIZE = 2000000;
             if (transposition_table2.size() >= MAX_TT2_SIZE) {
                 auto it = transposition_table2.begin();
@@ -1829,21 +1852,23 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 }
             }
 
-            // --- DEBUG check (no insertion here)
+            // --- DEBUG check
             #ifdef DOING_TT_NORM_DEBUG
             {
                 //if (foundPos) {
                 if (foundPos && (foundDepth == depth) ) {            
 
-                    if (foundScore != cp_score_temp)
-                    {
-                        bool isFailure = false;
+                    //if (foundScore != cp_score_temp) {
+                    if ( fabs(foundScore - cp_score_temp) > BURP2_THRESHOLD_CP) {
+                        bool isFailure = true;
                         int repNow = 0;
                         auto itRepNow = engine.repetition_table.find(key);
                         if (itRepNow != engine.repetition_table.end()) repNow = itRepNow->second;
 
                         cout << endl << NhitsTT2 << " " << " burp2 " 
                             << foundScore  << " = "  << cp_score_temp << "    " 
+                            << foundRawScore << " = " << d_best_score << "    "
+
                             << foundnPlys << " = "  << nPlys  << "  "
                             << foundDraw << " = " << (state == GameState::DRAW) << "   "
                             << foundAlpha << " = " << alpha_in  << "    "
@@ -1851,7 +1876,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                             << foundIsCheck << " = " << in_check << "    "
                             << foundLegalMoveSize << " = " << legalMovesSize << "    "
                             << foundRepCount << " = " << repNow << "    "
-                            << foundRawScore << " = " << d_best_score << "    "
 
                             << std::hex
                             << " wp " << found_wp << " = " << engine.game_board.white_pawns   << "\n"
@@ -1869,8 +1893,23 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                             << std::dec
                         << "  depth-> " << depth << " mv->" << engine.g_iMove << endl;
                         
-                        // cout << gameboard_to_string(engine.game_board) << endl;
-                        isFailure = true;
+                        string out = gameboard_to_string2(engine.game_board);
+                        cout << out << endl;
+
+                        //isFailure = true;
+                        char* pszTemp = ""; 
+                        (engine.game_board.turn == ShumiChess::WHITE) ? pszTemp = "WHITE to move" : pszTemp = "BLACK to move";
+                        cout << pszTemp << endl;
+
+
+                        string mv_string1;
+                        string mv_string2;
+                        engine.bitboards_to_algebraic(engine.game_board.turn, foundMove, (GameState::INPROGRESS)
+                                        , false, false, mv_string1);
+                        engine.bitboards_to_algebraic(engine.game_board.turn, the_best_move, (GameState::INPROGRESS)
+                                        , false, false, mv_string2);
+                        cout << mv_string1 << " = " << mv_string2 << endl;
+
 
 
                         if (!(foundMove == the_best_move)) {
@@ -1878,6 +1917,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                             bool isEmpty = (the_best_move == deadmove);
                             cout << " burp2m " << (int)foundMove.piece_type  << " = "  << (int)the_best_move.piece_type << "  " << isEmpty << " "  
                                 << NhitsTT2 << " " << endl;
+
                             isFailure = true;
                         }
 
@@ -2055,28 +2095,28 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
 
 
 
+        #ifdef KILLER_MOVES
+            // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
+            auto quiet_begin = it_split;
+            auto quiet_end   = moves.end();
 
-
-
-        // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
-        auto quiet_begin = it_split;
-        auto quiet_end   = moves.end();
-
-        auto bring_front = [&](const ShumiChess::Move& km)
-        {
-            if (km == ShumiChess::Move{}) return;
-            for (auto it = quiet_begin; it != quiet_end; ++it)
+            auto bring_front = [&](const ShumiChess::Move& km)
             {
-                if (*it == km)
+                if (km == ShumiChess::Move{}) return;
+                for (auto it = quiet_begin; it != quiet_end; ++it)
                 {
-                    std::rotate(quiet_begin, it, it + 1);
-                    ++quiet_begin; // next killer goes just after previous
-                    break;
+                    if (*it == km)
+                    {
+                        std::rotate(quiet_begin, it, it + 1);
+                        ++quiet_begin; // next killer goes just after previous
+                        break;
+                    }
                 }
-            }
-        };
-        bring_front(killer1[nPlys]);
-        bring_front(killer2[nPlys]);
+            };
+            bring_front(killer1[nPlys]);
+            bring_front(killer2[nPlys]);
+        #endif
+
     #endif
   
 }

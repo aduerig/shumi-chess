@@ -25,16 +25,6 @@
 using namespace std;
 
 
-// // Note: ABsolute mystery why this reenforces 
-// #ifdef NDEBUG
-// #  undef NDEBUG
-// #endif
-// #ifdef assert
-// #  undef assert
-// #endif
-// #include <assert.h>
-
-
 
 namespace ShumiChess {
 

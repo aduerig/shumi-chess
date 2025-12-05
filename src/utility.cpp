@@ -64,6 +64,10 @@ void print_bitboard(ull bitboard) {
     cout << bitboard_to_string(bitboard) << endl;
 }
 
+
+
+
+
 std::string gameboard_to_string(GameBoard gameboard) {
     unordered_map<ull, char> bitboard_to_letter = {
         {gameboard.white_bishops, 'B'},
@@ -98,6 +102,77 @@ std::string gameboard_to_string(GameBoard gameboard) {
     }
     return builder;
 }
+
+
+// Wrap uppercase (white) pieces in yellow, lowercase (black) in light grey.
+std::string colorize_board_string(const std::string& plain)
+{
+    const char* YELLOW    = "\x1b[33m";
+    const char* LIGHTGREY = "\x1b[37m";   // or "\x1b[90m" for a dimmer grey
+    const char* LIGHTRED  = "\x1b[91m";   // or "\x1b[31m" for normal red
+    const char* RESET     = "\x1b[0m";
+
+    std::string out;
+    out.reserve(plain.size() * 6);  // rough over-reserve
+
+    for (char c : plain)
+    {
+        if (c == '\n' || c == '-' || c == ' ')
+        {
+            out.push_back(c);       // no color on board lines / empties
+        }
+        else if (c >= 'A' && c <= 'Z')
+        {
+            // White pieces -> yellow
+            out += YELLOW;
+            out.push_back(c);
+            out += RESET;
+        }
+        else if (c >= 'a' && c <= 'z')
+        {
+            // Black pieces -> light grey
+            out += LIGHTRED;
+            out.push_back(c);
+            out += RESET;
+        }
+        else
+        {
+            out.push_back(c);
+        }
+    }
+    return out;
+}
+
+std::string widen_board(const std::string& plain)
+{
+    std::string out;
+    out.reserve(plain.size() * 2);
+
+    for (char c : plain)
+    {
+        if (c == '\n')
+        {
+            out.push_back('\n');
+        }
+        else
+        {
+            out.push_back(c);
+            out.push_back(' ');  // extra space makes the board wider
+        }
+    }
+    return out;
+}
+
+std::string gameboard_to_string2(GameBoard gameboard) {
+    string plain;
+    string colored;
+    string colored2;
+    plain = gameboard_to_string(gameboard);
+    colored = widen_board(plain);
+    colored2 = colorize_board_string(colored);
+    return colored2;
+}
+    
 
 void print_gameboard(GameBoard gameboard) {
     cout << gameboard_to_string(gameboard) << endl;

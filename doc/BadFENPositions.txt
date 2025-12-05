@@ -188,3 +188,4 @@ Very long (10).
 
 
 
+Just picked up on something in the chess TT2 (transposition table) That the table is NOT cleared ever, not even at the end of games. This has to be wrong. It is not intended/. When sghould I clear the TT2?  Check. I just found out that its true i NEVER clear the table. There is a rollover watchdog, way higher at value than I ever intended. I must clear it. at minimum at game start. I only do it now at creation (engined start).

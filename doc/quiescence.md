@@ -53,49 +53,5 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
         bool in_check = engine.is_king_in_check(engine.game_board.turn);
 
 
-        if in_check {
-            // when in check, by definition all moves are check esscapes, and all escspes are legal moves.
-            Vector<Move> moves_to_loop_over = legal_moves;   
 
-            // decrement depth, and 
-            // continue recursive search. 
-
-        }
-
-        double d_end_score = evaluate_board(engine.game_board.turn, legal_moves);
-
-        // stand-pat cutoff
-        // If d_end_score ≥ beta ⇒ return d_end_score (fail-high).
-        if (d_end_score >= beta) {
-            return { d_end_score, Move{} };
-        }
-
-        // raise alpha to stand-pat, then search captures/promotions only
-        alpha = std::max(alpha, d_end_score);
-
-        unquiet_moves = engine.reduce_to_unquiet_moves(legal_moves);
-
-
-        Vector<Move> moves_to_loop_over = unquiet_moves;   
-
-        //if (unquiet_moves.size() > 0) {
-        //    
-        //}
-
-    } else {
-        //
-    
-        // decrement depth, and 
-        // continue recursive search. 
-
-    }
-
-
-
-
-
-
-
-
-
-}
+This is a problems we have faced before. I want to use "transposition_table2" to protect a search node of the recursion. This is my last unsolvable problem. We have failed numerous times with this. Note my use of DOING_TT_NORM. I also use DOING_TT_NORM_DEBUG to control the output of "burp2" to indicate when mt stored score does not match what is calculated. Either the debug is wrong, or there are more serious errors. Because I see "burp2" outputs after 2 or 3000 "correct matches or so. The zobrist is definilty been proven correct. 

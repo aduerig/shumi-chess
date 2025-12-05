@@ -224,6 +224,9 @@ struct MoveHash {
 std::string bitboard_to_string(ull);
 void print_bitboard(ull);
 std::string gameboard_to_string(ShumiChess::GameBoard);
+std::string gameboard_to_string2(ShumiChess::GameBoard);
+std::string colorize_board_string(const std::string& plain);
+std::string widen_board(const std::string& plain);
 void print_gameboard(ShumiChess::GameBoard);
 std::string stringify(ShumiChess::Piece);
 std::string square_to_position_string(ull);

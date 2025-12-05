@@ -66,7 +66,7 @@ public:
     ull nRandos = 0;
 
     
-    // Transition table (TT)
+    // Transposition table (TT)    Protects the evaluator (evaluate_board(). Cleared on every move 
     struct TTEntry {
         int score_cp;
         ShumiChess::Move movee;
@@ -76,7 +76,7 @@ public:
 
 
     
-    // Transition table #2 (normal node-based TT)
+    // Transposition table #2 (normal node-based TT)      Protects the node (recursive_negamax()). Cleared on every ??? 
     enum class TTFlag : unsigned char {
         EXACT,       // exact alpha–beta result
         LOWER_BOUND, // fail-high node
@@ -89,6 +89,7 @@ public:
         ShumiChess::Move best_move;  // move that produced score_cp
         TTFlag           flag;       // EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
+        
         int nPlysDebug;
         bool drawDebug;  // 0 = not draw, 1 = draw
         double dAlphaDebug;

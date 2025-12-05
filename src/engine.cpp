@@ -47,9 +47,12 @@ Engine::Engine() {
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 }
-
-void Engine::reset_engine() {
-    //std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
+//
+//
+// By "reset engine" is meant: "new game". 
+//
+void Engine::reset_engine() {         // New game.
+    std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
     
     // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -67,8 +70,8 @@ void Engine::reset_engine() {
 
     //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
     //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
-   // game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
-    //game_board = GamegBoard("");
+    // game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
+    //game_board = GameBoard("4kbb1/8/8/8/8/8/4K3/8 w - - 0 1");
 
     // Or you can pick a random simple FEN. (maybe)
     // vector<Move> v;
@@ -78,7 +81,6 @@ void Engine::reset_engine() {
 
     //     v = get_legal_moves(ShumiChess::WHITE);
     // } while (v.size() == 0);
-
 
     game_board = GameBoard();
 
@@ -101,13 +103,16 @@ void Engine::reset_engine() {
 
     g_iMove = 0;       // real moves in whole game
 
+    // These things are cleared every game.
     repetition_table.clear();
+
+    //transposition_table2.clear();
 
 }
 
-void Engine::reset_engine(const string& fen) {
+void Engine::reset_engine(const string& fen) {      // New game.
 
-    //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
+    std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
 
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -133,7 +138,10 @@ void Engine::reset_engine(const string& fen) {
 
     g_iMove = 0;       // real moves in whole game
 
+    // These things are cleared every game.
     repetition_table.clear();
+
+    //transposition_table2.clear();
     
 }
 
