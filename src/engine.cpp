@@ -106,7 +106,7 @@ void Engine::reset_engine() {         // New game.
     // These things are cleared every game.
     repetition_table.clear();
 
-    //transposition_table2.clear();
+    //TTable2.clear();
 
 }
 
@@ -141,7 +141,7 @@ void Engine::reset_engine(const string& fen) {      // New game.
     // These things are cleared every game.
     repetition_table.clear();
 
-    //transposition_table2.clear();
+    //TTable2.clear();
     
 }
 

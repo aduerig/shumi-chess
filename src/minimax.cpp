@@ -157,8 +157,8 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
     engine.repetition_table.clear();
-    transposition_table.clear();
-    transposition_table.reserve(10000000);    // NOTE: What size here?
+    TTable.clear();
+    TTable.reserve(10000000);    // NOTE: What size here?
     
     // add the current position
     uint64_t key_now = engine.game_board.zobrist_key;
@@ -780,7 +780,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         // Here we do stuff to be done at the beginning of a game. Terrible way to have to detect 
         // this, but there it is.
         //
-        transposition_table2.clear();
+        TTable2.clear();
 
         NhitsTT = 0;
         NhitsTT2 = 0;
@@ -802,7 +802,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //cout << "zobrist_key at the root: " << zobrist_key_start << endl;
 
     // Cleared on every move
-    transposition_table.clear();
+    TTable.clear();
    
 
 
@@ -1111,9 +1111,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //iNearSquares = engine.game_board.get_king_near_squares(Color::BLACK, king_near_squares_out);
     //utemp = engine.game_board.sliders_and_knights_attacking_square(Color::BLACK, engine.game_board.square_d5);
     //utemp = engine.game_board.attackers_on_enemy_king_near(Color::BLACK);
-    //utemp = transposition_table.size();
+    //utemp = TTable.size();
     //utemp = (ull)engine.game_board.is_king_in_check_new(Color::BLACK);
-    //itemp = engine.game_board.SEE(ShumiChess::BLACK, engine.game_board.square_d5);   // transposition_table.size();    // (ull)(engine.game_board.insufficient_material_simple());
+    //itemp = engine.game_board.SEE(ShumiChess::BLACK, engine.game_board.square_d5);   // TTable.size();    // (ull)(engine.game_board.insufficient_material_simple());
     // dTemp = engine.convert_from_CP(utemp);
     //dTemp = engine.game_board.distance_between_squares(engine.game_board.square_h1, engine.game_board.square_f3);
     //dTemp = engine.game_board.bIsOnlyKing(Color::BLACK);
@@ -1137,9 +1137,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
 
 
-    utemp = transposition_table.size();
+    utemp = TTable.size();
     cout << "TT: " << utemp << " hits= " << NhitsTT << endl;
-    utemp = transposition_table2.size();
+    utemp = TTable2.size();
     cout << "TT2: " << utemp << " hits= " << NhitsTT2 << endl;
  
     //engine.debug_print_repetition_table();
@@ -1246,9 +1246,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         // unsigned mode  = salt_the_TT2(bOverFlow, nReps);
         // key ^= g_eval_salt[mode];
 
-        auto it = transposition_table2.find(key);
+        auto it = TTable2.find(key);
 
-        if (it != transposition_table2.end()) {
+        if (it != TTable2.end()) {
             const TTEntry2 &entry = it->second;
 
             // We can reuse an entry if it was searched at least as deep
@@ -1451,8 +1451,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
 
             // Look for the entry in the TT
-            auto it = transposition_table.find(evalKey);
-            if (it != transposition_table.end()) {
+            auto it = TTable.find(evalKey);
+            if (it != TTable.end()) {
                 const TTEntry &entry = it->second;
                 cp_from_tt   = entry.score_cp;
                 have_tt_eval = true;
@@ -1493,7 +1493,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
 
                  // Store this position away into the TT
-                TTEntry &slot = transposition_table[evalKey];
+                TTEntry &slot = TTable[evalKey];
                 slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
                 slot.movee    = the_best_move;   // or bestMove, etc.
                 slot.depth    = top_deepening;
@@ -1896,10 +1896,10 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
             // Rolling size cap for TT2  (2 million?)
             static const std::size_t MAX_TT2_SIZE = 2000000;
-            if (transposition_table2.size() >= MAX_TT2_SIZE) {
-                auto it = transposition_table2.begin();
-                if (it != transposition_table2.end()) {
-                    transposition_table2.erase(it);
+            if (TTable2.size() >= MAX_TT2_SIZE) {
+                auto it = TTable2.begin();
+                if (it != TTable2.end()) {
+                    TTable2.erase(it);
                 }
             }
 
@@ -1993,7 +1993,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             #endif
             if (!did_cutoff && !did_fail_low) {
                 // --- Always store (even in DEBUG)
-                TTEntry2 &slot = transposition_table2[key];
+                TTEntry2 &slot = TTable2[key];
                 slot.score_cp  = cp_score_temp;
                 slot.best_move = the_best_move;
                 slot.depth     = depth;
@@ -2398,8 +2398,8 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
             uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
 
             // Look for the entry in the TT
-            auto it = transposition_table.find(evalKey);
-            if (it != transposition_table.end()) {
+            auto it = TTable.find(evalKey);
+            if (it != TTable.end()) {
                 const TTEntry &entry = it->second;
                 cp_from_tt   = entry.score_cp;
                 have_tt_eval = true;
@@ -2436,7 +2436,7 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
                 uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
 
                  // Store this position away into the TT
-                TTEntry &slot = transposition_table[evalKey];
+                TTEntry &slot = TTable[evalKey];
                 slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
                 slot.movee    = Move{};
                 slot.depth    = top_deepening;

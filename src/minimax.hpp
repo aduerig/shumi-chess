@@ -72,7 +72,7 @@ public:
         ShumiChess::Move movee;
         int depth;
     };
-    std::unordered_map<uint64_t, TTEntry> transposition_table;
+    std::unordered_map<uint64_t, TTEntry> TTable;
 
 
     
@@ -104,7 +104,7 @@ public:
         
     };
 
-    std::unordered_map<uint64_t, TTEntry2> transposition_table2;
+    std::unordered_map<uint64_t, TTEntry2> TTable2;
 
 
     ull passed_white_pawns = 0ULL; // im a bitmap
