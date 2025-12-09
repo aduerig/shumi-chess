@@ -234,6 +234,7 @@ class GameBoard {
 
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);
+        int SEE_for_capture_new(Color side, const Move &mv, FILE* fpDebug);
 
         const endgameTablePos to_egt();
 

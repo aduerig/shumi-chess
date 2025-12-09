@@ -350,7 +350,8 @@ GameState Engine::game_over(vector<Move>& legal_moves) {
 }
 
 
-int Engine::get_draw_status() {
+int Engine::get_best_score_at_root() {
+
     //cout << reason_for_draw << endl;
     //cout << "ouch" << endl;
 
@@ -1679,15 +1680,30 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
             // Very late in analysis! So discard negative SEE captures.
             int testValue = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
             if (qPlys > MAX_QPLY2) {
-                if (testValue < -100) {     // centipawns
+
+                if (testValue > 0) {     // centipawns
                     #ifdef _DEBUGGING_TO_FILE 
-                        fprintf(fpDebug,"\nSEE ELIM: ");
-                        
+                       
+                        fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
+    
                         print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
                         
                         print_move_history_to_file(fpDebug);
                         fputc('\n', fpDebug);
                     #endif
+                }
+
+                if (testValue < -100) {     // centipawns
+                    #ifdef _DEBUGGING_TO_FILE 
+                       
+                        fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
+    
+                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                        
+                        print_move_history_to_file(fpDebug);
+                        fputc('\n', fpDebug);
+                    #endif
+
                     continue;
                 }
             }
@@ -1752,7 +1768,8 @@ void Engine::move_into_string(ShumiChess::Move m) {
 // Uses: nPly = -2, isInCheck = false, bFormated = false
 void Engine::print_move_history_to_file(FILE* fp) {
     bool bFlipColor = false;
-    int ierr = fputs("\nhistory: ", fp);
+    //int ierr = fputs("\nhistory: ", fp);
+    int ierr = fprintf(fp, " (%03ld) history:", (long)move_history.size());
     assert (ierr!=EOF);
 
     // copy stack so we don't mutate Engine's history
@@ -1772,6 +1789,8 @@ void Engine::print_move_history_to_file(FILE* fp) {
         bFlipColor = !bFlipColor;
         print_move_to_file(m, -2, (GameState::INPROGRESS), false, false, bFlipColor, fp);
     }
+
+    fputc('\n', fp);
 }
 //
 // Get algebriac (SAN) text form of the last move.

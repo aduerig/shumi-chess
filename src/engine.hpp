@@ -26,7 +26,8 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
    
 #define TINY_SCORE 1.0e-15          // In pawns.
 #define VERY_SMALL_SCORE 1.0e-5     // In pawns. (its 0.001 centipawns)
-#define HUGE_SCORE 10000            // In pawns. (its a million centipawns!)       //  DBL_MAX    // A relative score
+#define HUGE_SCORE 10000.0          // In pawns. (its a million centipawns!)       //  DBL_MAX    // A relative score
+#define IS_MATE_SCORE(x) ( std::abs((x)) > (HUGE_SCORE - 200) )
 
 #define ABORT_SCORE (HUGE_SCORE+1)      // Used only to abort the analysis
 #define ONLY_MOVE_SCORE (HUGE_SCORE+2)  // Used to short circuit anlysis when only one legal move
@@ -187,6 +188,7 @@ class Engine {
             return n_attacks | s_attacks | w_attacks | e_attacks;
         }
 
+        void move_into_string(ShumiChess::Move m);
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
@@ -258,13 +260,12 @@ class Engine {
 
         // display crap
         //string reason_for_draw = "------------";
-        int get_draw_status();
+        int get_best_score_at_root();
         int material_centPawns = 0;
 
         int rand_int(int, int);
         bool flip_a_coin(void);
 
-        void move_into_string(ShumiChess::Move m);
         //ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
     
         std::unordered_map<uint64_t, int> repetition_table;

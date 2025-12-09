@@ -57,6 +57,17 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
     bool bSuppressOutput = false;
 #endif
 
+static void print_mismatch(std::ostream& os,
+                        const char* label,
+                        int found,
+                        int actual) {
+    if (found != actual) {
+        os << " " << label << " " << found << " = " << actual << "\n";
+    }
+}
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -66,9 +77,9 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 // #define DOING_TT_EVAL_DEBUG
 
 // TT2
-// #define DOING_TT_NORM
-// #define DOING_TT_NORM_DEBUG
-// #define BURP2_THRESHOLD_CP 10
+#define DOING_TT_NORM
+//#define DOING_TT_NORM_DEBUG
+//#define BURP2_THRESHOLD_CP 25
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -81,16 +92,23 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 // later analysis is profited by these killer moves.
 #ifndef DOING_TT_NORM_DEBUG
     #define KILLER_MOVES
+    //#define DEBUGGING_KILLER_MOVES 
 #endif
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening, AND 
 // on first move.
 #define RANDOMIZING_EQUAL_MOVES
-#define RANDOMIZING_EQUAL_MOVES_DELTA 0.02
+#define RANDOMIZING_EQUAL_MOVES_DELTA 0.001
 
 // Obviously TT2 debug breaks repeatibility if we flip coins in the anaylisis. So what. 
 #ifndef DOING_TT_NORM_DEBUG
     //#define RANDOM_FLIP_COIN
+#endif
+
+
+#ifdef DEBUGGING_KILLER_MOVES
+    static long long killer_tried = 0;
+    static long long killer_cutoff = 0;
 #endif
 
 
@@ -1018,6 +1036,14 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
     cout << "\n";
 
+    #ifdef DEBUGGING_KILLER_MOVES
+        cout << "Killers: tried=" << killer_tried
+            << " cutoffs=" << killer_cutoff
+            << " (" << (killer_tried ? (100.0 * killer_cutoff / killer_tried) : 0.0)
+            << "%)\n\n";
+    #endif
+
+
     /////////////////////////////////////////////////////////////////////////////////
     //
     // Debug only  playground   sandbox for testing evaluation functions
@@ -1071,7 +1097,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
      itemp3 = sizeof(uint8_t);
     // itemp4 = engine.game_board.SEE(ShumiChess::WHITE, engine.game_board.square_d4);
 
-    cout << "wht " << nRandos << endl;
+    cout << "wht " << nFarts << endl;
     //cout << "wht " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
@@ -1171,7 +1197,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         bool   foundPos = false;
         int    foundScore = 0;
         Move   foundMove = {};
-        int    foundnPlys = 0;
+        //int    foundnPlys = 0;
         bool   foundDraw = 0;
         double foundAlpha = 0.0;
         double foundBeta  = 0.0;
@@ -1233,12 +1259,11 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     (std::fabs(entry.dAlphaDebug - alpha) <= VERY_SMALL_SCORE) &&
                     (std::fabs(entry.dBetaDebug  - beta ) <= VERY_SMALL_SCORE);
 
-                bool plyMatches = (entry.nPlysDebug == nPlys);
+                //bool plyMatches = (entry.nPlysDebug == nPlys);
 
-                if (!windowMatches || !plyMatches) {
+                if (!windowMatches) {
 
-                //if (!windowMatches) {
-                    // treat as miss
+
                 } else {
                     #ifdef DOING_TT_NORM_DEBUG
 
@@ -1246,7 +1271,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                         foundPos   = true;
                         foundScore = entry.score_cp;
                         foundMove  = entry.best_move;
-                        foundnPlys = entry.nPlysDebug;
+                        //foundnPlys = entry.nPlysDebug;
                         foundDraw  = entry.drawDebug;
                         foundAlpha = entry.dAlphaDebug;
                         foundBeta  = entry.dBetaDebug;
@@ -1626,7 +1651,10 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // --- end Delta pruning
             #endif
     
-
+            #ifdef DEBUGGING_KILLER_MOVES
+                bool is_killer_here = (m == killer1[nPlys]) || (m == killer2[nPlys]);
+                if (is_killer_here) killer_tried++;
+            #endif
 
 
             assert(m.piece_type != Piece::NONE);
@@ -1712,7 +1740,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             bool isRoot = ( (top_deepening == maximum_deepening) && (nPlys == 1) );
             if (isRoot) {
 
-                #ifdef _DEBUGGING_TO_FILE
+                #ifdef _DEBUGGING_TO_FILE1
                     fprintf(fpDebug,
                             "PUSH_ROOT depth=%d top=%d max=%d nPlys=%d : ",
                             depth, top_deepening, maximum_deepening, nPlys);
@@ -1764,15 +1792,19 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
             #ifdef RANDOM_FLIP_COIN
-                bool bUseMe = d_difference_in_score <= (delta_score + VERY_SMALL_SCORE);
+                //bool bUseMe = d_difference_in_score <= (delta_score + VERY_SMALL_SCORE);
+                bool bUseMe = d_difference_in_score <= (delta_score);
             #else
                 bool bUseMe = false;
             #endif
 
             if (bUseMe) {
+                
                 // tie (within delta): flip a coin.
-
                 b_use_this_move = engine.flip_a_coin();
+
+                //cout << d_score_value << " = " << d_best_score << " , " << b_use_this_move << endl;     
+
                 #ifdef _DEBUGGING_MOVE_CHAIN1
                     //sprintf (szDebug, "flip %ld", b_use_this_move);
                     fputs(szDebug, fpDebug);
@@ -1797,27 +1829,46 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             //if (alpha >= beta + TINY_SCORE) {
             if (alpha >= beta) {
 
+                // You found a move so good that the opponent would never allow this position.
+                // Therefore, further searching at this node is pointless.
+                // You stop searching siblings and immediately return beta upward.
+
                 did_cutoff = true;
 
+                #ifdef DEBUGGING_KILLER_MOVES
+                    if (is_killer_here) killer_cutoff++;
+                #endif
+
+
                 if ((depth > 0) && (!engine.is_unquiet_move(m))) {
-                    // Quiet moves that "cut off" are notable.
-                    if (killer1[nPlys] == ShumiChess::Move{})        killer1[nPlys] = m;
-                    else if (!(m == killer1[nPlys]))                 killer2[nPlys] = m;
+                    // Quiet moves that "cut off" are "notable", or "killer moves"
+                    if (killer1[nPlys] == ShumiChess::Move{}) {
+                        killer1[nPlys] = m;
+                        #ifdef DEBUGGING_KILLER_MOVES1
+                            engine.move_into_string(killer1[nPlys]);
+                            fprintf(fpDebug, "\nkiller1-> %s\n", engine.move_string.c_str());
+                            
+                            engine.print_move_history_to_file(fpDebug);
+                        #endif
+                    }
+                    else if (!(m == killer1[nPlys])) {
+                        killer2[nPlys] = m;
+                    }
                 }
 
                 #ifdef _DEBUGGING_MOVE_CHAIN3
                     char szTemp[64];
                     sprintf(szTemp, " Beta cutoff %f %f",  alpha, beta);
                     fputs(szTemp, fpDebug);
-                #endif
-                if (!engine.is_unquiet_move(m)){
-                    #ifdef _DEBUGGING_MOVE_CHAIN3
+
+                    if (!engine.is_unquiet_move(m)){
+
                         char szTemp[64];
                         sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
                         fputs(szTemp, fpDebug);
                         engine.print_move_to_file(m, nPlys, state, false, false, false, fpDebug);
-                    #endif
-                }
+                    }
+                #endif
 
                 break;
             }
@@ -1858,75 +1909,85 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 //if (foundPos) {
                 if (foundPos && (foundDepth == depth) ) {            
 
-                    //if (foundScore != cp_score_temp) {
-                    if ( fabs(foundScore - cp_score_temp) > BURP2_THRESHOLD_CP) {
-                        bool isFailure = true;
-                        int repNow = 0;
-                        auto itRepNow = engine.repetition_table.find(key);
-                        if (itRepNow != engine.repetition_table.end()) repNow = itRepNow->second;
+                    bool bBothScoresMates = (IS_MATE_SCORE(foundRawScore) && IS_MATE_SCORE(d_best_score));
 
-                        cout << endl << NhitsTT2 << " " << " burp2 " 
-                            << foundScore  << " = "  << cp_score_temp << "    " 
-                            << foundRawScore << " = " << d_best_score << "    "
+                    if (!bBothScoresMates) {
 
-                            << foundnPlys << " = "  << nPlys  << "  "
-                            << foundDraw << " = " << (state == GameState::DRAW) << "   "
-                            << foundAlpha << " = " << alpha_in  << "    "
-                            << foundBeta << " = " << beta << "    "
-                            << foundIsCheck << " = " << in_check << "    "
-                            << foundLegalMoveSize << " = " << legalMovesSize << "    "
-                            << foundRepCount << " = " << repNow << "    "
+                        int idelta;
+                        int avgScore_cp = abs((foundScore + cp_score_temp)) / 2;
+                      
+                        //delta = BURP2_THRESHOLD_CP;
+                        idelta = BURP2_THRESHOLD_CP + (avgScore_cp / 9); 
+                        if ( abs(foundScore - cp_score_temp) > idelta) {
 
-                            << std::hex
-                            << " wp " << found_wp << " = " << engine.game_board.white_pawns   << "\n"
-                            << " wn " << found_wn << " = " << engine.game_board.white_knights << "\n"
-                            << " wb " << found_wb << " = " << engine.game_board.white_bishops << "\n"
-                            << " wr " << found_wr << " = " << engine.game_board.white_rooks   << "\n"
-                            << " wq " << found_wq << " = " << engine.game_board.white_queens  << "\n"
-                            << " wk " << found_wk << " = " << engine.game_board.white_king    << "\n"
-                            << " bp " << found_bp << " = " << engine.game_board.black_pawns   << "\n"
-                            << " bn " << found_bn << " = " << engine.game_board.black_knights << "\n"
-                            << " bb " << found_bb << " = " << engine.game_board.black_bishops << "\n"
-                            << " br " << found_br << " = " << engine.game_board.black_rooks   << "\n"
-                            << " bq " << found_bq << " = " << engine.game_board.black_queens  << "\n"
-                            << " bk " << found_bk << " = " << engine.game_board.black_king    << "\n"
-                            << std::dec
-                        << "  depth-> " << depth << " mv->" << engine.g_iMove << endl;
-                        
-                        string out = gameboard_to_string2(engine.game_board);
-                        cout << out << endl;
+                            bool isFailure = true;
+                            int repNow = 0;
+                            auto itRepNow = engine.repetition_table.find(key);
+                            if (itRepNow != engine.repetition_table.end()) repNow = itRepNow->second;
 
-                        //isFailure = true;
-                        char* pszTemp = ""; 
-                        (engine.game_board.turn == ShumiChess::WHITE) ? pszTemp = "WHITE to move" : pszTemp = "BLACK to move";
-                        cout << pszTemp << endl;
+                            cout << endl << NhitsTT2 << " " << " burp2 " 
+                                << foundScore  << " = "  << cp_score_temp << "    " 
+                                << foundRawScore << " = " << d_best_score << "    "
+                                << endl;
 
+                            print_mismatch(cout, "al", foundAlpha,         alpha_in);
+                            print_mismatch(cout, "bt", foundBeta,          beta);
+                            print_mismatch(cout, "dr", foundDraw,          (state == GameState::DRAW));
+                            print_mismatch(cout, "ck", foundIsCheck,       in_check);
+                            print_mismatch(cout, "lm", foundLegalMoveSize, legalMovesSize);
+                            print_mismatch(cout, "rp", foundRepCount,      repNow);
 
-                        string mv_string1;
-                        string mv_string2;
-                        engine.bitboards_to_algebraic(engine.game_board.turn, foundMove, (GameState::INPROGRESS)
-                                        , false, false, mv_string1);
-                        engine.bitboards_to_algebraic(engine.game_board.turn, the_best_move, (GameState::INPROGRESS)
-                                        , false, false, mv_string2);
-                        cout << mv_string1 << " = " << mv_string2 << endl;
+                            print_mismatch(cout, "wp", found_wp, engine.game_board.white_pawns);
+                            print_mismatch(cout, "wn", found_wn, engine.game_board.white_knights);
+                            print_mismatch(cout, "wb", found_wb, engine.game_board.white_bishops);
+                            print_mismatch(cout, "wr", found_wr, engine.game_board.white_rooks);
+                            print_mismatch(cout, "wq", found_wq, engine.game_board.white_queens);
+                            print_mismatch(cout, "wk", found_wk, engine.game_board.white_king);
+
+                            print_mismatch(cout, "bp", found_bp, engine.game_board.black_pawns);
+                            print_mismatch(cout, "bn", found_bn, engine.game_board.black_knights);
+                            print_mismatch(cout, "bb", found_bb, engine.game_board.black_bishops);
+                            print_mismatch(cout, "br", found_br, engine.game_board.black_rooks);
+                            print_mismatch(cout, "bq", found_bq, engine.game_board.black_queens);
+                            print_mismatch(cout, "bk", found_bk, engine.game_board.black_king);
 
 
+                            cout << "  depth-> " << depth << " mv->" << engine.g_iMove 
+                            << " dbg->" << bBothScoresMates << " idelta-> " << idelta 
+                            << " , " << abs(foundScore - cp_score_temp)
+                            << endl;
+                            
+                            string out = gameboard_to_string2(engine.game_board);
+                            cout << out << endl;
 
-                        if (!(foundMove == the_best_move)) {
-                            Move deadmove =  {};
-                            bool isEmpty = (the_best_move == deadmove);
-                            cout << " burp2m " << (int)foundMove.piece_type  << " = "  << (int)the_best_move.piece_type << "  " << isEmpty << " "  
-                                << NhitsTT2 << " " << endl;
+                            //isFailure = true;
+                            char* pszTemp = ""; 
+                            (engine.game_board.turn == ShumiChess::WHITE) ? pszTemp = "WHITE to move" : pszTemp = "BLACK to move";
+                            cout << pszTemp << endl;
 
-                            isFailure = true;
+                            string mv_string1;
+                            string mv_string2;
+                            engine.bitboards_to_algebraic(engine.game_board.turn, foundMove, (GameState::INPROGRESS)
+                                            , false, false, mv_string1);
+                            engine.bitboards_to_algebraic(engine.game_board.turn, the_best_move, (GameState::INPROGRESS)
+                                            , false, false, mv_string2);
+                            cout << mv_string1 << " = " << mv_string2 << endl;
+
+                            if (!(foundMove == the_best_move)) {
+                                Move deadmove =  {};
+                                bool isEmpty = (the_best_move == deadmove);
+                                cout << " burp2m " << (int)foundMove.piece_type  << " = "  << (int)the_best_move.piece_type << "  " << isEmpty << " "  
+                                    << NhitsTT2 << " " << endl;
+
+                                isFailure = true;
+                            }
+
+                            if (isFailure) assert(0);
                         }
-
-                        if (isFailure) assert(0);
+                        else {
+                            NhitsTT2++;
+                        }
                     }
-                    else {
-                        NhitsTT2++;
-                    }
-                    
                 }
             }
             #endif
@@ -1936,7 +1997,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 slot.score_cp  = cp_score_temp;
                 slot.best_move = the_best_move;
                 slot.depth     = depth;
-                slot.nPlysDebug = nPlys;
+                //slot.nPlysDebug = nPlys;
                 slot.drawDebug = (state == GameState::DRAW);
                 slot.dAlphaDebug = alpha_in;
                 slot.dBetaDebug = beta;
@@ -2113,8 +2174,19 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                     }
                 }
             };
+            
             bring_front(killer1[nPlys]);
+
+            #ifdef DEBUGGING_KILLER_MOVES1
+                engine.move_into_string(killer1[nPlys]);
+                fprintf(fpDebug, " killer1-> %s\n", engine.move_string.c_str());
+                engine.print_move_history_to_file(fpDebug);
+            #endif
+
             bring_front(killer2[nPlys]);
+
+           
+
         #endif
 
     #endif

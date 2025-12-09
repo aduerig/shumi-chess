@@ -2238,8 +2238,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
                          bp, bn, bb, br, bq, bk,
                          balance);
 
-    if (fpDebug)
-    {
+    if (fpDebug) {
         fprintf(fpDebug,
                 "debug final: move(from_sq=%d,to_sq=%d) side=%s SEE=%d\n",
                 from_sq, to_sq,
@@ -2250,6 +2249,393 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     return result;
 }
 
+
+
+int GameBoard::SEE_for_capture_new(Color side, const Move &mv, FILE* fpDebug)
+{
+    // mv.from and mv.to are BITBOARDS (ull) with exactly one bit set.
+    ull from_bb = mv.from;
+    ull to_bb   = mv.to;
+
+    if (from_bb == 0ULL || to_bb == 0ULL) {
+        assert(0);      // NULL bitboards, should never happen.
+        return 0;
+    }
+
+    // Convert bitboards to 0..63 square indices (h1 = 0) using your helper
+    ull tmp = from_bb;
+    int from_sq = utility::bit::lsb_and_pop_to_square(tmp);
+    tmp = to_bb;
+    int to_sq   = utility::bit::lsb_and_pop_to_square(tmp);
+
+    // There must be an enemy victim on 'to_sq' for a normal capture
+    Piece victim = get_piece_type_on_bitboard(to_bb);
+    if (victim == Piece::NONE) {
+        // ignore en passant etc. for SEE for now
+        return 0;
+    }
+
+    Color victim_color = get_color_on_bitboard(to_bb);
+    if (victim_color == side) {
+        assert(0);     // Caller should prevent this. Can't take your own piece!
+        return 0;
+    }
+
+    // Identify the moving piece on 'from_sq'
+    Piece mover = get_piece_type_on_bitboard(from_bb);
+    if (mover == Piece::NONE) {
+        assert(0);      // Caller should prevent this. Can't take nothing!
+        return 0;
+    }
+
+    auto piece_cp = [&](Piece p) -> int {
+        return centipawn_score_of(p);
+    };
+
+    // Local mutable copies of all piece bitboards and occupancy
+    ull wp = white_pawns,   wn = white_knights, wb = white_bishops,
+        wr = white_rooks,   wq = white_queens,  wk = white_king;
+    ull bp = black_pawns,   bn = black_knights, bb = black_bishops,
+        br = black_rooks,   bq = black_queens,  bk = black_king;
+
+    ull occ =
+        wp | wn | wb | wr | wq | wk |
+        bp | bn | bb | br | bq | bk;
+
+    const ull FILE_A = col_masks[Col::COL_A];
+    const ull FILE_H = col_masks[Col::COL_H];
+
+    // Helper: current piece type of a bitboard (using local boards)
+    auto piece_type_of = [&](Color c, ull bb1) -> Piece {
+        if (c == Color::WHITE) {
+            if (bb1 & wp) return Piece::PAWN;
+            if (bb1 & wn) return Piece::KNIGHT;
+            if (bb1 & wb) return Piece::BISHOP;
+            if (bb1 & wr) return Piece::ROOK;
+            if (bb1 & wq) return Piece::QUEEN;
+            if (bb1 & wk) return Piece::KING;
+        } else {
+            if (bb1 & bp) return Piece::PAWN;
+            if (bb1 & bn) return Piece::KNIGHT;
+            if (bb1 & bb) return Piece::BISHOP;
+            if (bb1 & br) return Piece::ROOK;
+            if (bb1 & bq) return Piece::QUEEN;
+            if (bb1 & bk) return Piece::KING;
+        }
+        return Piece::NONE;
+    };
+
+    // Helper: all attackers on 'to_sq' for color c using current local boards & occ
+    auto attackers_on = [&](Color c) -> ull {
+        ull atk = 0ULL;
+        ull bit = (1ULL << to_sq);
+
+        // Pawns (origins that attack to_sq)
+        ull pawns = (c == Color::WHITE) ? wp : bp;
+        ull origins;
+        if (c == Color::WHITE) {
+            origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
+        } else {
+            origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
+        }
+        atk |= (origins & pawns);
+
+        // Knights
+        ull knights = (c == Color::WHITE) ? wn : bn;
+        atk |= tables::movegen::knight_attack_table[to_sq] & knights;
+
+        // Kings
+        ull kings = (c == Color::WHITE) ? wk : bk;
+        atk |= tables::movegen::king_attack_table[to_sq] & kings;
+
+        // Bishops / Queens on diagonals
+        ull bishops = (c == Color::WHITE) ? wb : bb;
+        ull queens  = (c == Color::WHITE) ? wq : bq;
+
+        int r0 = to_sq / 8;
+        int f0 = to_sq % 8;
+
+        const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
+        for (int k = 0; k < 4; ++k) {
+            int r = r0;
+            int f = f0;
+            while (true) {
+                r += diag_dirs[k][0];
+                f += diag_dirs[k][1];
+                if (r < 0 || r > 7 || f < 0 || f > 7) break;
+                int s2  = r * 8 + f;
+                ull bb2 = 1ULL << s2;
+                if (occ & bb2) {
+                    if ((bb2 & bishops) || (bb2 & queens))
+                        atk |= bb2;
+                    break;
+                }
+            }
+        }
+
+        // Rooks / Queens on files/ranks
+        ull rooks = (c == Color::WHITE) ? wr : br;
+        const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
+        for (int k = 0; k < 4; ++k) {
+            int r = r0;
+            int f = f0;
+            while (true) {
+                r += ortho_dirs[k][0];
+                f += ortho_dirs[k][1];
+                if (r < 0 || r > 7 || f < 0 || f > 7) break;
+                int s2  = r * 8 + f;
+                ull bb2 = 1ULL << s2;
+                if (occ & bb2) {
+                    if ((bb2 & rooks) || (bb2 & queens))
+                        atk |= bb2;
+                    break;
+                }
+            }
+        }
+
+        return atk;
+    };
+
+    // === Apply the FORCED first capture mv by 'side' ===
+
+    int balance = 0;
+    balance += piece_cp(victim);   // side captures victim
+
+    ull to_mask = (1ULL << to_sq);
+
+    // Remove victim from its color's bitboard
+    if (victim_color == Color::WHITE) {
+        if (victim == Piece::PAWN)      wp &= ~to_mask;
+        else if (victim == Piece::KNIGHT) wn &= ~to_mask;
+        else if (victim == Piece::BISHOP) wb &= ~to_mask;
+        else if (victim == Piece::ROOK)   wr &= ~to_mask;
+        else if (victim == Piece::QUEEN)  wq &= ~to_mask;
+        else if (victim == Piece::KING)   wk &= ~to_mask;
+    } else {
+        if (victim == Piece::PAWN)      bp &= ~to_mask;
+        else if (victim == Piece::KNIGHT) bn &= ~to_mask;
+        else if (victim == Piece::BISHOP) bb &= ~to_mask;
+        else if (victim == Piece::ROOK)   br &= ~to_mask;
+        else if (victim == Piece::QUEEN)  bq &= ~to_mask;
+        else if (victim == Piece::KING)   bk &= ~to_mask;
+    }
+
+    // Remove mover from its original square
+    if (side == Color::WHITE) {
+        if (mover == Piece::PAWN)      wp &= ~from_bb;
+        else if (mover == Piece::KNIGHT) wn &= ~from_bb;
+        else if (mover == Piece::BISHOP) wb &= ~from_bb;
+        else if (mover == Piece::ROOK)   wr &= ~from_bb;
+        else if (mover == Piece::QUEEN)  wq &= ~from_bb;
+        else if (mover == Piece::KING)   wk &= ~from_bb;
+    } else {
+        if (mover == Piece::PAWN)      bp &= ~from_bb;
+        else if (mover == Piece::KNIGHT) bn &= ~from_bb;
+        else if (mover == Piece::BISHOP) bb &= ~from_bb;
+        else if (mover == Piece::ROOK)   br &= ~from_bb;
+        else if (mover == Piece::QUEEN)  bq &= ~from_bb;
+        else if (mover == Piece::KING)   bk &= ~from_bb;
+    }
+
+    // Place mover on to_sq
+    if (side == Color::WHITE) {
+        if (mover == Piece::PAWN)      wp |= to_mask;
+        else if (mover == Piece::KNIGHT) wn |= to_mask;
+        else if (mover == Piece::BISHOP) wb |= to_mask;
+        else if (mover == Piece::ROOK)   wr |= to_mask;
+        else if (mover == Piece::QUEEN)  wq |= to_mask;
+        else if (mover == Piece::KING)   wk |= to_mask;
+    } else {
+        if (mover == Piece::PAWN)      bp |= to_mask;
+        else if (mover == Piece::KNIGHT) bn |= to_mask;
+        else if (mover == Piece::BISHOP) bb |= to_mask;
+        else if (mover == Piece::ROOK)   br |= to_mask;
+        else if (mover == Piece::QUEEN)  bq |= to_mask;
+        else if (mover == Piece::KING)   bk |= to_mask;
+    }
+
+    // Update occupancy
+    occ &= ~from_bb;   // clear original square of mover
+    occ &= ~to_mask;   // clear victim
+    occ |=  to_mask;   // mover now on to_sq
+
+    // After the first forced capture, the target is now the mover on to_sq
+    Piece current_target_piece  = mover;
+    Color current_target_color  = side;
+    Color root_side             = side;
+    Color stm                   = (side == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+    // === Stockfish-style SEE: build gain[] along a single exchange line ===
+
+    int gain[32];
+    int depth = 0;
+
+    // gain[0]: material after the initial capture by 'side'
+    gain[0] = balance;
+
+    // Simulate further captures on to_sq
+    while (true) {
+        ull atk_side = attackers_on(stm);
+        if (!atk_side)
+            break;
+
+        // Pick least valuable attacker for stm on this square
+        ull attackers = atk_side;
+        ull attacker_bb = 0ULL;
+        Piece attacker_piece = Piece::NONE;
+
+        // Pawn
+        ull pawns = (stm == Color::WHITE) ? wp : bp;
+        ull mask = attackers & pawns;
+        if (mask) {
+            attacker_bb = mask & (~mask + 1ULL);
+            attacker_piece = Piece::PAWN;
+        } else {
+            // Knight
+            ull knights = (stm == Color::WHITE) ? wn : bn;
+            mask = attackers & knights;
+            if (mask) {
+                attacker_bb = mask & (~mask + 1ULL);
+                attacker_piece = Piece::KNIGHT;
+            } else {
+                // Bishop
+                ull bishops = (stm == Color::WHITE) ? wb : bb;
+                mask = attackers & bishops;
+                if (mask) {
+                    attacker_bb = mask & (~mask + 1ULL);
+                    attacker_piece = Piece::BISHOP;
+                } else {
+                    // Rook
+                    ull rooks = (stm == Color::WHITE) ? wr : br;
+                    mask = attackers & rooks;
+                    if (mask) {
+                        attacker_bb = mask & (~mask + 1ULL);
+                        attacker_piece = Piece::ROOK;
+                    } else {
+                        // Queen
+                        ull queens = (stm == Color::WHITE) ? wq : bq;
+                        mask = attackers & queens;
+                        if (mask) {
+                            attacker_bb = mask & (~mask + 1ULL);
+                            attacker_piece = Piece::QUEEN;
+                        } else {
+                            // King (last resort)
+                            ull kings = (stm == Color::WHITE) ? wk : bk;
+                            mask = attackers & kings;
+                            if (mask) {
+                                attacker_bb = mask & (~mask + 1ULL);
+                                attacker_piece = Piece::KING;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!attacker_bb || attacker_piece == Piece::NONE)
+            break;  // should not happen, but be safe
+
+        // Material change from root_side's point of view:
+        int val_target = piece_cp(current_target_piece);
+        int prev_balance = gain[depth];
+        int new_balance;
+        if (stm == root_side)
+            new_balance = prev_balance + val_target;
+        else
+            new_balance = prev_balance - val_target;
+
+        if (depth + 1 < (int)(sizeof(gain) / sizeof(gain[0])))
+            gain[++depth] = new_balance;
+        else
+            break; // safety guard: shouldn't ever hit
+
+        // Apply capture on the board: attacker takes current_target_piece on to_sq
+
+        // Remove the target from its bitboard
+        if (current_target_color == Color::WHITE) {
+            if (current_target_piece == Piece::PAWN)      wp &= ~to_mask;
+            else if (current_target_piece == Piece::KNIGHT) wn &= ~to_mask;
+            else if (current_target_piece == Piece::BISHOP) wb &= ~to_mask;
+            else if (current_target_piece == Piece::ROOK)   wr &= ~to_mask;
+            else if (current_target_piece == Piece::QUEEN)  wq &= ~to_mask;
+            else if (current_target_piece == Piece::KING)   wk &= ~to_mask;
+        } else {
+            if (current_target_piece == Piece::PAWN)      bp &= ~to_mask;
+            else if (current_target_piece == Piece::KNIGHT) bn &= ~to_mask;
+            else if (current_target_piece == Piece::BISHOP) bb &= ~to_mask;
+            else if (current_target_piece == Piece::ROOK)   br &= ~to_mask;
+            else if (current_target_piece == Piece::QUEEN)  bq &= ~to_mask;
+            else if (current_target_piece == Piece::KING)   bk &= ~to_mask;
+        }
+
+        // Remove attacker from its original square and place it on to_sq
+        if (stm == Color::WHITE) {
+            if (attacker_piece == Piece::PAWN)      wp &= ~attacker_bb;
+            else if (attacker_piece == Piece::KNIGHT) wn &= ~attacker_bb;
+            else if (attacker_piece == Piece::BISHOP) wb &= ~attacker_bb;
+            else if (attacker_piece == Piece::ROOK)   wr &= ~attacker_bb;
+            else if (attacker_piece == Piece::QUEEN)  wq &= ~attacker_bb;
+            else if (attacker_piece == Piece::KING)   wk &= ~attacker_bb;
+
+            if (attacker_piece == Piece::PAWN)      wp |= to_mask;
+            else if (attacker_piece == Piece::KNIGHT) wn |= to_mask;
+            else if (attacker_piece == Piece::BISHOP) wb |= to_mask;
+            else if (attacker_piece == Piece::ROOK)   wr |= to_mask;
+            else if (attacker_piece == Piece::QUEEN)  wq |= to_mask;
+            else if (attacker_piece == Piece::KING)   wk |= to_mask;
+        } else {
+            if (attacker_piece == Piece::PAWN)      bp &= ~attacker_bb;
+            else if (attacker_piece == Piece::KNIGHT) bn &= ~attacker_bb;
+            else if (attacker_piece == Piece::BISHOP) bb &= ~attacker_bb;
+            else if (attacker_piece == Piece::ROOK)   br &= ~attacker_bb;
+            else if (attacker_piece == Piece::QUEEN)  bq &= ~attacker_bb;
+            else if (attacker_piece == Piece::KING)   bk &= ~attacker_bb;
+
+            if (attacker_piece == Piece::PAWN)      bp |= to_mask;
+            else if (attacker_piece == Piece::KNIGHT) bn |= to_mask;
+            else if (attacker_piece == Piece::BISHOP) bb |= to_mask;
+            else if (attacker_piece == Piece::ROOK)   br |= to_mask;
+            else if (attacker_piece == Piece::QUEEN)  bq |= to_mask;
+            else if (attacker_piece == Piece::KING)   bk |= to_mask;
+        }
+
+        // Update occupancy
+        occ &= ~attacker_bb;
+        occ &= ~to_mask;
+        occ |=  to_mask;
+
+        // New target on to_sq is now the attacker we just moved
+        current_target_piece  = attacker_piece;
+        current_target_color  = stm;
+
+        // Next side to move
+        stm = (stm == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    }
+
+    // === Backward propagation: each side can choose to stop or continue ===
+    // Gain[] is from root_side's point of view, alternating turns implicitly.
+    while (depth > 0) {
+        int g_prev = gain[depth - 1];
+        int g_next = gain[depth];
+        // Each side chooses whether to continue or not:
+        // gain[i-1] = max(-gain[i-1], gain[i]);
+        int cont_if = -g_prev;
+        gain[depth - 1] = (cont_if > g_next) ? cont_if : g_next;
+        --depth;
+    }
+
+    int result = gain[0];
+
+    if (fpDebug) {
+        fprintf(fpDebug,
+                "debug SEE_new final: move(from_sq=%d,to_sq=%d) side=%s SEE=%d\n",
+                from_sq, to_sq,
+                (side == Color::WHITE ? "WHITE" : "BLACK"),
+                result);
+    }
+
+    return result;
+}
 
 
 } // end namespace ShumiChess

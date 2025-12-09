@@ -89,8 +89,8 @@ public:
         ShumiChess::Move best_move;  // move that produced score_cp
         TTFlag           flag;       // EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
-        
-        int nPlysDebug;
+
+        //int nPlysDebug;
         bool drawDebug;  // 0 = not draw, 1 = draw
         double dAlphaDebug;
         double dBetaDebug;

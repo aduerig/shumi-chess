@@ -219,7 +219,8 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
 static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
     double milliseconds;          // required   , NOTE: why no default
-    int max_deepening = 7;        // default to 7
+    int max_deepening = 7;
+    int argument = 0;
 
     // parse arguments: required double, optional int
     if (!PyArg_ParseTuple(args, "d|i", &milliseconds, &max_deepening)) return NULL;
@@ -243,16 +244,10 @@ engine_communicator_wakeup(PyObject* self, PyObject* args) {
     return Py_BuildValue(""); // this is None in Python
 }
 
-// static PyObject*
-// engine_communicator_get_draw_status(PyObject* self, PyObject* args)
-// {
-//     int ijunk = python_engine.get_draw_status();
-//     return Py_BuildValue("i", ijunk);
-// }
 static PyObject* 
-engine_communicator_get_draw_status(PyObject* self, PyObject* args)
+engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args)
 {
-    int ijunk = python_engine.get_draw_status();
+    int ijunk = python_engine.get_best_score_at_root();
     double value = ijunk / 100.0;        // e.g. 243 -> 2.43, -1234 -> -12.34
     return Py_BuildValue("d", value);    // "d" = Python float
 }
@@ -272,7 +267,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"one_Key_Hit",  engine_communicator_set_random, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
-    {"get_draw_status",  engine_communicator_get_draw_status, METH_VARARGS, ""},
+    {"get_best_score_at_root",  engine_communicator_get_best_score_at_root, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

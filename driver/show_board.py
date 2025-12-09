@@ -802,7 +802,7 @@ try:
             white_flags_text.setText(f"wFlags d={dpth_white} t={time_white}")
             black_flags_text.setText(f"bFlags d={dpth_black} t={time_black}")
 
-            material_text.setText(str(engine_communicator.get_draw_status()))
+            material_text.setText(str(engine_communicator.get_best_score_at_root()))
 
             curr_player = both_players[player_index]
 
