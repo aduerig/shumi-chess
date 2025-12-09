@@ -32,7 +32,7 @@ Move& get_random_move(vector<Move>& moves) {
 
 
 GameState play_game(Engine& engine, int& total_moves) {
-    GameState result = engine.game_over();
+    GameState result = engine.is_game_over();
 
     while (result == GameState::INPROGRESS) {
         vector<Move> all_moves = engine.get_legal_moves();
@@ -43,7 +43,7 @@ GameState play_game(Engine& engine, int& total_moves) {
         }
         total_moves++;
         engine.pushMove(get_random_move(all_moves));
-        result = engine.game_over();
+        result = engine.is_game_over();
     }
     engine.reset_engine();
     return result;

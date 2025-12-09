@@ -521,7 +521,7 @@ material_text.setText(str(score))
 # set current turn text
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
-    Point(square_size * 1.45, square_size * 9),
+    Point(square_size * 1.5, square_size * 9),
     turn_text_values[0]
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
@@ -543,7 +543,7 @@ for t in (bottom_wins_text, top_wins_text, draw_wins_text):
 
 # set game number
 curr_game_text = Text(
-    Point(square_size * 2.75, square_size * 9),
+    Point(square_size * 2.7, square_size * 9),
     f'Game {curr_game}'
 )
 curr_game_text.setFill(color_rgb(200, 200, 200))
@@ -570,7 +570,7 @@ black_flags_text.draw(win)
 
 # set current move number
 curr_move_text = Text(
-    Point(square_size * 3.75, square_size * 9),
+    Point(square_size * 3.8, square_size * 9),
     'Move {}'.format(engine_communicator.get_move_number())
 )
 curr_move_text.setFill(color_rgb(200, 200, 200))
@@ -795,7 +795,7 @@ game_state_result = -1
 def game_over_cache():
     global game_state_might_change, game_state_result
     if game_state_might_change:
-        game_state_result = engine_communicator.game_over()
+        game_state_result = engine_communicator.is_game_over()
         game_state_might_change = False
     return game_state_result
 
@@ -975,7 +975,7 @@ try:
 
         # show the win/lose/draw banner
         winner = '????'
-        gamover = engine_communicator.game_over()
+        gamover = engine_communicator.is_game_over()
         if gamover == 0:    # GameState::WHITEWIN
             winner = 'white'
         elif gamover == 2:  # GameState::BLACKWIN

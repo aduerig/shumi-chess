@@ -19,7 +19,7 @@ namespace ShumiChess {
         reset_engine()
         push()
         pop()
-        game_over()
+        is_game_over()
         access_piece_of_color()
         apply_en_passant_checks()
         apply_castling_changes()

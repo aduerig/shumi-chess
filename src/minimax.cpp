@@ -1378,7 +1378,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     }
 
 
-    GameState state = engine.game_over(legal_moves);
+    GameState state = engine.is_game_over(legal_moves);
 
 
     // =====================================================================
@@ -2221,7 +2221,7 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
 
     nodes_visited++;
     vector<Move> moves = engine.get_legal_moves();
-    GameState state = engine.game_over(moves);
+    GameState state = engine.is_game_over(moves);
     
     if (state == GameState::BLACKWIN) {
         // Use of DBL_MAX + 1 not really valid, as DBL_MAX + 1 == DBL_MAX in doubles.

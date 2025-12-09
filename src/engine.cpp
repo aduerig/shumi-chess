@@ -290,12 +290,12 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 //      returning on the actual call?, very slow calling get_legal_moves again
 // NOTE: I complely agree this is wastefull. But it is not called in the "main line", the one below is.
 //   This one is called only during testing?
-GameState Engine::game_over() {
+GameState Engine::is_game_over() {
     vector<Move> legal_moves = get_legal_moves();
-    return game_over(legal_moves);
+    return is_game_over(legal_moves);
 }
 
-GameState Engine::game_over(vector<Move>& legal_moves) {
+GameState Engine::is_game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
         if ( (!game_board.white_king) || (is_square_in_check(Color::WHITE, game_board.white_king)) ) {
             return GameState::BLACKWIN;     // Checkmate
@@ -1512,6 +1512,7 @@ char Engine::file_from_move(const Move& m)
 
 // pop!
 void Engine::set_random_on_next_move() {
+    //
     // user_request_next_move++;
     // if (user_request_next_move > 10) {
     //     user_request_next_move = 7;
@@ -1527,8 +1528,6 @@ void Engine::set_random_on_next_move() {
         i_randomize_next_move = 1;
         cout << "\033[1;31m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
-
-
 
     //killTheKing(ShumiChess::BLACK);
 }

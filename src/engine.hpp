@@ -70,8 +70,8 @@ class Engine {
         void pushMoveFast(const Move&);
         void popMoveFast();
         
-        GameState game_over();
-        GameState game_over(vector<Move>&);
+        GameState is_game_over();
+        GameState is_game_over(vector<Move>&);
         int i_randomize_next_move = 0;
 
         // Returns direct pointer (reference) to a bit board.

@@ -156,7 +156,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 }
 
 static PyObject*
-engine_communicator_set_random(PyObject* self, PyObject* args) {
+engine_communicator_hit_one_key(PyObject* self, PyObject* args) {
     //python_engine.popMove();   pop!
 
     //cout << "random!" << endl;
@@ -167,7 +167,7 @@ engine_communicator_set_random(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_game_over(PyObject* self, PyObject* args) {
-    return Py_BuildValue("i", (int) python_engine.game_over());
+    return Py_BuildValue("i", (int) python_engine.is_game_over());
 }
 
 
@@ -269,13 +269,13 @@ static PyMethodDef engine_communicator_methods[] = {
     {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
-    {"game_over",  engine_communicator_game_over, METH_VARARGS, ""},
+    {"is_game_over",  engine_communicator_game_over, METH_VARARGS, ""},
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},
     {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
-    {"one_Key_Hit",  engine_communicator_set_random, METH_VARARGS, ""},
+    {"one_Key_Hit",  engine_communicator_hit_one_key, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
     {"get_best_score_at_root",  engine_communicator_get_best_score_at_root, METH_VARARGS, ""},
