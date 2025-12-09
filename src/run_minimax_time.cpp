@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
         cout << "You entered time_to_use of: " << time_to_use << endl;
     }
     // minimax_ai.get_move(time_to_use);
-    minimax_ai.get_move_iterative_deepening(time_to_use, 7);
+    minimax_ai.get_move_iterative_deepening(time_to_use, 7, 0);
     cout << "Got a move at time_to_use: " << time_to_use << endl;
     return 0;
 }

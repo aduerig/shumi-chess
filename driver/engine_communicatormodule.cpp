@@ -214,23 +214,34 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
 }
 
 
-
-
 static PyObject*
-minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args) {
-    double milliseconds;          // required   , NOTE: why no default
-    int max_deepening = 7;
-    int argument = 0;
+minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
+{
+    double milliseconds;      // required
+    int    max_deepening;     // required
+    int    argument = 0;      // optional, default 0
 
-    // parse arguments: required double, optional int
-    if (!PyArg_ParseTuple(args, "d|i", &milliseconds, &max_deepening)) return NULL;
+    // required double, required int, optional int
+    if (!PyArg_ParseTuple(args, "di|i",
+                          &milliseconds,
+                          &max_deepening,
+                          &argument))
+    {
+        return NULL;
+    }
 
     ShumiChess::Move gotten_move;
     std::string move_in_acn_notation;
 
     Py_BEGIN_ALLOW_THREADS;
 
-    gotten_move = minimax_ai->get_move_iterative_deepening(milliseconds, max_deepening);
+    // Pass arguments through to the engine
+    gotten_move = minimax_ai->get_move_iterative_deepening(
+        milliseconds,
+        max_deepening,
+        argument
+    );
+
     move_in_acn_notation = utility::representation::move_to_string(gotten_move);
 
     Py_END_ALLOW_THREADS;

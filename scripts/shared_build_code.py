@@ -74,49 +74,20 @@ def build_python_gui_module(release):
         sys.exit(1)
 
 
-# def run_python_gui(fen=None, human=False, depth=None, time=None):
-
-#     cmd_line = [
-#         'python',
-#         str(show_board_path)
-#     ]
-#     if fen is not None:
-#         cmd_line.extend(['--fen', fen])
-#     if human:
-#         cmd_line.extend(['--human'])
-
-#     # NEW: forward time to the GUI
-#     if time is not None:
-#         cmd_line.extend(['-t', str(time)])
-#     if depth is not None:
-#         cmd_line.extend(['-d', str(depth)])
-    # process = run_command_async(cmd_line, stdout=None, stderr=None)
-
-    # try:
-    #     process.wait()
-    # except KeyboardInterrupt:
-    #     print("\nKeyboard interrupt received in launcher. Killing child process group...")
-    #     if process:
-    #         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-    #     raise
-    # except Exception as e:
-    #     print(f"An error occurred: {e}")
-    #     if process:
-    #         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-    #     raise
-
-
-
 def run_python_gui(
     fen=None,
     human=False,
     depth=None,
     time=None,
+    rand=None,
+    argu=None,
     wdepth=None,
     wtime=None,
+    wargu=None,
     bdepth=None,
     btime=None,
-    rand=None,
+    bargu=None,
+
 ):
     cmd_line = [
         'python',
@@ -135,16 +106,22 @@ def run_python_gui(
         cmd_line.extend(['-d', str(depth)])
     if rand is not None:
         cmd_line.extend(['-r', str(rand)])
+    if argu is not None:
+        cmd_line.extend(['-a', str(argu)])
 
     # per-side
     if wdepth is not None:
         cmd_line.extend(['-wd', str(wdepth)])
     if wtime is not None:
         cmd_line.extend(['-wt', str(wtime)])
+    if wargu is not None:
+        cmd_line.extend(['-wa', str(wargu)])
     if bdepth is not None:
         cmd_line.extend(['-bd', str(bdepth)])
     if btime is not None:
         cmd_line.extend(['-bt', str(btime)])
+    if bargu is not None:
+        cmd_line.extend(['-ba', str(bargu)])
 
     process = run_command_async(cmd_line, stdout=None, stderr=None)
 

@@ -144,7 +144,7 @@ public:
                     std::vector<MoveAndScore>& MovesFromRoot,
                     double delta_pawns);
 
-    ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested);
+    ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int argu);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
                                             , const ShumiChess::Move& move_last

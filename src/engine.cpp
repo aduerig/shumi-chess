@@ -1525,7 +1525,7 @@ void Engine::set_random_on_next_move() {
     // RANDOMIZING_EQUAL_MOVES
     if (g_iMove==0) {
         i_randomize_next_move = 1;
-        cout << "\033[1;31mrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
+        cout << "\033[1;31m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
 

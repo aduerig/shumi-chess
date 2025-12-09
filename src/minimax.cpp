@@ -742,7 +742,7 @@ int g_this_depth = 6;
 //
 // This is a "root position". The next human move triggers a new root position
 // timeRequested now in *milliseconds*
-Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepening_requested) {  
+Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int argu) {  
     
 
     using namespace std::chrono;
@@ -750,9 +750,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     auto us  = duration_cast<microseconds>(now).count();
     std::srand(static_cast<unsigned>(us));   // reseed once per search
 
-    
-    // cout << "\x1b[94mtime requested (msec) =" << timeRequested << "\x1b[0m" << endl;
-    // scout << "\x1b[94mdept requested (ply)  =" << max_deepening_requested << "\x1b[0m" << endl;
+    cout << "\x1b[94mdept requested (ply)  =" << max_deepening_requested << "\x1b[0m" << endl;  
+    cout << "\x1b[94mtime requested (msec) =" << timeRequested << "\x1b[0m" << endl;
+    cout << "\x1b[94margu requested (msec) =" << argu << "\x1b[0m" << endl;
 
     auto start_time = chrono::high_resolution_clock::now();
     // CHANGED: interpret timeRequestedMsec as milliseconds
@@ -959,7 +959,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
                     ).count();
 
             nRandos++;
-            cout << "\n\033[1;31m rando move \033[0m" << MovesFromRoot.size() << endl;
+            cout << "\033[1;31m rando move \033[0m" << MovesFromRoot.size() << endl;
 
             best_move = pick_random_within_delta_rand(MovesFromRoot, d_random_delta);
         }

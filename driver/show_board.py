@@ -31,13 +31,18 @@ parser.add_argument('-human', '--human', default=False, action='store_true')
 # common
 parser.add_argument('-d', '--depth', type=int, default=None, help='Maximum deepening')
 parser.add_argument('-t', '--time',  type=int, default=None, help='Time per move in ms')
+parser.add_argument('-a', '--argu',   type=int, default=None, help='Special argument')
 parser.add_argument('-r', '--rand',  type=int, default=None, help='Randomization')
 
 # per-side
 parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')
 parser.add_argument('-wt', '--wt', type=int, default=None, help='white time ms')
+parser.add_argument('-wa', '--wa', type=int, default=None, help='white Special argument')
 parser.add_argument('-bd', '--bd', type=int, default=None, help='black max deepening')
 parser.add_argument('-bt', '--bt', type=int, default=None, help='black time ms')
+parser.add_argument('-ba', '--ba', type=int, default=None, help='black Special argument')
+
+
 
 # parse arguments
 args = parser.parse_args()
@@ -45,18 +50,22 @@ args = parser.parse_args()
 print("\nARGS:",
       "  depth=", args.depth,
       "  time=", args.time,
+      "  rand=", args.rand,
       "  wdepth=", args.wd,
       "  wtime=", args.wt,
+      "  wargu=", args.wa,
       "  bdepth=", args.bd,
       "  btime=", args.bt,
-      "  rand=", args.rand
+      "  bargu=", args.ba
       )
 
 dpth_white = None
 time_white = None
+argu_white = None
+
 dpth_black = None
 time_black = None
-
+argu_black = None
 
 
 script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
@@ -94,6 +103,7 @@ def reset_board(fen="", winner="????"):
     
     # If AI is thinking, cancel it
     if ai_is_thinking:
+        # NO This should be a resign.
         print("Board reset during AI turn, cancelling computation.")
         ai_is_thinking = False
         # Clear the queue of any potential stale moves
@@ -157,14 +167,15 @@ def get_random_move(legal_moves):
 
 def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
     import sys
-    global player_index, dpth_white, time_white, dpth_black, time_black
+    global player_index, dpth_white, time_white, dpth_black, time_black, argu_white, argu_black
     try:
         if name_of_ai.lower() == 'random_ai':
             from_acn, to_acn = get_random_move(legal_moves)
         else:
-            # did the user give global -t / -d ?
+            # did the user give global -t / -d  / -a?
             global_time_set  = ('-t' in sys.argv) or ('--time' in sys.argv)
             global_depth_set = ('-d' in sys.argv) or ('--depth' in sys.argv)
+            global_argu_set = ('-a' in sys.argv) or ('--argu' in sys.argv)
 
             side = player_index  # 0 = white, 1 = black
 
@@ -188,23 +199,43 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
             else:
                 max_deepening = args.depth if args.depth is not None else 7
 
+              # ARG: per-side beats global
+            if side == 0 and args.wa is not None:
+                special_arg = args.wa
+            elif side == 1 and args.ba is not None:
+                special_arg = args.ba
+            elif global_argu_set and args.argu is not None:
+                special_arg = args.argu
+            else:
+                special_arg = args.argu  # may be None
+
+
             # debug print
-            #print("\nmillsecs=    ", milliseconds)
-            #print("max_deepening= ", max_deepening)
-            #print("random= ", args.rand)      # -r
+            # print("\nmillsecs=    ", milliseconds)
+            # print("max_deepening= ", max_deepening)
+            # print("special_arg=   ", special_arg)
+            # print("random= ", args.rand)      # -r
+
             if side == 0:
                 time_white = milliseconds
                 dpth_white = max_deepening
+                argu_white = special_arg
             else:
                 time_black = milliseconds
                 dpth_black = max_deepening
+                argu_black = special_arg
            
 
-            # RANDOM
+            # To randomize first move(s)
             if args.rand:
-                engine_communicator.one_Key_Hit()       #  To randomize first move(s)
+                engine_communicator.one_Key_Hit()
 
-            move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening)
+
+            # make sure special_arg is an int (no None)
+            if special_arg is None:
+                special_arg = 0
+
+            move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, special_arg)
             from_acn, to_acn = move[0:2], move[2:4]
 
 
@@ -315,8 +346,6 @@ def flip_sides():
         curr_whose_on_top_text.setText('Black on top')
     else:
         curr_whose_on_top_text.setText('White on top')
-
-    #print("cat ", whiteOnBottom)
 
 
 def clicked_flip_button(button_obj):
@@ -480,7 +509,7 @@ for button_obj in button_holder:
     curr_y_cell -= 1
 
 # set small field left of the turn label
-material_text = Text(Point(square_size * 0.30, square_size * 9), '1234')
+material_text = Text(Point(square_size * 0.35, square_size * 9), '1234')
 material_text.setFill(color_rgb(200, 200, 200))
 material_text.setSize(12)
 material_text.draw(win)
@@ -492,7 +521,7 @@ material_text.setText(str(score))
 # set current turn text
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
-    Point(square_size * 1.25, square_size * 9),
+    Point(square_size * 1.45, square_size * 9),
     turn_text_values[0]
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
@@ -500,9 +529,9 @@ current_turn_text.draw(win)
 
 
 # current game text (plus small W/B/D counters to the left)
-bottom_wins_text = Text(Point(square_size * 6.75, square_size * 9.4), f'Bot {curr_game_bottom}')
-top_wins_text = Text(Point(square_size * 7.45, square_size * 9.4), f'Top {curr_game_top}')
-draw_wins_text  = Text(Point(square_size * 8.15, square_size * 9.4), f'Drw {curr_game_draw}')
+bottom_wins_text = Text(Point(square_size * 6.35, square_size * 9.0), f'Bot {curr_game_bottom}')
+top_wins_text = Text(Point(square_size * 7.05, square_size * 9.0), f'Top {curr_game_top}')
+draw_wins_text  = Text(Point(square_size * 7.75, square_size * 9.0), f'Drw {curr_game_draw}')
 
 # set the win/loss/draw counters
 for t in (bottom_wins_text, top_wins_text, draw_wins_text):
@@ -514,7 +543,7 @@ for t in (bottom_wins_text, top_wins_text, draw_wins_text):
 
 # set game number
 curr_game_text = Text(
-    Point(square_size * 2.5, square_size * 9),
+    Point(square_size * 2.75, square_size * 9),
     f'Game {curr_game}'
 )
 curr_game_text.setFill(color_rgb(200, 200, 200))
@@ -523,7 +552,7 @@ curr_game_text.draw(win)
 
 # set white flags
 white_flags_text = Text(
-    Point(square_size * 6.75, square_size * 9),
+    Point(square_size * 4.75, square_size * 9.32),
     'wFlags -'
 )
 white_flags_text.setFill(color_rgb(200, 200, 200))
@@ -532,7 +561,7 @@ white_flags_text.draw(win)
 
 # set black flags
 black_flags_text = Text(
-    Point(square_size * 8.5, square_size * 9),
+    Point(square_size * 7.20, square_size * 9.32),
     'bFlags - '
 )
 black_flags_text.setFill(color_rgb(200, 200, 200))
@@ -541,7 +570,7 @@ black_flags_text.draw(win)
 
 # set current move number
 curr_move_text = Text(
-    Point(square_size * 3.55, square_size * 9),
+    Point(square_size * 3.75, square_size * 9),
     'Move {}'.format(engine_communicator.get_move_number())
 )
 curr_move_text.setFill(color_rgb(200, 200, 200))
@@ -553,6 +582,7 @@ curr_whose_on_top_text = Text(
     'Black on top'
 )
 curr_whose_on_top_text.setFill(color_rgb(200, 200, 200))
+curr_whose_on_top_text.setSize(8)   # or 10, 12, etc.
 curr_whose_on_top_text.draw(win)
 
 #engine_communicator.one_Key_Hit()       #  To randomize first move(s)
@@ -578,11 +608,10 @@ if winner == 'draw':
 else:
     winner_text = 'GAME OVER: {} wins'
 
-game_over_text = Text(
-    Point(square_size * 2.0, square_size * 9.5),
-    winner_text
-)
-game_over_text.setFill(color_rgb(255, 160, 122))
+game_over_text = Text(Point(square_size * 1.5, square_size * 9.35), winner_text)
+game_over_text.setFill(color_rgb(80, 150, 255))
+game_over_text.setText('Good Luck')
+game_over_text.draw(win)
 
 # draws the squares of the board
 every_other = 1
@@ -791,16 +820,52 @@ ai_is_thinking = False
 try:
     while True:
 
-        game_over_text.undraw()
+        #game_over_text.undraw()
+        
         while game_over_cache() == -1: # stuff to do every frame no matter what
             # print(f'Loop: {acn_focused}')
+
+            move_number = engine_communicator.get_move_number()
+
+            # once the game has really started (move > 2), erase this text.
+            if move_number > 2:
+                game_over_text.undraw()
+
+            current_turn_text.setText(turn_text_values[player_index])
+            curr_game_text.setText('Game {}'.format(curr_game))
+            curr_move_text.setText('Move {}'.format(move_number))
+
+
+
 
             current_turn_text.setText(turn_text_values[player_index])
             curr_game_text.setText('Game {}'.format(curr_game))
             curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
 
-            white_flags_text.setText(f"wFlags d={dpth_white} t={time_white}")
-            black_flags_text.setText(f"bFlags d={dpth_black} t={time_black}")
+            # White flags
+            w_parts = ["wFlags:"]
+            if dpth_white is not None:
+                w_parts.append(f" d={dpth_white}")
+            if time_white is not None:
+                w_parts.append(f" t={time_white}")
+            if argu_white is not None:
+                w_parts.append(f" a={argu_white}")
+
+            white_flags_text.setText(" ".join(w_parts))
+
+            # Black flags
+            b_parts = ["bFlags:"]
+            if dpth_black is not None:
+                b_parts.append(f" d={dpth_black}")
+            if time_black is not None:
+                b_parts.append(f" t={time_black}")
+            if argu_black is not None:
+                b_parts.append(f" a={argu_black}")
+
+            black_flags_text.setText(" ".join(b_parts))
+
+            # white_flags_text.setText(f"wFlags d={dpth_white} t={time_white} a={argu_white}")
+            # black_flags_text.setText(f"bFlags d={dpth_black} t={time_black} a={argu_black}")
 
             material_text.setText(str(engine_communicator.get_best_score_at_root()))
 
@@ -917,7 +982,6 @@ try:
             winner = 'black'
         elif gamover == 1:  # GameState::DRAW
             winner = 'draw'
-
 
         if winner == 'draw':
             game_over_text.setText('GAME OVER: draw')

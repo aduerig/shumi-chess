@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 
     Move move_best;
 
-    move_best = minimax_ai.get_move_iterative_deepening(time_to_use_msec, depth_limit);
+    move_best = minimax_ai.get_move_iterative_deepening(time_to_use_msec, depth_limit, 0);
 
 
     engine.move_into_string(move_best);
