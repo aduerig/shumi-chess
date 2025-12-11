@@ -109,7 +109,9 @@ void Engine::reset_engine() {         // New game.
     //TTable2.clear();
 
 }
-
+//
+// By "reset engine" is meant: "new game". 
+//
 void Engine::reset_engine(const string& fen) {      // New game.
 
     std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
@@ -146,7 +148,7 @@ void Engine::reset_engine(const string& fen) {      // New game.
 }
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
-// https://stackoverflow.com/questions/15704565/efficient-way-to-return-a-stdvector-in-c
+// https://stackoverflow.com/questions/15704565/efficient-way-to-return-f-stdvector-in-c
 
 
 

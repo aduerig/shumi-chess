@@ -54,4 +54,4 @@ tuple<double, Move> MinimaxAI::store_board_values_negamax(int depth, double alph
 
 
 
-This is a problems we have faced before. I want to use "TTable2" to protect a search node of the recursion. This is my last unsolvable problem. We have failed numerous times with this. Note my use of DOING_TT_NORM. I also use DOING_TT_NORM_DEBUG to control the output of "burp2" to indicate when mt stored score does not match what is calculated. Either the debug is wrong, or there are more serious errors. Because I see "burp2" outputs after 2 or 3000 "correct matches or so. The zobrist is definilty been proven correct. 
+This is a problems we have faced before. I want to use "TTable2" to protect a search node of the recursion. This is my last unsolvable problem. We have failed numerous times with this. Note my use of DOING_TT2_NORM. I also use DOING_TT2_NORM_DEBUG to control the output of "burp2" to indicate when mt stored score does not match what is calculated. Either the debug is wrong, or there are more serious errors. Because I see "burp2" outputs after 2 or 3000 "correct matches or so. The zobrist is definilty been proven correct. 

@@ -10,12 +10,12 @@
 #include <string>
 #include <limits>
 
-
+#include "Features.hpp"
 
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
-
+//#define DOING_TT2_NORM_DEBUG
 
 
 class RandomAI {
@@ -37,6 +37,9 @@ public:
 
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
+
+
+    ull Features_mask = 0;   // Note why no _DEFAULT_FEATURES_MASK?
 
 
     bool stop_calculation = false;
@@ -90,18 +93,22 @@ public:
         TTFlag           flag;       // EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
 
-        //int nPlysDebug;
-        bool drawDebug;  // 0 = not draw, 1 = draw
         double dAlphaDebug;
         double dBetaDebug;
-        bool bIsInCheckDebug;
-        int legalMovesSize;
-        int repCountDebug;
-        double dScoreDebug;
 
-        ull   bb_wp, bb_wn, bb_wb, bb_wr, bb_wq, bb_wk;
-        ull   bb_bp, bb_bn, bb_bb, bb_br, bb_bq, bb_bk;
-        
+        #ifdef DOING_TT2_NORM_DEBUG
+            // All the below to end is debug
+            //int nPlysDebug;
+            bool drawDebug;  // 0 = not draw, 1 = draw
+            bool bIsInCheckDebug;
+            int legalMovesSize;
+            int repCountDebug;
+            double dScoreDebug;
+
+            ull   bb_wp, bb_wn, bb_wb, bb_wr, bb_wq, bb_wk;
+            ull   bb_bp, bb_bn, bb_bb, bb_br, bb_bq, bb_bk;
+        #endif
+
     };
 
     std::unordered_map<uint64_t, TTEntry2> TTable2;
@@ -133,6 +140,7 @@ public:
     );
 
     void wakeup();
+    void resign();
 
     void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
     tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time, const ShumiChess::Move& null_move);
@@ -144,7 +152,7 @@ public:
                     std::vector<MoveAndScore>& MovesFromRoot,
                     double delta_pawns);
 
-    ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int argu);
+    ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int feat);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
                                             , const ShumiChess::Move& move_last
@@ -173,7 +181,7 @@ public:
     double get_value(int depth, int color_multiplier, double alpha, double beta);
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
-
+    // end oLD CHESS engine
 
 
     int nFarts = 0;

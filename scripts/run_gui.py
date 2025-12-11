@@ -19,16 +19,16 @@ parser.add_argument('--human', default=False, action='store_true')
 # common
 parser.add_argument('-d', '--depth', type=int, default=5, help='Max deepening')
 parser.add_argument('-t', '--time', type=int, default=99, help='Time per move in ms')
-parser.add_argument('-a', '--argu',   type=int, default=0, help='Special argument')
+parser.add_argument('-f', '--feat',   type=int, default=0, help='Special argument')
 parser.add_argument('-r', '--rand', type=int, default=0, help='Randomization')
 
 # per-side
 parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')
 parser.add_argument('-wt', '--wt', type=int, default=None, help='white time ms')
-parser.add_argument('-wa', '--wa', type=int, default=None, help='white Special argument')
+parser.add_argument('-wf', '--wf', type=int, default=None, help='white Special argument')
 parser.add_argument('-bd', '--bd', type=int, default=None, help='black max deepening')
 parser.add_argument('-bt', '--bt', type=int, default=None, help='black time ms')
-parser.add_argument('-ba', '--ba', type=int, default=None, help='black Special argument')
+parser.add_argument('-bf', '--bf', type=int, default=None, help='black Special argument')
 
 
 args = parser.parse_args()
@@ -45,13 +45,13 @@ shared_build_code.run_python_gui(
     depth=args.depth,
     time=args.time,
     rand=args.rand,
-    argu=args.argu,
+    feat=args.feat,
     wdepth=args.wd,
     wtime=args.wt,
-    wargu=args.wa,
+    wargu=args.wf,
     bdepth=args.bd,
     btime=args.bt,
-    bargu=args.ba
+    bargu=args.bf
 )
 
 

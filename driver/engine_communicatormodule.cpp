@@ -170,7 +170,7 @@ engine_communicator_game_over(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", (int) python_engine.is_game_over());
 }
 
-
+// By "reset engine" is meant: "new game". 
 static PyObject*
 engine_communicator_reset_engine(PyObject* self, PyObject* args) {
     cout << "reset_engine" << endl;
@@ -255,6 +255,17 @@ engine_communicator_wakeup(PyObject* self, PyObject* args) {
     return Py_BuildValue(""); // this is None in Python
 }
 
+
+static PyObject*
+engine_communicator_get_draw_reason(PyObject* self, PyObject* args)
+{
+    const char* reason = "3 time rep";
+
+    // "s" builds a Python str from a C null-terminated char*
+    return Py_BuildValue("s", reason);
+}
+
+
 static PyObject* 
 engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args)
 {
@@ -262,6 +273,14 @@ engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args)
     double value = ijunk / 100.0;        // e.g. 243 -> 2.43, -1234 -> -12.34
     return Py_BuildValue("d", value);    // "d" = Python float
 }
+
+static PyObject*
+engine_communicator_resign(PyObject* self, PyObject* args) {
+    minimax_ai->resign();
+    return Py_BuildValue(""); // this is None in Python
+}
+
+
 
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
@@ -279,6 +298,8 @@ static PyMethodDef engine_communicator_methods[] = {
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
     {"get_best_score_at_root",  engine_communicator_get_best_score_at_root, METH_VARARGS, ""},
+    {"get_draw_reason",  engine_communicator_get_draw_reason, METH_VARARGS, ""},
+    {"resign",  engine_communicator_resign, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

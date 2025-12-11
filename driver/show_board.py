@@ -8,6 +8,16 @@ import argparse
 import threading
 import queue
 
+
+from Features import (
+    _FEATURE_TT,
+    _FEATURE_TT2,
+    _FEATURE_KILLER,
+    _FEATURE_UNQUIET_SORT,
+    _DEFAULT_FEATURES_MASK,
+)
+
+
 # same directory
 from modified_graphics import *
 import engine_communicator
@@ -31,16 +41,16 @@ parser.add_argument('-human', '--human', default=False, action='store_true')
 # common
 parser.add_argument('-d', '--depth', type=int, default=None, help='Maximum deepening')
 parser.add_argument('-t', '--time',  type=int, default=None, help='Time per move in ms')
-parser.add_argument('-a', '--argu',   type=int, default=None, help='Special argument')
+parser.add_argument('-f', '--feat',   type=int, default=None, help='Special argument')
 parser.add_argument('-r', '--rand',  type=int, default=None, help='Randomization')
 
 # per-side
 parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')
 parser.add_argument('-wt', '--wt', type=int, default=None, help='white time ms')
-parser.add_argument('-wa', '--wa', type=int, default=None, help='white Special argument')
+parser.add_argument('-wf', '--wf', type=int, default=None, help='white Special argument')
 parser.add_argument('-bd', '--bd', type=int, default=None, help='black max deepening')
 parser.add_argument('-bt', '--bt', type=int, default=None, help='black time ms')
-parser.add_argument('-ba', '--ba', type=int, default=None, help='black Special argument')
+parser.add_argument('-bf', '--bf', type=int, default=None, help='black Special argument')
 
 
 
@@ -53,19 +63,19 @@ print("\nARGS:",
       "  rand=", args.rand,
       "  wdepth=", args.wd,
       "  wtime=", args.wt,
-      "  wargu=", args.wa,
+      "  wfeat=", args.wf,
       "  bdepth=", args.bd,
       "  btime=", args.bt,
-      "  bargu=", args.ba
+      "  bargu=", args.bf
       )
 
 dpth_white = None
 time_white = None
-argu_white = None
+feat_white = None
 
 dpth_black = None
 time_black = None
-argu_black = None
+feat_black = None
 
 
 script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
@@ -93,14 +103,11 @@ for key, val in imported_ais.items():
     print('AI: {} imported, module is: {}'.format(key, val))
 
 
-##def reset_board(fen=""):
 def reset_board(fen="", winner="????"):
 
     global curr_game_bottom, curr_game_top, curr_game_draw, curr_game
     global legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index
-
-    #print('reset_board called from python')
-    
+   
     # If AI is thinking, cancel it
     if ai_is_thinking:
         # NO This should be a resign.
@@ -132,6 +139,8 @@ def reset_board(fen="", winner="????"):
     undraw_pieces()
     render_all_pieces_and_assign(board)
 
+    legal_moves = engine_communicator.get_legal_moves()
+    game_state_might_change = True
 
     # Update the match counters
     curr_game += 1
@@ -155,10 +164,6 @@ def reset_board(fen="", winner="????"):
     draw_wins_text.setText(f'Drw {curr_game_draw}')
 
 
-    legal_moves = engine_communicator.get_legal_moves()
-    game_state_might_change = True
-
-
 def get_random_move(legal_moves):
     # ! if this line errors it is cause random.choice(moves) returns 0, which shouldn't really be possible in a completed engine
     choice = random.choice(legal_moves)
@@ -167,15 +172,15 @@ def get_random_move(legal_moves):
 
 def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
     import sys
-    global player_index, dpth_white, time_white, dpth_black, time_black, argu_white, argu_black
+    global player_index, dpth_white, time_white, dpth_black, time_black, feat_white, feat_black
     try:
         if name_of_ai.lower() == 'random_ai':
             from_acn, to_acn = get_random_move(legal_moves)
         else:
-            # did the user give global -t / -d  / -a?
+            # did the user give global -t / -d  / -f?
             global_time_set  = ('-t' in sys.argv) or ('--time' in sys.argv)
             global_depth_set = ('-d' in sys.argv) or ('--depth' in sys.argv)
-            global_argu_set = ('-a' in sys.argv) or ('--argu' in sys.argv)
+            global_argu_set = ('-f' in sys.argv) or ('--feat' in sys.argv)
 
             side = player_index  # 0 = white, 1 = black
 
@@ -200,42 +205,44 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
                 max_deepening = args.depth if args.depth is not None else 7
 
               # ARG: per-side beats global
-            if side == 0 and args.wa is not None:
-                special_arg = args.wa
-            elif side == 1 and args.ba is not None:
-                special_arg = args.ba
-            elif global_argu_set and args.argu is not None:
-                special_arg = args.argu
+            if side == 0 and args.wf is not None:
+                features_mask = args.wf
+            elif side == 1 and args.bf is not None:
+                features_mask = args.bf
+            elif global_argu_set and args.feat is not None:
+                features_mask = args.feat
             else:
-                special_arg = args.argu  # may be None
+                features_mask = args.feat  # may be None
 
+            if features_mask is None:   # make sure features_mask is an int (no None)
+                features_mask =_DEFAULT_FEATURES_MASK
 
+            # if features_mask == 0:
+            #     features_mask = _DEFAULT_FEATURES_MASK
+
+            if not features_mask:
+                features_mask = _DEFAULT_FEATURES_MASK
+                
             # debug print
             # print("\nmillsecs=    ", milliseconds)
             # print("max_deepening= ", max_deepening)
-            # print("special_arg=   ", special_arg)
+            # print("features_mask=   ", features_mask)
             # print("random= ", args.rand)      # -r
 
             if side == 0:
                 time_white = milliseconds
                 dpth_white = max_deepening
-                argu_white = special_arg
+                feat_white = features_mask
             else:
                 time_black = milliseconds
                 dpth_black = max_deepening
-                argu_black = special_arg
-           
+                feat_black = features_mask
 
             # To randomize first move(s)
             if args.rand:
-                engine_communicator.one_Key_Hit()
+                engine_communicator.one_Key_Hit()            
 
-
-            # make sure special_arg is an int (no None)
-            if special_arg is None:
-                special_arg = 0
-
-            move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, special_arg)
+            move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, features_mask)
             from_acn, to_acn = move[0:2], move[2:4]
 
 
@@ -399,9 +406,9 @@ def clicked_reset_button(button_obj):
 
 
 def wake_up(button_obj):
+    #engine_communicator.resign()
     engine_communicator.wakeup()
     
-
 
 def get_fen(button_obj):
     fen = engine_communicator.get_fen()
@@ -604,9 +611,9 @@ set_fen_text.draw(win)
 
 # set the winner text
 if winner == 'draw':
-    winner_text = 'GAME OVER: DRAW'      
+    winner_text = 'GAME OVER: draw'      
 else:
-    winner_text = 'GAME OVER: {} wins'
+    winner_text = 'GAME OVER: {} won'
 
 game_over_text = Text(Point(square_size * 1.5, square_size * 9.35), winner_text)
 game_over_text.setFill(color_rgb(80, 150, 255))
@@ -835,9 +842,6 @@ try:
             curr_game_text.setText('Game {}'.format(curr_game))
             curr_move_text.setText('Move {}'.format(move_number))
 
-
-
-
             current_turn_text.setText(turn_text_values[player_index])
             curr_game_text.setText('Game {}'.format(curr_game))
             curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
@@ -848,8 +852,8 @@ try:
                 w_parts.append(f" d={dpth_white}")
             if time_white is not None:
                 w_parts.append(f" t={time_white}")
-            if argu_white is not None:
-                w_parts.append(f" a={argu_white}")
+            if feat_white is not None:
+                w_parts.append(f" f={feat_white}")
 
             white_flags_text.setText(" ".join(w_parts))
 
@@ -859,13 +863,10 @@ try:
                 b_parts.append(f" d={dpth_black}")
             if time_black is not None:
                 b_parts.append(f" t={time_black}")
-            if argu_black is not None:
-                b_parts.append(f" a={argu_black}")
+            if feat_black is not None:
+                b_parts.append(f" f={feat_black}")
 
             black_flags_text.setText(" ".join(b_parts))
-
-            # white_flags_text.setText(f"wFlags d={dpth_white} t={time_white} a={argu_white}")
-            # black_flags_text.setText(f"bFlags d={dpth_black} t={time_black} a={argu_black}")
 
             material_text.setText(str(engine_communicator.get_best_score_at_root()))
 
@@ -984,13 +985,14 @@ try:
             winner = 'draw'
 
         if winner == 'draw':
-            game_over_text.setText('GAME OVER: draw')
+            reason = engine_communicator.get_draw_reason()  # this should return a Python str
+            game_over_text.setText(f'GAME OVER: draw ({reason})')
         else:
             game_over_text.setText(winner_text.format(winner))
         game_over_text.draw(win)
 
 
-        # if autoreset is ON, do the old behavior (this also updates counters)
+        # if autoreset is ON, do the old behavior (this also updates game counters)
         if autoreset_toggle:
             print('RESETTING BOARD TOGGLE')
             reset_board("", winner)

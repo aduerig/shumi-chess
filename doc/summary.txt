@@ -27,7 +27,7 @@ TT2: Used for the search/node caching. This is the component under test.
 
 Philosophy: You treat the TT not just as a search accelerator, but as a correctness oracle. You expect Store(Position) == Retrieve(Position) to hold true 100% of the time, provided the depth matches.
 4. The "Burp" Verification System (Debug Mode)
-Trigger: Compiled under #ifdef DOING_TT_NORM_DEBUG.
+Trigger: Compiled under #ifdef DOING_TT2_NORM_DEBUG.
 Workflow:
 
 Execute the search/calculation for the current node (cp_score_temp).

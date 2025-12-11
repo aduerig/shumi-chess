@@ -80,7 +80,7 @@ def run_python_gui(
     depth=None,
     time=None,
     rand=None,
-    argu=None,
+    feat=None,
     wdepth=None,
     wtime=None,
     wargu=None,
@@ -106,8 +106,8 @@ def run_python_gui(
         cmd_line.extend(['-d', str(depth)])
     if rand is not None:
         cmd_line.extend(['-r', str(rand)])
-    if argu is not None:
-        cmd_line.extend(['-a', str(argu)])
+    if feat is not None:
+        cmd_line.extend(['-f', str(feat)])
 
     # per-side
     if wdepth is not None:
@@ -115,13 +115,13 @@ def run_python_gui(
     if wtime is not None:
         cmd_line.extend(['-wt', str(wtime)])
     if wargu is not None:
-        cmd_line.extend(['-wa', str(wargu)])
+        cmd_line.extend(['-wf', str(wargu)])
     if bdepth is not None:
         cmd_line.extend(['-bd', str(bdepth)])
     if btime is not None:
         cmd_line.extend(['-bt', str(btime)])
     if bargu is not None:
-        cmd_line.extend(['-ba', str(bargu)])
+        cmd_line.extend(['-bf', str(bargu)])
 
     process = run_command_async(cmd_line, stdout=None, stderr=None)
 

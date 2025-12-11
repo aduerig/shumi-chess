@@ -563,7 +563,7 @@ def kill_existing_port_listener(port=5000):
     import platform
     if is_windows():
         try:
-            find_pid_command = f'netstat -a -n -o | findstr ":{port}"'
+            find_pid_command = f'netstat -f -n -o | findstr ":{port}"'
             result = subprocess.run(find_pid_command, capture_output=True, text=True, shell=True)
             
             pids_to_kill = set()

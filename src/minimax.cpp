@@ -10,27 +10,21 @@
 #include <set>
 #include <cstdint>
 #include <cmath>
-#include <utility>
-
+#include <chrono>
+#include <iostream>
+#include <atomic>
 
 #include <globals.hpp>
 #include "utility.hpp"
 #include "minimax.hpp"
-
+#include "salt.h"
+#include "Features.hpp"
 
 using namespace std;
 using namespace ShumiChess;
 using namespace utility;
 using namespace utility::representation;
 using namespace utility::bit;
-
-#include <chrono>
-#include <iostream>
-
-#include <atomic>
-static std::atomic<int> g_live_ply{0};   // value the callback prints
-
-#include "salt.h"
 
 
 #undef NDEBUG
@@ -40,6 +34,7 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Debug   THESE SHOULD BE OFF only for debugging
+
 //#define _DEBUGGING_PUSH_POP
 
 //#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
@@ -51,12 +46,36 @@ static std::atomic<int> g_live_ply{0};   // value the callback prints
 
 //#define DEBUGGING_RANDOM_DELTA
 
+// #define DOING_TT_EVAL2
+// #define DOING_TT_EVAL_DEBUG
+
+//#define DOING_TT2_NORM_DEBUG
+//#define BURP2_THRESHOLD_CP 25
+
+//#define DEBUGGING_KILLER_MOVES 
+
 #ifdef _DEBUGGING_TO_FILE
     FILE *fpDebug = NULL;
     char szDebug[256];
     bool bSuppressOutput = false;
 #endif
 
+// It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
+// later analysis is profited by these killer moves.
+#ifndef DOING_TT2_NORM_DEBUG
+    //#define KILLER_MOVES
+#endif
+
+// Obviously TT2 debug breaks repeatibility if we flip coins in the anaylisis. So what. 
+#ifndef DOING_TT2_NORM_DEBUG
+    //#define RANDOM_FLIP_COIN
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+
+static std::atomic<int> g_live_ply{0};   // value the callback prints
+
+// Used only in DOING_TT2_NORM_DEBUG
 static void print_mismatch(std::ostream& os,
                         const char* label,
                         int found,
@@ -66,44 +85,18 @@ static void print_mismatch(std::ostream& os,
     }
 }
 
-
-
-
-///////////////////////////////////////////////////////////////////////////
-
-// TT
-// #define DOING_TT_EVAL
-// #define DOING_TT_EVAL2
-// #define DOING_TT_EVAL_DEBUG
-
-// TT2
-#define DOING_TT_NORM
-//#define DOING_TT_NORM_DEBUG
-//#define BURP2_THRESHOLD_CP 25
-
 /////////////////////////////////////////////////////////////////////////
 
 // Speedups?
 //#define FAST_EVALUATIONS
 //#define DELTA_PRUNING
-#define UNQUIET_SORT
 
-// It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
-// later analysis is profited by these killer moves.
-#ifndef DOING_TT_NORM_DEBUG
-    #define KILLER_MOVES
-    //#define DEBUGGING_KILLER_MOVES 
-#endif
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening, AND 
 // on first move.
 #define RANDOMIZING_EQUAL_MOVES
 #define RANDOMIZING_EQUAL_MOVES_DELTA 0.001
 
-// Obviously TT2 debug breaks repeatibility if we flip coins in the anaylisis. So what. 
-#ifndef DOING_TT_NORM_DEBUG
-    //#define RANDOM_FLIP_COIN
-#endif
 
 
 #ifdef DEBUGGING_KILLER_MOVES
@@ -138,7 +131,6 @@ static void print_mismatch(std::ostream& os,
         });
     }
 
-
     static void stop_callback_thread() {
         g_cb_running.store(false, std::memory_order_relaxed);
         if (g_cb_thread.joinable()) g_cb_thread.join();
@@ -154,7 +146,6 @@ static void print_mismatch(std::ostream& os,
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
 
-
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
     engine.repetition_table.clear();
     TTable.clear();
@@ -163,6 +154,9 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
     // add the current position
     uint64_t key_now = engine.game_board.zobrist_key;
     engine.repetition_table[key_now] = 1;
+
+    // Set default features
+    Features_mask = _DEFAULT_FEATURES_MASK;
 
     // Open a file for debug writing
     #ifdef _DEBUGGING_TO_FILE
@@ -207,13 +201,16 @@ string format_with_commas(T value) {
 void MinimaxAI::wakeup() {
 
     cout << "wake up " << endl;
-
     stop_calculation = true;
-
     //engine.debug_SEE_for_all_captures(fpDebug);
-
 }
 
+
+void MinimaxAI::resign() {
+
+    cout << "resign " << endl;
+    //stop_calculation = true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -742,7 +739,7 @@ int g_this_depth = 6;
 //
 // This is a "root position". The next human move triggers a new root position
 // timeRequested now in *milliseconds*
-Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int argu) {  
+Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int feat) {  
     
 
     using namespace std::chrono;
@@ -752,12 +749,13 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
     cout << "\x1b[94mdept requested (ply)  =" << max_deepening_requested << "\x1b[0m" << endl;  
     cout << "\x1b[94mtime requested (msec) =" << timeRequested << "\x1b[0m" << endl;
-    cout << "\x1b[94margu requested (msec) =" << argu << "\x1b[0m" << endl;
+    cout << "\x1b[94margu requested (msec) =" << feat << "\x1b[0m" << endl;
 
     auto start_time = chrono::high_resolution_clock::now();
     // CHANGED: interpret timeRequestedMsec as milliseconds
     auto required_end_time = start_time + chrono::duration<double, std::milli>(timeRequested);
 
+    Features_mask = feat;
 
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;    // Just to make the move history work?
@@ -1005,7 +1003,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     double percent_depth_zero = nodes_visited ? ( (double)nodes_visited_depth_zero / (double)nodes_visited ) : 0.0;
 
 
-
     char pct[32];
     snprintf(pct, sizeof(pct), "%.0f", percent_depth_zero * 100.0);
 
@@ -1193,7 +1190,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     double alpha_in = alpha;   //  save original alpha window lower bound
 
 
-    #ifdef DOING_TT_NORM        // debug for comparing recalled to actual
+    #ifdef  DOING_TT2_NORM_DEBUG       // debug for comparing recalled to actual
         bool   foundPos = false;
         int    foundScore = 0;
         Move   foundMove = {};
@@ -1223,90 +1220,88 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         ull    found_bk = 0ULL;
     #endif
 
-
-
-    //bool in_check = engine.is_king_in_check(engine.game_board.turn);
-
-    // Get all legal moves. If mover is in check, this routine returns all check escapes and only the check escapes.
-    vector<Move> *p_moves_to_loop_over = 0;
-    std::vector<Move> legal_moves = engine.get_legal_moves();
-    p_moves_to_loop_over = &legal_moves;
-    int legalMovesSize = legal_moves.size();
+        vector<Move> *p_moves_to_loop_over = 0;
+        std::vector<Move> legal_moves = engine.get_legal_moves();
+        p_moves_to_loop_over = &legal_moves;
+        int legalMovesSize = legal_moves.size();
+   
 
 
 
+    if (Features_mask & _FEATURE_TT2) {  // probe in TT2
+    //#ifdef DOING_TT2_NORM    // probe in TT2
 
-    #ifdef DOING_TT_NORM    // probe in TT2
-    if (depth > 1) {
-        // --- Normal TT2 probe (exact-only version, no flags/age yet)
+        if (depth > 1) {
+            // --- Normal TT2 probe (exact-only version, no flags/age yet)
 
-        uint64_t key = engine.game_board.zobrist_key;
+            uint64_t key = engine.game_board.zobrist_key;
 
-        // Salt the entry
-        // unsigned mode  = salt_the_TT2(bOverFlow, nReps);
-        // key ^= g_eval_salt[mode];
+            // Salt the entry
+            // unsigned mode  = salt_the_TT2(bOverFlow, nReps);
+            // key ^= g_eval_salt[mode];
 
-        auto it = TTable2.find(key);
+            auto it = TTable2.find(key);
 
-        if (it != TTable2.end()) {
-            const TTEntry2 &entry = it->second;
+            if (it != TTable2.end()) {
+                const TTEntry2 &entry = it->second;
 
-            // We can reuse an entry if it was searched at least as deep
-            if (entry.depth >= depth) {
+                // We can reuse an entry if it was searched at least as deep
+                if (entry.depth >= depth) {
 
-                // Only accept hit if window matches stored one
-                bool windowMatches =
-                    (std::fabs(entry.dAlphaDebug - alpha) <= VERY_SMALL_SCORE) &&
-                    (std::fabs(entry.dBetaDebug  - beta ) <= VERY_SMALL_SCORE);
+                    // Only accept hit if window matches stored one
+                    bool windowMatches =
+                        (std::fabs(entry.dAlphaDebug - alpha) <= VERY_SMALL_SCORE) &&
+                        (std::fabs(entry.dBetaDebug  - beta ) <= VERY_SMALL_SCORE);
 
-                //bool plyMatches = (entry.nPlysDebug == nPlys);
+                    //bool plyMatches = (entry.nPlysDebug == nPlys);
 
-                if (!windowMatches) {
-
-
-                } else {
-                    #ifdef DOING_TT_NORM_DEBUG
+                    if (!windowMatches) {
 
 
-                        foundPos   = true;
-                        foundScore = entry.score_cp;
-                        foundMove  = entry.best_move;
-                        //foundnPlys = entry.nPlysDebug;
-                        foundDraw  = entry.drawDebug;
-                        foundAlpha = entry.dAlphaDebug;
-                        foundBeta  = entry.dBetaDebug;
-                        foundDepth = entry.depth;
-                        foundIsCheck = entry.bIsInCheckDebug;
-                        foundLegalMoveSize = entry.legalMovesSize;
-                        foundRepCount = entry.repCountDebug;
-                        foundRawScore = entry.dScoreDebug;
-
-                        found_wp = entry.bb_wp;
-                        found_wn = entry.bb_wn;
-                        found_wb = entry.bb_wb;
-                        found_wr = entry.bb_wr;
-                        found_wq = entry.bb_wq;
-                        found_wk = entry.bb_wk;
-
-                        found_bp = entry.bb_bp;
-                        found_bn = entry.bb_bn;
-                        found_bb = entry.bb_bb;
-                        found_br = entry.bb_br;
-                        found_bq = entry.bb_bq;
-                        found_bk = entry.bb_bk;
+                    } else {
+                        #ifdef DOING_TT2_NORM_DEBUG
 
 
-                    #else
-                        double dScore = (double)entry.score_cp / 100.0;
-                        return { dScore, entry.best_move };
-                    #endif
+                            foundPos   = true;
+                            foundScore = entry.score_cp;
+                            foundMove  = entry.best_move;
+                            //foundnPlys = entry.nPlysDebug;
+                            foundDraw  = entry.drawDebug;
+                            foundAlpha = entry.dAlphaDebug;
+                            foundBeta  = entry.dBetaDebug;
+                            foundDepth = entry.depth;
+                            foundIsCheck = entry.bIsInCheckDebug;
+                            foundLegalMoveSize = entry.legalMovesSize;
+                            foundRepCount = entry.repCountDebug;
+                            foundRawScore = entry.dScoreDebug;
+
+                            found_wp = entry.bb_wp;
+                            found_wn = entry.bb_wn;
+                            found_wb = entry.bb_wb;
+                            found_wr = entry.bb_wr;
+                            found_wq = entry.bb_wq;
+                            found_wk = entry.bb_wk;
+
+                            found_bp = entry.bb_bp;
+                            found_bn = entry.bb_bn;
+                            found_bb = entry.bb_bb;
+                            found_br = entry.bb_br;
+                            found_bq = entry.bb_bq;
+                            found_bk = entry.bb_bk;
+
+
+                        #else
+                            double dScore = (double)entry.score_cp / 100.0;
+                            return { dScore, entry.best_move };
+                        #endif
+                    }
                 }
+
+
             }
-
-
         }
     }
-    #endif
+    //#endif
 
     vector<ShumiChess::Move> unquiet_moves;   // This MUST be declared as local in this functio or horrible crashes
 
@@ -1441,10 +1436,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         int  cp_from_tt   = 0;
         bool have_tt_eval = false;
 
-        // memoization
-        #ifdef DOING_TT_EVAL
-
-
+        // memoization of leafs
+        if (Features_mask & _FEATURE_TT) {
             // Salt the entry
             unsigned mode  = salt_the_TT(b_is_Quiet, nPhase);
 
@@ -1457,7 +1450,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 cp_from_tt   = entry.score_cp;
                 have_tt_eval = true;
             }
-        #endif
+        }
+        //#endif
 
         //
         // evaluate (main call)
@@ -1484,7 +1478,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         d_best_score = engine.convert_from_CP(cp_score_best);
         
         // memoization
-        #ifdef DOING_TT_EVAL
+        if (Features_mask & _FEATURE_TT) {
             if (!bFast) {
 
                 // Salt the entry
@@ -1498,7 +1492,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 slot.movee    = the_best_move;   // or bestMove, etc.
                 slot.depth    = top_deepening;
             }
-        #endif
+        }
+        //endif
 
         in_check = engine.is_king_in_check(engine.game_board.turn);
 
@@ -1510,7 +1505,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     
         } else {
 
-            // Obtain moves to use in the limited search.
+            // Obtain moves to use in the limited search. (Quiescence)
             unquiet_moves.reserve(MAX_MOVES);
             engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, unquiet_moves);
 
@@ -1594,7 +1589,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
         } else {
-            // In depth==0 and not in check)
+            // In depth==0 (Quiescence) and not in check)
         }
 
         d_best_score = -HUGE_SCORE;
@@ -1617,11 +1612,11 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             #endif
 
 
-            // Delta pruning (in qsearch at depth==0) estimates the most this capture/promotion could possibly 
+            // Delta pruning (in qsearch (Quiescence) at depth==0) estimates the most this capture/promotion could possibly 
             // improve the current stand-pat score (including material swing and a safety margin), and if 
             // even that optimistic bound still can't raise alpha, it just skips searching that move as futile. 
             #ifdef DELTA_PRUNING
-                // --- Delta pruning (qsearch only)
+                // --- Delta pruning (qsearch (Quiescence) only)
                 if (depth == 0 && !in_check) {
                     int ub = 0;
                     if (m.capture != ShumiChess::Piece::NONE) {
@@ -1651,9 +1646,12 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // --- end Delta pruning
             #endif
     
+            bool is_killer_here = false;
             #ifdef DEBUGGING_KILLER_MOVES
-                bool is_killer_here = (m == killer1[nPlys]) || (m == killer2[nPlys]);
-                if (is_killer_here) killer_tried++;
+                if (Features_mask & _FEATURE_KILLER) {
+                    is_killer_here = (m == killer1[nPlys]) || (m == killer2[nPlys]);
+                    if (is_killer_here) killer_tried++;
+                }
             #endif
 
 
@@ -1670,7 +1668,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             // Two parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
             //                       2. The beta and alpha arguments are staggered, or reversed. 
             auto ret_val = recursive_negamax(
-                (depth > 0 ? depth - 1 : 0),                // Refuse to allow negative depth
+                (depth > 0 ? depth - 1 : 0),                // Refuse to pass on negative depth
                 -beta, -alpha,      // reverse in sign and order at the same time
                 m, 
                 (nPlys+1),
@@ -1836,7 +1834,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 did_cutoff = true;
 
                 #ifdef DEBUGGING_KILLER_MOVES
-                    if (is_killer_here) killer_cutoff++;
+                    if (Features_mask & _FEATURE_KILLER) {
+                        if (is_killer_here) killer_cutoff++;
+                    }
                 #endif
 
 
@@ -1883,153 +1883,161 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         did_fail_low = true;
     }
 
-    #ifdef DOING_TT_NORM    // store in TT2
-    if (depth > 1) {
-        if (!did_cutoff && !did_fail_low) {  // only store EXACT results for now
+    if (Features_mask & _FEATURE_TT2) {  // store in TT2
+    //#ifdef DOING_TT2_NORM    // store in TT2
+        if (depth > 1) {
+            if (!did_cutoff && !did_fail_low) {  // only store EXACT results for now
 
-            uint64_t key = engine.game_board.zobrist_key;
-            //unsigned mode  = salt_the_TT2(bOverFlow, nReps);
+                uint64_t key = engine.game_board.zobrist_key;
+                //unsigned mode  = salt_the_TT2(bOverFlow, nReps);
 
-            //key = key ^ g_eval_salt[mode];
+                //key = key ^ g_eval_salt[mode];
 
-            int cp_score_temp = engine.convert_to_CP(d_best_score);
+                int cp_score_temp = engine.convert_to_CP(d_best_score);
 
-            // Rolling size cap for TT2  (2 million?)
-            static const std::size_t MAX_TT2_SIZE = 2000000;
-            if (TTable2.size() >= MAX_TT2_SIZE) {
-                auto it = TTable2.begin();
-                if (it != TTable2.end()) {
-                    TTable2.erase(it);
+                // Rolling size cap for TT2  (2 million?)
+                static const std::size_t MAX_TT2_SIZE = 2000000;
+                if (TTable2.size() >= MAX_TT2_SIZE) {
+                    auto it = TTable2.begin();
+                    if (it != TTable2.end()) {
+                        TTable2.erase(it);
+                    }
                 }
-            }
 
-            // --- DEBUG check
-            #ifdef DOING_TT_NORM_DEBUG
-            {
-                //if (foundPos) {
-                if (foundPos && (foundDepth == depth) ) {            
+                // --- DEBUG check
+                #ifdef DOING_TT2_NORM_DEBUG
+                {
+                    //if (foundPos) {
+                    if (foundPos && (foundDepth == depth) ) {            
 
-                    bool bBothScoresMates = (IS_MATE_SCORE(foundRawScore) && IS_MATE_SCORE(d_best_score));
+                        bool bBothScoresMates = (IS_MATE_SCORE(foundRawScore) && IS_MATE_SCORE(d_best_score));
 
-                    if (!bBothScoresMates) {
+                        if (!bBothScoresMates) {
 
-                        int idelta;
-                        int avgScore_cp = abs((foundScore + cp_score_temp)) / 2;
-                      
-                        //delta = BURP2_THRESHOLD_CP;
-                        idelta = BURP2_THRESHOLD_CP + (avgScore_cp / 9); 
-                        if ( abs(foundScore - cp_score_temp) > idelta) {
+                            int idelta;
+                            int avgScore_cp = abs((foundScore + cp_score_temp)) / 2;
+                        
+                            //delta = BURP2_THRESHOLD_CP;
+                            idelta = BURP2_THRESHOLD_CP + (avgScore_cp / 9); 
+                            if ( abs(foundScore - cp_score_temp) > idelta) {
 
-                            bool isFailure = true;
-                            int repNow = 0;
-                            auto itRepNow = engine.repetition_table.find(key);
-                            if (itRepNow != engine.repetition_table.end()) repNow = itRepNow->second;
+                                bool isFailure = true;
+                                int repNow = 0;
+                                auto itRepNow = engine.repetition_table.find(key);
+                                if (itRepNow != engine.repetition_table.end()) repNow = itRepNow->second;
 
-                            cout << endl << NhitsTT2 << " " << " burp2 " 
-                                << foundScore  << " = "  << cp_score_temp << "    " 
-                                << foundRawScore << " = " << d_best_score << "    "
+                                cout << endl << NhitsTT2 << " " << " burp2 " 
+                                    << foundScore  << " = "  << cp_score_temp << "    " 
+                                    << foundRawScore << " = " << d_best_score << "    "
+                                    << endl;
+
+                                print_mismatch(cout, "al", foundAlpha,         alpha_in);
+                                print_mismatch(cout, "bt", foundBeta,          beta);
+                                print_mismatch(cout, "dr", foundDraw,          (state == GameState::DRAW));
+                                print_mismatch(cout, "ck", foundIsCheck,       in_check);
+                                print_mismatch(cout, "lm", foundLegalMoveSize, legalMovesSize);
+                                print_mismatch(cout, "rp", foundRepCount,      repNow);
+
+                                print_mismatch(cout, "wp", found_wp, engine.game_board.white_pawns);
+                                print_mismatch(cout, "wn", found_wn, engine.game_board.white_knights);
+                                print_mismatch(cout, "wb", found_wb, engine.game_board.white_bishops);
+                                print_mismatch(cout, "wr", found_wr, engine.game_board.white_rooks);
+                                print_mismatch(cout, "wq", found_wq, engine.game_board.white_queens);
+                                print_mismatch(cout, "wk", found_wk, engine.game_board.white_king);
+
+                                print_mismatch(cout, "bp", found_bp, engine.game_board.black_pawns);
+                                print_mismatch(cout, "bn", found_bn, engine.game_board.black_knights);
+                                print_mismatch(cout, "bb", found_bb, engine.game_board.black_bishops);
+                                print_mismatch(cout, "br", found_br, engine.game_board.black_rooks);
+                                print_mismatch(cout, "bq", found_bq, engine.game_board.black_queens);
+                                print_mismatch(cout, "bk", found_bk, engine.game_board.black_king);
+
+
+                                cout << "  depth-> " << depth << " mv->" << engine.g_iMove 
+                                << " dbg->" << bBothScoresMates << " idelta-> " << idelta 
+                                << " , " << abs(foundScore - cp_score_temp)
                                 << endl;
+                                
+                                string out = gameboard_to_string2(engine.game_board);
+                                cout << out << endl;
 
-                            print_mismatch(cout, "al", foundAlpha,         alpha_in);
-                            print_mismatch(cout, "bt", foundBeta,          beta);
-                            print_mismatch(cout, "dr", foundDraw,          (state == GameState::DRAW));
-                            print_mismatch(cout, "ck", foundIsCheck,       in_check);
-                            print_mismatch(cout, "lm", foundLegalMoveSize, legalMovesSize);
-                            print_mismatch(cout, "rp", foundRepCount,      repNow);
+                                //isFailure = true;
+                                char* pszTemp = ""; 
+                                (engine.game_board.turn == ShumiChess::WHITE) ? pszTemp = "WHITE to move" : pszTemp = "BLACK to move";
+                                cout << pszTemp << endl;
 
-                            print_mismatch(cout, "wp", found_wp, engine.game_board.white_pawns);
-                            print_mismatch(cout, "wn", found_wn, engine.game_board.white_knights);
-                            print_mismatch(cout, "wb", found_wb, engine.game_board.white_bishops);
-                            print_mismatch(cout, "wr", found_wr, engine.game_board.white_rooks);
-                            print_mismatch(cout, "wq", found_wq, engine.game_board.white_queens);
-                            print_mismatch(cout, "wk", found_wk, engine.game_board.white_king);
+                                string mv_string1;
+                                string mv_string2;
+                                engine.bitboards_to_algebraic(engine.game_board.turn, foundMove, (GameState::INPROGRESS)
+                                                , false, false, mv_string1);
+                                engine.bitboards_to_algebraic(engine.game_board.turn, the_best_move, (GameState::INPROGRESS)
+                                                , false, false, mv_string2);
+                                cout << mv_string1 << " = " << mv_string2 << endl;
 
-                            print_mismatch(cout, "bp", found_bp, engine.game_board.black_pawns);
-                            print_mismatch(cout, "bn", found_bn, engine.game_board.black_knights);
-                            print_mismatch(cout, "bb", found_bb, engine.game_board.black_bishops);
-                            print_mismatch(cout, "br", found_br, engine.game_board.black_rooks);
-                            print_mismatch(cout, "bq", found_bq, engine.game_board.black_queens);
-                            print_mismatch(cout, "bk", found_bk, engine.game_board.black_king);
+                                if (!(foundMove == the_best_move)) {
+                                    Move deadmove =  {};
+                                    bool isEmpty = (the_best_move == deadmove);
+                                    cout << " burp2m " << (int)foundMove.piece_type  << " = "  << (int)the_best_move.piece_type << "  " << isEmpty << " "  
+                                        << NhitsTT2 << " " << endl;
 
+                                    isFailure = true;
+                                }
 
-                            cout << "  depth-> " << depth << " mv->" << engine.g_iMove 
-                            << " dbg->" << bBothScoresMates << " idelta-> " << idelta 
-                            << " , " << abs(foundScore - cp_score_temp)
-                            << endl;
-                            
-                            string out = gameboard_to_string2(engine.game_board);
-                            cout << out << endl;
-
-                            //isFailure = true;
-                            char* pszTemp = ""; 
-                            (engine.game_board.turn == ShumiChess::WHITE) ? pszTemp = "WHITE to move" : pszTemp = "BLACK to move";
-                            cout << pszTemp << endl;
-
-                            string mv_string1;
-                            string mv_string2;
-                            engine.bitboards_to_algebraic(engine.game_board.turn, foundMove, (GameState::INPROGRESS)
-                                            , false, false, mv_string1);
-                            engine.bitboards_to_algebraic(engine.game_board.turn, the_best_move, (GameState::INPROGRESS)
-                                            , false, false, mv_string2);
-                            cout << mv_string1 << " = " << mv_string2 << endl;
-
-                            if (!(foundMove == the_best_move)) {
-                                Move deadmove =  {};
-                                bool isEmpty = (the_best_move == deadmove);
-                                cout << " burp2m " << (int)foundMove.piece_type  << " = "  << (int)the_best_move.piece_type << "  " << isEmpty << " "  
-                                    << NhitsTT2 << " " << endl;
-
-                                isFailure = true;
+                                if (isFailure) assert(0);
                             }
-
-                            if (isFailure) assert(0);
-                        }
-                        else {
-                            NhitsTT2++;
+                            else {
+                                NhitsTT2++;
+                            }
                         }
                     }
                 }
+                #endif
+                if (!did_cutoff && !did_fail_low) {
+                    // --- Always store (even in DEBUG)
+                    TTEntry2 &slot = TTable2[key];
+                    slot.score_cp  = cp_score_temp;
+                    slot.best_move = the_best_move;
+                    slot.depth     = depth;
+
+                    slot.dAlphaDebug = alpha_in;
+                    slot.dBetaDebug = beta;
+
+                    #ifdef DOING_TT2_NORM_DEBUG
+                        //slot.nPlysDebug = nPlys;
+                        slot.drawDebug = (state == GameState::DRAW);
+                        slot.bIsInCheckDebug = in_check;
+                        slot.legalMovesSize = legalMovesSize;
+
+                        int repNow = 0;
+                        auto itRepNow = engine.repetition_table.find(key);
+                        if (itRepNow != engine.repetition_table.end()) repNow = itRepNow->second;
+                        slot.repCountDebug = repNow;
+
+                        slot.dScoreDebug = d_best_score;
+
+
+                        slot.bb_wp = engine.game_board.white_pawns;
+                        slot.bb_wn = engine.game_board.white_knights;
+                        slot.bb_wb = engine.game_board.white_bishops;
+                        slot.bb_wr = engine.game_board.white_rooks;
+                        slot.bb_wq = engine.game_board.white_queens;
+                        slot.bb_wk = engine.game_board.white_king;
+
+                        slot.bb_bp = engine.game_board.black_pawns;
+                        slot.bb_bn = engine.game_board.black_knights;
+                        slot.bb_bb = engine.game_board.black_bishops;
+                        slot.bb_br = engine.game_board.black_rooks;
+                        slot.bb_bq = engine.game_board.black_queens;
+                        slot.bb_bk = engine.game_board.black_king;
+                    #endif
+
+
+                }
+
             }
-            #endif
-            if (!did_cutoff && !did_fail_low) {
-                // --- Always store (even in DEBUG)
-                TTEntry2 &slot = TTable2[key];
-                slot.score_cp  = cp_score_temp;
-                slot.best_move = the_best_move;
-                slot.depth     = depth;
-                //slot.nPlysDebug = nPlys;
-                slot.drawDebug = (state == GameState::DRAW);
-                slot.dAlphaDebug = alpha_in;
-                slot.dBetaDebug = beta;
-                slot.bIsInCheckDebug = in_check;
-                slot.legalMovesSize = legalMovesSize;
-
-                int repNow = 0;
-                auto itRepNow = engine.repetition_table.find(key);
-                if (itRepNow != engine.repetition_table.end()) repNow = itRepNow->second;
-                slot.repCountDebug = repNow;
-
-                slot.dScoreDebug = d_best_score;
-
-
-                slot.bb_wp = engine.game_board.white_pawns;
-                slot.bb_wn = engine.game_board.white_knights;
-                slot.bb_wb = engine.game_board.white_bishops;
-                slot.bb_wr = engine.game_board.white_rooks;
-                slot.bb_wq = engine.game_board.white_queens;
-                slot.bb_wk = engine.game_board.white_king;
-
-                slot.bb_bp = engine.game_board.black_pawns;
-                slot.bb_bn = engine.game_board.black_knights;
-                slot.bb_bb = engine.game_board.black_bishops;
-                slot.bb_br = engine.game_board.black_rooks;
-                slot.bb_bq = engine.game_board.black_queens;
-                slot.bb_bk = engine.game_board.black_king;
-            }
-
         }
     }
-    #endif
+    //#endif
 
 
     #ifdef _DEBUGGING_MOVE_CHAIN   // Print move summary. best move and best score
@@ -2065,7 +2073,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 //      3. killer moves (quiet, bubbled to the front of the "cutoff" quiet slice).
 //      4. remaining quiet moves.
 //  Sorts moves in place.
-//  I can be called at any depth, for depth==0 or depth>0.
+//  I can be called at any depth, for depth==0 (Quiescence) or depth>0.
 //
 void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_loop_over   // input/output
                             , int depth, int nPlys, bool is_top_of_deepening)
@@ -2099,7 +2107,8 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
     //      3. killer moves (quiet, bubbled to the front of the "cutoff" quiet slice)
     //      4. remaining quiet moves.
     //
-    #ifdef UNQUIET_SORT
+    if (Features_mask &_FEATURE_UNQUIET_SORT) {
+    //#ifdef UNQUIET_SORT
         // --- 1. Partition unquiet moves (captures/promotions) to the front ---
         auto it_split = std::partition(
             moves.begin(), moves.end(),
@@ -2153,10 +2162,8 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 return keyA > keyB;
             });
 
-
-
-
-        #ifdef KILLER_MOVES
+        if (Features_mask & _FEATURE_KILLER) {
+        //#ifdef KILLER_MOVES
             // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
             auto quiet_begin = it_split;
             auto quiet_end   = moves.end();
@@ -2185,11 +2192,11 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
 
             bring_front(killer2[nPlys]);
 
-           
+        }
+        //#endif
 
-        #endif
-
-    #endif
+    }
+    //#endif
   
 }
 
