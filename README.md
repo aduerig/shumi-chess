@@ -54,10 +54,12 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 
 ## recommended usage (for python scripts/run_tests.py -dD and -tT)
   fast 5 minute play: -d6 -t100      (for autoplay of computers)
-  for half hour game: -d8 -t1000
+  for half hour game: -d8 -t1200
   for long game     : -d9 -t2000
 
-  or you can use "-wd", "-wt", "bd", or "bt", to set the t and d arguments for one side only.
+  or you can use "-wd", "-wt", "bd", or "bt", to set the t and d arguments for one side only (black or white)
+  You can also use "-rN" where N is some ineger like 2, when it will play N random moves in a row. This feature2
+  is currently broken for N<1.  Also of note is the "fF" feature for a hexidecimal mask F (see Features.h for constants).
 
 ## Keystrokes active in app
   * esc  - Exit app

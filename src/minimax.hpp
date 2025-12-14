@@ -15,7 +15,7 @@
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
-//#define DOING_TT2_NORM_DEBUG
+//#define DOING_TT2_NORM_DEBUG    // I must also be defined in the .hpp file to work
 
 
 class RandomAI {
@@ -90,7 +90,7 @@ public:
         int              score_cp;   // search score in centipawns
         int              depth;      // depth this node was searched to
         ShumiChess::Move best_move;  // move that produced score_cp
-        TTFlag           flag;       // EXACT / LOWER_BOUND / UPPER_BOUND
+        TTFlag           flag;       // optional: EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
 
         double dAlphaDebug;
@@ -145,12 +145,14 @@ public:
     void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
     tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time, const ShumiChess::Move& null_move);
 
-    // Note: what am i?
+    // Note: All moves from the "root" position. The root is when the player starts thinking about his move.
     std::vector<std::pair<ShumiChess::Move, double>> MovesFromRoot;
 
     ShumiChess::Move pick_random_within_delta_rand(
-                    std::vector<MoveAndScore>& MovesFromRoot,
-                    double delta_pawns);
+                    std::vector<MoveAndScore>& MovsFromRoot,
+                    double delta_pawns,
+                    int& n_moves_within_delta
+                );
 
     ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int feat);
 

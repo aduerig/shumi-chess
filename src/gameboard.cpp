@@ -34,8 +34,7 @@ namespace ShumiChess {
     #include "gameboardSetup.hpp"
 
     {
-
-
+        // Seed randomization, for gameboard. (using microseconds since ?)
         using namespace std::chrono;
         auto now = high_resolution_clock::now().time_since_epoch();
         auto us  = duration_cast<microseconds>(now).count();
@@ -152,7 +151,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
 
 
-
+    // Seed randomization, for gameboard. (using microseconds since ?)
     using namespace std::chrono;
     auto now = high_resolution_clock::now().time_since_epoch();
     auto us  = duration_cast<microseconds>(now).count();

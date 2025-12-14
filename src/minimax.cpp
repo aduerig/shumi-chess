@@ -50,7 +50,7 @@ using namespace utility::bit;
 // #define DOING_TT_EVAL_DEBUG
 
 //#define DOING_TT2_NORM_DEBUG
-//#define BURP2_THRESHOLD_CP 25
+#define BURP2_THRESHOLD_CP 25
 
 //#define DEBUGGING_KILLER_MOVES 
 
@@ -58,12 +58,6 @@ using namespace utility::bit;
     FILE *fpDebug = NULL;
     char szDebug[256];
     bool bSuppressOutput = false;
-#endif
-
-// It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
-// later analysis is profited by these killer moves.
-#ifndef DOING_TT2_NORM_DEBUG
-    //#define KILLER_MOVES
 #endif
 
 // Obviously TT2 debug breaks repeatibility if we flip coins in the anaylisis. So what. 
@@ -95,7 +89,7 @@ static void print_mismatch(std::ostream& os,
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening, AND 
 // on first move.
 #define RANDOMIZING_EQUAL_MOVES
-#define RANDOMIZING_EQUAL_MOVES_DELTA 0.001
+#define RANDOMIZING_EQUAL_MOVES_DELTA 0.0005       // In units of pawns
 
 
 
@@ -605,7 +599,7 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
 //
 // Only returns false is if user aborts.
 //
-tuple<double, Move> MinimaxAI::do_a_deepening(int depth, long long elapsed_time, const Move& null_move) {
+tuple<double, Move> MinimaxAI::do_a_deepening(int depth, long long elapsed_time_display_only, const Move& null_move) {
 
     tuple<double, Move> ret_val;
 
@@ -638,7 +632,7 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, long long elapsed_time,
     do {
 
         cout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
-                    << " msec=" << std::setw(6) << elapsed_time << ' ';
+                    << " msec=" << std::setw(6) << elapsed_time_display_only << ' ';
                     
 
         ret_val = recursive_negamax(depth, alpha, beta
@@ -742,18 +736,28 @@ int g_this_depth = 6;
 Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int feat) {  
     
 
+    long long now_s;    // milliseconds 
+    long long end_s;    // milliseconds
+    long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
+    long long elapsed_time = 0; // in msec
+
+    // Obtain time now (milliseconds)
+    auto start_time = chrono::high_resolution_clock::now();
+
+    // Not actually a "endtime". The last deepening will start before or at this "requested" time. 
+    auto requested_end_time = start_time + chrono::duration<double, std::milli>(timeRequested);
+
+    // Seed randomization, for gameboard. (using microseconds since ?)
     using namespace std::chrono;
     auto now = high_resolution_clock::now().time_since_epoch();
     auto us  = duration_cast<microseconds>(now).count();
     std::srand(static_cast<unsigned>(us));   // reseed once per search
 
-    cout << "\x1b[94mdept requested (ply)  =" << max_deepening_requested << "\x1b[0m" << endl;  
-    cout << "\x1b[94mtime requested (msec) =" << timeRequested << "\x1b[0m" << endl;
-    cout << "\x1b[94margu requested (msec) =" << feat << "\x1b[0m" << endl;
+    // debug
+    // cout << "\x1b[94mdept requested (ply)  =" << max_deepening_requested << "\x1b[0m" << endl;  
+    // cout << "\x1b[94mtime requested (msec) =" << timeRequested << "\x1b[0m" << endl;
+    // cout << "\x1b[94margu requested (msec) =" << feat << "\x1b[0m" << endl;
 
-    auto start_time = chrono::high_resolution_clock::now();
-    // CHANGED: interpret timeRequestedMsec as milliseconds
-    auto required_end_time = start_time + chrono::duration<double, std::milli>(timeRequested);
 
     Features_mask = feat;
 
@@ -766,12 +770,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 	#ifdef IS_CALLBACK_THREAD
     	start_callback_thread();
     #endif
-
-
-
-    // if (engine.g_iMove==0) {
-    //     engine.i_randomize_next_move = 1;
-    // }
 
     if (engine.g_iMove == 0) {
         //
@@ -801,33 +799,17 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
     // Cleared on every move
     TTable.clear();
-   
-
-
-
-
-    int this_deepening;
 
     Move best_move = {};
     double d_best_move_value = 0.0;
 
- 
-
-
-
+    // This nonsense is to allow the "max deepening" to be changed "on the fly" (inbetween moves).
+    int this_deepening;
     this_deepening = engine.user_request_next_move;
     //this_deepening = 5;        // Note: because i said so.
     this_deepening = max_deepening_requested;
 
     maximum_deepening = this_deepening;
-    
-
-    // CHANGED: milliseconds instead of seconds; use wider integer
-    long long now_s;
-    long long end_s;
-    long long diff_s;     // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
-    long long elapsed_time = 0; // in msec
-
 
     // defaults
     int depth = 1;
@@ -843,13 +825,15 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         killer2[ii] = {};
     }
 
-    // Start each search with an empty root-move list for randomization.
+    // Start each search with an empty root-move list for move randomization.
     MovesFromRoot.clear();
 
     //engine.print_move_history_to_file(fpDebug);    // debug only
     double d_Return_score = 0.0;
 
     do {
+
+        MovesFromRoot.clear();
 
         tuple<double, Move> ret_val;
         
@@ -865,6 +849,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         if (depth>=MAXIMUM_DEEPENING) {
             //cout << "\x1b[31m \nOver Deepening " << depth << "\x1b[0m" << endl;
             //cout << gameboard_to_string(engine.game_board) << endl;
+            assert(0);
             break;   // Stop deepening, no more depths.
         }
 
@@ -900,18 +885,18 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
         cout << " Best: " << engine.move_string;
 
-        depth++;
-
-        // CHANGED: time based ending of thinking to use milliseconds
+        //
+        //  If diff_s < 0  → now is before requested_end_time (time remaining).
+        //  If diff_s == 0 → exactly at the requested end time.
+        //  If diff_s > 0  → now is after requested_end_time (you’ve gone over).
         now_s = (long long)chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
-        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(required_end_time.time_since_epoch()).count();
+        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
         diff_s = now_s - end_s;
+
+        // Elapsed time for all deepenings up to now (milliseconds)
         elapsed_time = now_s - (long long)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
 
-        // Endgame based ending of thinking (done to avoid overthinking engames)
-        // #define MAX_DEEPENING_SIMPLE_ENDGAME 3
-        // bThinkingOverByEnding = (engine.game_board.IsSimpleEndGame(engine.game_board.turn) 
-        //                             && depth >= MAX_DEEPENING_SIMPLE_ENDGAME) ;
+        depth++;
 
         // time based ending of thinking
         bThinkingOverByTime = (diff_s > 0);
@@ -919,22 +904,22 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         // depth based ending of thinking
         bThinkingOverByDepth = (depth >= (maximum_deepening+1));
 
-
         // we are done thinking if both time and depth is ended OR simple endgame is on.
         bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
 
-        // This odd line
-        // if (bThinkingOver && (depth >= MAXIMUM_DEEPENING-1))
-        // {
-        //     cout << " cheese ";
-        //     bThinkingOver = false;
-        // }
 
     } while (!bThinkingOver);
 
+
+    string move_stringee = "";
+
+
+
     cout << "\x1b[33m\nWent to depth " << (depth - 1)  
         << " elapsed msec= " << elapsed_time << " requested msec= " << timeRequested 
-        << " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth 
+        << std::fixed << std::setprecision(1)
+        << "    time overshoot= " << (elapsed_time / timeRequested)
+        //<< " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth 
         << "\x1b[0m" << endl;
 
 
@@ -943,7 +928,8 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     // If the first move, MAYBE randomize the response some.
     if ( (d_Return_score != ABORT_SCORE) && (d_Return_score != ONLY_MOVE_SCORE) ) {
 
-        // Reassign best move, if randomizing        
+        // Reassign best move, if randomizing. The i_randomize_next_move decrements, after every random 
+        // move chosen. When it hits zero, no more random moves will be chosen.
         d_random_delta = 0.0;
         #ifdef RANDOMIZING_EQUAL_MOVES
             if (engine.i_randomize_next_move>0) {
@@ -951,21 +937,30 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
                 engine.i_randomize_next_move--;
             }
         #endif
+
         if (d_random_delta != 0.0) {
-            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::high_resolution_clock::now().time_since_epoch()
-                    ).count();
-
             nRandos++;
-            cout << "\033[1;31m rando move \033[0m" << MovesFromRoot.size() << endl;
+            int n_moves_within_delta;
+            // The root is when the player starts thinking about his move.
+            best_move = pick_random_within_delta_rand(MovesFromRoot, d_random_delta, n_moves_within_delta);
+            // Show ranso move, and the "pool" (and reduced pool") it was chosen from.
 
-            best_move = pick_random_within_delta_rand(MovesFromRoot, d_random_delta);
+            //cout << "\033[1;31m rando move (out of: \033[0m" << MovesFromRoot.size() << " >> " << n_moves_within_delta << endl;
+            std::ostringstream oss;
+            oss << "\033[1;31mrando move (out of: \033[0m"
+                    << MovesFromRoot.size()
+                    << " >> "
+                    << n_moves_within_delta
+                    << endl;
+
+            move_stringee = oss.str();
+      
         }
 
-        // engine.move_into_string(best_move);
+        // (debug only) engine.move_into_string(best_move);
         // std::cout << engine.move_string << std::endl;
    
-        // print moves and scores (debug only)
+        //  (debug only) print moves and scores
         // for ( auto& ms : MovesFromRoot) {
         //     Move& m = ms.first;
         //     double sc = ms.second;
@@ -1013,11 +1008,19 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         " ---- " + format_with_commas(evals_visited) + " Evals"
     ) << endl;
 
-    //cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + " / " + percent_depth_zero + " nodes total" + " ---- " + format_with_commas(evals_visited) + " Evals") << endl;
-    
-    
+   
     chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time; // still prints seconds
-    cout << colorize(AColor::BRIGHT_GREEN, (static_cast<std::ostringstream&&>(std::ostringstream() << "Total time: " << std::fixed << std::setprecision(2) << total_time.count() << " sec")).str());
+    //cout << total_time << endl;
+    double dElapsedTime = total_time.count();
+    cout << colorize(AColor::BRIGHT_GREEN, (static_cast<std::ostringstream&&>(std::ostringstream()
+         << "Total time: " << std::fixed << std::setprecision(2) << dElapsedTime << " sec")).str());
+
+    ull total_time_msec = (ull)(dElapsedTime * 1000.0);
+    if (engine.game_board.turn == ShumiChess::WHITE) 
+        engine.totalWhiteTimeMsec += total_time_msec;
+    else 
+        engine.totalBlackTimeMsec += total_time_msec;
+
 
     assert (total_time.count() > 0);
     double nodes_per_sec = nodes_visited / total_time.count();
@@ -1026,8 +1029,7 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
         "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + 
         "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
 
-  
-
+    cout << move_stringee;
 
     engine.d_bestScore_at_root = d_best_move_value_abs;
 
@@ -1039,6 +1041,17 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
             << " (" << (killer_tried ? (100.0 * killer_cutoff / killer_tried) : 0.0)
             << "%)\n\n";
     #endif
+
+    // Elapsed_time used in this whole move. (milliseconds) 
+    // (does not include debug activities below)
+    // now_s = (long long)chrofTotal time:no::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
+    // end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
+    // diff_s = now_s - end_s;
+    // elapsed_time = now_s - (long long)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
+
+    // // Maintain times for whole game
+    // cout << "elapsed_time= " << elapsed_time << endl;
+
 
 
     /////////////////////////////////////////////////////////////////////////////////
@@ -1057,8 +1070,8 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //int itemp = cp_score_positional_get_opening(Color::WHITE);
     int itemp, iNearSquares;
     int king_near_squares_out[9];
-    ull utemp;
-    double dTemp;
+    ull utemp, utemp1, utemp2;
+    double dTemp, dtemp1, dtemp2;
     int itemp1, itemp2, itemp3, itemp4;
     
 
@@ -1087,14 +1100,11 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //utemp = Piece::NONE;
     //utemp = phaseOfGame(); 
 
-
-
-     itemp1 = sizeof(Color);
-     itemp2 = sizeof(Piece);
-     itemp3 = sizeof(uint8_t);
+    //  itemp1 = sizeof(Color);
+    //  itemp2 = sizeof(Piece);
+    //  itemp3 = sizeof(uint8_t);
     // itemp4 = engine.game_board.SEE(ShumiChess::WHITE, engine.game_board.square_d4);
 
-    cout << "wht " << nFarts << endl;
     //cout << "wht " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 << endl;
     
     //itemp = engine.game_board.knights_attacking_square(Color::BLACK, square_d5);
@@ -1121,9 +1131,14 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
     //itemp = engine.game_board.get_castle_status_for_color(Color::BLACK);
     //itemp = engine.game_board.count_doubled_pawns(Color::BLACK);
 
-    itemp = nFarts;
-    itemp = engine.i_randomize_next_move;
-    cout << "blk " << itemp << endl;
+    // itemp = nFarts;
+    // itemp = engine.i_randomize_next_move;
+    cout << std::fixed << std::setprecision(2)
+        <<                "wht " << (engine.totalWhiteTimeMsec / 1000.0)
+        << "               blk " << (engine.totalBlackTimeMsec / 1000.0)
+        << endl;
+
+    //cout << "wht " << dtemp1 << "               blk " << dtemp2 << endl;
 
     // itemp1 = engine.game_board.SEE(ShumiChess::BLACK, engine.game_board.square_d5);
     // itemp2 = engine.game_board.SEE(ShumiChess::BLACK, engine.game_board.square_e5);
@@ -1132,12 +1147,9 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 
     // cout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
 
-
-
-    utemp = TTable.size();
-    cout << "TT: " << utemp << " hits= " << NhitsTT << endl;
-    utemp = TTable2.size();
-    cout << "TT2: " << utemp << " hits= " << NhitsTT2 << endl;
+    utemp1 = TTable.size();
+    utemp2 = TTable2.size();
+    cout << "TT: " << utemp1 << " hits= " << NhitsTT << "       TT2: " << utemp2 << " hits= " << NhitsTT2 << endl;
  
     //engine.debug_print_repetition_table();
 
@@ -1146,8 +1158,6 @@ Move MinimaxAI::get_move_iterative_deepening(double timeRequested, int max_deepe
 //        engine.game_board.centipawn_score_of(Piece::PAWN),
 //        engine.game_board.centipawn_score_of(Piece::KNIGHT),
 //        engine.game_board.centipawn_score_of(Piece::PAWN) - engine.game_board.centipawn_score_of(Piece::KNIGHT));
-
-
 
 
 	#ifdef IS_CALLBACK_THREAD
@@ -1189,6 +1199,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     double alpha_in = alpha;   //  save original alpha window lower bound
 
+    std::vector<Move> legal_moves = engine.get_legal_moves();
+    vector<Move>* p_moves_to_loop_over = &legal_moves;
+
 
     #ifdef  DOING_TT2_NORM_DEBUG       // debug for comparing recalled to actual
         bool   foundPos = false;
@@ -1218,20 +1231,14 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         ull    found_br = 0ULL;
         ull    found_bq = 0ULL;
         ull    found_bk = 0ULL;
+
+        int legalMovesSize = legal_moves.size();
+
     #endif
 
-        vector<Move> *p_moves_to_loop_over = 0;
-        std::vector<Move> legal_moves = engine.get_legal_moves();
-        p_moves_to_loop_over = &legal_moves;
-        int legalMovesSize = legal_moves.size();
-   
-
-
-
     if (Features_mask & _FEATURE_TT2) {  // probe in TT2
-    //#ifdef DOING_TT2_NORM    // probe in TT2
-
-        if (depth > 1) {
+        int iLimit = (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 1 or 0 only
+        if (depth > iLimit) {
             // --- Normal TT2 probe (exact-only version, no flags/age yet)
 
             uint64_t key = engine.game_board.zobrist_key;
@@ -1363,7 +1370,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     // Only one of me, per deepening.
     bool first_node_in_deepening = (top_deepening == depth);
-
 
     if (first_node_in_deepening) {
         if (legal_moves.size() == 1) {
@@ -1676,7 +1682,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             );
 
             // The third part of negamax: negate the score to keep it relative.
-            double d_return_score = get<0>(ret_val);
+            double d_return_score = get<0>(ret_val);     // units are pawns
             Move d_return_move = get<1>(ret_val);
 
             --engine.repetition_table[engine.game_board.zobrist_key];
@@ -1735,7 +1741,11 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 return {ABORT_SCORE, the_best_move};
             }
 
-            bool isRoot = ( (top_deepening == maximum_deepening) && (nPlys == 1) );
+            // Record moves from the root.
+            
+            //bool isRoot = ( (top_deepening == maximum_deepening) && (nPlys == 1) );
+            bool isRoot = (nPlys == 1);
+            //assert ( (top_deepening == maximum_deepening) == (nPlys == 1) );
             if (isRoot) {
 
                 #ifdef _DEBUGGING_TO_FILE1
@@ -1746,7 +1756,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                         {m, d_score_value}, false, fpDebug);
                 #endif
 
-                MovesFromRoot.emplace_back(m, d_score_value);  // record ROOT move & its (negamax) score
+                MovesFromRoot.emplace_back(m, d_score_value);  // record ROOT move & its (negamax) score (units are pawns)
             }
 
 
@@ -1874,6 +1884,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
 
         }   // End loop over all moves to look at
+    
+    
+    
     }
 
 
@@ -1884,8 +1897,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     }
 
     if (Features_mask & _FEATURE_TT2) {  // store in TT2
-    //#ifdef DOING_TT2_NORM    // store in TT2
-        if (depth > 1) {
+        int iLimit = (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 1 or 0 only
+        if (depth > iLimit) {
             if (!did_cutoff && !did_fail_low) {  // only store EXACT results for now
 
                 uint64_t key = engine.game_board.zobrist_key;
@@ -2162,6 +2175,9 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 return keyA > keyB;
             });
 
+        // It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
+        // later analysis is profited by these killer moves.
+        #ifndef DOING_TT2_NORM_DEBUG
         if (Features_mask & _FEATURE_KILLER) {
         //#ifdef KILLER_MOVES
             // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
@@ -2193,7 +2209,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
             bring_front(killer2[nPlys]);
 
         }
-        //#endif
+        #endif
 
     }
     //#endif
@@ -2468,7 +2484,9 @@ MinimaxAI::best_move_static(ShumiChess::Color for_color,
 // If list is empty: returns default Move{}.
 // If best is "mate-like": returns the best (no randomization).
 Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
-                                              double delta_pawns)
+                                              double delta_pawns,
+                                              int& n_moves_within_delta
+                                            )
 {
 
     #ifdef _DEBUGGING_TO_FILE
@@ -2481,26 +2499,37 @@ Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>
         fprintf(fpDebug, "==================================================================\n");
     #endif
 
-
-    if (MovsFromRoot.empty()) return Move{};  // safety
+    if (MovsFromRoot.empty()) {
+        assert(0);
+        return Move{};  // safety
+    }
 
     // 0) Sort DESC by score (leaves the caller’s list sorted)
     std::sort(MovsFromRoot.begin(), MovsFromRoot.end(),
               [](const auto& a, const auto& b){ return a.second > b.second; });
 
     // 1) Best is now front()
-    const double best = MovsFromRoot.front().second;
+    const double bestScorePawns = MovsFromRoot.front().second;
 
     // 2) If mate-like, don’t randomize
-    if (std::fabs(best) > 9000.0) return MovsFromRoot.front().first;
+    // NOTE: what is this random constant???
+    if (std::fabs(bestScorePawns) > 9000.0) return MovsFromRoot.front().first;
 
     // 3) Build the contiguous “within delta” prefix
-    const double cutoff = best - delta_pawns;
+    const double cutoff = bestScorePawns - delta_pawns;
     size_t n_top = 0;
     while (n_top < MovsFromRoot.size() && MovsFromRoot[n_top].second >= cutoff) ++n_top;
 
-    // (fallback if something odd)
-    if (n_top == 0) return MovsFromRoot.front().first;
+    // Return number of moves that qualified.
+    n_moves_within_delta = (int)n_top;
+
+
+    // (fallback if something odd, like nothing within the delta?)
+    if (n_top == 0) {
+        assert(0);
+        return MovsFromRoot.front().first;
+    }
+
 
     // 4) Uniform pick from [0, n_top)
     const int pick = engine.rand_int(0, static_cast<int>(n_top) - 1);

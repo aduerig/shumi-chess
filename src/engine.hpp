@@ -115,6 +115,8 @@ class Engine {
         string syzygy_path = "C:\\tb\\syzygy\\";
 
         int g_iMove = 0;       // real moves in whole game
+        ull totalWhiteTimeMsec = 0;     // total white thinking time for game
+        ull totalBlackTimeMsec = 0;     // total black thinking time for game
 
         // Centipawn to pawn conversions
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
@@ -209,9 +211,10 @@ class Engine {
         char file_to_move(const Move& m);
         char rank_to_move(const Move& m);
 
-        void set_random_on_next_move();
-        int user_request_next_move = 7;    // Note: make me go aways
-        void killTheKing(Color color);      // The idea. is that you can resign by deleting your king. Sort of works.
+        void set_random_on_next_move(int randomMoveCount);
+        
+        int user_request_next_move = 7;    // Note: make me go aways. I am for changing the deepening inbetweem moves
+        void killTheKing(Color color);     // Note: The idea. is that you can resign by deleting your king. Sort of works.
 
         void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);

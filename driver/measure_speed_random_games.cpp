@@ -76,8 +76,11 @@ int main() {
             draws++;
         }
     }
+
+    // Duration is in microseconds.
     auto stop = high_resolution_clock::now();
     auto duration_microsec = duration_cast<microseconds>(stop - start);
+    // Convert duration to seconds
     double seconds_passed = duration_microsec.count() / 1000000.0f;
 
     double our_nps = (total_moves / seconds_passed);

@@ -131,9 +131,6 @@ def reset_board(fen="", winner="????"):
         print('Resetting to basic position cause FEN string is empty')
         engine_communicator.reset_engine()
 
-    # engine_communicator.one_Key_Hit()       #  To randomize first move
-    # print("one key hit2");
-
     # Resetting the board always sets the turn to white
     player_index = 0
     undraw_pieces()
@@ -240,7 +237,7 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
 
             # To randomize first move(s)
             if args.rand:
-                engine_communicator.one_Key_Hit()            
+                engine_communicator.one_Key_Hit(args.rand)       
 
             move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, features_mask)
             from_acn, to_acn = move[0:2], move[2:4]
@@ -297,7 +294,7 @@ win.master.bind("<Escape>", on_esc_key_hit)
 
 def on_one_key_hit(event):
     print("hello world from 1 key")       # pop!
-    engine_communicator.one_Key_Hit()
+    engine_communicator.one_Key_Hit(1)
 
 win.master.bind("1", on_one_key_hit)
 
@@ -505,7 +502,7 @@ for button_obj in button_holder:
     new_button.draw(win)
 
     new_button_text = Text(
-        Point(square_size * 9, square_size * (curr_y_cell - .5)),
+        Point(square_size *8.9, square_size * (curr_y_cell - .5)),
         button_obj.get_text()
     )
     new_button_text.setFill(button_obj.text_color)
@@ -516,7 +513,7 @@ for button_obj in button_holder:
     curr_y_cell -= 1
 
 # set small field left of the turn label
-material_text = Text(Point(square_size * 0.35, square_size * 9), '1234')
+material_text = Text(Point(square_size * 0.35, square_size *8.9), '1234')
 material_text.setFill(color_rgb(200, 200, 200))
 material_text.setSize(12)
 material_text.draw(win)
@@ -528,7 +525,7 @@ material_text.setText(str(score))
 # set current turn text
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
-    Point(square_size * 1.5, square_size * 9),
+    Point(square_size * 1.5, square_size *8.9),     # set current turn text
     turn_text_values[0]
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
@@ -536,9 +533,9 @@ current_turn_text.draw(win)
 
 
 # current game text (plus small W/B/D counters to the left)
-bottom_wins_text = Text(Point(square_size * 6.35, square_size * 9.0), f'Bot {curr_game_bottom}')
-top_wins_text = Text(Point(square_size * 7.05, square_size * 9.0), f'Top {curr_game_top}')
-draw_wins_text  = Text(Point(square_size * 7.75, square_size * 9.0), f'Drw {curr_game_draw}')
+bottom_wins_text = Text(Point(square_size * 6.35, square_size **8.9), f'Bot {curr_game_bottom}')
+top_wins_text = Text(Point(square_size * 7.05, square_size **8.9), f'Top {curr_game_top}')
+draw_wins_text  = Text(Point(square_size * 7.75, square_size **8.9), f'Drw {curr_game_draw}')
 
 # set the win/loss/draw counters
 for t in (bottom_wins_text, top_wins_text, draw_wins_text):
@@ -550,7 +547,7 @@ for t in (bottom_wins_text, top_wins_text, draw_wins_text):
 
 # set game number
 curr_game_text = Text(
-    Point(square_size * 2.7, square_size * 9),
+    Point(square_size * 2.7, square_size *8.9), # set game number
     f'Game {curr_game}'
 )
 curr_game_text.setFill(color_rgb(200, 200, 200))
@@ -559,8 +556,8 @@ curr_game_text.draw(win)
 
 # set white flags
 white_flags_text = Text(
-    Point(square_size * 4.75, square_size * 9.32),
-    'wFlags -'
+    Point(square_size * 4.75, square_size *9.25),      # set white flags
+    '---------'
 )
 white_flags_text.setFill(color_rgb(200, 200, 200))
 white_flags_text.setSize(8)
@@ -568,8 +565,8 @@ white_flags_text.draw(win)
 
 # set black flags
 black_flags_text = Text(
-    Point(square_size * 7.20, square_size * 9.32),
-    'bFlags - '
+    Point(square_size * 7.20, square_size *9.25),      # set black flags
+    '----------'
 )
 black_flags_text.setFill(color_rgb(200, 200, 200))
 black_flags_text.setSize(8)
@@ -577,7 +574,7 @@ black_flags_text.draw(win)
 
 # set current move number
 curr_move_text = Text(
-    Point(square_size * 3.8, square_size * 9),
+    Point(square_size * 3.8, square_size *8.9), # set current move number
     'Move {}'.format(engine_communicator.get_move_number())
 )
 curr_move_text.setFill(color_rgb(200, 200, 200))
@@ -585,15 +582,12 @@ curr_move_text.draw(win)
 
 # set whose on top/bottom of board
 curr_whose_on_top_text = Text(
-    Point(square_size * 5.0, square_size * 9),
+    Point(square_size * 5.0, square_size *8.9), # set whose on top/bottom of board
     'Black on top'
 )
 curr_whose_on_top_text.setFill(color_rgb(200, 200, 200))
 curr_whose_on_top_text.setSize(8)   # or 10, 12, etc.
 curr_whose_on_top_text.draw(win)
-
-#engine_communicator.one_Key_Hit()       #  To randomize first move(s)
-#print("one key hit");
 
 # small static label "FEN:" to the left of the FEN box
 fen_label = Text(Point(square_size * 0.25, square_size * 8.5), "FEN:")
@@ -603,7 +597,7 @@ fen_label.draw(win)
 
 # set fen entry text box 
 set_fen_text = Entry(
-    Point(square_size * 5.0, square_size * 8.5),
+    Point(square_size * 5.0, square_size * 8.5),    # set fen entry text box 
     70
 )
 set_fen_text.setFill(color_rgb(200, 200, 200))
@@ -615,7 +609,7 @@ if winner == 'draw':
 else:
     winner_text = 'GAME OVER: {} won'
 
-game_over_text = Text(Point(square_size * 1.5, square_size * 9.35), winner_text)
+game_over_text = Text(Point(square_size * 1.5, square_size *9.25), winner_text)
 game_over_text.setFill(color_rgb(80, 150, 255))
 game_over_text.setText('Good Luck')
 game_over_text.draw(win)
@@ -853,7 +847,8 @@ try:
             if time_white is not None:
                 w_parts.append(f" t={time_white}")
             if feat_white is not None:
-                w_parts.append(f" f={feat_white}")
+                #w_parts.append(f" f={feat_white}")
+                w_parts.append(f" f=0x{feat_white:x}")
 
             white_flags_text.setText(" ".join(w_parts))
 
@@ -864,7 +859,8 @@ try:
             if time_black is not None:
                 b_parts.append(f" t={time_black}")
             if feat_black is not None:
-                b_parts.append(f" f={feat_black}")
+                #b_parts.append(f" f={feat_black}")
+                b_parts.append(f" f=0x{feat_black:x}")
 
             black_flags_text.setText(" ".join(b_parts))
 

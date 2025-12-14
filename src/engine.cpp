@@ -33,6 +33,7 @@ Engine::Engine() {
     reset_engine();
     ShumiChess::initialize_rays();
 
+    // Seed randomization, for engine. (using microseconds since ?)
     using namespace std::chrono;
     auto now = high_resolution_clock::now().time_since_epoch();
     auto us  = duration_cast<microseconds>(now).count();
@@ -102,6 +103,8 @@ void Engine::reset_engine() {         // New game.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     g_iMove = 0;       // real moves in whole game
+    totalWhiteTimeMsec = 0;     // total white thinking time for game
+    totalBlackTimeMsec = 0;     // total black thinking time for game
 
     // These things are cleared every game.
     repetition_table.clear();
@@ -139,6 +142,8 @@ void Engine::reset_engine(const string& fen) {      // New game.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     g_iMove = 0;       // real moves in whole game
+    totalWhiteTimeMsec = 0;     // total white thinking time for game
+    totalBlackTimeMsec = 0;     // total black thinking time for game
 
     // These things are cleared every game.
     repetition_table.clear();
@@ -1513,7 +1518,7 @@ char Engine::file_from_move(const Move& m)
 
 
 // pop!
-void Engine::set_random_on_next_move() {
+void Engine::set_random_on_next_move(int randomMoveCount) {
     //
     // user_request_next_move++;
     // if (user_request_next_move > 10) {
@@ -1525,12 +1530,14 @@ void Engine::set_random_on_next_move() {
     //assert(0);  // exploratory
     //debugNow = !debugNow;
 
-    // RANDOMIZING_EQUAL_MOVES
+    // On first move(ply) of game, we initialize the "number of random plys". It decrements, after  
+    // every random move chosen. When it hits zero, no more random plys will be chosen.
     if (g_iMove==0) {
-        i_randomize_next_move = 1;
-        cout << "\033[1;31m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
+        i_randomize_next_move = randomMoveCount;
+        //cout << "\033[1;31m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
+    // Is this a way to resign?
     //killTheKing(ShumiChess::BLACK);
 }
 

@@ -157,11 +157,15 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_hit_one_key(PyObject* self, PyObject* args) {
-    //python_engine.popMove();   pop!
+    int randomMoveCount;
+  
+    if(!PyArg_ParseTuple(args, "i", &randomMoveCount)) {
+        return NULL;
+    }
+    //cout << "random!" << randomMoveCount << endl;
 
-    //cout << "random!" << endl;
-    python_engine.set_random_on_next_move();
-    
+    python_engine.set_random_on_next_move(randomMoveCount);
+
     return Py_BuildValue("");
 }
 
@@ -315,8 +319,10 @@ static struct PyModuleDef engine_communicatormodule = {
 
 PyMODINIT_FUNC
 PyInit_engine_communicator(void) {
+    
+    // Seed randomization (using microseconds since ?)
     using namespace std::chrono;
-    auto now = high_resolution_clock::now().time_since_epoch();
+    auto now = chrono::high_resolution_clock::now().time_since_epoch();
     auto us  = duration_cast<microseconds>(now).count();
     std::srand(static_cast<unsigned>(us));  // higher-resolution seed
 
