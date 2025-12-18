@@ -16,26 +16,29 @@
 
 using namespace std;
 
-//#define _DEBUGGING_PUSH_POP_FAST
-
-#define MAX_MOVES 128
-
-// Note: make me go away.
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
-   
-#define TINY_SCORE 1.0e-15          // In pawns.
-#define VERY_SMALL_SCORE 1.0e-5     // In pawns. (its 0.001 centipawns)
-#define HUGE_SCORE 10000.0          // In pawns. (its a million centipawns!)       //  DBL_MAX    // A relative score
-#define IS_MATE_SCORE(x) ( std::abs((x)) > (HUGE_SCORE - 200) )
 
-#define ABORT_SCORE (HUGE_SCORE+1)      // Used only to abort the analysis
-#define ONLY_MOVE_SCORE (HUGE_SCORE+2)  // Used to short circuit anlysis when only one legal move
-
-#define _MAX_ALGEBRIAC_SIZE 16        // longest SAN text possible? -> "exd8=Q#" or "axb8=R+"
-#define _MAX_MOVE_PLUS_SCORE_SIZE (_MAX_ALGEBRIAC_SIZE+32)        // Move text plus a score
+//#define _DEBUGGING_PUSH_POP_FAST
 
 
+
+// #include <cstddef>  // size_t
+// #include <cmath>    // std::abs
+
+inline constexpr int MAX_MOVES = 128;
+
+inline constexpr double TINY_SCORE       = 1.0e-15;  // pawns
+inline constexpr double VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)
+inline constexpr double HUGE_SCORE       = 10000.0;  // pawns
+
+inline bool IS_MATE_SCORE(double x) {return std::abs(x) > (HUGE_SCORE - 200.0);}
+
+inline constexpr double ABORT_SCORE     = HUGE_SCORE + 1.0;  // abort analysis
+inline constexpr double ONLY_MOVE_SCORE = HUGE_SCORE + 2.0;  // short-circuit when only one legal move
+
+inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
+inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 32;
 
 
 namespace ShumiChess {
@@ -60,8 +63,8 @@ class Engine {
 
 
         // Member methods
-        void reset_engine();
-        void reset_engine(const string&);
+        void reset_engine();                // New game
+        void reset_engine(const string&);   // new game (with FEN)
 
         void pushMove(const Move&);
         void popMove();
@@ -115,8 +118,8 @@ class Engine {
         string syzygy_path = "C:\\tb\\syzygy\\";
 
         int g_iMove = 0;       // real moves in whole game
-        ull totalWhiteTimeMsec = 0;     // total white thinking time for game
-        ull totalBlackTimeMsec = 0;     // total black thinking time for game
+        ull game_white_time_msec = 0;     // total white thinking time for game
+        ull game_black_time_msec = 0;     // total black thinking time for game
 
         // Centipawn to pawn conversions
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}

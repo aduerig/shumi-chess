@@ -10,10 +10,6 @@ import queue
 
 
 from Features import (
-    _FEATURE_TT,
-    _FEATURE_TT2,
-    _FEATURE_KILLER,
-    _FEATURE_UNQUIET_SORT,
     _DEFAULT_FEATURES_MASK,
 )
 
@@ -28,6 +24,10 @@ curr_game = 1
 curr_game_bottom = 0
 curr_game_top = 0
 curr_game_draw = 0
+
+iWhiteTimeMatch = 0
+iBlackTimeMatch = 0
+
 # ------------------------------------
 winner = '????'
 
@@ -57,17 +57,17 @@ parser.add_argument('-bf', '--bf', type=int, default=None, help='black Special a
 # parse arguments
 args = parser.parse_args()
 
-print("\nARGS:",
-      "  depth=", args.depth,
-      "  time=", args.time,
-      "  rand=", args.rand,
-      "  wdepth=", args.wd,
-      "  wtime=", args.wt,
-      "  wfeat=", args.wf,
-      "  bdepth=", args.bd,
-      "  btime=", args.bt,
-      "  bargu=", args.bf
-      )
+# print("\nARGS:",
+#       "  depth=", args.depth,
+#       "  time=", args.time,
+#       "  rand=", args.rand,
+#       "  wdepth=", args.wd,
+#       "  wtime=", args.wt,
+#       "  wfeat=", args.wf,
+#       "  bdepth=", args.bd,
+#       "  btime=", args.bt,
+#       "  bargu=", args.bf
+#       )
 
 dpth_white = None
 time_white = None
@@ -128,7 +128,7 @@ def reset_board(fen="", winner="????"):
     if fen:
         engine_communicator.reset_engine(fen)
     else:
-        print('Resetting to basic position cause FEN string is empty')
+        #print('Resetting to basic position cause FEN string is empty')
         engine_communicator.reset_engine()
 
     # Resetting the board always sets the turn to white
@@ -513,7 +513,7 @@ for button_obj in button_holder:
     curr_y_cell -= 1
 
 # set small field left of the turn label
-material_text = Text(Point(square_size * 0.35, square_size *8.9), '1234')
+material_text = Text(Point(square_size * 0.525, square_size *8.9), '1234')
 material_text.setFill(color_rgb(200, 200, 200))
 material_text.setSize(12)
 material_text.draw(win)
@@ -525,7 +525,7 @@ material_text.setText(str(score))
 # set current turn text
 turn_text_values = {0: "White's turn", 1: "Black's turn"}
 current_turn_text = Text(
-    Point(square_size * 1.5, square_size *8.9),     # set current turn text
+    Point(square_size * 1.6, square_size *8.9),     # set current turn text
     turn_text_values[0]
 )
 current_turn_text.setFill(color_rgb(200, 200, 200))
@@ -533,12 +533,15 @@ current_turn_text.draw(win)
 
 
 # current game text (plus small W/B/D counters to the left)
-bottom_wins_text = Text(Point(square_size * 6.35, square_size **8.9), f'Bot {curr_game_bottom}')
-top_wins_text = Text(Point(square_size * 7.05, square_size **8.9), f'Top {curr_game_top}')
-draw_wins_text  = Text(Point(square_size * 7.75, square_size **8.9), f'Drw {curr_game_draw}')
+bottom_wins_text = Text(Point(square_size * 6.35, square_size *8.9), f'Bot {curr_game_bottom}')
+top_wins_text = Text(Point(square_size * 7.05, square_size *8.9), f'Top {curr_game_top}')
+draw_wins_text = Text(Point(square_size * 7.75, square_size *8.9), f'Drw {curr_game_draw}')
+
+wht_time_text  = Text(Point(square_size * 8.65, square_size *8.9), f'Wtim')
+blk_time_text  = Text(Point(square_size * 9.35, square_size *8.9), f'Btim')
 
 # set the win/loss/draw counters
-for t in (bottom_wins_text, top_wins_text, draw_wins_text):
+for t in (bottom_wins_text, top_wins_text, draw_wins_text, wht_time_text, blk_time_text):
     t.setFill(color_rgb(200, 200, 200))
     t.setSize(8)
     t.draw(win)
@@ -547,7 +550,7 @@ for t in (bottom_wins_text, top_wins_text, draw_wins_text):
 
 # set game number
 curr_game_text = Text(
-    Point(square_size * 2.7, square_size *8.9), # set game number
+    Point(square_size * 2.8, square_size *8.9), # set game number
     f'Game {curr_game}'
 )
 curr_game_text.setFill(color_rgb(200, 200, 200))
@@ -556,7 +559,7 @@ curr_game_text.draw(win)
 
 # set white flags
 white_flags_text = Text(
-    Point(square_size * 4.75, square_size *9.25),      # set white flags
+    Point(square_size * 5.85, square_size *9.25),      # set white flags
     '---------'
 )
 white_flags_text.setFill(color_rgb(200, 200, 200))
@@ -565,12 +568,22 @@ white_flags_text.draw(win)
 
 # set black flags
 black_flags_text = Text(
-    Point(square_size * 7.20, square_size *9.25),      # set black flags
+    Point(square_size * 8.2, square_size *9.25),      # set black flags
     '----------'
 )
 black_flags_text.setFill(color_rgb(200, 200, 200))
 black_flags_text.setSize(8)
-black_flags_text.draw(win)
+black_flags_text.draw(win)    # common flgs
+
+# set common flags
+common_flags_text = Text(
+    Point(square_size * 4.5, square_size *9.25),      # set white flags
+    'flags='
+)
+common_flags_text.setFill(color_rgb(200, 200, 200))
+common_flags_text.setSize(8)
+common_flags_text.draw(win)    # common flgs
+
 
 # set current move number
 curr_move_text = Text(
@@ -582,7 +595,7 @@ curr_move_text.draw(win)
 
 # set whose on top/bottom of board
 curr_whose_on_top_text = Text(
-    Point(square_size * 5.0, square_size *8.9), # set whose on top/bottom of board
+    Point(square_size * 5.2, square_size *8.9), # set whose on top/bottom of board
     'Black on top'
 )
 curr_whose_on_top_text.setFill(color_rgb(200, 200, 200))
@@ -840,6 +853,11 @@ try:
             curr_game_text.setText('Game {}'.format(curr_game))
             curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
 
+            if (args.rand == 0):
+                common_flags_text.setText('')
+            else:
+                common_flags_text.setText('r={}'.format(args.rand))
+
             # White flags
             w_parts = ["wFlags:"]
             if dpth_white is not None:
@@ -864,6 +882,7 @@ try:
 
             black_flags_text.setText(" ".join(b_parts))
 
+            # show material
             material_text.setText(str(engine_communicator.get_best_score_at_root()))
 
             curr_player = both_players[player_index]
@@ -970,6 +989,9 @@ try:
             win.update()
             time.sleep(1/fps)
 
+        
+        # Game is now over
+
         # show the win/lose/draw banner
         winner = '????'
         gamover = engine_communicator.is_game_over()
@@ -987,10 +1009,21 @@ try:
             game_over_text.setText(winner_text.format(winner))
         game_over_text.draw(win)
 
+        # update match timers
+        iWhiteTime = engine_communicator.get_game_timew()
+        print("wht time=",iWhiteTime)
+        iBlackTime = engine_communicator.get_game_timeb()
+        print("blk time=",iBlackTime)
+        iWhiteTimeMatch += iWhiteTime    
+        iBlackTimeMatch += iBlackTime
+        wht_time_text.setText(f'Wtim {round(iWhiteTimeMatch / 1000)}')
+        blk_time_text.setText(f'Btim {round(iBlackTimeMatch / 1000)}')
 
-        # if autoreset is ON, do the old behavior (this also updates game counters)
+
+
+        # if autoreset is ON, reset (this also updates match counters)
         if autoreset_toggle:
-            print('RESETTING BOARD TOGGLE')
+            #print('Auto Reset game')
             reset_board("", winner)
             game_state_might_change = True
             continue
@@ -1017,9 +1050,6 @@ try:
         bottom_wins_text.setText(f'Bot {curr_game_bottom}')
         top_wins_text.setText(f'Top {curr_game_top}')
         draw_wins_text.setText(f'Drw {curr_game_draw}')
-
-
-        # skip the blocking getMouse()
 
         # get raw positions
         raw_position_left_click = win.getMouse()

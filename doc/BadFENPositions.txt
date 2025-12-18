@@ -1,4 +1,12 @@
 
+
+Contests! (features playing each other) 
+=========
+0xf beats ox2f about 2 to 1, either side, various time controls.
+)
+
+
+
 // Initial position
 rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 

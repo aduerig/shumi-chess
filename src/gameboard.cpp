@@ -9,8 +9,8 @@
 
 #include "gameboard.hpp"
 //
-// Note: Why this needs to be here is a complete mystery. If #include 
-// <assert.h> is done before, no asserts come out!
+// Note: Why this needs to be here is a complete mystery. But if #include <assert.h> is 
+// done before #include "gameboard.hpp", no asserts come out!
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
@@ -696,7 +696,7 @@ int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on 
 }
 //
 // returns true only if "insufficient material
-// NOTE: known errors here: this logic declares the follwing positions drawn, when they are not:
+// NOTE: known errors here: this logic declares the following positions drawn, when they are not:
 //      two knights and pawn .vs. king. 
 //      
 bool GameBoard::insufficient_material_simple() {
@@ -717,18 +717,18 @@ bool GameBoard::insufficient_material_simple() {
 
     int n_piecesW = n_knightsW + n_bishopsW;
     int n_piecesB = n_knightsB + n_bishopsB;
-    if ( (n_piecesW <= 1) && (n_piecesB <= 1) ) return true;
-    if ( (n_piecesW <= 1) && (n_knightsB == 2) ) return true;
-    if ( (n_piecesB <= 1) && (n_knightsW == 2) ) return true;
+    if ( (n_piecesW <= 1) && (n_piecesB <= 1) ) return true;    // no pieces
+    if ( (n_piecesW <= 1) && (n_knightsB == 2) ) return true;   // 2 knights
+    if ( (n_piecesB <= 1) && (n_knightsW == 2) ) return true;   // 2 knights
 
     return false;
 
 }
 
 
-//
+// Isolated pawns.
 // counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
-// One count for each instance.
+// One count for each instance. Rook pawns can be isolated too.
 //
 int GameBoard::count_isolated_pawns(Color c) const {
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
@@ -746,12 +746,12 @@ int GameBoard::count_isolated_pawns(Color c) const {
     }
 
     int total = 0;
-    for (int f = 0; f < 8; ++f) {
-        int k = file_count[f];            // pawns on this file
+    for (int file = 0; file < 8; ++file) {
+        int k = file_count[file];              // number of pawns on this file
         if (k == 0) continue;
 
-        bool left  = (f < 7) && (files_present & (1u << (f + 1)));
-        bool right = (f > 0) && (files_present & (1u << (f - 1)));
+        bool left  = (file < 7) && (files_present & (1u << (file + 1)));
+        bool right = (file > 0) && (files_present & (1u << (file - 1)));
 
         if (!left && !right) {
             // isolated file: single→1, double→2, triple→3, etc.
@@ -847,7 +847,7 @@ int GameBoard::king_edge_weight(Color color)
 //  - 20 cp on 5th
 //  - 25 co on 6th rank
 //  - 30 cp on 7th rank
-int GameBoard::count_passed_pawns(Color c) {
+int GameBoard::count_passed_pawns(Color c, double dMultiplier) {
 
     const ull my_pawns  = get_pieces(c, Piece::PAWN);
     const ull his_pawns = get_pieces(utility::representation::opposite_color(c), Piece::PAWN);

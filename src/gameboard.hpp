@@ -8,8 +8,9 @@
 #include "endgameTables.hpp"
 
 
-#define MAX_QPLY  7        // because i said so
-#define MAX_QPLY2 4        // because i said so
+// Note neither of these include the "depth". So if depth=6, then the actual levels analyzed is (6+MAX_QPLY).
+#define MAX_QPLY  7        // Units = plys. At this point we just evaluate (stand pat)
+#define MAX_QPLY2 4        // Units = plys. Very late in analysis! So discard negative SEE captures below one pawn.
 
 namespace ShumiChess {
 // TODO think about copy and move constructors.
@@ -48,6 +49,7 @@ class GameBoard {
         uint8_t black_castle_rights = 0b00000000;
         uint8_t white_castle_rights = 0b00000000;
 
+        // NOTE: why is this a ull? Should it be coded into a unint8_t like castling privilidges?
         //square behind enpassantable pawn after moving
         //0 is impossible state in conventional game
         // ? is this right way to represent this
@@ -74,7 +76,6 @@ class GameBoard {
         // Castled status. This is different than castle priviledge, this tracks wether it actully happens.
         bool bCastledWhite;
         bool bCastledBlack;
-
 
         template <Piece p>
         inline ull get_pieces_template() {
@@ -199,7 +200,7 @@ class GameBoard {
         int rook_file_status(Color c) const;
         int rook_7th_rankness(Color c) const;
         int count_isolated_pawns(Color c) const;
-        int count_passed_pawns(Color c);
+        int count_passed_pawns(Color c, double dMultiplier);
         int count_doubled_pawns(Color c) const;
 
         std::string random_kqk_fen(bool doQueen);

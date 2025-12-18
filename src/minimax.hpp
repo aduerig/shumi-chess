@@ -15,7 +15,7 @@
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
-//#define DOING_TT2_NORM_DEBUG    // I must also be defined in the .hpp file to work
+#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
 
 
 class RandomAI {
@@ -96,7 +96,7 @@ public:
         double dAlphaDebug;
         double dBetaDebug;
 
-        #ifdef DOING_TT2_NORM_DEBUG
+        #ifdef DEBUG_NODE_TT2
             // All the below to end is debug
             //int nPlysDebug;
             bool drawDebug;  // 0 = not draw, 1 = draw
@@ -111,6 +111,7 @@ public:
 
     };
 
+    // Transposition table 2 (protects nodes)
     std::unordered_map<uint64_t, TTEntry2> TTable2;
 
 
@@ -121,7 +122,7 @@ public:
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
 
-    double d_random_delta = 0.0;    // note: what am I
+    double d_random_delta = 0.0;
 
     int TT_ntrys = 0;
     int TT_ntrys1 = 0;
@@ -154,7 +155,7 @@ public:
                     int& n_moves_within_delta
                 );
 
-    ShumiChess::Move get_move_iterative_deepening(double timeRequested, int max_deepening_requested, int feat);
+    ShumiChess::Move get_move_iterative_deepening(double time_requested, int max_deepening_requested, int feat);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
                                             , const ShumiChess::Move& move_last
@@ -199,7 +200,7 @@ public:
     void print_moves_to_file(const vector<ShumiChess::Move> &mvs, int depth, char* szHeader, char* szTrailer);
 
 
-    // Salt the entry. Specific to evalute_board() TT protection 
+    // Salt the entry. Specific to evalute_board() TT leaf protection 
     unsigned salt_the_TT(int b_is_Quiet, int nPhase)
     {
         unsigned mode = 0u;

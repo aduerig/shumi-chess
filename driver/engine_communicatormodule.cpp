@@ -177,7 +177,7 @@ engine_communicator_game_over(PyObject* self, PyObject* args) {
 // By "reset engine" is meant: "new game". 
 static PyObject*
 engine_communicator_reset_engine(PyObject* self, PyObject* args) {
-    cout << "reset_engine" << endl;
+    //cout << "reset_engine" << endl;
     const char* fen_string = nullptr;
     if (!PyArg_ParseTuple(args, "|s", &fen_string)) {
         return nullptr; 
@@ -189,6 +189,8 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args) {
     }
     Py_RETURN_NONE;
 }
+
+
 
 static PyObject*
 engine_communicator_get_fen(PyObject* self, PyObject* args) {
@@ -259,20 +261,31 @@ engine_communicator_wakeup(PyObject* self, PyObject* args) {
     return Py_BuildValue(""); // this is None in Python
 }
 
-
+// NOTE: unfinished
 static PyObject*
-engine_communicator_get_draw_reason(PyObject* self, PyObject* args)
-{
+engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
     const char* reason = "3 time rep";
 
     // "s" builds a Python str from a C null-terminated char*
     return Py_BuildValue("s", reason);
 }
 
+static PyObject*
+engine_communicator_get_game_timew(PyObject* self, PyObject* args) {
+    //cout << "wsec=" << minimax_ai->engine.game_white_time_msec << endl;
+    return Py_BuildValue("i", minimax_ai->engine.game_white_time_msec);
+}
+static PyObject*
+engine_communicator_get_game_timeb(PyObject* self, PyObject* args) {
+    //cout << "wsec=" << minimax_ai->engine.game_black_time_msec << endl;
+    return Py_BuildValue("i", minimax_ai->engine.game_black_time_msec);
+}
+
+
+
 
 static PyObject* 
-engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args)
-{
+engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
     int ijunk = python_engine.get_best_score_at_root();
     double value = ijunk / 100.0;        // e.g. 243 -> 2.43, -1234 -> -12.34
     return Py_BuildValue("d", value);    // "d" = Python float
@@ -288,22 +301,26 @@ engine_communicator_resign(PyObject* self, PyObject* args) {
 
 static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
+
+    // These are move generation engines
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
     {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
+    {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},      // new game
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
-    {"is_game_over",  engine_communicator_game_over, METH_VARARGS, ""},
+    {"is_game_over",  engine_communicator_game_over, METH_VARARGS, ""},         // returns constant (GameState C constant) 
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
-    {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},
     {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
-    {"one_Key_Hit",  engine_communicator_hit_one_key, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
-    {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},
+    {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},                  //  force a move if thinking
     {"get_best_score_at_root",  engine_communicator_get_best_score_at_root, METH_VARARGS, ""},
     {"get_draw_reason",  engine_communicator_get_draw_reason, METH_VARARGS, ""},
+    {"get_game_timew",   engine_communicator_get_game_timew, METH_VARARGS, ""},
+    {"get_game_timeb",   engine_communicator_get_game_timeb, METH_VARARGS, ""},
     {"resign",  engine_communicator_resign, METH_VARARGS, ""},
+    {"one_Key_Hit",  engine_communicator_hit_one_key, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

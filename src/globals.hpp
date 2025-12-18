@@ -14,7 +14,7 @@
 #define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
-//#define SHORT_SIZES
+//#define SHORT_SIZES     // minimize size of the Move structure.
 
 typedef unsigned long long ull;
 

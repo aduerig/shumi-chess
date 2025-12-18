@@ -45,21 +45,20 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Failure: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Also does not postfix checks with a "+" either. The function is debug for human consumption only.
   * Failure: Trading motivator in eval only looks at pieces, not pawns.
   * Failure: See to put rooks on passed pawn files. or maybe all pieces to put attack on passed pawns.
-  * Bug: "You are full of it" error, in some non-opening positions (like rook endgame checkmates). This is an error in the "rando" Random root move selection. It stores no moves from the root. Comment out "RANDOMIZING_EQUAL_MOVES" to stop it. (thats what "you are full of it" means, a bad or null move seen).
-  * Bug: Disapearaing pieces. Only in the python, display, peices are really there. Infrequent. But repeatible, 
+   * Bug: Disappearing pieces. Only in the python, display, peices are really there. Infrequent. But repeatible, 
     just enter the FEN: "3qk3/8/8/8/8/8/8/3Q1K1B w KQkq - 0 1", then move Ke1 for white. King "disappears".
   * Feature: Finish bottom/top/white/black/ match scores. Auto flip board at end of game?
 ## todo
 * See [brainStorm](doc/brainStorm.md) for more future directions.
 
 ## recommended usage (for python scripts/run_tests.py -dD and -tT)
-  fast 5 minute play: -d6 -t100      (for autoplay of computers)
-  for half hour game: -d8 -t1200
-  for long game     : -d9 -t2000
+  fast 5 minute play: -t200 -d6     (for autoplay of computers)
+  for half hour game: -t1200 -d8
+  for long game     : -t2000 -d9    long game
 
   or you can use "-wd", "-wt", "bd", or "bt", to set the t and d arguments for one side only (black or white)
-  You can also use "-rN" where N is some ineger like 2, when it will play N random moves in a row. This feature2
-  is currently broken for N<1.  Also of note is the "fF" feature for a hexidecimal mask F (see Features.h for constants).
+  You can also use "-rN" where N is some ineger like 2, when it will play N "random moves" in a row. This move is randomly
+  chosen as one of the best withen a small delta. Watch out, these "random moves" reduce ability. Also of note is the "foxF" feature for a hexidecimal number F (see Features.hpp for constants).
 
 ## Keystrokes active in app
   * esc  - Exit app
@@ -70,7 +69,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * see ...
 
 ## building
-This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and several simple engine commands for the purposes of a GUI (a somewhat simple GUI is provided). There is also two AI's builty on the engine: a. RandomAI, and MinimaxAI. RandomAI is what you think, looks at all legal moves and selects a random response. MinimaxAI is much different using many technologies such as alpha/beta, iterive deepening, and so on, for move choice.
+This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and several simple engine commands for the purposes of a GUI (a somewhat simple GUI is provided). There is also two AI's builty on the engine: a. RandomAI, and MinimaxAI. RandomAI is what you think, looks at all legal moves and selects a random response. MinimaxAI is much different using many technologies such as alpha/beta, iterative deepening, quiessence, SEE, and so on, for move choice.
 
 * use the python files in the `scripts/` folder
 * Run before compilation to compile with clang

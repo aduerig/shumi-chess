@@ -6,11 +6,14 @@
 #include <cmath>
 
 
-// NOTE: How is NDEBUG being defined by someone (CMAKE?). I would rather do it in the make apparutus than in source files.
+// NOTE: How is NDEBUG being defined by someone (CMAKE?). I would rather do it in the make apparutus than 
+// in source files. But cant figure out how to build debug.
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
-//#define NO_CASTLING
+
+
+//#define DEBUG_NO_CASTLING    // Debug, to disallow castling for everyone
 
 //#define _DEBUGGING_TO_FILE
 
@@ -22,9 +25,6 @@
 bool debugNow = false;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define THREE_TIME_REP           // I should always be defined
-
 
 using namespace std;
 
@@ -48,13 +48,18 @@ Engine::Engine() {
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
 }
+
+
 //
 //
 // By "reset engine" is meant: "new game". 
 //
 void Engine::reset_engine() {         // New game.
-    std::cout << "\x1b[94m    hello world() I'm reset_engine()! \x1b[0m";
+    std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
     
+    // match_white_time_msec += game_white_time_msec;     // total white thinking time for match
+    // match_black_time_msec += game_black_time_msec;     // total black thinking time for match
+
     // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
     psuedo_legal_moves.reserve(MAX_MOVES); 
@@ -62,7 +67,7 @@ void Engine::reset_engine() {         // New game.
 
     ///////////////////////////////////////////////////////////////////////
     //
-    // You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. enter fen. FEN setup. Setup the FEN
+    // Debug only. You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. enter fen. FEN setup. Setup the FEN
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
@@ -71,15 +76,14 @@ void Engine::reset_engine() {         // New game.
 
     //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
     //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
-    // game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
+    //game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
     //game_board = GameBoard("4kbb1/8/8/8/8/8/4K3/8 w - - 0 1");
 
-    // Or you can pick a random simple FEN. (maybe)
+    // Or you can pick a random simple endgame FEN. (maybe)
     // vector<Move> v;
     // do {  
-    //     string stemp = game_board.random_kqk_fen(false);
+    //     string stemp = game_board.random_kqk_fen(true);
     //     game_board = GameBoard(stemp);
-
     //     v = get_legal_moves(ShumiChess::WHITE);
     // } while (v.size() == 0);
 
@@ -103,8 +107,8 @@ void Engine::reset_engine() {         // New game.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     g_iMove = 0;       // real moves in whole game
-    totalWhiteTimeMsec = 0;     // total white thinking time for game
-    totalBlackTimeMsec = 0;     // total black thinking time for game
+    game_white_time_msec = 0;     // total white thinking time for game 
+    game_black_time_msec = 0;     // total black thinking time for game
 
     // These things are cleared every game.
     repetition_table.clear();
@@ -142,8 +146,8 @@ void Engine::reset_engine(const string& fen) {      // New game.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     g_iMove = 0;       // real moves in whole game
-    totalWhiteTimeMsec = 0;     // total white thinking time for game
-    totalBlackTimeMsec = 0;     // total black thinking time for game
+    game_white_time_msec = 0;     // total white thinking time for game
+    game_black_time_msec = 0;     // total black thinking time for game
 
     // These things are cleared every game.
     repetition_table.clear();
@@ -294,8 +298,9 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // TODO should this check for draws by internally calling get legal moves and caching that and 
-//      returning on the actual call?, very slow calling get_legal_moves again
-// NOTE: I complely agree this is wastefull. But it is not called in the "main line", the one below is.
+//      returning on the actual call?, very slow calling get_legal_moves again.
+// NOTE: I complely agree this is wastefull. But it is not called in the "main line", it is only called as a 
+// "python method". The one below is the ont called in actual play.
 //   This one is called only during testing?
 GameState Engine::is_game_over() {
     vector<Move> legal_moves = get_legal_moves();
@@ -315,7 +320,7 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
-    else if (game_board.halfmove >= 50) {     // NOTE: debug only
+    else if (game_board.halfmove >= 50) {
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
         //reason_for_draw = "50 move rule";
@@ -323,7 +328,6 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
         return GameState::DRAW;           // draw by 50 move rule
 
     } else {
-        // Three move repetition draw
 
         // Insuffecient material   Note: what about two bishops and bishop and knight
         bool isOverThatWay = game_board.insufficient_material_simple();
@@ -332,22 +336,21 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
             return GameState::DRAW;
         }
 
-
-        #ifdef THREE_TIME_REP
-            auto it = repetition_table.find(game_board.zobrist_key);
-            if (it != repetition_table.end()) {
+        // Three time repetition
+        auto it = repetition_table.find(game_board.zobrist_key);
+        if (it != repetition_table.end()) {
+            //assert(0);
+            if (it->second >= 3) {
+                // We've seen this exact position (same zobrist) at least twice already
+                // along the current line. That means we are in a repetition loop.
+                //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
                 //assert(0);
-                if (it->second >= 3) {
-                    // We've seen this exact position (same zobrist) at least twice already
-                    // along the current line. That means we are in a repetition loop.
-                    //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
-                    //assert(0);
-                    //reason_for_draw = "3 time rep";
-                    if (debugNow) cout<<"3-time-rep"<< endl;
-                    return GameState::DRAW;
-                }
+                //reason_for_draw = "3 time rep";
+                if (debugNow) cout<<"3-time-rep"<< endl;
+                return GameState::DRAW;
             }
-        #endif
+        }
+
     
 
     }
@@ -666,11 +669,11 @@ void Engine::popMove() {
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
 
             int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
-            // NOTE: here the statements are reversed from the else. What gives?
-            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, target_pawn_square);
-          
+            
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
-    
+            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, target_pawn_square);
+
+
         } else {
 
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
@@ -1201,7 +1204,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
     
 
-    #ifndef NO_CASTLING
+    #ifndef DEBUG_NO_CASTLING
 
         // castling, NOTE: a Rook must exist in the right place to castle the king.
         ull squares_inbetween;
@@ -1685,7 +1688,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
         if (is_unquiet_move(mv)) {
             // its either a capture or a promotion (or both)
 
-            // Very late in analysis! So discard negative SEE captures.
+            // Very late in analysis! So discard negative SEE captures below one pawn.
             int testValue = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
             if (qPlys > MAX_QPLY2) {
 
