@@ -198,6 +198,12 @@ engine_communicator_get_fen(PyObject* self, PyObject* args) {
 }
 
 static PyObject*
+engine_communicator_get_features_default(PyObject* self, PyObject* args) {
+    PyObject* ret = Py_BuildValue("i", _DEFAULT_FEATURES_MASK);
+    return ret;
+}
+
+static PyObject*
 engine_communicator_get_move_number(PyObject* self, PyObject* args) {
     PyObject* ret = Py_BuildValue("i", python_engine.g_iMove);    // real moves in whole game
     return ret;
@@ -312,6 +318,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
+    {"get_features_default",  engine_communicator_get_features_default, METH_VARARGS, ""},
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},
     {"get_engine",  engine_communicator_get_engine, METH_VARARGS, ""},
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},                  //  force a move if thinking

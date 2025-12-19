@@ -55,7 +55,7 @@ using namespace utility::bit;
 // #define DEBUG_LEAF_TT
 
 //#define DEBUG_NODE_TT2          // I must also be defined in the .hpp file to work
-#define BURP2_THRESHOLD_CP 10   // "burps" or fails if the stored (TT) does not match the evaluaton made.
+//#define BURP2_THRESHOLD_CP 10   // "burps" or fails if the stored (TT) does not match the evaluaton made.
 
 //#define DEBUGGING_KILLER_MOVES 
 
@@ -66,7 +66,7 @@ using namespace utility::bit;
 #endif
 
 // Obviously TT2 debug breaks repeatibility if we flip coins in the anaylisis. So what. 
-// Also other features (below) breaks repeatability.
+// Also these other features (below) breaks repeatability.
 #ifndef DEBUG_NODE_TT2
     #undef RANDOM_FLIP_COIN
 #endif
@@ -75,9 +75,6 @@ using namespace utility::bit;
     #undef FAST_EVALUATIONS
 #endif
 
-#ifndef DEBUG_NODE_TT2
-    features_mask &= ~_FEATURE_DELTA_PRUNE;
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -185,6 +182,12 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
         //fprintf(fpDebug, "opening debug.dat file!");
 
     #endif
+
+    #ifndef DEBUG_NODE_TT2
+        Features_mask &= ~_FEATURE_DELTA_PRUNE;
+    #endif
+
+
 }
 
 

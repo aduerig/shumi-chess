@@ -9,11 +9,6 @@ import threading
 import queue
 
 
-from Features import (
-    _DEFAULT_FEATURES_MASK,
-)
-
-
 # same directory
 from modified_graphics import *
 import engine_communicator
@@ -212,13 +207,10 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
                 features_mask = args.feat  # may be None
 
             if features_mask is None:   # make sure features_mask is an int (no None)
-                features_mask =_DEFAULT_FEATURES_MASK
-
-            # if features_mask == 0:
-            #     features_mask = _DEFAULT_FEATURES_MASK
+                features_mask = engine_communicator.get_features_default()
 
             if not features_mask:
-                features_mask = _DEFAULT_FEATURES_MASK
+                features_mask = engine_communicator.get_features_default()
                 
             # debug print
             # print("\nmillsecs=    ", milliseconds)

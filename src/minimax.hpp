@@ -15,7 +15,7 @@
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
-#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
+// #define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
 
 
 class RandomAI {
@@ -39,7 +39,7 @@ public:
     ~MinimaxAI();
 
 
-    ull Features_mask = 0;   // Note why no _DEFAULT_FEATURES_MASK?
+    ull Features_mask = _DEFAULT_FEATURES_MASK;
 
 
     bool stop_calculation = false;
