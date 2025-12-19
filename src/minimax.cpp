@@ -18,7 +18,7 @@
 #include "utility.hpp"
 #include "minimax.hpp"
 #include "salt.h"
-#include "Features.hpp"
+#include "features.hpp"
 
 using namespace std;
 using namespace ShumiChess;

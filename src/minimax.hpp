@@ -10,7 +10,7 @@
 #include <string>
 #include <limits>
 
-#include "Features.hpp"
+#include "features.hpp"
 
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
