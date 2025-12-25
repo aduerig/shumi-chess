@@ -25,6 +25,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 ## current issue log 
     Not prioritized. No particular order to them. All issues classified as either: a. Bug, or b. Failure (to chess requirements), or c. Sloth (slowdown) or d. Feature. ~~Crossed out~~ items are done, but under testing.
 
+  * Bug: Get FEN button gives scrambled result when computer playyer is playing. Maybe this is OK, The scrambled FEN is seen both in the FEN box and the terminal of VSC. 
   * Sloth: Move structure is to big (56 bytes). For example look at en_passant_rights, or Piece or Color.
   * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG".
   * Bug: Forces promotions for the human to be to a queen. Problem with the interface I suppose. Need a new feature here.
@@ -58,11 +59,11 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 
   or you can use "-wd", "-wt", "bd", or "bt", to set the t and d arguments for one side only (black or white)
   You can also use "-rN" where N is some ineger like 2, when it will play N "random moves" in a row. This move is randomly
-  chosen as one of the best withen a small delta. Watch out, these "random moves" reduce ability. Also of note is the "foxF" feature for a hexidecimal number F (see Features.hpp for constants).
+  chosen as one of the best withen a small delta. Watch out, these "random moves" reduce ability. Also of note is the "f0xF" feature for a hexidecimal number F (see Features.hpp for constants).
 
 ## Keystrokes active in app
   * esc  - Exit app
-  * 1    - Sets "randomize" next move. Useful to play different games. But careful, it will play a lot worse if   you use this too much
+  * 1    - Pause play. Useful when playing computers against each other so you can look at the position before the game moves on. You can then hit "Get FEN" button, which will deposit the FEN into the clipboard. Timers not paused, so times will include the pause interval. One key hit again, releases the pause
 
 ## change log
   * Abandoned 10/11/2025

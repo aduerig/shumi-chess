@@ -7,7 +7,7 @@ import pathlib
 import argparse
 import threading
 import queue
-
+import pyperclip
 
 # same directory
 from modified_graphics import *
@@ -82,6 +82,12 @@ temp_folder.mkdir(exist_ok=True)
 ai_move_queue = queue.Queue()
 ai_is_thinking = False
 
+# --- Pause control (global) ---
+paused = False
+pause_event = threading.Event()
+pause_event.set()   # "set" means NOT paused
+
+
 def get_temp_file(suffix=''):
     return temp_folder.joinpath(f'temp_file_{time.time()}{suffix}')
 
@@ -105,8 +111,9 @@ def reset_board(fen="", winner="????"):
    
     # If AI is thinking, cancel it
     if ai_is_thinking:
-        # NO This should be a resign.
-        print("Board reset during AI turn, cancelling computation.")
+        # Note: NO This should be a resign.
+        print("\033[1;31mreset_board() during AI turn, cancelling computation.\033[0m")
+
         ai_is_thinking = False
         # Clear the queue of any potential stale moves
         while not ai_move_queue.empty():
@@ -165,6 +172,10 @@ def get_random_move(legal_moves):
 def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
     import sys
     global player_index, dpth_white, time_white, dpth_black, time_black, feat_white, feat_black
+
+    pause_event.wait()  # <-- blocks AI thread until unpaused
+
+
     try:
         if name_of_ai.lower() == 'random_ai':
             from_acn, to_acn = get_random_move(legal_moves)
@@ -229,7 +240,7 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
 
             # To randomize first move(s)
             if args.rand:
-                engine_communicator.one_Key_Hit(args.rand)       
+                engine_communicator.set_random_number_of_moves(args.rand)       
 
             move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, features_mask)
             from_acn, to_acn = move[0:2], move[2:4]
@@ -283,12 +294,24 @@ def on_esc_key_hit(event):
 # 1. Pressing escape closes out of the program
 win.master.bind("<Escape>", on_esc_key_hit)
 
-
+# pause game
 def on_one_key_hit(event):
-    print("hello world from 1 key")       # pop!
-    engine_communicator.one_Key_Hit(1)
+    global paused
+    paused = not paused
+    if paused:
+        print("PAUSE ON")
+        pause_event.clear()   # block
+    else:
+        print("PAUSE OFF")
+        pause_event.set()     # release
 
 win.master.bind("1", on_one_key_hit)
+
+# evaluate game
+# def on_two_key_hit(event): 
+#     evaluate()
+
+# win.master.bind("2", on_two_key_hit)
 
 
 
@@ -401,8 +424,9 @@ def wake_up(button_obj):
 
 def get_fen(button_obj):
     fen = engine_communicator.get_fen()
-    print(f'Current FEN: {fen}')
-    set_fen_text.setText(fen)      # <-- put FEN into the entry box
+    print(f'Current FEN: {fen}')            # <-- print to terminal
+    set_fen_text.setText(fen)               # <-- put FEN into the entry box
+    pyperclip.copy(fen)                     # <-- put FEN into the clipboard
 
 
 # engine_communicator.make_move_two_acn(from_acn, to_acn)
@@ -614,7 +638,7 @@ if winner == 'draw':
 else:
     winner_text = 'GAME OVER: {} won'
 
-game_over_text = Text(Point(square_size * 1.5, square_size *9.25), winner_text)
+game_over_text = Text(Point(square_size * 1.6, square_size *9.25), winner_text)
 game_over_text.setFill(color_rgb(80, 150, 255))
 game_over_text.setText('Good Luck')
 game_over_text.draw(win)
@@ -776,9 +800,11 @@ def make_move(from_acn, to_acn):
         last_move_indicator.undraw()
 
     engine_communicator.make_move_two_acn(from_acn, to_acn)
+
     legal_moves = engine_communicator.get_legal_moves()
     fen = engine_communicator.get_fen()
     print(f'Fen is now {fen}')
+
     graphics_update_only_moved_pieces()
     player_index = 1 - player_index
 
@@ -794,14 +820,16 @@ def make_move(from_acn, to_acn):
     arrow.draw(win)
     last_move_indicator = arrow
 
-
+    #print('done arrows...')
 
 game_state_might_change = True
-game_state_result = -1
-def game_over_cache():
+game_state_result = -1              
+
+# "cache" means that it updates only when a "change" happens
+def game_over_cache():          # Returns a GameState constant
     global game_state_might_change, game_state_result
     if game_state_might_change:
-        game_state_result = engine_communicator.is_game_over()
+        game_state_result = engine_communicator.is_game_over()   # Returns a GameState constant
         game_state_might_change = False
     return game_state_result
 
@@ -828,7 +856,9 @@ try:
 
         #game_over_text.undraw()
         
-        while game_over_cache() == -1: # stuff to do every frame no matter what
+        #while game_over_cache() == -1: 
+        while game_over_cache() == engine_communicator.INPROGRESS: 
+            # stuff to do every frame no matter what
             # print(f'Loop: {acn_focused}')
 
             move_number = engine_communicator.get_move_number()
@@ -888,12 +918,16 @@ try:
             if ai_is_thinking:
                 try:
                     from_acn, to_acn = ai_move_queue.get_nowait()
+                    print('make_move...')
                     make_move(from_acn, to_acn)
+                    print('made_move...')
                     game_state_might_change = True
                     ai_is_thinking = False
                     continue
                 except queue.Empty:
                     pass
+
+            #print(f'ai_is_thinking... {ai_is_thinking}')
 
             raw_position_left_click = win.checkMouse()
             if raw_position_left_click:
@@ -980,19 +1014,22 @@ try:
 
             win.update()
             time.sleep(1/fps)
-
+            #print("woke up")
         
         # Game is now over
 
         # show the win/lose/draw banner
-        winner = '????'
         gamover = engine_communicator.is_game_over()
-        if gamover == 0:    # GameState::WHITEWIN
+        if gamover == engine_communicator.WHITEWIN:
             winner = 'white'
-        elif gamover == 2:  # GameState::BLACKWIN
+        elif gamover == engine_communicator.BLACKWIN:
             winner = 'black'
-        elif gamover == 1:  # GameState::DRAW
+        elif gamover == engine_communicator.DRAW:
             winner = 'draw'
+        elif gamover == engine_communicator.INPROGRESS:
+            winner = '???'                         # should never happen
+        else:
+            winner = '!!!'                         # should never happen
 
         if winner == 'draw':
             reason = engine_communicator.get_draw_reason()  # this should return a Python str

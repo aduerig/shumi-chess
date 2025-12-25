@@ -786,38 +786,38 @@ int GameBoard::count_doubled_pawns(Color c) const {
 }
 
 
-// Identifies if enemy king only, and friendy side has a lone queen or a lone rook
-// Note: kill this function! Engine should have full range, even if in simple endgame.
-bool GameBoard::IsSimpleEndGame(Color for_color)
-{
-    bool bReturn = false;
-    ull enemyPieces, myPieces, myQueens, myRooks;
+// // Identifies if enemy king only, and friendy side has a lone queen or a lone rook
+// // Note: kill this function! Engine should have full range, even if in simple endgame.
+// bool GameBoard::IsSimpleEndGame(Color for_color)
+// {
+//     bool bReturn = false;
+//     ull enemyPieces, myPieces, myQueens, myRooks;
 
-    if (for_color == ShumiChess:: WHITE) {
-        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
-        myPieces = (white_knights | white_bishops | white_pawns);
-        myQueens = white_queens;
-        myRooks = white_rooks;
-    } else {
-        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
-        myPieces = (black_knights | black_bishops | black_pawns);
-        myQueens = black_queens;
-        myRooks = black_rooks;
-    }
+//     if (for_color == ShumiChess:: WHITE) {
+//         enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
+//         myPieces = (white_knights | white_bishops | white_pawns);
+//         myQueens = white_queens;
+//         myRooks = white_rooks;
+//     } else {
+//         enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
+//         myPieces = (black_knights | black_bishops | black_pawns);
+//         myQueens = black_queens;
+//         myRooks = black_rooks;
+//     }
 
-    if ( ( enemyPieces == 0ULL) && (myPieces == 0ULL) ) {
-        int nQueens = bits_in(myQueens);
-        int nRooks = bits_in(myRooks);
-        if ( (nQueens == 1) && (nRooks == 0) ) {         
-           bReturn = true;
-        }
-        else if ( (nQueens == 0) && (nRooks == 1) ) {         
-           bReturn = true;
-        }
-    }
+//     if ( ( enemyPieces == 0ULL) && (myPieces == 0ULL) ) {
+//         int nQueens = bits_in(myQueens);
+//         int nRooks = bits_in(myRooks);
+//         if ( (nQueens == 1) && (nRooks == 0) ) {         
+//            bReturn = true;
+//         }
+//         else if ( (nQueens == 0) && (nRooks == 1) ) {         
+//            bReturn = true;
+//         }
+//     }
 
-    return bReturn;
-}
+//     return bReturn;
+// }
 
 
 //
@@ -841,14 +841,23 @@ int GameBoard::king_edge_weight(Color color)
 }
 
 
+// if (Features_mask & _FEATURE_EVAL_TEST1) {
+//
 // Passed pawns bonus in centipawns: (from that side's perspective)
 //  - 10 cp on 2cnd/3rd rank
 //  - 15 cp on 4th
 //  - 20 cp on 5th
 //  - 25 co on 6th rank
 //  - 30 cp on 7th rank
-int GameBoard::count_passed_pawns(Color c, double dMultiplier) {
+// count_passed_pawns():
+// A "passed pawn" has no enemy pawns on its own file or adjacent files on any rank ahead of it (toward promotion).
+// A "protected passed pawn" is a passed pawn that is defended by one of our pawns:
+// i.e., a friendly pawn sits on a square that attacks this pawn's square (diagonally from behind).
+int GameBoard::count_passed_pawns(Color c, ull& passed_pawns) {
 
+    passed_pawns = 0ULL;
+
+    int n_passed_pawns = 0;
     const ull my_pawns  = get_pieces(c, Piece::PAWN);
     const ull his_pawns = get_pieces(utility::representation::opposite_color(c), Piece::PAWN);
     if (!my_pawns) return 0;   // I have no pawns
@@ -859,13 +868,14 @@ int GameBoard::count_passed_pawns(Color c, double dMultiplier) {
     while (tmp) {
         const int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
 
+        // Get file and rank coordinates
         const int f = s % 8;            // h1=0 → 0=H ... 7=A
         const int r = s / 8;            // rank index 0..7 (White's view)
 
         // Map to A..H index used by col_masks
         const int fi = 7 - f;
 
-        // Same + adjacent files
+        // files_mask <- same file, and both adjacent files
         ull files_mask = col_masks[fi];
         if (fi > 0) files_mask |= col_masks[fi - 1];
         if (fi < 7) files_mask |= col_masks[fi + 1];
@@ -884,20 +894,31 @@ int GameBoard::count_passed_pawns(Color c, double dMultiplier) {
         const ull blockers = his_pawns & files_mask & ranks_ahead;
         if (blockers == 0ULL) {
 
+            // mark this pawn in the h1=0 bitboard
+            passed_pawns |= (1ULL << s);
+
+            n_passed_pawns++;
+
             // advancement from "c"" side's perspective (2..6 typical for passers)
             const int adv = (c == Color::WHITE) ? r : (7 - r);
             assert(adv != 0);  // pawns can never be on 1st rank!
             assert(adv != 7);  // pawns can never be on 8th rank (they promote)
-            if      (adv == 6) bonus += 30;      // 7th rank
-            else if (adv == 5) bonus += 25;      // 6th
-            else if (adv == 4) bonus += 20;      // 5th
-            else if (adv == 3) bonus += 15;      // 4th
-            else if (adv >= 1) bonus += 10;      // 2cnd/3rd
-           
+
+            int base = 0;
+            if      (adv == 6) base = 30;      // 7th rank
+            else if (adv == 5) base = 25;      // 6th
+            else if (adv == 4) base = 20;      // 5th
+            else if (adv == 3) base = 15;      // 4th
+            else if (adv >= 1) base = 10;      // 2cnd/3rd
+
+            bonus += base;
+
+         
         }
     }
     return bonus;
 }
+
 
 
  double GameBoard::openingness_of(int avg_cp) {
@@ -1215,7 +1236,7 @@ int GameBoard::king_sq_of(Color color) {
 }
 
 
-// Returns 1 to 8. 1 if close to the passed sq. 8 if as far as possible from the passed sq.
+// Returns 1 to 10. 1 if close to the passed sq. 10 if as far as possible from the passed sq.
 double GameBoard::king_near_sq(Color attacker_color, ull sq) {
     double dBonus = 0;
 
@@ -1659,36 +1680,49 @@ int GameBoard::rand_new()
     return dist(rng);
 }
 
-// Black gets lone king. White gets queen or rook with his king.
+// White gets lone king. Black gets queen or rook with his king.
 ///////////////////////////////////////////////////////////////
 std::string GameBoard::random_kqk_fen(bool doQueen)
 {
+
+    int itrys = 0;
     // make all 64 squares in h1=0 order: h1,g1,...,a1, h2,...,a8
-    std::vector<std::string> squares;
+    std::vector<std::string> all_squares;
     for (int r = 1; r <= 8; ++r) {
         for (int fi = 0; fi < 8; ++fi) {
             char f = char('h' - fi);   // h,g,f,e,d,c,b,a
             std::string sq;
             sq += f;
             sq += char('0' + r);
-            squares.push_back(sq);
+            all_squares.push_back(sq);
         }
     }
 
 retry_all:
-    // 1) pick white king
-    std::string wk = squares[rand_new() % 64];
 
-    // 2) pick black king not adjacent
+    ++itrys;
+    assert (itrys < 5);
+
+    // 1) pick random white king position ("choices" here are any square)
+    size_t idx = (size_t)rand_new() % 64;
+    if (idx == 0) goto retry_all;       // NOTE: how does this happen?
+    //assert (idx > 0);
+    std::string wk = all_squares[idx];
+
+    // 2) remove squares adjacent to the white king from "choices"
     std::vector<std::string> bk_choices;
-    for (const auto &sq : squares) {
+    for (const auto &sq : all_squares) {
         if (sq != wk && !kings_adjacent(wk, sq)) {
             bk_choices.push_back(sq);
         }
     }
-    if (bk_choices.empty())
-        goto retry_all;
-    std::string bk = bk_choices[rand_new() % bk_choices.size()];
+    if (bk_choices.empty()) goto retry_all;  // no possible position for black king, try again
+
+    // 3) Pick random black king position
+    idx = (size_t)rand_new() % bk_choices.size();
+    if (idx == 0) goto retry_all;       // NOTE: how does this happen?
+    //assert(0);
+    std::string bk = bk_choices[idx];
 
     // helper: rook attacks (orthogonal only)
     auto rook_attacks = [](const std::string &r, const std::string &k) -> bool
@@ -1700,9 +1734,9 @@ retry_all:
         return (f1 == f2) || (r1 == r2);
     };
 
-    // 3) pick black Q or R that does NOT give check to WK
-    std::vector<std::string> bX_choices;
-    for (const auto &sq : squares)
+    // 4) remove squares attacking the white king (do NOT give check to WK) from "choices"
+    std::vector<std::string> bX_choices;      // Choices for the black heavy piece
+    for (const auto &sq : all_squares)
     {
         if (sq == wk || sq == bk)
             continue;
@@ -1717,9 +1751,14 @@ retry_all:
     }
     if (bX_choices.empty())
         goto retry_all;
-    std::string bX = bX_choices[rand_new() % bX_choices.size()];
 
-    // 4) build board [row 8 → row 1], still standard FEN layout
+    // 5) Pick random black Q/R position
+    idx = (size_t)rand_new() % bX_choices.size();
+    if (idx == 0) goto retry_all;       // NOTE: how does this happen?
+    //assert (idx > 0);
+    std::string bX = bX_choices[idx];  
+
+    // 6) build board [row 8 → row 1], still standard FEN layout
     char board[8][8] = { 0 };
     auto place = [&](char piece, const std::string &sq)
     {
@@ -1760,6 +1799,13 @@ retry_all:
     }
 
     fen += " w - - 0 1";
+
+    static int n = 0;
+    ++n;
+    if ((n % 1000) == 0) printf("made %d fens\n", n);
+    printf("K/Q/R fen=%s\n", fen.c_str());
+
+
     return fen;
 }
 

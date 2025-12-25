@@ -32,7 +32,7 @@ inline constexpr double TINY_SCORE       = 1.0e-15;  // pawns
 inline constexpr double VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)
 inline constexpr double HUGE_SCORE       = 10000.0;  // pawns
 
-inline bool IS_MATE_SCORE(double x) {return std::abs(x) > (HUGE_SCORE - 200.0);}
+inline bool IS_MATE_SCORE(double x) {return std::abs(x) > (HUGE_SCORE - 200.0);}  // pawns
 
 inline constexpr double ABORT_SCORE     = HUGE_SCORE + 1.0;  // abort analysis
 inline constexpr double ONLY_MOVE_SCORE = HUGE_SCORE + 2.0;  // short-circuit when only one legal move
@@ -219,7 +219,8 @@ class Engine {
         int user_request_next_move = 7;    // Note: make me go aways. I am for changing the deepening inbetweem moves
         void killTheKing(Color color);     // Note: The idea. is that you can resign by deleting your king. Sort of works.
 
-        void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp);
+        void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list
+            , bool b_convert_to_abs_score, bool b_sort_descending, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
 
         void move_and_score_to_string(const Move best_move, double d_best_move_value, bool b_convert_to_abs_score);
@@ -238,7 +239,7 @@ class Engine {
                                         vector<ShumiChess::Move>& vReturn           // output
                                     );
 
-        double d_bestScore_at_root = 0.0;
+        double d_bestScore_at_root = 0.0;       // in abs coordinates
         //
         // Returns "an ordering key", for a capture, using MVV-LVA. "Top range" of key is the victim piece value,                          
         // "Bottom range" is the negative of the attacker piece value. 

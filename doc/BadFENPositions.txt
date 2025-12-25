@@ -196,4 +196,14 @@ Very long (10).
 
 
 
-Just picked up on something in the chess TT2 (transposition table) That the table is NOT cleared ever, not even at the end of games. This has to be wrong. It is not intended/. When sghould I clear the TT2?  Check. I just found out that its true i NEVER clear the table. There is a rollover watchdog, way higher at value than I ever intended. I must clear it. at minimum at game start. I only do it now at creation (engined start).
+// mismatches with lichess engine.
+
+rnbqkbnr/pp1ppppp/8/2p5/2P5/8/PP1PPPPP/RNBQKBNR w KQkq c6 0 2
+
+8/3k4/4p2R/3p1p2/3P1P2/3R3P/1KP5/5q2 b - - 2 38
+
+
+2kr3r/ppq2ppp/2pbbn2/4p3/1P6/P1N2BP1/2PBQP1P/R3R1K1 w - - 1 17
+
+
+8/8/8/8/5k2/7r/4K3/8 b - - 5 3      // why black advantage so large?

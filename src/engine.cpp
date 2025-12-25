@@ -79,12 +79,16 @@ void Engine::reset_engine() {         // New game.
     //game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
     //game_board = GameBoard("4kbb1/8/8/8/8/8/4K3/8 w - - 0 1");
 
-    // Or you can pick a random simple endgame FEN. (maybe)
+    // // Or you can pick a random simple endgame FEN. (maybe)
     // vector<Move> v;
+    // int itrys = 0;
     // do {  
-    //     string stemp = game_board.random_kqk_fen(true);
+    //     string stemp = game_board.random_kqk_fen(false);
     //     game_board = GameBoard(stemp);
     //     v = get_legal_moves(ShumiChess::WHITE);
+    //     ++itrys;
+    //     assert(itrys < 4);
+
     // } while (v.size() == 0);
 
     game_board = GameBoard();
@@ -119,9 +123,12 @@ void Engine::reset_engine() {         // New game.
 //
 // By "reset engine" is meant: "new game". 
 //
-void Engine::reset_engine(const string& fen) {      // New game.
+void Engine::reset_engine(const string& fen) {      // New game (with fen)
 
-    std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
+    d_bestScore_at_root = 0.0;
+
+    //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
+    std::cout << "\x1b[94mNew Game (from FEN) \x1b[0m" << endl;
 
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -158,7 +165,6 @@ void Engine::reset_engine(const string& fen) {      // New game.
 
 // understand why this is ok (vector can be returned even though on stack), move ellusion? 
 // https://stackoverflow.com/questions/15704565/efficient-way-to-return-f-stdvector-in-c
-
 
 
 vector<Move> Engine::get_legal_moves() {
@@ -300,8 +306,8 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 // TODO should this check for draws by internally calling get legal moves and caching that and 
 //      returning on the actual call?, very slow calling get_legal_moves again.
 // NOTE: I complely agree this is wastefull. But it is not called in the "main line", it is only called as a 
-// "python method". The one below is the ont called in actual play.
-//   This one is called only during testing?
+// "python method". The one below this, is the one called in actual play.
+//
 GameState Engine::is_game_over() {
     vector<Move> legal_moves = get_legal_moves();
     return is_game_over(legal_moves);
@@ -1537,7 +1543,7 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
     // every random move chosen. When it hits zero, no more random plys will be chosen.
     if (g_iMove==0) {
         i_randomize_next_move = randomMoveCount;
-        //cout << "\033[1;31m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
+        cout << "\033[1;31m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
     // Is this a way to resign?
@@ -1586,12 +1592,50 @@ void makeMoveScoreList(const Move ) {
 }
 
 
-void Engine::print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list, bool b_convert_to_abs_score, FILE* fp)
+
+
+
+
+#include <algorithm> // sort
+#include <cmath>     // abs
+
+void Engine::print_moves_and_scores_to_file(MoveAndScoreList move_and_scores_list,
+                                           bool b_convert_to_abs_score,
+                                           bool b_sort_descending,
+                                           FILE* fp)
 {
+    if (b_sort_descending)
+    {
+        std::sort(move_and_scores_list.begin(), move_and_scores_list.end(),
+                  [&](const MoveAndScore& a, const MoveAndScore& b)
+                  {
+                      double sa = a.second;
+                      double sb = b.second;
+
+                      if (b_convert_to_abs_score)
+                      {
+                          sa = std::abs(sa);
+                          sb = std::abs(sb);
+                      }
+
+                      return sa > sb; // descending
+                  });
+    }
+
     for (const MoveAndScore& ms : move_and_scores_list) {
         print_move_and_score_to_file(ms, b_convert_to_abs_score, fp);
     }
 }
+
+
+
+// void Engine::print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list
+//     , bool b_convert_to_abs_score, bool b_sort_descending, FILE* fp)
+// {
+//     for (const MoveAndScore& ms : move_and_scores_list) {
+//         print_move_and_score_to_file(ms, b_convert_to_abs_score, fp);
+//     }
+// }
 
 void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
 {
@@ -1804,7 +1848,7 @@ void Engine::print_move_history_to_file(FILE* fp) {
     fputc('\n', fp);
 }
 //
-// Get algebriac (SAN) text form of the last move.
+// Get algebriac (SAN) text form of the move
 // Tabs over based on ply. Pass in nPly=-2 for no tabs. 
 // The formatted version does one move per line. 
 // The unformatted version puts them all on one line.

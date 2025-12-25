@@ -77,10 +77,10 @@ struct Move {
 //   Wait I think its just the line "game_over_cache() == -1:" in show_board.py.
 // ? Should we try to make most checked things = 0 for magical compiler is zero optimizations? 
 enum GameState {
-    INPROGRESS = -1,
-    WHITEWIN = 0,
-    DRAW = 1,
-    BLACKWIN = 2
+    INPROGRESS = 0,
+    WHITEWIN,
+    DRAW,
+    BLACKWIN
 };
 
 

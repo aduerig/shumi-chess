@@ -144,7 +144,7 @@ public:
     void resign();
 
     void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
-    tuple<double, ShumiChess::Move> do_a_deepening(int depth, long long elapsed_time, const ShumiChess::Move& null_move);
+    tuple<double, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time, const ShumiChess::Move& null_move);
 
     // Note: All moves from the "root" position. The root is when the player starts thinking about his move.
     std::vector<std::pair<ShumiChess::Move, double>> MovesFromRoot;
@@ -157,7 +157,9 @@ public:
 
     ShumiChess::Move get_move_iterative_deepening(double time_requested, int max_deepening_requested, int feat);
 
-    std::tuple<double, ShumiChess::Move> recursive_negamax(int depth, double alpha, double beta
+    std::tuple<double, ShumiChess::Move> recursive_negamax(int depth
+                                            , double alpha, double beta
+                                            , bool is_from_root
                                             , const ShumiChess::Move& move_last
                                             , int nPlys
                                             , int qPlys
@@ -175,7 +177,7 @@ public:
 
         bool bHasCastled = engine.game_board.bHasCastled(engine.game_board.turn);
 
-        int nPhase = (bHasCastled && ((engine.g_iMove)>17) ); 
+        int nPhase = (bHasCastled && ((engine.g_iMove)>17) );   // NOTE: this is crap
         return nPhase;
     }
 

@@ -156,7 +156,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 }
 
 static PyObject*
-engine_communicator_hit_one_key(PyObject* self, PyObject* args) {
+engine_communicator_set_random_number_of_moves(PyObject* self, PyObject* args) {
     int randomMoveCount;
   
     if(!PyArg_ParseTuple(args, "i", &randomMoveCount)) {
@@ -171,6 +171,7 @@ engine_communicator_hit_one_key(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_game_over(PyObject* self, PyObject* args) {
+    // returns constant (GameState C constant) 
     return Py_BuildValue("i", (int) python_engine.is_game_over());
 }
 
@@ -247,7 +248,7 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 
     Py_BEGIN_ALLOW_THREADS;
 
-    // Pass arguments through to the engine
+    // Pass arguments through to the engine, get the opponents move.
     gotten_move = minimax_ai->get_move_iterative_deepening(
         milliseconds,
         max_deepening,
@@ -277,6 +278,22 @@ engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
 }
 
 static PyObject*
+engine_communicator_evaluate(PyObject* self, PyObject* args) {
+
+    int nPhase = minimax_ai->phaseOfGame();
+    std::vector<ShumiChess::Move> legal_moves = minimax_ai->engine.get_legal_moves();
+    bool b_is_Quiet = !minimax_ai->engine.has_unquiet_move(legal_moves);
+    
+    int cp_score_best = minimax_ai->evaluate_board( minimax_ai->engine.game_board.turn, nPhase, false, b_is_Quiet);
+    double pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);
+
+    cout << "eval = " << pawnScore << endl;
+    
+    return Py_BuildValue(""); // this is None in Python
+}
+
+
+static PyObject*
 engine_communicator_get_game_timew(PyObject* self, PyObject* args) {
     //cout << "wsec=" << minimax_ai->engine.game_white_time_msec << endl;
     return Py_BuildValue("i", minimax_ai->engine.game_white_time_msec);
@@ -292,9 +309,34 @@ engine_communicator_get_game_timeb(PyObject* self, PyObject* args) {
 
 static PyObject* 
 engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
-    int ijunk = python_engine.get_best_score_at_root();
-    double value = ijunk / 100.0;        // e.g. 243 -> 2.43, -1234 -> -12.34
-    return Py_BuildValue("d", value);    // "d" = Python float
+    int iCPScore = python_engine.get_best_score_at_root();
+    double iPawnScore = iCPScore / 100.0;        // e.g. 243 -> 2.43, -1234 -> -12.34
+    double absip;
+
+    bool isMateScore = IS_MATE_SCORE(iPawnScore);
+    char szScore[16];
+
+    if (isMateScore) {
+        if (iPawnScore >= 0.0) {
+            absip = iPawnScore;
+        } else {
+            absip = -iPawnScore;
+        }
+ 
+        double mate_in_number = ((HUGE_SCORE - absip) / 2.0);
+        assert (mate_in_number > 0.0);
+
+        if (iPawnScore >= 0.0) {
+            sprintf(szScore, "#%.1f", mate_in_number);
+        } else {
+            sprintf(szScore, "-#%.1f", mate_in_number);
+        }
+    } else {
+        sprintf(szScore, "%.2f", iPawnScore);
+    }
+
+    return Py_BuildValue("s", szScore);
+    //return Py_BuildValue("d", iPawnScore);    // "d" = Python float
 }
 
 static PyObject*
@@ -311,6 +353,7 @@ static PyMethodDef engine_communicator_methods[] = {
     // These are move generation engines
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
     {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
+    
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},      // new game
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
@@ -324,10 +367,11 @@ static PyMethodDef engine_communicator_methods[] = {
     {"wakeup",  engine_communicator_wakeup, METH_VARARGS, ""},                  //  force a move if thinking
     {"get_best_score_at_root",  engine_communicator_get_best_score_at_root, METH_VARARGS, ""},
     {"get_draw_reason",  engine_communicator_get_draw_reason, METH_VARARGS, ""},
-    {"get_game_timew",   engine_communicator_get_game_timew, METH_VARARGS, ""},
-    {"get_game_timeb",   engine_communicator_get_game_timeb, METH_VARARGS, ""},
+    {"evaluate",  engine_communicator_evaluate, METH_VARARGS, ""},
+    {"get_game_timew",   engine_communicator_get_game_timew, METH_VARARGS, ""},     // Total time thinking, since match start
+    {"get_game_timeb",   engine_communicator_get_game_timeb, METH_VARARGS, ""},     // Total time thinking, since match start
     {"resign",  engine_communicator_resign, METH_VARARGS, ""},
-    {"one_Key_Hit",  engine_communicator_hit_one_key, METH_VARARGS, ""},
+    {"set_random_number_of_moves",  engine_communicator_set_random_number_of_moves, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -343,18 +387,26 @@ static struct PyModuleDef engine_communicatormodule = {
 
 PyMODINIT_FUNC
 PyInit_engine_communicator(void) {
-    
+
     // Seed randomization (using microseconds since ?)
     using namespace std::chrono;
     auto now = chrono::high_resolution_clock::now().time_since_epoch();
     auto us  = duration_cast<microseconds>(now).count();
     std::srand(static_cast<unsigned>(us));  // higher-resolution seed
 
-    //printf("\x1b[94mHello Im communicator %ld\x1b[0m\n", (int)us);
+    PyObject* m = PyModule_Create(&engine_communicatormodule);
+    if (m == NULL) {return NULL;}
 
-    return PyModule_Create(&engine_communicatormodule);
+    // Export GameState enum values to Python as module-level constants
+    // Python usage: engine_communicator.DRAW, etc.s
+    if (PyModule_AddIntConstant(m, "INPROGRESS", (int)ShumiChess::INPROGRESS) < 0) return NULL;
+    if (PyModule_AddIntConstant(m, "WHITEWIN",   (int)ShumiChess::WHITEWIN)   < 0) return NULL;
+    if (PyModule_AddIntConstant(m, "DRAW",       (int)ShumiChess::DRAW)       < 0) return NULL;
+    if (PyModule_AddIntConstant(m, "BLACKWIN",   (int)ShumiChess::BLACKWIN)   < 0) return NULL;
+
+
+    return m;
 }
-
 
 
 

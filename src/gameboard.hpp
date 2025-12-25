@@ -200,7 +200,7 @@ class GameBoard {
         int rook_file_status(Color c) const;
         int rook_7th_rankness(Color c) const;
         int count_isolated_pawns(Color c) const;
-        int count_passed_pawns(Color c, double dMultiplier);
+        int count_passed_pawns(Color c, ull& passedPawns);
         int count_doubled_pawns(Color c) const;
 
         std::string random_kqk_fen(bool doQueen);
@@ -223,7 +223,7 @@ class GameBoard {
         bool bIsOnlyKing(Color attacker_color);
         bool bNoPawns();
         bool is_king_highest_piece();
-        bool IsSimpleEndGame(Color for_color);
+        //bool IsSimpleEndGame(Color for_color);
         
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
