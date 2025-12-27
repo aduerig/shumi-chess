@@ -308,10 +308,10 @@ def on_one_key_hit(event):
 win.master.bind("1", on_one_key_hit)
 
 # evaluate game
-# def on_two_key_hit(event): 
-#     evaluate()
+def on_two_key_hit(event): 
+    engine_communicator.evaluate()
 
-# win.master.bind("2", on_two_key_hit)
+win.master.bind("2", on_two_key_hit)
 
 
 
@@ -854,8 +854,6 @@ ai_is_thinking = False
 try:
     while True:
 
-        #game_over_text.undraw()
-        
         #while game_over_cache() == -1: 
         while game_over_cache() == engine_communicator.INPROGRESS: 
             # stuff to do every frame no matter what
@@ -865,7 +863,7 @@ try:
 
             # once the game has really started (move > 2), erase this text.
             if move_number > 2:
-                game_over_text.undraw()
+                game_over_text.setText("")
 
             current_turn_text.setText(turn_text_values[player_index])
             curr_game_text.setText('Game {}'.format(curr_game))
@@ -1036,7 +1034,10 @@ try:
             game_over_text.setText(f'GAME OVER: draw ({reason})')
         else:
             game_over_text.setText(winner_text.format(winner))
-        game_over_text.draw(win)
+
+        # START code crash if not commented out 
+        # game_over_text.draw(win)
+        # END code crash if not commented out 
 
         # update match timers
         iWhiteTime = engine_communicator.get_game_timew()

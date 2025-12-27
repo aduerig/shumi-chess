@@ -22,7 +22,7 @@
 #endif
 
 
-bool debugNow = false;
+//bool debugNow = false;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -57,8 +57,7 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 void Engine::reset_engine() {         // New game.
     std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
     
-    // match_white_time_msec += game_white_time_msec;     // total white thinking time for match
-    // match_black_time_msec += game_black_time_msec;     // total black thinking time for match
+
 
     // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -78,8 +77,8 @@ void Engine::reset_engine() {         // New game.
     //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
     //game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
     //game_board = GameBoard("4kbb1/8/8/8/8/8/4K3/8 w - - 0 1");
-
-    // // Or you can pick a random simple endgame FEN. (maybe)
+    //game_board = GameBoard("6k1/8/8/8/8/8/P7/6K1 w - - 0 1");
+    // // // Or you can pick a random simple endgame FEN. (maybe)
     // vector<Move> v;
     // int itrys = 0;
     // do {  
@@ -116,6 +115,9 @@ void Engine::reset_engine() {         // New game.
 
     // These things are cleared every game.
     repetition_table.clear();
+
+    reason_for_draw = DRAW_NULL;
+
 
     //TTable2.clear();
 
@@ -303,16 +305,22 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-// TODO should this check for draws by internally calling get legal moves and caching that and 
+// Notes:
+//     TODO should this check for draws by internally calling get legal moves and caching that and 
 //      returning on the actual call?, very slow calling get_legal_moves again.
 // NOTE: I complely agree this is wastefull. But it is not called in the "main line", it is only called as a 
 // "python method". The one below this, is the one called in actual play.
 //
+
+//
+// I am called only from python, when the game is over. I am very waseful. as get_legal_moves() is very 
+// expensive
 GameState Engine::is_game_over() {
     vector<Move> legal_moves = get_legal_moves();
     return is_game_over(legal_moves);
 }
 
+// I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
 GameState Engine::is_game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
         if ( (!game_board.white_king) || (is_square_in_check(Color::WHITE, game_board.white_king)) ) {
@@ -322,14 +330,15 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
         }
         else {
             //reason_for_draw = "stalemate";
-            if (debugNow) cout<<"stalemate" << endl;
+            reason_for_draw = DRAW_STALEMATE;
+            //if (debugNow) cout<<"stalemate" << endl;
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
     else if (game_board.halfmove >= 50) {
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
-        //reason_for_draw = "50 move rule";
+        reason_for_draw = DRAW_50MOVERULE;
         //cout<<"50 move rule" << endl;
         return GameState::DRAW;           // draw by 50 move rule
 
@@ -338,7 +347,8 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
         // Insuffecient material   Note: what about two bishops and bishop and knight
         bool isOverThatWay = game_board.insufficient_material_simple();
         if (isOverThatWay) {
-            if (debugNow) cout<<"no material" << endl;
+            reason_for_draw = DRAW_INSUFFMATER;
+            //if (debugNow) cout<<"no material" << endl;
             return GameState::DRAW;
         }
 
@@ -351,8 +361,8 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
                 // along the current line. That means we are in a repetition loop.
                 //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
                 //assert(0);
-                //reason_for_draw = "3 time rep";
-                if (debugNow) cout<<"3-time-rep"<< endl;
+                reason_for_draw = DRAW_3TIME_REP;
+                //if (debugNow) cout<<"3-time-rep"<< endl;
                 return GameState::DRAW;
             }
         }

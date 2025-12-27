@@ -106,7 +106,7 @@ Edge bugs with king and pawn? (Edge and king bug)
 5r1k/1Q5p/8/p2P3B/2P1P3/1PK5/P7/8 w - a6 0 42
 
 
-3 time repetation draw test
+3 time repitation draw test
 ==============================
 r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17
 

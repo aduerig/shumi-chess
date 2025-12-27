@@ -271,7 +271,37 @@ engine_communicator_wakeup(PyObject* self, PyObject* args) {
 // NOTE: unfinished
 static PyObject*
 engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
-    const char* reason = "3 time rep";
+    char reason[32];
+
+    switch (minimax_ai->engine.reason_for_draw)
+    {
+        case DRAW_NULL:
+        default:
+            strcpy(reason, "?????????");
+            break;
+
+        case DRAW_STALEMATE:
+            strcpy(reason, "stalemate");
+            break;
+
+        case DRAW_3TIME_REP:
+            strcpy(reason, "3 time rep");
+            break;
+
+        case DRAW_50MOVERULE:
+            strcpy(reason, "50 movs");
+            break;
+
+        case DRAW_INSUFFMATER:
+            strcpy(reason, "not enuf");
+            break;
+
+        case DRAW_AGREEMENT:
+            strcpy(reason, "agreed");
+            break;
+    }
+
+    //strcpy(reason, "");
 
     // "s" builds a Python str from a C null-terminated char*
     return Py_BuildValue("s", reason);
@@ -284,10 +314,13 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
     std::vector<ShumiChess::Move> legal_moves = minimax_ai->engine.get_legal_moves();
     bool b_is_Quiet = !minimax_ai->engine.has_unquiet_move(legal_moves);
     
+    minimax_ai->is_debug = true;
     int cp_score_best = minimax_ai->evaluate_board( minimax_ai->engine.game_board.turn, nPhase, false, b_is_Quiet);
+    minimax_ai->is_debug = false;
+    
     double pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);
 
-    cout << "eval = " << pawnScore << endl;
+    cout << "\n  eval = " << pawnScore << endl;
     
     return Py_BuildValue(""); // this is None in Python
 }

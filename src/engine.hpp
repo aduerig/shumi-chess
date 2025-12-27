@@ -267,6 +267,14 @@ class Engine {
 
         // display crap
         //string reason_for_draw = "------------";
+        #define DRAW_NULL        0 
+        #define DRAW_STALEMATE   1
+        #define DRAW_3TIME_REP   2
+        #define DRAW_50MOVERULE  3
+        #define DRAW_INSUFFMATER 4
+        #define DRAW_AGREEMENT   5
+        int reason_for_draw = DRAW_NULL;
+
         int get_best_score_at_root();
         int material_centPawns = 0;
 

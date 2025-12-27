@@ -54,6 +54,9 @@ public:
     int cp_score_material_avg = 0;
     //int cp_score_material_NP_avg = 0;
 
+    ull passed_pawns_white = 0ULL; 
+    ull passed_pawns_black = 0ULL; 
+
     // For PV from previous iteration
     static constexpr int MAX_PLY_PV = 256;
     std::pair<ShumiChess::Move, double> prev_root_best_[MAX_PLY_PV + 2];
@@ -138,6 +141,7 @@ public:
 
     int evaluate_board(ShumiChess::Color for_color, int nPhase, bool fast_style_eval, bool isQuietPosition
                    //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
+                    //, bool is_debug
     );
 
     void wakeup();
@@ -188,7 +192,7 @@ public:
     ShumiChess::Move get_move();
     // end oLD CHESS engine
 
-
+    bool is_debug = false;
     int nFarts = 0;
 
     std::tuple<double, ShumiChess::Move> best_move_static(ShumiChess::Color for_color,

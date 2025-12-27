@@ -238,6 +238,7 @@ void MinimaxAI::resign() {
 //        3 extreme endgame
 
 int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, bool isQuietPosition
+                                //, bool is_debug
                                 //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
                             )
                                 
@@ -313,7 +314,7 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
     assert(mat_np_white>=0);
     assert(mat_np_black>=0);
     //cp_score_material_NP_avg = (mat_np_white + mat_np_black) / 2;   // NEW
-
+    if (is_debug) printf("\nmat: %ld", cp_score_material_all);
 
     // ??? Note: display only
     engine.material_centPawns = cp_score_material_all;
@@ -344,16 +345,19 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
             if (!onlyKingEnemy) {
 
                 test = cp_score_positional_get_opening(color);
+                if (is_debug) printf("\nopening: %ld", test);
                 cp_score_position_temp += test;
        
                 // Note this return is in centpawns, and can be negative
                 test = cp_score_positional_get_middle(color);
+                if (is_debug) printf("\nmiddle: %ld", test);
                 cp_score_position_temp += test;    
             }     
             
             // Note this return is in centpawns, and can be negative
             test = cp_score_positional_get_end(color, nPhase, cp_score_material_avg
                                             ,onlyKingFriend, onlyKingEnemy);
+            if (is_debug) printf("\nend: %ld", test);
             cp_score_position_temp += test;      
 
 
@@ -364,6 +368,7 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
             if ( (isQuietPosition) && (color == for_color) ) {
                 test = cp_score_get_trade_adjustment(color, mat_np_white, mat_np_black);
                 cp_score_position_temp += test;
+                if (is_debug) printf("\ntrd: %ld", test);
 
                 #ifdef _DEBUGGING_MOVE_CHAIN1
                     sprintf(szDebug, "trd %ld", test);
@@ -371,7 +376,8 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
                 #endif
 
             }
-    
+     
+
             /////////////// end positional evals /////////////////
 
 
@@ -380,6 +386,8 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
             cp_score_position += cp_score_position_temp;
 
         }
+
+        if (is_debug) printf("\npst: %ld   %ld", test, cp_score_position);
 
     }
 
@@ -492,19 +500,6 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(color));
     if (bishops >= 2) cp_score_position_temp += 10;   // in centipawns
 
-    // Add code to encourage passed pawns. (1 for each passed pawn)
-    //    TODO: does not see wether passed pawns are protected
-    //    TODO: does not see wether passed pawns are isolated
-    //    TODO: does not see wether passed pawns are on open enemy files
-    ull passed_pawns;
-    int iZeroToThirty = engine.game_board.count_passed_pawns(color, passed_pawns);
-    assert (iZeroToThirty>=0);
-    
-    if (Features_mask & _FEATURE_EVAL_TEST1) {
-        cp_score_position_temp += iZeroToThirty*02;   // centipawns
-    } else {
-        cp_score_position_temp += iZeroToThirty*03;   // centipawns
-    }
 
     // Add code to encourage rook connections (files or ranks)
     int connectiveness;     // One if rooks connected. 0 if not.
@@ -528,7 +523,7 @@ int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color,
                                              int mat_np_white,      // centipawns
                                              int mat_np_black)      // centipawns
 {
-    int cp_clamp = 1000;   // no more than a pawn of motivation
+    int cp_clamp = 5;   // no more than a pawn of motivation
 
     // NP advantage (centipawns) from "color"'s point of view (positive, if good for color)
     int np_adv_for_color =
@@ -545,7 +540,7 @@ int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color,
 
     // Full complement of pieces is 4000 centpawns. Suppose one side a knight up. Then 
     // ratio = 320 / 4000  or about 1 tenth, so we see about 60 cp motivation to trade.
-    int iReturn = (int)(dRatio*800.0);
+    int iReturn = (int)(dRatio*1200.0);
     if (iReturn >  cp_clamp) iReturn =  cp_clamp;
     if (iReturn < -cp_clamp) iReturn = -cp_clamp;
 
@@ -559,6 +554,24 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
                                             ) {
 
     int cp_score_position_temp = 0;
+
+    // Add code to encourage passed pawns. (1 for each passed pawn)
+    //    TODO: does not see wether passed pawns are protected
+    //    TODO: does not see wether passed pawns are isolated
+    //    TODO: does not see wether passed pawns are on open enemy files
+    ull passed_pawns;
+    int iZeroToThirty = engine.game_board.count_passed_pawns(color, passed_pawns);
+    assert (iZeroToThirty>=0);
+
+    // Remember where passed pawns are.
+    (color==ShumiChess::WHITE) ? passed_pawns_white = passed_pawns : passed_pawns_black = passed_pawns; 
+
+    if (Features_mask & _FEATURE_EVAL_TEST1) {
+        cp_score_position_temp += iZeroToThirty*02;   // centipawns
+    } else {
+        cp_score_position_temp += iZeroToThirty*03;   // centipawns
+    }
+    if (is_debug) printf("\ngt1: %ld", cp_score_position_temp);
 
     // Add code to encourage ???
     //int iZeroToOne = engine.game_board.kings_in_opposition(color);
@@ -575,10 +588,9 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
         assert (itemp>=0);
         cp_score_position_temp += itemp*20;  // centipawns  
     }
+    if (is_debug) printf("\ngt2: %ld", cp_score_position_temp);
 
     if (onlyKngEnemy) {
-
-        //     if (color == ShumiChess::WHITE) assert(0);   // exploratory
 
         // Rewards king near other king
         // Returns 2 to 10,. 2 if in opposition, 10 if in opposite corners.
@@ -594,16 +606,22 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, 
         }
 
         double dFarness = 10.0 - dkk;   // 8 if in opposition, 0, if in opposite corners
-        cp_score_position_temp += (int)(dFarness * 50.0);
+        cp_score_position_temp += (int)(dFarness * 25.0);
+
+        if (is_debug) printf("\ngt3: %ld", cp_score_position_temp);
 
 
         // Rewards if enemy king near corner. 0 for the inner ring (center) 3 for outer ring (edge squares)
         enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
         int edge_wght = engine.game_board.king_edge_weight(enemy_color);
 
-        cp_score_position_temp += (int)(edge_wght * 80.0);
+        cp_score_position_temp += (int)(edge_wght * 40.0);
+
+        if (is_debug) printf("\ngt4: %ld", cp_score_position_temp);
 
     }
+
+
 
     return cp_score_position_temp;
 }
@@ -1378,7 +1396,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                             : (-HUGE_SCORE + d_level);
         } else if (state == GameState::DRAW) {
             d_best_score = 0.0;          // Stalemate
-            //engine.reason_for_draw = "stalemate";
+
+            if (is_from_root) engine.reason_for_draw = DRAW_STALEMATE;
+
         } else {
             assert(0);
         }

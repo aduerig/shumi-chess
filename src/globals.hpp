@@ -72,10 +72,6 @@ struct Move {
     
 };
 
-// ? is this best way to number
-// NOTE: cant we just renumber it from 0 ? NO, somehow the python requires this.
-//   Wait I think its just the line "game_over_cache() == -1:" in show_board.py.
-// ? Should we try to make most checked things = 0 for magical compiler is zero optimizations? 
 enum GameState {
     INPROGRESS = 0,
     WHITEWIN,
