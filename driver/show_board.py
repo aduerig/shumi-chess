@@ -432,6 +432,12 @@ def get_fen(button_obj):
 # engine_communicator.make_move_two_acn(from_acn, to_acn)
 # legal_moves = engine_communicator.get_legal_moves()
 
+
+def output_pgn(button_obj):
+    print('output pgn')
+    engine_communicator.get_pgn()
+
+#    Button(output_fens_depth_1, lambda: "Depth 1 FENs + test", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 def output_fens_depth_1(button_obj):
     global legal_moves
     import chess
@@ -498,7 +504,7 @@ button_holder = [
     Button(clicked_autoreset, lambda: "Autoreset board\n{}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(wake_up, lambda: "Wake up", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(get_fen, lambda: "Get FEN", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(output_fens_depth_1, lambda: "Depth 1 FENs + test", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
+    Button(output_pgn, lambda: "Get PGN", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
 
 def gui_click_choices():

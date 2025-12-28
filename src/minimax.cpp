@@ -244,13 +244,13 @@ int MinimaxAI::evaluate_board(Color for_color, int nPhase, bool is_fast_style, b
                                 
 {
     // move_history
-    #ifdef _DEBUGGING_MOVE_CHAIN1
+    #ifdef _DEBUGGING_MOVE_CHAIN
         //if (engine.move_history.size() > 7) {
         //if (look_for_king_moves()) {
         //if (has_repeated_move()) {
-        if (alternating_repeat_prefix_exact(1)) {
+        //if (alternating_repeat_prefix_exact(1)) {
             engine.print_move_history_to_file(fpDebug);    // debug only
-        }
+        //}
     #endif
 
     evals_visited++;
@@ -817,6 +817,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     }   
 
+    // add null_move to the pgn
+
     // NOTE: In 2 computer mode this is in plys. If one human, its in moves.
     engine.g_iMove++;                      // Increment real moves in whole game
     cout << "\x1b[94m\n\nMove: " << engine.g_iMove << "\x1b[0m";
@@ -828,7 +830,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     evals_visited = 0;
 
     seen_zobrist.clear();
-    uint64_t zobrist_key_start = engine.game_board.zobrist_key;
+    //uint64_t zobrist_key_start = engine.game_board.zobrist_key;
     //cout << "zobrist_key at the root: " << zobrist_key_start << endl;
 
     TTable.clear();       // Leaf TT cleared on every move (even if never used)
@@ -1124,6 +1126,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     ull passed_pawns;
     dtemp1 = engine.game_board.count_passed_pawns(ShumiChess::WHITE, passed_pawns);
     dtemp2 = engine.game_board.count_passed_pawns(ShumiChess::BLACK, passed_pawns);
+    dtemp2 = sizeof(Move);
+    dtemp1 = sizeof(bool);
     cout << "wht " << dtemp1 << "               blk " << dtemp2 << endl;
 
     // itemp1 = engine.game_board.SEE(ShumiChess::BLACK, engine.game_board.square_d5);
@@ -1281,7 +1285,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     if (Features_mask & _FEATURE_TT2) {  // probe in TT2
         int iLimit = (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 1 or 0 only
         if (depth > iLimit) {
-            // --- Normal TT2 probe (exact-only version, no flags/age yet)
+            // --- Normal TT2 probe (Note: exact-only version, no flags/age yet)
 
             uint64_t key = engine.game_board.zobrist_key;
 

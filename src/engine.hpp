@@ -42,6 +42,21 @@ inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 3
 
 
 namespace ShumiChess {
+
+
+
+class PGN {
+    public:
+        PGN();
+        void clear();
+        int add(Move& m);
+        void spitout();
+    private:
+        std::string text;
+};
+
+
+
 class Engine {
     public:
         // Members
@@ -289,7 +304,7 @@ class Engine {
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
 
-
+        void print_move_history_to_buffer(char *out, size_t out_size);
         void print_move_history_to_file(FILE* fp);
 
         int print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs

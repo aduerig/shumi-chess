@@ -22,13 +22,50 @@
 #endif
 
 
+
+
+
+
+
 //bool debugNow = false;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 using namespace std;
 
 namespace ShumiChess {
+
+#define PGN_MAX 10000
+PGN::PGN() 
+{
+    text.reserve(PGN_MAX);
+};
+
+void PGN::clear()
+{
+    text.clear();      // sets size to 0, keeps the reserved capacity
+}
+void PGN::spitout()
+{
+    std::cout << text << std::endl;
+}
+
+int PGN::add(Move& m)
+{
+    return 0;
+    // algebriac
+    // bitboards_to_algebraic
+    // engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+    //             , (GameState::INPROGRESS)
+    //             //, NULL
+    //             , false
+    //             , false
+    //             , engine.move_string);    // Output
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 Engine::Engine() {
     reset_engine();
     ShumiChess::initialize_rays();
@@ -1826,6 +1863,52 @@ void Engine::move_into_string(ShumiChess::Move m) {
                 , false
                 , move_string);    // Output
 }
+
+
+void Engine::print_move_history_to_buffer(char *out, size_t out_size)
+{
+    if (out_size == 0) return;
+    out[0] = '\0';       // fail safely
+
+    FILE *tmp = tmpfile();   // creates an anonymous temporary file
+    if (!tmp) return;
+
+    // Write into the temp file using your existing function
+    print_move_history_to_file(tmp);
+
+    // Flush and find out how much was written
+    fflush(tmp);
+    if (fseek(tmp, 0, SEEK_END) != 0)
+    {
+        fclose(tmp);
+        out[0] = '\0';
+        return;
+    }
+
+    long len = ftell(tmp);
+    if (len < 0)
+    {
+        fclose(tmp);
+        out[0] = '\0';
+        return;
+    }
+
+    // Clamp to buffer size - 1 for the null terminator
+    if ((size_t)len >= out_size)
+    {
+        len = (long)out_size - 1;
+    }
+
+    // Rewind and read the data
+    rewind(tmp);
+    size_t nread = fread(out, 1, (size_t)len, tmp);
+    out[nread] = '\0';
+
+    fclose(tmp);
+}
+
+
+
 
 
 //

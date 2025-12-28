@@ -169,6 +169,26 @@ engine_communicator_set_random_number_of_moves(PyObject* self, PyObject* args) {
     return Py_BuildValue("");
 }
 
+
+static PyObject*
+engine_communicator_get_pgn(PyObject* self, PyObject* args) {
+
+    // if(!PyArg_ParseTuple(args, "i", &randomMoveCount)) {
+    //     return NULL;
+    // }
+    cout << "get_pgn!" << endl;
+
+    // char out[1028];
+    // python_engine.print_move_history_to_buffer(out, 1028);
+    // cout << out << endl;
+
+    return Py_BuildValue("");
+}
+
+
+
+
+
 static PyObject*
 engine_communicator_game_over(PyObject* self, PyObject* args) {
     // returns constant (GameState C constant) 
@@ -405,6 +425,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"get_game_timeb",   engine_communicator_get_game_timeb, METH_VARARGS, ""},     // Total time thinking, since match start
     {"resign",  engine_communicator_resign, METH_VARARGS, ""},
     {"set_random_number_of_moves",  engine_communicator_set_random_number_of_moves, METH_VARARGS, ""},
+    {"get_pgn",  engine_communicator_get_pgn, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

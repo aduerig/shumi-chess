@@ -14,7 +14,7 @@
 #define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
-//#define SHORT_SIZES     // minimize size of the Move structure.
+#define SHORT_SIZES     // minimize size of the Move structure.
 
 typedef unsigned long long ull;
 
@@ -45,17 +45,21 @@ enum Piece {     // Pieces must be in this order!
 
 // TODO think about if this is the right way to represent a move
 // NOTE: Can this be a class? How would it help?
-// 56 bytes.
+// 56 bytes.  Now its 48, with SHORT_SIZES. Now its at 32 Whopee, just by reordering!
 struct Move {
-    Color color = ShumiChess::WHITE;
-    Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
+  
     ull from = 0ULL;   // bitboard (but with only one bit set)
     ull to = 0ULL;     // bitboard (but with only one bit set)
+    ull en_passant_rights = 0;              // Note this is a bitboard?
+
+    Color color = ShumiChess::WHITE;
+    Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
+
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
     uint8_t black_castle_rights = 0b00000011;
     uint8_t white_castle_rights = 0b00000011;
-    ull en_passant_rights = 0;              // Note this is a bitboard?
+
     bool is_en_passent_capture = false;    // bools are hopefully 1 byte
     bool is_castle_move = false;
 

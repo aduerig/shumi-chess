@@ -26,7 +26,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
     Not prioritized. No particular order to them. All issues classified as either: a. Bug, or b. Failure (to chess requirements), or c. Sloth (slowdown) or d. Feature. ~~Crossed out~~ items are done, but under testing.
 
   * Bug: Get FEN button gives scrambled result when computer playyer is playing. Maybe this is OK, The scrambled FEN is seen both in the FEN box and the terminal of VSC. 
-  * Sloth: Move structure is to big (56 bytes). For example look at en_passant_rights, or Piece or Color.
+  * Sloth: Move structure is to big (32 bytes). For example look at en_passant_rights, or .tp and .from.
   * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG".
   * Bug: Forces promotions for the human to be to a queen. Problem with the interface I suppose. Need a new feature here.
   * Bug: Weird interface bug prevents shumi from promotion to other than queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2). Shumi comes up with c1=N. c1=Q leads to a stalemate and is not even considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw.
