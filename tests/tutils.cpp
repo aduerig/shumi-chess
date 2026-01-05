@@ -18,14 +18,14 @@ TEST(InverseColor, GetOpposingColorTest) {
 
 TEST(MoveStringConversion, MoveToString1) {
     // squares 0 (h1), and 1 (g1)
-    ShumiChess::Move test_move = {ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 0, 1ULL << 1};
+    ShumiChess::Move test_move = MoveSet(ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 0, 1ULL << 1);
     string converted = utility::representation::move_to_string(test_move);
     ASSERT_EQ("h1g1", converted);
 }
 
 TEST(MoveStringConversion, MoveToString2) {
     // squares 8 (h2), and 63 (a8)
-    ShumiChess::Move test_move = {ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 8, 1ULL << 63};
+    ShumiChess::Move test_move = MoveSet(ShumiChess::Color::WHITE, ShumiChess::Piece::PAWN, 1ULL << 8, 1ULL << 63);
     string converted = utility::representation::move_to_string(test_move);
     ASSERT_EQ("h2a8", converted);
 }

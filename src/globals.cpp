@@ -87,6 +87,37 @@ void initialize_zobrist() {
     zobrist_side = randomer.get_random_number();
 }
 
+Move MoveSet(Color c, Piece p, ull frm, ull to)
+{
+    Move m;
+    m.color = c;
+    m.piece_type = p;
+    m.from = frm;
+    m.to = to;
+    return m;
+}
+Move MoveSet2(Color c, Piece p, ull frm, ull to, Piece a)
+{
+    Move m;
+    m.color = c;
+    m.piece_type = p;
+    m.from = frm;
+    m.to = to;
+    m.capture = a;
+    return m;
+}
+Move MoveSet3(Color c, Piece p, ull frm, ull to, Piece a, Piece b)
+{
+    Move m;
+    m.color = c;
+    m.piece_type = p;
+    m.from = frm;
+    m.to = to;
+    m.capture = a;
+    m.promotion = b;
+    return m;
+}
+
 
 array<ull, 64> square_to_y = {};
 array<ull, 64> square_to_x = {};

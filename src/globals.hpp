@@ -76,6 +76,11 @@ struct Move {
     
 };
 
+Move MoveSet(Color c, Piece p, ull frm, ull to);
+Move MoveSet2(Color c, Piece p, ull frm, ull to, Piece a);
+Move MoveSet3(Color c, Piece p, ull frm, ull to, Piece a, Piece b);
+
+
 enum GameState {
     INPROGRESS = 0,
     WHITEWIN,

@@ -434,8 +434,13 @@ def get_fen(button_obj):
 
 
 def output_pgn(button_obj):
-    print('output pgn')
-    engine_communicator.get_pgn()
+    #print('output pgn')
+    #engine_communicator.get_pgn()    // clipboard
+
+    pgn_text = engine_communicator.get_pgn()
+    #print(" pig ")
+    print(pgn_text)
+    pyperclip.copy(pgn_text)                     # <-- put PGN into the clipboard
 
 #    Button(output_fens_depth_1, lambda: "Depth 1 FENs + test", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 def output_fens_depth_1(button_obj):
@@ -503,8 +508,8 @@ button_holder = [
     Button(clicked_reset_button, lambda: "Reset\n(to FEN above)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(clicked_autoreset, lambda: "Autoreset board\n{}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(wake_up, lambda: "Wake up", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(get_fen, lambda: "Get FEN", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(output_pgn, lambda: "Get PGN", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
+    Button(get_fen, lambda: "Export FEN", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(output_pgn, lambda: "Export PGN", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
 ]
 
 def gui_click_choices():
@@ -922,9 +927,9 @@ try:
             if ai_is_thinking:
                 try:
                     from_acn, to_acn = ai_move_queue.get_nowait()
-                    print('make_move...')
+                    #print('make_move...')
                     make_move(from_acn, to_acn)
-                    print('made_move...')
+                    #print('made_move...')
                     game_state_might_change = True
                     ai_is_thinking = False
                     continue

@@ -22,11 +22,6 @@
 #endif
 
 
-
-
-
-
-
 //bool debugNow = false;
 
 
@@ -45,22 +40,36 @@ void PGN::clear()
 {
     text.clear();      // sets size to 0, keeps the reserved capacity
 }
-void PGN::spitout()
-{
-    std::cout << text << std::endl;
-}
 
-int PGN::add(Move& m)
+string PGN::spitout()
 {
+    text += " *";
+    //std::cout << text << std::endl;
+    return text;
+} 
+
+int PGN::addMe(Move& m, Engine& e)
+{
+    // Add the move number to the string (PGN needs this)
+    if (e.game_board.turn == ShumiChess::WHITE) {
+        char sztmp[16];
+        sprintf(sztmp, "%i. ", (e.ply_so_far/2+1));
+        
+        text += sztmp;
+    }
+
+    // Puts the move in simple algebriac (SAN)
+    // Warning: this function is expensive. (because of disambigouation) Should be called only 
+    // for making formal PGN or move files.
+    e.move_into_string_full(m);
+
+    // Add the algebriac (disambiguated) to the string
+    e.move_string += " ";
+    
+    text += e.move_string;
+
     return 0;
-    // algebriac
-    // bitboards_to_algebraic
-    // engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-    //             , (GameState::INPROGRESS)
-    //             //, NULL
-    //             , false
-    //             , false
-    //             , engine.move_string);    // Output
+    
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,7 +123,11 @@ void Engine::reset_engine() {         // New game.
     //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
     //game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
     //game_board = GameBoard("4kbb1/8/8/8/8/8/4K3/8 w - - 0 1");
-    //game_board = GameBoard("6k1/8/8/8/8/8/P7/6K1 w - - 0 1");
+
+    // burp2 bug then c5 for black.
+    //game_board = GameBoard("rnbq1rk1/ppp2p1p/3ppp2/8/2PP4/2PQ1N2/P3PPPP/R3KB1R b KQ - 1 8");
+    ////////////////////game_board = GameBoard("rnbq1rk1/pp3p1p/3ppp2/2p5/2PP4/2PQ1N2/P3PPPP/R3KB1R w KQ - 1 8");
+
     // // // Or you can pick a random simple endgame FEN. (maybe)
     // vector<Move> v;
     // int itrys = 0;
@@ -146,11 +159,14 @@ void Engine::reset_engine() {         // New game.
     game_board.bCastledWhite = false;  // I dont care which side i castled.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
-    g_iMove = 0;       // real moves in whole game
+    computer_ply_so_far = 0;       // real moves in whole game
+    ply_so_far = 0;     // ply played in game so far
     game_white_time_msec = 0;     // total white thinking time for game 
     game_black_time_msec = 0;     // total black thinking time for game
 
     // These things are cleared every game.
+    gamePGN.clear();
+
     repetition_table.clear();
 
     reason_for_draw = DRAW_NULL;
@@ -187,15 +203,17 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
     game_board.bCastledWhite = false;  // I dont care which side i castled.
     game_board.bCastledBlack = false;  // I dont care which side i castled.
 
-    g_iMove = 0;       // real moves in whole game
+    computer_ply_so_far = 0;       // real moves in whole game
+    ply_so_far = 0;     // ply played in game so far
     game_white_time_msec = 0;     // total white thinking time for game
     game_black_time_msec = 0;     // total black thinking time for game
 
     // These things are cleared every game.
+    gamePGN.clear();
+
     repetition_table.clear();
 
     //TTable2.clear();
@@ -1373,14 +1391,16 @@ inline void safe_push_back(std::string &s, char c) {
 // Does check, mate, promotion, and disambiguation. 
 //   Only thing I added was '~' for forced draws (50 move, or 3-time).
 //
-void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move the_move
+void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
+                            , const ShumiChess::Move the_move
                             , GameState state 
                             , bool isCheck
-                            //, const vector<ShumiChess::Move>* p_legal_moves   // from this position. This is only used for disambigouation
                             , bool bPadTrailing
-                            , std::string& MoveText)            // output
+                            , const vector<ShumiChess::Move>* p_legal_moves   // from this position. This is only used for disambigouation
+                            , std::string& MoveText) const           // output
 {
     char thisChar;
+    char aChar;
    
     MoveText.clear();        // start fresh (does NOT free capacity)
 
@@ -1393,102 +1413,122 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
         MoveText += "none";
     } else {
 
-        bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
+        bool isCastles=false;
+  
+        if (the_move.piece_type == Piece::KING) {
+            int from_sq = utility::bit::bitboard_to_lowest_square(the_move.from); // 0..63
+            //printf("quack %ld\n", from_sq);
 
-        if (b_is_pawn_move) {
-            // For pawn move we give the ".from" file, and omit the "p"
-            thisChar = file_from_move(the_move);
-            safe_push_back(MoveText,thisChar);
-        } else {
-            // Add the correct piece character
-            thisChar = get_piece_char(the_move.piece_type);
-            safe_push_back(MoveText,thisChar);
+            if ( (from_sq == game_board.square_e1) || (from_sq == game_board.square_e8) )
+            {
+                int to_sq = utility::bit::bitboard_to_lowest_square(the_move.to); // 0..63
+
+                //printf("quyyy %ld\n", to_sq);
+
+                if ( (to_sq == game_board.square_g1) || (to_sq == game_board.square_g8) ) {
+                     MoveText += "O-O";
+                     isCastles=true;
+                }
+                if ( (to_sq == game_board.square_c1) || (to_sq == game_board.square_c8) ) {
+                     MoveText += "O-O-O";
+                     isCastles=true;
+                }
+            }
         }
 
-        // disambiguation ??? Code should live here
-        //if (legal_moves && !legal_moves->empty()) {
-    
 
-        // Add "capture" character
-        bool b_is_capture = (the_move.capture != Piece::NONE);
-        if (b_is_capture) safe_push_back(MoveText,'x');
+        if (!isCastles) {
 
+            bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
 
-        // Add ".to" information
-        if (b_is_pawn_move && !b_is_capture) {
-            // Omit the "from" column, for pawn moves that are not captures.
-            thisChar = rank_to_move(the_move);
-            safe_push_back(MoveText,thisChar);
-
-        } else {
-            thisChar = file_to_move(the_move);
-            safe_push_back(MoveText,thisChar);
-
-            thisChar = rank_to_move(the_move);
-            safe_push_back(MoveText,thisChar);
-        }
-
-        // Add promotion information, if needed
-        if (the_move.promotion != Piece::NONE)
-        {
-            safe_push_back(MoveText,'=');  
-
-            assert(the_move.promotion != Piece::PAWN);   // certainly a promotion error. Pawns don't promote to pawns
-            thisChar = get_piece_char(the_move.promotion);
-            safe_push_back(MoveText,thisChar);
-
-        }
-
-        // Add the check or checkmate symbol if needed.
-        if ( (state == GameState::WHITEWIN) || (state == GameState::BLACKWIN) ) {
-            safe_push_back(MoveText,'#');
-        }
-        else if (state == GameState::DRAW) {      
-            safe_push_back(MoveText,'~');       // NOT technically SAN, but I need to see 3-time rep and 5- move rule.
-        }
-        else {
-            // // Not a checkmate or draw. See if its a check
-
-            if (isCheck) {
-                safe_push_back(MoveText,'+');
+            if (b_is_pawn_move) {
+                // For pawn move we give the ".from" file, and omit the "p"
+                thisChar = file_from_move(the_move);
+                safe_push_back(MoveText,thisChar);
+            } else {
+                // Add the correct piece character
+                thisChar = get_piece_char(the_move.piece_type);
+                safe_push_back(MoveText,thisChar);
             }
 
-            // Add a check character if needed (This is absurdly, ridicululy expensive!)
-            // if (in_check_after_move(color_that_moved, the_move)) {
-            //     safe_push_back(MoveText,'+');
-            // }
+            // disambiguation
+            if (!b_is_pawn_move) {      // Dont disambigouate pawn moves.
+                if (p_legal_moves) {
+
+                    for (const Move& m : *p_legal_moves) {
+                //         //int iPieces = bits_in(correct_bit_board);
+                        if ( (m.from == the_move.from) && (m.to == the_move.to) ) continue;    // skip this move
+                        ull mask = (the_move.to & m.to);    //assert (iPieces>0);
+                        if ( (mask != 0ull) && (the_move.piece_type == m.piece_type) ) {
+                            // Try file first
+                            aChar = file_from_move(the_move);
+                            if (aChar == file_from_move(m)) {
+                                aChar = rank_from_move(the_move);
+                            }
+                            safe_push_back(MoveText, aChar);
+                        }
+                    }
+                }
+            }
+
+            // Add "capture" character
+            bool b_is_capture = (the_move.capture != Piece::NONE);
+            if (b_is_capture) safe_push_back(MoveText,'x');
+
+
+            // Add ".to" information
+            if (b_is_pawn_move && !b_is_capture) {
+                // Omit the "from" column, for pawn moves that are not captures.
+                thisChar = rank_to_move(the_move);
+                safe_push_back(MoveText,thisChar);
+
+            } else {
+                thisChar = file_to_move(the_move);
+                safe_push_back(MoveText,thisChar);
+
+                thisChar = rank_to_move(the_move);
+                safe_push_back(MoveText,thisChar);
+            }
+
+            // Add promotion information, if needed
+            if (the_move.promotion != Piece::NONE)
+            {
+                safe_push_back(MoveText,'=');  
+
+                assert(the_move.promotion != Piece::PAWN);   // certainly a promotion error. Pawns don't promote to pawns
+                thisChar = get_piece_char(the_move.promotion);
+                safe_push_back(MoveText,thisChar);
+
+            }
+
+            // Add the check or checkmate symbol if needed.
+            if ( (state == GameState::WHITEWIN) || (state == GameState::BLACKWIN) ) {
+                safe_push_back(MoveText,'#');
+            }
+            else if (state == GameState::DRAW) {      
+                safe_push_back(MoveText,'~');       // NOT technically SAN, but I need to see 3-time rep and 5- move rule.
+            }
+            else {
+                // // Not a checkmate or draw. See if its a check
+
+                if (isCheck) {
+                    safe_push_back(MoveText,'+');
+                }
+
+                // Add a check character if needed (This is absurdly, ridicululy expensive!)
+                // if (in_check_after_move(color_that_moved, the_move)) {
+                //     safe_push_back(MoveText,'+');
+                // }
+            }
+
+
+
         }
-
-        // Note: disambiguation. Fix this. Doesnt work cause the legal_moves passed in are of the wrong color!
-        // if (0) {  // p_legal_moves) {
-
-        //     for (const Move& m : *p_legal_moves) {
-        //         //int iPieces = bits_in(correct_bit_board);
-        //         if ( (m.from == the_move.from) && (m.to == the_move.to) ) continue;
-        //         ull mask = (the_move.to & m.to);    //assert (iPieces>0);
-        //         if ( (mask != 0ull) && (the_move.piece_type == m.piece_type) ) {
-        //             safe_push_back(MoveText,'&';
-        //             safe_push_back(MoveText,'(';
-
-        //             char temp[64];
-        //             bitboards_to_algebraic(color_that_moved, m, GameState::INPROGRESS
-        //                         , NULL                      // NO disambiguation
-        //                         , temp);            // output
-        //             strcpy(p, temp);           // temp is NULL-terminated
-        //             p += strlen(temp);         // now p points at the '\0' we just wrote
-        //         }
-        //     }
-        // }
-
-        //safe_push_back(MoveText,'\n';        // Post face with a carriage return
 
     }
 
-    //*p = '\0';              // don�t forget to terminate
-
-
-
-     if (bPadTrailing) {
+ 
+    if (bPadTrailing) {
 
         auto it = std::find(MoveText.begin(), MoveText.end(), ' ');
         int nonblank_len = static_cast<int>(it - MoveText.begin());
@@ -1500,14 +1540,12 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved, const Sh
         }  
     }
 
-
-
     return;
 
 }
 
 // Returns character, for the piece (note in algebriac, SAN, caps are always used)
-char Engine::get_piece_char(Piece p) {
+char Engine::get_piece_char(Piece p) const {
 
     switch (p)
     {
@@ -1540,7 +1578,7 @@ char Engine::get_piece_char(Piece p) {
 }
 
 // Returns character, for the rank of the "from" square
-char Engine::rank_from_move(const Move& m)
+char Engine::rank_from_move(const Move& m) const
 {
     int from_sq = utility::bit::bitboard_to_lowest_square(m.from);
     int rank    = from_sq >> 3;             // 0..7 for ranks 1..8
@@ -1548,7 +1586,7 @@ char Engine::rank_from_move(const Move& m)
 }
 
 // Returns character, for the file of the "from" square
-char Engine::file_to_move(const Move& m)
+char Engine::file_to_move(const Move& m) const
 {
     int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 0..63
     int file  = to_sq & 7;     // within-rank index 0..7
@@ -1557,14 +1595,14 @@ char Engine::file_to_move(const Move& m)
 }
 
 /// Returns character, for the rank of the "to" square
-char Engine::rank_to_move(const Move& m)
+char Engine::rank_to_move(const Move& m) const
 {
     int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 
     int rank  = to_sq / 8;   // 0=rank 1, 1=rank 2, ..., 7=rank 8
     return '1' + rank;       // convert to character '1'..'8'
 }
 
-char Engine::file_from_move(const Move& m)
+char Engine::file_from_move(const Move& m) const
 {
     int from_sq = utility::bit::bitboard_to_lowest_square(m.from); // 0..63
     int file  = from_sq & 7;     // within-rank index 0..7
@@ -1588,9 +1626,9 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
 
     // On first move(ply) of game, we initialize the "number of random plys". It decrements, after  
     // every random move chosen. When it hits zero, no more random plys will be chosen.
-    if (g_iMove==0) {
+    if (computer_ply_so_far==0) {
         i_randomize_next_move = randomMoveCount;
-        cout << "\033[1;31m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
+        cout << "\033[1;34m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
     // Is this a way to resign?
@@ -1712,6 +1750,7 @@ void Engine::move_and_score_to_string(const Move best_move, double d_best_move_v
                     , (GameState::INPROGRESS)
                     , false
                     , true 
+                    , NULL
                     , move_string); 
 
     char buf[32];
@@ -1790,7 +1829,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
     
                         print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
                         
-                        print_move_history_to_file(fpDebug);
+                        print_move_history_to_file(fpDebug, "SEE hist");
                         fputc('\n', fpDebug);
                     #endif
                 }
@@ -1802,7 +1841,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
     
                         print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
                         
-                        print_move_history_to_file(fpDebug);
+                        print_move_history_to_file(fpDebug, "SEE hist");
                         fputc('\n', fpDebug);
                     #endif
 
@@ -1858,9 +1897,25 @@ int Engine::rand_int(int min_val, int max_val)
 void Engine::move_into_string(ShumiChess::Move m) {
     bitboards_to_algebraic(game_board.turn, m
                 , (GameState::INPROGRESS)
-                //, NULL
                 , false
                 , false
+                , NULL
+                , move_string);    // Output
+}
+
+
+// Warning: this function is expensive. Should be called only for making formal PGN or move files.
+void Engine::move_into_string_full(ShumiChess::Move m) {
+
+    // Warning: this function is expensive. Should be called only for making formal PGN or move files.
+    vector<ShumiChess::Move> moves = get_legal_moves(game_board.turn);
+
+
+    bitboards_to_algebraic(game_board.turn, m
+                , (GameState::INPROGRESS)
+                , false
+                , false
+                , &moves
                 , move_string);    // Output
 }
 
@@ -1874,7 +1929,7 @@ void Engine::print_move_history_to_buffer(char *out, size_t out_size)
     if (!tmp) return;
 
     // Write into the temp file using your existing function
-    print_move_history_to_file(tmp);
+    print_move_history_to_file(tmp, "_tO-buffer");
 
     // Flush and find out how much was written
     fflush(tmp);
@@ -1914,14 +1969,21 @@ void Engine::print_move_history_to_buffer(char *out, size_t out_size)
 //
 // Prints the move history from oldest → most recent 
 // Uses: nPly = -2, isInCheck = false, bFormated = false
-void Engine::print_move_history_to_file(FILE* fp) {
-    bool bFlipColor = false;
+void Engine::print_move_history_to_file(FILE* fp, char* psz) {
+
     //int ierr = fputs("\nhistory: ", fp);
-    int ierr = fprintf(fp, " (%03ld) history:", (long)move_history.size());
+    int ierr = fprintf(fp, " (%03ld) %s:", (long)move_history.size(), psz);
     assert (ierr!=EOF);
 
     // copy stack so we don't mutate Engine's history
     std::stack<ShumiChess::Move> tmp = move_history;
+
+    print_move_history_to_file0(fp, tmp);
+}
+
+
+void Engine::print_move_history_to_file0(FILE* fp, std::stack<ShumiChess::Move> tmp) {
+    bool bFlipColor = false;
 
     // collect in a vector (top = newest), then reverse to oldest → newest
     std::vector<ShumiChess::Move> seq;
@@ -1958,6 +2020,7 @@ int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
                                 , gs
                                 , isInCheck
                                 , false
+                                , NULL
                                 , move_string);
 
     if (bFormated) { 
@@ -2037,6 +2100,7 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
             GameState::INPROGRESS,
             false,          // isCheck (we don't care here)
             false,          // bPadTrailing
+            NULL,
             san
         );
 

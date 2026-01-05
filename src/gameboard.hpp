@@ -187,7 +187,7 @@ class GameBoard {
         int knights_attacking_square(Color c, int sq);
         int knights_attacking_center_squares(Color for_color);
 
-        // int king_castle_happiness(Color c) const;
+        int king_castle_happiness(Color c) const;
         // bool knights_centerness(Color c, double& centerness) const;
         // bool bishops_centerness(Color c, double& centerness) const;
 
@@ -261,6 +261,10 @@ class GameBoard {
 
         // Square identities (in h1=0 bit board lingo)
         int square_h1 = 0;
+        int square_g1 = 1;
+        int square_e1 = 3;
+        int square_c1 = 5;
+        int square_a1 = 7;
         int square_e4 = 27;
         int square_d4 = 28;
         int square_e5 = 35;
@@ -272,7 +276,15 @@ class GameBoard {
         int square_f3 = 18;  // e3 - 1
         int square_g3 = 17;  // e3 - 2
         int square_h3 = 16;  // e3 - 3
+        int square_h8 = 56;
+        int square_g8 = 57;
+        int square_e8 = 59;
+        int square_c8 = 61;
         int square_a8 = 63;
+
+
+
+
 
         double openingness_of(int avg_cp);
 

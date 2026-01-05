@@ -132,13 +132,13 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
         }
     }
 
-    // Get, and store in engine, the algebriac (SAN) text form of the user's move.
-    // string tempString;
-    // python_engine.bitboards_to_algebraic(ShumiChess::WHITE, found_move, ShumiChess::GameState::INPROGRESS
-    //                                     , false
-    //                                     , false
-    //                                     , tempString);      // Output
+
     python_engine.users_last_move = found_move;
+
+    // Add to PGN
+    python_engine.ply_so_far++;
+    python_engine.gamePGN.addMe(found_move, python_engine);
+
 
     python_engine.move_history = stack<ShumiChess::Move>();
     //python_engine.move_history.push(found_move);
@@ -176,13 +176,18 @@ engine_communicator_get_pgn(PyObject* self, PyObject* args) {
     // if(!PyArg_ParseTuple(args, "i", &randomMoveCount)) {
     //     return NULL;
     // }
-    cout << "get_pgn!" << endl;
+    //cout << "get_pgn!" << endl;
 
     // char out[1028];
     // python_engine.print_move_history_to_buffer(out, 1028);
     // cout << out << endl;
 
-    return Py_BuildValue("");
+    string sPGN;
+
+    sPGN = python_engine.gamePGN.spitout();
+
+    return Py_BuildValue("s", sPGN.c_str());
+    //return Py_BuildValue("");
 }
 
 
@@ -226,7 +231,8 @@ engine_communicator_get_features_default(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_move_number(PyObject* self, PyObject* args) {
-    PyObject* ret = Py_BuildValue("i", python_engine.g_iMove);    // real moves in whole game
+    //PyObject* ret = Py_BuildValue("i", python_engine.computer_ply_so_far);    // real moves in whole game
+    PyObject* ret = Py_BuildValue("i", ((python_engine.ply_so_far+1)/2));    // real moves in whole game
     return ret;
 }
 
@@ -406,13 +412,13 @@ static PyMethodDef engine_communicator_methods[] = {
     // These are move generation engines
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
     {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
-    
+    {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
+
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},      // new game
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
     {"is_game_over",  engine_communicator_game_over, METH_VARARGS, ""},         // returns constant (GameState C constant) 
     {"get_piece_positions",  engine_communicator_get_piece_positions, METH_VARARGS, ""},
-    {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"get_fen",  engine_communicator_get_fen, METH_VARARGS, ""},
     {"get_features_default",  engine_communicator_get_features_default, METH_VARARGS, ""},
     {"get_move_number",  engine_communicator_get_move_number, METH_VARARGS, ""},

@@ -207,3 +207,49 @@ rnbqkbnr/pp1ppppp/8/2p5/2P5/8/PP1PPPPP/RNBQKBNR w KQkq c6 0 2
 
 
 8/8/8/8/5k2/7r/4K3/8 b - - 5 3      // why black advantage so large?
+
+
+ 
+
+ 1. e3 d5   2. Be2 e5   3. c4 dxc4   4. Bxc4 Nf6   5. Nf3 Bd6   6. d4 exd4   7. exd4 O-O   8. Nc3 Nc6   9. Be3 Bg4  10. O-O Qd7  11. Bb5 a6  12. Bxc6 Qxc6  13. Re1 Bxf3  14. Qxf3 Qxf3  15. gxf3 Rfe8  16. f4 Ne4  17. f3 Nxc3  18. bxc3 Re7  19. Bd2 Re8  20. Rxe7 Rxe7  21. Kf1 f6  22. Re1 Kf7  23. Rxe7 Kxe7  24. h4 Ke6  25. Bc1 Kf5  26. c4 Bxf4  27. Bxf4 Kxf4  28. Kf2 h5  29. a3 g5  30. hxg5 fxg5  31. a4 h4  32. a5 Kf5  33. Kg2 Ke6  34. Kg1 b6  35. axb6 cxb6  36. Kg2 a5  37. d5 Kd6  38. f4 gxf4  39. Kf3  *
+
+
+1. e4 e6   2. d4 Nf6   3. e5 Ng8   4. f4 c5   5. d5 exd5   6. Qxd5 Nc6   7. Bc4 Nh6   8. Nf3 d6   9. O-O Be6  10. Qd3 Bxc4  11. Qxc4 Be7  12. Nc3 O-O  13. Nd5 Nf5  14. g4 Nd4  15. Nxd4 cxd4  16. Nxe7 Qxe7  17. exd6 Qxd6  18. Bd2 Qe6  19. Qxe6 fxe6  20. Re1 Re8  21. c3 d3  22. Re3 Rc8  23. Rxd3 e5  24. Rd7 Rd8  25. Rxd8 Rxd8  26. Be3 a6  27. Rf2 Rd3  28. Re2 h6  29. fxe5 Nxe5  30. h3 Ng6  31. Kf2 Ne5  32. Rd2 Rxd2  33. Bxd2 Nd3  34. Ke3 Nxb2  35. Kd4 b5  36. Bf4 Nd1  37. Bg3 Nb2  38. Kc5 Na4  39. Kb4 a5  40. Kxa5 Nxc3  41. a3 Ne4  42. Be5 Nf2  43. Kxb5 Nd3  44. Bg3 Nc1  45. a4 Nb3  *
+
+
+
+
+
+
+
+
+// Disambigouation problem (Rxc3)
+Fen is now 2r3k1/1p2pp1p/Q5p1/7n/4PP2/P1P2P1q/2r1BR1P/R5K1 w - - 0 22
+
+
+rnbq1rk1/ppp2p1p/3ppp2/8/2PP4/2PQ1N2/P3PPPP/R3KB1R b KQ - 1 8   then move c5 from black   -t1000 -d5
+
+
+
+burp2 (from d4) no sorting
+r - b q - r k -
+p p - - - p - p
+- - - p p p - -
+- - p - - - - -
+- - P n - - - -
+- - P Q - N - -
+P - - K P P P P
+- - - R - B - R
+WHITE to move
+
+
+
+
+
+
+draw with shumi.
+  1. d4 Nf6   2. c4 g6   3. Nc3 d5   4. cxd5 Nxd5   5. Nxd5 Qxd5   6. Nf3 Bg7   7. e3 O-O   8. Bd3 Bg4   9. h3 Bxf3  10. gxf3 Nc6  11. Qe2 Rad8  12. Be4 Qd7  13. Bd2 e6  14. Bxc6 Qxc6  15. Bc3 Rfe8  16. O-O Qd5  17. f4 Qf5  18. Qg4 Qxg4  19. hxg4 c5  20. dxc5 Bxc3  21. bxc3 Rc8  22. Rfd1 Rxc5  23. Rd7 Rxc3  24. Rxb7 Ra3  25. g5 Rc8  26. Rb3 Rc3  27. Rb2 Kg7  28. Rd1 Rd3  29. Rxd3 Rxd3  30. Kh2 Ra3  31. Kh1 Rc3  32. Kh2 Ra3  33. Kh1 Rc3  34. Kg2 Ra3  35. Kh1  *
+
+
+
+

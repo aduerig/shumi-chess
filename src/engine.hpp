@@ -44,13 +44,15 @@ inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 3
 namespace ShumiChess {
 
 
+class Engine;
+
 
 class PGN {
     public:
         PGN();
         void clear();
-        int add(Move& m);
-        void spitout();
+        int addMe(Move& m, Engine& e);
+        string spitout();
     private:
         std::string text;
 };
@@ -132,9 +134,12 @@ class Engine {
 
         string syzygy_path = "C:\\tb\\syzygy\\";
 
-        int g_iMove = 0;       // real moves in whole game
+        int computer_ply_so_far = 0;       // real moves in whole game
+        int ply_so_far = 0;     // ply played in game so far
         ull game_white_time_msec = 0;     // total white thinking time for game
         ull game_black_time_msec = 0;     // total black thinking time for game
+
+        PGN gamePGN;
 
         // Centipawn to pawn conversions
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
@@ -209,6 +214,7 @@ class Engine {
         }
 
         void move_into_string(ShumiChess::Move m);
+        void move_into_string_full(ShumiChess::Move m);
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
@@ -218,16 +224,16 @@ class Engine {
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move
                                     , GameState state 
                                     , bool isCheck
-                                    //, const vector<ShumiChess::Move>* p_legal_moves   // from this position
                                     , bool bPadTrailing
-                                    , std::string& MoveText);           // output
+                                    , const vector<ShumiChess::Move>* p_legal_moves   // from this position                                    
+                                    , std::string& MoveText) const;           // output
 
-        char get_piece_char(Piece p);
-        char file_from_move(const Move& m);
-        char rank_from_move(const Move& m);
+        char get_piece_char(Piece p) const;
+        char file_from_move(const Move& m) const;
+        char rank_from_move(const Move& m) const;
 
-        char file_to_move(const Move& m);
-        char rank_to_move(const Move& m);
+        char file_to_move(const Move& m) const;
+        char rank_to_move(const Move& m) const;
 
         void set_random_on_next_move(int randomMoveCount);
         
@@ -295,9 +301,7 @@ class Engine {
 
         int rand_int(int, int);
         bool flip_a_coin(void);
-
-        //ShumiChess::Move make_enpassant_move_from_bit_boards( Piece p, ull bitTo, ull bitFrom, Color color);
-    
+   
         std::unordered_map<uint64_t, int> repetition_table;
 
         void debug_print_repetition_table() const;
@@ -305,7 +309,8 @@ class Engine {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
 
         void print_move_history_to_buffer(char *out, size_t out_size);
-        void print_move_history_to_file(FILE* fp);
+        void print_move_history_to_file(FILE* fp, char* psz);
+        void print_move_history_to_file0(FILE* fp, std::stack<ShumiChess::Move> tmp);
 
         int print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
                             , bool isInCheck, bool bFormated, bool bFlipColor, FILE* fp);
@@ -319,4 +324,10 @@ class Engine {
         void debug_SEE_for_all_captures(FILE* fp);
 
     };
+
+
+
+
+
+
 } // end namespace ShumiChess

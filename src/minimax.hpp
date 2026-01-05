@@ -15,7 +15,7 @@
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
-// #define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
+//#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
 
 
 class RandomAI {
@@ -101,7 +101,7 @@ public:
 
         #ifdef DEBUG_NODE_TT2
             // All the below to end is debug
-            //int nPlysDebug;
+            int nPlysDebug;
             bool drawDebug;  // 0 = not draw, 1 = draw
             bool bIsInCheckDebug;
             int legalMovesSize;
@@ -110,6 +110,12 @@ public:
 
             ull   bb_wp, bb_wn, bb_wb, bb_wr, bb_wq, bb_wk;
             ull   bb_bp, bb_bn, bb_bb, bb_br, bb_bq, bb_bk;
+
+            std::stack<ShumiChess::Move> move_history_debug; 
+
+            bool white_castled_debug;
+            bool black_castled_debug;
+
         #endif
 
     };
@@ -176,12 +182,14 @@ public:
     // 0 - opening, 1- middle, 2- ending, 3 - ? extreme ending?
     inline int phaseOfGame() {
 
+        return 0;  
+
         int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
 
 
         bool bHasCastled = engine.game_board.bHasCastled(engine.game_board.turn);
 
-        int nPhase = (bHasCastled && ((engine.g_iMove)>17) );   // NOTE: this is crap
+        int nPhase = (bHasCastled && ((engine.computer_ply_so_far)>17) );   // NOTE: this is crap
         return nPhase;
     }
 
