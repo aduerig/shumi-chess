@@ -186,4 +186,24 @@ vector<Piece> promotion_values = {
     Piece::QUEEN
 };
 
+
+char* str_from_GamePhase(int phse) {
+    switch (phse)
+    {
+        case OPENING:
+            return "OPENING";
+        case MIDDLE_EARLY:
+            return "MIDDLE_EARLY";
+        case MIDDLE:
+            return "MIDDLE";
+        case ENDGAME:
+            return "ENDGAME";
+        case ENDGAME_LATE:
+            return "ENDGAME_LATE";
+        default:
+            return "????";
+    }
+};
+
+
 } // end namespace ShumiChess

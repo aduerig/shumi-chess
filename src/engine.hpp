@@ -294,6 +294,7 @@ class Engine {
         #define DRAW_50MOVERULE  3
         #define DRAW_INSUFFMATER 4
         #define DRAW_AGREEMENT   5
+        #define DRAW_ADMIN       6    // tounyement director is closing the hall.
         int reason_for_draw = DRAW_NULL;
 
         int get_best_score_at_root();
@@ -313,10 +314,17 @@ class Engine {
         void print_move_history_to_file0(FILE* fp, std::stack<ShumiChess::Move> tmp);
 
         int print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
-                            , bool isInCheck, bool bFormated, bool bFlipColor, FILE* fp);
+                            , bool isInCheck, bool bFormated, bool bFlipColor
+                            , FILE* fp);
+
+        int print_move_to_file2(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
+                            , bool isInCheck, bool bFlipColor
+                            , const char* preString
+                            , FILE* fp);
+        void print_tabOver(int nPly, FILE* fp);
 
         void print_move_to_file_from_string(const char* p_move_text, ShumiChess::Color turn, int nPly
-                                            , char preCharacter
+                                            , const char* preString
                                             , char postCharacter
                                             , bool b_right_Pad
                                             , FILE* fp);

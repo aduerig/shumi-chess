@@ -343,28 +343,77 @@ bool GameBoard::are_bit_boards_valid() const {
 //     
 //
 
-int GameBoard::get_castle_status_for_color(Color color1) const {
+int GameBoard::get_castle_status_for_color(Color color1, int nPhase) const {
     int i_can_castle = 0;
     bool b_has_castled = false;
 
     if (color1 == ShumiChess::WHITE) {
         i_can_castle += (white_castle_rights & king_side_castle)  ? 1 : 0;
         i_can_castle += (white_castle_rights & queen_side_castle) ? 1 : 0;
-
-        b_has_castled = bCastledWhite;
     } else {
         i_can_castle += (black_castle_rights & king_side_castle)  ? 1 : 0;
         i_can_castle += (black_castle_rights & queen_side_castle) ? 1 : 0;
-
-        b_has_castled = bCastledBlack;
     }
+    b_has_castled = bHasCastled_fake(color1);
 
     int icode = (b_has_castled ? 130 : 0) + i_can_castle * 35;
 
-    return icode;  // "centipawns"
+    int final_code;
+
+    if      (nPhase == GamePhase::OPENING) final_code = icode;
+    else if (nPhase == GamePhase::MIDDLE_EARLY) final_code = icode/2;
+    else final_code = 0;
+
+    return final_code;  // "centipawns"
 }
 
-bool GameBoard::bHasCastled(Color color1) {
+bool GameBoard::bHasCastled_fake(Color color1) const {
+    // 2) Build an occupancy bitboard (all pieces)
+    ull occupied =
+        white_pawns   | white_knights | white_bishops |
+        white_rooks   | white_queens  | white_king    |
+        black_pawns   | black_knights | black_bishops |
+        black_rooks   | black_queens  | black_king;
+
+    // 3) Get this side's king square
+    ull king_bb = (color1 == ShumiChess::WHITE) ? white_king : black_king;
+    if (!king_bb) return false;  // safety
+
+    int king_sq = utility::bit::bitboard_to_lowest_square(king_bb);
+    int file    = king_sq % 8;   // 0 = h, 1 = g, 2 = f, 3 = e, 4 = d, 5 = c, 6 = b, 7 = a
+    int rank    = king_sq / 8;   // 0 = rank 1, 7 = rank 8
+
+    int homeRank = (color1 == ShumiChess::WHITE) ? 0 : 7;
+
+    // King must be on home rank and on h/g/c/b/a file: file 0,1,5,6,7
+    if (!(rank == homeRank && (file <= 1 || file >= 5))) return false;
+
+    bool blocked = false;
+
+    if (file <= 1) {
+        // Kingside: scan toward h-file (file 0) (all files must be empty)
+        for (int f = file - 1; f >= 0; --f) {
+            int sq = rank * 8 + f;
+            if (occupied & (1ULL << sq)) {
+                blocked = true;
+                break;
+            }
+        }
+    } else {
+        // Queenside: scan toward a-file (file 7) (all files must be empty)
+        for (int f = file + 1; f <= 7; ++f) {
+            int sq = rank * 8 + f;
+            if (occupied & (1ULL << sq)) {
+                blocked = true;
+                break;
+            }
+        }
+    }
+
+    return !blocked;
+}
+
+bool GameBoard::bHasCastled(Color color1) const {
     bool b_has_castled = false;
     if (color1 == ShumiChess::WHITE) {
         b_has_castled = bCastledWhite;

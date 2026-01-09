@@ -9,8 +9,8 @@
 
 
 // Note neither of these include the "depth". So if depth=6, then the actual levels analyzed is (6+MAX_QPLY).
-#define MAX_QPLY  7        // Units = plys. At this point we just evaluate (stand pat)
-#define MAX_QPLY2 4        // Units = plys. Very late in analysis! So discard negative SEE captures below one pawn.
+#define MAX_QPLY  7        // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
+#define MAX_QPLY2 4        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
 
 namespace ShumiChess {
 // TODO think about copy and move constructors.
@@ -229,9 +229,10 @@ class GameBoard {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();
 
-        int get_castle_status_for_color(Color color1) const;
+        int get_castle_status_for_color(Color color1, int nPhase) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
-        bool bHasCastled(Color color1);
+        bool bHasCastled(Color color1) const;
+        bool bHasCastled_fake(Color color1) const;
 
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);

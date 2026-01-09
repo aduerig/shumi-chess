@@ -12,6 +12,9 @@
 //#define NDEBUG         // Define (uncomment) this to disable asserts
 #include <assert.h>
 
+/////////// Debug ////////////////////////////////////////////////////////////////////////////////////
+
+//#define _SUPRESSING_MOVE_HISTORY_RESULTS  // 3 time rep and the fifty move rule supession
 
 //#define DEBUG_NO_CASTLING    // Debug, to disallow castling for everyone
 
@@ -25,6 +28,7 @@
 //bool debugNow = false;
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 
@@ -126,9 +130,14 @@ void Engine::reset_engine() {         // New game.
 
     // burp2 bug then c5 for black.
     //game_board = GameBoard("rnbq1rk1/ppp2p1p/3ppp2/8/2PP4/2PQ1N2/P3PPPP/R3KB1R b KQ - 1 8");
+   
     ////////////////////game_board = GameBoard("rnbq1rk1/pp3p1p/3ppp2/2p5/2PP4/2PQ1N2/P3PPPP/R3KB1R w KQ - 1 8");
+    
+    // burp2 bug then d5 for black.     (-t500 -d4)
+    //game_board = GameBoard("r1bqkb1r/pppppppp/2n2n2/8/6P1/2N2P2/PPPPP2P/R1BQKBNR b KQkq g3 0 3");
 
-    // // // Or you can pick a random simple endgame FEN. (maybe)
+
+    // // Or you can pick a random simple endgame FEN. (maybe)
     // vector<Move> v;
     // int itrys = 0;
     // do {  
@@ -376,6 +385,15 @@ GameState Engine::is_game_over() {
 }
 
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
+
+#ifdef _SUPRESSING_MOVE_HISTORY_RESULTS
+    #define FIFTY_MOVE_RULE_PLY 5000      // This should be 100 as the units are ply.
+    #define THREE_TIME_REP 3333            // Should be 3
+#else
+    #define FIFTY_MOVE_RULE_PLY 50      // This should be 100 as the units are ply.
+    #define THREE_TIME_REP 3            // Should be 3
+#endif
+
 GameState Engine::is_game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
         if ( (!game_board.white_king) || (is_square_in_check(Color::WHITE, game_board.white_king)) ) {
@@ -384,13 +402,12 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
             return GameState::WHITEWIN;     // Checkmate
         }
         else {
-            //reason_for_draw = "stalemate";
             reason_for_draw = DRAW_STALEMATE;
             //if (debugNow) cout<<"stalemate" << endl;
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
-    else if (game_board.halfmove >= 50) {
+    else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
         reason_for_draw = DRAW_50MOVERULE;
@@ -399,7 +416,7 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
 
     } else {
 
-        // Insuffecient material   Note: what about two bishops and bishop and knight
+        // Insuffecient material.
         bool isOverThatWay = game_board.insufficient_material_simple();
         if (isOverThatWay) {
             reason_for_draw = DRAW_INSUFFMATER;
@@ -411,7 +428,7 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
         auto it = repetition_table.find(game_board.zobrist_key);
         if (it != repetition_table.end()) {
             //assert(0);
-            if (it->second >= 3) {
+            if (it->second >= THREE_TIME_REP) {
                 // We've seen this exact position (same zobrist) at least twice already
                 // along the current line. That means we are in a repetition loop.
                 //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
@@ -1883,6 +1900,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
 
 
 bool Engine::flip_a_coin(void) {
+       assert(0);
     std::uniform_int_distribution<int> dist(0,1);
     return dist(rng) == 1;
 }
@@ -2025,11 +2043,11 @@ int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
 
     if (bFormated) { 
         print_move_to_file_from_string(move_string.c_str(), aColor, nPly
-                                        , '\n', ',', false
+                                        , "\n", ',', false
                                         , fp);
     } else {
         print_move_to_file_from_string(move_string.c_str(), aColor, nPly
-                                        , ' ', ',', false
+                                        , "", ',', false
                                         , fp); 
     }
 
@@ -2037,29 +2055,63 @@ int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
 
 }
 
+int Engine::print_move_to_file2(const ShumiChess::Move m, int nPly, GameState gs
+                                    , bool isInCheck, bool bFlipColor
+                                    , const char* preString
+                                    , FILE* fp
+                                ) {
+    // NOTE: Here I am assumming the "human" player is white
+    Color aColor = ShumiChess::WHITE;  //engine.game_board.turn;
+
+    if (bFlipColor) aColor = utility::representation::opposite_color(aColor);
+
+    bitboards_to_algebraic(aColor, m
+                                , gs
+                                , isInCheck
+                                , false
+                                , NULL
+                                , move_string);
+
+    print_move_to_file_from_string(move_string.c_str(), aColor, nPly
+                                        , preString, ',', false
+                                        , fp);
+ 
+    return move_string.length();
+
+}
 
 
-// Tabs over based on ply. Pass in nPly=-2 for no tabs
-// Prints the preCharacter, then the move, then the postCharacter. 
-// If b_right_pad is on, Will align, padding with trailing blanks.
-void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn, int nPly
-                                            , char preCharacter
-                                            , char postCharacter
-                                            , bool b_right_Pad
-                                            , FILE* fp) {
-    int ierr = fputc(preCharacter, fp);
-    assert (ierr!=EOF);
 
-    
-    char szValue[_MAX_ALGEBRIAC_SIZE+8];
 
-    // Indent the whole thing over based on depth level
-    int nTabs = nPly+2;
+void Engine::print_tabOver(int nPly, FILE* fp)
+{
+    int nTabs = nPly;
     
     if (nTabs<0) nTabs=0;
 
     int nSpaces = nTabs*4;
     int nChars = fprintf(fp, "%*s", nSpaces, "");
+}
+
+// Tabs over based on ply. Pass in nPly=-2 for no tabs
+// Prints the preCharacter, then the move, then the postCharacter. 
+// If b_right_pad is on, Will align, padding with trailing blanks.
+void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn, int nPly
+                                            , const char* preString
+                                            , char postCharacter
+                                            , bool b_right_Pad
+                                            , FILE* fp) {
+    int ierr;
+    char szValue[_MAX_ALGEBRIAC_SIZE+8];
+
+    // Indent the whole thing over based on depth level
+    print_tabOver(nPly, fp);
+
+    // print prestring
+    if (preString != "") {
+        ierr = fputs(preString, fp);
+        assert (ierr!=EOF);
+    }
 
     // compose "..."+move (for Black) or just move (for White)
     if (turn == utility::representation::opposite_color(ShumiChess::BLACK)) {
@@ -2068,11 +2120,12 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
         snprintf(szValue, sizeof(szValue), "%s",    p_move_text);
     }
 
-    // print as a single left-justified 8-char field: "...e4   " or "e4     "
+    // print move as a single left-justified 8-char field: "...e4   " or "e4     "
     //                                                 12345678
     if (b_right_Pad) fprintf(fp, "%-10.8s", szValue);  // option 1
     else             fprintf(fp, "%.8s", szValue);     // option 2
 
+    // print post character
     ierr = fputc(postCharacter, fp);
     assert (ierr!=EOF);
 

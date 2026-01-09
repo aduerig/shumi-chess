@@ -139,13 +139,13 @@ public:
 
     int cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black);
 
-    int cp_score_positional_get_opening(ShumiChess::Color color); 
+    int cp_score_positional_get_opening(ShumiChess::Color color, int nPhase); 
     int cp_score_positional_get_middle(ShumiChess::Color color); 
     int cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg,
                                     bool onlyKngFriend, bool onlyKngEnemy
                                 ); 
 
-    int evaluate_board(ShumiChess::Color for_color, int nPhase, bool fast_style_eval, bool isQuietPosition
+    int evaluate_board(ShumiChess::Color for_color, bool fast_style_eval, bool isQuietPosition
                    //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
                     //, bool is_debug
     );
@@ -178,21 +178,14 @@ public:
     bool look_for_king_moves() const;
     int enemyKingSquare; 
 
-
+    // Total of 4000 centipawns for each side.  Suppose minor pieces are all 300. 
+    // Say two minor pieces traded. Then 4*300=1200, and 8000-1200=6800
+    // Suppose queens and rooks traded , its 2*900+4*500=3800 or 8000-3800=4200
     // 0 - opening, 1- middle, 2- ending, 3 - ? extreme ending?
-    inline int phaseOfGame() {
-
-        return 0;  
-
-        int i_castle_status = engine.game_board.get_castle_status_for_color(engine.game_board.turn);
 
 
-        bool bHasCastled = engine.game_board.bHasCastled(engine.game_board.turn);
-
-        int nPhase = (bHasCastled && ((engine.computer_ply_so_far)>17) );   // NOTE: this is crap
-        return nPhase;
-    }
-
+    int phaseOfGame(int material_cp);
+    int phase_of_game_full();
 
     // oLD CHESS engine
     double get_value(int depth, int color_multiplier, double alpha, double beta);
@@ -215,15 +208,15 @@ public:
 
 
     // Salt the entry. Specific to evalute_board() TT leaf protection 
-    unsigned salt_the_TT(int b_is_Quiet, int nPhase)
+    unsigned salt_the_TT(int b_is_Quiet)
     {
         unsigned mode = 0u;
-        if (engine.game_board.turn == ShumiChess::BLACK) mode |= 1u;   // bit0 = color
-        if (b_is_Quiet)                                  mode |= 2u;   // bit1 = quiet
-        int phaseBits = (nPhase & 3);          // 0..3
-        mode |= (unsigned)(phaseBits << 2);    // bits 2–3 = phase
-        if (engine.game_board.bCastledWhite) mode |= (1u << 4);        // bit 4
-        if (engine.game_board.bCastledBlack) mode |= (1u << 5);        // bit 5
+        if (engine.game_board.turn == ShumiChess::BLACK) mode |= (1u << 0);   // bit0 = color
+        if (b_is_Quiet)                                  mode |= (1u << 1);   // bit1 = quiet
+
+        if (engine.game_board.bCastledWhite) mode |= (1u << 2);        // bit 4
+        if (engine.game_board.bCastledBlack) mode |= (1u << 3);        // bit 5
+
         return mode;
     }
 

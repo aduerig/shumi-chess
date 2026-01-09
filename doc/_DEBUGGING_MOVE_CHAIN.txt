@@ -1,0 +1,110 @@
+
+/////////////////////////////////////////
+
+    // At the start of a deepening
+    loop over all deepenings
+
+        // Start of a deepening
+        #ifdef _DEBUGGING_MOVE_CHAIN    
+        contains:
+                two new line characters.
+                "-------------------------- depth ------------------------------".
+
+        Then we call recursion to next (first in the deepening) node
+
+
+    end loop over all deepenings
+
+/////////////////////////////////////////
+
+    // In the node:
+
+
+    if (Quiescence)
+        in_check = engine.is_king_in_check(engine.game_board.turn);
+
+        if (in_check) {
+        
+        } else {
+
+            unquiet_moves.reserve(MAX_MOVES);
+            engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, unquiet_moves);
+
+            // If quiet (not in check & no tactics), just return stand-pat
+            if (unquiet_moves.empty()) {
+                return { d_best_score, Move{} };
+            
+            } else {
+              
+                // Stand-pat cutoff
+                if (d_best_score >= beta) {
+                    return { d_best_score, Move{} };
+                }
+                alpha = std::max(alpha, d_best_score);
+
+                // Extend on captures/promotions only
+                p_moves_to_loop_over = &unquiet_moves; 
+
+            }
+
+        }
+
+
+
+
+
+        loop over all moves to anaylze.
+            #ifdef _DEBUGGING_MOVE_CHAIN    // Print move we are going to analyze
+            contains:
+                a new line character.
+                "[n/m]", where n is the one base index of the move, m is total number of moves to look at.
+                     The move we are going to analyze.
+                a comma
+                sprintf(szDebug, "A= %f, B=%f", alpha, beta);
+            #end if
+
+
+            call recursion to next node.
+
+            // Print negamax (relative) score of move
+            #ifdef _DEBUGGING_MOVE_CHAIN    
+            contains:
+                negamax score of the "best" determined by the recursion
+            #end if
+
+            alpha = std::max(alpha, d_best_score);
+            if (alpha >= beta) {
+
+                // Beta cutoff (break move loop)
+                #ifdef _DEBUGGING_MOVE_CHAIN   
+                contains:
+                    a new line character.
+                    "[n/m]", where n is the one base index of the move, m is total number of moves to look at.
+                    The move we are going to analyze.
+                #end if
+                break out of the move loop search
+            }
+
+        end loop
+
+
+
+        // Print summary: best move and best score
+        #ifdef _DEBUGGING_MOVE_CHAIN 
+        contains:
+            "BST=".
+            The "last move", (move made just before the loop above).
+            The "best move", (as determined by the loop above).
+            The "best score", (as determined by the loop above).
+        #end if
+
+    // End in the node
+
+
+/////////////////////////////////////////
+
+    // And at the Start of an evaluation  
+    #ifdef _DEBUGGING_MOVE_CHAIN      
+    contains: 
+            "e="      // Note: no score is printed out here.
+    #end if

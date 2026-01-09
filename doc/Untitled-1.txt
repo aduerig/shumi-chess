@@ -1,0 +1,83 @@
+
+
+
+tuple<double, Move> MinimaxAI::recursive_negamax(
+                    int depth
+                    ,double alpha, double beta
+                    , bool is_from_root
+                    ,const ShumiChess::Move& move_last      // seems to be used for debug only...
+                    ,int nPlys
+                    ,int qPlys
+                    )
+{
+
+
+
+
+
+
+
+
+    //
+    //  Code to store entries in the TT2, AND 
+    //
+    if (Features_mask & _FEATURE_TT2) {  // store in TT2
+        int iLimit = (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 1 or 0 only
+
+        if (depth > iLimit) {
+            if (!did_cutoff && !did_fail_low) {  // only store EXACT results for now
+
+                uint64_t key = engine.game_board.zobrist_key;
+
+                int cp_score_temp = engine.convert_to_CP(d_best_score);
+
+                // Rolling size cap for TT2  (NOTE: 2 million?), This is a non-determinism that can break "burp2" TT2.
+                static const std::size_t MAX_TT2_SIZE = 20000000;
+                if (TTable2.size() >= MAX_TT2_SIZE) {
+                    auto it = TTable2.begin();
+                    if (it != TTable2.end()) {
+                        TTable2.erase(it);
+                    }
+                }
+
+                // --- DEBUG check
+                #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
+                {
+                    if (foundPos && (foundDepth == depth) ) {            
+
+                        bool bBothScoresMates = (IS_MATE_SCORE(foundRawScore) && IS_MATE_SCORE(d_best_score));
+
+                        if (!bBothScoresMates) {
+
+                       
+                            // Here we compare and "burp2" if the current situation does not match the found one
+                        }
+                    }
+                }
+                #endif
+
+
+            }      // END adding an entry to the TT2 (exact result)
+        }        // END adding an entry to the TT2 (depth correct)
+
+    }     // END adding an entry to the TT2 feature
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

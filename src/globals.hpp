@@ -45,7 +45,7 @@ enum Piece {     // Pieces must be in this order!
 
 // TODO think about if this is the right way to represent a move
 // NOTE: Can this be a class? How would it help?
-// 56 bytes.  Now its 48, with SHORT_SIZES. Now its at 32 Whopee, just by reordering!
+// Now its at 32 Whopee.
 struct Move {
   
     ull from = 0ULL;   // bitboard (but with only one bit set)
@@ -88,6 +88,15 @@ enum GameState {
     BLACKWIN
 };
 
+enum GamePhase {
+    OPENING = 0,
+    MIDDLE_EARLY,
+    MIDDLE,
+    ENDGAME,
+    ENDGAME_LATE
+};
+char* str_from_GamePhase(int phse);
+   
 
 // ? maybe can use inline here for externs? but it complicates the build. defining in globals.cpp
 

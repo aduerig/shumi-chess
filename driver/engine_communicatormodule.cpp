@@ -325,6 +325,10 @@ engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
         case DRAW_AGREEMENT:
             strcpy(reason, "agreed");
             break;
+
+        case DRAW_ADMIN:
+            strcpy(reason, "admin");
+            break;
     }
 
     //strcpy(reason, "");
@@ -336,12 +340,11 @@ engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
 static PyObject*
 engine_communicator_evaluate(PyObject* self, PyObject* args) {
 
-    int nPhase = minimax_ai->phaseOfGame();
     std::vector<ShumiChess::Move> legal_moves = minimax_ai->engine.get_legal_moves();
     bool b_is_Quiet = !minimax_ai->engine.has_unquiet_move(legal_moves);
     
     minimax_ai->is_debug = true;
-    int cp_score_best = minimax_ai->evaluate_board( minimax_ai->engine.game_board.turn, nPhase, false, b_is_Quiet);
+    int cp_score_best = minimax_ai->evaluate_board( minimax_ai->engine.game_board.turn, false, b_is_Quiet);
     minimax_ai->is_debug = false;
     
     double pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);

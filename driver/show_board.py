@@ -264,15 +264,6 @@ screen_width = 700
 screen_height = 800
 win = GraphWin(width = screen_width, height = screen_height)
 
-# 2. Start the GUI in the middle of the screen
-# win.master.withdraw()
-# win.master.update_idletasks()  # Update "requested size"
-# x = (win.master.winfo_screenwidth() - win.master.winfo_reqwidth()) / 2
-# y = (win.master.winfo_screenheight() - win.master.winfo_reqheight()) / 2
-# win.master.geometry(f"+{int(x)}+{int(y)}")
-# win.master.deiconify()
-
-
 # 2. Start the GUI in the upper right corner of the screen
 win.master.withdraw()
 win.master.update_idletasks()  # ensure reqwidth/reqheight are set
@@ -854,7 +845,7 @@ player_index = 0
 acn_focused = None
 drawn_potential = []
 avail_moves = []
-fps = 5.0     # Make pretty small, the display dont need to do anything that fast is fine, (fps=5 is .2 sec)
+fps = 5.0     # Make pretty small, the display dont need to do anything that fast, (fps=5 is .2 sec)
 
 last_move_indicator = None
 if args.fen is not None:
@@ -865,12 +856,20 @@ ai_is_thinking = False
 try:
     while True:
 
-        #while game_over_cache() == -1: 
         while game_over_cache() == engine_communicator.INPROGRESS: 
             # stuff to do every frame no matter what
             # print(f'Loop: {acn_focused}')
 
             move_number = engine_communicator.get_move_number()
+
+            DEBUG_MAX_PLIES = 200  # or whatever cap you want
+
+            # "admin" draw (used for debug only)
+            if move_number > DEBUG_MAX_PLIES:
+                # Debug-only forced draw by ply cap
+                #game_over_text.setText("GAME OVER: draw (debug ply cap)")
+                # You can add any other text you like here (e.g. curr_move_text)
+                break
 
             # once the game has really started (move > 2), erase this text.
             if move_number > 2:
@@ -896,7 +895,6 @@ try:
             if time_white is not None:
                 w_parts.append(f" t={time_white}")
             if feat_white is not None:
-                #w_parts.append(f" f={feat_white}")
                 w_parts.append(f" f=0x{feat_white:x}")
 
             white_flags_text.setText(" ".join(w_parts))
@@ -908,7 +906,6 @@ try:
             if time_black is not None:
                 b_parts.append(f" t={time_black}")
             if feat_black is not None:
-                #b_parts.append(f" f={feat_black}")
                 b_parts.append(f" f=0x{feat_black:x}")
 
             black_flags_text.setText(" ".join(b_parts))
@@ -924,6 +921,7 @@ try:
                 ai_thread.start()
                 ai_is_thinking = True
 
+            # Make the computer's move
             if ai_is_thinking:
                 try:
                     from_acn, to_acn = ai_move_queue.get_nowait()
@@ -938,6 +936,7 @@ try:
 
             #print(f'ai_is_thinking... {ai_is_thinking}')
 
+            # Obtain user's move (from clicks)
             raw_position_left_click = win.checkMouse()
             if raw_position_left_click:
                 ##print('clicked')
@@ -1024,11 +1023,18 @@ try:
             win.update()
             time.sleep(1/fps)
             #print("woke up")
+
         
         # Game is now over
 
         # show the win/lose/draw banner
         gamover = engine_communicator.is_game_over()
+
+        # "admin" draw (used for debug only)
+        if move_number > DEBUG_MAX_PLIES:   
+            gamover = engine_communicator.DRAW  
+
+
         if gamover == engine_communicator.WHITEWIN:
             winner = 'white'
         elif gamover == engine_communicator.BLACKWIN:
@@ -1042,13 +1048,12 @@ try:
 
         if winner == 'draw':
             reason = engine_communicator.get_draw_reason()  # this should return a Python str
-            game_over_text.setText(f'GAME OVER: draw ({reason})')
+            if move_number > DEBUG_MAX_PLIES:   
+                game_over_text.setText(f'GAME OVER: draw (admin)')
+            else:
+                game_over_text.setText(f'GAME OVER: draw ({reason})')
         else:
             game_over_text.setText(winner_text.format(winner))
-
-        # START code crash if not commented out 
-        # game_over_text.draw(win)
-        # END code crash if not commented out 
 
         # update match timers
         iWhiteTime = engine_communicator.get_game_timew()
