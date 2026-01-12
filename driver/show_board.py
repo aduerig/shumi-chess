@@ -862,7 +862,7 @@ try:
 
             move_number = engine_communicator.get_move_number()
 
-            DEBUG_MAX_PLIES = 200  # or whatever cap you want
+            DEBUG_MAX_PLIES = 80  # or whatever cap you want
 
             # "admin" draw (used for debug only)
             if move_number > DEBUG_MAX_PLIES:

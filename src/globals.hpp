@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdlib>
 
+#include "globals.hpp"
 
 #undef NDEBUG
 #define NDEBUG         // Define (uncomment) this to disable asserts
@@ -91,12 +92,20 @@ enum GameState {
 enum GamePhase {
     OPENING = 0,
     MIDDLE_EARLY,
-    MIDDLE,
+    MIDDLE,         // both sides castled by now
     ENDGAME,
     ENDGAME_LATE
 };
 char* str_from_GamePhase(int phse);
    
+
+enum EvalPersons {
+    MATERIAL_ONLY = 0,
+    CRAZY_IVAN,
+    UNCLE_SHUMI
+};
+
+
 
 // ? maybe can use inline here for externs? but it complicates the build. defining in globals.cpp
 

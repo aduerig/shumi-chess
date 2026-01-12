@@ -1,1 +1,3 @@
 
+1. Once both sides castled, all castle-motivators off.
+2. Problem: if only one side castled, the castled side might "overmotivate"

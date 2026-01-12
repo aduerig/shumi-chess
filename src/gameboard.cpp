@@ -343,7 +343,7 @@ bool GameBoard::are_bit_boards_valid() const {
 //     
 //
 
-int GameBoard::get_castle_status_for_color(Color color1, int nPhase) const {
+int GameBoard::get_castle_bonus_cp_for_color(Color color1, int phase) const {
     int i_can_castle = 0;
     bool b_has_castled = false;
 
@@ -356,12 +356,13 @@ int GameBoard::get_castle_status_for_color(Color color1, int nPhase) const {
     }
     b_has_castled = bHasCastled_fake(color1);
 
+    // has_castled bonus must be > castled privledge or it will never castle.
     int icode = (b_has_castled ? 130 : 0) + i_can_castle * 35;
 
     int final_code;
 
-    if      (nPhase == GamePhase::OPENING) final_code = icode;
-    else if (nPhase == GamePhase::MIDDLE_EARLY) final_code = icode/2;
+    if      (phase == GamePhase::OPENING) final_code = icode;
+    else if (phase == GamePhase::MIDDLE_EARLY) final_code = icode/2;
     else final_code = 0;
 
     return final_code;  // "centipawns"
@@ -385,7 +386,7 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
 
     int homeRank = (color1 == ShumiChess::WHITE) ? 0 : 7;
 
-    // King must be on home rank and on h/g/c/b/a file: file 0,1,5,6,7
+    // King must be on home rank and on h/g/c/b/a file: file 0,1,2,5,6,7
     if (!(rank == homeRank && (file <= 1 || file >= 5))) return false;
 
     bool blocked = false;
@@ -413,15 +414,15 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
     return !blocked;
 }
 
-bool GameBoard::bHasCastled(Color color1) const {
-    bool b_has_castled = false;
-    if (color1 == ShumiChess::WHITE) {
-        b_has_castled = bCastledWhite;
-    } else {
-        b_has_castled = bCastledBlack;
-    }
-    return b_has_castled;
-}
+// bool GameBoard::bHasCastled(Color color1) const {
+//     bool b_has_castled = false;
+//     if (color1 == ShumiChess::WHITE) {
+//         b_has_castled = bCastledWhite;
+//     } else {
+//         b_has_castled = bCastledBlack;
+//     }
+//     return b_has_castled;
+// }
 
 //
 // Returns centipawns. Always positive. 
@@ -478,17 +479,6 @@ int GameBoard::bits_in(ull bitboard) const {
 // Linear interpolation: t=0 → a, t=1 → b
 inline double lerp(double a, double b, double t) { return a + (b - a) * t; }
 
-//
-// int GameBoard::king_castle_happiness(Color c) const {
-   
-//     int centerness = get_castle_status_for_color(c);
-//     assert(centerness>=0);
-
-//     assert(0);
-
-
-//     return (centerness);      // centipawns
-// }
 
 int GameBoard::queen_still_home(Color color)
 {
@@ -810,12 +800,13 @@ int GameBoard::count_isolated_pawns(Color c) const {
     return total;
 }
 
+// two for each doubled pawm, three for each tripled pawn, four for each quadrupled pawn
 int GameBoard::count_doubled_pawns(Color c) const {
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
     if (!P) return 0;
 
+    // For each file, count number of pawns on that file.
     int file_count[8] = {0};
-
     ull tmp = P;        // dont mutate bitboards
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
@@ -827,7 +818,7 @@ int GameBoard::count_doubled_pawns(Color c) const {
     for (int f = 0; f < 8; ++f) {
         int k = file_count[f];    // pawns on this file
         if (k >= 2) {
-            // doubled (or tripled) file: count all pawns on it
+            // doubled (or tripled or quadrupled) file: count all pawns on the file
             total += k;
         }
     }
@@ -875,6 +866,11 @@ int GameBoard::king_edge_weight(Color color)
 {
     ull kbb = (color == Color::WHITE) ? white_king : black_king;   // dont mutate the bitboards
     assert(kbb != 0ULL);
+    return piece_edge_weight(kbb);
+}
+
+// 0 = center, 3 = edge
+int GameBoard::piece_edge_weight(ull kbb) {   
     int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63
 
     int r = sq / 8;              // 0..7
@@ -888,6 +884,74 @@ int GameBoard::king_edge_weight(Color color)
 
     return ring;  // 0 = center, 3 = edge
 }
+
+
+// Piece occuptation squares scaled for closness to center.
+int GameBoard::center_closeness_bonus(Color c) {
+    const int BASE_CP = 24;  // tune strength (centipawns)
+    int bonus = 0;
+
+    ull nBB = 0ULL, bBB = 0ULL, rBB = 0ULL, qBB = 0ULL;
+
+    if (c == Color::WHITE) {
+        nBB = white_knights;
+        bBB = white_bishops;
+        rBB = white_rooks;
+        qBB = white_queens;
+    } else {
+        nBB = black_knights;
+        bBB = black_bishops;
+        rBB = black_rooks;
+        qBB = black_queens;
+    }
+
+    // Knights (divide by 3)
+    ull tmp = nBB;
+    while (tmp) {
+        int sq = utility::bit::lsb_and_pop_to_square(tmp);
+        ull one = 1ULL << sq;
+        int ring = piece_edge_weight(one);    // 0=center .. 3=edge
+        int centerness = 3 - ring;            // 3=center .. 0=edge
+        if (centerness < 0) centerness = 0;
+        bonus += (BASE_CP * centerness) / 3;
+    }
+
+    // Bishops (divide by 3)
+    tmp = bBB;
+    while (tmp) {
+        int sq = utility::bit::lsb_and_pop_to_square(tmp);
+        ull one = 1ULL << sq;
+        int ring = piece_edge_weight(one);
+        int centerness = 3 - ring;
+        if (centerness < 0) centerness = 0;
+        bonus += (BASE_CP * centerness) / 3;
+    }
+
+    // Rooks (divide by 5)
+    tmp = rBB;
+    while (tmp) {
+        int sq = utility::bit::lsb_and_pop_to_square(tmp);
+        ull one = 1ULL << sq;
+        int ring = piece_edge_weight(one);
+        int centerness = 3 - ring;
+        if (centerness < 0) centerness = 0;
+        bonus += (BASE_CP * centerness) / 5;
+    }
+
+    // Queens (divide by 9)
+    tmp = qBB;
+    while (tmp) {
+        int sq = utility::bit::lsb_and_pop_to_square(tmp);
+        ull one = 1ULL << sq;
+        int ring = piece_edge_weight(one);
+        int centerness = 3 - ring;
+        if (centerness < 0) centerness = 0;
+        bonus += (BASE_CP * centerness) / 9;
+    }
+
+    return bonus;
+}
+
 
 
 // if (Features_mask & _FEATURE_EVAL_TEST1) {

@@ -73,9 +73,9 @@ class GameBoard {
 
         void set_zobrist();
 
-        // Castled status. This is different than castle priviledge, this tracks wether it actully happens.
-        bool bCastledWhite;
-        bool bCastledBlack;
+        // // Castled status. This is different than castle priviledge, this tracks wether it actully happens.
+        // bool bCastledWhite;
+        // bool bCastledBlack;
 
         template <Piece p>
         inline ull get_pieces_template() {
@@ -180,6 +180,9 @@ class GameBoard {
         bool insufficient_material_simple();
 
         int king_edge_weight(Color color);
+        int piece_edge_weight(ull pieces);
+
+        int center_closeness_bonus(Color c);
 
         int pawns_attacking_square(Color c, int sq);
         int pawns_attacking_center_squares(Color c);
@@ -229,9 +232,9 @@ class GameBoard {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();
 
-        int get_castle_status_for_color(Color color1, int nPhase) const;
+        int get_castle_bonus_cp_for_color(Color color1, int phase) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
-        bool bHasCastled(Color color1) const;
+        //bool bHasCastled(Color color1) const;
         bool bHasCastled_fake(Color color1) const;
 
         // returns 0 if sq has no attackers. 

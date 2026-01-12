@@ -15,7 +15,12 @@
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
+
+/////////// Debug ////////////////////////////////////////////////////////////////////////////////////
+
 //#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 class RandomAI {
@@ -29,8 +34,9 @@ public:
     ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
 
-constexpr int MAXIMUM_DEEPENING = 50;
-constexpr int MAX_PLY = 49;     // Can never look ahead past this far.
+constexpr int MAXIMUM_DEEPENING = 40;
+constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead past this far.
+//assert(MAXIMUM_DEEPENING < MAX_PLY);
 
 class MinimaxAI {
 public:
@@ -70,7 +76,7 @@ public:
     ull NhitsTT = 0;
     ull NhitsTT2 = 0;
     ull nRandos = 0;
-
+    ull nGames = 0;
     
     // Transposition table (TT)    Protects the evaluator (evaluate_board(). Cleared on every move 
     struct TTEntry {
@@ -141,11 +147,11 @@ public:
 
     int cp_score_positional_get_opening(ShumiChess::Color color, int nPhase); 
     int cp_score_positional_get_middle(ShumiChess::Color color); 
-    int cp_score_positional_get_end(ShumiChess::Color color, int nPly, int mat_avg,
+    int cp_score_positional_get_end(ShumiChess::Color color, int nPly,
                                     bool onlyKngFriend, bool onlyKngEnemy
                                 ); 
 
-    int evaluate_board(ShumiChess::Color for_color, bool fast_style_eval, bool isQuietPosition
+    int evaluate_board(ShumiChess::Color for_color, ShumiChess::EvalPersons evp, bool isQuietPosition
                    //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
                     //, bool is_debug
     );
@@ -193,16 +199,16 @@ public:
     ShumiChess::Move get_move();
     // end oLD CHESS engine
 
-    bool is_debug = false;
+    //bool is_debug = false;
     int nFarts = 0;
 
-    std::tuple<double, ShumiChess::Move> best_move_static(ShumiChess::Color for_color,
-                                const std::vector<ShumiChess::Move>& moves,
-                                //int nPly,
-                                bool in_Check,
-                                int depth,
-                                bool isFast
-                            );
+    // std::tuple<double, ShumiChess::Move> best_move_static(ShumiChess::Color for_color,
+    //                             const std::vector<ShumiChess::Move>& moves,
+    //                             //int nPly,
+    //                             bool in_Check,
+    //                             int depth,
+    //                             bool isFast
+    //                         );
                
     void print_moves_to_file(const vector<ShumiChess::Move> &mvs, int depth, char* szHeader, char* szTrailer);
 
@@ -214,8 +220,8 @@ public:
         if (engine.game_board.turn == ShumiChess::BLACK) mode |= (1u << 0);   // bit0 = color
         if (b_is_Quiet)                                  mode |= (1u << 1);   // bit1 = quiet
 
-        if (engine.game_board.bCastledWhite) mode |= (1u << 2);        // bit 4
-        if (engine.game_board.bCastledBlack) mode |= (1u << 3);        // bit 5
+        // if (engine.game_board.bCastledWhite) mode |= (1u << 2);        // bit 4
+        // if (engine.game_board.bCastledBlack) mode |= (1u << 3);        // bit 5
 
         return mode;
     }

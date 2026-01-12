@@ -14,7 +14,7 @@
 
 /////////// Debug ////////////////////////////////////////////////////////////////////////////////////
 
-//#define _SUPRESSING_MOVE_HISTORY_RESULTS  // 3 time rep and the fifty move rule supession
+#define _SUPRESSING_MOVE_HISTORY_RESULTS  // Prevents 3 time rep and the fifty move rule  
 
 //#define DEBUG_NO_CASTLING    // Debug, to disallow castling for everyone
 
@@ -136,12 +136,14 @@ void Engine::reset_engine() {         // New game.
     // burp2 bug then d5 for black.     (-t500 -d4)
     //game_board = GameBoard("r1bqkb1r/pppppppp/2n2n2/8/6P1/2N2P2/PPPPP2P/R1BQKBNR b KQkq g3 0 3");
 
+    //   then g5 with CRAZY_IVAN
+    //game_board = GameBoard("r1bqkbnr/ppppp1pp/2n2p2/8/8/1PN2N2/P1PPPPPP/R1BQKB1R b KQkq - 3 3");
 
-    // // Or you can pick a random simple endgame FEN. (maybe)
+    // Or you can pick a random simple endgame FEN. (maybe)
     // vector<Move> v;
     // int itrys = 0;
     // do {  
-    //     string stemp = game_board.random_kqk_fen(false);
+    //     string stemp = game_board.random_kqk_fen(true);
     //     game_board = GameBoard(stemp);
     //     v = get_legal_moves(ShumiChess::WHITE);
     //     ++itrys;
@@ -165,8 +167,8 @@ void Engine::reset_engine() {         // New game.
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    game_board.bCastledWhite = false;  // I dont care which side i castled.
-    game_board.bCastledBlack = false;  // I dont care which side i castled.
+    // game_board.bCastledWhite = false;  // I dont care which side i castled.
+    // game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     computer_ply_so_far = 0;       // real moves in whole game
     ply_so_far = 0;     // ply played in game so far
@@ -180,8 +182,6 @@ void Engine::reset_engine() {         // New game.
 
     reason_for_draw = DRAW_NULL;
 
-
-    //TTable2.clear();
 
 }
 //
@@ -212,8 +212,8 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    game_board.bCastledWhite = false;  // I dont care which side i castled.
-    game_board.bCastledBlack = false;  // I dont care which side i castled.
+    // game_board.bCastledWhite = false;  // I dont care which side i castled.
+    // game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     computer_ply_so_far = 0;       // real moves in whole game
     ply_so_far = 0;     // ply played in game so far
@@ -225,7 +225,6 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
 
     repetition_table.clear();
 
-    //TTable2.clear();
     
 }
 
@@ -569,12 +568,12 @@ void Engine::pushMove(const Move& move) {
         }
     } else if (move.is_castle_move) {
 
-        // if pushing a castle turn castling status on in gameboard.
-        if (move.color == ShumiChess::Color::WHITE) {
-           game_board.bCastledWhite = true;  // I dont care which side i castled.
-        } else {
-           game_board.bCastledBlack = true;  // I dont care which side i castled.
-        }
+        // // if pushing a castle turn castling status on in gameboard.
+        // if (move.color == ShumiChess::Color::WHITE) {
+        //    game_board.bCastledWhite = true;  // I dont care which side i castled.
+        // } else {
+        //    game_board.bCastledBlack = true;  // I dont care which side i castled.
+        // }
 
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
@@ -769,12 +768,12 @@ void Engine::popMove() {
         }
     } else if (move.is_castle_move) {
        
-        // if popping a castle turn castling status off in gameboard.
-        if (move.color == ShumiChess::Color::WHITE) {
-           game_board.bCastledWhite = false;  // I dont care which side i castled.
-        } else {
-           game_board.bCastledBlack = false;  // I dont care which side i castled.
-        }
+        // // if popping a castle turn castling status off in gameboard.
+        // if (move.color == ShumiChess::Color::WHITE) {
+        //    game_board.bCastledWhite = false;  // I dont care which side i castled.
+        // } else {
+        //    game_board.bCastledBlack = false;  // I dont care which side i castled.
+        // }
 
         // get pointer to the rook? Which rook?
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
@@ -877,12 +876,12 @@ void Engine::pushMoveFast(const Move& move)
 
     if (move.is_castle_move) {
 
-        // if pushing a castle turn castling status on in gameboard.
-        if (move.color == ShumiChess::Color::WHITE) {
-           game_board.bCastledWhite = true;  // I dont care which side i castled.
-        } else {
-           game_board.bCastledBlack = true;  // I dont care which side i castled.
-        }
+        // // if pushing a castle turn castling status on in gameboard.
+        // if (move.color == ShumiChess::Color::WHITE) {
+        //    game_board.bCastledWhite = true;  // I dont care which side i castled.
+        // } else {
+        //    game_board.bCastledBlack = true;  // I dont care which side i castled.
+        // }
 
         ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         //
@@ -970,12 +969,12 @@ void Engine::popMoveFast()
 
     if (move.is_castle_move) {
 
-        // if popping a castle turn castling status off in gameboard.
-        if (move.color == ShumiChess::Color::WHITE) {
-           game_board.bCastledWhite = false;  // I dont care which side i castled.
-        } else {
-           game_board.bCastledBlack = false;  // I dont care which side i castled.
-        }
+        // // if popping a castle turn castling status off in gameboard.
+        // if (move.color == ShumiChess::Color::WHITE) {
+        //    game_board.bCastledWhite = false;  // I dont care which side i castled.
+        // } else {
+        //    game_board.bCastledBlack = false;  // I dont care which side i castled.
+        // }
 
         //assert(0 && "popMoveFast(): castling should never appear in fast path");
         // get pointer to the rook? Which rook?

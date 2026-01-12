@@ -343,9 +343,13 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
     std::vector<ShumiChess::Move> legal_moves = minimax_ai->engine.get_legal_moves();
     bool b_is_Quiet = !minimax_ai->engine.has_unquiet_move(legal_moves);
     
-    minimax_ai->is_debug = true;
-    int cp_score_best = minimax_ai->evaluate_board( minimax_ai->engine.game_board.turn, false, b_is_Quiet);
-    minimax_ai->is_debug = false;
+    //minimax_ai->is_debug = true;
+
+    ShumiChess::EvalPersons evp = ShumiChess::UNCLE_SHUMI;
+
+
+    int cp_score_best = minimax_ai->evaluate_board( minimax_ai->engine.game_board.turn, evp, b_is_Quiet);
+    //minimax_ai->is_debug = false;
     
     double pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);
 
