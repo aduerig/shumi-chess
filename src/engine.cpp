@@ -14,7 +14,7 @@
 
 /////////// Debug ////////////////////////////////////////////////////////////////////////////////////
 
-#define _SUPRESSING_MOVE_HISTORY_RESULTS  // Prevents 3 time rep and the fifty move rule  
+//#define _SUPRESSING_MOVE_HISTORY_RESULTS  // Prevents 3 time rep and the fifty move rule  
 
 //#define DEBUG_NO_CASTLING    // Debug, to disallow castling for everyone
 

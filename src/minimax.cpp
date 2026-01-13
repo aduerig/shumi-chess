@@ -55,8 +55,8 @@ using namespace utility::bit;
 
 //#define _DEBUGGING_PUSH_POP
 
-// #define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
-// #define _DEBUGGING_MOVE_CHAIN
+//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+//#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 
 // extern bool bMoreDebug;
@@ -97,8 +97,6 @@ using namespace utility::bit;
         clearerr(fp); // optional: clears EOF/error flags
         return 0;
     }
-
-
 
 #endif
 
@@ -489,8 +487,8 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 
     // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
     pers_index = 0;
-    //icp_temp = engine.game_board.get_castle_bonus_cp_for_color(color, nPhase);
-    //cp_score_position_temp += icp_temp;     // centipawns
+    icp_temp = engine.game_board.get_castle_bonus_cp_for_color(color, nPhase);
+    cp_score_position_temp += icp_temp;     // centipawns
 
 
     // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
@@ -733,6 +731,8 @@ int MinimaxAI::phase_of_game_full() {
         assert (cp_score_mat_temp>=0);    // there is no negative value material 
         cp_score_material_all += cp_score_mat_temp;   
     }
+
+    cp_score_material_all = cp_score_material_all / 2;
 
     //cout << "bogee " << cp_score_material_all;
     int nPhase = phaseOfGame(cp_score_material_all); 
@@ -1253,9 +1253,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     //dtemp2 = engine.game_board.bHasCastled_fake(ShumiChess::WHITE);
 
-    //itemp = phase_of_game_full();
-    itemp = nGames;
-    char szTemp[64];
+    itemp = phase_of_game_full();
+    char szTemp[128];
     char* pszTemp = &szTemp[0];
     pszTemp = str_from_GamePhase(itemp);
 
@@ -1420,76 +1419,88 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
         int iLimit = (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 1 or 0 only
         if (depth > iLimit) {
+
             // --- Normal TT2 probe (Note: exact-only version, no flags/age yet)
 
-            uint64_t key = engine.game_board.zobrist_key;
+            bool is_perfect_match = false;
 
+            // Probe the table
+            uint64_t key = engine.game_board.zobrist_key;
             auto it = TTable2.find(key);
 
             if (it != TTable2.end()) {
+
+                // probe found for this zobrist key
                 const TTEntry2 &entry = it->second;
 
-                // Qualification on probe #1: We can reuse an entry if it was searched at least as deep
+                // Qualification #1 on probe: We can reuse an entry if it was searched at least as deep
                 // We already searched this node to at least this depth so we can trust the stored result.
                 if (entry.depth >= depth) {
 
-                    // Only accept hit if window matches stored one
+                    // Qualification #2 on probe: Only accept hit if window matches stored one
+                    // Since stored results is EXACT, the "debug" versions should be the full window now.
+                    // So here we restrict ourselves to situations where the current window is full.
                     bool windowMatches =
                         (std::fabs(entry.dAlphaDebug - alpha) <= VERY_SMALL_SCORE) &&
                         (std::fabs(entry.dBetaDebug  - beta ) <= VERY_SMALL_SCORE);
 
-                    if (!windowMatches) {
-
-
-                    } else {
-                        #ifdef DEBUG_NODE_TT2        // Store information recalled from the TT2 "record"
-
-                            foundPos   = true;
-                            foundScore = entry.score_cp;
-                            foundMove  = entry.best_move;
-                            foundnPlys = entry.nPlysDebug;
-                            foundDraw  = entry.drawDebug;
-                            foundAlpha = entry.dAlphaDebug;
-                            foundBeta  = entry.dBetaDebug;
-                            foundDepth = entry.depth;
-                            foundIsCheck = entry.bIsInCheckDebug;
-                            foundLegalMoveSize = entry.legalMovesSize;
-                            foundRepCount = entry.repCountDebug;
-                            foundRawScore = entry.dScoreDebug;
-
-                            found_wp = entry.bb_wp;
-                            found_wn = entry.bb_wn;
-                            found_wb = entry.bb_wb;
-                            found_wr = entry.bb_wr;
-                            found_wq = entry.bb_wq;
-                            found_wk = entry.bb_wk;
-
-                            found_bp = entry.bb_bp;
-                            found_bn = entry.bb_bn;
-                            found_bb = entry.bb_bb;
-                            found_br = entry.bb_br;
-                            found_bq = entry.bb_bq;
-                            found_bk = entry.bb_bk;
-
-                            found_white_castled = entry.white_castled_debug;
-                            found_black_castled = entry.black_castled_debug;
-
-                            found_move_history = entry.move_history_debug; 
-
-                        #else
-                            double dScore = (double)entry.score_cp / 100.0;
-                            return { dScore, entry.best_move };
-                        #endif
+                    if (windowMatches) {
+                        is_perfect_match = true;
                     }
                 }
 
 
-            }
-        }
-    }
+                if (is_perfect_match) {      
+                    // If debug, just compare to the computation. If not debug actually use the result. 
+
+                    #ifdef DEBUG_NODE_TT2        // Store information recalled from the TT2 "record"
+                        foundPos   = true;
+                        foundScore = entry.score_cp;
+                        foundMove  = entry.best_move;
+                        foundnPlys = entry.nPlysDebug;
+                        foundDraw  = entry.drawDebug;
+                        foundAlpha = entry.dAlphaDebug;
+                        foundBeta  = entry.dBetaDebug;
+                        foundDepth = entry.depth;
+                        foundIsCheck = entry.bIsInCheckDebug;
+                        foundLegalMoveSize = entry.legalMovesSize;
+                        foundRepCount = entry.repCountDebug;
+                        foundRawScore = entry.dScoreDebug;
+
+                        found_wp = entry.bb_wp;
+                        found_wn = entry.bb_wn;
+                        found_wb = entry.bb_wb;
+                        found_wr = entry.bb_wr;
+                        found_wq = entry.bb_wq;
+                        found_wk = entry.bb_wk;
+
+                        found_bp = entry.bb_bp;
+                        found_bn = entry.bb_bn;
+                        found_bb = entry.bb_bb;
+                        found_br = entry.bb_br;
+                        found_bq = entry.bb_bq;
+                        found_bk = entry.bb_bk;
+
+                        found_white_castled = entry.white_castled_debug;
+                        found_black_castled = entry.black_castled_debug;
+
+                        found_move_history = entry.move_history_debug; 
+
+                    #else
+                        double dScore = (double)entry.score_cp / 100.0;
+                        return { dScore, entry.best_move };
+                    #endif
+
+                }   // END is perfect match
+                
+            }   // END probe hit
+
+        }   // END stupid 0/1 filter sub-feature
+
+    }   // END TT2 feature
 
 
-    vector<ShumiChess::Move> unquiet_moves;   // This MUST be declared as local in this functio or horrible crashes
+    vector<ShumiChess::Move> unquiet_moves;   // This MUST be declared as local in this function (not in the class) or horrible crashes
 
 
     // Only one of me, per deepening.
@@ -1540,7 +1551,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }
 
 
-
         // final_result = std::make_tuple(d_best_score, the_best_move);
         // return final_result;
         return {d_best_score, the_best_move};
@@ -1559,29 +1569,12 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     if (depth == 0) {
 
         // Static board evaluation
-        // do "fast eval if nPly too high"
-        // bool bFast = false;
-        // #ifdef FAST_EVALUATIONS          
-        //     if (nPlys > (maximum_deepening*2)) // because I said so    (14 or so)
-        //     //if (nPlys > 15) // because I said so    (14 or so)
-        //     {
-        //         //cout << " beeep ";
-        //         bFast = true;
-        //     }
-        // #endif
-
-        //bool bFast = false;
-        //#ifdef FAST_EVALUATIONS       
-            //bFast = true;
-        //#endif
 
         bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
 
         int  cp_from_tt   = 0;
         bool have_tt_eval = false;
 
-
- 
 
         // memoization of leafs
         if (Features_mask & _FEATURE_TT) {
@@ -2094,16 +2087,19 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     }
 
     if (Features_mask & _FEATURE_TT2) {  // store in TT2
+
         int iLimit = (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 1 or 0 only
 
         if (depth > iLimit) {
-            if (!did_cutoff && !did_fail_low) {  // only store EXACT results for now
-
+            if (!did_cutoff && !did_fail_low) {
+                //
+                //  This is an EXACT score (not an alpha/beta boundary).
+                //
                 uint64_t key = engine.game_board.zobrist_key;
 
                 int cp_score_temp = engine.convert_to_CP(d_best_score);
 
-                // Rolling size cap for TT2  (NOTE: 2 million?), This is a non-determinism that can break "burp2" TT2.
+                // Rolling size cap for TT2  (NOTE: 2 million?), This is a non-determinism that can break "burp2" TT2?
                 static const std::size_t MAX_TT2_SIZE = 20000000;
                 if (TTable2.size() >= MAX_TT2_SIZE) {
                     auto it = TTable2.begin();
@@ -2216,9 +2212,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                                 }
 
                                 if (isFailure) {
-                                    std::string temp_fen_ = engine.game_board.to_fen();
-                                    cout << ("burp22 %ld      %s\n", nGames, temp_fen_.c_str());
-
                                     #ifdef _DEBUGGING_TO_FILE
                                         if (fpDebug) {
                                             fflush(fpDebug);
@@ -2226,6 +2219,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                                             fpDebug = NULL;
                                         }
                                     #endif
+                                    std::string temp_fen_ = engine.game_board.to_fen();
+                                    sprintf (szDebug, "burp22 %llu      %s\n", nGames, temp_fen_.c_str());
+                                    cout << szDebug;
                                     assert(0);
                                 }
                             }
@@ -2234,11 +2230,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                             }
                         }
                     }
-                }
+
+                }   // END debug
                 #endif
 
-                if (!did_cutoff && !did_fail_low)
-                {
+                if (!did_cutoff && !did_fail_low) {
+                    
+                    // this is an EXACT score (not an alpha/beta boundary).
                     bool bdebug = false;
 
                     // --- New entry: actually insert and fill TT2 slot ---
@@ -2332,17 +2330,16 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                             std::fflush(fpDebug);
                         }
 
+                    #endif   // END all position move specific debug
 
-
-
-                    #endif
-
-                }   // END all position move specific debug
-
+                } else {    // END this is an EXACT match
+                    assert(0);      // NOTE: clean this up
+                }
  
 
             }      // END adding an entry to the TT2 (exact result)
-        }        // END adding an entry to the TT2 (depth correct)
+
+        }        // END adding an entry to the TT2 (depth correct, just a stupid 0/1 feature)
 
     }     // END adding an entry to the TT2 feature
  

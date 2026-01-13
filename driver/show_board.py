@@ -862,10 +862,10 @@ try:
 
             move_number = engine_communicator.get_move_number()
 
-            DEBUG_MAX_PLIES = 80  # or whatever cap you want
+            DEBUG_MAX_MOVES = 120  # or whatever cap you want
 
             # "admin" draw (used for debug only)
-            if move_number > DEBUG_MAX_PLIES:
+            if move_number > DEBUG_MAX_MOVES:
                 # Debug-only forced draw by ply cap
                 #game_over_text.setText("GAME OVER: draw (debug ply cap)")
                 # You can add any other text you like here (e.g. curr_move_text)
@@ -1031,7 +1031,7 @@ try:
         gamover = engine_communicator.is_game_over()
 
         # "admin" draw (used for debug only)
-        if move_number > DEBUG_MAX_PLIES:   
+        if move_number > DEBUG_MAX_MOVES:   
             gamover = engine_communicator.DRAW  
 
 
@@ -1048,7 +1048,7 @@ try:
 
         if winner == 'draw':
             reason = engine_communicator.get_draw_reason()  # this should return a Python str
-            if move_number > DEBUG_MAX_PLIES:   
+            if move_number > DEBUG_MAX_MOVES:   
                 game_over_text.setText(f'GAME OVER: draw (admin)')
             else:
                 game_over_text.setText(f'GAME OVER: draw ({reason})')
