@@ -206,4 +206,16 @@ char* str_from_GamePhase(int phse) {
 };
 
 
+bool is_move_in_list(const Move& mov, const std::vector<Move>& mvs)
+{
+    return std::find(mvs.begin(), mvs.end(), mov) != mvs.end();
+    // for (Move m : mvs) {
+    //     if  (m == mov) {
+    //         return true;
+    //     }
+    // }
+    // return false;
+}
+
+
 } // end namespace ShumiChess

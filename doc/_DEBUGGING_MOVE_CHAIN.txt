@@ -19,39 +19,7 @@
 
     // In the node:
 
-
-    if (Quiescence)
-        in_check = engine.is_king_in_check(engine.game_board.turn);
-
-        if (in_check) {
-        
-        } else {
-
-            unquiet_moves.reserve(MAX_MOVES);
-            engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, unquiet_moves);
-
-            // If quiet (not in check & no tactics), just return stand-pat
-            if (unquiet_moves.empty()) {
-                return { d_best_score, Move{} };
-            
-            } else {
-              
-                // Stand-pat cutoff
-                if (d_best_score >= beta) {
-                    return { d_best_score, Move{} };
-                }
-                alpha = std::max(alpha, d_best_score);
-
-                // Extend on captures/promotions only
-                p_moves_to_loop_over = &unquiet_moves; 
-
-            }
-
-        }
-
-
-
-
+        ...
 
         loop over all moves to anaylze.
             #ifdef _DEBUGGING_MOVE_CHAIN    // Print move we are going to analyze

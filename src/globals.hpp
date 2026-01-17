@@ -105,6 +105,7 @@ enum EvalPersons {
     UNCLE_SHUMI
 };
 
+bool is_move_in_list(const Move& mov, const std::vector<Move>& mvs);
 
 
 // ? maybe can use inline here for externs? but it complicates the build. defining in globals.cpp

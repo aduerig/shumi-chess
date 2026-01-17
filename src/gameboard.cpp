@@ -331,6 +331,7 @@ bool GameBoard::are_bit_boards_valid() const {
     return true; // no overlaps found
 }
 //
+// Returns in cp.
 // Delevers bonus points based on castling.
 //  Two things (bools) about castling. 
 //      1. Can you castle or not?  (do you have the priviledge)  
@@ -339,10 +340,7 @@ bool GameBoard::are_bit_boards_valid() const {
 //  Results (bonus points):
 //    2 castled
 //    1 
-//    can still 
-//     
 //
-
 int GameBoard::get_castle_bonus_cp_for_color(Color color1, int phase) const {
     int i_can_castle = 0;
     bool b_has_castled = false;
@@ -357,7 +355,7 @@ int GameBoard::get_castle_bonus_cp_for_color(Color color1, int phase) const {
     b_has_castled = bHasCastled_fake(color1);
 
     // has_castled bonus must be > castled privledge or it will never castle.
-    int icode = (b_has_castled ? 130 : 0) + i_can_castle * 35;
+    int icode = (b_has_castled ? 150 : 0) + i_can_castle * 35;
 
     int final_code;
 
@@ -368,13 +366,18 @@ int GameBoard::get_castle_bonus_cp_for_color(Color color1, int phase) const {
     return final_code;  // "centipawns"
 }
 
+//
+// “Returns true if king is on home rank and positioned near an edge, and there are no friendly 
+// rooks between the king and that edge.”
+//
 bool GameBoard::bHasCastled_fake(Color color1) const {
     // 2) Build an occupancy bitboard (all pieces)
-    ull occupied =
-        white_pawns   | white_knights | white_bishops |
-        white_rooks   | white_queens  | white_king    |
-        black_pawns   | black_knights | black_bishops |
-        black_rooks   | black_queens  | black_king;
+    ull occupied = 0;
+        //    white_knights | white_bishops | white_queens  | white_king    |
+        //    black_knights | black_bishops | black_queens  | black_king;
+
+    ull rooks_bb = (color1 == ShumiChess::WHITE) ? white_rooks : black_rooks;
+    occupied |= rooks_bb;
 
     // 3) Get this side's king square
     ull king_bb = (color1 == ShumiChess::WHITE) ? white_king : black_king;
@@ -392,7 +395,7 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
     bool blocked = false;
 
     if (file <= 1) {
-        // Kingside: scan toward h-file (file 0) (all files must be empty)
+        // Kingside: scan toward h-file (file 0) (all files must be empty of friendly rooks)
         for (int f = file - 1; f >= 0; --f) {
             int sq = rank * 8 + f;
             if (occupied & (1ULL << sq)) {
@@ -400,8 +403,8 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
                 break;
             }
         }
-    } else {
-        // Queenside: scan toward a-file (file 7) (all files must be empty)
+    } else {        // file >= 5 
+        // Queenside: scan toward a-file (file 7) (all files must be empty friendly rooks)
         for (int f = file + 1; f <= 7; ++f) {
             int sq = rank * 8 + f;
             if (occupied & (1ULL << sq)) {
@@ -551,17 +554,17 @@ int GameBoard::bishop_pawn_pattern(Color color)
 
 int GameBoard::pawns_attacking_square(Color c, int sq)
 {
-    ull bit = (1ULL << sq);
+    ull bitBoard = (1ULL << sq);
     const ull FILE_A = col_masks[Col::COL_A];
     const ull FILE_H = col_masks[Col::COL_H];
 
     ull origins;
     if (c == Color::WHITE) {
         // white pawn origins that attack sq: from (sq-7) and (sq-9)
-        origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
+        origins = ((bitBoard & ~FILE_A) >> 7) | ((bitBoard & ~FILE_H) >> 9);
     } else {
         // black pawn origins that attack sq: from (sq+7) and (sq+9)
-        origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
+        origins = ((bitBoard & ~FILE_H) << 7) | ((bitBoard & ~FILE_A) << 9);
     }
 
     ull pawns = get_pieces_template<Piece::PAWN>(c);
@@ -569,11 +572,11 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 }
 
 
-
+// Returns in cp.
 int GameBoard::pawns_attacking_center_squares(Color c) {
     
-    constexpr int CENTER_W = 2;   // weight for e4,d4,e5,d5
-    constexpr int ADV_W    = 1;   // weight for e6,d6 (White) or e3,d3 (Black)
+    constexpr int CENTER_W = 40;   // weight for e4,d4,e5,d5
+    constexpr int ADV_W    = 30;   // weight for e6,d6 (White) or e3,d3 (Black)
 
     int sum = 0;
 
@@ -621,11 +624,11 @@ int GameBoard::knights_attacking_center_squares(Color c)
 // Note sure what happens with three or more rooks.
 bool GameBoard::rook_connectiveness(Color c, int& connectiveness) const
 {
+    connectiveness = 0;
     const ull rooks = (c == Color::WHITE) ? white_rooks : black_rooks;
 
     // Need at least two rooks of this color
     if ((rooks == 0) || ((rooks & (rooks - 1)) == 0)) {
-        connectiveness = 0;
         return false;
     }
 
@@ -698,7 +701,7 @@ int GameBoard::rook_file_status(Color c) const {
 
     int score = 0;  // +2 per rook on open file, +1 per rook on semi-open
 
-    ull tmp = rooks;
+    ull tmp = rooks;    // dont mutate the bitboards
     while (tmp) {
         int s  = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
         int f  = s % 8;            // 0=H ... 7=A in h1=0 layout
@@ -716,20 +719,26 @@ int GameBoard::rook_file_status(Color c) const {
 }
 
 
-
+//
+// Returns in cp.
+// Rooks or queens on 7th or 8th ranks
 int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on enemy 7th */
 {
     const ull rooks  = (c == Color::WHITE) ? white_rooks  : black_rooks;
     const ull queens = (c == Color::WHITE) ? white_queens : black_queens;
-    ull rq = rooks | queens;
-    if (!rq) return 0;
 
-    const int target_rank = (c == Color::WHITE) ? 6 : 1; // enemy 7th rank: White→6, Black→1
+    ull bigPieces = rooks | queens;    // Dont mutate the bitboards
+    if (!bigPieces) return 0;
 
-    int score = 0; // +1 per rook or queen on enemy 7th (max 2 if both R+Q there)
-    while (rq) {
-        int s = utility::bit::lsb_and_pop_to_square(rq); // 0..63
-        if ((s / 8) == target_rank) ++score;
+    const int seventh_rank = (c == Color::WHITE) ? 6 : 1;
+    const int eight_rank = (c == Color::WHITE) ? 7 : 0;
+
+    int score = 0;
+    while (bigPieces) {
+        int s = utility::bit::lsb_and_pop_to_square(bigPieces); // 0..63
+        int rnk = (s / 8);
+        if (rnk == seventh_rank) score+=20;
+        if (rnk == eight_rank) score+=10;
     }
     return score;
 }
@@ -765,7 +774,25 @@ bool GameBoard::insufficient_material_simple() {
 }
 
 
-// Isolated pawns.
+bool GameBoard::isReversableMove(const Move& m)
+{
+    // "Reversible" here means: does NOT reset the repetition window.
+    // Irreversible moves (reset window): pawn moves, captures (incl. en-passant), promotions.
+
+    if (m.piece_type == Piece::PAWN) return false;
+
+    if (m.capture != Piece::NONE) return false;
+
+    if (m.is_en_passent_capture) return false;  // safety: should imply capture, but keep explicit
+
+    if (m.promotion != Piece::NONE) return false;
+
+    return true;
+}
+
+
+//
+// Isolated pawns. Returns cp.
 // counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
 // One count for each instance. Rook pawns can be isolated too.
 //
@@ -785,6 +812,8 @@ int GameBoard::count_isolated_pawns(Color c) const {
     }
 
     int total = 0;
+    //
+    // loop over all files
     for (int file = 0; file < 8; ++file) {
         int k = file_count[file];              // number of pawns on this file
         if (k == 0) continue;
@@ -800,26 +829,27 @@ int GameBoard::count_isolated_pawns(Color c) const {
     return total;
 }
 
-// two for each doubled pawm, three for each tripled pawn, four for each quadrupled pawn
+//
+// Returns cp. 3 for each doubled pawn (4 for rook pawns), 6 for each tripled pawn, 12 for each quadrupled pawn
+//   soo worst case quarluped rook pawns is 16 cp.
 int GameBoard::count_doubled_pawns(Color c) const {
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
     if (!P) return 0;
 
-    // For each file, count number of pawns on that file.
     int file_count[8] = {0};
-    ull tmp = P;        // dont mutate bitboards
+    ull tmp = P;  // dont mutate bitboards
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        int f = s % 8;                                    // 0..7
+        int f = s % 8;                                    // 0..7 (0=H ... 7=A)
         ++file_count[f];
     }
 
     int total = 0;
     for (int f = 0; f < 8; ++f) {
-        int k = file_count[f];    // pawns on this file
+        int k = file_count[f];
         if (k >= 2) {
-            // doubled (or tripled or quadrupled) file: count all pawns on the file
-            total += k;
+            int weight = (f == 0 || f == 7) ? 10 : 8;  // rook files penalized more
+            total += k * weight;
         }
     }
     return total;
@@ -1007,7 +1037,7 @@ int GameBoard::count_passed_pawns(Color c, ull& passed_pawns) {
         const ull blockers = his_pawns & files_mask & ranks_ahead;
         if (blockers == 0ULL) {
 
-            // mark this pawn in the h1=0 bitboard
+            // mark this pawn in this h1=0 bitboard
             passed_pawns |= (1ULL << s);
 
             n_passed_pawns++;
@@ -1026,6 +1056,25 @@ int GameBoard::count_passed_pawns(Color c, ull& passed_pawns) {
 
             bonus += base;
 
+            // Is it protected?
+            ull protect_mask = 0ULL;
+
+            if (c == Color::WHITE) {
+                if (r > 0) {
+                    if (f < 7) protect_mask |= (1ULL << (s - 7));  // defender on (f+1, r-1)
+                    if (f > 0) protect_mask |= (1ULL << (s - 9));  // defender on (f-1, r-1)
+                }
+            } else {
+                if (r < 7) {
+                    if (f < 7) protect_mask |= (1ULL << (s + 9));  // defender on (f+1, r+1)
+                    if (f > 0) protect_mask |= (1ULL << (s + 7));  // defender on (f-1, r+1)
+                }
+            }
+
+
+            // see if its protected (potentially at least)
+            bool bProtected = my_pawns & protect_mask;
+            if (bProtected) bonus+=30;
          
         }
     }
@@ -1276,6 +1325,26 @@ bool GameBoard::is_king_highest_piece() {
     if (white_rooks || black_rooks) return false;
     return true;
 
+}
+
+// Punishment for knights on edge of board, knight in corners even worse (twice as bad)
+int GameBoard::is_knight_on_edge(Color color) {
+    int pointsOff=0;
+    ull knghts; // dont mutate the bitboard
+    if (color == ShumiChess:: WHITE) {
+        knghts = (white_knights);
+    } else {
+        knghts = (black_knights);
+    }
+    if (!knghts) return 0;
+    while (knghts) {
+        int s  = utility::bit::lsb_and_pop_to_square(knghts); // 0..63  
+        const int f = s % 8;            // h1=0 → 0=H ... 7=A
+        const int r = s / 8;            // rank index 0..7 (White's view)
+        if ((f==0) || (f==7)) pointsOff++;
+        if ((r==0) || (r==7)) pointsOff++;
+    }
+    return pointsOff;
 }
 
 // Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.

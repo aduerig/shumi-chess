@@ -44,6 +44,19 @@ inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
 inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 32;
 
 
+
+#ifdef _SUPRESSING_MOVE_HISTORY_RESULTS
+    #define FIFTY_MOVE_RULE_PLY 5000      // This should be 100 as the units are ply.
+    #define THREE_TIME_REP 3333            // Should be 3
+#else
+    #define FIFTY_MOVE_RULE_PLY 50      // This should be 100 as the units are ply.
+    #define THREE_TIME_REP 3            // Should be 3
+#endif
+
+
+
+
+
 namespace ShumiChess {
 
 
@@ -223,7 +236,10 @@ class Engine {
         Move users_last_move = {};
 
         int bishops_attacking_center_squares(Color c);
-        int bishops_attacking_square(Color c, int sq);    
+        int bishops_attacking_square(Color c, int sq);   
+        int bishops_attacking_center_squares_old(Color c);
+        int bishops_attacking_square_old(Color c, int sq);         
+        
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move
                                     , GameState state 
                                     , bool isCheck
@@ -306,9 +322,11 @@ class Engine {
         int rand_int(int, int);
         bool flip_a_coin(void);
    
-        std::unordered_map<uint64_t, int> repetition_table;
+        //std::unordered_map<uint64_t, int> repetition_table;
+        std::vector<uint64_t> key_stack;
+        std::vector<int> boundary_stack; // index into key_stack
 
-        void debug_print_repetition_table() const;
+        //void debug_print_repetition_table() const;
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
 
@@ -335,8 +353,6 @@ class Engine {
         void debug_SEE_for_all_captures(FILE* fp);
 
     };
-
-
 
 
 

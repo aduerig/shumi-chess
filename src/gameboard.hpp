@@ -223,11 +223,14 @@ class GameBoard {
         int king_sq_of(Color color);    
         double king_near_sq(Color attacker_color, ull sq);    
         double king_near_other_king(Color attacker_color);
+        int is_knight_on_edge(Color color);
         bool bIsOnlyKing(Color attacker_color);
         bool bNoPawns();
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
         
+        bool isReversableMove(const Move& m);
+
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();

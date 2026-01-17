@@ -150,7 +150,15 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
         // Tell the engine the move
         python_engine.pushMove(found_move);
         
-        ++python_engine.repetition_table[python_engine.game_board.zobrist_key];
+        //++python_engine.repetition_table[python_engine.game_board.zobrist_key];
+        python_engine.key_stack.push_back(python_engine.game_board.zobrist_key);
+     
+        bool bReversable = python_engine.game_board.isReversableMove(found_move);
+        if (!bReversable) {
+            python_engine.boundary_stack.push_back((int)python_engine.key_stack.size() - 1);
+        }
+
+
     }
     return Py_BuildValue("");
 }

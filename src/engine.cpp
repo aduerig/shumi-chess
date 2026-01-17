@@ -126,7 +126,7 @@ void Engine::reset_engine() {         // New game.
     //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
     //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
     //game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
-    //game_board = GameBoard("4kbb1/8/8/8/8/8/4K3/8 w - - 0 1");
+    //game_board = GameBoard("r1bqkb1r/pppppppp/2n2n2/8/4P3/3B1N2/PPPP1PPP/RNBQK2R b KQkq - 4 3");
 
     // burp2 bug then c5 for black.
     //game_board = GameBoard("rnbq1rk1/ppp2p1p/3ppp2/8/2PP4/2PQ1N2/P3PPPP/R3KB1R b KQ - 1 8");
@@ -178,7 +178,9 @@ void Engine::reset_engine() {         // New game.
     // These things are cleared every game.
     gamePGN.clear();
 
-    repetition_table.clear();
+    //repetition_table.clear();
+    key_stack.clear();
+    boundary_stack.clear();
 
     reason_for_draw = DRAW_NULL;
 
@@ -223,8 +225,9 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
     // These things are cleared every game.
     gamePGN.clear();
 
-    repetition_table.clear();
-
+    //repetition_table.clear();
+    key_stack.clear();
+    boundary_stack.clear();
     
 }
 
@@ -385,13 +388,6 @@ GameState Engine::is_game_over() {
 
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
 
-#ifdef _SUPRESSING_MOVE_HISTORY_RESULTS
-    #define FIFTY_MOVE_RULE_PLY 5000      // This should be 100 as the units are ply.
-    #define THREE_TIME_REP 3333            // Should be 3
-#else
-    #define FIFTY_MOVE_RULE_PLY 50      // This should be 100 as the units are ply.
-    #define THREE_TIME_REP 3            // Should be 3
-#endif
 
 GameState Engine::is_game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
@@ -424,19 +420,33 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
         }
 
         // Three time repetition
-        auto it = repetition_table.find(game_board.zobrist_key);
-        if (it != repetition_table.end()) {
-            //assert(0);
-            if (it->second >= THREE_TIME_REP) {
-                // We've seen this exact position (same zobrist) at least twice already
-                // along the current line. That means we are in a repetition loop.
-                //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
-                //assert(0);
-                reason_for_draw = DRAW_3TIME_REP;
-                //if (debugNow) cout<<"3-time-rep"<< endl;
-                return GameState::DRAW;
-            }
+        // auto it = repetition_table.find(game_board.zobrist_key);
+        // if (it != repetition_table.end()) {
+        //     //assert(0);
+        //     if (it->second >= THREE_TIME_REP) {
+        //         // We've seen this exact position (same zobrist) at least twice already
+        //         // along the current line. That means we are in a repetition loop.
+        //         //std::cout << "\x1b[31m3-time-rep\x1b[0m" << std::endl;
+        //         //assert(0);
+        //         reason_for_draw = DRAW_3TIME_REP;
+        //         //if (debugNow) cout<<"3-time-rep"<< endl;
+        //         return GameState::DRAW;
+        //     }
+        // }
+        int start = boundary_stack.empty() ? 0 : boundary_stack.back();
+        int count = 0;
+        uint64_t cur = game_board.zobrist_key;
+        for (int i = start; i < (int)key_stack.size(); ++i) {
+            if (key_stack[i] == cur) count++;
         }
+        if (count >= THREE_TIME_REP) {
+            // threefold repetition draw
+            reason_for_draw = DRAW_3TIME_REP;
+            //if (debugNow) cout<<"3-time-rep"<< endl;
+            return GameState::DRAW;
+        }
+
+
 
     
 
@@ -1375,12 +1385,54 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 //
 // engine.cpp
-int Engine::bishops_attacking_square(Color c, int sq)
+
+
+
+
+
+
+int Engine::bishops_attacking_square_old(Color c, int sq)
 {
     ull bit_target = (1ULL << sq);
     ull rays       = get_diagonal_attacks(bit_target);  // your existing diagonal (bishop) attack generator
     ull bishops    = game_board.get_pieces_template<Piece::BISHOP>(c);
     return game_board.bits_in(rays & bishops);
+}
+
+int Engine::bishops_attacking_center_squares_old(Color c)
+{
+    int itemp = 0;
+    itemp += bishops_attacking_square(c, game_board.square_e4);
+    itemp += bishops_attacking_square(c, game_board.square_d4);
+    itemp += bishops_attacking_square(c, game_board.square_e5);
+    itemp += bishops_attacking_square(c, game_board.square_d5);
+    return itemp;
+}
+
+
+int Engine::bishops_attacking_square(Color c, int sq)
+{
+    const int tf = sq % 8;   // 0..7 (h1=0 => 0=H ... 7=A) 
+    const int tr = sq / 8;   // 0..7
+
+    const int diag_sum  = tf + tr;   // NE-SW diagonal id
+    const int diag_diff = tf - tr;   // NW-SE diagonal id
+
+    ull bishops = game_board.get_pieces_template<Piece::BISHOP>(c);
+    int count = 0;
+
+    while (bishops)
+    {
+        const int s = utility::bit::lsb_and_pop_to_square(bishops);
+        const int f = s % 8;
+        const int r = s / 8;
+        if ((f + r) == diag_sum || (f - r) == diag_diff)
+        {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 int Engine::bishops_attacking_center_squares(Color c)
@@ -1392,6 +1444,9 @@ int Engine::bishops_attacking_center_squares(Color c)
     itemp += bishops_attacking_square(c, game_board.square_d5);
     return itemp;
 }
+
+
+
 
 
 
@@ -1656,17 +1711,17 @@ void Engine::killTheKing(Color color) {
     game_board.black_king = 0;
 }
 
-void Engine::debug_print_repetition_table() const {
-    std::cout << "=== repetition_table dump ===\n";
-    for (const auto& entry : repetition_table) {
-        uint64_t key   = entry.first;
-        int      count = entry.second;
-        std::cout << "key 0x" << std::hex << key
-                  << "  count " << std::dec << count
-                  << "\n";
-    }
-    std::cout << "=== end dump (" << repetition_table.size() << " entries) ===\n";
-}
+// void Engine::debug_print_repetition_table() const {
+//     std::cout << "=== repetition_table dump ===\n";
+//     for (const auto& entry : repetition_table) {
+//         uint64_t key   = entry.first;
+//         int      count = entry.second;
+//         std::cout << "key 0x" << std::hex << key
+//                   << "  count " << std::dec << count
+//                   << "\n";
+//     }
+//     std::cout << "=== end dump (" << repetition_table.size() << " entries) ===\n";
+// }
 
 void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 {

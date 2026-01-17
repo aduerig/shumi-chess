@@ -77,6 +77,8 @@ public:
     ull NhitsTT2 = 0;
     ull nRandos = 0;
     ull nGames = 0;
+
+    ShumiChess::Move TT2_match_move = {};
     
     // Transposition table (TT)    Protects the evaluator (evaluate_board(). Cleared on every move 
     struct TTEntry {
@@ -181,7 +183,7 @@ public:
                                             , int qPlys
                                         );
 
-    bool look_for_king_moves() const;
+    //bool look_for_king_moves() const;
     int enemyKingSquare; 
 
     // Total of 4000 centipawns for each side.  Suppose minor pieces are all 300. 
