@@ -341,7 +341,7 @@ bool GameBoard::are_bit_boards_valid() const {
 //    2 castled
 //    1 
 //
-int GameBoard::get_castle_bonus_cp_for_color(Color color1, int phase) const {
+int GameBoard::get_castle_bonus_cp(Color color1, int phase) const {
     int i_can_castle = 0;
     bool b_has_castled = false;
 
@@ -357,13 +357,13 @@ int GameBoard::get_castle_bonus_cp_for_color(Color color1, int phase) const {
     // has_castled bonus must be > castled privledge or it will never castle.
     int icode = (b_has_castled ? 150 : 0) + i_can_castle * 35;
 
-    int final_code;
+    int final_cp;
 
-    if      (phase == GamePhase::OPENING) final_code = icode;
-    else if (phase == GamePhase::MIDDLE_EARLY) final_code = icode/2;
-    else final_code = 0;
+    if      (phase == GamePhase::OPENING) final_cp = icode;
+    else if (phase == GamePhase::MIDDLE_EARLY) final_cp = icode/2;
+    else final_cp = 0;
 
-    return final_code;  // "centipawns"
+    return final_cp;  // "centipawns"
 }
 
 //
@@ -573,7 +573,7 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 
 
 // Returns in cp.
-int GameBoard::pawns_attacking_center_squares(Color c) {
+int GameBoard::pawns_attacking_center_squares_cp(Color c) {
     
     constexpr int CENTER_W = 40;   // weight for e4,d4,e5,d5
     constexpr int ADV_W    = 30;   // weight for e6,d6 (White) or e3,d3 (Black)
@@ -722,7 +722,7 @@ int GameBoard::rook_file_status(Color c) const {
 //
 // Returns in cp.
 // Rooks or queens on 7th or 8th ranks
-int GameBoard::rook_7th_rankness(Color c) const   /* now counts R+Q; +1 each on enemy 7th */
+int GameBoard::rook_7th_rankness_cp(Color c) const   /* now counts R+Q; +1 each on enemy 7th */
 {
     const ull rooks  = (c == Color::WHITE) ? white_rooks  : black_rooks;
     const ull queens = (c == Color::WHITE) ? white_queens : black_queens;
@@ -792,7 +792,7 @@ bool GameBoard::isReversableMove(const Move& m)
 
 
 //
-// Isolated pawns. Returns cp.
+// Isolated pawns.
 // counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
 // One count for each instance. Rook pawns can be isolated too.
 //
@@ -832,7 +832,7 @@ int GameBoard::count_isolated_pawns(Color c) const {
 //
 // Returns cp. 3 for each doubled pawn (4 for rook pawns), 6 for each tripled pawn, 12 for each quadrupled pawn
 //   soo worst case quarluped rook pawns is 16 cp.
-int GameBoard::count_doubled_pawns(Color c) const {
+int GameBoard::count_doubled_pawns_cp(Color c) const {
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
     if (!P) return 0;
 
@@ -992,11 +992,11 @@ int GameBoard::center_closeness_bonus(Color c) {
 //  - 20 cp on 5th
 //  - 25 co on 6th rank
 //  - 30 cp on 7th rank
-// count_passed_pawns():
+// count_passed_pawns_cp():
 // A "passed pawn" has no enemy pawns on its own file or adjacent files on any rank ahead of it (toward promotion).
 // A "protected passed pawn" is a passed pawn that is defended by one of our pawns:
 // i.e., a friendly pawn sits on a square that attacks this pawn's square (diagonally from behind).
-int GameBoard::count_passed_pawns(Color c, ull& passed_pawns) {
+int GameBoard::count_passed_pawns_cp(Color c, ull& passed_pawns) {
 
     passed_pawns = 0ULL;
 

@@ -185,7 +185,7 @@ class GameBoard {
         int center_closeness_bonus(Color c);
 
         int pawns_attacking_square(Color c, int sq);
-        int pawns_attacking_center_squares(Color c);
+        int pawns_attacking_center_squares_cp(Color c);
 
         int knights_attacking_square(Color c, int sq);
         int knights_attacking_center_squares(Color for_color);
@@ -201,10 +201,10 @@ class GameBoard {
 
         bool rook_connectiveness(Color c, int& connectiveness) const;
         int rook_file_status(Color c) const;
-        int rook_7th_rankness(Color c) const;
+        int rook_7th_rankness_cp(Color c) const;
         int count_isolated_pawns(Color c) const;
-        int count_passed_pawns(Color c, ull& passedPawns);
-        int count_doubled_pawns(Color c) const;
+        int count_passed_pawns_cp(Color c, ull& passedPawns);
+        int count_doubled_pawns_cp(Color c) const;
 
         std::string random_kqk_fen(bool doQueen);
 
@@ -235,7 +235,7 @@ class GameBoard {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();
 
-        int get_castle_bonus_cp_for_color(Color color1, int phase) const;
+        int get_castle_bonus_cp(Color color1, int phase) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
         //bool bHasCastled(Color color1) const;
         bool bHasCastled_fake(Color color1) const;

@@ -495,7 +495,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 
     // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
     pers_index = 0;
-    icp_temp = engine.game_board.get_castle_bonus_cp_for_color(color, nPhase);
+    icp_temp = engine.game_board.get_castle_bonus_cp(color, nPhase);
     cp_score_position_temp += icp_temp;     // centipawns
 
 
@@ -507,8 +507,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
     // Add code to discourage doubled/tripled/quadrupled pawns. Note each pair of doubled pawns is 2. Each 
     // trio of tripled pawns is 3.
     pers_index = 1;
-    int doublees =  engine.game_board.count_doubled_pawns(color);
-    //assert (doublees>=0);
+    int doublees =  engine.game_board.count_doubled_pawns_cp(color);
     cp_score_position_temp -= doublees;   // centipawns
 
 
@@ -525,7 +524,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
  //goto endEval;
 
     // Add code to encourage pawns attacking the 4-square center 
-    iZeroToFour = engine.game_board.pawns_attacking_center_squares(color);
+    iZeroToFour = engine.game_board.pawns_attacking_center_squares_cp(color);
     //assert (iZeroToFour>=0);
     cp_score_position_temp += iZeroToFour;  // centipawns  (from 14)  
 
@@ -546,8 +545,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 
     // Add code to encourage occupation of open and semi open files by rooks
     icp_temp = engine.game_board.rook_file_status(color);
-    //assert (icp_temp>=0);
-    cp_score_position_temp += icp_temp;  // centipawns       
+    cp_score_position_temp += icp_temp*10;  // centipawns       
 
 endEval:
     return cp_score_position_temp;
@@ -567,13 +565,12 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     // Add code to encourage rook connections (files or ranks)
     int connectiveness;     // One if rooks connected. 0 if not.
     bool isOK = engine.game_board.rook_connectiveness(color, connectiveness);
-    //assert (connectiveness>=0);
     if (isOK) {    // !isOK just means that there werent two rooks to connect
         cp_score_position_temp += connectiveness*150;
     }
     
     // Add code to encourage occupation of 7th rank by queens and rook
-    int iZeroToFour = engine.game_board.rook_7th_rankness(color);
+    int iZeroToFour = engine.game_board.rook_7th_rankness_cp(color);
     //assert (iZeroToFour>=0);
     cp_score_position_temp += iZeroToFour;  // centipawns  
     
@@ -625,24 +622,21 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
     //    TODO: does not see wether passed pawns are isolated
     //    TODO: does not see wether passed pawns are on open enemy files
     ull passed_pawns;
-    int iZeroToThirty = engine.game_board.count_passed_pawns(color, passed_pawns);
+    int iZeroToThirty = engine.game_board.count_passed_pawns_cp(color, passed_pawns);
     assert (iZeroToThirty>=0);
 
     // Remember where passed pawns are.
     (color==ShumiChess::WHITE) ? passed_pawns_white = passed_pawns : passed_pawns_black = passed_pawns; 
 
-    if (Features_mask & _FEATURE_EVAL_TEST1) {
-        cp_score_position_temp += iZeroToThirty*02;   // centipawns
-    } else {
-        cp_score_position_temp += iZeroToThirty*03;   // centipawns
-    }
+    cp_score_position_temp += iZeroToThirty*03;   // centipawns
+
     //if (is_debug) printf("\ngt1: %ld", cp_score_position_temp);
 
     // Add code to encourage ???
     //int iZeroToOne = engine.game_board.kings_in_opposition(color);
     //cp_score_position_temp += iZeroToOne*200;  // centipawns  
 
-    Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
+    //Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
 
 
     if (nPhase > GamePhase::OPENING) { 
@@ -675,7 +669,7 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
 
 
         // Rewards if enemy king near corner. 0 for the inner ring (center) 3 for outer ring (edge squares)
-        enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
+        Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
         int edge_wght = engine.game_board.king_edge_weight(enemy_color);
 
         cp_score_position_temp += (int)(edge_wght * 40.0);
@@ -716,7 +710,7 @@ int MinimaxAI::phaseOfGame(int material_cp) {
         if (bBothCastled) nPhase = GamePhase::MIDDLE;
     }
 
-    // int i_castle_status = engine.game_board.get_castle_bonus_cp_for_color(engine.game_board.turn);
+    // int i_castle_status = engine.game_board.get_castle_bonus_cp(engine.game_board.turn);
 
 
     // bool bHasCastled = engine.game_board.bHasCastled(engine.game_board.turn);
@@ -1246,7 +1240,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //int itemp = engine.game_board.knights_attacking_center_squares(Color::WHITE);
     //int itemp = engine.bishops_attacking_center_squares(Color::WHITE);
     //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
-    //int itemp = engine.game_board. pawns_attacking_center_squares(Color::WHITE);
+    //int itemp = engine.game_board. pawns_attacking_center_squares_cp(Color::WHITE);
     //int itemp = engine.game_board.count_isolated_pawns(Color::WHITE);
     int itemp, iNearSquares, iPhase;
     int king_near_squares_out[9];
@@ -1255,8 +1249,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     int itemp1, itemp2, itemp3, itemp4;
     
     ull passed_pawns;
-    // dtemp1 = engine.game_board.count_passed_pawns(ShumiChess::WHITE, passed_pawns);
-    // dtemp2 = engine.game_board.count_passed_pawns(ShumiChess::BLACK, passed_pawns);
+    // dtemp1 = engine.game_board.count_passed_pawns_cp(ShumiChess::WHITE, passed_pawns);
+    // dtemp2 = engine.game_board.count_passed_pawns_cp(ShumiChess::BLACK, passed_pawns);
 
 
     isOK = false; // engine.game_board.bHasCastled_fake(ShumiChess::WHITE);
@@ -1268,7 +1262,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     //isOK = engine.game_board.isReversableMove(best_move);
 
-    //itemp = engine.game_board.get_castle_bonus_cp_for_color(Color::WHITE, iPhase);
+    //itemp = engine.game_board.get_castle_bonus_cp(Color::WHITE, iPhase);
     itemp = engine.bishops_attacking_center_squares(ShumiChess::WHITE);
 
     cout << "wht " << pszTemp << "               blk " << itemp << endl;
