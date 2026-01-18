@@ -501,8 +501,8 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 
     // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
     pers_index = 1;
-    int isolanis =  engine.game_board.count_isolated_pawns(color);
-    cp_score_position_temp -= (isolanis*30);   // centipawns
+    int isolanis =  engine.game_board.count_isolated_pawns_cp(color);
+    cp_score_position_temp -= (isolanis);   // centipawns
   
     // Add code to discourage doubled/tripled/quadrupled pawns. Note each pair of doubled pawns is 2. Each 
     // trio of tripled pawns is 3.
@@ -1241,7 +1241,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //int itemp = engine.bishops_attacking_center_squares(Color::WHITE);
     //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
     //int itemp = engine.game_board. pawns_attacking_center_squares_cp(Color::WHITE);
-    //int itemp = engine.game_board.count_isolated_pawns(Color::WHITE);
+    //int itemp = engine.game_board.count_isolated_pawns_cp(Color::WHITE);
     int itemp, iNearSquares, iPhase;
     int king_near_squares_out[9];
     ull utemp, utemp1, utemp2;
@@ -1263,9 +1263,12 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //isOK = engine.game_board.isReversableMove(best_move);
 
     //itemp = engine.game_board.get_castle_bonus_cp(Color::WHITE, iPhase);
-    itemp = engine.bishops_attacking_center_squares(ShumiChess::WHITE);
+    //itemp = engine.bishops_attacking_center_squares(ShumiChess::WHITE);
 
-    cout << "wht " << pszTemp << "               blk " << itemp << endl;
+    itemp1 = engine.game_board.count_isolated_pawns_cp(Color::WHITE);
+    itemp2 = engine.game_board.count_isolated_pawns_cp(Color::BLACK);
+
+    cout << "wht " << itemp1 << "               blk " << itemp2 << endl;
 
 
     // cout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;

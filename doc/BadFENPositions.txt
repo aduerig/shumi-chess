@@ -1,5 +1,16 @@
 
 
+--------------------------------------------------------------
+
+1. BUg with king not approaching other king see FEN: 
+// level 6 t 1000, put this FEN in and watch kings wander. White should close the distance, see, 
+8/2k5/2p4p/3p1P1P/p2P4/P1P5/8/5K2 b - - 25 69
+
+2. No backward pawns respect.
+
+
+-----------------------------------------------------------------
+
 Contests! (features playing each other) 
 =========
 0xf beats ox2f about 2 to 1, either side, various time controls.
@@ -215,7 +226,6 @@ rnbqkbnr/pp1ppppp/8/2p5/2P5/8/PP1PPPPP/RNBQKBNR w KQkq c6 0 2
 
 
 1. e4 e6   2. d4 Nf6   3. e5 Ng8   4. f4 c5   5. d5 exd5   6. Qxd5 Nc6   7. Bc4 Nh6   8. Nf3 d6   9. O-O Be6  10. Qd3 Bxc4  11. Qxc4 Be7  12. Nc3 O-O  13. Nd5 Nf5  14. g4 Nd4  15. Nxd4 cxd4  16. Nxe7 Qxe7  17. exd6 Qxd6  18. Bd2 Qe6  19. Qxe6 fxe6  20. Re1 Re8  21. c3 d3  22. Re3 Rc8  23. Rxd3 e5  24. Rd7 Rd8  25. Rxd8 Rxd8  26. Be3 a6  27. Rf2 Rd3  28. Re2 h6  29. fxe5 Nxe5  30. h3 Ng6  31. Kf2 Ne5  32. Rd2 Rxd2  33. Bxd2 Nd3  34. Ke3 Nxb2  35. Kd4 b5  36. Bf4 Nd1  37. Bg3 Nb2  38. Kc5 Na4  39. Kb4 a5  40. Kxa5 Nxc3  41. a3 Ne4  42. Be5 Nf2  43. Kxb5 Nd3  44. Bg3 Nc1  45. a4 Nb3  *
-
 
 
 

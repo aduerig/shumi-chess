@@ -575,23 +575,34 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 // Returns in cp.
 int GameBoard::pawns_attacking_center_squares_cp(Color c) {
     
-    constexpr int CENTER_W = 40;   // weight for e4,d4,e5,d5
-    constexpr int ADV_W    = 30;   // weight for e6,d6 (White) or e3,d3 (Black)
+    // Offensive .vs. defensive center squares. Like Offensive center the best.
+    constexpr int CTR_OFF = 40;   // weight for center e4,d4,e5,d5
+    constexpr int CTR_DEF = 35;   // weight for center e4,d4,e5,d5
+    constexpr int ADV = 30;   // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
 
     int sum = 0;
 
-    sum += CENTER_W * (  pawns_attacking_square(c, square_e4)
-                    + pawns_attacking_square(c, square_d4)
-                    + pawns_attacking_square(c, square_e5)
-                    + pawns_attacking_square(c, square_d5));
+    if (c == Color::WHITE) {
 
-    if (c == Color::WHITE)
-        sum += ADV_W * (  pawns_attacking_square(c, square_e6)
+        sum += CTR_OFF * (  pawns_attacking_square(c, square_e5)
+                            + pawns_attacking_square(c, square_d5));
+
+        sum += CTR_DEF * (  pawns_attacking_square(c, square_e4)
+                            + pawns_attacking_square(c, square_d4));
+
+        sum += ADV * (  pawns_attacking_square(c, square_e6)
                         + pawns_attacking_square(c, square_d6));
-    else
-        sum += ADV_W * (  pawns_attacking_square(c, square_e3)
-                        + pawns_attacking_square(c, square_d3));
+    } else {
 
+        sum += CTR_OFF * (  pawns_attacking_square(c, square_e4)
+                            + pawns_attacking_square(c, square_d4));
+
+        sum += CTR_DEF * ( pawns_attacking_square(c, square_e5)
+                            + pawns_attacking_square(c, square_d5));
+
+        sum += ADV * (  pawns_attacking_square(c, square_e3)
+                        + pawns_attacking_square(c, square_d3));
+    }
     return sum;
 
 }
@@ -790,52 +801,160 @@ bool GameBoard::isReversableMove(const Move& m)
     return true;
 }
 
+int GameBoard::count_backward_pawns(Color c) const {
+    const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
+    if (!P) return 0;
+
+
+}
+
+
+
+static inline void build_pawn_file_summary(ull P
+                                            , int file_count[8]             // output
+                                            , ull file_bb[8]                // output
+                                            , unsigned& files_present)      // output
+{
+    // Initialize my outputs
+    for (int i = 0; i < 8; ++i) { file_count[i] = 0; file_bb[i] = 0ULL; }
+    files_present = 0;
+
+    ull tmp = P;
+    while (tmp) {
+        int s = utility::bit::lsb_and_pop_to_square(tmp);
+        int f = s % 8;
+        ++file_count[f];
+        file_bb[f] |= (1ULL << s);
+        files_present |= (1u << f);
+    }
+}
+//
+// Isolated pawns.
+// counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
+// One count for each instance. Rook pawns can be isolated too.
+//
+// int GameBoard::count_isolated_pawns_cp(Color c) const {
+//     constexpr int ISOLANI_WGHT = 30;
+//     constexpr int BCKWARD_WGHT = 15;
+
+//     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
+//     if (!P) return 0;
+
+//     int file_count[8];
+//     unsigned files_present;
+//     ull file_bb[8];
+//     build_pawn_file_summary(P, file_count, file_bb, files_present);
+
+//     //
+//     // loop over all files
+//     int total = 0;
+//     for (int file = 0; file < 8; ++file) {
+//         int k = file_count[file];              // number of pawns on this file
+//         if (k == 0) continue;
+
+//         bool left  = (file < 7) && (files_present & (1u << (file + 1)));
+//         bool right = (file > 0) && (files_present & (1u << (file - 1)));
+
+//         if (!left && !right) {
+//             // isolated file: single→1, double→2, triple→3, etc.
+//             total += k;
+//         }
+//     }
+//     return (total*ISOLANI_WGHT);
+// }
 
 //
 // Isolated pawns.
 // counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
 // One count for each instance. Rook pawns can be isolated too.
 //
-int GameBoard::count_isolated_pawns(Color c) const {
+// Backward pawns (cheap heuristic):
+// counts 1 for each pawn that has a friendly pawn on an adjacent file somewhere,
+// but has no friendly pawn on an adjacent file on the same rank or behind it.
+//
+int GameBoard::count_isolated_pawns_cp(Color c) const
+{
+    constexpr int ISOLANI_WGHT  = 30;
+    constexpr int BCKWARD_WGHT  = 13;
+
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
     if (!P) return 0;
 
-    int file_count[8] = {0};
-    unsigned files_present = 0;
+    int file_count[8];
+    ull file_bb[8];
+    unsigned files_present;
 
-    ull tmp = P;
-    while (tmp) {
-        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        int f = s % 8;                                    // 0..7
-        ++file_count[f];
-        files_present |= (1u << f);
-    }
+    build_pawn_file_summary(P, file_count, file_bb, files_present);
 
-    int total = 0;
-    //
-    // loop over all files
+    // --- isolated (your existing logic) ---
+    int isolated = 0;
     for (int file = 0; file < 8; ++file) {
-        int k = file_count[file];              // number of pawns on this file
+        int k = file_count[file];
         if (k == 0) continue;
 
         bool left  = (file < 7) && (files_present & (1u << (file + 1)));
         bool right = (file > 0) && (files_present & (1u << (file - 1)));
 
         if (!left && !right) {
-            // isolated file: single→1, double→2, triple→3, etc.
-            total += k;
+            isolated += k;   // single->1, double->2, triple->3, etc.
         }
     }
-    return total;
+
+    // --- backward (new) ---
+    int backward = 0;
+    ull tmp = P;
+    while (tmp) {
+        int s = utility::bit::lsb_and_pop_to_square(tmp);
+        int f = s % 8;
+        int r = s / 8;   // 0..7 (White's view)
+
+        // if no adjacent-file pawns anywhere, it's isolated; don't also count backward
+        bool has_adj =
+            ((f > 0) && file_count[f - 1]) ||
+            ((f < 7) && file_count[f + 1]);
+        if (!has_adj) continue;
+
+        // mask of ranks "behind or same rank" from this side's perspective
+        ull behind_or_same_mask;
+        if (c == Color::WHITE) {
+            // ranks 0..r inclusive => bits [0 .. (r+1)*8 - 1]
+            int end = (r + 1) * 8;
+            behind_or_same_mask = (end >= 64) ? ~0ULL : ((1ULL << end) - 1ULL);
+        } else {
+            // for Black, "behind" is toward higher r (in White view) => ranks r..7
+            int start = r * 8;
+            behind_or_same_mask = (start <= 0) ? ~0ULL : (~((1ULL << start) - 1ULL));
+        }
+
+        bool supported =
+            ((f > 0) && (file_bb[f - 1] & behind_or_same_mask)) ||
+            ((f < 7) && (file_bb[f + 1] & behind_or_same_mask));
+
+        if (!supported) backward++;
+    }
+
+    return isolated * ISOLANI_WGHT + backward * BCKWARD_WGHT;
 }
 
+
+
+
+
+
+
+
+
+
+
+
 //
-// Returns cp. 3 for each doubled pawn (4 for rook pawns), 6 for each tripled pawn, 12 for each quadrupled pawn
-//   soo worst case quarluped rook pawns is 16 cp.
+// Returns cp. x for each doubled pawn (5x/4 for rook pawns), 2x for each tripled pawn, 3x for each quadrupled pawn
+//   soo this gives us x=16 We have: worst case quadrupled rook pawns is 20 cp.
 int GameBoard::count_doubled_pawns_cp(Color c) const {
     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
     if (!P) return 0;
-
+    //
+    // Part 1: Count how many of our pawns exist on each file.
     int file_count[8] = {0};
     ull tmp = P;  // dont mutate bitboards
     while (tmp) {
@@ -843,7 +962,12 @@ int GameBoard::count_doubled_pawns_cp(Color c) const {
         int f = s % 8;                                    // 0..7 (0=H ... 7=A)
         ++file_count[f];
     }
-
+    //
+    // Part 2: Convert file counts into a penalty.
+    //   - Any file with k >= 2 pawns is considered "doubled or worse".
+    //   - Penalty is proportional to the number of pawns on that file (k * weight).
+    //   - Edge files (f==0 or f==7, i.e. H/A files in this indexing) are penalized more,
+    //     because doubled pawns on rook files tend to be harder to undouble.
     int total = 0;
     for (int f = 0; f < 8; ++f) {
         int k = file_count[f];
@@ -1679,6 +1803,7 @@ int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
     for (int i = 0; i < count; ++i) {
 
         int sq = king_near_squares[i];
+        // sliders are queens, bishops, and rooks
         total += sliders_and_knights_attacking_square(attacker_color, sq);
 
         total += pawns_attacking_square(attacker_color,  sq);
@@ -1960,12 +2085,9 @@ retry_all:
         for (int col = 0; col < 8; ++col)
         {
             char c = board[row][col];
-            if (c == 0)
-            {
+            if (c == 0) {
                 ++empty;
-            }
-            else
-            {
+            } else {
                 if (empty)
                 {
                     fen += char('0' + empty);

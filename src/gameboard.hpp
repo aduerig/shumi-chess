@@ -202,7 +202,8 @@ class GameBoard {
         bool rook_connectiveness(Color c, int& connectiveness) const;
         int rook_file_status(Color c) const;
         int rook_7th_rankness_cp(Color c) const;
-        int count_isolated_pawns(Color c) const;
+        int count_isolated_pawns_cp(Color c) const;
+        int count_backward_pawns(Color c) const;
         int count_passed_pawns_cp(Color c, ull& passedPawns);
         int count_doubled_pawns_cp(Color c) const;
 
