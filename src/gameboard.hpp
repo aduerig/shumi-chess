@@ -212,8 +212,7 @@ class GameBoard {
         bool is_king_in_check_new(Color color);
 
         bool rook_connectiveness(Color c, int& connectiveness) const;
-        int rook_file_status(Color c) const;
-        int rook_7th_rankness_cp(Color c) const;
+        int rook_7th_rankness_cp(Color c);
 
         bool build_pawn_file_summary(Color c, PInfo& p);
         bool any_piece_ahead_on_file(Color c, int sq, ull pieces) const;
@@ -224,15 +223,18 @@ class GameBoard {
         int count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
         int count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo
                                     , ull& holes) const;
+        int count_knights_on_holes_cp(Color c, ull holes_bb);
 
         int count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
         //int count_passed_pawns_cp(Color c, ull& passedPawns);
         int count_passed_pawns_cp(Color c, const PawnFileInfo& pawnInfo,
                                     ull& passed_pawns) const;
+        int rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo);
+
 
         std::string random_kqk_fen(bool doQueen);
 
-        int get_king_near_squares(Color defender_color, int king_near_squares_out[9]) const;
+        int get_king_near_squares(Color defender_color, int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
         int attackers_on_enemy_king_near(Color attacker_color);

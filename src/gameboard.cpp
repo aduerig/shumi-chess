@@ -580,8 +580,8 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 int GameBoard::pawns_attacking_center_squares_cp(Color c) {
     
     // Offensive .vs. defensive center squares. Like Offensive center the best.
+    constexpr int CTR_DEF = 33;     // weight for center e4,d4,e5,d5  "defensive" center squares
     constexpr int CTR_OFF = 40;     // weight for center e4,d4,e5,d5  "offensive" center squares
-    constexpr int CTR_DEF = 35;     // weight for center e4,d4,e5,d5  "defensive" center squares
     constexpr int ADV = 30;         // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
 
     int sum = 0;
@@ -705,42 +705,87 @@ bool GameBoard::rook_connectiveness(Color c, int& connectiveness) const
 // Return 2 if any friendly rook is on an OPEN file (no pawns on that file).
 // Return 1 if any friendly rook is on a SEMI-OPEN file (no friendly pawns on that file, but at least one enemy pawn).
 // Return 0 otherwise.
-int GameBoard::rook_file_status(Color c) const {
+// int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
+// {
+//     constexpr int FILE_STATUS_WGHT = 10;        // double this for open files
 
-    const ull rooks     = (c == Color::WHITE) ? white_rooks : black_rooks;
-    const ull own_pawns = (c == Color::WHITE) ? white_pawns  : black_pawns;
-    const ull opp_pawns = (c == Color::WHITE) ? black_pawns  : white_pawns;
-    const ull all_pawns = own_pawns | opp_pawns;
+//     ull rooks = get_pieces_template<Piece::ROOK>(c);    // Get all friendly rooks
+//     if (!rooks) return 0;
 
+//     int score_cp = 0;
+
+//     // For each file, determine open/semi-open from pawnInfo,
+//     // then count how many friendly rooks sit on that file.
+//     for (int file = 0; file < 8; ++file) {
+
+//         int nRooksOnFile = bits_in(rooks & col_masks[7 - file]); // because col_masks is A..H
+//         if (!nRooksOnFile) continue;
+
+//         bool ownPawnOnFile = (pawnInfo.p[friendlyP].file_count[file] != 0);
+//         bool oppPawnOnFile = (pawnInfo.p[enemyP].file_count[file] != 0);
+
+//         if (!ownPawnOnFile && !oppPawnOnFile) {
+//             score_cp += 2 * nRooksOnFile * FILE_STATUS_WGHT;          // open file
+//         } else if (!ownPawnOnFile && oppPawnOnFile) {
+//             score_cp += 1 * nRooksOnFile * FILE_STATUS_WGHT;          // semi-open file
+//         }
+//     }
+
+//     return score_cp;
+// }
+int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
+{
+    constexpr int FILE_STATUS_WGHT      = 10;   // open=2x, semi-open=1x
+    constexpr int KING_ON_FILE_BONUS    = 8;    // extra per rook if enemy king on same file (tune)
+
+    const ull rooks = get_pieces_template<Piece::ROOK>(c);
     if (!rooks) return 0;
 
-    int score = 0;  // +2 per rook on open file, +1 per rook on semi-open
+    const Color enemy = utility::representation::opposite_color(c);
+    const ull enemy_king = get_pieces_template<Piece::KING>(enemy);
 
-    ull tmp = rooks;    // dont mutate the bitboards
-    while (tmp) {
-        int s  = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        int f  = s % 8;            // 0=H ... 7=A in h1=0 layout
-        int fi = 7 - f;            // map to col_masks index: 0=A ... 7=H
-        ull file_mask = col_masks[fi];
+    int score_cp = 0;
 
-        if ( (all_pawns & file_mask) == 0ULL ) {
-            score += 2;                                    // open file
-        } else if ( (own_pawns & file_mask) == 0ULL &&
-                    (opp_pawns & file_mask) != 0ULL ) {
-            score += 1;                                    // semi-open
+    for (int file = 0; file < 8; ++file) {
+
+        // Count rooks on this file (col_masks indexed A..H, your file is 0=H..7=A)
+        const ull file_mask = col_masks[7 - file];
+        const int nRooksOnFile = bits_in(rooks & file_mask);
+        if (!nRooksOnFile) continue;
+
+        const bool ownPawnOnFile = (pawnInfo.p[friendlyP].file_count[file] != 0);
+        const bool oppPawnOnFile = (pawnInfo.p[enemyP].file_count[file] != 0);
+
+        int file_mult = 0;
+        if (!ownPawnOnFile && !oppPawnOnFile)       file_mult = 2;   // open
+        else if (!ownPawnOnFile &&  oppPawnOnFile)  file_mult = 1;   // semi-open
+        else continue; // not open/semi-open
+
+        // Base open/semi-open file bonus
+        score_cp += nRooksOnFile * file_mult * FILE_STATUS_WGHT;
+
+        // Extra bonus if enemy king is on this file (even if blocked)
+        if (enemy_king & file_mask) {
+            score_cp += nRooksOnFile * file_mult * KING_ON_FILE_BONUS;
         }
     }
-    return score;  // 0..4 (two rooks)
+
+    return score_cp;
 }
 
 
 //
 // Returns in cp.
 // Rooks or queens on 7th or 8th ranks
-int GameBoard::rook_7th_rankness_cp(Color c) const   /* now counts R+Q; +1 each on enemy 7th */
+int GameBoard::rook_7th_rankness_cp(Color c)   /* now counts R+Q; +1 each on enemy 7th */
 {
-    const ull rooks  = (c == Color::WHITE) ? white_rooks  : black_rooks;
-    const ull queens = (c == Color::WHITE) ? white_queens : black_queens;
+    constexpr int RANK7_WGHT = 20;
+    constexpr int RANK8_WGHT = 10;
+
+    // const ull rooks  = (c == Color::WHITE) ? white_rooks  : black_rooks;
+    // const ull queens = (c == Color::WHITE) ? white_queens : black_queens;
+    const ull rooks  = get_pieces_template<Piece::ROOK>(c);
+    const ull queens = get_pieces_template<Piece::QUEEN>(c);
 
     ull bigPieces = rooks | queens;    // Dont mutate the bitboards
     if (!bigPieces) return 0;
@@ -748,14 +793,14 @@ int GameBoard::rook_7th_rankness_cp(Color c) const   /* now counts R+Q; +1 each 
     const int seventh_rank = (c == Color::WHITE) ? 6 : 1;
     const int eight_rank = (c == Color::WHITE) ? 7 : 0;
 
-    int score = 0;
+    int score_cp = 0;
     while (bigPieces) {
         int s = utility::bit::lsb_and_pop_to_square(bigPieces); // 0..63
         int rnk = (s / 8);
-        if (rnk == seventh_rank) score+=20;
-        if (rnk == eight_rank) score+=10;
+        if (rnk == seventh_rank) score_cp += RANK7_WGHT;
+        if (rnk == eight_rank) score_cp += RANK8_WGHT;
     }
-    return score;
+    return score_cp;
 }
 //
 // returns true only if "insufficient material
@@ -840,7 +885,7 @@ std::string GameBoard::sqToString(int sq) const
 bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
     const ull Pawns = get_pieces_template<Piece::PAWN>(c);
-    if (!Pawns) return false;
+    if (!Pawns) return false;     
 
     // Initialize structure elements
     for (int i = 0; i < 8; ++i) { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; }
@@ -968,94 +1013,26 @@ int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) co
     return isolated_cp;
 }
 
-// int GameBoard::count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo) const {
 
-//     constexpr int BCKWARD_WGHT  = 13;
 
-//     // --- backward
-//     const ull Pawns = (c == Color::WHITE) ? white_pawns : black_pawns;
-//     if (!Pawns) return 0;
+int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
 
-//     int backward = 0;
-//     ull tmp = Pawns;
-//     while (tmp) {
-//         int s = utility::bit::lsb_and_pop_to_square(tmp);
-//         int f = s % 8;
-//         int r = s / 8;
+    constexpr int KNIGHT_HOLE_BONUS = 25;   // tune later
 
-//         // if no adjacent-file pawns anywhere, it's isolated; don't also count backward
-//         bool has_adj =
-//             ((f > 0) && pawnInfo.p[friendlyP].file_count[f - 1]) ||
-//             ((f < 7) && pawnInfo.p[friendlyP].file_count[f + 1]);
-//         if (!has_adj) continue;
+    // Friendly knights (h1=0 bitboard)
+    ull knights = get_pieces_template<Piece::KNIGHT>(c);
+    if (!knights || !holes_bb) return 0;
 
-//         // mask of ranks "behind or same rank" from this side's perspective
-//         // Is there any friendly pawn on an adjacent file that is on the same rank or behind this 
-//         // pawn (from this side’s perspective)?
-//         ull behind_or_same_mask;
-//         if (c == Color::WHITE) {
-//             // ranks 0..r inclusive => bits [0 .. (r+1)*8 - 1]
-//             int end = (r + 1) * 8;
-//             behind_or_same_mask = (end >= 64) ? ~0ULL : ((1ULL << end) - 1ULL);
-//         } else {
-//             // for Black, "behind" is toward higher r (in White view) => ranks r..7
-//             int start = r * 8;
-//             behind_or_same_mask = (start <= 0) ? ~0ULL : (~((1ULL << start) - 1ULL));
-//         }
+    // Knights sitting on holes
+    ull on_holes = knights & holes_bb;
 
-//         bool supported =
-//             ((f > 0) && (pawnInfo.p[friendlyP].file_bb[f - 1] & behind_or_same_mask)) ||
-//             ((f < 7) && (pawnInfo.p[friendlyP].file_bb[f + 1] & behind_or_same_mask));
+    // Count them
+    int n = bits_in(on_holes);
 
-//         if (!supported) backward++;
-//     }
+    return n * KNIGHT_HOLE_BONUS;
+}
 
-//     return backward * BCKWARD_WGHT;
-// }
-// int GameBoard::count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo) const
-// {
-//     constexpr int BCKWARD_WGHT = 13;
 
-//     // --- backward
-//     const ull Pawns = (c == Color::WHITE) ? white_pawns : black_pawns;
-//     if (!Pawns) return 0;
-
-//     const unsigned files_present = pawnInfo.p[friendlyP].files_present;
-
-//     int backward = 0;
-//     ull tmp = Pawns;
-//     while (tmp) {
-//         int s = utility::bit::lsb_and_pop_to_square(tmp);
-//         int f = s % 8;
-//         int r = s / 8;
-
-//         // If no adjacent-file pawns exist anywhere, it's isolated; don't also count backward
-//         bool has_adj =
-//             ((f > 0) && (files_present & (1u << (f - 1)))) ||
-//             ((f < 7) && (files_present & (1u << (f + 1))));
-//         if (!has_adj) continue;
-
-//         // mask of ranks "behind or same rank" from this side's perspective
-//         ull behind_or_same_mask;
-//         if (c == Color::WHITE) {
-//             // ranks 0..r inclusive => bits [0 .. (r+1)*8 - 1]
-//             int end = (r + 1) * 8;
-//             behind_or_same_mask = (end >= 64) ? ~0ULL : ((1ULL << end) - 1ULL);
-//         } else {
-//             // for Black, "behind" is toward higher r (in White view) => ranks r..7
-//             int start = r * 8;
-//             behind_or_same_mask = (start <= 0) ? ~0ULL : (~((1ULL << start) - 1ULL));
-//         }
-
-//         bool supported =
-//             ((f > 0) && (pawnInfo.p[friendlyP].file_bb[f - 1] & behind_or_same_mask)) ||
-//             ((f < 7) && (pawnInfo.p[friendlyP].file_bb[f + 1] & behind_or_same_mask));
-
-//         if (!supported) backward++;
-//     }
-
-//     return backward * BCKWARD_WGHT;
-// }
 // Finds pawn-structure "holes":
 // For each friendly pawn, mark the square directly in front of it as a hole if no friendly pawn can
 // attack that square (i.e., there is no friendly pawn on an adjacent file that is on the same rank
@@ -1300,7 +1277,9 @@ int GameBoard::count_passed_pawns_cp(Color c,
 // Returns smaller values near the center. 0 for the inner ring (center) 3 for outer ring (edge squares)
 int GameBoard::king_edge_weight(Color color)
 {
-    ull kbb = (color == Color::WHITE) ? white_king : black_king;   // dont mutate the bitboards
+    //ull kbb = (color == Color::WHITE) ? white_king : black_king;   // dont mutate the bitboards
+    ull kbb = get_pieces_template<Piece::KING>(color);   // dont mutate the bitboard
+
     assert(kbb != 0ULL);
     return piece_edge_weight(kbb);
 }
@@ -1401,12 +1380,15 @@ int GameBoard::center_closeness_bonus(Color c) {
 // Fills an array of up to 9 squares around the king (including the king square).
 // Returns how many valid squares were written.
 // king_near_squares_out[i] are square indices 0..63.
-int GameBoard::get_king_near_squares(Color defender_color, int king_near_squares_out[9]) const
+int GameBoard::get_king_near_squares(Color defender_color, int king_near_squares_out[9])
 {
     int count = 0;
 
     // find king square for defender_color
-    ull kbb = (defender_color == Color::WHITE) ? white_king : black_king;
+    //ull kbb = (defender_color == Color::WHITE) ? white_king : black_king;
+    ull kbb = get_pieces_template<Piece::KING>(defender_color);
+
+
     assert(kbb != 0ULL);
     ull tmp = kbb;  // dont mutate the bitboards
     int king_sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
@@ -1977,8 +1959,7 @@ int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq
 int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
 {
     // enemy (the one whose king we are surrounding)
-    Color defender_color =
-        (attacker_color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    Color defender_color = (attacker_color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
     // grab up to 9 squares around defender's king
     int king_near_squares[9];
@@ -2175,8 +2156,7 @@ int GameBoard::rand_new()
 
 // White gets lone king. Black gets queen or rook with his king.
 ///////////////////////////////////////////////////////////////
-std::string GameBoard::random_kqk_fen(bool doQueen)
-{
+std::string GameBoard::random_kqk_fen(bool doQueen) {
 
     int itrys = 0;
     // make all 64 squares in h1=0 order: h1,g1,...,a1, h2,...,a8
@@ -2398,8 +2378,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         // Pawns (origins that attack to_sq)
         ull pawns = (c == Color::WHITE) ? wp : bp;
         ull origins;
-        if (c == Color::WHITE)
-        {
+        if (c == Color::WHITE){
             origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
         } else {
             origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);

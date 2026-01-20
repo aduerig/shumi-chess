@@ -7,8 +7,11 @@
 8/2k5/2p4p/3p1P1P/p2P4/P1P5/8/5K2 b - - 25 69
 
 2. No backward pawns respect.
-
 3. Passed pawns redo
+
+4. No respect for the horror of king in the center with queens on etc.
+
+
 
 
 -----------------------------------------------------------------

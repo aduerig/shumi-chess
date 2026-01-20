@@ -279,7 +279,6 @@ vector<Move> Engine::get_legal_moves(Color color) {
 
 // Doesn't factor in check 
  void Engine::get_psuedo_legal_moves(Color color, vector<Move>& all_psuedo_legal_moves) {
-    //vector<Move> all_psuedo_legal_moves;
     
     add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
     add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
@@ -288,7 +287,7 @@ vector<Move> Engine::get_legal_moves(Color color) {
     add_king_moves_to_vector(all_psuedo_legal_moves, color); 
     add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
 
-    return;  // all_psuedo_legal_moves;
+    return;
 }
 
 int Engine::get_minor_piece_move_number (const vector <Move> mvs)
@@ -1064,13 +1063,20 @@ ull& Engine::access_pieces_of_color(Piece piece, Color color)
     }
 }
 
+//
+// Fills in a Move data structure based on a single "from" square, and multiple "to" squares.
+//
+void Engine::add_move_to_vector(vector<Move>& moves, 
+                                ull single_bitboard_from, 
+                                ull bitboard_to,            // I can be multiple squares in one bitboard. 
+                                Piece piece, Color color, bool capture, bool promotion,
+                                ull en_passant_rights,
+                                bool is_en_passent_capture, bool is_castle) {
 
+    assert(game_board.bits_in(single_bitboard_from) == 1);
+    //assert(game_board.bits_in(bitboard_to) == 1);         // NOTE: why does this not work
 
-
-void Engine::add_move_to_vector(vector<Move>& moves, ull single_bitboard_from, ull bitboard_to, Piece piece, Color color
-    , bool capture, bool promotion, ull en_passant_rights, bool is_en_passent_capture, bool is_castle) {
-
-    // code to actually pop all the potential squares and add them as moves
+    // for all "to" squares and add them as moves
     while (bitboard_to) {
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
         Piece piece_captured = Piece::NONE;
@@ -1257,7 +1263,6 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
         ull single_bishop = utility::bit::lsb_and_pop(bishops);
         ull avail_attacks = get_diagonal_attacks(single_bishop);
 
-
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
         add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP, color, true, false, 0ULL, false, false);
@@ -1322,7 +1327,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                     !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {   
                     // King square, and squares inbetween are empty and not in check
                     needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
-                    //actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
                     actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
@@ -1338,7 +1342,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
                         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
                     needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
-                    //actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
                     actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
 
                     if (actual_rooks_location & needed_rook_location) {
@@ -1357,7 +1360,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {
                     // King square, and squares inbetween are empty and not in check
                     needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    //actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
                     actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
@@ -1374,7 +1376,6 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
                     // King square, and squares inbetween are empty and not in check
                     needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    //actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
                     actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling

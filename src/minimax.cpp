@@ -504,21 +504,25 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 
     if (bOK) {      // There are friendly pawns
 
+        ull holes_bb = 0ULL;
+        ull passed_pawns = 0ULL;
+
         Color enemyColor = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
         // Get the enemy pawns summary (used by all the "count_" functions below)
         bOK = engine.game_board.build_pawn_file_summary(enemyColor, pawnFileInfo.p[enemyP]);
+        //if (!bOK) // false if enemy color has no pawns
 
         // Add code to discourage isolated pawns.
-        //pers_index = 1;
         int isolanis = engine.game_board.count_isolated_pawns_cp(color, pawnFileInfo);
         cp_score_position_temp -= (isolanis);   // centipawns
 
-        // Add code to discourage backward pawns.
-        //pers_index = 1;
-        ull holes;
-        isolanis = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes);
+        // Add code to discourage backward pawns/pawn holes
+        isolanis = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
         cp_score_position_temp -= (isolanis);   // centipawns
+
+        isolanis = engine.game_board.count_knights_on_holes_cp(color, holes_bb);
+        cp_score_position_temp -= (isolanis);   // cent
     
         // Add code to discourage doubled/tripled/quadrupled pawns. Note each pair of doubled pawns is 2. Each 
         // trio of tripled pawns is 3.
@@ -527,13 +531,16 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
         cp_score_position_temp -= doublees;   // centipawns
 
         // Add code to encourage passed pawns. (1 for each passed pawn)
-        ull passed_pawns;
         int iZeroToThirty = engine.game_board.count_passed_pawns_cp(color, pawnFileInfo, passed_pawns);
         assert (iZeroToThirty>=0);
         cp_score_position_temp += iZeroToThirty;   // centipawns
 
         // Remember where passed pawns are.
         (color==ShumiChess::WHITE) ? passed_pawns_white = passed_pawns : passed_pawns_black = passed_pawns; 
+
+        // Add code to encourage occupation of open and semi open files by rooks
+        icp_temp = engine.game_board.rooks_file_status_cp(color, pawnFileInfo);
+        cp_score_position_temp += icp_temp;  // centipawns       
 
 
     }
@@ -563,9 +570,6 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
     iZeroToFour = engine.game_board.is_knight_on_edge_cp(color);
     cp_score_position_temp -= iZeroToFour;  // centipawns
 
-    // Add code to encourage occupation of open and semi open files by rooks
-    icp_temp = engine.game_board.rook_file_status(color);
-    cp_score_position_temp += icp_temp*10;  // centipawns       
 
 endEval:
     return cp_score_position_temp;
@@ -576,11 +580,9 @@ endEval:
 int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     int cp_score_position_temp = 0;
 
-
-    // bishop pair bonus
+    // bishop pair bonus (two bishops) (2 bishops)
     int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(color));
     if (bishops >= 2) cp_score_position_temp += 10;   // in centipawns
-
 
     // Add code to encourage rook connections (files or ranks)
     int connectiveness;     // One if rooks connected. 0 if not.
@@ -591,7 +593,6 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     
     // Add code to encourage occupation of 7th rank by queens and rook
     int iZeroToFour = engine.game_board.rook_7th_rankness_cp(color);
-    //assert (iZeroToFour>=0);
     cp_score_position_temp += iZeroToFour;  // centipawns  
     
 
@@ -1276,13 +1277,15 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     isOK = engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[friendlyP]);
     isOK = isOK && engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[enemyP]);
     //if (isOK) itemp1 = engine.game_board.count_passed_pawns_cp(Color::WHITE, pawnFileInfo,passed_pawns);
-    if (isOK) itemp1 = engine.game_board.count_pawn_holes_cp(Color::WHITE, pawnFileInfo, holes);
+    //if (isOK) itemp1 = engine.game_board.count_pawn_holes_cp(Color::WHITE, pawnFileInfo, holes);
+    if (isOK) itemp1 = engine.game_board.rooks_file_status_cp(Color::WHITE, pawnFileInfo);
     
 
     isOK = engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[friendlyP]);
     isOK = isOK && engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[enemyP]);
     //if (isOK) itemp2 = engine.game_board.count_passed_pawns_cp(Color::BLACK, pawnFileInfo,passed_pawns);
-    if (isOK) itemp2 = engine.game_board.count_pawn_holes_cp(Color::BLACK, pawnFileInfo, holes);
+    //if (isOK) itemp2 = engine.game_board.count_pawn_holes_cp(Color::BLACK, pawnFileInfo, holes);
+    if (isOK) itemp2 = engine.game_board.rooks_file_status_cp(Color::BLACK, pawnFileInfo);
     
     cout << "wht " << itemp1 << "           blk " << itemp2 << endl;
 
