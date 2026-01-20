@@ -130,9 +130,21 @@ namespace representation {
 
 ull acn_to_bitboard_conversion(const std::string&);
 std::string bitboard_to_acn_conversion(ull);
+
+//
+//  Which one is fastest? This is called everywhere. Chatbot says they are the same speed.
+// inline const Color ShumiChess::opposite_color(const ShumiChess::Color color) {
+//     return static_cast<Color>(static_cast<std::uint8_t>(color) ^ 1);   // I depend on WHITE=0, BLACK=1
+// }
+// inline const Color ShumiChess::opposite_color(const ShumiChess::Color color) {
+//     return (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+// }
 inline const ShumiChess::Color opposite_color(const ShumiChess::Color color) {
-    return (ShumiChess::Color) (1 - (int) color);
+    return (ShumiChess::Color) (1 - (int) color);                      // I depend on WHITE=0, BLACK=1
 }
+
+
+
 inline const string color_str(const ShumiChess::Color color) {
     return color == ShumiChess::WHITE ? "white" : "black";
 }

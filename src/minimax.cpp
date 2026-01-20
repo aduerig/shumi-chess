@@ -72,6 +72,7 @@ using namespace utility::bit;
 
 //#define DEBUGGING_KILLER_MOVES 
 
+bool global_debug_flag = 0;
 
 #ifdef _DEBUGGING_TO_FILE   // Data used for debug
     FILE *fpDebug = NULL;
@@ -123,7 +124,7 @@ using namespace utility::bit;
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening, AND 
 // on first move.
-#define RANDOMIZING_EQUAL_MOVES_DELTA 0.1       // In units of pawns
+#define RANDOMIZING_EQUAL_MOVES_DELTA 0.15       // In units of pawns
 
 #ifdef DEBUGGING_KILLER_MOVES
     static long long killer_tried = 0;
@@ -472,76 +473,95 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
 //
 // personalities
 // 
-#define MAX_personalities 50
+// #define MAX_personalities 50
 
-struct person {
-    int constants[MAX_personalities];   
-};
+// struct person {
+//     int constants[MAX_personalities];   
+// };
 
 // NOte: what sort of nonsense is this? A family of evaluator's? Why not?
-person TheShumiFamily[20];
+//person TheShumiFamily[20];
 
-person MrShumi = {100, -10, -30, +14, 20, 20, 20};  // All of these are integer and are applied in centipawns
-int pers_index = 0;
+// person MrShumi = {100, -10, -30, +14, 20, 20, 20};  // All of these are integer and are applied in centipawns
+// int pers_index = 0;
 
 int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPhase) {
 
     int cp_score_position_temp = 0;
-
+    bool bOK;
     int icp_temp, iZeroToThree, iZeroToThirty;
     int iZeroToFour, iZeroToEight;
 
-    // personalities
 
     // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
-    pers_index = 0;
+    //pers_index = 0;
     icp_temp = engine.game_board.get_castle_bonus_cp(color, nPhase);
     cp_score_position_temp += icp_temp;     // centipawns
 
+    // Get the friendly pawns summary (used by all the "count_" functions below)
+    PawnFileInfo pawnFileInfo;
+    bOK = engine.game_board.build_pawn_file_summary(color, pawnFileInfo.p[friendlyP]);
 
-    // Add code to discourage isolated pawns. (returns 1 for isolani, 2 for doubled isolani, 3 for tripled isolani)
-    pers_index = 1;
-    int isolanis =  engine.game_board.count_isolated_pawns_cp(color);
-    cp_score_position_temp -= (isolanis);   // centipawns
-  
-    // Add code to discourage doubled/tripled/quadrupled pawns. Note each pair of doubled pawns is 2. Each 
-    // trio of tripled pawns is 3.
-    pers_index = 1;
-    int doublees =  engine.game_board.count_doubled_pawns_cp(color);
-    cp_score_position_temp -= doublees;   // centipawns
+    if (bOK) {      // There are friendly pawns
+
+        Color enemyColor = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+        // Get the enemy pawns summary (used by all the "count_" functions below)
+        bOK = engine.game_board.build_pawn_file_summary(enemyColor, pawnFileInfo.p[enemyP]);
+
+        // Add code to discourage isolated pawns.
+        //pers_index = 1;
+        int isolanis = engine.game_board.count_isolated_pawns_cp(color, pawnFileInfo);
+        cp_score_position_temp -= (isolanis);   // centipawns
+
+        // Add code to discourage backward pawns.
+        //pers_index = 1;
+        ull holes;
+        isolanis = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes);
+        cp_score_position_temp -= (isolanis);   // centipawns
+    
+        // Add code to discourage doubled/tripled/quadrupled pawns. Note each pair of doubled pawns is 2. Each 
+        // trio of tripled pawns is 3.
+        //pers_index = 1;
+        int doublees = engine.game_board.count_doubled_pawns_cp(color, pawnFileInfo);
+        cp_score_position_temp -= doublees;   // centipawns
+
+        // Add code to encourage passed pawns. (1 for each passed pawn)
+        ull passed_pawns;
+        int iZeroToThirty = engine.game_board.count_passed_pawns_cp(color, pawnFileInfo, passed_pawns);
+        assert (iZeroToThirty>=0);
+        cp_score_position_temp += iZeroToThirty;   // centipawns
+
+        // Remember where passed pawns are.
+        (color==ShumiChess::WHITE) ? passed_pawns_white = passed_pawns : passed_pawns_black = passed_pawns; 
 
 
-    if (nPhase == OPENING) {
-        // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
-        // Note: this is gross
-        pers_index = 2;
-        iZeroToThirty = engine.game_board.bishop_pawn_pattern(color);
-        //assert (iZeroToThirty>=0);
-        cp_score_position_temp -= iZeroToThirty*50;   // centipawns
     }
 
-   
- //goto endEval;
+    // if (nPhase == OPENING) {
+    //     // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
+    //     // Note: this is gross
+    //     pers_index = 2;
+    //     iZeroToThirty = engine.game_board.bishop_pawn_pattern(color);
+    //     //assert (iZeroToThirty>=0);
+    //     cp_score_position_temp -= iZeroToThirty*50;   // centipawns
+    // }
 
     // Add code to encourage pawns attacking the 4-square center 
     iZeroToFour = engine.game_board.pawns_attacking_center_squares_cp(color);
-    //assert (iZeroToFour>=0);
     cp_score_position_temp += iZeroToFour;  // centipawns  (from 14)  
 
     // Add code to encourage knights attacking the 4-square center 
     iZeroToFour = engine.game_board.knights_attacking_center_squares(color);
-    //assert (iZeroToFour>=0);
     cp_score_position_temp += iZeroToFour*20;  // centipawns
 
     // Add code to encourage bishops attacking the 4-square center
-    // (cannot see through material, but will include "captures" of friendly material) 
     iZeroToFour = engine.bishops_attacking_center_squares(color);
-    //assert (iZeroToFour>=0);
     cp_score_position_temp += iZeroToFour*20;  // centipawns
 
 
-    iZeroToFour = engine.game_board.is_knight_on_edge(color);
-    cp_score_position_temp -= iZeroToFour*10;  // centipawns
+    iZeroToFour = engine.game_board.is_knight_on_edge_cp(color);
+    cp_score_position_temp -= iZeroToFour;  // centipawns
 
     // Add code to encourage occupation of open and semi open files by rooks
     icp_temp = engine.game_board.rook_file_status(color);
@@ -617,18 +637,7 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
 
     int cp_score_position_temp = 0;
 
-    // Add code to encourage passed pawns. (1 for each passed pawn)
-    //    TODO: does not see wether passed pawns are protected
-    //    TODO: does not see wether passed pawns are isolated
-    //    TODO: does not see wether passed pawns are on open enemy files
-    ull passed_pawns;
-    int iZeroToThirty = engine.game_board.count_passed_pawns_cp(color, passed_pawns);
-    assert (iZeroToThirty>=0);
-
-    // Remember where passed pawns are.
-    (color==ShumiChess::WHITE) ? passed_pawns_white = passed_pawns : passed_pawns_black = passed_pawns; 
-
-    cp_score_position_temp += iZeroToThirty*03;   // centipawns
+    
 
     //if (is_debug) printf("\ngt1: %ld", cp_score_position_temp);
 
@@ -1120,7 +1129,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
         if (d_random_delta != 0.0) {
             nRandos++;
-            int n_moves_within_delta;
+            int n_moves_within_delta=0;
             // The root is when the player starts thinking about his move.
             best_move = pick_random_within_delta_rand(MovesFromRoot, d_random_delta, n_moves_within_delta);
             // Show random move, and the "pool" (and reduced pool") it was chosen from.
@@ -1236,23 +1245,13 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     bool isOK;
     double centerness;
 
-    //int itemp = engine.game_board.knights_attacking_square(Color::WHITE, square_d4);
-    //int itemp = engine.game_board.knights_attacking_center_squares(Color::WHITE);
-    //int itemp = engine.bishops_attacking_center_squares(Color::WHITE);
-    //int itemp = engine.game_board.pawns_attacking_square(Color::WHITE, square_e4);
-    //int itemp = engine.game_board. pawns_attacking_center_squares_cp(Color::WHITE);
-    //int itemp = engine.game_board.count_isolated_pawns_cp(Color::WHITE);
     int itemp, iNearSquares, iPhase;
     int king_near_squares_out[9];
     ull utemp, utemp1, utemp2;
     double dTemp, dtemp1, dtemp2;
-    int itemp1, itemp2, itemp3, itemp4;
+    int itemp3, itemp4;
     
-    ull passed_pawns;
-    // dtemp1 = engine.game_board.count_passed_pawns_cp(ShumiChess::WHITE, passed_pawns);
-    // dtemp2 = engine.game_board.count_passed_pawns_cp(ShumiChess::BLACK, passed_pawns);
-
-
+    
     isOK = false; // engine.game_board.bHasCastled_fake(ShumiChess::WHITE);
 
     iPhase = phase_of_game_full();
@@ -1262,14 +1261,32 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     //isOK = engine.game_board.isReversableMove(best_move);
 
+    global_debug_flag = true;
     //itemp = engine.game_board.get_castle_bonus_cp(Color::WHITE, iPhase);
     //itemp = engine.bishops_attacking_center_squares(ShumiChess::WHITE);
 
-    itemp1 = engine.game_board.count_isolated_pawns_cp(Color::WHITE);
-    itemp2 = engine.game_board.count_isolated_pawns_cp(Color::BLACK);
+    // test harness for testing isolated/doubled/passed pawns
+    ull passed_pawns;
+    ull holes;
 
-    cout << "wht " << itemp1 << "               blk " << itemp2 << endl;
+    int itemp1=0;
+    int itemp2=0;
+    PawnFileInfo pawnFileInfo;
 
+    isOK = engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[friendlyP]);
+    isOK = isOK && engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[enemyP]);
+    //if (isOK) itemp1 = engine.game_board.count_passed_pawns_cp(Color::WHITE, pawnFileInfo,passed_pawns);
+    if (isOK) itemp1 = engine.game_board.count_pawn_holes_cp(Color::WHITE, pawnFileInfo, holes);
+    
+
+    isOK = engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[friendlyP]);
+    isOK = isOK && engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[enemyP]);
+    //if (isOK) itemp2 = engine.game_board.count_passed_pawns_cp(Color::BLACK, pawnFileInfo,passed_pawns);
+    if (isOK) itemp2 = engine.game_board.count_pawn_holes_cp(Color::BLACK, pawnFileInfo, holes);
+    
+    cout << "wht " << itemp1 << "           blk " << itemp2 << endl;
+
+    global_debug_flag = false;
 
     // cout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
 
@@ -2846,11 +2863,11 @@ Move MinimaxAI::get_move() {
 // If best is "mate-like": returns the best (no randomization).
 Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
                                               double delta_pawns,
-                                              int& n_moves_within_delta
+                                              int& n_moves_within_delta     // output
                                             )
 {
 
-
+    n_moves_within_delta = 0;
     if (MovsFromRoot.empty()) {
         assert(0);           // Better not happen  NOTE: but sometimes it does. 
                              // seems to be from odd button push combinations.
@@ -2864,9 +2881,9 @@ Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>
     // 1) Best is now front()
     const double bestScorePawns = MovsFromRoot.front().second;
 
-    // 2) If mate-like, don’t randomize
-    // NOTE: what is this random constant???
-    if (std::fabs(bestScorePawns) > 9000.0) return MovsFromRoot.front().first;
+    // 2) If best score is mate-like, don’t randomize. Just pick the first one. 
+    //    Here n_moves_within_delta is returned as zero.
+    if (IS_MATE_SCORE(bestScorePawns)) return MovsFromRoot.front().first;
 
     // 3) Build the contiguous “within delta” prefix
     const double cutoff = bestScorePawns - delta_pawns;
@@ -2875,7 +2892,6 @@ Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>
 
     // Return number of moves that qualified.
     n_moves_within_delta = (int)n_top;
-
 
     // (fallback if something odd, like nothing within the delta?)
     if (n_top == 0) {

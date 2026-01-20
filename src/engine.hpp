@@ -35,7 +35,7 @@ inline constexpr double TINY_SCORE       = 1.0e-15;  // pawns
 inline constexpr double VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)
 inline constexpr double HUGE_SCORE       = 10000.0;  // pawns
 
-inline bool IS_MATE_SCORE(double x) {return std::abs(x) > (HUGE_SCORE - 200.0);}  // pawns
+inline bool IS_MATE_SCORE(double x) {return std::abs(x) > (HUGE_SCORE - 200.0);}  // pawns. Why 200? This would be a mate in 100.
 
 inline constexpr double ABORT_SCORE     = HUGE_SCORE + 1.0;  // abort analysis
 inline constexpr double ONLY_MOVE_SCORE = HUGE_SCORE + 2.0;  // short-circuit when only one legal move
@@ -237,7 +237,6 @@ class Engine {
 
         int bishops_attacking_center_squares(Color c);
         int bishops_attacking_square(Color c, int sq);   
-        int bishops_attacking_center_squares_old(Color c);
         int bishops_attacking_square_old(Color c, int sq);         
         
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move

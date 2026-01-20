@@ -20,6 +20,18 @@ namespace ShumiChess {
 constexpr uint8_t king_side_castle  = 0b00000001;
 constexpr uint8_t queen_side_castle = 0b00000010;
 
+struct PInfo {
+    int file_count[8]; // = {0};        // Count of pawns on this file
+    ull file_bb[8]; // = {0ULL};        // Bitboard of pawns on this file
+    unsigned files_present; // = 0;     // Bitmask of which files contain >= 1 pawn
+    int advancedSq[8];
+};
+struct PawnFileInfo {
+    PInfo p[2];   // [0] friendly, [1] enemy
+};
+#define friendlyP 0 
+#define enemyP    1
+
 class GameBoard {
     public:
 
@@ -202,10 +214,21 @@ class GameBoard {
         bool rook_connectiveness(Color c, int& connectiveness) const;
         int rook_file_status(Color c) const;
         int rook_7th_rankness_cp(Color c) const;
-        int count_isolated_pawns_cp(Color c) const;
-        int count_backward_pawns(Color c) const;
-        int count_passed_pawns_cp(Color c, ull& passedPawns);
-        int count_doubled_pawns_cp(Color c) const;
+
+        bool build_pawn_file_summary(Color c, PInfo& p);
+        bool any_piece_ahead_on_file(Color c, int sq, ull pieces) const;
+        std::string sqToString2(int f, int r) const; // H1=0, 
+        std::string sqToString(int sq) const; // H1=0, 
+
+        // "Positional "pawn" routines.
+        int count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
+        int count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo
+                                    , ull& holes) const;
+
+        int count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
+        //int count_passed_pawns_cp(Color c, ull& passedPawns);
+        int count_passed_pawns_cp(Color c, const PawnFileInfo& pawnInfo,
+                                    ull& passed_pawns) const;
 
         std::string random_kqk_fen(bool doQueen);
 
@@ -224,13 +247,17 @@ class GameBoard {
         int king_sq_of(Color color);    
         double king_near_sq(Color attacker_color, ull sq);    
         double king_near_other_king(Color attacker_color);
-        int is_knight_on_edge(Color color);
+        int is_knight_on_edge_cp(Color color);
         bool bIsOnlyKing(Color attacker_color);
         bool bNoPawns();
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
         
         bool isReversableMove(const Move& m);
+        
+        inline ull get_major_pieces(Color c) const {
+            return (c == Color::WHITE) ? (white_rooks | white_queens) : (black_rooks | black_queens);
+        }
 
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.

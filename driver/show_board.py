@@ -805,7 +805,7 @@ def make_move(from_acn, to_acn):
 
     legal_moves = engine_communicator.get_legal_moves()
     fen = engine_communicator.get_fen()
-    print(f'Fen is now {fen}')
+    print(f'{fen}')
 
     graphics_update_only_moved_pieces()
     player_index = 1 - player_index

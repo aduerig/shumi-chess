@@ -126,7 +126,9 @@ void Engine::reset_engine() {         // New game.
     //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
     //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
     //game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
-    //game_board = GameBoard("r1bqkb1r/pppppppp/2n2n2/8/4P3/3B1N2/PPPP1PPP/RNBQK2R b KQkq - 4 3");
+    // 
+    // horrible doubled pawn hater bug.
+    //game_board = GameBoard("r4rk1/p1Nn2pp/p4q2/2p1p3/2P1P1n1/3BQ3/1P3PK1/R2R4 w - - 2 24");
 
     // burp2 bug then c5 for black.
     //game_board = GameBoard("rnbq1rk1/ppp2p1p/3ppp2/8/2PP4/2PQ1N2/P3PPPP/R3KB1R b KQ - 1 8");
@@ -150,6 +152,8 @@ void Engine::reset_engine() {         // New game.
     //     assert(itrys < 4);
 
     // } while (v.size() == 0);
+
+    //game_board = GameBoard("2r2rk1/pp1qn1pp/4ppbn/3p4/1p3PPQ/3BPN1P/PBPP4/1RR3K1 w - - 9 24");
 
     game_board = GameBoard();
 
@@ -1318,7 +1322,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                     !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {   
                     // King square, and squares inbetween are empty and not in check
                     needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
-                    actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                    //actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<1;
@@ -1333,7 +1338,9 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
                         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
                     needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
-                    actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                    //actual_rooks_location = game_board.get_pieces(Color::WHITE, Piece::ROOK);
+                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<5;
@@ -1350,7 +1357,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {
                     // King square, and squares inbetween are empty and not in check
                     needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                    //actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<57;
@@ -1366,7 +1374,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
                     // King square, and squares inbetween are empty and not in check
                     needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                    //actual_rooks_location = game_board.get_pieces(Color::BLACK, Piece::ROOK);
+                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<61;
@@ -1399,17 +1408,9 @@ int Engine::bishops_attacking_square_old(Color c, int sq)
     return game_board.bits_in(rays & bishops);
 }
 
-int Engine::bishops_attacking_center_squares_old(Color c)
-{
-    int itemp = 0;
-    itemp += bishops_attacking_square(c, game_board.square_e4);
-    itemp += bishops_attacking_square(c, game_board.square_d4);
-    itemp += bishops_attacking_square(c, game_board.square_e5);
-    itemp += bishops_attacking_square(c, game_board.square_d5);
-    return itemp;
-}
 
-
+//
+// This sees through all material
 int Engine::bishops_attacking_square(Color c, int sq)
 {
     const int tf = sq % 8;   // 0..7 (h1=0 => 0=H ... 7=A) 
@@ -1444,8 +1445,6 @@ int Engine::bishops_attacking_center_squares(Color c)
     itemp += bishops_attacking_square(c, game_board.square_d5);
     return itemp;
 }
-
-
 
 
 

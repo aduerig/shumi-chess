@@ -17,6 +17,9 @@
 #undef NDEBUG
 
 
+extern bool global_debug_flag;     // NOTE: make me go away
+
+
 #include "move_tables.hpp"
 #include "utility.hpp"
 #include "endgameTables.hpp"
@@ -430,8 +433,6 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
 //
 // Returns centipawns. Always positive. 
 int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
-
- 
     ull pieces_bitboard;
     int cp_board_score;
     int nPieces;
@@ -439,14 +440,14 @@ int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
     // Pawns first
     cp_pawns_only_temp = 0;
     // Get bitboard of all pieces on board of this type and color
-    pieces_bitboard = get_pieces(color,  Piece::PAWN);
+    pieces_bitboard = get_pieces_template<Piece::PAWN>(color);
+
     // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
     cp_board_score = centipawn_score_of( Piece::PAWN);
     nPieces = bits_in(pieces_bitboard);
     cp_pawns_only_temp += (int)(((double)nPieces * (double)cp_board_score));
     // This return must always be positive.
     assert (cp_pawns_only_temp>=0);
-
 
     // Add up the scores for each piece
     int cp_score_mat_temp = 0;                    // no pawns in this one
@@ -460,14 +461,16 @@ int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
         // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
         cp_board_score = centipawn_score_of(piece_type);
         nPieces = bits_in(pieces_bitboard);
-        cp_score_mat_temp += (int)(((double)nPieces * (double)cp_board_score));
+
+        //cp_score_mat_temp += (int)(((double)nPieces * (double)cp_board_score));
+        cp_score_mat_temp += nPieces * cp_board_score;
+
         // This return must always be positive.
         assert (cp_score_mat_temp>=0);
 
     }
 
     cp_score_mat_temp += cp_pawns_only_temp;
-
 
     return cp_score_mat_temp;
 }
@@ -523,8 +526,7 @@ int GameBoard::bishop_pawn_pattern(Color color)
     const int sq_d6 = 44;
     const int sq_d7 = 52;
 
-    if (color == Color::WHITE)
-    {
+    if (color == Color::WHITE) {
         // White: bishop on d3, pawn on d2
         ull bishop_mask = (1ULL << sq_d3);
         ull pawn_mask   = (1ULL << sq_d2);
@@ -573,12 +575,14 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 
 
 // Returns in cp.
+// The four center squares are weighted, "offensive" are the 2 squares near the enemy, 
+// "defensive" are the 2 squares near the friendly king.
 int GameBoard::pawns_attacking_center_squares_cp(Color c) {
     
     // Offensive .vs. defensive center squares. Like Offensive center the best.
-    constexpr int CTR_OFF = 40;   // weight for center e4,d4,e5,d5
-    constexpr int CTR_DEF = 35;   // weight for center e4,d4,e5,d5
-    constexpr int ADV = 30;   // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
+    constexpr int CTR_OFF = 40;     // weight for center e4,d4,e5,d5  "offensive" center squares
+    constexpr int CTR_DEF = 35;     // weight for center e4,d4,e5,d5  "defensive" center squares
+    constexpr int ADV = 30;         // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
 
     int sum = 0;
 
@@ -801,217 +805,495 @@ bool GameBoard::isReversableMove(const Move& m)
     return true;
 }
 
-int GameBoard::count_backward_pawns(Color c) const {
-    const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
-    if (!P) return 0;
+std::string GameBoard::sqToString2(int f, int r) const
+{
+    char file = 'h' - f;   // 0=H ... 7=A
+    char rank = '1' + r;   // 0=1 ... 7=8
+    return std::string{file, rank};
+}
 
-
+std::string GameBoard::sqToString(int sq) const
+{
+    return sqToString2(sq % 8, sq / 8);
 }
 
 
 
-static inline void build_pawn_file_summary(ull P
-                                            , int file_count[8]             // output
-                                            , ull file_bb[8]                // output
-                                            , unsigned& files_present)      // output
-{
-    // Initialize my outputs
-    for (int i = 0; i < 8; ++i) { file_count[i] = 0; file_bb[i] = 0ULL; }
-    files_present = 0;
+//
+// This summarizes where our pawns are by file, without mutating any bitboards.
+//
+// Inputs:
+//   c               Which side (WHITE or BLACK) to summarize.
+//
+// Outputs:
+//   file_count[8]   Number of friendly pawns on each file (0..7 in h1=0 indexing:
+//                   f = s % 8 => 0=H ... 7=A).
+//   file_bb[8]      Bitboard of friendly pawns restricted to each file.
+//                   (file_bb[f] contains all pawns whose square has file index f.)
+//   files_present   Bitmask of which files contain >= 1 friendly pawn.
+//                   Bit f is set iff file_count[f] > 0.
+//
+// Return value:
+//   true  if the side has at least one pawn
+//   false if the side has no pawns (caller can skip pawn-structure work).
+//
+bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
-    ull tmp = P;
+    const ull Pawns = get_pieces_template<Piece::PAWN>(c);
+    if (!Pawns) return false;
+
+    // Initialize structure elements
+    for (int i = 0; i < 8; ++i) { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; }
+    pinfo.files_present = 0;
+  
+    ull tmp = Pawns;
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp);
         int f = s % 8;
-        ++file_count[f];
-        file_bb[f] |= (1ULL << s);
-        files_present |= (1u << f);
+        int r = (s / 8);
+
+        ++pinfo.file_count[f];
+
+        pinfo.file_bb[f] |= (1ULL << s);
+        pinfo.files_present |= (1u << f);
+        
+        if (pinfo.advancedSq[f] == -1) {
+            pinfo.advancedSq[f] = s;
+        } else {
+            int prev_r = pinfo.advancedSq[f] / 8;
+            bool isMoreAdv = (c == Color::WHITE) ? (r > prev_r) : (r < prev_r);
+
+            if (isMoreAdv) pinfo.advancedSq[f] = s;
+        }
     }
+    return true;
 }
-//
-// Isolated pawns.
-// counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
-// One count for each instance. Rook pawns can be isolated too.
-//
-// int GameBoard::count_isolated_pawns_cp(Color c) const {
-//     constexpr int ISOLANI_WGHT = 30;
-//     constexpr int BCKWARD_WGHT = 15;
 
-//     const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
-//     if (!P) return 0;
+// Returns true if there if there are any "file_pieces" on the same file,
+// strictly ahead of `sq` toward promotion for color `c`. Does not include `sq` itself.
+// bool GameBoard::any_piece_ahead_on_file(Color c, int sq, ull pieces) const
+// {
+//     const int f = sq % 8;   // 0..7 (h1=0 => 0=H ... 7=A)
+//     const int r = sq / 8;   // 0..7 (White's view)
 
-//     int file_count[8];
-//     unsigned files_present;
-//     ull file_bb[8];
-//     build_pawn_file_summary(P, file_count, file_bb, files_present);
+//     // Same-file mask (using your existing col_masks[] which is indexed A..H)
+//     const int fi = 7 - f;
+//     const ull file_mask = col_masks[fi];
 
-//     //
-//     // loop over all files
-//     int total = 0;
-//     for (int file = 0; file < 8; ++file) {
-//         int k = file_count[file];              // number of pawns on this file
-//         if (k == 0) continue;
-
-//         bool left  = (file < 7) && (files_present & (1u << (file + 1)));
-//         bool right = (file > 0) && (files_present & (1u << (file - 1)));
-
-//         if (!left && !right) {
-//             // isolated file: single→1, double→2, triple→3, etc.
-//             total += k;
-//         }
+//     // Ranks ahead toward promotion (strictly ahead)
+//     ull ranks_ahead;
+//     if (c == Color::WHITE) {
+//         const int start_bit = (r + 1) * 8;
+//         ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
+//     } else {
+//         const int end_bit = r * 8;
+//         ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1ULL);
 //     }
-//     return (total*ISOLANI_WGHT);
+
+//     const ull mask = file_mask & ranks_ahead;
+//     return (pieces & mask) != 0ULL;
 // }
+// Returns true if there is any bit set in `file_pieces` strictly ahead of sq toward promotion.
+bool GameBoard::any_piece_ahead_on_file(Color c, int sq, ull file_pieces) const
+{
+    const int r = sq / 8;
+
+    ull ranks_ahead;
+    if (c == Color::WHITE) {
+        const int start_bit = (r + 1) * 8;
+        ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
+    } else {
+        const int end_bit = r * 8;
+        ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1ULL);
+    }
+
+    return (file_pieces & ranks_ahead) != 0ULL;
+}
+
+
 
 //
 // Isolated pawns.
-// counts 1 for each isolated pawn, 2 for a isolated doubled pawn, 3 for tripled isolated pawn.
 // One count for each instance. Rook pawns can be isolated too.
+// 1.5 times as bad for isolated pawns on open files
 //
-// Backward pawns (cheap heuristic):
-// counts 1 for each pawn that has a friendly pawn on an adjacent file somewhere,
-// but has no friendly pawn on an adjacent file on the same rank or behind it.
-//
-int GameBoard::count_isolated_pawns_cp(Color c) const
-{
-    constexpr int ISOLANI_WGHT  = 30;
-    constexpr int BCKWARD_WGHT  = 13;
+int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const {
 
-    const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
-    if (!P) return 0;
+    constexpr int ISOLANI_WGHT  = 18;
+    constexpr int ISOLANI_ROOK_WGHT  = 18;
 
-    int file_count[8];
-    ull file_bb[8];
-    unsigned files_present;
-
-    build_pawn_file_summary(P, file_count, file_bb, files_present);
-
-    // --- isolated (your existing logic) ---
-    int isolated = 0;
+    int isolated_cp = 0;
     for (int file = 0; file < 8; ++file) {
-        int k = file_count[file];
-        if (k == 0) continue;
+        int k = pawnInfo.p[friendlyP].file_count[file];
+        if (k == 0) continue;       // no pawns on this file
 
-        bool left  = (file < 7) && (files_present & (1u << (file + 1)));
-        bool right = (file > 0) && (files_present & (1u << (file - 1)));
+        bool left  = (file < 7) && (pawnInfo.p[friendlyP].files_present & (1u << (file + 1)));
+        bool right = (file > 0) && (pawnInfo.p[friendlyP].files_present & (1u << (file - 1)));
 
         if (!left && !right) {
-            isolated += k;   // single->1, double->2, triple->3, etc.
+            // Friendly pawn is isolated
+
+            // if (global_debug_flag) {
+            //     ull bb = pawnInfo.p[friendlyP].file_bb[file];
+            //     ull t2 = bb;
+            //     while (t2)
+            //     {
+            //         int s = utility::bit::lsb_and_pop_to_square(t2);
+            //         int f = s % 8;
+            //         int r = s / 8;
+            //         // print each isolated pawn square that is being counted
+            //         // (use whatever output you prefer: printf/fprintf/cout)
+            //         cout << "isolated pawn " << sqToString2(f, r) << " (fileIdx=" << file << " k=" << k << ")\n";
+            //     }
+            // }
+
+            int this_cp;
+            if ((file==0)||(file==7)) {
+                this_cp = (k*ISOLANI_ROOK_WGHT);   // single->1, double->2, triple->3, etc. on this file
+            } else {
+                this_cp = (k*ISOLANI_WGHT);        // single->1, double->2, triple->3, etc. on this file
+            }
+
+            if (get_major_pieces(c)) {
+                bool is_blocked = any_piece_ahead_on_file(c,
+                                                        pawnInfo.p[friendlyP].advancedSq[file],
+                                                        pawnInfo.p[enemyP].file_bb[file]);
+                if (!is_blocked) this_cp *= (3/2);
+            }
+
+            isolated_cp += this_cp;
         }
     }
 
-    // --- backward (new) ---
-    int backward = 0;
-    ull tmp = P;
+    return isolated_cp;
+}
+
+// int GameBoard::count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo) const {
+
+//     constexpr int BCKWARD_WGHT  = 13;
+
+//     // --- backward
+//     const ull Pawns = (c == Color::WHITE) ? white_pawns : black_pawns;
+//     if (!Pawns) return 0;
+
+//     int backward = 0;
+//     ull tmp = Pawns;
+//     while (tmp) {
+//         int s = utility::bit::lsb_and_pop_to_square(tmp);
+//         int f = s % 8;
+//         int r = s / 8;
+
+//         // if no adjacent-file pawns anywhere, it's isolated; don't also count backward
+//         bool has_adj =
+//             ((f > 0) && pawnInfo.p[friendlyP].file_count[f - 1]) ||
+//             ((f < 7) && pawnInfo.p[friendlyP].file_count[f + 1]);
+//         if (!has_adj) continue;
+
+//         // mask of ranks "behind or same rank" from this side's perspective
+//         // Is there any friendly pawn on an adjacent file that is on the same rank or behind this 
+//         // pawn (from this side’s perspective)?
+//         ull behind_or_same_mask;
+//         if (c == Color::WHITE) {
+//             // ranks 0..r inclusive => bits [0 .. (r+1)*8 - 1]
+//             int end = (r + 1) * 8;
+//             behind_or_same_mask = (end >= 64) ? ~0ULL : ((1ULL << end) - 1ULL);
+//         } else {
+//             // for Black, "behind" is toward higher r (in White view) => ranks r..7
+//             int start = r * 8;
+//             behind_or_same_mask = (start <= 0) ? ~0ULL : (~((1ULL << start) - 1ULL));
+//         }
+
+//         bool supported =
+//             ((f > 0) && (pawnInfo.p[friendlyP].file_bb[f - 1] & behind_or_same_mask)) ||
+//             ((f < 7) && (pawnInfo.p[friendlyP].file_bb[f + 1] & behind_or_same_mask));
+
+//         if (!supported) backward++;
+//     }
+
+//     return backward * BCKWARD_WGHT;
+// }
+// int GameBoard::count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo) const
+// {
+//     constexpr int BCKWARD_WGHT = 13;
+
+//     // --- backward
+//     const ull Pawns = (c == Color::WHITE) ? white_pawns : black_pawns;
+//     if (!Pawns) return 0;
+
+//     const unsigned files_present = pawnInfo.p[friendlyP].files_present;
+
+//     int backward = 0;
+//     ull tmp = Pawns;
+//     while (tmp) {
+//         int s = utility::bit::lsb_and_pop_to_square(tmp);
+//         int f = s % 8;
+//         int r = s / 8;
+
+//         // If no adjacent-file pawns exist anywhere, it's isolated; don't also count backward
+//         bool has_adj =
+//             ((f > 0) && (files_present & (1u << (f - 1)))) ||
+//             ((f < 7) && (files_present & (1u << (f + 1))));
+//         if (!has_adj) continue;
+
+//         // mask of ranks "behind or same rank" from this side's perspective
+//         ull behind_or_same_mask;
+//         if (c == Color::WHITE) {
+//             // ranks 0..r inclusive => bits [0 .. (r+1)*8 - 1]
+//             int end = (r + 1) * 8;
+//             behind_or_same_mask = (end >= 64) ? ~0ULL : ((1ULL << end) - 1ULL);
+//         } else {
+//             // for Black, "behind" is toward higher r (in White view) => ranks r..7
+//             int start = r * 8;
+//             behind_or_same_mask = (start <= 0) ? ~0ULL : (~((1ULL << start) - 1ULL));
+//         }
+
+//         bool supported =
+//             ((f > 0) && (pawnInfo.p[friendlyP].file_bb[f - 1] & behind_or_same_mask)) ||
+//             ((f < 7) && (pawnInfo.p[friendlyP].file_bb[f + 1] & behind_or_same_mask));
+
+//         if (!supported) backward++;
+//     }
+
+//     return backward * BCKWARD_WGHT;
+// }
+// Finds pawn-structure "holes":
+// For each friendly pawn, mark the square directly in front of it as a hole if no friendly pawn can
+// attack that square (i.e., there is no friendly pawn on an adjacent file that is on the same rank
+// or behind this pawn from our perspective).
+//
+// Outputs:
+//   holes_bb: bitboard (h1=0) of all hole squares found.
+// Returns:
+//   count of holes (one per pawn that creates such a hole).
+int GameBoard::count_pawn_holes_cp(Color c,
+                               const PawnFileInfo& pawnInfo,
+                               ull& holes_bb) const
+{
+    constexpr int HOLE_PENALTY = 18;
+
+    int holes = 0;
+    holes_bb = 0ULL;
+
+    // Friendly pawns (you can replace this with a stored all-pawns-bb later)
+    ull Pawns = 0ULL;
+    for (int file = 0; file < 8; ++file) Pawns |= pawnInfo.p[friendlyP].file_bb[file];
+    if (!Pawns) return 0;
+
+    // Quick reject for “no adjacent files anywhere” checks
+    const unsigned files_present = pawnInfo.p[friendlyP].files_present;
+
+    ull tmp = Pawns;
+
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp);
         int f = s % 8;
-        int r = s / 8;   // 0..7 (White's view)
+        int r = s / 8;
 
-        // if no adjacent-file pawns anywhere, it's isolated; don't also count backward
-        bool has_adj =
-            ((f > 0) && file_count[f - 1]) ||
-            ((f < 7) && file_count[f + 1]);
-        if (!has_adj) continue;
+        // Square directly in front of the pawn (ignore pawns already on 7th/2nd edge appropriately)
+        int front_sq;
+        if (c == Color::WHITE) {
+            if (r == 7) continue;            // shouldn't happen for a pawn, but safe
+            front_sq = s + 8;
+        } else {
+            if (r == 0) continue;            // shouldn't happen for a pawn, but safe
+            front_sq = s - 8;
+        }
 
-        // mask of ranks "behind or same rank" from this side's perspective
+        // For the hole test, we need to know:
+        // Is there any friendly pawn on an adjacent file that is on the same rank or behind this pawn
+        // (from this side's perspective)?
+        //
+        // Use a "behind_or_same" mask (same as your backward routine).
         ull behind_or_same_mask;
         if (c == Color::WHITE) {
-            // ranks 0..r inclusive => bits [0 .. (r+1)*8 - 1]
-            int end = (r + 1) * 8;
+            int end = (r + 1) * 8;                              // ranks 0..r inclusive
             behind_or_same_mask = (end >= 64) ? ~0ULL : ((1ULL << end) - 1ULL);
         } else {
-            // for Black, "behind" is toward higher r (in White view) => ranks r..7
-            int start = r * 8;
+            int start = r * 8;                                   // ranks r..7 inclusive
             behind_or_same_mask = (start <= 0) ? ~0ULL : (~((1ULL << start) - 1ULL));
         }
 
-        bool supported =
-            ((f > 0) && (file_bb[f - 1] & behind_or_same_mask)) ||
-            ((f < 7) && (file_bb[f + 1] & behind_or_same_mask));
+        // Check adjacent files existence (bitmask) then actual support (bitboard)
+        bool can_be_attacked = false;
 
-        if (!supported) backward++;
+        if (f > 0 && (files_present & (1u << (f - 1)))) {
+            if (pawnInfo.p[friendlyP].file_bb[f - 1] & behind_or_same_mask) can_be_attacked = true;
+        }
+        if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
+            if (pawnInfo.p[friendlyP].file_bb[f + 1] & behind_or_same_mask) can_be_attacked = true;
+        }
+
+        if (!can_be_attacked) {
+
+            // I am a hole
+            // if (global_debug_flag) {
+            //     cout << "hole from pawn " << sqToString(s)
+            //         << " -> " << sqToString(front_sq) << "\n";
+            // }
+
+            holes_bb |= (1ULL << front_sq);
+            holes++;
+        }
     }
 
-    return isolated * ISOLANI_WGHT + backward * BCKWARD_WGHT;
+    return (holes*HOLE_PENALTY);
 }
-
-
-
-
-
-
-
-
-
-
 
 
 //
 // Returns cp. x for each doubled pawn (5x/4 for rook pawns), 2x for each tripled pawn, 3x for each quadrupled pawn
 //   soo this gives us x=16 We have: worst case quadrupled rook pawns is 20 cp.
-int GameBoard::count_doubled_pawns_cp(Color c) const {
-    const ull P = (c == Color::WHITE) ? white_pawns : black_pawns;
-    if (!P) return 0;
-    //
-    // Part 1: Count how many of our pawns exist on each file.
-    int file_count[8] = {0};
-    ull tmp = P;  // dont mutate bitboards
-    while (tmp) {
-        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        int f = s % 8;                                    // 0..7 (0=H ... 7=A)
-        ++file_count[f];
-    }
-    //
-    // Part 2: Convert file counts into a penalty.
-    //   - Any file with k >= 2 pawns is considered "doubled or worse".
-    //   - Penalty is proportional to the number of pawns on that file (k * weight).
-    //   - Edge files (f==0 or f==7, i.e. H/A files in this indexing) are penalized more,
-    //     because doubled pawns on rook files tend to be harder to undouble.
+// int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const
+// {
+//     constexpr int DOUBLED_WGHT = 30;
+//     constexpr int DOUBLED_ROOK_WGHT = 30;       //  because doubled pawns on rook files tend to be harder to undouble?
+
+//     int total = 0;
+//     for (int file = 0; file < 8; ++file) {
+//         int k = pawnInfo.p[friendlyP].file_count[file];
+//         if (k >= 2) {
+//             int weight = (file == 0 || file == 7) ? DOUBLED_ROOK_WGHT : DOUBLED_WGHT;
+
+//             // Penalize only the *extra* pawns on the file
+//             total += (k - 1) * weight;
+//         }
+//     }
+//     return total;
+// }
+
+int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const
+{
+    constexpr int DOUBLED_WGHT      = 30;
+    constexpr int DOUBLED_ROOK_WGHT = 30;
+
+    // Extra penalty per "extra pawn" if the file is open of enemy pawns
+    constexpr int OPEN_FILE_EXTRA   = (2);   // tune this
+
     int total = 0;
-    for (int f = 0; f < 8; ++f) {
-        int k = file_count[f];
-        if (k >= 2) {
-            int weight = (f == 0 || f == 7) ? 10 : 8;  // rook files penalized more
-            total += k * weight;
+
+    for (int file = 0; file < 8; ++file) {
+
+        int k = pawnInfo.p[friendlyP].file_count[file];
+        if (k < 2) continue;
+
+        int weight = (file == 0 || file == 7) ? DOUBLED_ROOK_WGHT : DOUBLED_WGHT;
+
+        // base: penalize only extra pawns
+        int extras = (k - 1);
+        int this_cp = extras * weight;
+
+        // "open file" for pawn structure: no enemy pawns on this file
+        if (pawnInfo.p[enemyP].file_count[file] == 0) {
+            this_cp += extras * OPEN_FILE_EXTRA;
         }
+
+        total += this_cp;
     }
+
     return total;
 }
 
 
-// // Identifies if enemy king only, and friendy side has a lone queen or a lone rook
-// // Note: kill this function! Engine should have full range, even if in simple endgame.
-// bool GameBoard::IsSimpleEndGame(Color for_color)
-// {
-//     bool bReturn = false;
-//     ull enemyPieces, myPieces, myQueens, myRooks;
 
-//     if (for_color == ShumiChess:: WHITE) {
-//         enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
-//         myPieces = (white_knights | white_bishops | white_pawns);
-//         myQueens = white_queens;
-//         myRooks = white_rooks;
-//     } else {
-//         enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
-//         myPieces = (black_knights | black_bishops | black_pawns);
-//         myQueens = black_queens;
-//         myRooks = black_rooks;
-//     }
 
-//     if ( ( enemyPieces == 0ULL) && (myPieces == 0ULL) ) {
-//         int nQueens = bits_in(myQueens);
-//         int nRooks = bits_in(myRooks);
-//         if ( (nQueens == 1) && (nRooks == 0) ) {         
-//            bReturn = true;
-//         }
-//         else if ( (nQueens == 0) && (nRooks == 1) ) {         
-//            bReturn = true;
-//         }
-//     }
+//
+// Passed pawns bonus in centipawns: (from that side's perspective)
+//  - 10 cp on 2cnd/3rd rank
+//  - 15 cp on 4th
+//  - 20 cp on 5th
+//  - 25 co on 6th rank
+//  - 30 cp on 7th rank
+//
+// A "passed pawn" has no enemy pawns on its own file or adjacent files on any rank ahead of it (toward promotion).
+// A "protected passed pawn" is a passed pawn that is defended by one of our pawns:
+// i.e., a friendly pawn sits on a square that attacks this pawn's square (diagonally from behind).
+// int GameBoard::count_passed_pawns_cp(Color c, ull& passed_pawns) {
+//
+// Passed pawns bonus in centipawns.
+// A passed pawn has no enemy pawns on its file or adjacent files on any rank ahead (toward promotion).
+// Also awards extra bonus if the passed pawn is protected by a friendly pawn.
+//
+int GameBoard::count_passed_pawns_cp(Color c,
+                                    const PawnFileInfo& pawnInfo,
+                                    ull& passed_pawns) const {
+    passed_pawns = 0ULL;
 
-//     return bReturn;
-// }
+    // Friendly pawns (already summarized)
+    ull my_pawns = 0ULL;
+    for (int f = 0; f < 8; ++f) my_pawns |= pawnInfo.p[friendlyP].file_bb[f];
+    if (!my_pawns) return 0;            // I have no pawns
+
+    int bonus_cp = 0;
+    ull tmp = my_pawns;     // dont mutate the bitboards
+
+    while (tmp) {
+        int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        int f = s % 8;                                    // 0..7 (0=H ... 7=A)
+        int r = s / 8;                                    // 0..7 (White's view)
+
+        // Enemy pawns on same file and adjacent files
+        ull enemy_files = pawnInfo.p[enemyP].file_bb[f];
+        if (f > 0) enemy_files |= pawnInfo.p[enemyP].file_bb[f - 1];
+        if (f < 7) enemy_files |= pawnInfo.p[enemyP].file_bb[f + 1];
+
+        // Ranks ahead toward promotion (strictly ahead)
+        ull ranks_ahead;
+        if (c == Color::WHITE) {
+            int start_bit = (r + 1) * 8;
+            ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
+        } else {
+            int end_bit = r * 8;
+            ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1ULL);
+        }
+
+        // Passed?
+        if ((enemy_files & ranks_ahead) == 0ULL) {
+
+            passed_pawns |= (1ULL << s);
+
+            // Rank, from the color's point of view (example:pawns start at adv=1, queen at adv=7)
+            int adv = (c == Color::WHITE) ? r : (7 - r);
+
+            // advancement from the friendly side's perspective
+            int base;
+            if      (adv == 6) base = 200;   // 7th rank    (2 pawns)
+            else if (adv == 5) base = 151;   // 6th         (1.5 pawns)
+            else if (adv == 4) base = 82;    // 5th
+            else if (adv == 3) base = 45;    // 4th
+            else if (adv >= 1) base = 25;    // 2nd/3rd
+            else assert(0);           // Cant have pawns on 1st or last rank (adv=0 or adv=7)
+
+            // Protected passed pawn?
+            // A friendly pawn protects this pawn if it sits on a square that attacks (s).
+            ull protect_mask = 0ULL;
+            if (c == Color::WHITE) {
+                if (r > 0) {
+                    if (f < 7) protect_mask |= (1ULL << (s - 7));  // defender on (f+1, r-1)
+                    if (f > 0) protect_mask |= (1ULL << (s - 9));  // defender on (f-1, r-1)
+                }
+            } else {
+                if (r < 7) {
+                    if (f < 7) protect_mask |= (1ULL << (s + 9));  // defender on (f+1, r+1)
+                    if (f > 0) protect_mask |= (1ULL << (s + 7));  // defender on (f-1, r+1)
+                }
+            }
+
+            if ((my_pawns & protect_mask) != 0ULL) {
+                // This passed pawn is protected
+                base += 100;            // a whole pawn
+               // base = base*4/3;    
+            }
+
+            bonus_cp += base;       // base value for passed pawn
+
+        }       // END pawn is passed
+    }       // END loop over all friendly pawns
+
+    return bonus_cp;
+}
+
+
+
 
 
 //
@@ -1106,104 +1388,6 @@ int GameBoard::center_closeness_bonus(Color c) {
     return bonus;
 }
 
-
-
-// if (Features_mask & _FEATURE_EVAL_TEST1) {
-//
-// Passed pawns bonus in centipawns: (from that side's perspective)
-//  - 10 cp on 2cnd/3rd rank
-//  - 15 cp on 4th
-//  - 20 cp on 5th
-//  - 25 co on 6th rank
-//  - 30 cp on 7th rank
-// count_passed_pawns_cp():
-// A "passed pawn" has no enemy pawns on its own file or adjacent files on any rank ahead of it (toward promotion).
-// A "protected passed pawn" is a passed pawn that is defended by one of our pawns:
-// i.e., a friendly pawn sits on a square that attacks this pawn's square (diagonally from behind).
-int GameBoard::count_passed_pawns_cp(Color c, ull& passed_pawns) {
-
-    passed_pawns = 0ULL;
-
-    int n_passed_pawns = 0;
-    const ull my_pawns  = get_pieces(c, Piece::PAWN);
-    const ull his_pawns = get_pieces(utility::representation::opposite_color(c), Piece::PAWN);
-    if (!my_pawns) return 0;   // I have no pawns
-
-    int bonus = 0;
-    ull tmp = my_pawns;     // Dont mutate the bitboards
-
-    while (tmp) {
-        const int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-
-        // Get file and rank coordinates
-        const int f = s % 8;            // h1=0 → 0=H ... 7=A
-        const int r = s / 8;            // rank index 0..7 (White's view)
-
-        // Map to A..H index used by col_masks
-        const int fi = 7 - f;
-
-        // files_mask <- same file, and both adjacent files
-        ull files_mask = col_masks[fi];
-        if (fi > 0) files_mask |= col_masks[fi - 1];
-        if (fi < 7) files_mask |= col_masks[fi + 1];
-
-        // Ranks ahead toward promotion
-        ull ranks_ahead;
-        if (c == Color::WHITE) {
-            const int start_bit = (r + 1) * 8;
-            ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
-        } else {
-            const int end_bit = r * 8;
-            ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1);
-        }
-
-        // Passed?
-        const ull blockers = his_pawns & files_mask & ranks_ahead;
-        if (blockers == 0ULL) {
-
-            // mark this pawn in this h1=0 bitboard
-            passed_pawns |= (1ULL << s);
-
-            n_passed_pawns++;
-
-            // advancement from "c"" side's perspective (2..6 typical for passers)
-            const int adv = (c == Color::WHITE) ? r : (7 - r);
-            assert(adv != 0);  // pawns can never be on 1st rank!
-            assert(adv != 7);  // pawns can never be on 8th rank (they promote)
-
-            int base = 0;
-            if      (adv == 6) base = 30;      // 7th rank
-            else if (adv == 5) base = 25;      // 6th
-            else if (adv == 4) base = 20;      // 5th
-            else if (adv == 3) base = 15;      // 4th
-            else if (adv >= 1) base = 10;      // 2cnd/3rd
-
-            bonus += base;
-
-            // Is it protected?
-            ull protect_mask = 0ULL;
-
-            if (c == Color::WHITE) {
-                if (r > 0) {
-                    if (f < 7) protect_mask |= (1ULL << (s - 7));  // defender on (f+1, r-1)
-                    if (f > 0) protect_mask |= (1ULL << (s - 9));  // defender on (f-1, r-1)
-                }
-            } else {
-                if (r < 7) {
-                    if (f < 7) protect_mask |= (1ULL << (s + 9));  // defender on (f+1, r+1)
-                    if (f > 0) protect_mask |= (1ULL << (s + 7));  // defender on (f-1, r+1)
-                }
-            }
-
-
-            // see if its protected (potentially at least)
-            bool bProtected = my_pawns & protect_mask;
-            if (bProtected) bonus+=30;
-         
-        }
-    }
-    return bonus;
-}
 
 
 
@@ -1451,25 +1635,27 @@ bool GameBoard::is_king_highest_piece() {
 
 }
 
-// Punishment for knights on edge of board, knight in corners even worse (twice as bad)
-int GameBoard::is_knight_on_edge(Color color) {
+
+// Corners are twice as bad as the edges.
+int GameBoard::is_knight_on_edge_cp(Color color) {
+ 
+    constexpr int PENELTY = 10;     // knight on edge penatly
+
     int pointsOff=0;
-    ull knghts; // dont mutate the bitboard
-    if (color == ShumiChess:: WHITE) {
-        knghts = (white_knights);
-    } else {
-        knghts = (black_knights);
-    }
+    ull knghts; // go ahead mutate me
+    knghts = get_pieces_template<Piece::KNIGHT>(color);
     if (!knghts) return 0;
+    
     while (knghts) {
         int s  = utility::bit::lsb_and_pop_to_square(knghts); // 0..63  
         const int f = s % 8;            // h1=0 → 0=H ... 7=A
         const int r = s / 8;            // rank index 0..7 (White's view)
-        if ((f==0) || (f==7)) pointsOff++;
-        if ((r==0) || (r==7)) pointsOff++;
+        if ((f==0) || (f==7)) pointsOff+=PENELTY;      // I am on a or h file
+        if ((r==0) || (r==7)) pointsOff+=PENELTY;      // I am on eight or first rank
     }
     return pointsOff;
 }
+
 
 // Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.
 double GameBoard::king_near_other_king(Color attacker_color) {
