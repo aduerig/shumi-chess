@@ -124,7 +124,7 @@ bool global_debug_flag = 0;
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening, AND 
 // on first move.
-#define RANDOMIZING_EQUAL_MOVES_DELTA 0.15       // In units of pawns
+#define RANDOMIZING_EQUAL_MOVES_DELTA 10       // In units of centi-pawns
 
 #ifdef DEBUGGING_KILLER_MOVES
     static long long killer_tried = 0;
@@ -484,8 +484,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 
 
     // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
-    //pers_index = 0;
-    icp_temp = engine.game_board.get_castle_bonus_cp(color, nPhase);
+    icp_temp = engine.game_board.get_castled_bonus_cp(color, nPhase);
     cp_score_position_temp += icp_temp;     // centipawns
 
     // Get the friendly pawns summary (used by all the "count_" functions below)
@@ -520,9 +519,8 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
         cp_score_position_temp -= icp_temp;   // centipawns
 
         // Add code to encourage passed pawns. (1 for each passed pawn)
-        int iZeroToThirty = engine.game_board.count_passed_pawns_cp(color, pawnFileInfo, passed_pawns);
-        assert (iZeroToThirty>=0);
-        cp_score_position_temp += iZeroToThirty;   // centipawns
+        icp_temp = engine.game_board.count_passed_pawns_cp(color, pawnFileInfo, passed_pawns);
+        cp_score_position_temp += icp_temp;   // centipawns
 
         // Remember where passed pawns are.
         (color==ShumiChess::WHITE) ? passed_pawns_white = passed_pawns : passed_pawns_black = passed_pawns; 
@@ -576,16 +574,16 @@ int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     int icp_temp;
 
     // bishop pair bonus (two bishops) (2 bishops)
-    int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(color));
-    if (bishops >= 2) cp_score_position_temp += 10;   // in centipawns
+    icp_temp = engine.game_board.two_bishops_cp(color);
+    cp_score_position_temp += icp_temp;
 
     // Add code to encourage rook connections (files or ranks)
     icp_temp = engine.game_board.rook_connectiveness_cp(color);
     cp_score_position_temp += icp_temp;
     
     // Add code to encourage occupation of 7th rank by queens and rook
-    int iZeroToFour = engine.game_board.rook_7th_rankness_cp(color);
-    cp_score_position_temp += iZeroToFour;  // centipawns  
+    icp_temp = engine.game_board.rook_7th_rankness_cp(color);
+    cp_score_position_temp += icp_temp;  // centipawns  
     
 
     return cp_score_position_temp;
@@ -627,10 +625,8 @@ int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color,
 int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
                                             bool onlyKngFriend, bool onlyKngEnemy
                                             ) {
-
+    int icp_temp;                                
     int cp_score_position_temp = 0;
-
-    
 
     //if (is_debug) printf("\ngt1: %ld", cp_score_position_temp);
 
@@ -642,9 +638,9 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
 
     if (nPhase > GamePhase::OPENING) { 
         // Add code to attack squares near the king
-        int itemp = engine.game_board.attackers_on_enemy_king_near(color);
-        assert (itemp>=0);
-        cp_score_position_temp += itemp*20;  // centipawns  
+        icp_temp = engine.game_board.attackers_on_enemy_king_near_cp(color);
+        assert (icp_temp>=0);
+        cp_score_position_temp += icp_temp;  // centipawns  
     }
 
     if (onlyKngEnemy) {
@@ -653,14 +649,7 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
         // Returns 2 to 10,. 2 if in opposition, 10 if in opposite corners.
         // Returns zero if other pieces on board
         double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..
-        if ( (dkk!=0) && (dkk<2.0) ) {   // equal zero if other pieces 
-            printf(" %f ", dkk);
-            assert(0);
-        }
-        if (dkk > 10) {
-            printf(" %f ", dkk);
-            assert(0);
-        }
+    
 
         double dFarness = 10.0 - dkk;   // 8 if in opposition, 0, if in opposite corners
         cp_score_position_temp += (int)(dFarness * 25.0);
@@ -670,9 +659,9 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
 
         // Rewards if enemy king near corner. 0 for the inner ring (center) 3 for outer ring (edge squares)
         Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
-        int edge_wght = engine.game_board.king_edge_weight(enemy_color);
+        icp_temp = engine.game_board.king_edgeness_cp(enemy_color);
 
-        cp_score_position_temp += (int)(edge_wght * 40.0);
+        cp_score_position_temp += icp_temp;
 
         //if (is_debug) printf("\ngt4: %ld", cp_score_position_temp);
 
@@ -1101,35 +1090,24 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
             fprintf(fpDebug, "\n===============================================================\n");
         #endif
 
+        int i_random_delta_cp = 0;
 
         // Reassign best move, if randomizing. The i_randomize_next_move decrements, after every random 
         // move chosen. When it hits zero, no more random moves will be chosen.
-        d_random_delta = 0.0;
         if (engine.i_randomize_next_move>0) {
-            d_random_delta = RANDOMIZING_EQUAL_MOVES_DELTA;
+            i_random_delta_cp = RANDOMIZING_EQUAL_MOVES_DELTA;
             engine.i_randomize_next_move--;             // Decrement number of randome moves to make
         }
 
-        if (d_random_delta != 0.0) {
+        if (i_random_delta_cp != 0) {
             nRandos++;
             int n_moves_within_delta=0;
             // The root is when the player starts thinking about his move.
-            best_move = pick_random_within_delta_rand(MovesFromRoot, d_random_delta, n_moves_within_delta);
+            best_move = pick_random_within_delta_rand(MovesFromRoot, i_random_delta_cp, n_moves_within_delta);
             // Show random move, and the "pool" (and reduced pool") it was chosen from.
 
             cout << "\033[1;34mrando move (out of: \033[0m" << MovesFromRoot.size() << " >> " << n_moves_within_delta << endl;
         
-            string move_stringee = "";
-            std::ostringstream oss;
-            oss << "\033[1;34mrando move (out of: \033[0m"
-                   
-            << MovesFromRoot.size()
-                    << " >> "
-                    << n_moves_within_delta
-                    << endl;
-
-            move_stringee = oss.str();
-      
         }
 
         // (debug only) engine.move_into_string(best_move);
@@ -1245,7 +1223,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //isOK = engine.game_board.isReversableMove(best_move);
 
     global_debug_flag = true;
-    //itemp = engine.game_board.get_castle_bonus_cp(Color::WHITE, iPhase);
+    //itemp = engine.game_board.get_castled_bonus_cp(Color::WHITE, iPhase);
 
     // test harness for testing isolated/doubled/passed pawns
     ull passed_pawns;
@@ -2844,62 +2822,143 @@ Move MinimaxAI::get_move() {
 
 
 
-//
-// Picks a random root move within delta (in pawns) of the best score (negamax-relative).
-// If list is empty: returns default Move{}.
-// If best is "mate-like": returns the best (no randomization).
-Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
-                                              double delta_pawns,
-                                              int& n_moves_within_delta     // output
+// //
+// // Picks a random root move within delta (in pawns) of the best score (negamax-relative).
+// // If list is empty: returns default Move{}.
+// // If best is "mate-like": returns the best (no randomization).
+// Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
+//                                               double delta_pawns,
+//                                               int& n_moves_within_delta     // output
+//                                             ) {
+
+//     double d_delta = delta_pawns;    
+//     int nTries = 0;
+
+// try_again:
+//     nTries++;
+//     n_moves_within_delta = 0;
+//     if (MovsFromRoot.empty()) {
+//         assert(0);           // Better not happen 
+//         return Move{};  // safety
+//     }
+
+//     // 0) Sort MovsFromRoot by score (leaves the caller’s list sorted)
+//     std::sort(MovsFromRoot.begin(), MovsFromRoot.end(),
+//               [](const auto& a, const auto& b){ return a.second > b.second; });
+
+//     // 1) Best is now front()
+//     const double bestScorePawns = MovsFromRoot.front().second;
+
+//     // 2) If best score is mate-like, don’t randomize. Just pick the first one. 
+//     if (IS_MATE_SCORE(bestScorePawns)) return MovsFromRoot.front().first;
+
+//     // 3) Build the contiguous “within delta” prefix
+//     const double cutoff = bestScorePawns - d_delta;
+//     size_t n_top = 0;
+//     while (n_top < MovsFromRoot.size() && MovsFromRoot[n_top].second >= cutoff) ++n_top;
+
+//     // Return number of moves that qualified.
+//     n_moves_within_delta = (int)n_top;
+
+//     // (fallback if something odd, like nothing within the delta? At least the best move must be zero delta)
+//     if (n_top == 0) {
+//         assert(0);      // better not happen
+//         return MovsFromRoot.front().first;
+//     }
+//     else if ( (n_top == 1) && (nTries <= 2) ) {
+//         d_delta = d_delta * 1.5;
+//         goto try_again;
+//     }
+
+//     // #ifdef DEBUGGING_RANDOM_DELTA
+//     //     fprintf(fpDebug, "\n===============================================================\n");
+
+//     //     engine.print_moves_and_scores_to_file(MovsFromRoot, false, false, fpDebug);
+ 
+//     //     fprintf(fpDebug, "\n===============================================================\n");
+//     // #endif
+
+
+//     // 4) Uniform pick from [0, n_top)
+//     const int pick = engine.rand_int(0, static_cast<int>(n_top) - 1);
+//     return MovsFromRoot[static_cast<size_t>(pick)].first;
+// }
+
+ShumiChess::Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
+                                             int delta_cp,
+                                             int& n_moves_within_delta     // output
                                             )
 {
+    int i_delta_cp = delta_cp;
+    int nTries = 0;
 
+try_again:
+    nTries++;
     n_moves_within_delta = 0;
     if (MovsFromRoot.empty()) {
-        assert(0);           // Better not happen  NOTE: but sometimes it does. 
-                             // seems to be from odd button push combinations.
-        return Move{};  // safety
+        assert(0);           // Better not happen 
+        return Move{};       // safety
     }
 
-    // 0) Sort DESC by score (leaves the caller’s list sorted)
+    // 0) Sort MovsFromRoot by score (leaves the caller’s list sorted)
     std::sort(MovsFromRoot.begin(), MovsFromRoot.end(),
               [](const auto& a, const auto& b){ return a.second > b.second; });
 
     // 1) Best is now front()
     const double bestScorePawns = MovsFromRoot.front().second;
 
-    // 2) If best score is mate-like, don’t randomize. Just pick the first one. 
-    //    Here n_moves_within_delta is returned as zero.
+    // 2) If best score is mate-like, don’t randomize. Just pick the first one.
     if (IS_MATE_SCORE(bestScorePawns)) return MovsFromRoot.front().first;
 
-    // 3) Build the contiguous “within delta” prefix
-    const double cutoff = bestScorePawns - delta_pawns;
+    // Convert best score to centipawns once (rounded).
+    // Assumes score is in pawns (e.g., +0.23 == +23 cp).
+    const int bestScoreCp = (bestScorePawns >= 0.0)
+                          ? (int)(bestScorePawns * 100.0 + 0.5)
+                          : (int)(bestScorePawns * 100.0 - 0.5);
+
+    // 3) Build the contiguous “within delta” prefix in centipawns
+    const int cutoffCp = bestScoreCp - i_delta_cp;
+
     size_t n_top = 0;
-    while (n_top < MovsFromRoot.size() && MovsFromRoot[n_top].second >= cutoff) ++n_top;
+    while (n_top < MovsFromRoot.size()) {
+
+        const double scP = MovsFromRoot[n_top].second;
+        const int scCp = (scP >= 0.0)
+                       ? (int)(scP * 100.0 + 0.5)
+                       : (int)(scP * 100.0 - 0.5);
+
+        if (scCp < cutoffCp) break;
+        ++n_top;
+    }
 
     // Return number of moves that qualified.
     n_moves_within_delta = (int)n_top;
 
-    // (fallback if something odd, like nothing within the delta?)
+    // (fallback if something odd, like nothing within the delta? At least the best move must be zero delta)
     if (n_top == 0) {
         assert(0);      // better not happen
         return MovsFromRoot.front().first;
     }
+    else if ( (n_top == 1) && (nTries <= 2) ) {
+        // increase delta a bit and try again
+        i_delta_cp = (i_delta_cp * 3) / 2;   // *1.5, integer
+        goto try_again;
+    }
 
-    // #ifdef DEBUGGING_RANDOM_DELTA
-    //     fprintf(fpDebug, "\n===============================================================\n");
-
-    //     engine.print_moves_and_scores_to_file(MovsFromRoot, false, false, fpDebug);
- 
-    //     fprintf(fpDebug, "\n===============================================================\n");
-    // #endif
-
+    // PRINT HERE (only when randomizing)
+    if (n_top > 1) {
+        cout << "\n[RandomWithinDelta] n_top=" << (int)n_top << "  candidates:\n";
+        for (size_t i = 0; i < n_top; ++i) {
+            engine.move_into_string(MovsFromRoot[i].first);   // fills engine.move_string
+            cout << "  [" << (int)i << "]  " << engine.move_string << "\n";
+        }
+        cout.flush();
+    }
 
     // 4) Uniform pick from [0, n_top)
-    const int pick = engine.rand_int(0, static_cast<int>(n_top) - 1);
-    return MovsFromRoot[static_cast<size_t>(pick)].first;
+    const int pick = engine.rand_int(0, (int)n_top - 1);
+    return MovsFromRoot[(size_t)pick].first;
 }
-
 
 
 /////////////////////////////////////////////////////////////////////

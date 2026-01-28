@@ -191,8 +191,8 @@ class GameBoard {
         
         bool insufficient_material_simple();
 
-        int king_edge_weight(Color color);
-        int piece_edge_weight(ull pieces);
+        int king_edgeness_cp(Color color);
+        int piece_edgeness(ull pieces);
         int queenOnCenterSquare_cp(Color c) const;
 
         int center_closeness_bonus(Color c);
@@ -213,6 +213,7 @@ class GameBoard {
 
         bool is_king_in_check_new(Color color);
 
+        int two_bishops_cp(Color c) const;
         int rook_connectiveness_cp(Color c) const;
         int rook_7th_rankness_cp(Color c);
 
@@ -239,17 +240,19 @@ class GameBoard {
         int get_king_near_squares(Color defender_color, int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
-        int attackers_on_enemy_king_near(Color attacker_color);
+        int attackers_on_enemy_king_near_cp(Color attacker_color);
         int attackers_on_enemy_passed_pawns(Color attacker_color,
                                                ull passed_white_pwns,
                                                ull passed_black_pswns);
 
         double distance_between_squares(int enemySq, int frienSq);
+
         int get_Chebyshev_distance(int x1, int y1, int x2, int y2);
         int get_Manhattan_distance(int x1, int y1, int x2, int y2);   
         double get_board_distance(int x1, int y1, int x2, int y2);
+        int get_board_distance_100(int x1, int y1, int x2, int y2) const;
 
-        int king_sq_of(Color color);    
+        // int king_sq_of(Color color);    
         //double king_near_sq(Color attacker_color, ull sq);    
         double king_near_other_king(Color attacker_color);
         int king_center_manhattan_dist(Color c);
@@ -268,7 +271,7 @@ class GameBoard {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();
 
-        int get_castle_bonus_cp(Color color1, int phase) const;
+        int get_castled_bonus_cp(Color color1, int phase) const;
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
         //bool bHasCastled(Color color1) const;
         bool bHasCastled_fake(Color color1) const;

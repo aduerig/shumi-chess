@@ -313,7 +313,7 @@ Color GameBoard::get_color_on_bitboard(ull bitboard) {
     }
 }
 
-// Is there only zero or one pieces on eacxh square?
+// Is there only zero or one pieces on each square?
 bool GameBoard::are_bit_boards_valid() const {
     ull occupied = 0ULL;
 
@@ -340,11 +340,13 @@ bool GameBoard::are_bit_boards_valid() const {
 //      1. Can you castle or not?  (do you have the priviledge)  
 //      2. Whether YOU have castled or not. The latter IS NOT stored in a FEN by the way. It has to be a bollean 
 //          maintained by the push/pop.
-//  Results (bonus points):
-//    2 castled
-//    1 
 //
-int GameBoard::get_castle_bonus_cp(Color color1, int phase) const {
+int GameBoard::get_castled_bonus_cp(Color color1, int phase) const {
+    //
+    // notice: "Has_castled" must be larger thn "can_castle" or the king will move stupidly too early.
+    constexpr int HAS_CASTLED_WGHT = 150;
+    constexpr int CAN_CASTLE_WGHT = 35;
+
     int i_can_castle = 0;
     bool b_has_castled = false;
 
@@ -358,10 +360,11 @@ int GameBoard::get_castle_bonus_cp(Color color1, int phase) const {
     b_has_castled = bHasCastled_fake(color1);
 
     // has_castled bonus must be > castled privledge or it will never castle.
-    int icode = (b_has_castled ? 150 : 0) + i_can_castle * 35;
+    int icode = (b_has_castled ? HAS_CASTLED_WGHT : 0) + i_can_castle * CAN_CASTLE_WGHT;
 
     int final_cp;
 
+    // But its not so imporant later in the game...
     if      (phase == GamePhase::OPENING) final_cp = icode;
     else if (phase == GamePhase::MIDDLE_EARLY) final_cp = icode/2;
     else final_cp = 0;
@@ -801,6 +804,20 @@ static inline bool clear_between_file(ull occupancy, int a, int b)
 }
 
 
+//  2 or more bishops helps out
+int GameBoard::two_bishops_cp(Color c) const {
+
+    constexpr int TWO_BISHOPS_WGHT = 15;
+
+    //int bishops = bits_in(get_pieces_template<Piece::BISHOP>(c));
+    
+    ull friendlyBishops = (c == ShumiChess::WHITE) ? white_bishops : black_bishops;
+    int bishops = bits_in(friendlyBishops);
+
+    if (bishops >= 2) return TWO_BISHOPS_WGHT;   // in centipawns  
+    return 0;
+}
+
 //
 // Returns ROOK_CONNECTED_WGHT if any connected rook pair exists, else 0. 
 int GameBoard::rook_connectiveness_cp(Color c) const {
@@ -1157,7 +1174,7 @@ int GameBoard::count_pawn_holes_cp(Color c,
                                const PawnFileInfo& pawnInfo,
                                ull& holes_bb) const
 {
-    constexpr int HOLE_PENALTY = 18;
+    constexpr int HOLE_WGHT = 18;
 
     int holes = 0;
     holes_bb = 0ULL;
@@ -1224,7 +1241,7 @@ int GameBoard::count_pawn_holes_cp(Color c,
         }
     }
 
-    return (holes*HOLE_PENALTY);
+    return (holes*HOLE_WGHT);
 }
 
 
@@ -1365,17 +1382,22 @@ int GameBoard::count_passed_pawns_cp(Color c,
 
 //
 // Returns smaller values near the center. 0 for the inner ring (center) 3 for outer ring (edge squares)
-int GameBoard::king_edge_weight(Color color)
+int GameBoard::king_edgeness_cp(Color color)
 {
+    int edgeCode;
+    constexpr int KING_EDGE_WGHT = 40;
+
     //ull kbb = (color == Color::WHITE) ? white_king : black_king;   // dont mutate the bitboards
     ull kbb = get_pieces_template<Piece::KING>(color);   // dont mutate the bitboard
 
     assert(kbb != 0ULL);
-    return piece_edge_weight(kbb);
+    edgeCode = piece_edgeness(kbb);    // 0 = center, 3 = edge
+
+    return (edgeCode*KING_EDGE_WGHT);
 }
 
 // 0 = center, 3 = edge
-int GameBoard::piece_edge_weight(ull kbb) {   
+int GameBoard::piece_edgeness(ull kbb) {   
     int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63
 
     int r = sq / 8;              // 0..7
@@ -1444,7 +1466,7 @@ int GameBoard::center_closeness_bonus(Color c) {
     while (tmp) {
         int sq = utility::bit::lsb_and_pop_to_square(tmp);
         ull one = 1ULL << sq;
-        int ring = piece_edge_weight(one);    // 0=center .. 3=edge
+        int ring = piece_edgeness(one);    // 0=center .. 3=edge
         int centerness = 3 - ring;            // 3=center .. 0=edge
         if (centerness < 0) centerness = 0;
         bonus += (BASE_CP_WGHT * centerness) / 3;
@@ -1455,7 +1477,7 @@ int GameBoard::center_closeness_bonus(Color c) {
     while (tmp) {
         int sq = utility::bit::lsb_and_pop_to_square(tmp);
         ull one = 1ULL << sq;
-        int ring = piece_edge_weight(one);
+        int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
         bonus += (BASE_CP_WGHT * centerness) / 3;
@@ -1466,7 +1488,7 @@ int GameBoard::center_closeness_bonus(Color c) {
     while (tmp) {
         int sq = utility::bit::lsb_and_pop_to_square(tmp);
         ull one = 1ULL << sq;
-        int ring = piece_edge_weight(one);
+        int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
         bonus += (BASE_CP_WGHT * centerness) / 5;
@@ -1477,7 +1499,7 @@ int GameBoard::center_closeness_bonus(Color c) {
     while (tmp) {
         int sq = utility::bit::lsb_and_pop_to_square(tmp);
         ull one = 1ULL << sq;
-        int ring = piece_edge_weight(one);
+        int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
         bonus += (BASE_CP_WGHT * centerness) / 9;
@@ -1647,39 +1669,38 @@ double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
     }
 
     // if somehow above max, just clamp
+    assert (N>=1);
     return table[N-1].v;
 }
 
-// double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
-// {
-//     int dx = x1 - x2; if (dx < 0) dx = -dx;
-//     int dy = y1 - y2; if (dy < 0) dy = -dy;
-//     int d2 = dx*dx + dy*dy;   // 0..98
+//
+// Fast Euclidean distance using a lookup table.
+// Returns approx 100*sqrt(dx*dx + dy*dy) in [0..990].  No doubles.  No loops.
+//
+int GameBoard::get_board_distance_100(int x1, int y1, int x2, int y2) const
+{
+    int dx = x1 - x2; if (dx < 0) dx = -dx;
+    int dy = y1 - y2; if (dy < 0) dy = -dy;
 
-//     if (d2 <= 0)  return 0.00;
-//     if (d2 <= 1)  return 1.00;
-//     if (d2 <= 2)  return 1.41;  // sqrt(2)
-//     if (d2 <= 4)  return 2.00;
-//     if (d2 <= 5)  return 2.24;  // sqrt(5)
-//     if (d2 <= 8)  return 2.83;  // sqrt(8)
-//     if (d2 <= 10) return 3.16;  // sqrt(10)
-//     if (d2 <= 13) return 3.61;  // sqrt(13)
-//     if (d2 <= 17) return 4.12;  // sqrt(17)
-//     if (d2 <= 20) return 4.47;  // sqrt(20)
-//     if (d2 <= 25) return 5.00;
-//     if (d2 <= 29) return 5.39;  // sqrt(29)
-//     if (d2 <= 34) return 5.83;  // sqrt(34)
-//     if (d2 <= 40) return 6.32;  // sqrt(40)
-//     if (d2 <= 45) return 6.71;  // sqrt(45)
-//     if (d2 <= 52) return 7.21;  // sqrt(52)
-//     if (d2 <= 58) return 7.62;  // sqrt(58)
-//     if (d2 <= 65) return 8.06;  // sqrt(65)
-//     if (d2 <= 73) return 8.54;  // sqrt(73)
-//     if (d2 <= 82) return 9.06;  // sqrt(82)
-//     if (d2 <= 90) return 9.49;  // sqrt(90)
-//     return 9.90;                // sqrt(98) ≈ 9.90
-// }
+    const int d2 = dx*dx + dy*dy;   // 0..98
+    assert(d2 >= 0 && d2 <= 98);
 
+    // round(100*sqrt(d2)) for d2=0..98
+    static const unsigned short dist100[99] = {
+          0, 100, 141, 173, 200, 224, 245, 265, 283, 300,
+        316, 332, 346, 361, 374, 387, 400, 412, 424, 436,
+        447, 458, 469, 479, 490, 500, 510, 520, 529, 539,
+        548, 557, 566, 574, 583, 592, 600, 608, 616, 624,
+        632, 640, 648, 656, 663, 671, 678, 686, 693, 700,
+        707, 714, 721, 728, 735, 742, 748, 755, 762, 768,
+        775, 781, 787, 794, 800, 806, 812, 819, 825, 831,
+        837, 843, 849, 854, 860, 866, 872, 877, 883, 889,
+        894, 900, 906, 911, 917, 922, 927, 933, 938, 943,
+        949, 954, 959, 964, 970, 975, 980, 985, 990
+    };
+
+    return (int)dist100[d2];
+}
 
 
 //
@@ -1703,11 +1724,11 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     //double dfakeDist = (double)(abs(xEnemy - xFrien) +  abs(yEnemy - yFrien));
     //double dfakeDist = (double)iFakeDist;
 
-    // Method 2 Chebyshev. Better but
+    // Method 2 Chebyshev. This coorasponds to the number of king moves to the square on an empty board,.
     // iFakeDist = get_Chebyshev_distance(xEnemy, yEnemy, xFrien, yFrien);
-    // double dfakeDist = (double)iFakeDist;
+    // dfakeDist = (double)iFakeDist;
 
-    // Method 3. Best ? (table driven)
+    // Method 3. Most accurate distance (table driven)
     dfakeDist = get_board_distance(xEnemy, yEnemy, xFrien, yFrien);
     
     //dfakeDist = (double)xFrien;     // debug only
@@ -1719,19 +1740,20 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 }
 
 
-// Color has king only, or king with a single minor piece.
+// Color has king only, or king with a single/double minor piece.
+// So discounting pawns, basically it means no more than "4 points" in material.
 bool GameBoard::hasNoMajorPieces(Color attacker_color) {
     ull enemyBigPieces;
     ull enemySmallPieces;
     if (attacker_color == ShumiChess:: BLACK) {
-        enemyBigPieces = (black_pawns | black_rooks | black_queens);
+        enemyBigPieces = (black_rooks | black_queens);
         enemySmallPieces = (black_knights | black_bishops);
     } else {
-        enemyBigPieces = (white_pawns | white_rooks | white_queens);  
+        enemyBigPieces = (white_rooks | white_queens);  
         enemySmallPieces = (white_knights | white_bishops);
     }
     if (enemyBigPieces) return false;
-    if (bits_in(enemySmallPieces) > 1) return false;
+    if (bits_in(enemySmallPieces) > 2) return false;
     return true;
 }
 
@@ -1780,7 +1802,6 @@ double GameBoard::king_near_other_king(Color attacker_color) {
     assert(white_king != 0ULL);
     assert(black_king != 0ULL);
 
-
     if (attacker_color == ShumiChess:: WHITE) {
         enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
         tmpEnemy = black_king;         // don't mutate the bitboards
@@ -1803,8 +1824,8 @@ double GameBoard::king_near_other_king(Color attacker_color) {
 
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
-        assert (dFakeDist >=  2.0);      // Kings cant touch
-        assert (dFakeDist <= 10.0);      // Board is only so big
+        assert (dFakeDist >=  2.0);      // Kings cant touch each other
+        assert (dFakeDist <= 14.0);      // Board is only so big  Note: how big? 14 is max for all including manhatten distance.
 
         // Bonus higher if friendly king closer to enemy king
         dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
@@ -1821,20 +1842,20 @@ double GameBoard::king_near_other_king(Color attacker_color) {
 }
 
 
-int GameBoard::king_sq_of(Color color) {
-    int frienKingSq;
-    ull tmpFrien;
-    if (color == ShumiChess:: WHITE) {
-        tmpFrien = white_king;         // don't mutate the bitboards
-    } else {
-        tmpFrien = black_king;         // don't mutate the bitboards
-    }
-    frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
-    assert(frienKingSq >= 0);
-    assert(frienKingSq <= 63);
+// int GameBoard::king_sq_of(Color color) {
+//     int frienKingSq;
+//     ull tmpFrien;
+//     if (color == ShumiChess:: WHITE) {
+//         tmpFrien = white_king;         // don't mutate the bitboards
+//     } else {
+//         tmpFrien = black_king;         // don't mutate the bitboards
+//     }
+//     frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
+//     assert(frienKingSq >= 0);
+//     assert(frienKingSq <= 63);
 
-    return frienKingSq;
-}
+//     return frienKingSq;
+// }
 
 
 // Returns 1 to 14. 1 if close to the passed sq. 10 if as far as possible from the passed sq.
@@ -1884,6 +1905,45 @@ int GameBoard::king_sq_of(Color color) {
 
 //     return dBonus;
 // }
+
+
+//
+// Minimum Manhattan distance from the friendly king to the 2×2 center box
+// center squares: (3,3),(4,3),(3,4),(4,4)  (i.e., d4,e4,d5,e5 in normal coords)
+//
+// Returns 0..6 on an 8×8 board.
+//
+int GameBoard::king_center_manhattan_dist(Color c)
+{
+    int iReturn;
+    assert(white_king != 0ULL);
+    assert(black_king != 0ULL);
+
+    ull kbb = (c == ShumiChess::WHITE) ? white_king : black_king;
+
+    // king square 0..63 (non-mutating if you have a non-pop lsb routine; otherwise copy is fine)
+    int ks = utility::bit::lsb_and_pop_to_square(kbb);
+
+    int f = ks % 8;
+    int r = ks / 8;
+
+    int dx1 = f - 3; if (dx1 < 0) dx1 = -dx1;
+    int dx2 = f - 4; if (dx2 < 0) dx2 = -dx2;
+    int dy1 = r - 3; if (dy1 < 0) dy1 = -dy1;
+    int dy2 = r - 4; if (dy2 < 0) dy2 = -dy2;
+
+    int dx = (dx1 < dx2) ? dx1 : dx2;
+    int dy = (dy1 < dy2) ? dy1 : dy2;
+
+    iReturn = dx + dy;
+    assert(iReturn <= 6);
+
+    return iReturn;
+}
+
+
+
+
 
 int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq)
 {
@@ -2080,9 +2140,12 @@ int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq
     return bits_in(any_attackers);
 }
 
-// Attackers are NOT kings or pawns.
-int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
+// Attackers are NOT kings or pawns. Otherwise everybosy else.
+int GameBoard::attackers_on_enemy_king_near_cp(Color attacker_color)
 {
+
+    constexpr int ATTACKERS_ON_KING_WGHT = 20;
+
     // enemy (the one whose king we are surrounding)
     Color defender_color = (attacker_color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
@@ -2102,7 +2165,7 @@ int GameBoard::attackers_on_enemy_king_near(Color attacker_color)
 
     }
 
-    return total;
+    return (total*ATTACKERS_ON_KING_WGHT);
 }
 
 // Counts sliders+knights attacking the enemy's passed pawns.

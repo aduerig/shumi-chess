@@ -139,7 +139,7 @@ public:
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
 
-    double d_random_delta = 0.0;
+
 
     int TT_ntrys = 0;
     int TT_ntrys1 = 0;
@@ -147,7 +147,7 @@ public:
 
     int cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black);
 
-    int cp_score_positional_get_pawn_things(ShumiChess::Color color, int nPhase); 
+    //int cp_score_positional_get_pawn_things(ShumiChess::Color color, int nPhase); 
     int cp_score_positional_get_opening(ShumiChess::Color color, int nPhase); 
     int cp_score_positional_get_middle(ShumiChess::Color color); 
     int cp_score_positional_get_end(ShumiChess::Color color, int nPly,
@@ -168,11 +168,10 @@ public:
     // Note: All moves from the "root" position. The root is when the player starts thinking about his move.
     std::vector<std::pair<ShumiChess::Move, double>> MovesFromRoot;
 
-    ShumiChess::Move pick_random_within_delta_rand(
-                    std::vector<MoveAndScore>& MovsFromRoot,
-                    double delta_pawns,
-                    int& n_moves_within_delta
-                );
+    ShumiChess::Move pick_random_within_delta_rand(std::vector<std::pair<ShumiChess::Move,double>>& MovsFromRoot,
+                                             int delta_cp,
+                                             int& n_moves_within_delta     // output
+                                            );
 
     ShumiChess::Move get_move_iterative_deepening(double time_requested, int max_deepening_requested, int feat);
 
