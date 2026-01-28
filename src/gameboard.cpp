@@ -475,11 +475,8 @@ int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
     return cp_score_mat_temp;
 }
 
-//
-int GameBoard::bits_in(ull bitboard) const {
-    auto bs = bitset<64>(bitboard);
-    return (int) bs.count();
-}
+
+
 //
 // “lerp” stands for Linear intERPolation.
 // Linear interpolation: t=0 → a, t=1 → b
@@ -574,42 +571,135 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 }
 
 
-// Returns in cp.
-// The four center squares are weighted, "offensive" are the 2 squares near the enemy, 
-// "defensive" are the 2 squares near the friendly king.
-int GameBoard::pawns_attacking_center_squares_cp(Color c) {
+// int GameBoard::pawns_attacking_center_squares_cp(Color c) {
     
+//     // Offensive .vs. defensive center squares. Like Offensive center the best.
+//     constexpr int CTR_DEF_WGHT = 33;     // weight for center e4,d4,e5,d5  "defensive" center squares
+//     constexpr int CTR_OFF_WGHT = 40;     // weight for center e4,d4,e5,d5  "offensive" center squares
+//     constexpr int ADV_CTR_WGHT = 30;         // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
+
+//     int sum = 0;
+
+//     if (c == Color::WHITE) {
+
+//         sum += CTR_OFF_WGHT * (  pawns_attacking_square(c, square_e5)
+//                         + pawns_attacking_square(c, square_d5));
+
+//         sum += CTR_DEF_WGHT * (  pawns_attacking_square(c, square_e4)
+//                           + pawns_attacking_square(c, square_d4));
+
+//         sum += ADV_CTR_WGHT * (  pawns_attacking_square(c, square_e6)
+//                       + pawns_attacking_square(c, square_d6));
+//     } else {
+
+//         sum += CTR_OFF_WGHT * (  pawns_attacking_square(c, square_e4)
+//                           + pawns_attacking_square(c, square_d4));
+
+//         sum += CTR_DEF_WGHT * ( pawns_attacking_square(c, square_e5)
+//                          + pawns_attacking_square(c, square_d5));
+
+//         sum += ADV_CTR_WGHT * (  pawns_attacking_square(c, square_e3)
+//                       + pawns_attacking_square(c, square_d3));
+//     }
+//     return sum;
+
+// }
+// Returns in cp. 
+// The four center squares are weighted, "offensive" are the 2 squares near the enemy,
+// "defensive" are the 2 squares near the friendly king.
+// int GameBoard::pawns_attacking_center_squares_cp(Color c)
+// {
+//     // Offensive .vs. defensive center squares. Like Offensive center the best.
+//     constexpr int CTR_DEF_WGHT = 33;     // weight for center e4,d4,e5,d5  "defensive" center squares
+//     constexpr int CTR_OFF_WGHT = 40;     // weight for center e4,d4,e5,d5  "offensive" center squares
+//     constexpr int ADV_CTR_WGHT = 30;     // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
+//     constexpr int ADV_FLK_WGHT = 10;     // weight for "advanced flank center" c4,f4 (black) c5,f5 (White)
+
+//     int sum = 0;
+
+//     if (c == Color::WHITE) {
+
+//         // Offensive center (near enemy)
+//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
+//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
+
+//         // Defensive center (near friendly king)
+//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
+//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
+
+//         // Advanced center
+//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
+//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
+
+//     } else {
+
+//         // Offensive center (near enemy)
+//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
+//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
+
+//         // Defensive center (near friendly king)
+//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
+//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
+
+//         // Advanced center
+//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
+//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
+//     }
+
+//     return sum;
+// }
+int GameBoard::pawns_attacking_center_squares_cp(Color c)
+{
     // Offensive .vs. defensive center squares. Like Offensive center the best.
-    constexpr int CTR_DEF = 33;     // weight for center e4,d4,e5,d5  "defensive" center squares
-    constexpr int CTR_OFF = 40;     // weight for center e4,d4,e5,d5  "offensive" center squares
-    constexpr int ADV = 30;         // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
+    constexpr int CTR_DEF_WGHT = 25;     // weight for center e4,d4,e5,d5  "defensive" center squares
+    constexpr int CTR_OFF_WGHT = 30;     // weight for center e4,d4,e5,d5  "offensive" center squares
+    constexpr int ADV_CTR_WGHT = 20;     // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
+    constexpr int ADV_FLK_WGHT = 10;     // weight for "advanced flank center" c4,f4 (black) c5,f5 (White)
 
     int sum = 0;
 
     if (c == Color::WHITE) {
 
-        sum += CTR_OFF * (  pawns_attacking_square(c, square_e5)
-                            + pawns_attacking_square(c, square_d5));
+        // Offensive center (near enemy)
+        sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
+        sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
 
-        sum += CTR_DEF * (  pawns_attacking_square(c, square_e4)
-                            + pawns_attacking_square(c, square_d4));
+        // Defensive center (near friendly king)
+        sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
+        sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
 
-        sum += ADV * (  pawns_attacking_square(c, square_e6)
-                        + pawns_attacking_square(c, square_d6));
+        // Advanced center
+        sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
+        sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
+
+        // Advanced flank center
+        sum += ADV_FLK_WGHT * pawns_attacking_square(c, square_c5);
+        sum += ADV_FLK_WGHT * pawns_attacking_square(c, square_f5);
+
     } else {
 
-        sum += CTR_OFF * (  pawns_attacking_square(c, square_e4)
-                            + pawns_attacking_square(c, square_d4));
+        // Offensive center (near enemy)
+        sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
+        sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
 
-        sum += CTR_DEF * ( pawns_attacking_square(c, square_e5)
-                            + pawns_attacking_square(c, square_d5));
+        // Defensive center (near friendly king)
+        sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
+        sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
 
-        sum += ADV * (  pawns_attacking_square(c, square_e3)
-                        + pawns_attacking_square(c, square_d3));
+        // Advanced center
+        sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
+        sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
+
+        // Advanced flank center
+        sum += ADV_FLK_WGHT * pawns_attacking_square(c, square_c4);
+        sum += ADV_FLK_WGHT * pawns_attacking_square(c, square_f4);
     }
-    return sum;
 
+    return sum;
 }
+
+
+
 
 
 int GameBoard::knights_attacking_square(Color c, int sq)
@@ -619,8 +709,11 @@ int GameBoard::knights_attacking_square(Color c, int sq)
     return bits_in(targets & knights);  // count the 1-bits
 }
 
-int GameBoard::knights_attacking_center_squares(Color c)
+int GameBoard::knights_attacking_center_squares_cp(Color c)
 {
+
+    constexpr int KNIGHT_ON_CTR_WGHT = 20;
+
     int square_e4 = 27;
     int square_d4 = 28;
     int square_e5 = 35;
@@ -630,113 +723,131 @@ int GameBoard::knights_attacking_center_squares(Color c)
     itemp += knights_attacking_square(c, square_d4);
     itemp += knights_attacking_square(c, square_e5);
     itemp += knights_attacking_square(c, square_d5);
-    return itemp;
+
+    return (itemp * KNIGHT_ON_CTR_WGHT);
 }
 
+
 //
-// One if rooks connected. 0 if not.
-// return false if two rooks dont exist. But in any case, returns the correct connectiveness.
-// Note sure what happens with three or more rooks.
-bool GameBoard::rook_connectiveness(Color c, int& connectiveness) const
+// This sees through all material
+int GameBoard::bishops_attacking_square(Color c, int sq)
 {
-    connectiveness = 0;
+    const int tf = sq % 8;   // 0..7 (h1=0 => 0=H ... 7=A) 
+    const int tr = sq / 8;   // 0..7
+
+    const int diag_sum  = tf + tr;   // NE-SW diagonal id
+    const int diag_diff = tf - tr;   // NW-SE diagonal id
+
+    ull bishops = get_pieces_template<Piece::BISHOP>(c);
+    int count = 0;
+
+    while (bishops)
+    {
+        const int s = utility::bit::lsb_and_pop_to_square(bishops);
+        const int f = s % 8;
+        const int r = s / 8;
+        if ((f + r) == diag_sum || (f - r) == diag_diff) count++;
+    }
+
+    return count;
+}
+
+int GameBoard::bishops_attacking_center_squares_cp(Color c)
+{
+
+    constexpr int BISHOP_ON_CTR_WGHT = 20;
+
+    int itemp = 0;
+
+    itemp += bishops_attacking_square(c, square_e4);
+    itemp += bishops_attacking_square(c, square_d4);
+    itemp += bishops_attacking_square(c, square_e5);
+    itemp += bishops_attacking_square(c, square_d5);
+
+    return (itemp*BISHOP_ON_CTR_WGHT);
+}
+
+
+
+
+
+    
+// Return true if all squares strictly between a and b on the same rank are empty.
+static inline bool clear_between_rank(ull occupancy, int a, int b)
+{
+    const int ra = a / 8;
+    int fa = a % 8, fb = b % 8;
+    if (fa > fb) std::swap(fa, fb);
+
+    for (int f = fa + 1; f < fb; ++f) {
+        const int sq = ra * 8 + f;
+        if (occupancy & (1ULL << sq)) return false;
+    }
+    return true;
+}
+
+// Return true if all squares strictly between a and b on the same file are empty.
+static inline bool clear_between_file(ull occupancy, int a, int b)
+{
+    const int fa = a % 8;
+    int ra = a / 8, rb = b / 8;
+    if (ra > rb) std::swap(ra, rb);
+
+    for (int r = ra + 1; r < rb; ++r) {
+        const int sq = r * 8 + fa;
+        if (occupancy & (1ULL << sq)) return false;
+    }
+    return true;
+}
+
+
+//
+// Returns ROOK_CONNECTED_WGHT if any connected rook pair exists, else 0. 
+int GameBoard::rook_connectiveness_cp(Color c) const {
+
+    constexpr int ROOK_CONNECTED_WGHT = 120;
+
     const ull rooks = (c == Color::WHITE) ? white_rooks : black_rooks;
 
-    // Need at least two rooks of this color
+    // Return 0 if the color has fewer than two rooks (0 or 1 rooks).
     if ((rooks == 0) || ((rooks & (rooks - 1)) == 0)) {
-        return false;
+        return 0;
     }
 
     // Occupancy of all pieces (both sides)
-    const ull occupancy =
-        white_pawns | white_knights | white_bishops | white_rooks | white_queens | white_king |
-        black_pawns | black_knights | black_bishops | black_rooks | black_queens | black_king;
-
-    // Collect squares of this side's rooks
-    int sqs[8]; // promotion could make more than 2, but 8 is plenty
+    const ull occupancy = get_pieces();
+     
+    // Collect squares where the friendly side's rooks sit.
+    int sqs[8]; // promotion could make more than 2 rooks, but hopefully 8 is plenty? Note: better way to allocate this.
+    
     int n = 0;
     ull tmp = rooks;
     while (tmp) {
-        sqs[n++] = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        assert(n < 8);
+        sqs[n] = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
+        n++;
     }
-
-    auto clear_between_rank = [&](int a, int b) -> bool {
-        const int ra = a / 8;               // same rank as b
-        int fa = a % 8, fb = b % 8;
-        if (fa > fb) std::swap(fa, fb);
-        for (int f = fa + 1; f < fb; ++f) {
-            const int sq = ra * 8 + f;
-            if (occupancy & (1ULL << sq)) return false;
-        }
-        return true;
-    };
-
-    auto clear_between_file = [&](int a, int b) -> bool {
-        const int fa = a % 8;               // same file as b
-        int ra = a / 8, rb = b / 8;
-        if (ra > rb) std::swap(ra, rb);
-        for (int r = ra + 1; r < rb; ++r) {
-            const int sq = r * 8 + fa;
-            if (occupancy & (1ULL << sq)) return false;
-        }
-        return true;
-    };
 
     // Check all rook pairs: same rank OR same file, with empty squares between
     for (int i = 0; i < n; ++i) {
         for (int j = i + 1; j < n; ++j) {
             const int s1 = sqs[i], s2 = sqs[j];
-            if ((s1 / 8 == s2 / 8) && clear_between_rank(s1, s2)) {
-                connectiveness = 1;
-                return true;
+            if ((s1 / 8 == s2 / 8) && clear_between_rank(occupancy, s1, s2)) {
+                return (ROOK_CONNECTED_WGHT);
             }
-            if ((s1 % 8 == s2 % 8) && clear_between_file(s1, s2)) {
-                connectiveness = 1;
-                return true;
+            if ((s1 % 8 == s2 % 8) && clear_between_file(occupancy, s1, s2)) {
+                return (ROOK_CONNECTED_WGHT);
             }
         }
     }
-
-    connectiveness = 0;
-    return false;
+    return 0;
 }
 
-//
-// Return 2 if any friendly rook is on an OPEN file (no pawns on that file).
-// Return 1 if any friendly rook is on a SEMI-OPEN file (no friendly pawns on that file, but at least one enemy pawn).
-// Return 0 otherwise.
-// int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
-// {
-//     constexpr int FILE_STATUS_WGHT = 10;        // double this for open files
 
-//     ull rooks = get_pieces_template<Piece::ROOK>(c);    // Get all friendly rooks
-//     if (!rooks) return 0;
-
-//     int score_cp = 0;
-
-//     // For each file, determine open/semi-open from pawnInfo,
-//     // then count how many friendly rooks sit on that file.
-//     for (int file = 0; file < 8; ++file) {
-
-//         int nRooksOnFile = bits_in(rooks & col_masks[7 - file]); // because col_masks is A..H
-//         if (!nRooksOnFile) continue;
-
-//         bool ownPawnOnFile = (pawnInfo.p[friendlyP].file_count[file] != 0);
-//         bool oppPawnOnFile = (pawnInfo.p[enemyP].file_count[file] != 0);
-
-//         if (!ownPawnOnFile && !oppPawnOnFile) {
-//             score_cp += 2 * nRooksOnFile * FILE_STATUS_WGHT;          // open file
-//         } else if (!ownPawnOnFile && oppPawnOnFile) {
-//             score_cp += 1 * nRooksOnFile * FILE_STATUS_WGHT;          // semi-open file
-//         }
-//     }
-
-//     return score_cp;
-// }
 int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
 {
-    constexpr int FILE_STATUS_WGHT      = 10;   // open=2x, semi-open=1x
-    constexpr int KING_ON_FILE_BONUS    = 8;    // extra per rook if enemy king on same file (tune)
+    constexpr int FILE_STATUS_WGHT     = 10;   // open=2x, semi-open=1x
+    constexpr int KING_ON_FILE_WGHT    = 8;    // extra per rook if enemy king on same file (tune)
 
     const ull rooks = get_pieces_template<Piece::ROOK>(c);
     if (!rooks) return 0;
@@ -766,7 +877,7 @@ int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
 
         // Extra bonus if enemy king is on this file (even if blocked)
         if (enemy_king & file_mask) {
-            score_cp += nRooksOnFile * file_mult * KING_ON_FILE_BONUS;
+            score_cp += nRooksOnFile * file_mult * KING_ON_FILE_WGHT;
         }
     }
 
@@ -1017,7 +1128,7 @@ int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) co
 
 int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
 
-    constexpr int KNIGHT_HOLE_BONUS = 25;   // tune later
+    constexpr int KNIGHT_HOLE_WGHT = 25;   // tune later
 
     // Friendly knights (h1=0 bitboard)
     ull knights = get_pieces_template<Piece::KNIGHT>(c);
@@ -1029,7 +1140,7 @@ int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
     // Count them
     int n = bits_in(on_holes);
 
-    return n * KNIGHT_HOLE_BONUS;
+    return n * KNIGHT_HOLE_WGHT;
 }
 
 
@@ -1117,31 +1228,10 @@ int GameBoard::count_pawn_holes_cp(Color c,
 }
 
 
-//
-// Returns cp. x for each doubled pawn (5x/4 for rook pawns), 2x for each tripled pawn, 3x for each quadrupled pawn
-//   soo this gives us x=16 We have: worst case quadrupled rook pawns is 20 cp.
-// int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const
-// {
-//     constexpr int DOUBLED_WGHT = 30;
-//     constexpr int DOUBLED_ROOK_WGHT = 30;       //  because doubled pawns on rook files tend to be harder to undouble?
-
-//     int total = 0;
-//     for (int file = 0; file < 8; ++file) {
-//         int k = pawnInfo.p[friendlyP].file_count[file];
-//         if (k >= 2) {
-//             int weight = (file == 0 || file == 7) ? DOUBLED_ROOK_WGHT : DOUBLED_WGHT;
-
-//             // Penalize only the *extra* pawns on the file
-//             total += (k - 1) * weight;
-//         }
-//     }
-//     return total;
-// }
-
 int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const
 {
-    constexpr int DOUBLED_WGHT      = 30;
-    constexpr int DOUBLED_ROOK_WGHT = 30;
+    constexpr int DOUBLED_WGHT      = 28;
+    constexpr int DOUBLED_ROOK_WGHT = 33;
 
     // Extra penalty per "extra pawn" if the file is open of enemy pawns
     constexpr int OPEN_FILE_EXTRA   = (2);   // tune this
@@ -1300,10 +1390,39 @@ int GameBoard::piece_edge_weight(ull kbb) {
     return ring;  // 0 = center, 3 = edge
 }
 
+//
+// Returns true if the given color's queen is on one of the 4 center squares:
+// d4, e4, d5, e5  (i.e., (3,3), (4,3), (3,4), (4,4) in file/rank 0..7).
+//
+// NOTE: If there is no queen (bitboard == 0), returns false.
+// NOTE: If there are multiple queens (promotion), returns true if ANY queen is on a center square.
+//
+int GameBoard::queenOnCenterSquare_cp(Color c) const {
+
+    constexpr int QUEEN_OUT_EARLY_WGHT = 20;
+
+    ull q = (c == ShumiChess::WHITE) ? white_queens : black_queens;
+    //ull q = get_pieces_template<Piece::QUEEN>(c);
+    if (q == 0ULL) return 0;
+
+    // Center squares bitmask
+    // sq = r*8 + f, where f in {3,4}, r in {3,4}
+    const ull CENTER4 =
+        (1ULL << (3*8 + 3)) |  // (f=3,r=3)
+        (1ULL << (4*8 + 3)) |  // (f=4,r=3)
+        (1ULL << (3*8 + 4)) |  // (f=3,r=4)
+        (1ULL << (4*8 + 4));   // (f=4,r=4)
+
+    // Any queen on any center square?
+    return ((q & CENTER4) != 0ULL) * QUEEN_OUT_EARLY_WGHT;
+}
+
 
 // Piece occuptation squares scaled for closness to center.
 int GameBoard::center_closeness_bonus(Color c) {
-    const int BASE_CP = 24;  // tune strength (centipawns)
+
+    const int BASE_CP_WGHT = 24;  // tune strength (centipawns)
+
     int bonus = 0;
 
     ull nBB = 0ULL, bBB = 0ULL, rBB = 0ULL, qBB = 0ULL;
@@ -1328,7 +1447,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edge_weight(one);    // 0=center .. 3=edge
         int centerness = 3 - ring;            // 3=center .. 0=edge
         if (centerness < 0) centerness = 0;
-        bonus += (BASE_CP * centerness) / 3;
+        bonus += (BASE_CP_WGHT * centerness) / 3;
     }
 
     // Bishops (divide by 3)
@@ -1339,7 +1458,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edge_weight(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (BASE_CP * centerness) / 3;
+        bonus += (BASE_CP_WGHT * centerness) / 3;
     }
 
     // Rooks (divide by 5)
@@ -1350,7 +1469,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edge_weight(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (BASE_CP * centerness) / 5;
+        bonus += (BASE_CP_WGHT * centerness) / 5;
     }
 
     // Queens (divide by 9)
@@ -1361,7 +1480,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edge_weight(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (BASE_CP * centerness) / 9;
+        bonus += (BASE_CP_WGHT * centerness) / 9;
     }
 
     return bonus;
@@ -1370,11 +1489,11 @@ int GameBoard::center_closeness_bonus(Color c) {
 
 
 
- double GameBoard::openingness_of(int avg_cp) {
-    if (avg_cp <= 3000) return 0.0;   // fully "not opening"
-    if (avg_cp >= 4000) return 1.0;   // fully opening
-    return ( (double)(avg_cp - 3000) ) / 1000.0;  // linear between
-}
+//  double GameBoard::openingness_of(int avg_cp) {
+//     if (avg_cp <= 3000) return 0.0;   // fully "not opening"
+//     if (avg_cp >= 4000) return 1.0;   // fully opening
+//     return ( (double)(avg_cp - 3000) ) / 1000.0;  // linear between
+// }
 
 
 // Fills an array of up to 9 squares around the king (including the king square).
@@ -1441,14 +1560,23 @@ int GameBoard::kings_in_opposition(Color color)
     else
         return +1;  // reward White
 }
+//
+// Manhattan distance  (D(x,y)=|x1-x2| + |y1-y2|)
+// Varys from 0 to 14 inclusive.
+// Also known as "taxicab distance". A cheap distance with integers, that avoids sqrt()
+//
+int GameBoard::get_Manhattan_distance(int x1, int y1, int x2, int y2) {
 
-
-
-
+    int dx = x1 > x2 ? x1 - x2 : x2 - x1;
+    int dy = y1 > y2 ? y1 - y2 : y2 - y1;
+    int iDist = dx + dy;
+    return iDist;
+}
 //
 // Chebyshev distance  (D(x,y)=\max (|x_{1}-x_{2}|,|y_{1}-y_{2}|)\)
-// It is also known as "chessboard distance".
-// A cheap distance with integers, that avoids sqrt()
+// Varys from 0 to 7 inclusive.
+// It is also known as "chessboard distance".  A cheap distance with integers, that avoids sqrt()
+//
 //
 int GameBoard::get_Chebyshev_distance(int x1, int y1, int x2, int y2) {
 
@@ -1457,8 +1585,10 @@ int GameBoard::get_Chebyshev_distance(int x1, int y1, int x2, int y2) {
     int iDist = (dx > dy) ? dx : dy;
     return iDist;
 }
-
-
+//
+// Most accurate, uses a table. Still to slow.
+// Goes from 0.0 to 9.899 inclusive
+//
 double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
 {
     int dx = x1 - x2; if (dx < 0) dx = -dx;
@@ -1466,7 +1596,7 @@ double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
     assert(dx>=0);
     assert(dy>=0);
     assert(dx<=7);
-    assert(dx<=7);
+    assert(dy<=7);
     int d2 = dx*dx + dy*dy;   // 0..98
 
     struct Pt { int d2; double v; };
@@ -1590,7 +1720,7 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 
 
 // Color has king only, or king with a single minor piece.
-bool GameBoard::bIsOnlyKing(Color attacker_color) {
+bool GameBoard::hasNoMajorPieces(Color attacker_color) {
     ull enemyBigPieces;
     ull enemySmallPieces;
     if (attacker_color == ShumiChess:: BLACK) {
@@ -1605,10 +1735,6 @@ bool GameBoard::bIsOnlyKing(Color attacker_color) {
     return true;
 }
 
-// Enemy has king only
-bool GameBoard::bNoPawns() {
-    return ( (white_pawns | black_pawns) == 0);
-}
 
 bool GameBoard::is_king_highest_piece() {
     if (white_queens || black_queens) return false;
@@ -1621,10 +1747,10 @@ bool GameBoard::is_king_highest_piece() {
 // Corners are twice as bad as the edges.
 int GameBoard::is_knight_on_edge_cp(Color color) {
  
-    constexpr int PENELTY = 10;     // knight on edge penatly
+    constexpr int KNIGHT_ON_EDGE_WGHT = 10;     // knight on edge penatly (its doubled if knight in corner)
 
     int pointsOff=0;
-    ull knghts; // go ahead mutate me
+    ull knghts; // go ahead mutate me, I'm local
     knghts = get_pieces_template<Piece::KNIGHT>(color);
     if (!knghts) return 0;
     
@@ -1632,8 +1758,8 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
         int s  = utility::bit::lsb_and_pop_to_square(knghts); // 0..63  
         const int f = s % 8;            // h1=0 → 0=H ... 7=A
         const int r = s / 8;            // rank index 0..7 (White's view)
-        if ((f==0) || (f==7)) pointsOff+=PENELTY;      // I am on a or h file
-        if ((r==0) || (r==7)) pointsOff+=PENELTY;      // I am on eight or first rank
+        if ((f==0) || (f==7)) pointsOff+=KNIGHT_ON_EDGE_WGHT;      // I am on a or h file
+        if ((r==0) || (r==7)) pointsOff+=KNIGHT_ON_EDGE_WGHT;      // I am on eight or first rank
     }
     return pointsOff;
 }
@@ -1641,7 +1767,8 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
 
 // Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.
 double GameBoard::king_near_other_king(Color attacker_color) {
-    double dBonus = 0;
+  
+    double dBonus = 0.0;
 
     int enemyKingSq;
     int frienKingSq;
@@ -1710,55 +1837,53 @@ int GameBoard::king_sq_of(Color color) {
 }
 
 
-// Returns 1 to 10. 1 if close to the passed sq. 10 if as far as possible from the passed sq.
-double GameBoard::king_near_sq(Color attacker_color, ull sq) {
-    double dBonus = 0;
+// Returns 1 to 14. 1 if close to the passed sq. 10 if as far as possible from the passed sq.
+// double GameBoard::king_near_sq(Color attacker_color, ull sq) {
+//     double dBonus = 0;
 
-    int enemyKingSq;
-    int frienKingSq;
-    ull enemyPieces;
-    ull tmpFrien;
+//     int enemyKingSq;
+//     int frienKingSq;
+//     ull enemyPieces;
+//     ull tmpFrien;
 
-    //if ( (white_king == 0ULL) || (black_king == 0ULL) ) return 0;
-    assert(white_king != 0ULL);
-    assert(black_king != 0ULL);
+//     //if ( (white_king == 0ULL) || (black_king == 0ULL) ) return 0;
+//     // NOTE: someoine else should have checked for this at a higher level.
+//     assert(white_king != 0ULL);
+//     assert(black_king != 0ULL);
 
+//     if (attacker_color == ShumiChess:: WHITE) {
+//         tmpFrien = white_king;         // don't mutate the bitboards
+//     } else {
+//         tmpFrien = black_king;         // don't mutate the bitboards
+//     }
 
-    if (attacker_color == ShumiChess:: WHITE) {
-        enemyPieces = (black_knights | black_bishops | black_pawns | black_rooks | black_queens);
-        tmpFrien = white_king;         // don't mutate the bitboards
-    } else {
-        enemyPieces = (white_knights | white_bishops | white_pawns | white_rooks | white_queens);
-        tmpFrien = black_king;         // don't mutate the bitboards
-    }
-
-    enemyKingSq = sq;
-    assert(enemyKingSq <= 63);
-    frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
-    assert(frienKingSq >= 0);
+//     enemyKingSq = sq;
+//     assert(enemyKingSq <= 63);
+//     frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
+//     assert(frienKingSq >= 0);
 
 
-    // Bring friendly king near enemy king (reward small distances to other king)
-    if (enemyPieces == 0) { // enemy has king only
+//     // Bring friendly king near enemy king (reward small distances to other king)
+//     if (enemyPieces == 0) { // enemy has king only
 
-        // 7 (furthest), to 1 (adjacent), to 0 (identical)
-        double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
-        assert (dFakeDist >=  1.0);
-        assert (dFakeDist <= 10.0);      // Board is only so big
+//         // 7 (furthest), to 1 (adjacent), to 0 (identical)
+//         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
+//         assert (dFakeDist >=  1.0);
+//         assert (dFakeDist <= 10.0);      // Board is only so big
 
-        // Bonus higher if friendly king closer to enemy king
-        dBonus = dFakeDist;
+//         // Bonus higher if friendly king closer to enemy king
+//         dBonus = dFakeDist;
 
-        // Bonus debugs
-        //dBonus = (double)frienKingSq;               // enemy king is attracted to a8
-        //dBonus = 63.0 - (double)(frienKingSq);    // enemy king is attracted to h1
+//         // Bonus debugs
+//         //dBonus = (double)frienKingSq;               // enemy king is attracted to a8
+//         //dBonus = 63.0 - (double)(frienKingSq);    // enemy king is attracted to h1
 
-        return dBonus;
+//         return dBonus;
 
-    }
+//     }
 
-    return dBonus;
-}
+//     return dBonus;
+// }
 
 int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq)
 {
@@ -2123,7 +2248,7 @@ bool GameBoard::is_king_in_check_new(Color color)
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-static bool kings_adjacent(const std::string &a, const std::string &b)
+static bool is_king_move_away(const std::string &a, const std::string &b)
 {
     int f1 = a[0] - 'a';
     int r1 = a[1] - '1';
@@ -2154,8 +2279,20 @@ int GameBoard::rand_new()
     return dist(rng);
 }
 
-// White gets lone king. Black gets queen or rook with his king.
 ///////////////////////////////////////////////////////////////
+//
+// Returns a FEN. White has a lone king. Black has king + (queen or rook). No other pieces or pawns.
+// Randomly chooses the 3 piece squares, with these constraints:
+//
+//   1) Kings are not adjacent (kings do not attack each other).
+//   2) The black heavy piece is not giving check to the white king
+//      (note: attack test may be conservative if king-blocking isn't modeled).
+//   3) Side to move is always White (" w - - 0 1").
+//
+// Note: This does NOT does not try to ensure the position is reachable from the initial position.
+//
+///////////////////////////////////////////////////////////////
+
 std::string GameBoard::random_kqk_fen(bool doQueen) {
 
     int itrys = 0;
@@ -2185,7 +2322,7 @@ retry_all:
     // 2) remove squares adjacent to the white king from "choices"
     std::vector<std::string> bk_choices;
     for (const auto &sq : all_squares) {
-        if (sq != wk && !kings_adjacent(wk, sq)) {
+        if (sq != wk && !is_king_move_away(wk, sq)) {
             bk_choices.push_back(sq);
         }
     }
@@ -2211,19 +2348,18 @@ retry_all:
     std::vector<std::string> bX_choices;      // Choices for the black heavy piece
     for (const auto &sq : all_squares)
     {
-        if (sq == wk || sq == bk)
-            continue;
+        // Rule: kings cant be on the same square.
+        if (sq == wk || sq == bk) continue;
 
-        bool attacks =
-            doQueen
-            ? queen_attacks(sq, wk)
-            : rook_attacks(sq, wk);
+        // New rule: White (lone king) must NOT be able to capture the black major piece immediately.
+        if (is_king_move_away(wk, sq)) continue;
+
+        bool attacks = doQueen ? queen_attacks(sq, wk) : rook_attacks(sq, wk);
 
         if (!attacks)
             bX_choices.push_back(sq);
     }
-    if (bX_choices.empty())
-        goto retry_all;
+    if (bX_choices.empty()) goto retry_all;
 
     // 5) Pick random black Q/R position
     idx = (size_t)rand_new() % bX_choices.size();
@@ -2243,13 +2379,11 @@ retry_all:
     place('k', bk);
     place(doQueen ? 'q' : 'r', bX);
 
-    // 5) make FEN ranks
+    // 7) make FEN ranks
     std::string fen;
-    for (int row = 0; row < 8; ++row)
-    {
+    for (int row = 0; row < 8; ++row) {
         int empty = 0;
-        for (int col = 0; col < 8; ++col)
-        {
+        for (int col = 0; col < 8; ++col) {
             char c = board[row][col];
             if (c == 0) {
                 ++empty;
@@ -2264,10 +2398,12 @@ retry_all:
         }
         if (empty)
             fen += char('0' + empty);
+
         if (row != 7)
             fen += '/';
     }
 
+    // Indicates White to move, no castle rights, and first move, 
     fen += " w - - 0 1";
 
     static int n = 0;

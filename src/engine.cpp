@@ -145,7 +145,7 @@ void Engine::reset_engine() {         // New game.
     // vector<Move> v;
     // int itrys = 0;
     // do {  
-    //     string stemp = game_board.random_kqk_fen(true);
+    //     string stemp = game_board.random_kqk_fen(false);
     //     game_board = GameBoard(stemp);
     //     v = get_legal_moves(ShumiChess::WHITE);
     //     ++itrys;
@@ -153,7 +153,8 @@ void Engine::reset_engine() {         // New game.
 
     // } while (v.size() == 0);
 
-    //game_board = GameBoard("2r2rk1/pp1qn1pp/4ppbn/3p4/1p3PPQ/3BPN1P/PBPP4/1RR3K1 w - - 9 24");
+    // "half chess"
+    //game_board = GameBoard("3qkbnr/1ppp1ppp/8/8/8/8/2PPPPPP/3QKBNR w KQkq - 0 1");
 
     game_board = GameBoard();
 
@@ -1401,51 +1402,13 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 
 
-int Engine::bishops_attacking_square_old(Color c, int sq)
-{
-    ull bit_target = (1ULL << sq);
-    ull rays       = get_diagonal_attacks(bit_target);  // your existing diagonal (bishop) attack generator
-    ull bishops    = game_board.get_pieces_template<Piece::BISHOP>(c);
-    return game_board.bits_in(rays & bishops);
-}
-
-
-//
-// This sees through all material
-int Engine::bishops_attacking_square(Color c, int sq)
-{
-    const int tf = sq % 8;   // 0..7 (h1=0 => 0=H ... 7=A) 
-    const int tr = sq / 8;   // 0..7
-
-    const int diag_sum  = tf + tr;   // NE-SW diagonal id
-    const int diag_diff = tf - tr;   // NW-SE diagonal id
-
-    ull bishops = game_board.get_pieces_template<Piece::BISHOP>(c);
-    int count = 0;
-
-    while (bishops)
-    {
-        const int s = utility::bit::lsb_and_pop_to_square(bishops);
-        const int f = s % 8;
-        const int r = s / 8;
-        if ((f + r) == diag_sum || (f - r) == diag_diff)
-        {
-            count++;
-        }
-    }
-
-    return count;
-}
-
-int Engine::bishops_attacking_center_squares(Color c)
-{
-    int itemp = 0;
-    itemp += bishops_attacking_square(c, game_board.square_e4);
-    itemp += bishops_attacking_square(c, game_board.square_d4);
-    itemp += bishops_attacking_square(c, game_board.square_e5);
-    itemp += bishops_attacking_square(c, game_board.square_d5);
-    return itemp;
-}
+// int Engine::bishops_attacking_square_old(Color c, int sq)
+// {
+//     ull bit_target = (1ULL << sq);
+//     ull rays       = get_diagonal_attacks(bit_target);  // your existing diagonal (bishop) attack generator
+//     ull bishops    = game_board.get_pieces_template<Piece::BISHOP>(c);
+//     return game_board.bits_in(rays & bishops);
+// }
 
 
 

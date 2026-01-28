@@ -235,9 +235,8 @@ class Engine {
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
 
-        int bishops_attacking_center_squares(Color c);
-        int bishops_attacking_square(Color c, int sq);   
-        int bishops_attacking_square_old(Color c, int sq);         
+ 
+        //int bishops_attacking_square_old(Color c, int sq);         
         
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move
                                     , GameState state 

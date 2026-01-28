@@ -281,12 +281,6 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
 {
 
     #ifdef _DEBUGGING_MOVE_CHAIN    // Start of an evaluation
-        //if (engine.move_history.size() > 7) {
-        //if (look_for_king_moves()) {
-        //if (has_repeated_move()) {
-        //if (alternating_repeat_prefix_exact(1)) {
-            //engine.print_move_history_to_file(fpDebug);    // debug only
-        //}
         fputs("  e=", fpDebug);
     #endif
 
@@ -377,12 +371,10 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
         Color enemy_of_color = (color == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
 
         // Has king only, or king with a single minor piece.
-        bool onlyKingEnemy   = engine.game_board.bIsOnlyKing(enemy_of_color);
-        bool onlyKingFriend  = engine.game_board.bIsOnlyKing(color);
+        bool onlyKingEnemy   = engine.game_board.hasNoMajorPieces(enemy_of_color);
+        bool onlyKingFriend  = engine.game_board.hasNoMajorPieces(color);
    
         int bonus_cp;
-
-        //printf("%ld", evp);
              
         switch (evp)
         {
@@ -405,17 +397,17 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
        
                 if (!onlyKingEnemy) {
 
+                    // Encourage: castling, pawns/knights/bishops attacking the center. Discourage knights on edge and corner.
                     test = cp_score_positional_get_opening(color, nPhase);
                     //if (is_debug) printf("\nopening: %ld", test);
                     cp_score_position_temp += test;
             
-                    // Note this return is in centpawns, and can be negative
+                    // Major piece positioning.
                     test = cp_score_positional_get_middle(color);
                     //if (is_debug) printf("\nmiddle: %ld", test);
                     cp_score_position_temp += test;    
                 }     
                 
-                // Note this return is in centpawns, and can be negative
                 test = cp_score_positional_get_end(color, nPhase, onlyKingFriend, onlyKingEnemy);
                 //if (is_debug) printf("\nend: %ld", test);
                 cp_score_position_temp += test;      
@@ -462,7 +454,6 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
         engine.print_move_to_file(move_last, nPlys, (GameState::INPROGRESS), false, true, true, fpDebug); 
     #endif
 
-    // Convert sum (for both colors) from centipawns to double.
     return cp_score_adjusted;
 }
 
@@ -489,8 +480,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 
     int cp_score_position_temp = 0;
     bool bOK;
-    int icp_temp, iZeroToThree, iZeroToThirty;
-    int iZeroToFour, iZeroToEight;
+    int icp_temp;
 
 
     // Add code to make king: 1. want to retain castling rights, and 2. get castled. (this one more important)
@@ -514,21 +504,20 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
         //if (!bOK) // false if enemy color has no pawns
 
         // Add code to discourage isolated pawns.
-        int isolanis = engine.game_board.count_isolated_pawns_cp(color, pawnFileInfo);
-        cp_score_position_temp -= (isolanis);   // centipawns
+        icp_temp = engine.game_board.count_isolated_pawns_cp(color, pawnFileInfo);
+        cp_score_position_temp -= (icp_temp);   // centipawns
 
         // Add code to discourage backward pawns/pawn holes
-        isolanis = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
-        cp_score_position_temp -= (isolanis);   // centipawns
+        icp_temp = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
+        cp_score_position_temp -= (icp_temp);   // centipawns
 
-        isolanis = engine.game_board.count_knights_on_holes_cp(color, holes_bb);
-        cp_score_position_temp -= (isolanis);   // cent
+        icp_temp = engine.game_board.count_knights_on_holes_cp(color, holes_bb);
+        cp_score_position_temp -= (icp_temp);   // cent
     
         // Add code to discourage doubled/tripled/quadrupled pawns. Note each pair of doubled pawns is 2. Each 
         // trio of tripled pawns is 3.
-        //pers_index = 1;
-        int doublees = engine.game_board.count_doubled_pawns_cp(color, pawnFileInfo);
-        cp_score_position_temp -= doublees;   // centipawns
+        icp_temp = engine.game_board.count_doubled_pawns_cp(color, pawnFileInfo);
+        cp_score_position_temp -= icp_temp;   // centipawns
 
         // Add code to encourage passed pawns. (1 for each passed pawn)
         int iZeroToThirty = engine.game_board.count_passed_pawns_cp(color, pawnFileInfo, passed_pawns);
@@ -554,24 +543,29 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
     //     cp_score_position_temp -= iZeroToThirty*50;   // centipawns
     // }
 
+    // Add code to discourage early queen occupation of center.
+    if (nPhase == OPENING) {
+        //cout << "feee";
+        icp_temp = engine.game_board.queenOnCenterSquare_cp(color);
+        cp_score_position_temp -= icp_temp;     // centipawns
+    }
+
     // Add code to encourage pawns attacking the 4-square center 
-    iZeroToFour = engine.game_board.pawns_attacking_center_squares_cp(color);
-    cp_score_position_temp += iZeroToFour;  // centipawns  (from 14)  
+    icp_temp = engine.game_board.pawns_attacking_center_squares_cp(color);
+    cp_score_position_temp += icp_temp;  // centipawns  (from 14)  
 
     // Add code to encourage knights attacking the 4-square center 
-    iZeroToFour = engine.game_board.knights_attacking_center_squares(color);
-    cp_score_position_temp += iZeroToFour*20;  // centipawns
+    icp_temp = engine.game_board.knights_attacking_center_squares_cp(color);
+    cp_score_position_temp += icp_temp;  // centipawns
 
     // Add code to encourage bishops attacking the 4-square center
-    iZeroToFour = engine.bishops_attacking_center_squares(color);
-    cp_score_position_temp += iZeroToFour*20;  // centipawns
+    icp_temp = engine.game_board.bishops_attacking_center_squares_cp(color);
+    cp_score_position_temp += icp_temp;  // centipawns
 
+    // Add code to discourage knights on the edge or in the corner
+    icp_temp = engine.game_board.is_knight_on_edge_cp(color);
+    cp_score_position_temp -= icp_temp;  // centipawns
 
-    iZeroToFour = engine.game_board.is_knight_on_edge_cp(color);
-    cp_score_position_temp -= iZeroToFour;  // centipawns
-
-
-endEval:
     return cp_score_position_temp;
 
 }
@@ -579,17 +573,15 @@ endEval:
 // should be called in middlegame, but tries to prepare for endgame.
 int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     int cp_score_position_temp = 0;
+    int icp_temp;
 
     // bishop pair bonus (two bishops) (2 bishops)
     int bishops = engine.game_board.bits_in(engine.game_board.get_pieces_template<Piece::BISHOP>(color));
     if (bishops >= 2) cp_score_position_temp += 10;   // in centipawns
 
     // Add code to encourage rook connections (files or ranks)
-    int connectiveness;     // One if rooks connected. 0 if not.
-    bool isOK = engine.game_board.rook_connectiveness(color, connectiveness);
-    if (isOK) {    // !isOK just means that there werent two rooks to connect
-        cp_score_position_temp += connectiveness*150;
-    }
+    icp_temp = engine.game_board.rook_connectiveness_cp(color);
+    cp_score_position_temp += icp_temp;
     
     // Add code to encourage occupation of 7th rank by queens and rook
     int iZeroToFour = engine.game_board.rook_7th_rankness_cp(color);
@@ -648,14 +640,12 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
 
     //Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
 
-
     if (nPhase > GamePhase::OPENING) { 
         // Add code to attack squares near the king
         int itemp = engine.game_board.attackers_on_enemy_king_near(color);
         assert (itemp>=0);
         cp_score_position_temp += itemp*20;  // centipawns  
     }
-    //if (is_debug) printf("\ngt2: %ld", cp_score_position_temp);
 
     if (onlyKngEnemy) {
 
@@ -720,33 +710,25 @@ int MinimaxAI::phaseOfGame(int material_cp) {
         if (bBothCastled) nPhase = GamePhase::MIDDLE;
     }
 
-    // int i_castle_status = engine.game_board.get_castle_bonus_cp(engine.game_board.turn);
-
-
-    // bool bHasCastled = engine.game_board.bHasCastled(engine.game_board.turn);
-
-    // int nPhase = (bHasCastled && ((engine.computer_ply_so_far)>17) );   // NOTE: this is crap
-
     return nPhase;
 }
 
 
 // phaseOfGame(), but gets the material(s) by itself. For display only.
 int MinimaxAI::phase_of_game_full() {
-    int cp_score_material_all = 0;
+    int cp_score_material_avg = 0;
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
         int cp_pawns_only_temp;
         int cp_score_mat_temp = engine.game_board.get_material_for_color(color1, cp_pawns_only_temp);
         assert (cp_score_mat_temp>=0);    // there is no negative value material 
-        cp_score_material_all += cp_score_mat_temp;   
+        cp_score_material_avg += cp_score_mat_temp;   
     }
 
-    cp_score_material_all = cp_score_material_all / 2;
+    cp_score_material_avg = cp_score_material_avg / 2;
 
-    //cout << "bogee " << cp_score_material_all;
-    int nPhase = phaseOfGame(cp_score_material_all); 
+    int nPhase = phaseOfGame(cp_score_material_avg); 
     return nPhase;
 }
 
@@ -1264,7 +1246,6 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     global_debug_flag = true;
     //itemp = engine.game_board.get_castle_bonus_cp(Color::WHITE, iPhase);
-    //itemp = engine.bishops_attacking_center_squares(ShumiChess::WHITE);
 
     // test harness for testing isolated/doubled/passed pawns
     ull passed_pawns;
@@ -1274,20 +1255,23 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     int itemp2=0;
     PawnFileInfo pawnFileInfo;
 
-    isOK = engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[friendlyP]);
-    isOK = isOK && engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[enemyP]);
+    //isOK = engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[friendlyP]);
+    //isOK = isOK && engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[enemyP]);
     //if (isOK) itemp1 = engine.game_board.count_passed_pawns_cp(Color::WHITE, pawnFileInfo,passed_pawns);
     //if (isOK) itemp1 = engine.game_board.count_pawn_holes_cp(Color::WHITE, pawnFileInfo, holes);
-    if (isOK) itemp1 = engine.game_board.rooks_file_status_cp(Color::WHITE, pawnFileInfo);
+    //if (isOK) itemp1 = engine.game_board.rooks_file_status_cp(Color::WHITE, pawnFileInfo);
     
 
-    isOK = engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[friendlyP]);
-    isOK = isOK && engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[enemyP]);
+    // = engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[friendlyP]);
+    //isOK = isOK && engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[enemyP]);
     //if (isOK) itemp2 = engine.game_board.count_passed_pawns_cp(Color::BLACK, pawnFileInfo,passed_pawns);
     //if (isOK) itemp2 = engine.game_board.count_pawn_holes_cp(Color::BLACK, pawnFileInfo, holes);
     if (isOK) itemp2 = engine.game_board.rooks_file_status_cp(Color::BLACK, pawnFileInfo);
     
-    cout << "wht " << itemp1 << "           blk " << itemp2 << endl;
+    //itemp2 = engine.game_board.king_center_manhattan_dist(Color::WHITE);
+    // itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
+    // itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
+    cout << "wht " << pszTemp << "           blk " << itemp2 << endl;
 
     global_debug_flag = false;
 

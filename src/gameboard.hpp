@@ -178,9 +178,9 @@ class GameBoard {
         }
 
         // Returns a bitboard
-        inline ull get_pieces() {
+        inline ull get_pieces() const {
             return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king | 
-                black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king;
+                   black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king;
         }
 
         // Piece get_piece_type_on_bitboard_using_templates(ull bitboard);
@@ -193,6 +193,7 @@ class GameBoard {
 
         int king_edge_weight(Color color);
         int piece_edge_weight(ull pieces);
+        int queenOnCenterSquare_cp(Color c) const;
 
         int center_closeness_bonus(Color c);
 
@@ -200,18 +201,19 @@ class GameBoard {
         int pawns_attacking_center_squares_cp(Color c);
 
         int knights_attacking_square(Color c, int sq);
-        int knights_attacking_center_squares(Color for_color);
+        int knights_attacking_center_squares_cp(Color for_color);
+
+        int bishops_attacking_center_squares_cp(Color c);
+        int bishops_attacking_square(Color c, int sq);   
 
         int king_castle_happiness(Color c) const;
-        // bool knights_centerness(Color c, double& centerness) const;
-        // bool bishops_centerness(Color c, double& centerness) const;
 
         int bishop_pawn_pattern(Color color);       // Stupid bishop blocking pawn
         int queen_still_home(Color color);          // Stupid queen move too early
 
         bool is_king_in_check_new(Color color);
 
-        bool rook_connectiveness(Color c, int& connectiveness) const;
+        int rook_connectiveness_cp(Color c) const;
         int rook_7th_rankness_cp(Color c);
 
         bool build_pawn_file_summary(Color c, PInfo& p);
@@ -244,14 +246,15 @@ class GameBoard {
 
         double distance_between_squares(int enemySq, int frienSq);
         int get_Chebyshev_distance(int x1, int y1, int x2, int y2);
+        int get_Manhattan_distance(int x1, int y1, int x2, int y2);   
         double get_board_distance(int x1, int y1, int x2, int y2);
 
         int king_sq_of(Color color);    
-        double king_near_sq(Color attacker_color, ull sq);    
+        //double king_near_sq(Color attacker_color, ull sq);    
         double king_near_other_king(Color attacker_color);
+        int king_center_manhattan_dist(Color c);
         int is_knight_on_edge_cp(Color color);
-        bool bIsOnlyKing(Color attacker_color);
-        bool bNoPawns();
+        bool hasNoMajorPieces(Color attacker_color);
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
         
@@ -290,40 +293,62 @@ class GameBoard {
             }
         }
 
+        // Three possibilities here: Which is best? Must use fastest one.
+        // inline int GameBoard::bits_in(ull bitboard) const {
+        //     auto bs = bitset<64>(bitboard);
+        //     return (int) bs.count();
+        // }
+        // It translates directly to the POPCNT machine instruction on supported x86-64 processors, providing 
+        // high-performance bit counting. 
+        inline int bits_in(ull bb) const {
+            #if defined(_MSC_VER)
+                return (int)__popcnt64(bb);     // bb is NOT mutated here
+            #else
+                return (int)__builtin_popcountll(bb);
+            #endif
+        }
+        // inline int bits_in(ull bb) const {
+        //     int n = 0;
+        //     while (bb) { bb &= (bb - 1); ++n; }    // The K&R or Kernighan trick
+        //     return n;
+        // }
 
-
-
-        int bits_in(ull x) const;
-        int bits_in0(ull x) const;
 
         // Square identities (in h1=0 bit board lingo)
-        int square_h1 = 0;
-        int square_g1 = 1;
-        int square_e1 = 3;
-        int square_c1 = 5;
-        int square_a1 = 7;
-        int square_e4 = 27;
-        int square_d4 = 28;
-        int square_e5 = 35;
-        int square_d5 = 36;
-        int square_e6 = 43;  // e4 + 16
-        int square_d6 = 44;  // d4 + 16
-        int square_e3 = 19;  // e4 - 8
-        int square_d3 = 20;  // d4 - 8
-        int square_f3 = 18;  // e3 - 1
-        int square_g3 = 17;  // e3 - 2
-        int square_h3 = 16;  // e3 - 3
-        int square_h8 = 56;
-        int square_g8 = 57;
-        int square_e8 = 59;
-        int square_c8 = 61;
-        int square_a8 = 63;
+        // "static constexpr" means, only one set of contants for multiple instances.
+        static constexpr int square_h1 = 0;
+        static constexpr int square_g1 = 1;
+        static constexpr int square_e1 = 3;
+        static constexpr int square_c1 = 5;
+        static constexpr int square_a1 = 7;
+
+        static constexpr int square_e4 = 27;
+        static constexpr int square_d4 = 28;
+        static constexpr int square_f4 = 26;   // e4 - 1
+        static constexpr int square_c4 = 29;   // d4 + 1
+
+        static constexpr int square_e5 = 35;
+        static constexpr int square_d5 = 36;
+        static constexpr int square_f5 = 34;   // e5 - 1
+        static constexpr int square_c5 = 37;   // d5 + 1
+
+        static constexpr int square_e6 = 43;   // e4 + 16
+        static constexpr int square_d6 = 44;   // d4 + 16
+
+        static constexpr int square_e3 = 19;   // e4 - 8
+        static constexpr int square_d3 = 20;   // d4 - 8
+        static constexpr int square_f3 = 18;   // e3 - 1
+        static constexpr int square_g3 = 17;   // e3 - 2
+        static constexpr int square_h3 = 16;   // e3 - 3
+
+        static constexpr int square_h8 = 56;
+        static constexpr int square_g8 = 57;
+        static constexpr int square_e8 = 59;
+        static constexpr int square_c8 = 61;
+        static constexpr int square_a8 = 63;
 
 
-
-
-
-        double openingness_of(int avg_cp);
+        //double openingness_of(int avg_cp);
 
 };
 } // end namespace ShumiChess

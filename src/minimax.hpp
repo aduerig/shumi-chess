@@ -147,10 +147,11 @@ public:
 
     int cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black);
 
+    int cp_score_positional_get_pawn_things(ShumiChess::Color color, int nPhase); 
     int cp_score_positional_get_opening(ShumiChess::Color color, int nPhase); 
     int cp_score_positional_get_middle(ShumiChess::Color color); 
     int cp_score_positional_get_end(ShumiChess::Color color, int nPly,
-                                    bool onlyKngFriend, bool onlyKngEnemy
+                                    bool noMajorPiecesFriend, bool noMajorPiecesEnemy
                                 ); 
 
     int evaluate_board(ShumiChess::Color for_color, ShumiChess::EvalPersons evp, bool isQuietPosition
