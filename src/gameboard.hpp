@@ -245,15 +245,18 @@ class GameBoard {
                                                ull passed_white_pwns,
                                                ull passed_black_pswns);
 
+        #define MAX_DIST 10     // Varies based on method used. 14 for Manhatten, 8 for Chebyshev
         double distance_between_squares(int enemySq, int frienSq);
 
         int get_Chebyshev_distance(int x1, int y1, int x2, int y2);
         int get_Manhattan_distance(int x1, int y1, int x2, int y2);   
         double get_board_distance(int x1, int y1, int x2, int y2);
-        int get_board_distance_100(int x1, int y1, int x2, int y2) const;
+        //int get_board_distance_100(int x1, int y1, int x2, int y2) const;
 
         // int king_sq_of(Color color);    
-        //double king_near_sq(Color attacker_color, ull sq);    
+        //double king_near_sq(Color attacker_color, ull sq);  
+
+        double king_far_from_other_king_cp(Color attacker_color);
         double king_near_other_king(Color attacker_color);
         int king_center_manhattan_dist(Color c);
         int is_knight_on_edge_cp(Color color);

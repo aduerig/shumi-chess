@@ -398,12 +398,12 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
                 if (!onlyKingEnemy) {
 
                     // Encourage: castling, pawns/knights/bishops attacking the center. Discourage knights on edge and corner.
-                    test = cp_score_positional_get_opening(color, nPhase);
+                    test = cp_score_positional_get_opening_cp(color, nPhase);
                     //if (is_debug) printf("\nopening: %ld", test);
                     cp_score_position_temp += test;
             
                     // Major piece positioning.
-                    test = cp_score_positional_get_middle(color);
+                    test = cp_score_positional_get_middle_cp(color);
                     //if (is_debug) printf("\nmiddle: %ld", test);
                     cp_score_position_temp += test;    
                 }     
@@ -476,7 +476,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
 // person MrShumi = {100, -10, -30, +14, 20, 20, 20};  // All of these are integer and are applied in centipawns
 // int pers_index = 0;
 
-int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPhase) {
+int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int nPhase) {
 
     int cp_score_position_temp = 0;
     bool bOK;
@@ -569,7 +569,7 @@ int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPha
 }
 //
 // should be called in middlegame, but tries to prepare for endgame.
-int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
+int MinimaxAI::cp_score_positional_get_middle_cp(ShumiChess::Color color) {
     int cp_score_position_temp = 0;
     int icp_temp;
 
@@ -625,7 +625,9 @@ int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color,
 int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
                                             bool onlyKngFriend, bool onlyKngEnemy
                                             ) {
-    int icp_temp;                                
+    int icp_temp;   
+    int icp_temp2;     
+    double dcp_temp;                            
     int cp_score_position_temp = 0;
 
     //if (is_debug) printf("\ngt1: %ld", cp_score_position_temp);
@@ -648,19 +650,19 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
         // Rewards king near other king
         // Returns 2 to 10,. 2 if in opposition, 10 if in opposite corners.
         // Returns zero if other pieces on board
+        dcp_temp = engine.game_board.king_far_from_other_king_cp(color);
+        icp_temp = (int)dcp_temp;
+
         double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..
-    
+        double dFarness = MAX_DIST - dkk;   // 8 if in opposition, 0 if in opposite corners
+        icp_temp2 = (int)(dFarness * 30.0);
+        assert(icp_temp == icp_temp2);
 
-        double dFarness = 10.0 - dkk;   // 8 if in opposition, 0, if in opposite corners
-        cp_score_position_temp += (int)(dFarness * 25.0);
-
-        //if (is_debug) printf("\ngt3: %ld", cp_score_position_temp);
-
+        cp_score_position_temp += (int)dcp_temp;
 
         // Rewards if enemy king near corner. 0 for the inner ring (center) 3 for outer ring (edge squares)
         Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
         icp_temp = engine.game_board.king_edgeness_cp(enemy_color);
-
         cp_score_position_temp += icp_temp;
 
         //if (is_debug) printf("\ngt4: %ld", cp_score_position_temp);
@@ -1229,6 +1231,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     ull passed_pawns;
     ull holes;
 
+    double dcp_temp;
     int itemp1=0;
     int itemp2=0;
     PawnFileInfo pawnFileInfo;
@@ -1244,12 +1247,20 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //isOK = isOK && engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[enemyP]);
     //if (isOK) itemp2 = engine.game_board.count_passed_pawns_cp(Color::BLACK, pawnFileInfo,passed_pawns);
     //if (isOK) itemp2 = engine.game_board.count_pawn_holes_cp(Color::BLACK, pawnFileInfo, holes);
-    if (isOK) itemp2 = engine.game_board.rooks_file_status_cp(Color::BLACK, pawnFileInfo);
+    //if (isOK) itemp2 = engine.game_board.rooks_file_status_cp(Color::BLACK, pawnFileInfo);
     
+    dcp_temp = engine.game_board.king_near_other_king(Color::WHITE);
+    //double dcp_temp = engine.game_board.king_far_from_other_king_cp(Color::WHITE);
+    itemp1 = (int)dcp_temp;
+
+    dcp_temp = engine.game_board.king_near_other_king(Color::BLACK);
+    //double dcp_temp = engine.game_board.king_far_from_other_king_cp(Color::WHITE);
+    itemp2 = (int)dcp_temp;
+
     //itemp2 = engine.game_board.king_center_manhattan_dist(Color::WHITE);
     // itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
     // itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
-    cout << "wht " << pszTemp << "           blk " << itemp2 << endl;
+    cout << "wht " << itemp1 << "           blk " << itemp2 << endl;
 
     global_debug_flag = false;
 

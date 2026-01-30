@@ -8,6 +8,7 @@
 
 
 #include "gameboard.hpp"
+#include "weights.hpp"
 //
 // Note: Why this needs to be here is a complete mystery. But if #include <assert.h> is 
 // done before #include "gameboard.hpp", no asserts come out!
@@ -574,90 +575,13 @@ int GameBoard::pawns_attacking_square(Color c, int sq)
 }
 
 
-// int GameBoard::pawns_attacking_center_squares_cp(Color c) {
-    
-//     // Offensive .vs. defensive center squares. Like Offensive center the best.
-//     constexpr int CTR_DEF_WGHT = 33;     // weight for center e4,d4,e5,d5  "defensive" center squares
-//     constexpr int CTR_OFF_WGHT = 40;     // weight for center e4,d4,e5,d5  "offensive" center squares
-//     constexpr int ADV_CTR_WGHT = 30;         // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
-
-//     int sum = 0;
-
-//     if (c == Color::WHITE) {
-
-//         sum += CTR_OFF_WGHT * (  pawns_attacking_square(c, square_e5)
-//                         + pawns_attacking_square(c, square_d5));
-
-//         sum += CTR_DEF_WGHT * (  pawns_attacking_square(c, square_e4)
-//                           + pawns_attacking_square(c, square_d4));
-
-//         sum += ADV_CTR_WGHT * (  pawns_attacking_square(c, square_e6)
-//                       + pawns_attacking_square(c, square_d6));
-//     } else {
-
-//         sum += CTR_OFF_WGHT * (  pawns_attacking_square(c, square_e4)
-//                           + pawns_attacking_square(c, square_d4));
-
-//         sum += CTR_DEF_WGHT * ( pawns_attacking_square(c, square_e5)
-//                          + pawns_attacking_square(c, square_d5));
-
-//         sum += ADV_CTR_WGHT * (  pawns_attacking_square(c, square_e3)
-//                       + pawns_attacking_square(c, square_d3));
-//     }
-//     return sum;
-
-// }
-// Returns in cp. 
-// The four center squares are weighted, "offensive" are the 2 squares near the enemy,
-// "defensive" are the 2 squares near the friendly king.
-// int GameBoard::pawns_attacking_center_squares_cp(Color c)
-// {
-//     // Offensive .vs. defensive center squares. Like Offensive center the best.
-//     constexpr int CTR_DEF_WGHT = 33;     // weight for center e4,d4,e5,d5  "defensive" center squares
-//     constexpr int CTR_OFF_WGHT = 40;     // weight for center e4,d4,e5,d5  "offensive" center squares
-//     constexpr int ADV_CTR_WGHT = 30;     // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
-//     constexpr int ADV_FLK_WGHT = 10;     // weight for "advanced flank center" c4,f4 (black) c5,f5 (White)
-
-//     int sum = 0;
-
-//     if (c == Color::WHITE) {
-
-//         // Offensive center (near enemy)
-//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
-//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
-
-//         // Defensive center (near friendly king)
-//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
-//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
-
-//         // Advanced center
-//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
-//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
-
-//     } else {
-
-//         // Offensive center (near enemy)
-//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
-//         sum += CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
-
-//         // Defensive center (near friendly king)
-//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
-//         sum += CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
-
-//         // Advanced center
-//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
-//         sum += ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
-//     }
-
-//     return sum;
-// }
 int GameBoard::pawns_attacking_center_squares_cp(Color c)
 {
     // Offensive .vs. defensive center squares. Like Offensive center the best.
-    constexpr int CTR_DEF_WGHT = 25;     // weight for center e4,d4,e5,d5  "defensive" center squares
-    constexpr int CTR_OFF_WGHT = 30;     // weight for center e4,d4,e5,d5  "offensive" center squares
-    constexpr int ADV_CTR_WGHT = 20;     // weight for "advanced center" e6,d6 (White) or e3,d3 (Black)
-    constexpr int ADV_FLK_WGHT = 10;     // weight for "advanced flank center" c4,f4 (black) c5,f5 (White)
+    constexpr int CTR_DEF_WGHT = 25;     // weight for center e4,d4 (white); e5,d5, (black) "defensive" center squares
+    constexpr int CTR_OFF_WGHT = 30;     // weight for center e4,d4 (black); e5,d5, (white) "offensive" center squares
+    constexpr int ADV_CTR_WGHT = 20;     // weight for "advanced center" e6,d6 (White); or e3,d3 (Black)
+    constexpr int ADV_FLK_WGHT = 10;     // weight for "advanced flank" c4,f4 (black); c5,f5 (White)
 
     int sum = 0;
 
@@ -1300,6 +1224,23 @@ int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) con
 int GameBoard::count_passed_pawns_cp(Color c,
                                     const PawnFileInfo& pawnInfo,
                                     ull& passed_pawns) const {
+
+    // base = PASSED_PAWN_SLOPE_WGHT*adv*adv + PASSED_PAWN_YINRCPT;
+    /*
+        Passed pawn base value comparison (centipawns)
+
+        adv   new: 5*adv*adv + 20     old (hand-tuned)
+        ----------------------------------------------
+        1        25                  25    // 2nd rank
+        2        40                  25    // 3rd rank
+        3        65                  45    // 4th rank
+        4       100                  82    // 5th rank
+        5       145                 151    // 6th rank
+        6       200                 200    // 7th rank
+    */
+    constexpr int PASSED_PAWN_SLOPE_WGHT = 5;
+    constexpr int PASSED_PAWN_YINRCPT = 20;
+                                        
     passed_pawns = 0ULL;
 
     // Friendly pawns (already summarized)
@@ -1340,12 +1281,15 @@ int GameBoard::count_passed_pawns_cp(Color c,
 
             // advancement from the friendly side's perspective
             int base;
-            if      (adv == 6) base = 200;   // 7th rank    (2 pawns)
-            else if (adv == 5) base = 151;   // 6th         (1.5 pawns)
-            else if (adv == 4) base = 82;    // 5th
-            else if (adv == 3) base = 45;    // 4th
-            else if (adv >= 1) base = 25;    // 2nd/3rd
-            else assert(0);           // Cant have pawns on 1st or last rank (adv=0 or adv=7)
+            // if      (adv == 6) base = 200;   // 7th rank    (2 pawns)
+            // else if (adv == 5) base = 151;   // 6th         (1.5 pawns)
+            // else if (adv == 4) base = 82;    // 5th
+            // else if (adv == 3) base = 45;    // 4th
+            // else if (adv >= 1) base = 25;    // 2nd/3rd
+            // else assert(0);           // Cant have pawns on 1st or last rank (adv=0 or adv=7)
+            assert ((adv>0) && (adv<7));  // Cant have pawns on 1st or 8th rank (adv=0 or adv=7)
+            base = PASSED_PAWN_SLOPE_WGHT*adv*adv + PASSED_PAWN_YINRCPT;
+
 
             // Protected passed pawn?
             // A friendly pawn protects this pawn if it sits on a square that attacks (s).
@@ -1677,30 +1621,30 @@ double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
 // Fast Euclidean distance using a lookup table.
 // Returns approx 100*sqrt(dx*dx + dy*dy) in [0..990].  No doubles.  No loops.
 //
-int GameBoard::get_board_distance_100(int x1, int y1, int x2, int y2) const
-{
-    int dx = x1 - x2; if (dx < 0) dx = -dx;
-    int dy = y1 - y2; if (dy < 0) dy = -dy;
+// int GameBoard::get_board_distance_100(int x1, int y1, int x2, int y2) const
+// {
+//     int dx = x1 - x2; if (dx < 0) dx = -dx;
+//     int dy = y1 - y2; if (dy < 0) dy = -dy;
 
-    const int d2 = dx*dx + dy*dy;   // 0..98
-    assert(d2 >= 0 && d2 <= 98);
+//     const int d2 = dx*dx + dy*dy;   // 0..98
+//     assert(d2 >= 0 && d2 <= 98);
 
-    // round(100*sqrt(d2)) for d2=0..98
-    static const unsigned short dist100[99] = {
-          0, 100, 141, 173, 200, 224, 245, 265, 283, 300,
-        316, 332, 346, 361, 374, 387, 400, 412, 424, 436,
-        447, 458, 469, 479, 490, 500, 510, 520, 529, 539,
-        548, 557, 566, 574, 583, 592, 600, 608, 616, 624,
-        632, 640, 648, 656, 663, 671, 678, 686, 693, 700,
-        707, 714, 721, 728, 735, 742, 748, 755, 762, 768,
-        775, 781, 787, 794, 800, 806, 812, 819, 825, 831,
-        837, 843, 849, 854, 860, 866, 872, 877, 883, 889,
-        894, 900, 906, 911, 917, 922, 927, 933, 938, 943,
-        949, 954, 959, 964, 970, 975, 980, 985, 990
-    };
+//     // round(100*sqrt(d2)) for d2=0..98
+//     static const unsigned short dist100[99] = {
+//           0, 100, 141, 173, 200, 224, 245, 265, 283, 300,
+//         316, 332, 346, 361, 374, 387, 400, 412, 424, 436,
+//         447, 458, 469, 479, 490, 500, 510, 520, 529, 539,
+//         548, 557, 566, 574, 583, 592, 600, 608, 616, 624,
+//         632, 640, 648, 656, 663, 671, 678, 686, 693, 700,
+//         707, 714, 721, 728, 735, 742, 748, 755, 762, 768,
+//         775, 781, 787, 794, 800, 806, 812, 819, 825, 831,
+//         837, 843, 849, 854, 860, 866, 872, 877, 883, 889,
+//         894, 900, 906, 911, 917, 922, 927, 933, 938, 943,
+//         949, 954, 959, 964, 970, 975, 980, 985, 990
+//     };
 
-    return (int)dist100[d2];
-}
+//     return (int)dist100[d2];
+// }
 
 
 //
@@ -1724,17 +1668,19 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     //double dfakeDist = (double)(abs(xEnemy - xFrien) +  abs(yEnemy - yFrien));
     //double dfakeDist = (double)iFakeDist;
 
-    // Method 2 Chebyshev. This coorasponds to the number of king moves to the square on an empty board,.
+    // Method 2 Chebyshev. This coorasponds to the number of king moves to the square on an empty board,
+    //#define MAX_DIST 14
     // iFakeDist = get_Chebyshev_distance(xEnemy, yEnemy, xFrien, yFrien);
     // dfakeDist = (double)iFakeDist;
 
     // Method 3. Most accurate distance (table driven)
+    //#define MAX_DIST 10
     dfakeDist = get_board_distance(xEnemy, yEnemy, xFrien, yFrien);
     
     //dfakeDist = (double)xFrien;     // debug only
 
     assert (dfakeDist >=  0.0);
-    assert (dfakeDist <= 10.0);
+    assert (dfakeDist <= MAX_DIST);
    
     return dfakeDist;
 }
@@ -1787,7 +1733,21 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
 }
 
 
-// Returns 2 to 7,. Zero if in opposition, 7 if in opposite corners.
+double GameBoard::king_far_from_other_king_cp(Color attacker_color) {
+
+    constexpr int FAR_FROM_KING_WGHT = 30;
+
+    // Returns 2 to MAX_DIST inclusive. 2 if in opposition, MAX_DIST if in opposite corners.
+    double dkk = king_near_other_king(attacker_color);
+
+    double dFarness = MAX_DIST - dkk;   // 8 if in opposition, 0, if in opposite corners
+    assert (dFarness>=0.0);
+    return (int)(dFarness * FAR_FROM_KING_WGHT);
+
+}
+
+
+// Returns 2 to MAX_DIST inclusive. 2 if in opposition, MAX_DIST if in opposite corners.
 double GameBoard::king_near_other_king(Color attacker_color) {
   
     double dBonus = 0.0;
@@ -1825,10 +1785,10 @@ double GameBoard::king_near_other_king(Color attacker_color) {
         // 7 (furthest), to 1 (adjacent), to 0 (identical)
         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
         assert (dFakeDist >=  2.0);      // Kings cant touch each other
-        assert (dFakeDist <= 14.0);      // Board is only so big  Note: how big? 14 is max for all including manhatten distance.
+        assert (dFakeDist <= MAX_DIST);
 
         // Bonus higher if friendly king closer to enemy king
-        dBonus = dFakeDist;    //dFakeDist*dFakeDist / 2.0;
+        dBonus = dFakeDist;
 
         // Bonus debugs
         //dBonus = (double)frienKingSq;               // enemy king is attracted to a8

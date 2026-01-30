@@ -142,21 +142,21 @@ void Engine::reset_engine() {         // New game.
     //game_board = GameBoard("r1bqkbnr/ppppp1pp/2n2p2/8/8/1PN2N2/P1PPPPPP/R1BQKB1R b KQkq - 3 3");
 
     // Or you can pick a random simple endgame FEN. (maybe)
-    vector<Move> v;
-    int itrys = 0;
-    do {  
-        string stemp = game_board.random_kqk_fen(false);
-        game_board = GameBoard(stemp);
-        v = get_legal_moves(ShumiChess::WHITE);
-        ++itrys;
-        assert(itrys < 4);
+    // vector<Move> v;
+    // int itrys = 0;
+    // do {  
+    //     string stemp = game_board.random_kqk_fen(false);
+    //     game_board = GameBoard(stemp);
+    //     v = get_legal_moves(ShumiChess::WHITE);
+    //     ++itrys;
+    //     assert(itrys < 4);
 
-    } while (v.size() == 0);
+    // } while (v.size() == 0);
 
     // "half chess"
     //game_board = GameBoard("3qkbnr/2pppppp/8/8/8/8/2PPPPPP/3QKBNR w KQkq - 0 1");
 
-    //game_board = GameBoard();
+    game_board = GameBoard();
 
     //////////////////////////////////////////////////////////////////////.
 
