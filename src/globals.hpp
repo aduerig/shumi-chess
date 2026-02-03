@@ -88,7 +88,23 @@ enum GameState {
     DRAW,
     BLACKWIN
 };
-
+//
+//  GamePhase::OPENING:
+//      1. Castle.
+//      2. Dont occupy center with queen. 
+//      3. Prevent stupid-bishop pattern. 
+//      4. Dont attack enemy king squares yet. (do it in all phases afterward)
+//
+//  GamePhase::MIDDLE_EARLY:
+//      1. Castle (half strength motivator)
+//
+//  GamePhase::MIDDLE:
+//
+//  GamePhase::ENDGAME
+// 
+//  GamePhase::ENDGAME_LATE
+//
+//
 enum GamePhase {
     OPENING = 0,
     MIDDLE_EARLY,

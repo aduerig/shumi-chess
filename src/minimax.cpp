@@ -296,8 +296,8 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
     //int pawns_cp_white = 0;
     //int pawns_cp_black = 0;
 
-    int tempsum = 0.0;
-    int tempsumNP = 0.0;
+    int tempsum = 0;
+    int tempsumNP = 0;
     int cp_score_material_all = 0;
     int cp_score_pawns_only = 0;
     
@@ -333,7 +333,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
         cp_score_material_all += cp_score_mat_temp;
         cp_score_pawns_only += cp_pawns_only_temp;
 
-    }
+    }   // END loop over both colors
 
     assert(tempsum>=0);
     assert(tempsumNP>=0);
@@ -350,7 +350,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosi
     // ??? Note: display only
     engine.material_centPawns = cp_score_material_all;
 
-
+    assert (cp_score_material_avg >= 0);
     int nPhase = phaseOfGame(cp_score_material_avg); 
 
     //
@@ -532,25 +532,23 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
 
     }
 
-    // if (nPhase == OPENING) {
-    //     // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
-    //     // Note: this is gross
-    //     pers_index = 2;
-    //     iZeroToThirty = engine.game_board.bishop_pawn_pattern(color);
-    //     //assert (iZeroToThirty>=0);
-    //     cp_score_position_temp -= iZeroToThirty*50;   // centipawns
-    // }
+    //if (nPhase == GamePhase::OPENING) {
+        // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
+        // Note: this is gross
+        icp_temp = engine.game_board.bishop_pawn_pattern_cp(color);
+        //assert (iZeroToThirty>=0);
+        cp_score_position_temp -= icp_temp;   // centipawns
+    //}
 
     // Add code to discourage early queen occupation of center.
-    if (nPhase == OPENING) {
-        //cout << "feee";
+    //if (nPhase == GamePhase::OPENING) {
         icp_temp = engine.game_board.queenOnCenterSquare_cp(color);
         cp_score_position_temp -= icp_temp;     // centipawns
-    }
+    //}
 
     // Add code to encourage pawns attacking the 4-square center 
     icp_temp = engine.game_board.pawns_attacking_center_squares_cp(color);
-    cp_score_position_temp += icp_temp;  // centipawns  (from 14)  
+    cp_score_position_temp += icp_temp;  // centipawns  (from 14)  clea
 
     // Add code to encourage knights attacking the 4-square center 
     icp_temp = engine.game_board.knights_attacking_center_squares_cp(color);
@@ -611,7 +609,7 @@ int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color,
 
     double dRatio = (double)np_adv_for_color / (double)denominator;
 
-    // Full complement of pieces is 4000 centpawns. Suppose one side a knight up. Then 
+    // Full complement of pieces is MAX_CP_PER_SIDE centpawns. Suppose one side a knight up. Then 
     // ratio = 320 / 4000  or about 1 tenth, so we see about 60 cp motivation to trade.
     int iReturn = (int)(dRatio*1200.0);
     if (iReturn >  cp_clamp) iReturn =  cp_clamp;
@@ -630,19 +628,15 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
     double dcp_temp;                            
     int cp_score_position_temp = 0;
 
-    //if (is_debug) printf("\ngt1: %ld", cp_score_position_temp);
-
-    // Add code to encourage ???
-    //int iZeroToOne = engine.game_board.kings_in_opposition(color);
-    //cp_score_position_temp += iZeroToOne*200;  // centipawns  
-
     //Color enemy_color = (color==ShumiChess::WHITE ? ShumiChess::BLACK : ShumiChess::WHITE);
 
     if (nPhase > GamePhase::OPENING) { 
         // Add code to attack squares near the king
         icp_temp = engine.game_board.attackers_on_enemy_king_near_cp(color);
-        assert (icp_temp>=0);
         cp_score_position_temp += icp_temp;  // centipawns  
+    }
+
+    if (nPhase == GamePhase::ENDGAME_LATE) { 
     }
 
     if (onlyKngEnemy) {
@@ -674,52 +668,73 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
     return cp_score_position_temp;
 }
 
-// material_cp must be average material (positive)
-int MinimaxAI::phaseOfGame(int material_cp) {
-    int nPhase = GamePhase::OPENING;
-    assert(material_cp>=0);
 
+bool MinimaxAI::no_queens_on_board() {
+    if (engine.game_board.white_queens != 0 ) return false;
+    if (engine.game_board.black_queens != 0 ) return false;
+    return true;
+}
+
+// material_cp must be average material (positive)
+int MinimaxAI::phaseOfGame(int material_cp_avg) {
+
+    int nPhase = GamePhase::OPENING;
+    assert(material_cp_avg>=0);
 
     bool bWhiteCstled = engine.game_board.bHasCastled_fake(ShumiChess::WHITE);
     bool bBlackCstled = engine.game_board.bHasCastled_fake(ShumiChess::BLACK);
 
     //
-    // Each side has 4000 centipawns
-    if      (material_cp > 3500) nPhase = GamePhase::OPENING;
-    else if (material_cp > 3000) nPhase = GamePhase::MIDDLE_EARLY;
-    else if (material_cp > 2600) nPhase = GamePhase::MIDDLE;
-    else if (material_cp > 1100) nPhase = GamePhase::ENDGAME;
-    else if (material_cp >= 0)   nPhase = GamePhase::ENDGAME_LATE;
-    else assert(0);
+    // Each side has MAX_CP_PER_SIDE centipawns at start. 
+    //
+    //int lost_so_far = (MAX_CP_PER_SIDE - material_cp_avg)/100;  // Note: should I be rounded instead of truncated?
+    int lost_so_far = (MAX_CP_PER_SIDE - material_cp_avg + 50) / 100;  // round to nearest pawn
 
-    bool bBothCastled = (bWhiteCstled && bBlackCstled);
+ 
+    if (lost_so_far < 0) {   // Can happen if pawns queen, early in game. So what Its still the opening.
+        // cout << "lost_so_far=" << lost_so_far;
+        lost_so_far = 0;      // Can happen if pawns queen. So what Its still the opening.
+        //assert(0);
+    }
+
+    // So 6 down is 2 pieces (per side). Or one piece and 3 pawns.
+    if      (lost_so_far < 5)  nPhase = GamePhase::OPENING;
+    else if (lost_so_far < 10) nPhase = GamePhase::MIDDLE_EARLY;
+    else if (lost_so_far < 14) nPhase = GamePhase::MIDDLE;
+    else if (lost_so_far < 29) nPhase = GamePhase::ENDGAME;
+    else                       nPhase = GamePhase::ENDGAME_LATE;
+
+    bool b_both_castled = (bWhiteCstled && bBlackCstled);
+    bool b_either_castled = (bWhiteCstled || bBlackCstled);
 
     if (nPhase == GamePhase::OPENING) {
-        if (bBothCastled) nPhase = GamePhase::MIDDLE;
+        if (b_both_castled) nPhase = GamePhase::MIDDLE;         // Turns off all castling incentives
+        if (no_queens_on_board()) nPhase = GamePhase::MIDDLE;
     }
     else if (nPhase == GamePhase::MIDDLE_EARLY) {
-        if (bBothCastled) nPhase = GamePhase::MIDDLE;
+        if (b_both_castled) nPhase = GamePhase::MIDDLE;         // Turns off all castling incentives
+        if (no_queens_on_board()) nPhase = GamePhase::MIDDLE;
     }
 
     return nPhase;
 }
 
 
-// phaseOfGame(), but gets the material(s) by itself. For display only.
+// Same as phaseOfGame(), but gets the material(s) by itself. For display only.
 int MinimaxAI::phase_of_game_full() {
-    int cp_score_material_avg = 0;
+    int cp_score_material_avg_local = 0;
     for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
 
         // Get the centipawn value for this color
         int cp_pawns_only_temp;
         int cp_score_mat_temp = engine.game_board.get_material_for_color(color1, cp_pawns_only_temp);
         assert (cp_score_mat_temp>=0);    // there is no negative value material 
-        cp_score_material_avg += cp_score_mat_temp;   
+        cp_score_material_avg_local += cp_score_mat_temp;   
     }
 
-    cp_score_material_avg = cp_score_material_avg / 2;
+    cp_score_material_avg_local = cp_score_material_avg_local / 2;
 
-    int nPhase = phaseOfGame(cp_score_material_avg); 
+    int nPhase = phaseOfGame(cp_score_material_avg_local); 
     return nPhase;
 }
 
@@ -1068,8 +1083,6 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     //cout << endl << " Deep end " << depth << "          msec=" << std::setw(6) << elapsed_time << ' ';
 
-
-
     cout << "\x1b[33m\nWent to depth " << (depth - 1)  
         << " elapsed msec= " << elapsed_time << " requested msec= " << time_requested 
         << std::fixed << std::setprecision(1)
@@ -1082,7 +1095,6 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     // If the first move, MAYBE randomize the response some.
     if ( (d_Return_score != ABORT_SCORE) && (d_Return_score != ONLY_MOVE_SCORE) ) {
-
 
         #ifdef DEBUGGING_RANDOM_DELTA
             fprintf(fpDebug, "\n===============================================================\n");
@@ -1105,7 +1117,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
             nRandos++;
             int n_moves_within_delta=0;
             // The root is when the player starts thinking about his move.
-            best_move = pick_random_within_delta_rand(MovesFromRoot, i_random_delta_cp, n_moves_within_delta);
+            best_move = pick_random_within_delta_rand(MovesFromRoot, i_random_delta_cp, engine.computer_ply_so_far
+                                                    , n_moves_within_delta);
             // Show random move, and the "pool" (and reduced pool") it was chosen from.
 
             cout << "\033[1;34mrando move (out of: \033[0m" << MovesFromRoot.size() << " >> " << n_moves_within_delta << endl;
@@ -1260,7 +1273,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //itemp2 = engine.game_board.king_center_manhattan_dist(Color::WHITE);
     // itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
     // itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
-    cout << "wht " << itemp1 << "           blk " << itemp2 << endl;
+    cout << "wht " << pszTemp << "           blk " << itemp2 << endl;
 
     global_debug_flag = false;
 
@@ -1857,12 +1870,20 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             //++engine.repetition_table[engine.game_board.zobrist_key];
             engine.key_stack.push_back(engine.game_board.zobrist_key);
 
+            // Pauls plan (concerning windowing)
+            bool bRootWideWindowForRandom = false;
+            assert ( (is_from_root) == (nPlys==1) );
 
-            bool bRootWideWindowForRandom = is_from_root && (engine.i_randomize_next_move > 0);
+            if (engine.i_randomize_next_move > 0) {
+                int wideWindowPlies = 2;
+
+                //bRootWideWindowForRandom = is_from_root;
+                bRootWideWindowForRandom = (nPlys <= wideWindowPlies);
+            }
 
             //
-            // Two parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
-            //                       2. The beta and alpha arguments are staggered, or reversed.
+            // Three parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
+            //                         2. The beta and alpha arguments are staggered, or reversed.
             double childAlpha = -beta;
             double childBeta  = -alpha;
 
@@ -1872,6 +1893,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 childBeta  =  HUGE_SCORE;
             }
 
+
             auto ret_val = recursive_negamax(
                 (depth > 0 ? depth - 1 : 0),
                 childAlpha, childBeta,
@@ -1880,6 +1902,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 (nPlys+1),
                 (depth == 0 ? qPlys+1 : qPlys)
             );
+
 
             // The third part of negamax: negate the score to keep it relative.
             double d_return_score = get<0>(ret_val);     // units are pawns
@@ -2833,73 +2856,11 @@ Move MinimaxAI::get_move() {
 
 
 
-// //
-// // Picks a random root move within delta (in pawns) of the best score (negamax-relative).
-// // If list is empty: returns default Move{}.
-// // If best is "mate-like": returns the best (no randomization).
-// Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
-//                                               double delta_pawns,
-//                                               int& n_moves_within_delta     // output
-//                                             ) {
-
-//     double d_delta = delta_pawns;    
-//     int nTries = 0;
-
-// try_again:
-//     nTries++;
-//     n_moves_within_delta = 0;
-//     if (MovsFromRoot.empty()) {
-//         assert(0);           // Better not happen 
-//         return Move{};  // safety
-//     }
-
-//     // 0) Sort MovsFromRoot by score (leaves the caller’s list sorted)
-//     std::sort(MovsFromRoot.begin(), MovsFromRoot.end(),
-//               [](const auto& a, const auto& b){ return a.second > b.second; });
-
-//     // 1) Best is now front()
-//     const double bestScorePawns = MovsFromRoot.front().second;
-
-//     // 2) If best score is mate-like, don’t randomize. Just pick the first one. 
-//     if (IS_MATE_SCORE(bestScorePawns)) return MovsFromRoot.front().first;
-
-//     // 3) Build the contiguous “within delta” prefix
-//     const double cutoff = bestScorePawns - d_delta;
-//     size_t n_top = 0;
-//     while (n_top < MovsFromRoot.size() && MovsFromRoot[n_top].second >= cutoff) ++n_top;
-
-//     // Return number of moves that qualified.
-//     n_moves_within_delta = (int)n_top;
-
-//     // (fallback if something odd, like nothing within the delta? At least the best move must be zero delta)
-//     if (n_top == 0) {
-//         assert(0);      // better not happen
-//         return MovsFromRoot.front().first;
-//     }
-//     else if ( (n_top == 1) && (nTries <= 2) ) {
-//         d_delta = d_delta * 1.5;
-//         goto try_again;
-//     }
-
-//     // #ifdef DEBUGGING_RANDOM_DELTA
-//     //     fprintf(fpDebug, "\n===============================================================\n");
-
-//     //     engine.print_moves_and_scores_to_file(MovsFromRoot, false, false, fpDebug);
- 
-//     //     fprintf(fpDebug, "\n===============================================================\n");
-//     // #endif
-
-
-//     // 4) Uniform pick from [0, n_top)
-//     const int pick = engine.rand_int(0, static_cast<int>(n_top) - 1);
-//     return MovsFromRoot[static_cast<size_t>(pick)].first;
-// }
-
 ShumiChess::Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
                                              int delta_cp,
+                                             int i_computer_ply_so_far,
                                              int& n_moves_within_delta     // output
-                                            )
-{
+                                            ) {
     int i_delta_cp = delta_cp;
     int nTries = 0;
 
@@ -2945,20 +2906,27 @@ try_again:
     // Return number of moves that qualified.
     n_moves_within_delta = (int)n_top;
 
-    // (fallback if something odd, like nothing within the delta? At least the best move must be zero delta)
-    if (n_top == 0) {
-        assert(0);      // better not happen
-        return MovsFromRoot.front().first;
-    }
-    else if ( (n_top == 1) && (nTries <= 2) ) {
+    assert(n_top != 0);      // better not happen. At least the best move must be within zero delta
+
+    bool b_use_this_one;
+    if (i_computer_ply_so_far <= 1) 
+        b_use_this_one = (n_top > 2);
+    else
+        b_use_this_one = (n_top > 1);
+
+    // (fallback if something odd, like nothing within the delta? At least the best move must be within zero delta)
+
+    if (!b_use_this_one) {
         // increase delta a bit and try again
         i_delta_cp = (i_delta_cp * 3) / 2;   // *1.5, integer
         goto try_again;
     }
 
     // PRINT HERE (only when randomizing)
-    if (n_top > 1) {
-        cout << "\n[RandomWithinDelta] n_top=" << (int)n_top << "  candidates:\n";
+
+    assert (b_use_this_one);
+    if (b_use_this_one) {
+        cout << "\n[RandomWithinDelta] n_top=" << (int)n_top << "  candidates: \n" << i_computer_ply_so_far;
         for (size_t i = 0; i < n_top; ++i) {
             engine.move_into_string(MovsFromRoot[i].first);   // fills engine.move_string
             cout << "  [" << (int)i << "]  " << engine.move_string << "\n";

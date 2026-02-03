@@ -170,6 +170,7 @@ public:
 
     ShumiChess::Move pick_random_within_delta_rand(std::vector<std::pair<ShumiChess::Move,double>>& MovsFromRoot,
                                              int delta_cp,
+                                             int i_computer_ply_so_far,
                                              int& n_moves_within_delta     // output
                                             );
 
@@ -194,6 +195,8 @@ public:
 
     int phaseOfGame(int material_cp);
     int phase_of_game_full();
+
+    bool no_queens_on_board();
 
     // oLD CHESS engine
     double get_value(int depth, int color_multiplier, double alpha, double beta);

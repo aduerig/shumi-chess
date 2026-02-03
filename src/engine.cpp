@@ -1073,9 +1073,13 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                                 Piece piece, Color color, bool capture, bool promotion,
                                 ull en_passant_rights,
                                 bool is_en_passent_capture, bool is_castle) {
+    // Castled bitmaps
+    constexpr ull W_KSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000;
+    constexpr ull W_QSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001;
+    constexpr ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+    constexpr ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
     assert(game_board.bits_in(single_bitboard_from) == 1);
-    //assert(game_board.bits_in(bitboard_to) == 1);         // NOTE: why does this not work
 
     // for all "to" squares and add them as moves
     while (bitboard_to) {
@@ -1083,7 +1087,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
         Piece piece_captured = Piece::NONE;
         if (capture) {
             if (!is_en_passent_capture) {
-                piece_captured = { game_board.get_piece_type_on_bitboard(single_bitboard_to) };
+                piece_captured = game_board.get_piece_type_on_bitboard(single_bitboard_to);
             }
             else {
                 piece_captured = Piece::PAWN;
@@ -1091,6 +1095,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
         }
 
         Move new_move = {};
+
         new_move.color = color;
         new_move.piece_type = piece;
         new_move.from = single_bitboard_from;
@@ -1102,18 +1107,10 @@ void Engine::add_move_to_vector(vector<Move>& moves,
 
         // castling rights
         ull from_or_to = (single_bitboard_from | single_bitboard_to);
-        if (from_or_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000) {
-            new_move.white_castle_rights &= 0b00000001;
-        }
-        if (from_or_to & 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001) {
-            new_move.white_castle_rights &= 0b00000010;
-        }
-        if (from_or_to & 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
-            new_move.black_castle_rights &= 0b00000001;
-        }
-        if (from_or_to & 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000) {
-            new_move.black_castle_rights &= 0b00000010;
-        }
+        if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
+        if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
+        if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
+        if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
 
         if (!promotion) {
             new_move.promotion = Piece::NONE;
@@ -1121,12 +1118,10 @@ void Engine::add_move_to_vector(vector<Move>& moves,
             moves.emplace_back(new_move);
         }
         else {
-            // A promotion
-            for (auto& promo_piece : promotion_values) {
-                Move promo_move = new_move;
-                promo_move.promotion = promo_piece;
-                // Add new move to the list of moves. 
-                moves.emplace_back(promo_move);
+            // A promotion. Add all possible promotion moves.
+            for (const auto promo_piece : promotion_values) {
+                moves.push_back(new_move);                  // copy new_move into vector
+                moves.back().promotion = promo_piece;       // change only this field (in the vector)
             }
         }
     }
@@ -1136,29 +1131,37 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     // get just pawns of correct color
     ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
 
-    // grab variables that will be used several times
-    ull enemy_starting_rank_mask = row_masks[Row::ROW_8];
-    ull pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
-    ull pawn_starting_rank_mask = row_masks[Row::ROW_2];
-    ull pawn_enpassant_rank_mask = row_masks[Row::ROW_3];
-    ull far_right_row = col_masks[Col::COL_H];
-    ull far_left_row = col_masks[Col::COL_A];
+    ull enemy_starting_rank_mask;
+    ull pawn_enemy_starting_rank_mask;
+    ull pawn_starting_rank_mask;
+    ull pawn_enpassant_rank_mask;
+    ull far_right_row;
+    ull far_left_row;
 
-    if (color == Color::BLACK) {
-        enemy_starting_rank_mask = row_masks[Row::ROW_1];
+    // grab variables that will be used several times
+    if (color == Color::WHITE) {
+        enemy_starting_rank_mask      = row_masks[Row::ROW_8];
+        pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
+        pawn_starting_rank_mask       = row_masks[Row::ROW_2];
+        pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
+        far_right_row                 = col_masks[Col::COL_H];
+        far_left_row                  = col_masks[Col::COL_A];
+    } else {
+        enemy_starting_rank_mask      = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
-        pawn_enpassant_rank_mask = row_masks[Row::ROW_6];
-        pawn_starting_rank_mask = row_masks[Row::ROW_7];
-        far_right_row = col_masks[Col::COL_A];
-        far_left_row = col_masks[Col::COL_H];
+        pawn_starting_rank_mask       = row_masks[Row::ROW_7];
+        pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
+        far_right_row                 = col_masks[Col::COL_A];
+        far_left_row                  = col_masks[Col::COL_H];
     }
+
 
     ull all_pieces = game_board.get_pieces();
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
 
     while (pawns) {
         // pop and get one pawn bitboard. This gets the pawn, but also removes it from "pawns" but who cares.
-        // "pawns" is not an original.
+        // "pawns" is not an original. (you can mutate it)
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         
         // Look to see if square just forward of me is empty.
@@ -1166,7 +1169,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
         ull spaces_to_move = one_move_forward_not_blocked;
 
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, spaces_to_move, Piece::PAWN, color, false, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_pawn, spaces_to_move, Piece::PAWN
+            , color, false, false, 0ULL, false, false);
 
         // Look for (and add if its there), a move up two ranks
         ull is_doublable = single_pawn & pawn_starting_rank_mask;
@@ -1179,15 +1183,16 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
             ull move_forward_two_blocked = move_forward_two & ~all_pieces;
 
-            add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN, color, false, false, move_forward_one_blocked, false, false);
+            add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN
+                , color, false, false, move_forward_one_blocked, false, false);
         }
 
         // Look for (and add if its there), promotions
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
         ull promo_squares = promotion_not_blocked;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, promo_squares, Piece::PAWN, color, 
-                false, true, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_pawn, promo_squares, Piece::PAWN
+                , color, false, true, 0ULL, false, false);
 
         // Look for (and add if its there), attacks forward left and forward right, also includes promotions like this
         // "Forward" means away from the pawns' back or "1st" rank.
@@ -1197,8 +1202,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         // normal attacks is set to nonzero if enemy pieces are in the pawns "crosshairs"
         ull normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, normal_attacks, Piece::PAWN, color, 
-                     true, (bool) (normal_attacks & enemy_starting_rank_mask), 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_pawn, normal_attacks, Piece::PAWN
+                    , color, true, (bool) (normal_attacks & enemy_starting_rank_mask), 0ULL, false, false);
 
         // enpassant attacks
         // TODO improvement here, cause we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
@@ -1211,8 +1216,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
             int dest_pawn_square = utility::bit::bitboard_to_lowest_square(one_move_forward);
       
-            add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN, color, 
-                         true, false, 0ULL, true, false);
+            add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN
+                , color, true, false, 0ULL, true, false);
         }
     }
 }
@@ -1228,11 +1233,13 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
         
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT, color, true, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
+            , color, true, false, 0ULL, false, false);
 
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT, color, false, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
+            , color, false, false, 0ULL, false, false);
     }
 }
 
@@ -1247,11 +1254,13 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK, color, true, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
+            , color, true, false, 0ULL, false, false);
     
         // all else
-        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK, color, false, false, 0ULL, false, false);
+        ull non_attack_moves = avail_attacks & (~own_pieces & ~enemy_piece_attacks);
+        add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
+            , color, false, false, 0ULL, false, false);
     }
 }
 
@@ -1266,11 +1275,13 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP, color, true, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
+            , color, true, false, 0ULL, false, false);
     
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP, color, false, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
+            , color, false, false, 0ULL, false, false);
     }
 }
 
@@ -1285,11 +1296,13 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN, color, true, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
+            , color, true, false, 0ULL, false, false);
     
         // all else
         ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN, color, false, false, 0ULL, false, false);
+        add_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
+            , color, false, false, 0ULL, false, false);
     }
 }
 
@@ -1304,11 +1317,13 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
     // captures
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-    add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING, color, true, false, 0ULL, false, false);
+    add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
+        , color, true, false, 0ULL, false, false);
 
     // non-capture moves
     ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
-    add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING, color, false, false, 0ULL, false, false);
+    add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
+        , color, false, false, 0ULL, false, false);
     
 
     #ifndef DEBUG_NO_CASTLING
@@ -1332,7 +1347,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<1;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            , color, false, false, 0ULL, false, true);
                     }
                 }
             }
@@ -1348,7 +1364,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<5;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            , color, false, false, 0ULL, false, true);
                     }
                 }
             }
@@ -1365,7 +1382,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<57;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            , color, false, false, 0ULL, false, true);
                     }
                 }
             }
@@ -1381,7 +1399,8 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                     if (actual_rooks_location & needed_rook_location) {
                         // Rook is on correct square for castling
                         king_origin_square = 1ULL<<61;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING, color, false, false, 0ULL, false, true);
+                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            , color, false, false, 0ULL, false, true);
                     }
                 }
             }

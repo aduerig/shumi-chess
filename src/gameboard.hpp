@@ -184,7 +184,21 @@ class GameBoard {
         }
 
         // Piece get_piece_type_on_bitboard_using_templates(ull bitboard);
-        Piece get_piece_type_on_bitboard(ull);
+        //Piece get_piece_type_on_bitboard(ull);
+        inline Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
+            //assert(bits_in(bitboard) == 1);
+            if (bitboard & (white_pawns   | black_pawns))   return Piece::PAWN;
+            if (bitboard & (white_rooks   | black_rooks))   return Piece::ROOK;
+            if (bitboard & (white_knights | black_knights)) return Piece::KNIGHT;
+            if (bitboard & (white_bishops | black_bishops)) return Piece::BISHOP;
+            if (bitboard & (white_queens  | black_queens))  return Piece::QUEEN;
+            if (bitboard & (white_king    | black_king))    return Piece::KING;
+            return Piece::NONE;
+        }
+
+
+
+
         Color get_color_on_bitboard(ull);
 
         bool are_bit_boards_valid() const;
@@ -208,7 +222,7 @@ class GameBoard {
 
         int king_castle_happiness(Color c) const;
 
-        int bishop_pawn_pattern(Color color);       // Stupid bishop blocking pawn
+        int bishop_pawn_pattern_cp(Color color);       // Stupid bishop blocking pawn
         int queen_still_home(Color color);          // Stupid queen move too early
 
         bool is_king_in_check_new(Color color);
@@ -298,6 +312,22 @@ class GameBoard {
                 default:                        {assert(0);return 0;}
             }
         }
+        // static constexpr int  MAX_CP_PER_SIDE = ( (8*centipawn_score_of(ShumiChess::Piece::PAWN)) 
+        //                             + (2*centipawn_score_of(ShumiChess::Piece::KNIGHT)) 
+        //                             + (2*centipawn_score_of(ShumiChess::Piece::BISHOP)) 
+        //                             + (2*centipawn_score_of(ShumiChess::Piece::ROOK)) 
+        //                             + (1*ShumiChess::Piece::QUEEN)
+        //                         );
+        // Total material in centipawns for one side at game start
+        // 8 pawns, 2 knights, 2 bishops, 2 rooks, 1 queen
+        #define MAX_CP_PER_SIDE ( \
+            (8 * 100)  + \
+            (2 * 320)  + \
+            (2 * 330)  + \
+            (2 * 500)  + \
+            (1 * 900)    \
+        )
+
 
         // Three possibilities here: Which is best? Must use fastest one.
         // inline int GameBoard::bits_in(ull bitboard) const {
