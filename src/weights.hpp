@@ -11,17 +11,17 @@ namespace EvalW
     // Isolated pawns.
     //      One count for each instance
     //      1.5 times as bad for isolated pawns on open files
-    constexpr int ISOLANI_WGHT  = 18;
-    constexpr int ISOLANI_ROOK_WGHT  = 18;    // Rook pawns can be isolated too
+    constexpr int ISOLANI_WGHT  = -18;
+    constexpr int ISOLANI_ROOK_WGHT  = -18;    // Rook pawns can be isolated too
 
     // Backward pawns (holes)
-    constexpr int HOLE_WGHT = 18;             // A hole is the square direclty ahead of a backward pawn.
-    constexpr int KNIGHT_HOLE_WGHT = 25;
+    constexpr int HOLE_WGHT = -18;             // A hole is the square direclty ahead of a backward pawn.
+    constexpr int KNIGHT_HOLE_WGHT = -25;
 
     // Doubled pawns
-    constexpr int DOUBLED_WGHT      = 28;
-    constexpr int DOUBLED_ROOK_WGHT = 33;
-    constexpr int DOUBLED_OPEN_FILE_WGHT   = 20;     // Extra penalty per "extra pawn" if the file is open of enemy pawns
+    constexpr int DOUBLED_WGHT      = -28;
+    constexpr int DOUBLED_ROOK_WGHT = -33;          // Doubled pawn or rook file
+    constexpr int DOUBLED_OPEN_FILE_WGHT   = -20;   // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
     // base = PASSED_PAWN_SLOPE_WGHT*adv*adv + PASSED_PAWN_YINRCPT_WGHT;
@@ -47,8 +47,8 @@ namespace EvalW
 
     constexpr int TWO_BISHOPS_WGHT = 15;    // 2 or more bishops (only one bonus for multiple bishops)
 
-    constexpr int QUEEN_OUT_EARLY_WGHT = 1000;   // for center squares only
-    constexpr int BISHOP_PATTERN_WGHT = 50;     // stupid king bishop blocking queen pawn (on d3 or d6)
+    constexpr int QUEEN_OUT_EARLY_WGHT = -400;   // for center squares only
+    constexpr int BISHOP_PATTERN_WGHT = -50;     // stupid king bishop blocking queen pawn (on d3 or d6)
 
     constexpr int ROOK_CONNECTED_WGHT = 120;    // if any connected rook pair exists (one bonus only)
 
@@ -59,17 +59,15 @@ namespace EvalW
     constexpr int RANK7_WGHT = 20;             // Rook or queen on 7th rank
     constexpr int RANK8_WGHT = 10;             // Rook or queen on 8th rank
 
+    constexpr int KNIGHT_ON_EDGE_WGHT = -10;     // knight on edge penatly (doubled if knight in corner)
+    
+    constexpr int KING_EDGE_WGHT = 40;              // Only in ending, to force enemy king to edge
 
-
-    constexpr int KING_EDGE_WGHT = 40;      // Only in ending
-
-    constexpr int KNIGHT_ON_EDGE_WGHT = 10;     // knight on edge penatly (doubled if knight in corner)
-
-    constexpr int FAR_FROM_KING_WGHT = 30;
+    constexpr int KINGS_CLOSE_TOGETHER_WGHT = 30;   // Only in ending, to force enemy king to edge
 
     // Attackers are NOT kings. Otherwise everybody else.
     constexpr int ATTACKERS_ON_KING_WGHT = 20;      // For each square at or around the king box.
 
-    const int BASE_CP_WGHT = 24;  // Used only in CRAZY_IVAN
+    constexpr int BASE_CP_WGHT = 24;  // Used only in CRAZY_IVAN
 
 }
