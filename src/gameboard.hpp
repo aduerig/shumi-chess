@@ -207,7 +207,7 @@ class GameBoard {
 
         int king_edgeness_cp(Color color);
         int piece_edgeness(ull pieces);
-        int queenOnCenterSquare_cp(Color c) const;
+        int queenOnCenterSquare_cp(Color c);
 
         int center_closeness_bonus(Color c);
 
@@ -270,8 +270,8 @@ class GameBoard {
         // int king_sq_of(Color color);    
         //double king_near_sq(Color attacker_color, ull sq);  
 
-        double king_far_from_other_king_cp(Color attacker_color);
-        double king_near_other_king(Color attacker_color);
+        double kings_close_toegather_cp(Color attacker_color);
+        double kings_far_apart(Color attacker_color);
         int king_center_manhattan_dist(Color c);
         int is_knight_on_edge_cp(Color color);
         bool hasNoMajorPieces(Color attacker_color);
@@ -348,7 +348,6 @@ class GameBoard {
         //     while (bb) { bb &= (bb - 1); ++n; }    // The K&R or Kernighan trick
         //     return n;
         // }
-
 
         // Square identities (in h1=0 bit board lingo)
         // "static constexpr" means, only one set of contants for multiple instances.

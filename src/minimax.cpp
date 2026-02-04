@@ -504,19 +504,19 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
 
         // Add code to discourage isolated pawns.
         icp_temp = engine.game_board.count_isolated_pawns_cp(color, pawnFileInfo);
-        cp_score_position_temp -= (icp_temp);   // centipawns
+        cp_score_position_temp += (icp_temp);   // centipawns
 
         // Add code to discourage backward pawns/pawn holes
         icp_temp = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
-        cp_score_position_temp -= (icp_temp);   // centipawns
+        cp_score_position_temp += (icp_temp);   // centipawns
 
         icp_temp = engine.game_board.count_knights_on_holes_cp(color, holes_bb);
-        cp_score_position_temp -= (icp_temp);   // cent
+        cp_score_position_temp += (icp_temp);   // cent
     
         // Add code to discourage doubled/tripled/quadrupled pawns. Note each pair of doubled pawns is 2. Each 
         // trio of tripled pawns is 3.
         icp_temp = engine.game_board.count_doubled_pawns_cp(color, pawnFileInfo);
-        cp_score_position_temp -= icp_temp;   // centipawns
+        cp_score_position_temp += icp_temp;   // centipawns
 
         // Add code to encourage passed pawns. (1 for each passed pawn)
         icp_temp = engine.game_board.count_passed_pawns_cp(color, pawnFileInfo, passed_pawns);
@@ -529,21 +529,23 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
         icp_temp = engine.game_board.rooks_file_status_cp(color, pawnFileInfo);
         cp_score_position_temp += icp_temp;  // centipawns       
 
-
     }
 
-    //if (nPhase == GamePhase::OPENING) {
+    if (nPhase == GamePhase::OPENING) {
         // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
         // Note: this is gross
         icp_temp = engine.game_board.bishop_pawn_pattern_cp(color);
         //assert (iZeroToThirty>=0);
-        cp_score_position_temp -= icp_temp;   // centipawns
-    //}
+        cp_score_position_temp += icp_temp;   // centipawns
+    }
 
     // Add code to discourage early queen occupation of center.
     //if (nPhase == GamePhase::OPENING) {
         icp_temp = engine.game_board.queenOnCenterSquare_cp(color);
-        cp_score_position_temp -= icp_temp;     // centipawns
+        // if (icp_temp) {
+        //     assert(0);
+        // }
+        cp_score_position_temp += icp_temp;     // centipawns
     //}
 
     // Add code to encourage pawns attacking the 4-square center 
@@ -560,7 +562,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
 
     // Add code to discourage knights on the edge or in the corner
     icp_temp = engine.game_board.is_knight_on_edge_cp(color);
-    cp_score_position_temp -= icp_temp;  // centipawns
+    cp_score_position_temp += icp_temp;  // centipawns
 
     return cp_score_position_temp;
 
@@ -644,13 +646,13 @@ int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase,
         // Rewards king near other king
         // Returns 2 to 10,. 2 if in opposition, 10 if in opposite corners.
         // Returns zero if other pieces on board
-        dcp_temp = engine.game_board.king_far_from_other_king_cp(color);
+        dcp_temp = engine.game_board.kings_close_toegather_cp(color);
         icp_temp = (int)dcp_temp;
 
-        double dkk = engine.game_board.king_near_other_king(color);  // ≈ 2..
-        double dFarness = MAX_DIST - dkk;   // 8 if in opposition, 0 if in opposite corners
-        icp_temp2 = (int)(dFarness * 30.0);
-        assert(icp_temp == icp_temp2);
+        // double dkk = engine.game_board.kings_far_apart(color);  // ≈ 2..
+        // double dFarness = MAX_DIST - dkk;   // 8 if in opposition, 0 if in opposite corners
+        // icp_temp2 = (int)(dFarness * 30.0);
+        // assert(icp_temp == icp_temp2);
 
         cp_score_position_temp += (int)dcp_temp;
 
@@ -715,6 +717,8 @@ int MinimaxAI::phaseOfGame(int material_cp_avg) {
         if (b_both_castled) nPhase = GamePhase::MIDDLE;         // Turns off all castling incentives
         if (no_queens_on_board()) nPhase = GamePhase::MIDDLE;
     }
+
+    // debug nPhase = GamePhase::OPENING;
 
     return nPhase;
 }
@@ -878,10 +882,9 @@ int g_this_depth = 6;
 //
 //////////////////////////////////////////////////////////////////////////////////
 //
-// This is a "root position". The next human move triggers a new root position
+// This is a "root position". The next fhuman move triggers a new root position
 // time_requested now in *milliseconds*
 Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deepening_requested, int feat) {  
-    
 
     long long now_s;    // milliseconds 
     long long end_s;    // milliseconds
@@ -902,6 +905,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     bool b_Forced = false;
 
     Features_mask = feat;
+
 
     //Move null_move = Move{};
     Move null_move = engine.users_last_move;    // Just to make the move history work?
@@ -957,7 +961,11 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     int this_deepening;
     this_deepening = engine.user_request_next_move;
     //this_deepening = 5;        // Note: because i said so.
+
     this_deepening = max_deepening_requested;
+    if ( (engine.i_randomize_next_move>0) && (this_deepening>2) ) {
+        this_deepening--;
+    }
 
     maximum_deepening = this_deepening;
 
@@ -1232,8 +1240,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     iPhase = phase_of_game_full();
     char szTemp[128];
-    char* pszTemp = &szTemp[0];
-    pszTemp = str_from_GamePhase(iPhase);
+    char* pszPhase = &szTemp[0];
+    pszPhase = str_from_GamePhase(iPhase);
 
     //isOK = engine.game_board.isReversableMove(best_move);
 
@@ -1262,18 +1270,18 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //if (isOK) itemp2 = engine.game_board.count_pawn_holes_cp(Color::BLACK, pawnFileInfo, holes);
     //if (isOK) itemp2 = engine.game_board.rooks_file_status_cp(Color::BLACK, pawnFileInfo);
     
-    dcp_temp = engine.game_board.king_near_other_king(Color::WHITE);
-    //double dcp_temp = engine.game_board.king_far_from_other_king_cp(Color::WHITE);
+    dcp_temp = engine.game_board.kings_far_apart(Color::WHITE);
+    //double dcp_temp = engine.game_board.kings_close_toegather_cp(Color::WHITE);
     itemp1 = (int)dcp_temp;
 
-    dcp_temp = engine.game_board.king_near_other_king(Color::BLACK);
-    //double dcp_temp = engine.game_board.king_far_from_other_king_cp(Color::WHITE);
+    dcp_temp = engine.game_board.kings_far_apart(Color::BLACK);
+    //double dcp_temp = engine.game_board.kings_close_toegather_cp(Color::WHITE);
     itemp2 = (int)dcp_temp;
 
     //itemp2 = engine.game_board.king_center_manhattan_dist(Color::WHITE);
-    // itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
-    // itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
-    cout << "wht " << pszTemp << "           blk " << itemp2 << endl;
+    itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
+    itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
+    cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
     global_debug_flag = false;
 

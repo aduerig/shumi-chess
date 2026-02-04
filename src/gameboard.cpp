@@ -626,10 +626,6 @@ int GameBoard::knights_attacking_square(Color c, int sq)
 
 int GameBoard::knights_attacking_center_squares_cp(Color c)
 {
-    int square_e4 = 27;
-    int square_d4 = 28;
-    int square_e5 = 35;
-    int square_d5 = 36;
     int itemp = 0;
     itemp += knights_attacking_square(c, square_e4);
     itemp += knights_attacking_square(c, square_d4);
@@ -1082,9 +1078,7 @@ int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
 //   count of holes (one per pawn that creates such a hole).
 int GameBoard::count_pawn_holes_cp(Color c,
                                const PawnFileInfo& pawnInfo,
-                               ull& holes_bb) const
-{
-
+                               ull& holes_bb) const {
     int holes = 0;
     holes_bb = 0ULL;
 
@@ -1154,8 +1148,7 @@ int GameBoard::count_pawn_holes_cp(Color c,
 }
 
 
-int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const
-{
+int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const {
 
     int total = 0;
 
@@ -1326,23 +1319,26 @@ int GameBoard::piece_edgeness(ull kbb) {
 // NOTE: If there is no queen (bitboard == 0), returns false.
 // NOTE: If there are multiple queens (promotion), returns true if ANY queen is on a center square.
 //
-int GameBoard::queenOnCenterSquare_cp(Color c) const {
-
-    ull q = (c == ShumiChess::WHITE) ? white_queens : black_queens;
-    //ull q = get_pieces_template<Piece::QUEEN>(c);
+int GameBoard::queenOnCenterSquare_cp(Color c)
+{
+    ull q;
+    // If you have a get_pieces_template<QUEEN>(c) that you trust, use it.
+    //q = get_pieces_template<Piece::QUEEN>(c);
+    q = (c == ShumiChess::WHITE) ? white_queens : black_queens;
     if (q == 0ULL) return 0;
 
-    // Center squares bitmask
-    // sq = r*8 + f, where f in {3,4}, r in {3,4}
-    const ull CENTER4 =
-        (1ULL << (3*8 + 3)) |  // (f=3,r=3)
-        (1ULL << (4*8 + 3)) |  // (f=4,r=3)
-        (1ULL << (3*8 + 4)) |  // (f=3,r=4)
-        (1ULL << (4*8 + 4));   // (f=4,r=4)
+    int itemp = 0;
 
-    // Any queen on any center square?
-    return ((q & CENTER4) != 0ULL) * EvalW::QUEEN_OUT_EARLY_WGHT;
+    // "Occupation" not attack: is the queen actually sitting on the square?
+    itemp += ((q & (1ULL << square_e4)) != 0ULL);
+    itemp += ((q & (1ULL << square_d4)) != 0ULL);
+    itemp += ((q & (1ULL << square_e5)) != 0ULL);
+    itemp += ((q & (1ULL << square_d5)) != 0ULL);
+
+    // At most 1 (assumming one queen)
+    return itemp * EvalW::QUEEN_OUT_EARLY_WGHT;
 }
+
 
 
 // Used only in CRAZY_IVAN
@@ -1691,20 +1687,20 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
 }
 
 
-double GameBoard::king_far_from_other_king_cp(Color attacker_color) {
+double GameBoard::kings_close_toegather_cp(Color attacker_color) {
 
     // Returns 2 to MAX_DIST inclusive. 2 if in opposition, MAX_DIST if in opposite corners.
-    double dkk = king_near_other_king(attacker_color);
+    double dkk = kings_far_apart(attacker_color);
 
     double dFarness = MAX_DIST - dkk;   // 8 if in opposition, 0, if in opposite corners
     assert (dFarness>=0.0);
-    return (int)(dFarness * EvalW::FAR_FROM_KING_WGHT);
-
+    return (int)(dFarness * EvalW::KINGS_CLOSE_TOGETHER_WGHT);
+    
 }
 
 
 // Returns 2 to MAX_DIST inclusive. 2 if in opposition, MAX_DIST if in opposite corners.
-double GameBoard::king_near_other_king(Color attacker_color) {
+double GameBoard::kings_far_apart(Color attacker_color) {
   
     double dBonus = 0.0;
 
