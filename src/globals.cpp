@@ -1,5 +1,6 @@
 #include <globals.hpp>
 #include <limits>
+#include <algorithm>
 
 #undef NDEBUG
 //#define NDEBUG         // Define (uncomment) this to disable asserts
@@ -187,7 +188,7 @@ vector<Piece> promotion_values = {
 };
 
 
-char* str_from_GamePhase(int phse) {
+const char* str_from_GamePhase(int phse) {
     switch (phse)
     {
         case OPENING:

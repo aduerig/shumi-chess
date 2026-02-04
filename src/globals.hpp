@@ -112,7 +112,7 @@ enum GamePhase {
     ENDGAME,
     ENDGAME_LATE
 };
-char* str_from_GamePhase(int phse);
+const char* str_from_GamePhase(int phse);
    
 
 enum EvalPersons {

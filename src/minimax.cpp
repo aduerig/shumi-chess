@@ -1232,7 +1232,7 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
 
     iPhase = phase_of_game_full();
     char szTemp[128];
-    char* pszTemp = &szTemp[0];
+    const char* pszTemp = &szTemp[0];
     pszTemp = str_from_GamePhase(iPhase);
 
     //isOK = engine.game_board.isReversableMove(best_move);

@@ -185,7 +185,7 @@ class GameBoard {
 
         // Piece get_piece_type_on_bitboard_using_templates(ull bitboard);
         //Piece get_piece_type_on_bitboard(ull);
-        inline Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
+        inline Piece get_piece_type_on_bitboard(ull bitboard) {
             //assert(bits_in(bitboard) == 1);
             if (bitboard & (white_pawns   | black_pawns))   return Piece::PAWN;
             if (bitboard & (white_rooks   | black_rooks))   return Piece::ROOK;
