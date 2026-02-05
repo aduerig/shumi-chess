@@ -273,11 +273,11 @@ void MinimaxAI::resign() {
 // returns a positive score, if "for_color" is ahead.
 //
 
-int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp, bool isQuietPosition
+int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
+                                , bool isQuietPosition      // not really used.
                                 //, bool is_debug
                                 //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
-                            )
-                                
+                            )           
 {
 
     #ifdef _DEBUGGING_MOVE_CHAIN    // Start of an evaluation
@@ -532,6 +532,12 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
     }
 
     if (nPhase == GamePhase::OPENING) {
+        icp_temp = engine.game_board.development_opening_cp(color);
+        cp_score_position_temp += icp_temp;  // centipawns
+    }
+
+    //sif (nPhase == GamePhase::OPENING) {
+    if ( (nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY) ) {
         // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
         // Note: this is gross
         icp_temp = engine.game_board.bishop_pawn_pattern_cp(color);
@@ -540,13 +546,32 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
     }
 
     // Add code to discourage early queen occupation of center.
-    //if (nPhase == GamePhase::OPENING) {
+    if ( (nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY) ) {
         icp_temp = engine.game_board.queenOnCenterSquare_cp(color);
-        // if (icp_temp) {
-        //     assert(0);
-        // }
         cp_score_position_temp += icp_temp;     // centipawns
-    //}
+    }
+
+    if ( (nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY) ) {
+        icp_temp = engine.game_board.moved_f_pawn_early_cp(color);
+        cp_score_position_temp += icp_temp;     // centipawns
+    }
+    // else {
+    //     icp_temp = engine.game_board.queenOnCenterSquare_cp(color);
+
+    //     if (icp_temp) {
+    //         sprintf(szDebug, "\nppphase= %d    %d    %d\n", nPhase, icp_temp, (int)color);
+    //         int nChars = fputs(szDebug, fpDebug); 
+    //         assert(nChars != EOF);
+
+    //         string out = gameboard_to_string(engine.game_board);
+    //         nChars = fputs(out.c_str(), fpDebug);
+    //         assert(nChars != EOF);
+
+    //         std::fflush(fpDebug);   // force write to disk
+
+    //         assert(0);
+    //     }
+    // }
 
     // Add code to encourage pawns attacking the 4-square center 
     icp_temp = engine.game_board.pawns_attacking_center_squares_cp(color);
@@ -963,7 +988,8 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //this_deepening = 5;        // Note: because i said so.
 
     this_deepening = max_deepening_requested;
-    if ( (engine.i_randomize_next_move>0) && (this_deepening>2) ) {
+    if ( (engine.i_randomize_next_move>0) && (this_deepening>4) ) {
+        this_deepening--;
         this_deepening--;
     }
 

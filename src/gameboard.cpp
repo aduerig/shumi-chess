@@ -47,10 +47,13 @@ namespace ShumiChess {
         // !TODO doesn't belong here i don't think. I think it does.
         ShumiChess::initialize_zobrist();
         set_zobrist();
+
+        //init_eval_weights();
  
         // No multiple pieces on the same square.
         bool no_pieces_on_same_square = are_bit_boards_valid();
         assert(no_pieces_on_same_square);
+
 
 
     }
@@ -162,6 +165,9 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
     ShumiChess::initialize_zobrist();
     set_zobrist();
+
+    
+    //init_eval_weights();
 }
 
 
@@ -576,38 +582,38 @@ int GameBoard::pawns_attacking_center_squares_cp(Color c)
     if (c == Color::WHITE) {
 
         // Offensive center (near enemy)
-        sum += EvalW::CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
-        sum += EvalW::CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
+        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
+        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
 
         // Defensive center (near friendly king)
-        sum += EvalW::CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
-        sum += EvalW::CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
+        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
+        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
 
         // Advanced center
-        sum += EvalW::ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
-        sum += EvalW::ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
+        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
+        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
 
         // Advanced flank center
-        sum += EvalW::ADV_FLK_WGHT * pawns_attacking_square(c, square_c5);
-        sum += EvalW::ADV_FLK_WGHT * pawns_attacking_square(c, square_f5);
+        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c5);
+        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f5);
 
     } else {
 
         // Offensive center (near enemy)
-        sum += EvalW::CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
-        sum += EvalW::CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
+        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
+        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
 
         // Defensive center (near friendly king)
-        sum += EvalW::CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
-        sum += EvalW::CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
+        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
+        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
 
         // Advanced center
-        sum += EvalW::ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
-        sum += EvalW::ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
+        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
+        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
 
         // Advanced flank center
-        sum += EvalW::ADV_FLK_WGHT * pawns_attacking_square(c, square_c4);
-        sum += EvalW::ADV_FLK_WGHT * pawns_attacking_square(c, square_f4);
+        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c4);
+        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f4);
     }
 
     return sum;
@@ -719,39 +725,46 @@ int GameBoard::two_bishops_cp(Color c) const {
 }
 
 // Stupid bishop blocking pawn (king bishop blocking queen pawn)
-int GameBoard::bishop_pawn_pattern_cp(Color color)
-{
-    const int sq_d2 = 12;
-    const int sq_d3 = 20;
-    const int sq_d6 = 44;
-    const int sq_d7 = 52;
+int GameBoard::bishop_pawn_pattern_cp(Color color) {
 
     if (color == Color::WHITE) {
-        // White: bishop on d3, pawn on d2
-        ull bishop_mask = (1ULL << sq_d3);
-        ull pawn_mask   = (1ULL << sq_d2);
+        // White: bishop on d3, pawn on d2  OR  bishop on e2, pawn on e3
+        ull bishop_mask = (1ULL << square_d3);
+        ull pawn_mask   = (1ULL << square_d2);
 
         if ( (white_bishops & bishop_mask) &&
-             (white_pawns   & pawn_mask) )
-        {
-            return 1;
+             (white_pawns   & pawn_mask) ) {
+            return EvalW::BISHOP_PATTERN_WGHT;
         }
-    }
-    else // color == BLACK
-    {
-        // Black: bishop on d6, pawn on d7
-        ull bishop_mask = (1ULL << sq_d6);
-        ull pawn_mask   = (1ULL << sq_d7);
+
+        bishop_mask = (1ULL << square_e2);
+        pawn_mask   = (1ULL << square_e3);
+
+        if ( (white_bishops & bishop_mask) &&
+             (white_pawns   & pawn_mask) ) {
+            return EvalW::BISHOP_PATTERN_WGHT;
+        }
+    } else {    // color == BLACK
+        // Black: bishop on d6, pawn on d7  OR  bishop on e7, pawn on e6
+        ull bishop_mask = (1ULL << square_d6);
+        ull pawn_mask   = (1ULL << square_d7);
 
         if ( (black_bishops & bishop_mask) &&
-             (black_pawns   & pawn_mask) )
-        {
+             (black_pawns   & pawn_mask) ) {
+            return EvalW::BISHOP_PATTERN_WGHT;
+        }
+
+        bishop_mask = (1ULL << square_e7);
+        pawn_mask   = (1ULL << square_e6);
+
+        if ( (black_bishops & bishop_mask) &&
+             (black_pawns   & pawn_mask) ) {
             return EvalW::BISHOP_PATTERN_WGHT;
         }
     }
-
     return 0;
 }
+
 
 
 //
@@ -821,7 +834,7 @@ int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
         else continue; // not open/semi-open
 
         // Base open/semi-open file bonus
-        score_cp += nRooksOnFile * file_mult * EvalW::FILE_STATUS_WGHT;
+        score_cp += nRooksOnFile * file_mult * EvalW::ROOK_ON_OPEN_FILE;
 
         // Extra bonus if enemy king is on this file (even if blocked)
         if (enemy_king & file_mask) {
@@ -851,8 +864,8 @@ int GameBoard::rook_7th_rankness_cp(Color c)   /* now counts R+Q; +1 each on ene
     while (bigPieces) {
         int s = utility::bit::lsb_and_pop_to_square(bigPieces); // 0..63
         int rnk = (s / 8);
-        if (rnk == seventh_rank) score_cp += EvalW::RANK7_WGHT;
-        if (rnk == eight_rank) score_cp += EvalW::RANK8_WGHT;
+        if (rnk == seventh_rank) score_cp += EvalW::MAJOR_ON_RANK7_WGHT;
+        if (rnk == eight_rank) score_cp += EvalW::MAJOR_ON_RANK8_WGHT;
     }
     return score_cp;
 }
@@ -1144,7 +1157,7 @@ int GameBoard::count_pawn_holes_cp(Color c,
         }
     }
 
-    return (holes*EvalW::HOLE_WGHT);
+    return (holes*EvalW::PAWN_HOLE_WGHT);
 }
 
 
@@ -1339,6 +1352,30 @@ int GameBoard::queenOnCenterSquare_cp(Color c)
     return itemp * EvalW::QUEEN_OUT_EARLY_WGHT;
 }
 
+// Penalize moving the f-pawn in the opening.
+// This is a small "king-safety / loosened diagonals" heuristic: f2/f7 is a sensitive pawn.
+// Returns 0 if the f-pawn is still on its starting square; otherwise returns a small negative score.
+int GameBoard::moved_f_pawn_early_cp(Color c) const
+{
+    // If you prefer, swap this for your get_pieces_template<Piece::PAWN>(c)
+    ull p = (c == ShumiChess::WHITE) ? white_pawns : black_pawns;
+    if (p == 0ULL) return 0;
+
+    // Starting-square indices MUST match your engine's indexing.
+    // If you already have these as constants, use them directly.
+
+    const int startSq = (c == ShumiChess::WHITE) ? square_f2 : square_f7;
+
+    int itemp = 0;
+
+    // If the pawn is NOT on its starting square, it has moved (or been captured).
+    // (We are intentionally penalizing both: moving it or losing it early are both usually bad in the opening.)
+    itemp += ((p & (1ULL << startSq)) == 0ULL);
+
+    return itemp * EvalW::F_PAWN_MOVED_EARLY_WGHT;
+}
+
+
 
 
 // Used only in CRAZY_IVAN
@@ -1369,7 +1406,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);    // 0=center .. 3=edge
         int centerness = 3 - ring;            // 3=center .. 0=edge
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::BASE_CP_WGHT * centerness) / 3;
+        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
     }
 
     // Bishops (divide by 3)
@@ -1380,7 +1417,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::BASE_CP_WGHT * centerness) / 3;
+        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
     }
 
     // Rooks (divide by 5)
@@ -1391,7 +1428,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::BASE_CP_WGHT * centerness) / 5;
+        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 5;
     }
 
     // Queens (divide by 9)
@@ -1402,7 +1439,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::BASE_CP_WGHT * centerness) / 9;
+        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 9;
     }
 
     return bonus;
@@ -1687,6 +1724,57 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
 }
 
 
+// -----------------------------------------------------------------------------
+// Opening development bonus.
+// "Development" here means ONLY: minor pieces (knights + bishops) moved off
+// their original squares.  (No queen/king/rooks: those lead to silly moves.)
+// This is intentionally a small, background nudge and is applied ONLY in the opening.
+// -----------------------------------------------------------------------------
+int GameBoard::development_opening_cp(Color c) {
+    // Very conservative "opening" gate:
+    // If queens are gone, or lots of pawns are gone, don't apply this.
+    const ull wq = get_pieces(Color::WHITE, Piece::QUEEN);
+    const ull bq = get_pieces(Color::BLACK, Piece::QUEEN);
+    if (!wq || !bq) return 0;
+
+    // const ull wp = get_pieces(Color::WHITE, Piece::PAWN);
+    // const ull bp = get_pieces(Color::BLACK, Piece::PAWN);
+    // const int pawnCount = bits_in(wp) + bits_in(bp);
+    // if (pawnCount < 12) return 0;   // opening likely over
+
+    // Starting squares for minors
+    ull start_knights = 0;
+    ull start_bishops = 0;
+
+    if (c == Color::WHITE) {
+        start_knights = (1ULL << square_b1) | (1ULL << square_g1);
+        start_bishops = (1ULL << square_c1) | (1ULL << square_f1);
+    } else {
+        start_knights = (1ULL << square_b8) | (1ULL << square_g8);
+        start_bishops = (1ULL << square_c8) | (1ULL << square_f8);
+    }
+
+    const ull my_knights = get_pieces(c, Piece::KNIGHT);
+    const ull my_bishops = get_pieces(c, Piece::BISHOP);
+
+    // Count how many minors are NOT on their original squares.
+    // (If a piece was captured, it simply won't be counted as "developed".)
+    const int knights_on_start = bits_in(my_knights & start_knights);
+    const int bishops_on_start = bits_in(my_bishops & start_bishops);
+
+    const int knights_total = bits_in(my_knights);
+    const int bishops_total = bits_in(my_bishops);
+
+    const int developed = (knights_total - knights_on_start) + (bishops_total - bishops_on_start);
+    if (developed <= 0) return 0;
+
+    return developed * EvalW::DEVELOPMENT_OPENING;
+}
+
+
+
+
+
 double GameBoard::kings_close_toegather_cp(Color attacker_color) {
 
     // Returns 2 to MAX_DIST inclusive. 2 if in opposition, MAX_DIST if in opposite corners.
@@ -1754,71 +1842,6 @@ double GameBoard::kings_far_apart(Color attacker_color) {
 }
 
 
-// int GameBoard::king_sq_of(Color color) {
-//     int frienKingSq;
-//     ull tmpFrien;
-//     if (color == ShumiChess:: WHITE) {
-//         tmpFrien = white_king;         // don't mutate the bitboards
-//     } else {
-//         tmpFrien = black_king;         // don't mutate the bitboards
-//     }
-//     frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
-//     assert(frienKingSq >= 0);
-//     assert(frienKingSq <= 63);
-
-//     return frienKingSq;
-// }
-
-
-// Returns 1 to 14. 1 if close to the passed sq. 10 if as far as possible from the passed sq.
-// double GameBoard::king_near_sq(Color attacker_color, ull sq) {
-//     double dBonus = 0;
-
-//     int enemyKingSq;
-//     int frienKingSq;
-//     ull enemyPieces;
-//     ull tmpFrien;
-
-//     //if ( (white_king == 0ULL) || (black_king == 0ULL) ) return 0;
-//     // NOTE: someoine else should have checked for this at a higher level.
-//     assert(white_king != 0ULL);
-//     assert(black_king != 0ULL);
-
-//     if (attacker_color == ShumiChess:: WHITE) {
-//         tmpFrien = white_king;         // don't mutate the bitboards
-//     } else {
-//         tmpFrien = black_king;         // don't mutate the bitboards
-//     }
-
-//     enemyKingSq = sq;
-//     assert(enemyKingSq <= 63);
-//     frienKingSq = utility::bit::lsb_and_pop_to_square(tmpFrien); // 0..63
-//     assert(frienKingSq >= 0);
-
-
-//     // Bring friendly king near enemy king (reward small distances to other king)
-//     if (enemyPieces == 0) { // enemy has king only
-
-//         // 7 (furthest), to 1 (adjacent), to 0 (identical)
-//         double dFakeDist = distance_between_squares(enemyKingSq, frienKingSq);
-//         assert (dFakeDist >=  1.0);
-//         assert (dFakeDist <= 10.0);      // Board is only so big
-
-//         // Bonus higher if friendly king closer to enemy king
-//         dBonus = dFakeDist;
-
-//         // Bonus debugs
-//         //dBonus = (double)frienKingSq;               // enemy king is attracted to a8
-//         //dBonus = 63.0 - (double)(frienKingSq);    // enemy king is attracted to h1
-
-//         return dBonus;
-
-//     }
-
-//     return dBonus;
-// }
-
-
 //
 // Minimum Manhattan distance from the friendly king to the 2×2 center box
 // center squares: (3,3),(4,3),(3,4),(4,4)  (i.e., d4,e4,d5,e5 in normal coords)
@@ -1852,7 +1875,6 @@ int GameBoard::king_center_manhattan_dist(Color c)
 
     return iReturn;
 }
-
 
 
 

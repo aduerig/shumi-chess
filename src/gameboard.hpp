@@ -208,6 +208,7 @@ class GameBoard {
         int king_edgeness_cp(Color color);
         int piece_edgeness(ull pieces);
         int queenOnCenterSquare_cp(Color c);
+        int moved_f_pawn_early_cp(Color c) const;
 
         int center_closeness_bonus(Color c);
 
@@ -266,14 +267,11 @@ class GameBoard {
         int get_Manhattan_distance(int x1, int y1, int x2, int y2);   
         double get_board_distance(int x1, int y1, int x2, int y2);
         //int get_board_distance_100(int x1, int y1, int x2, int y2) const;
-
-        // int king_sq_of(Color color);    
-        //double king_near_sq(Color attacker_color, ull sq);  
-
         double kings_close_toegather_cp(Color attacker_color);
         double kings_far_apart(Color attacker_color);
         int king_center_manhattan_dist(Color c);
         int is_knight_on_edge_cp(Color color);
+        int development_opening_cp(Color color);
         bool hasNoMajorPieces(Color attacker_color);
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
@@ -350,38 +348,53 @@ class GameBoard {
         // }
 
         // Square identities (in h1=0 bit board lingo)
-        // "static constexpr" means, only one set of contants for multiple instances.
+        // "static constexpr" means, only one set of contants for multiple instances
+
         static constexpr int square_h1 = 0;
         static constexpr int square_g1 = 1;
+        static constexpr int square_f1 = 2;
         static constexpr int square_e1 = 3;
+        static constexpr int square_d1 = 4;
         static constexpr int square_c1 = 5;
+        static constexpr int square_b1 = 6;
         static constexpr int square_a1 = 7;
 
+        static constexpr int square_f2 = 10;
+        static constexpr int square_e2 = 11;
+        static constexpr int square_d2 = 12;
+
+        static constexpr int square_h3 = 16;   // e3 - 3
+        static constexpr int square_g3 = 17;   // e3 - 2
+        static constexpr int square_f3 = 18;   // e3 - 1
+        static constexpr int square_e3 = 19;   // e4 - 8
+        static constexpr int square_d3 = 20;   // d4 - 8
+
+        static constexpr int square_f4 = 26;   // e4 - 1
         static constexpr int square_e4 = 27;
         static constexpr int square_d4 = 28;
-        static constexpr int square_f4 = 26;   // e4 - 1
         static constexpr int square_c4 = 29;   // d4 + 1
 
+        static constexpr int square_f5 = 34;   // e5 - 1
         static constexpr int square_e5 = 35;
         static constexpr int square_d5 = 36;
-        static constexpr int square_f5 = 34;   // e5 - 1
         static constexpr int square_c5 = 37;   // d5 + 1
 
+        static constexpr int square_f6 = 42;   // f4 + 16
         static constexpr int square_e6 = 43;   // e4 + 16
         static constexpr int square_d6 = 44;   // d4 + 16
 
-        static constexpr int square_e3 = 19;   // e4 - 8
-        static constexpr int square_d3 = 20;   // d4 - 8
-        static constexpr int square_f3 = 18;   // e3 - 1
-        static constexpr int square_g3 = 17;   // e3 - 2
-        static constexpr int square_h3 = 16;   // e3 - 3
+        static constexpr int square_f7 = 50;
+        static constexpr int square_e7 = 51;
+        static constexpr int square_d7 = 52;
 
         static constexpr int square_h8 = 56;
         static constexpr int square_g8 = 57;
+        static constexpr int square_f8 = 58;
         static constexpr int square_e8 = 59;
+        static constexpr int square_d8 = 60;
         static constexpr int square_c8 = 61;
+        static constexpr int square_b8 = 62;
         static constexpr int square_a8 = 63;
-
 
         //double openingness_of(int avg_cp);
 
