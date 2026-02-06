@@ -535,8 +535,8 @@ void Engine::pushMove(const Move& move) {
     int square_from = utility::bit::bitboard_to_lowest_square(move.from);
     int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
 
-      // zobrist_key "push" update (for normal moves, remove piece from from square)
-      game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_from);
+    // zobrist_key "push" update (for normal moves, remove piece from from square)
+    game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_from);
 
     // Put the piece where it will go.
     if (move.promotion == Piece::NONE) {

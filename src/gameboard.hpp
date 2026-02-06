@@ -5,6 +5,7 @@
 #include <random>
 
 #include "globals.hpp"
+#include "weights.hpp"
 #include "endgameTables.hpp"
 
 
@@ -395,6 +396,8 @@ class GameBoard {
         static constexpr int square_c8 = 61;
         static constexpr int square_b8 = 62;
         static constexpr int square_a8 = 63;
+
+        Weights wghts;
 
         //double openingness_of(int avg_cp);
 

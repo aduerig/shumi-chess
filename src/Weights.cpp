@@ -1,46 +1,40 @@
 
-
 #include "weights.hpp"
 
 
-int EvalWghts[LAST_VALUE+1] = {0};
-
-/*
-
-void init_eval_weights()
+Weights::Weights()
 {
-    EvalWghts[HAS_CASTLED]              = EvalW::HAS_CASTLED_WGHT;
-    EvalWghts[CAN_CASTLE]               = EvalW::CAN_CASTLE_WGHT;
-    EvalWghts[ISOLANI]                  = EvalW::ISOLANI_WGHT;
-    EvalWghts[ISOLANI_ROOK]             = EvalW::ISOLANI_ROOK_WGHT;
-    EvalWghts[PAWN_HOLE]                = EvalW::PAWN_HOLE_WGHT;
-    EvalWghts[KNIGHT_HOLE]              = EvalW::KNIGHT_HOLE_WGHT;
-    EvalWghts[DOUBLED]                  = EvalW::DOUBLED_WGHT;
-    EvalWghts[DOUBLED_ROOK]             = EvalW::DOUBLED_ROOK_WGHT;
-    EvalWghts[DOUBLED_OPEN_FILE]        = EvalW::DOUBLED_OPEN_FILE_WGHT;
-    EvalWghts[PASSED_PAWN_SLOPE]        = EvalW::PASSED_PAWN_SLOPE_WGHT;
-    EvalWghts[PASSED_PAWN_YINRCPT]      = EvalW::PASSED_PAWN_YINRCPT_WGHT;
-    EvalWghts[PAWN_ON_CTR_DEF]          = EvalW::PAWN_ON_CTR_DEF_WGHT;
-    EvalWghts[PAWN_ON_CTR_OFF]          = EvalW::PAWN_ON_CTR_OFF_WGHT;
-    EvalWghts[PAWN_ON_ADV_CTR]          = EvalW::PAWN_ON_ADV_CTR_WGHT;
-    EvalWghts[PAWN_ON_ADV_FLK]          = EvalW::PAWN_ON_ADV_FLK_WGHT;
-    EvalWghts[KNIGHT_ON_CTR]            = EvalW::KNIGHT_ON_CTR_WGHT;
-    EvalWghts[BISHOP_ON_CTR]            = EvalW::BISHOP_ON_CTR_WGHT;
-    EvalWghts[TWO_BISHOPS]              = EvalW::TWO_BISHOPS_WGHT;
-    EvalWghts[QUEEN_OUT_EARLY]          = EvalW::QUEEN_OUT_EARLY_WGHT;
-    EvalWghts[BISHOP_PATTERN]           = EvalW::BISHOP_PATTERN_WGHT;
-    EvalWghts[F_PAWN_MOVED_EARLY]       = EvalW::F_PAWN_MOVED_EARLY_WGHT;
-    EvalWghts[ROOK_CONNECTED]           = EvalW::ROOK_CONNECTED_WGHT;
-    EvalWghts[ROOK_ON_OPEN_FILE]        = EvalW::ROOK_ON_OPEN_FILE;
-    EvalWghts[KING_ON_FILE]             = EvalW::KING_ON_FILE_WGHT;
-    EvalWghts[MAJOR_ON_RANK7]           = EvalW::MAJOR_ON_RANK7_WGHT;
-    EvalWghts[MAJOR_ON_RANK8]           = EvalW::MAJOR_ON_RANK8_WGHT;
-    EvalWghts[KNIGHT_ON_EDGE]           = EvalW::KNIGHT_ON_EDGE_WGHT;
-    EvalWghts[KING_EDGE]                = EvalW::KING_EDGE_WGHT;
-    EvalWghts[KINGS_CLOSE_TOGETHER]     = EvalW::KINGS_CLOSE_TOGETHER_WGHT;
-    EvalWghts[ATTACKERS_ON_KING]        = EvalW::ATTACKERS_ON_KING_WGHT;
-    EvalWghts[CENTER_OCCUPY_PIECES]     = EvalW::CENTER_OCCUPY_PIECES_WGHT;
-    EvalWghts[DEVELOPMENT_OPENING]      = EvalW::DEVELOPMENT_OPENING;
+    // Fill table from the static constants
+    aW[HAS_CASTLED]          = HAS_CASTLED_WGHT;
+    aW[CAN_CASTLE]           = CAN_CASTLE_WGHT;
+    aW[ISOLANI]              = ISOLANI_WGHT;
+    aW[ISOLANI_ROOK]         = ISOLANI_ROOK_WGHT;
+    aW[PAWN_HOLE]            = PAWN_HOLE_WGHT;
+    aW[KNIGHT_HOLE]          = KNIGHT_HOLE_WGHT;
+    aW[DOUBLED]              = DOUBLED_WGHT;
+    aW[DOUBLED_ROOK]         = DOUBLED_ROOK_WGHT;
+    aW[DOUBLED_OPEN_FILE]    = DOUBLED_OPEN_FILE_WGHT;
+    aW[PASSED_PAWN_SLOPE]    = PASSED_PAWN_SLOPE_WGHT;
+    aW[PASSED_PAWN_YINRCPT]  = PASSED_PAWN_YINRCPT_WGHT;
+    aW[PAWN_ON_CTR_DEF]      = PAWN_ON_CTR_DEF_WGHT;
+    aW[PAWN_ON_CTR_OFF]      = PAWN_ON_CTR_OFF_WGHT;
+    aW[PAWN_ON_ADV_CTR]      = PAWN_ON_ADV_CTR_WGHT;
+    aW[PAWN_ON_ADV_FLK]      = PAWN_ON_ADV_FLK_WGHT;
+    aW[KNIGHT_ON_CTR]        = KNIGHT_ON_CTR_WGHT;
+    aW[BISHOP_ON_CTR]        = BISHOP_ON_CTR_WGHT;
+    aW[TWO_BISHOPS]          = TWO_BISHOPS_WGHT;
+    aW[QUEEN_OUT_EARLY]      = QUEEN_OUT_EARLY_WGHT;
+    aW[BISHOP_PATTERN]       = BISHOP_PATTERN_WGHT;
+    aW[F_PAWN_MOVED_EARLY]   = F_PAWN_MOVED_EARLY_WGHT;
+    aW[ROOK_CONNECTED]       = ROOK_CONNECTED_WGHT;
+    aW[ROOK_ON_OPEN_FILE]    = ROOK_ON_OPEN_FILE;
+    aW[KING_ON_FILE]         = KING_ON_FILE_WGHT;
+    aW[MAJOR_ON_RANK7]       = MAJOR_ON_RANK7_WGHT;
+    aW[MAJOR_ON_RANK8]       = MAJOR_ON_RANK8_WGHT;
+    aW[KNIGHT_ON_EDGE]       = KNIGHT_ON_EDGE_WGHT;
+    aW[KING_EDGE]            = KING_EDGE_WGHT;
+    aW[KINGS_CLOSE_TOGETHER] = KINGS_CLOSE_TOGETHER_WGHT;
+    aW[ATTACKERS_ON_KING]    = ATTACKERS_ON_KING_WGHT;
+    aW[CENTER_OCCUPY_PIECES] = CENTER_OCCUPY_PIECES_WGHT;
+    aW[DEVELOPMENT_OPENING]  = DEVELOPMENT_OPENING;
 }
-
-*/

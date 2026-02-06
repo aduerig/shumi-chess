@@ -48,7 +48,6 @@ namespace ShumiChess {
         ShumiChess::initialize_zobrist();
         set_zobrist();
 
-        //init_eval_weights();
  
         // No multiple pieces on the same square.
         bool no_pieces_on_same_square = are_bit_boards_valid();
@@ -166,8 +165,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     ShumiChess::initialize_zobrist();
     set_zobrist();
 
-    
-    //init_eval_weights();
 }
 
 
@@ -367,7 +364,7 @@ int GameBoard::get_castled_bonus_cp(Color color1, int phase) const {
     b_has_castled = bHasCastled_fake(color1);
 
     // has_castled bonus must be > castled priviledge or it will never castle.
-    int icode = (b_has_castled ? EvalW::HAS_CASTLED_WGHT : 0) + i_can_castle * EvalW::CAN_CASTLE_WGHT;
+    int icode = (b_has_castled ? Weights::HAS_CASTLED_WGHT : 0) + i_can_castle * Weights::CAN_CASTLE_WGHT;
 
     int final_cp;
 
@@ -582,38 +579,38 @@ int GameBoard::pawns_attacking_center_squares_cp(Color c)
     if (c == Color::WHITE) {
 
         // Offensive center (near enemy)
-        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
-        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
+        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
+        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
 
         // Defensive center (near friendly king)
-        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
-        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
+        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
+        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
 
         // Advanced center
-        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
-        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
+        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
+        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
 
         // Advanced flank center
-        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c5);
-        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f5);
+        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c5);
+        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f5);
 
     } else {
 
         // Offensive center (near enemy)
-        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
-        sum += EvalW::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
+        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
+        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
 
         // Defensive center (near friendly king)
-        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
-        sum += EvalW::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
+        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
+        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
 
         // Advanced center
-        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
-        sum += EvalW::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
+        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
+        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
 
         // Advanced flank center
-        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c4);
-        sum += EvalW::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f4);
+        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c4);
+        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f4);
     }
 
     return sum;
@@ -638,7 +635,7 @@ int GameBoard::knights_attacking_center_squares_cp(Color c)
     itemp += knights_attacking_square(c, square_e5);
     itemp += knights_attacking_square(c, square_d5);
 
-    return (itemp * EvalW::KNIGHT_ON_CTR_WGHT);
+    return (itemp * Weights::KNIGHT_ON_CTR_WGHT);
 }
 
 
@@ -675,7 +672,7 @@ int GameBoard::bishops_attacking_center_squares_cp(Color c)
     itemp += bishops_attacking_square(c, square_e5);
     itemp += bishops_attacking_square(c, square_d5);
 
-    return (itemp*EvalW::BISHOP_ON_CTR_WGHT);
+    return (itemp*Weights::BISHOP_ON_CTR_WGHT);
 }
 
 
@@ -720,7 +717,7 @@ int GameBoard::two_bishops_cp(Color c) const {
     ull friendlyBishops = (c == ShumiChess::WHITE) ? white_bishops : black_bishops;
     int bishops = bits_in(friendlyBishops);
 
-    if (bishops >= 2) return EvalW::TWO_BISHOPS_WGHT;   // in centipawns  
+    if (bishops >= 2) return Weights::TWO_BISHOPS_WGHT;   // in centipawns  
     return 0;
 }
 
@@ -734,7 +731,7 @@ int GameBoard::bishop_pawn_pattern_cp(Color color) {
 
         if ( (white_bishops & bishop_mask) &&
              (white_pawns   & pawn_mask) ) {
-            return EvalW::BISHOP_PATTERN_WGHT;
+            return Weights::BISHOP_PATTERN_WGHT;
         }
 
         bishop_mask = (1ULL << square_e2);
@@ -742,7 +739,7 @@ int GameBoard::bishop_pawn_pattern_cp(Color color) {
 
         if ( (white_bishops & bishop_mask) &&
              (white_pawns   & pawn_mask) ) {
-            return EvalW::BISHOP_PATTERN_WGHT;
+            return Weights::BISHOP_PATTERN_WGHT;
         }
     } else {    // color == BLACK
         // Black: bishop on d6, pawn on d7  OR  bishop on e7, pawn on e6
@@ -751,7 +748,7 @@ int GameBoard::bishop_pawn_pattern_cp(Color color) {
 
         if ( (black_bishops & bishop_mask) &&
              (black_pawns   & pawn_mask) ) {
-            return EvalW::BISHOP_PATTERN_WGHT;
+            return Weights::BISHOP_PATTERN_WGHT;
         }
 
         bishop_mask = (1ULL << square_e7);
@@ -759,7 +756,7 @@ int GameBoard::bishop_pawn_pattern_cp(Color color) {
 
         if ( (black_bishops & bishop_mask) &&
              (black_pawns   & pawn_mask) ) {
-            return EvalW::BISHOP_PATTERN_WGHT;
+            return Weights::BISHOP_PATTERN_WGHT;
         }
     }
     return 0;
@@ -797,10 +794,10 @@ int GameBoard::rook_connectiveness_cp(Color c) const {
         for (int j = i + 1; j < n; ++j) {
             const int s1 = sqs[i], s2 = sqs[j];
             if ((s1 / 8 == s2 / 8) && clear_between_rank(occupancy, s1, s2)) {
-                return (EvalW::ROOK_CONNECTED_WGHT);
+                return (Weights::ROOK_CONNECTED_WGHT);
             }
             if ((s1 % 8 == s2 % 8) && clear_between_file(occupancy, s1, s2)) {
-                return (EvalW::ROOK_CONNECTED_WGHT);
+                return (Weights::ROOK_CONNECTED_WGHT);
             }
         }
     }
@@ -834,11 +831,11 @@ int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
         else continue; // not open/semi-open
 
         // Base open/semi-open file bonus
-        score_cp += nRooksOnFile * file_mult * EvalW::ROOK_ON_OPEN_FILE;
+        score_cp += nRooksOnFile * file_mult * Weights::ROOK_ON_OPEN_FILE;
 
         // Extra bonus if enemy king is on this file (even if blocked)
         if (enemy_king & file_mask) {
-            score_cp += nRooksOnFile * file_mult * EvalW::KING_ON_FILE_WGHT;
+            score_cp += nRooksOnFile * file_mult * Weights::KING_ON_FILE_WGHT;
         }
     }
 
@@ -864,8 +861,8 @@ int GameBoard::rook_7th_rankness_cp(Color c)   /* now counts R+Q; +1 each on ene
     while (bigPieces) {
         int s = utility::bit::lsb_and_pop_to_square(bigPieces); // 0..63
         int rnk = (s / 8);
-        if (rnk == seventh_rank) score_cp += EvalW::MAJOR_ON_RANK7_WGHT;
-        if (rnk == eight_rank) score_cp += EvalW::MAJOR_ON_RANK8_WGHT;
+        if (rnk == seventh_rank) score_cp += Weights::MAJOR_ON_RANK7_WGHT;
+        if (rnk == eight_rank) score_cp += Weights::MAJOR_ON_RANK8_WGHT;
     }
     return score_cp;
 }
@@ -1042,10 +1039,12 @@ int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) co
         if (!left && !right) {
             // Friendly pawn is isolated
             int this_cp;
+
+            assert(Weights::ISOLANI_ROOK_WGHT == wghts.GetWeight(ISOLANI_ROOK));
             if ((file==0)||(file==7)) {
-                this_cp = (k*EvalW::ISOLANI_ROOK_WGHT);   // single->1, double->2, triple->3, etc. on this file
+                this_cp = (k*Weights::ISOLANI_ROOK_WGHT);   // single->1, double->2, triple->3, etc. on this file
             } else {
-                this_cp = (k*EvalW::ISOLANI_WGHT);        // single->1, double->2, triple->3, etc. on this file
+                this_cp = (k*Weights::ISOLANI_WGHT);        // single->1, double->2, triple->3, etc. on this file
             }
 
             if (get_major_pieces(c)) {
@@ -1076,7 +1075,7 @@ int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
     // Count them
     int n = bits_in(on_holes);
 
-    return (n * EvalW::KNIGHT_HOLE_WGHT);
+    return (n * Weights::KNIGHT_HOLE_WGHT);
 }
 
 
@@ -1157,7 +1156,7 @@ int GameBoard::count_pawn_holes_cp(Color c,
         }
     }
 
-    return (holes*EvalW::PAWN_HOLE_WGHT);
+    return (holes*Weights::PAWN_HOLE_WGHT);
 }
 
 
@@ -1170,7 +1169,7 @@ int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) con
         int k = pawnInfo.p[friendlyP].file_count[file];
         if (k < 2) continue;
 
-        int weight = (file == 0 || file == 7) ? EvalW::DOUBLED_ROOK_WGHT : EvalW::DOUBLED_WGHT;
+        int weight = (file == 0 || file == 7) ? Weights::DOUBLED_ROOK_WGHT : Weights::DOUBLED_WGHT;
 
         // base: penalize only extra pawns
         int extras = (k - 1);
@@ -1178,7 +1177,7 @@ int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) con
 
         // "open file" for pawn structure: no enemy pawns on this file
         if (pawnInfo.p[enemyP].file_count[file] == 0) {
-            this_cp += extras * EvalW::DOUBLED_OPEN_FILE_WGHT;
+            this_cp += extras * Weights::DOUBLED_OPEN_FILE_WGHT;
         }
 
         total += this_cp;
@@ -1258,7 +1257,7 @@ int GameBoard::count_passed_pawns_cp(Color c,
             // else if (adv >= 1) base = 25;    // 2nd/3rd
             // else assert(0);           // Cant have pawns on 1st or last rank (adv=0 or adv=7)
             assert ((adv>0) && (adv<7));  // Cant have pawns on 1st or 8th rank (adv=0 or adv=7)
-            base = EvalW::PASSED_PAWN_SLOPE_WGHT*adv*adv + EvalW::PASSED_PAWN_YINRCPT_WGHT;
+            base = Weights::PASSED_PAWN_SLOPE_WGHT*adv*adv + Weights::PASSED_PAWN_YINRCPT_WGHT;
 
 
             // Protected passed pawn?
@@ -1306,7 +1305,7 @@ int GameBoard::king_edgeness_cp(Color color)
     assert(kbb != 0ULL);
     edgeCode = piece_edgeness(kbb);    // 0 = center, 3 = edge
 
-    return (edgeCode*EvalW::KING_EDGE_WGHT);
+    return (edgeCode*Weights::KING_EDGE_WGHT);
 }
 
 // 0 = center, 3 = edge
@@ -1349,7 +1348,7 @@ int GameBoard::queenOnCenterSquare_cp(Color c)
     itemp += ((q & (1ULL << square_d5)) != 0ULL);
 
     // At most 1 (assumming one queen)
-    return itemp * EvalW::QUEEN_OUT_EARLY_WGHT;
+    return itemp * Weights::QUEEN_OUT_EARLY_WGHT;
 }
 
 // Penalize moving the f-pawn in the opening.
@@ -1372,7 +1371,7 @@ int GameBoard::moved_f_pawn_early_cp(Color c) const
     // (We are intentionally penalizing both: moving it or losing it early are both usually bad in the opening.)
     itemp += ((p & (1ULL << startSq)) == 0ULL);
 
-    return itemp * EvalW::F_PAWN_MOVED_EARLY_WGHT;
+    return itemp * Weights::F_PAWN_MOVED_EARLY_WGHT;
 }
 
 
@@ -1406,7 +1405,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);    // 0=center .. 3=edge
         int centerness = 3 - ring;            // 3=center .. 0=edge
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
+        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
     }
 
     // Bishops (divide by 3)
@@ -1417,7 +1416,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
+        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
     }
 
     // Rooks (divide by 5)
@@ -1428,7 +1427,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 5;
+        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 5;
     }
 
     // Queens (divide by 9)
@@ -1439,7 +1438,7 @@ int GameBoard::center_closeness_bonus(Color c) {
         int ring = piece_edgeness(one);
         int centerness = 3 - ring;
         if (centerness < 0) centerness = 0;
-        bonus += (EvalW::CENTER_OCCUPY_PIECES_WGHT * centerness) / 9;
+        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 9;
     }
 
     return bonus;
@@ -1717,8 +1716,8 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
         int s  = utility::bit::lsb_and_pop_to_square(knghts); // 0..63  
         const int f = s % 8;            // h1=0 → 0=H ... 7=A
         const int r = s / 8;            // rank index 0..7 (White's view)
-        if ((f==0) || (f==7)) pointsOff += EvalW::KNIGHT_ON_EDGE_WGHT;      // I am on a or h file
-        if ((r==0) || (r==7)) pointsOff += EvalW::KNIGHT_ON_EDGE_WGHT;      // I am on eight or first rank
+        if ((f==0) || (f==7)) pointsOff += Weights::KNIGHT_ON_EDGE_WGHT;      // I am on a or h file
+        if ((r==0) || (r==7)) pointsOff += Weights::KNIGHT_ON_EDGE_WGHT;      // I am on eight or first rank
     }
     return pointsOff;
 }
@@ -1768,7 +1767,7 @@ int GameBoard::development_opening_cp(Color c) {
     const int developed = (knights_total - knights_on_start) + (bishops_total - bishops_on_start);
     if (developed <= 0) return 0;
 
-    return developed * EvalW::DEVELOPMENT_OPENING;
+    return developed * Weights::DEVELOPMENT_OPENING;
 }
 
 
@@ -1782,7 +1781,7 @@ double GameBoard::kings_close_toegather_cp(Color attacker_color) {
 
     double dFarness = MAX_DIST - dkk;   // 8 if in opposition, 0, if in opposite corners
     assert (dFarness>=0.0);
-    return (int)(dFarness * EvalW::KINGS_CLOSE_TOGETHER_WGHT);
+    return (int)(dFarness * Weights::KINGS_CLOSE_TOGETHER_WGHT);
     
 }
 
@@ -2097,7 +2096,7 @@ int GameBoard::attackers_on_enemy_king_near_cp(Color attacker_color)
 
     }
 
-    return (total*EvalW::ATTACKERS_ON_KING_WGHT);
+    return (total*Weights::ATTACKERS_ON_KING_WGHT);
 }
 
 // Counts sliders+knights attacking the enemy's passed pawns.
