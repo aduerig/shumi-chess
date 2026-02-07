@@ -1029,16 +1029,8 @@ void Engine::popMoveFast()
 }
 
 
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-ull& Engine::access_pieces_of_color(Piece piece, Color color)
-{
-    switch (piece)
-    {
+inline ull& Engine::access_pieces_of_color(Piece piece, Color color) {
+    switch (piece)  {
         case Piece::PAWN:
             return (color != 0) ? this->game_board.black_pawns
                                 : this->game_board.white_pawns;
@@ -1063,6 +1055,8 @@ ull& Engine::access_pieces_of_color(Piece piece, Color color)
             return this->game_board.white_king;
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 //
 // Fills in a Move data structure based on a single "from" square, and multiple "to" squares.
@@ -1470,7 +1464,6 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
   
         if (the_move.piece_type == Piece::KING) {
             int from_sq = utility::bit::bitboard_to_lowest_square(the_move.from); // 0..63
-            //printf("quack %ld\n", from_sq);
 
             if ( (from_sq == game_board.square_e1) || (from_sq == game_board.square_e8) )
             {
@@ -1495,7 +1488,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
             bool b_is_pawn_move = (the_move.piece_type == Piece::PAWN);
 
             if (b_is_pawn_move) {
-                // For pawn move we give the ".from" file, and omit the "p"
+                // For pawn move we give the "from" file, and omit the "p"
                 thisChar = file_from_move(the_move);
                 safe_push_back(MoveText,thisChar);
             } else {
@@ -1509,9 +1502,10 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
                 if (p_legal_moves) {
 
                     for (const Move& m : *p_legal_moves) {
-                //         //int iPieces = bits_in(correct_bit_board);
-                        if ( (m.from == the_move.from) && (m.to == the_move.to) ) continue;    // skip this move
-                        ull mask = (the_move.to & m.to);    //assert (iPieces>0);
+
+                        if (m == the_move) continue;    // skip this move
+
+                        ull mask = (the_move.to & m.to);
                         if ( (mask != 0ull) && (the_move.piece_type == m.piece_type) ) {
                             // Try file first
                             aChar = file_from_move(the_move);

@@ -71,7 +71,6 @@ struct Move {
     // the promotion piece must be added to the equality. Not sure about the "en_passant_rights"?
 
     bool operator==(const Move &other) const {
-        //return ((from == other.from) && (to == other.to));
         return ((from == other.from) && (to == other.to) && (promotion == other.promotion));
     }
     

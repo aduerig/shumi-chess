@@ -27,8 +27,16 @@ char nth_letter(int n)
     assert(n >= 0 && n <= 25);
     return "abcdefghijklmnopqrstuvwxyz"[n];
 }
+
+//
+// Converts a one-hit square bitboard (exactly one bit set) into its ACN string,
+// e.g. (1ULL << sq) -> "e4".
+// ACN here means Algebraic Coordinate Notation: file 'a'..'h' + rank '1'..'8'.
+//
+// TODO move this somewhere else to precompute
 string bitboard_to_acn_conversion(ull bitboard) {
-    // TODO move this somewhere else to precompute
+    assert (bits_in(bitboard) == 1);
+
     unordered_map<ull, string> bitboard_to_acn_map;
     ull iterate_bitboard = 1ULL;
     for (int i = 1; i < 9; i++) {

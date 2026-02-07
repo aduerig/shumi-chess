@@ -112,7 +112,7 @@ class Engine {
 
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
-        //template <Piece P, Color C> ull& Engine::access_pieces_of_color()
+    
 
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 

@@ -153,7 +153,7 @@ inline const string color_str(const ShumiChess::Color color) {
 
 extern std::array<std::string, 8> row_to_letter;
 
-// assumes layout is:
+// assumes layout is (h1=0):
 // lower right is 2^0
 // lower left is 2^7
 // upper right is 2^56

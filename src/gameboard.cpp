@@ -2418,9 +2418,11 @@ retry_all:
 //
 int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 {
-    // mv.from and mv.to are BITBOARDS (ull) with exactly one bit set.
+    // from and to are BITBOARDS (ull) with exactly one bit set.
     ull from_bb = mv.from;
     ull to_bb   = mv.to;
+    assert (bits_in(from_bb) == 1);
+    assert (bits_in(to_bb) == 1);
 
     if (from_bb == 0ULL || to_bb == 0ULL) {   
         assert(0);      // NULL bitboards, should never happen.
