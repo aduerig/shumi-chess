@@ -134,21 +134,24 @@ std::string bitboard_to_acn_conversion(ull);
 //
 //  Which one is fastest? This is called everywhere. Chatbot says they are the same speed. But only
 //  one of them does not require colors to be "0" and "1".
-// inline const Color ShumiChess::opposite_color(const ShumiChess::Color color) {
+// inline constexpr Color ShumiChess::opposite_color(const ShumiChess::Color color) {
 //     return static_cast<Color>(static_cast<std::uint8_t>(color) ^ 1);   // I depend on WHITE=0, BLACK=1
 // }
-// inline const Color ShumiChess::opposite_color(const ShumiChess::Color color) {
+// inline constexpr Color ShumiChess::opposite_color(const ShumiChess::Color color) {
 //     return (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 // }
-inline const ShumiChess::Color opposite_color(const ShumiChess::Color color) {
+// Or what about this:
+// inline constexpr ShumiChess::Color opposite_color(Color c) {
+//     return static_cast<Color>(static_cast<unsigned>(c) ^ 1u);
+// }
+inline constexpr ShumiChess::Color opposite_color(const ShumiChess::Color color) {
     return (ShumiChess::Color) (1 - (int) color);                      // I depend on WHITE=0, BLACK=1
 }
 
 
-
-inline const string color_str(const ShumiChess::Color color) {
-    return color == ShumiChess::WHITE ? "white" : "black";
-}
+// inline constexpr string color_str(const ShumiChess::Color color) {
+//     return color == ShumiChess::WHITE ? "white" : "black";
+// }
 
 
 extern std::array<std::string, 8> row_to_letter;

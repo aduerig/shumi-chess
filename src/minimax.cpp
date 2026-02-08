@@ -371,8 +371,8 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
         Color enemy_of_color = (color == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
 
         // Has king only, or king with a single minor piece.
-        bool onlyKingEnemy   = engine.game_board.hasNoMajorPieces(enemy_of_color);
-        bool onlyKingFriend  = engine.game_board.hasNoMajorPieces(color);
+        bool NoMajorPiecesEnemy   = engine.game_board.hasNoMajorPieces(enemy_of_color);
+        bool NoMajorPiecesFriend  = engine.game_board.hasNoMajorPieces(color);
    
         int bonus_cp;
              
@@ -395,7 +395,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
                 /////////////// start positional evals /////////////////
 
        
-                if (!onlyKingEnemy) {
+                if (!NoMajorPiecesEnemy) {
 
                     // Encourage: castling, pawns/knights/bishops attacking the center. Discourage knights on edge and corner.
                     test = cp_score_positional_get_opening_cp(color, nPhase);
@@ -408,7 +408,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
                     cp_score_position_temp += test;    
                 }     
                 
-                test = cp_score_positional_get_end(color, nPhase, onlyKingFriend, onlyKingEnemy);
+                test = cp_score_positional_get_end(color, nPhase, NoMajorPiecesFriend, NoMajorPiecesEnemy);
                 //if (is_debug) printf("\nend: %ld", test);
                 cp_score_position_temp += test;      
 
@@ -536,7 +536,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
         cp_score_position_temp += icp_temp;  // centipawns
     }
 
-    //sif (nPhase == GamePhase::OPENING) {
+    //if (nPhase == GamePhase::OPENING) {
     if ( (nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY) ) {
         // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
         // Note: this is gross
@@ -555,24 +555,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
         icp_temp = engine.game_board.moved_f_pawn_early_cp(color);
         cp_score_position_temp += icp_temp;     // centipawns
     }
-    // else {
-    //     icp_temp = engine.game_board.queenOnCenterSquare_cp(color);
-
-    //     if (icp_temp) {
-    //         sprintf(szDebug, "\nppphase= %d    %d    %d\n", nPhase, icp_temp, (int)color);
-    //         int nChars = fputs(szDebug, fpDebug); 
-    //         assert(nChars != EOF);
-
-    //         string out = gameboard_to_string(engine.game_board);
-    //         nChars = fputs(out.c_str(), fpDebug);
-    //         assert(nChars != EOF);
-
-    //         std::fflush(fpDebug);   // force write to disk
-
-    //         assert(0);
-    //     }
-    // }
-
+   
     // Add code to encourage pawns attacking the 4-square center 
     icp_temp = engine.game_board.pawns_attacking_center_squares_cp(color);
     cp_score_position_temp += icp_temp;  // centipawns  (from 14)  clea
@@ -908,24 +891,22 @@ int g_this_depth = 6;
 //////////////////////////////////////////////////////////////////////////////////
 //
 // This is a "root position". The next fhuman move triggers a new root position
-// time_requested now in *milliseconds*
-Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deepening_requested, int feat) {  
+Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int feat) {  
 
     long long now_s;    // milliseconds 
     long long end_s;    // milliseconds
     long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
     ull elapsed_time = 0; // in msec
 
+    assert (i_time_requested > 0);
+
     // Obtain time now (milliseconds)
     auto start_time = chrono::high_resolution_clock::now();
 
     // Not actually a "endtime". The last deepening will start before or at this "requested" time. 
-    auto requested_end_time = start_time + chrono::duration<double, std::milli>(time_requested);
+    //auto requested_end_time = start_time + chrono::duration<double, std::milli>(time_requested);
+    auto requested_end_time = start_time + std::chrono::milliseconds(i_time_requested);
 
-    // debug
-    // cout << "\x1b[94mdept requested (ply)  =" << max_deepening_requested << "\x1b[0m" << endl;  
-    // cout << "\x1b[94mtime requested (msec) =" << time_requested << "\x1b[0m" << endl;
-    // cout << "\x1b[94margu requested (msec) =" << feat << "\x1b[0m" << endl;
 
     bool b_Forced = false;
 
@@ -1118,9 +1099,9 @@ Move MinimaxAI::get_move_iterative_deepening(double time_requested, int max_deep
     //cout << endl << " Deep end " << depth << "          msec=" << std::setw(6) << elapsed_time << ' ';
 
     cout << "\x1b[33m\nWent to depth " << (depth - 1)  
-        << " elapsed msec= " << elapsed_time << " requested msec= " << time_requested 
+        << " elapsed msec= " << elapsed_time << " requested msec= " << i_time_requested 
         << std::fixed << std::setprecision(1)
-        << "    time overshoot= " << (elapsed_time / time_requested)
+        << "    time overshoot= " << (elapsed_time / i_time_requested)
         //<< " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth 
         << "\x1b[0m" << endl;
 

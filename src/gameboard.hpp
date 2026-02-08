@@ -399,7 +399,5 @@ class GameBoard {
 
         Weights wghts;
 
-        //double openingness_of(int avg_cp);
-
 };
 } // end namespace ShumiChess

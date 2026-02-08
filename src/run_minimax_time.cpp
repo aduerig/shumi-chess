@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     Engine engine;
     MinimaxAI minimax_ai(engine);
 
-    double time_to_use = 30;
+    int time_to_use = 30;
     if (argc < 2) {
         cout << "You entered no argument for 'time_to_use', using default value of 1" << endl;
     } else {

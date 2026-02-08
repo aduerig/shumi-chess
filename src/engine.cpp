@@ -303,7 +303,6 @@ int Engine::get_minor_piece_move_number (const vector <Move> mvs)
     return iReturn;
 }
 
-// Does not take into account castling crossing a checked square? Yes, is_square_in_check() does this.
 bool Engine::is_king_in_check(const ShumiChess::Color& color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
 
@@ -314,12 +313,16 @@ bool Engine::is_king_in_check(const ShumiChess::Color& color) {
 
 //
 // Determines if a square is in check.
-// All bitboards are asssummed to be "h1=0". 
-bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square) {
+// All bitboards are assummed to be "h1=0". 
+// Inputs: "square+bb" is a bitboard (must be one bit set)
+bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square_bb) {
 
-    //Color enemy_color = utility::representation::opposite_color(color);
-    Color enemy_color = (Color)(color ^ 1);   // faster than the above
+    assert (game_board.bits_in(square_bb) == 1);
 
+    Color enemy_color = utility::representation::opposite_color(color);
+   
+
+    // Isolate which bitboard we will look at
     const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
     const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
     const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
@@ -327,7 +330,8 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
     const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
 
-    const int sq = utility::bit::bitboard_to_lowest_square(square);
+    // Indentify the 
+    const int sq = utility::bit::bitboard_to_lowest_square(square_bb);
 
     // knights that can reach (capture to) this square
     const ull reachable_knights = tables::movegen::knight_attack_table[sq];
@@ -340,10 +344,10 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     // pawns that can reach (capture to) this square
     ull temp;
     if (color == Color::WHITE) {
-        temp = (square & ~row_masks[7]) << 8;
+        temp = (square_bb & ~row_masks[7]) << 8;
     }
     else {
-        temp = (square & ~row_masks[0]) >> 8;
+        temp = (square_bb & ~row_masks[0]) >> 8;
     }
     
     // OLD wrong code that causes "Edge and king bug", FEN: 5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42
@@ -354,14 +358,18 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     ull reachable_pawns = (((temp & ~col_masks[0]) << 1) | 
                            ((temp & ~col_masks[7]) >> 1));                           
 
-    if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square
+    if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square_bb
 
 
     // Note: ? probably don't need knights here cause pins cannot happen with knights, but 
     //   we don't check if king is in check yet
-    ull straight_attacks_from_king = get_straight_attacks(square);
-    // cout << "diagonal_attacks_from_king: " << square << endl;
-    ull diagonal_attacks_from_king = get_diagonal_attacks(square);
+
+    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
+    int square = utility::bit::bitboard_to_lowest_square(square_bb);
+
+    // Look at both diagonal and straight moves
+    ull straight_attacks_from_king = get_straight_attacks(all_pieces_but_self, square);
+    ull diagonal_attacks_from_king = get_diagonal_attacks(all_pieces_but_self, square);
 
     // bishop, rook, queens that can reach (capture to) this square
     ull deadly_diags = themQueens | themBishops;
@@ -391,8 +399,6 @@ GameState Engine::is_game_over() {
 }
 
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
-
-
 GameState Engine::is_game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
         if ( (!game_board.white_king) || (is_square_in_check(Color::WHITE, game_board.white_king)) ) {
@@ -1073,6 +1079,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
     constexpr ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
     constexpr ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
+    // "from" square better be single bit.
     assert(game_board.bits_in(single_bitboard_from) == 1);
 
     // for all "to" squares and add them as moves
@@ -1088,37 +1095,103 @@ void Engine::add_move_to_vector(vector<Move>& moves,
             }
         }
 
-        Move new_move = {};
 
-        new_move.color = color;
-        new_move.piece_type = piece;
-        new_move.from = single_bitboard_from;
-        new_move.to = single_bitboard_to;
-        new_move.capture = piece_captured;
-        new_move.en_passant_rights = en_passant_rights;
-        new_move.is_en_passent_capture = is_en_passent_capture;
-        new_move.is_castle_move = is_castle;
 
-        // castling rights
-        ull from_or_to = (single_bitboard_from | single_bitboard_to);
-        if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
-        if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
-        if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
-        if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+       
+        // Move new_move = {};
 
-        if (!promotion) {
+        // new_move.color = color;
+        // new_move.piece_type = piece;
+        // new_move.from = single_bitboard_from;
+        // new_move.to = single_bitboard_to;
+        // new_move.capture = piece_captured;
+        // new_move.en_passant_rights = en_passant_rights;
+        // new_move.is_en_passent_capture = is_en_passent_capture;
+        // new_move.is_castle_move = is_castle;
+
+        // // castling rights
+        // ull from_or_to = (single_bitboard_from | single_bitboard_to);
+        // if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
+        // if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
+        // if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
+        // if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+
+        // if (!promotion) {
+        //     new_move.promotion = Piece::NONE;
+        //     // Add new move to the list of moves.  
+        //     moves.emplace_back(new_move);
+        // }
+        // else {
+        //     // A promotion. Add all possible promotion moves.
+        //     for (const auto promo_piece : promotion_values) {
+        //         moves.push_back(new_move);                  // copy new_move into vector
+        //         moves.back().promotion = promo_piece;       // change only this field (in the vector)
+        //     }
+        // }
+
+        //
+        // Faster than old way: construct the Move directly in the vector (emplace_back()),
+        // then fill its fields in-place. This avoids creating a temporary Move and
+        // copying it into the vector (emplace_back(new_move)).
+        if (!promotion)
+        {
+            // Get address of next slot in the vector.
+            moves.emplace_back();
+            Move& new_move = moves.back();
+
+            // Fill it in
+            new_move.color = color;
+            new_move.piece_type = piece;
+            new_move.from = single_bitboard_from;
+            new_move.to = single_bitboard_to;
+            new_move.capture = piece_captured;
+            new_move.en_passant_rights = en_passant_rights;
+            new_move.is_en_passent_capture = is_en_passent_capture;
+            new_move.is_castle_move = is_castle;
+
+            // castling rights
+            ull from_or_to = (single_bitboard_from | single_bitboard_to);
+            if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
+            if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
+            if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
+            if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+
             new_move.promotion = Piece::NONE;
-            // Add new move to the list of moves.  
-            moves.emplace_back(new_move);
         }
-        else {
+        else
+        {
             // A promotion. Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
-                moves.push_back(new_move);                  // copy new_move into vector
-                moves.back().promotion = promo_piece;       // change only this field (in the vector)
+                // Get address of next slot in the vector.
+                moves.emplace_back();
+                Move& new_move = moves.back();
+
+                // Fill it in
+                new_move.color = color;
+                new_move.piece_type = piece;
+                new_move.from = single_bitboard_from;
+                new_move.to = single_bitboard_to;
+                new_move.capture = piece_captured;
+                new_move.en_passant_rights = en_passant_rights;
+                new_move.is_en_passent_capture = is_en_passent_capture;
+                new_move.is_castle_move = is_castle;
+
+                // castling rights
+                ull from_or_to = (single_bitboard_from | single_bitboard_to);
+                if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
+                if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
+                if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
+                if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+
+                new_move.promotion = promo_piece;   // only difference from the non-promotion case 
             }
         }
-    }
+
+
+
+    }       // END loop over all "to" squares of move
+
+
 }
 
 void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
@@ -1243,8 +1316,13 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull own_pieces = game_board.get_pieces(color);
 
     while (rooks) {
+
         ull single_rook = utility::bit::lsb_and_pop(rooks);
-        ull avail_attacks = get_straight_attacks(single_rook);
+
+        // Straight moves 
+        ull all_pieces_but_self = game_board.get_pieces() & ~single_rook;
+        int square = utility::bit::bitboard_to_lowest_square(single_rook);       
+        ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -1264,8 +1342,13 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
     ull own_pieces = game_board.get_pieces(color);
 
     while (bishops) {
+
         ull single_bishop = utility::bit::lsb_and_pop(bishops);
-        ull avail_attacks = get_diagonal_attacks(single_bishop);
+
+         // Diagonal moves
+        ull all_pieces_but_self = game_board.get_pieces() & ~single_bishop;
+        int square = utility::bit::bitboard_to_lowest_square(single_bishop);
+        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -1285,8 +1368,13 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
     ull own_pieces = game_board.get_pieces(color);
 
     while (queens) {
-        ull single_queen = utility::bit::lsb_and_pop(queens);
-        ull avail_attacks = get_diagonal_attacks(single_queen) | get_straight_attacks(single_queen);
+
+        ull single_queen = utility::bit::lsb_and_pop(queens);       // To get it to a single bit
+
+        // Diagonal and straight moves
+        ull all_pieces_but_self = game_board.get_pieces() & ~single_queen;
+        int square = utility::bit::bitboard_to_lowest_square(single_queen);
+        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
 
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -1407,28 +1495,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 }
 
-//
-// engine.cpp
 
-
-
-
-
-
-// int Engine::bishops_attacking_square_old(Color c, int sq)
-// {
-//     ull bit_target = (1ULL << sq);
-//     ull rays       = get_diagonal_attacks(bit_target);  // your existing diagonal (bishop) attack generator
-//     ull bishops    = game_board.get_pieces_template<Piece::BISHOP>(c);
-//     return game_board.bits_in(rays & bishops);
-// }
-
-
-
-
-// inline void safe_push_back(std::string &s, char c) {
-//     if (s.size() < s.capacity()) s.push_back(c); else assert(0);
-//}
 inline void safe_push_back(std::string &s, char c) {
     s.push_back(c);   // always works
 }

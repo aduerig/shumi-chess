@@ -174,7 +174,7 @@ public:
                                              int& n_moves_within_delta     // output
                                             );
 
-    ShumiChess::Move get_move_iterative_deepening(double time_requested, int max_deepening_requested, int feat);
+    ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int feat);
 
     std::tuple<double, ShumiChess::Move> recursive_negamax(int depth
                                             , double alpha, double beta

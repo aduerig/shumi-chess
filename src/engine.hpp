@@ -171,14 +171,13 @@ class Engine {
         void add_king_moves_to_vector(vector<Move>&, Color);
         void add_rook_moves_to_vector(vector<Move>&, Color);
 
-        // helpers for move generation (inlined)
-        // ull get_diagonal_attacks(ull);
-        // ull get_straight_attacks(ull);
-
+        // This is the "classical" approach
         // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
-        inline ull get_diagonal_attacks(ull bitboard) {
-            ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-            ull square = utility::bit::bitboard_to_lowest_square(bitboard);
+        //inline ull get_diagonal_attacks(ull bitboard) {
+        inline ull get_diagonal_attacks(ull all_pieces_but_self, int square) {
+
+            // ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+            // int square = utility::bit::bitboard_to_lowest_square(bitboard);
 
             // up right
             ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
@@ -203,9 +202,11 @@ class Engine {
             return ne_attacks | nw_attacks | se_attacks | sw_attacks;
         }
 
-        inline ull get_straight_attacks(ull bitboard) {
-            ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-            ull square = utility::bit::bitboard_to_lowest_square(bitboard);
+        //inline ull get_straight_attacks(ull bitboard) {
+        inline ull get_straight_attacks(ull all_pieces_but_self, int square) {
+
+            // ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
+            // int square = utility::bit::bitboard_to_lowest_square(bitboard);
 
             // north
             ull masked_blockers_n = all_pieces_but_self & north_square_ray[square];

@@ -444,19 +444,6 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
 int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
     ull pieces_bitboard;
     int cp_board_score;
-    //int nPawns;
-
-    // Pawns first
-    //cp_pawns_only_temp = 0;
-    // Get bitboard of all pieces on board of this type and color
-    // pieces_bitboard = get_pieces_template<Piece::PAWN>(color);
-
-    // // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
-    // cp_board_score = centipawn_score_of(Piece::PAWN);
-    // nPawns = bits_in(pieces_bitboard);
-    // cp_pawns_only_temp += (int)(((double)nPawns * (double)cp_board_score));
-    // // This return must always be positive.
-    // assert (cp_pawns_only_temp>=0);
 
     const ull itemp   = get_pieces_template<Piece::PAWN> (color);
 
@@ -1042,9 +1029,9 @@ int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) co
 
             assert(Weights::ISOLANI_ROOK_WGHT == wghts.GetWeight(ISOLANI_ROOK));
             if ((file==0)||(file==7)) {
-                this_cp = (k*Weights::ISOLANI_ROOK_WGHT);   // single->1, double->2, triple->3, etc. on this file
+                this_cp = (k*Weights::ISOLANI_ROOK_WGHT);   // single->1, doubled->2, tripled->3, etc. on this file
             } else {
-                this_cp = (k*Weights::ISOLANI_WGHT);        // single->1, double->2, triple->3, etc. on this file
+                this_cp = (k*Weights::ISOLANI_WGHT);        // single->1, doubled->2, tripled->3, etc. on this file
             }
 
             if (get_major_pieces(c)) {
@@ -1445,15 +1432,6 @@ int GameBoard::center_closeness_bonus(Color c) {
 }
 
 
-
-
-//  double GameBoard::openingness_of(int avg_cp) {
-//     if (avg_cp <= 3000) return 0.0;   // fully "not opening"
-//     if (avg_cp >= 4000) return 1.0;   // fully opening
-//     return ( (double)(avg_cp - 3000) ) / 1000.0;  // linear between
-// }
-
-
 // Fills an array of up to 9 squares around the king (including the king square).
 // Returns how many valid squares were written.
 // king_near_squares_out[i] are square indices 0..63.
@@ -1678,7 +1656,7 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 }
 
 
-// Color has king only, or king with a single/double minor piece.
+// Color has king only, or king with a 1/2 minor pieces.
 // So discounting pawns, basically it means no more than "4 points" in material.
 bool GameBoard::hasNoMajorPieces(Color attacker_color) {
     ull enemyBigPieces;

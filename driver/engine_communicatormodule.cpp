@@ -127,7 +127,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     ShumiChess::Move found_move = {};
     for (const auto move : last_moves) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
-                to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
+            to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
             found_move = move;
         }
     }
@@ -264,11 +264,11 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
 static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 {
-    double milliseconds;      // required
-    int    max_deepening;     // required
-    int    argument = 0;      // optional, default 0
+    int milliseconds = 1;      // required
+    int max_deepening;     // required
+    int argument = 0;      // optional, default 0
 
-    // required double, required int, optional int
+    // required int, required int, optional int
     if (!PyArg_ParseTuple(args, "di|i",
                           &milliseconds,
                           &max_deepening,
@@ -284,7 +284,7 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 
     // Pass arguments through to the engine, get the opponents move.
     gotten_move = minimax_ai->get_move_iterative_deepening(
-        milliseconds,
+        milliseconds+1,
         max_deepening,
         argument
     );
@@ -384,7 +384,9 @@ engine_communicator_get_game_timeb(PyObject* self, PyObject* args) {
 static PyObject* 
 engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
     int iCPScore = python_engine.get_best_score_at_root();
-    double iPawnScore = iCPScore / 100.0;        // e.g. 243 -> 2.43, -1234 -> -12.34
+
+    double iPawnScore = minimax_ai->engine.convert_from_CP(iCPScore);
+
     double absip;
 
     bool isMateScore = IS_MATE_SCORE(iPawnScore);

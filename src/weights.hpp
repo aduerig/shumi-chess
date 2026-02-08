@@ -93,7 +93,8 @@ public:
     static constexpr int QUEEN_OUT_EARLY_WGHT = -100;   // for center squares only
     static constexpr int BISHOP_PATTERN_WGHT = -50;     // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30;     // only in opening. Boo hoo, no Bird opening.
-
+    static constexpr int DEVELOPMENT_OPENING = 7;    // Opening only
+    
     static constexpr int ROOK_CONNECTED_WGHT = 120;    // if any connected rook pair exists (one bonus only)
 
     // Rooks on open or semi open files
@@ -111,8 +112,6 @@ public:
 
     // Attackers are NOT kings. Otherwise everybody else.
     static constexpr int ATTACKERS_ON_KING_WGHT = 20;      // For each square at or around the king box. Includes the king square itself.
-
-    static constexpr int DEVELOPMENT_OPENING = 7;
 
     static constexpr int CENTER_OCCUPY_PIECES_WGHT = 24;  // Used only in CRAZY_IVAN. Doesnt count pawns or kings.
 

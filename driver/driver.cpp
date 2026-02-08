@@ -18,8 +18,8 @@ using namespace ShumiChess;
 int main(int argc, char** argv)
 {
     // defaults
-    double time_to_use_msec = 1000.0;   // -t1000
-    int    depth_limit      = 5;        // -d5
+    int time_to_use_msec = 1000;   // -t1000
+    int depth_limit      = 5;        // -d5
     string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     // parse only attached forms: -t8  -d6  -f<fen>
