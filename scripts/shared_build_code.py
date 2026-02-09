@@ -17,7 +17,10 @@ release_bin_dir = bin_dir.joinpath('Release')
 debug_bin_dir = bin_dir.joinpath('Debug')
 
 print_cyan(f'{show_board_path=}, {build_c_module_for_python_path=}')
-def build_shumi_chess(release, build_tests):
+
+# def build_shumi_chess(release, build_tests):
+def build_shumi_chess(release, build_tests=False, shumi_asserts=True):
+
     build_tests_str = 'OFF'
     if build_tests:
         build_tests_str = 'ON'
@@ -34,6 +37,8 @@ def build_shumi_chess(release, build_tests):
         '-Wno-dev',
         f'-DCMAKE_BUILD_TYPE={build_type_str}',
         f'-DBUILD_TESTS={build_tests_str}',
+        f"-DSHUMI_ASSERTS={'ON' if shumi_asserts else 'OFF'}",
+
     ]
     return_code, _stdout, _stderr = run_command_blocking(cmd, stdout_pipe=None, stderr_pipe=None, debug=True)
     if return_code:

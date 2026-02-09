@@ -13,11 +13,17 @@ from helpers import *
 parser = argparse.ArgumentParser()
 parser.add_argument('test_filter', nargs='?', default='*')
 parser.add_argument('--debug', dest='release', default=True, action='store_false')
+
+parser.add_argument('-asserts', '--asserts', dest='shumi_asserts', default=True, action='store_true')
+parser.add_argument('-no-asserts', '--no-asserts', dest='shumi_asserts', action='store_false')
+
 args = parser.parse_args()
 
 
 shared_build_code.build_shumi_chess(args.release, build_tests=True)
+shared_build_code.build_shumi_chess(args.release, build_tests=True, shumi_asserts=args.shumi_asserts)
 # shared_build_code.build_python_gui_module(args.release)
+
 
 windows_exe = '.exe' if is_windows() else ''
 

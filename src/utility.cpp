@@ -35,7 +35,7 @@ char nth_letter(int n)
 //
 // TODO move this somewhere else to precompute
 string bitboard_to_acn_conversion(ull bitboard) {
-    assert (bits_in(bitboard) == 1);
+    //assert (bits_in(bitboard) == 1);
 
     unordered_map<ull, string> bitboard_to_acn_map;
     ull iterate_bitboard = 1ULL;

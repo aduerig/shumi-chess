@@ -7,8 +7,9 @@
 #include <ostream>
 #include <sstream>
 
+#ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG
-// #define NDEBUG         // Define (uncomment) this to disable asserts
+#endif
 #include <assert.h>
 
 #include <engine.hpp>

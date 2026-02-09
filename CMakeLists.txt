@@ -4,6 +4,8 @@ set(project_name ShumiChess)
 project(${project_name} C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
+option(SHUMI_ASSERTS "Enable assert() even in Release builds" ON)
+
 # --- Set a default build type if none is specified (for single-config generators) ---
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'RelWithDebInfo' as default.")
@@ -58,6 +60,19 @@ if(BUILD_TESTS)
 endif(BUILD_TESTS)
 
 add_library(${project_name} STATIC ${Sources} ${Headers})
+
+if(SHUMI_ASSERTS)
+  message(STATUS "")
+  message(STATUS "Asserts ENABLED (forcing NDEBUG off)")
+  target_compile_definitions(${project_name} PRIVATE SHUMI_FORCE_ASSERTS=1)
+else()
+  message(STATUS "")
+  message(STATUS "Asserts DISABLED (NDEBUG as normal)")
+endif()
+
+
+
+
 
 set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 

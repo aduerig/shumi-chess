@@ -290,10 +290,13 @@ def on_one_key_hit(event):
     global paused
     paused = not paused
     if paused:
-        print("PAUSE ON")
+        # print("PAUSE ON")
+        print("\033[1;31mPAUSE ON\033[0m")
         pause_event.clear()   # block
     else:
-        print("PAUSE OFF")
+        # print("PAUSE OFF")
+        print("\033[1;31mPAUSE OFF\033[0m")
+
         pause_event.set()     # release
 
 win.master.bind("1", on_one_key_hit)

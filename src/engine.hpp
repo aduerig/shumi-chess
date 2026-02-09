@@ -112,7 +112,6 @@ class Engine {
 
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
-    
 
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
@@ -161,8 +160,8 @@ class Engine {
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
 
-        bool is_king_in_check(const Color&);
-        bool is_square_in_check(const Color&, const ull&);
+        bool is_king_in_check(const Color);
+        bool is_square_in_check(const Color, const ull);
 
         void add_pawn_moves_to_vector(vector<Move>&, Color);
         void add_knight_moves_to_vector(vector<Move>&, Color);

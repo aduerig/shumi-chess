@@ -33,19 +33,21 @@ parser.add_argument('-wt', '--wt', type=int, default=None, help='white time ms')
 parser.add_argument('-bd', '--bd', type=int, default=None, help='black max deepening')
 parser.add_argument('-bt', '--bt', type=int, default=None, help='black time ms')
 
-# parser.add_argument('-f', '--feat', type=int, default=0, help='Special argument')
-# parser.add_argument('-wf', '--wf',  type=int, default=None, help='white Special argument')
-# parser.add_argument('-bf', '--bf',  type=int, default=None, help='black Special argument')
 parser.add_argument('-f', '--feat', type=parse_int_auto, default=0,    help='Special argument (decimal or hex)')
 parser.add_argument('-wf', '--wf',  type=parse_int_auto, default=None, help='white Special argument')
 parser.add_argument('-bf', '--bf',  type=parse_int_auto, default=None, help='black Special argument')
+
+parser.add_argument('-asserts', '--asserts', dest='shumi_asserts', default=True, action='store_true')
+parser.add_argument('-no-asserts', '--no-asserts', dest='shumi_asserts', action='store_false')
+
 
 
 args = parser.parse_args()
 
 print('Building for:', 'debug' if not args.release else 'release')
 
-shared_build_code.build_shumi_chess(args.release, build_tests=False)
+# shared_build_code.build_shumi_chess(args.release, build_tests=False)
+shared_build_code.build_shumi_chess(args.release, build_tests=False, shumi_asserts=args.shumi_asserts)
 shared_build_code.build_python_gui_module(args.release)
 
 

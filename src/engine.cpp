@@ -5,12 +5,11 @@
 #include "utility"
 #include <cmath>
 
-
-// NOTE: How is NDEBUG being defined by someone (CMAKE?). I would rather do it in the make apparutus than 
-// in source files. But cant figure out how to build debug.
+#ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG
-//#define NDEBUG         // Define (uncomment) this to disable asserts
+#endif
 #include <assert.h>
+
 
 /////////// Debug ////////////////////////////////////////////////////////////////////////////////////
 
@@ -80,6 +79,7 @@ int PGN::addMe(Move& m, Engine& e)
 
 
 Engine::Engine() {
+
     reset_engine();
     ShumiChess::initialize_rays();
 
@@ -106,8 +106,8 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 //
 void Engine::reset_engine() {         // New game.
     std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
-    
 
+    //assert(0);
 
     // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -303,7 +303,7 @@ int Engine::get_minor_piece_move_number (const vector <Move> mvs)
     return iReturn;
 }
 
-bool Engine::is_king_in_check(const ShumiChess::Color& color) {
+bool Engine::is_king_in_check(const ShumiChess::Color color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
 
     bool bReturn =  is_square_in_check(color, friendly_king);
@@ -312,36 +312,30 @@ bool Engine::is_king_in_check(const ShumiChess::Color& color) {
 }
 
 //
-// Determines if a square is in check.
+// Determines if a square is "in check". 
+// IMPORTANT: It is assummed that IN ALL CALLERS, square_bb is thie bitboard for a single KIng.
 // All bitboards are assummed to be "h1=0". 
-// Inputs: "square+bb" is a bitboard (must be one bit set)
-bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& square_bb) {
+// Inputs: "square_bb" is a bitboard (must be one bit set)
+bool Engine::is_square_in_check(const ShumiChess::Color color, const ull square_bb) {
 
     assert (game_board.bits_in(square_bb) == 1);
 
     Color enemy_color = utility::representation::opposite_color(color);
    
-
-    // Isolate which bitboard we will look at
-    const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
-    const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
-    const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
-    const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
-    const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
-    const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
-
-    // Indentify the 
-    const int sq = utility::bit::bitboard_to_lowest_square(square_bb);
+    const int square = utility::bit::bitboard_to_lowest_square(square_bb);
 
     // knights that can reach (capture to) this square
-    const ull reachable_knights = tables::movegen::knight_attack_table[sq];
+    const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
+    const ull reachable_knights = tables::movegen::knight_attack_table[square];
     if (reachable_knights & themKnights) return true;   // Knight attacks this square
 
     // kings that can reach (capture to) this square
-    const ull reachable_kings   = tables::movegen::king_attack_table[sq];
+    const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
+    const ull reachable_kings   = tables::movegen::king_attack_table[square];
     if (reachable_kings   & themKing)    return true;   // King attacks this square
 
     // pawns that can reach (capture to) this square
+    const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
     ull temp;
     if (color == Color::WHITE) {
         temp = (square_bb & ~row_masks[7]) << 8;
@@ -354,20 +348,21 @@ bool Engine::is_square_in_check(const ShumiChess::Color& color, const ull& squar
     // ull reachable_pawns = (((temp & ~col_masks[7]) << 1) | 
     //                        ((temp & ~col_masks[0]) >> 1));
 
-    // New code fix?
+    // New code fix.
     ull reachable_pawns = (((temp & ~col_masks[0]) << 1) | 
                            ((temp & ~col_masks[7]) >> 1));                           
 
     if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square_bb
 
 
-    // Note: ? probably don't need knights here cause pins cannot happen with knights, but 
-    //   we don't check if king is in check yet
-
-    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
-    int square = utility::bit::bitboard_to_lowest_square(square_bb);
+    // In all the "sliding piece" cases, we need this.
+    const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
+    const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
+    const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
+    if ((themRooks | themBishops | themQueens) == 0ULL) return false;
 
     // Look at both diagonal and straight moves
+    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
     ull straight_attacks_from_king = get_straight_attacks(all_pieces_but_self, square);
     ull diagonal_attacks_from_king = get_diagonal_attacks(all_pieces_but_self, square);
 
@@ -1035,7 +1030,7 @@ void Engine::popMoveFast()
 }
 
 
-inline ull& Engine::access_pieces_of_color(Piece piece, Color color) {
+ull& Engine::access_pieces_of_color(Piece piece, Color color) {
     switch (piece)  {
         case Piece::PAWN:
             return (color != 0) ? this->game_board.black_pawns
@@ -1061,6 +1056,8 @@ inline ull& Engine::access_pieces_of_color(Piece piece, Color color) {
             return this->game_board.white_king;
     }
 }
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

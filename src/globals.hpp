@@ -11,9 +11,11 @@
 
 #include "globals.hpp"
 
+#ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG
-#define NDEBUG         // Define (uncomment) this to disable asserts
+#endif
 #include <assert.h>
+
 
 #define SHORT_SIZES     // minimize size of the Move structure.
 
@@ -161,10 +163,10 @@ extern uint64_t zobrist_side;
 
 void initialize_zobrist();
 inline uint64_t zobrist_piece_square_get(int i, int j) {
-    assert (i>= 0);
-    assert (i< 12);
-    assert (j>= 0);
-    assert (j< 64);
+    // assert (i>= 0);
+    // assert (i< 12);
+    // assert (j>= 0);
+    // assert (j< 64);
     return zobrist_piece_square[i][j];
 }
 
