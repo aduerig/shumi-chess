@@ -172,9 +172,6 @@ void Engine::reset_engine() {         // New game.
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    // game_board.bCastledWhite = false;  // I dont care which side i castled.
-    // game_board.bCastledBlack = false;  // I dont care which side i castled.
-
     computer_ply_so_far = 0;       // real moves in whole game
     ply_so_far = 0;     // ply played in game so far
     game_white_time_msec = 0;     // total white thinking time for game 
@@ -219,8 +216,6 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
 
-    // game_board.bCastledWhite = false;  // I dont care which side i castled.
-    // game_board.bCastledBlack = false;  // I dont care which side i castled.
 
     computer_ply_so_far = 0;       // real moves in whole game
     ply_so_far = 0;     // ply played in game so far
@@ -245,6 +240,159 @@ vector<Move> Engine::get_legal_moves() {
     return get_legal_moves(color);
 }
 
+bool Engine::in_check_after_move(Color color, const Move& move) {
+    // NOTE: is this the most effecient way to do this (push()/pop())?
+    #ifdef _DEBUGGING_PUSH_POP_FAST
+        std::string temp_fen_before = game_board.to_fen();
+    #endif
+
+    pushMoveFast(move);   
+
+    bool bReturn = is_king_in_check(color);
+
+    popMoveFast();
+    
+    #ifdef _DEBUGGING_PUSH_POP_FAST
+        std::string temp_fen_after = game_board.to_fen();
+        if (temp_fen_before != temp_fen_after) {
+            std::cout << "\x1b[31m";
+            std::cout << "PROBLEM WITH PUSH POP FAST!!!!!" << std::endl;
+            std::cout << "FEN before  push/pop: " << temp_fen_before  << std::endl;
+            std::cout << "FEN after   push/pop: " << temp_fen_after   << std::endl;
+            std::cout << "\x1b[0m";
+            assert(0);
+        }
+    #endif
+    return bReturn;
+}
+//
+//   Return true if, AFTER applying `move`, the king of `color` is in check.
+//
+// Why this exists (algorithm idea):
+//   Full pushMoveFast()/popMoveFast() is expensive because it touches move_history,
+//   turn, and does a lot of per-piece bookkeeping. But to answer "king attacked?",
+//   we only need the position 'as it would look after the move' in the limited ways
+//   that affect attacks on the king.
+//
+// What a move can change that matters for check:
+//   (1) Occupancy at `from` (moving piece leaves)  -> can open a discovered attack ray.
+//   (2) Occupancy at `to`   (moving piece arrives) -> can block/unblock an attack ray.
+//   (3) Captures remove an enemy piece (normal: at `to`; en-passant: behind `to`).
+//   (4) Promotion changes which friendly piece type occupies `to`.
+//   (5) Castling also moves a rook (so rook occupancy changes too).
+//
+// Implementation strategy (tiny make/unmake):
+//   - Save old values of only the bitboards we will touch.
+//   - Apply minimal edits to those bitboards to represent the "after-move" position.
+//   - Call is_king_in_check(color) (your optimized king-square test).
+//   - Restore the saved bitboards and return the result.
+//
+// NOTE:
+//   This does NOT touch move_history, turn, zobrist, repetition, rights, clocks, etc.
+//   It is strictly a fast "after-move king attacked?" query.
+// ---------------------------------------------------------------------------
+bool Engine::in_check_after_move_fast(Color color, const Move& move)
+{
+    assert(move.piece_type != Piece::NONE);
+
+    // Pointers to the specific bitboards we mutate, plus snapshots for the "pop".
+    ull* pSrc   = nullptr;
+    ull  srcOld = 0;
+
+    ull* pCap   = nullptr;
+    ull  capOld = 0;
+
+    ull* pPromo   = nullptr;
+    ull  promoOld = 0;
+
+    ull* pRooks   = nullptr;
+    ull  rooksOld = 0;
+
+    const ull from_mask = move.from;
+    const ull to_mask   = move.to;
+
+    // --- 1) Moving piece leaves `from` (always) ---
+    // This changes occupancy on `from`, which is one of the only squares that can
+    // change whether the king is attacked (discovered checks / pins).
+    pSrc   = &access_pieces_of_color(move.piece_type, move.color);
+    srcOld = *pSrc;
+    (*pSrc) &= ~from_mask;      // Clear the from square
+
+    // --- 2) Remove captured enemy piece (if any) ---
+    // Captures change occupancy too.
+    // En-passant is special: captured pawn is not on `to`; it's one rank behind `to`.
+    if (move.capture != Piece::NONE) {
+        const Color enemy = utility::representation::opposite_color(move.color);
+
+        pCap   = &access_pieces_of_color(move.capture, enemy);
+        capOld = *pCap;
+
+        if (move.is_en_passent_capture) {
+            ull behind_mask = (move.color == Color::WHITE) ? (to_mask >> 8) : (to_mask << 8);
+            (*pCap) &= ~behind_mask;
+        } else {
+            (*pCap) &= ~to_mask;
+        }
+    }
+
+    // --- 3) Occupy `to` with the correct friendly piece ---
+    // Normally the moving piece occupies `to`. If promotion, the promoted piece type
+    // occupies `to` instead (pawn disappears, promoted piece appears).
+    if (move.promotion != Piece::NONE) {
+        pPromo   = &access_pieces_of_color(move.promotion, move.color);
+        promoOld = *pPromo;
+        (*pPromo) |= to_mask;      
+    } else {
+        (*pSrc) |= to_mask;      // Add the to square 
+    }
+
+    // --- 4) Castling also moves a rook ---
+    // This mirrors the rook adjustment in pushMoveFast(), but ONLY for the occupancy effect.
+    if (move.is_castle_move) {
+        pRooks   = &access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(move.color);
+        rooksOld = *pRooks;
+
+        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+            // Queenside castle
+            if (move.color == ShumiChess::Color::WHITE) {
+                (*pRooks) &= ~(1ULL << 7);      // game_board.square_a1
+                (*pRooks) |=  (1ULL << 4);      // game_board.square_d1
+            } else {
+                (*pRooks) &= ~(1ULL << 63);     // game_board.square_a8
+                (*pRooks) |=  (1ULL << 60);     // game_board.square_d8
+            }
+        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+            // Kingside castle
+            if (move.color == ShumiChess::Color::WHITE) {
+                (*pRooks) &= ~(1ULL << 0);      // game_board.square_h1
+                (*pRooks) |=  (1ULL << 2);      // game_board.square_f1
+            } else {
+                (*pRooks) &= ~(1ULL << 56);     // game_board.square_h8
+                (*pRooks) |=  (1ULL << 58);     // game_board.square_f8
+            }
+        } else {
+            assert(0);
+        }
+    }
+
+    // After the edits above, the bitboards represent the "after-move" position
+    // in every way that can affect attacks on the king. So a plain king-in-check test
+    // answers the question.
+    const bool bReturn = is_king_in_check(color);
+
+    // Restore all mutated bitboards (this does the "pop")
+    if (pRooks) *pRooks = rooksOld;
+    if (pPromo) *pPromo = promoOld;
+    if (pCap)   *pCap   = capOld;
+    if (pSrc)   *pSrc   = srcOld;
+
+    return bReturn;
+}
+
+
+
+
+
 vector<Move> Engine::get_legal_moves(Color color) {
 
     //Color color = game_board.turn;
@@ -254,7 +402,6 @@ vector<Move> Engine::get_legal_moves(Color color) {
     psuedo_legal_moves.clear(); 
     all_legal_moves.clear();
 
-
     //
     // Get "psuedo_legal" moves. Those that does not put the king in check, and do not 
     // cross the king over a "checked square".
@@ -263,8 +410,10 @@ vector<Move> Engine::get_legal_moves(Color color) {
     
     for (const Move& move : psuedo_legal_moves) {
 
-        bool bKingInCheck = in_check_after_move(color, move);
-        
+        //bool bKingInCheck2 = in_check_after_move(color, move);
+        bool bKingInCheck = in_check_after_move_fast(color, move);
+        //assert(bKingInCheck == bKingInCheck2);
+
         if (!bKingInCheck) {
             // King is NOT in check after making the move
 
@@ -306,23 +455,23 @@ int Engine::get_minor_piece_move_number (const vector <Move> mvs)
 bool Engine::is_king_in_check(const ShumiChess::Color color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
 
-    bool bReturn =  is_square_in_check(color, friendly_king);
+    Color enemy_color = utility::representation::opposite_color(color);
+    bool bReturn =  is_square_in_check(enemy_color, friendly_king);
      
     return bReturn;
 }
 
 //
-// Determines if a square is "in check". 
-// IMPORTANT: It is assummed that IN ALL CALLERS, square_bb is thie bitboard for a single KIng.
-// All bitboards are assummed to be "h1=0". 
+////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Determines if a square is "in check". All bitboards are assummed to be "h1=0"
+// IMPORTANT: It is known that IN ALL CALLERS, square_bb is the bitboard for a single King.
 // Inputs: "square_bb" is a bitboard (must be one bit set)
-bool Engine::is_square_in_check(const ShumiChess::Color color, const ull square_bb) {
+bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull square_bb) {
 
     assert (game_board.bits_in(square_bb) == 1);
-
-    Color enemy_color = utility::representation::opposite_color(color);
    
-    const int square = utility::bit::bitboard_to_lowest_square(square_bb);
+    const int square = utility::bit::bitboard_to_lowest_square_safe(square_bb);
 
     // knights that can reach (capture to) this square
     const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
@@ -336,42 +485,58 @@ bool Engine::is_square_in_check(const ShumiChess::Color color, const ull square_
 
     // pawns that can reach (capture to) this square
     const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
-    ull temp;
-    if (color == Color::WHITE) {
-        temp = (square_bb & ~row_masks[7]) << 8;
+ 
+    // Enemy pawn capture sources that could attack `square_bb`.
+    ull pawn_from_squares;
+    if (enemy_color == Color::BLACK) {
+        pawn_from_squares = (square_bb & ~row_masks[ROW_8]) << 8;
     }
     else {
-        temp = (square_bb & ~row_masks[0]) >> 8;
+        pawn_from_squares = (square_bb & ~row_masks[ROW_1]) >> 8;
     }
     
-    // OLD wrong code that causes "Edge and king bug", FEN: 5r1k/1R5p/8/p2P4/1KP1P3/1P6/P7/8 w - a6 0 42
-    // ull reachable_pawns = (((temp & ~col_masks[7]) << 1) | 
-    //                        ((temp & ~col_masks[0]) >> 1));
+    // Mask out the rook file on the opposite side of the board
+    // Newer code clarification. (note: these COL_A, and COL_H constants are backwards!)
+    // Shift one file toward A (i.e., left on the board). Mask out the H-file first to prevent wraparound H→A.
+    ull towardA_from_target = ((pawn_from_squares & ~col_masks[COL_A]) << 1);   // col_masks[COL_A] == H-file in your current mask layout
 
-    // New code fix.
-    ull reachable_pawns = (((temp & ~col_masks[0]) << 1) | 
-                           ((temp & ~col_masks[7]) >> 1));                           
+    // Shift one file toward H (i.e., right on the board). Mask out the A-file first to prevent wraparound A→H.
+    ull towardH_from_target = ((pawn_from_squares & ~col_masks[COL_H]) >> 1);   // col_masks[COL_H] == A-file in your current mask layout
 
+    // Squares where an enemy pawn could sit and capture onto square_bb.
+    ull reachable_pawns = towardA_from_target | towardH_from_target;
+
+  
     if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square_bb
 
 
-    // In all the "sliding piece" cases, we need this.
+    // Now look at "sliders" (queens, rooks, bishops)
     const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
     const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
     const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
-    if ((themRooks | themBishops | themQueens) == 0ULL) return false;
+
+    ull deadly_diags = themQueens | themBishops;
+    ull deadly_straights = themQueens | themRooks;
+    if (!(deadly_straights | deadly_diags)) return false;   // No sliders on board
 
     // Look at both diagonal and straight moves
     ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
-    ull straight_attacks_from_king = get_straight_attacks(all_pieces_but_self, square);
-    ull diagonal_attacks_from_king = get_diagonal_attacks(all_pieces_but_self, square);
+    assert(all_pieces_but_self != 0ULL);       // There must be someone else on the board, right?
+
+    ull straight_attacks_from_passed_sq = 0ULL;
+    ull diagonal_attacks_from_passed_sq = 0ULL;
+
+    if (deadly_straights) {
+        straight_attacks_from_passed_sq = get_straight_attacks(all_pieces_but_self, square);
+    }
+
+    if (deadly_diags) {
+        diagonal_attacks_from_passed_sq = get_diagonal_attacks(all_pieces_but_self, square);
+    }
 
     // bishop, rook, queens that can reach (capture to) this square
-    ull deadly_diags = themQueens | themBishops;
-    ull deadly_straight = themQueens| themRooks;
-
-    if (deadly_straight & straight_attacks_from_king) return true;    // for queen and rook straight attacks
-    if (deadly_diags    & diagonal_attacks_from_king) return true;    // for queen and bishop straight attacks
+    if (deadly_straights & straight_attacks_from_passed_sq) return true;    // for queen and rook straight attacks
+    if (deadly_diags     & diagonal_attacks_from_passed_sq) return true;    // for queen and bishop straight attacks
 
     return false;
 
@@ -396,9 +561,10 @@ GameState Engine::is_game_over() {
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
 GameState Engine::is_game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
-        if ( (!game_board.white_king) || (is_square_in_check(Color::WHITE, game_board.white_king)) ) {
+        // if no moves, then gave is over. Either somebody wins or its a stalemate
+        if ( (!game_board.white_king) || (is_square_in_check(Color::BLACK, game_board.white_king)) ) {
             return GameState::BLACKWIN;     // Checkmate
-        } else if ( (!game_board.black_king) || (is_square_in_check(Color::BLACK, game_board.black_king)) ) {
+        } else if ( (!game_board.black_king) || (is_square_in_check(Color::WHITE, game_board.black_king)) ) {
             return GameState::WHITEWIN;     // Checkmate
         }
         else {
@@ -502,9 +668,6 @@ int Engine::get_best_score_at_root() {
 // takes a move, but tracks it so pop() can undo
 void Engine::pushMove(const Move& move) {
 
-    // Used for castling only
-    int rook_from_sq = -1;
-    int rook_to_sq = -1;
 
     assert(move.piece_type != NONE);
 
@@ -533,8 +696,8 @@ void Engine::pushMove(const Move& move) {
     moving_piece &= ~move.from;
 
     // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
-    int square_from = utility::bit::bitboard_to_lowest_square(move.from);
-    int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
+    int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
 
     // zobrist_key "push" update (for normal moves, remove piece from from square)
     game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_from);
@@ -567,7 +730,7 @@ void Engine::pushMove(const Move& move) {
             ull target_pawn_bitboard = (move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8);
 
             // Gets the number of leading zeros in the pawn butboard. So this is the first pawn in the list?
-            int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
+            int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bitboard);
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) &= ~target_pawn_bitboard;
 
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, target_pawn_square);
@@ -583,14 +746,12 @@ void Engine::pushMove(const Move& move) {
         }
     } else if (move.is_castle_move) {
 
-        // // if pushing a castle turn castling status on in gameboard.
-        // if (move.color == ShumiChess::Color::WHITE) {
-        //    game_board.bCastledWhite = true;  // I dont care which side i castled.
-        // } else {
-        //    game_board.bCastledBlack = true;  // I dont care which side i castled.
-        // }
+        // Used for castling only
+        int rook_from_sq;
+        int rook_to_sq;
 
-        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
+        ull& friendly_rooks = access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(move.color);
+        //ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         // cout << "PUSHING: Friendly rooks are:";
         // utility::representation::print_bitboard(friendly_rooks);
@@ -598,13 +759,13 @@ void Engine::pushMove(const Move& move) {
             //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
-                rook_from_sq = 7;
-                rook_to_sq = 4;
+                rook_from_sq = 7;   // game_board.square_a1
+                rook_to_sq = 4;     // game_board.square_d1
                 friendly_rooks &= ~(1ULL<<7);
                 friendly_rooks |= (1ULL<<4);
             } else {
-                rook_from_sq = 63;
-                rook_to_sq = 60;               
+                rook_from_sq = 63;  // game_board.square_a8
+                rook_to_sq = 60;    // game_board.square_d8              
                 friendly_rooks &= ~(1ULL<<63);
                 friendly_rooks |= (1ULL<<60);
             }
@@ -612,27 +773,37 @@ void Engine::pushMove(const Move& move) {
              //                rnbqkbnr                                                       RNBQKBNR
             // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
-                rook_from_sq = 0;
-                rook_to_sq = 2;
+                rook_from_sq = 0;   // game_board.square_h1
+                rook_to_sq = 2;     // game_board.square_f1
                 friendly_rooks &= ~(1ULL<<0);
                 friendly_rooks |= (1ULL<<2);
                 //assert (this->game_board.white_castle_rights);
             } else {
-                rook_from_sq = 56;
-                rook_to_sq = 58;                
+                rook_from_sq = 56;  // game_board.square_h8
+                rook_to_sq = 58;    // game_board.square_f8               
                 friendly_rooks &= ~(1ULL<<56);
                 friendly_rooks |= (1ULL<<58);
             }
         } else {        // Something wrong, its not a castle
             assert(0);
         }
+
+        // ---- Zobrist update for the rook hop in castling ----
+        // (has to happen after updating the castle rights, just above)
+   
+        // King squares were already XORed earlier in pushMove(), so we ONLY fix the rook here.
+        assert(rook_from_sq >= 0 && rook_to_sq >= 0);
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_from_sq);
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_to_sq);
+
+        
     }
 
     this->en_passant_history.push(this->game_board.en_passant_rights);
 
     // Zobrist: remove old en passant (if any)
     if (this->game_board.en_passant_rights) {
-        int old_ep_sq   = utility::bit::bitboard_to_lowest_square(this->game_board.en_passant_rights);
+        int old_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(this->game_board.en_passant_rights);
         int old_ep_file = old_ep_sq & 7;  // file index 0..7
         game_board.zobrist_key ^= zobrist_enpassant[old_ep_file];
     }
@@ -641,13 +812,12 @@ void Engine::pushMove(const Move& move) {
 
     // Zobrist: add new en passant (if any)
     if (this->game_board.en_passant_rights) {
-        int new_ep_sq   = utility::bit::bitboard_to_lowest_square(this->game_board.en_passant_rights);
+        int new_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(this->game_board.en_passant_rights);
         int new_ep_file = new_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[new_ep_file];
     }
 
 
-    
     // Manage castling rights
     uint8_t castle_rights = (this->game_board.black_castle_rights << 2) | this->game_board.white_castle_rights;
     this->castle_opportunity_history.push(castle_rights);
@@ -664,14 +834,7 @@ void Engine::pushMove(const Move& move) {
         game_board.zobrist_key ^= zobrist_castling[castle_new];
     }
 
-    // ---- Zobrist update for the rook hop in castling ----
-    // (has to happen after updating the castle rights, just above)
-    if (move.is_castle_move) {
-        // King squares were already XORed earlier in pushMove(), so we ONLY fix the rook here.
-        assert(rook_from_sq >= 0 && rook_to_sq >= 0);
-        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_from_sq);
-        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + move.color * 6, rook_to_sq);
-    }
+ 
 
 }
 
@@ -681,8 +844,6 @@ void Engine::pushMove(const Move& move) {
 // 
 void Engine::popMove() {
 
-    int rook_from_sq = -1;
-    int rook_to_sq = -1;
 
     const Move move = this->move_history.top();
     this->move_history.pop();
@@ -692,7 +853,7 @@ void Engine::popMove() {
     // --- undo zobrist for en passant rights ---
     // 1. XOR out the current en passant (the one set by the move we're undoing)
     if (this->game_board.en_passant_rights) {
-        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square(this->game_board.en_passant_rights);
+        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(this->game_board.en_passant_rights);
         int cur_ep_file = cur_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[cur_ep_file];
     }
@@ -700,7 +861,7 @@ void Engine::popMove() {
     // 2. Peek at the previous en passant square from history (do NOT pop yet)
     ull prev_ep_bb = this->en_passant_history.top();
     if (prev_ep_bb) {
-        int prev_ep_sq   = utility::bit::bitboard_to_lowest_square(prev_ep_bb);
+        int prev_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(prev_ep_bb);
         int prev_ep_file = prev_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[prev_ep_file];
     }
@@ -738,8 +899,8 @@ void Engine::popMove() {
     this->game_board.halfmove = this->halfway_move_state.top();
     this->halfway_move_state.pop();
 
-    int square_from = utility::bit::bitboard_to_lowest_square(move.from);
-    int square_to   = utility::bit::bitboard_to_lowest_square(move.to);
+    int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
 
     // pop the "actual move". This removes the piece from its square and puts it back to where it was.
     ull& moving_piece = access_pieces_of_color(move.piece_type, move.color);
@@ -770,28 +931,25 @@ void Engine::popMove() {
             // Looks at the rank just "forward" of this pawn, on the same file?
             ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
 
-            int target_pawn_square = utility::bit::bitboard_to_lowest_square(target_pawn_bitboard);
+            int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bitboard);
             
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= target_pawn_bitboard;
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, target_pawn_square);
-
 
         } else {
 
             access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, square_to);
         }
+
     } else if (move.is_castle_move) {
        
-        // // if popping a castle turn castling status off in gameboard.
-        // if (move.color == ShumiChess::Color::WHITE) {
-        //    game_board.bCastledWhite = false;  // I dont care which side i castled.
-        // } else {
-        //    game_board.bCastledBlack = false;  // I dont care which side i castled.
-        // }
+        int rook_from_sq;
+        int rook_to_sq;
 
         // get pointer to the rook? Which rook?
-        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
+        ull& friendly_rooks = access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(move.color);
+        //ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         // ! Bet we can make this part of push a func and do something fancy with to and from
         //  at least keep standard with push implimentation.
 
@@ -800,13 +958,13 @@ void Engine::popMove() {
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                rook_from_sq = 4;
-                rook_to_sq = 7;
+                rook_from_sq = 4;       // game_board.square_d1
+                rook_to_sq = 7;         // game_board.square_a1
                 friendly_rooks &= ~(1ULL<<4);
                 friendly_rooks |= (1ULL<<7);
             } else {
-                rook_from_sq = 60;
-                rook_to_sq = 63;
+                rook_from_sq = 60;      // game_board.square_d8
+                rook_to_sq = 63;        // game_board.square_a8
                 friendly_rooks &= ~(1ULL<<60);
                 friendly_rooks |= (1ULL<<63);
             }
@@ -814,13 +972,13 @@ void Engine::popMove() {
             //                 rnbqkbnr                                                       rnbqkbnr
             // Popping a Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                rook_from_sq = 2;
-                rook_to_sq = 0;
+                rook_from_sq = 2;       // game_board.square_f1
+                rook_to_sq = 0;         // game_board.square_h1
                 friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
                 friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
             } else {
-                rook_from_sq = 58;
-                rook_to_sq = 56;
+                rook_from_sq = 58;      // game_board.square_f8
+                rook_to_sq = 56;        // game_board.square_h8
                 friendly_rooks &= ~(1ULL<<58);
                 friendly_rooks |= (1ULL<<56);
             }
@@ -852,7 +1010,7 @@ void Engine::pushMoveFast(const Move& move)
 {
     assert(move.piece_type != Piece::NONE);
 
-    // Use the same move_history as regular push
+    // (popMoveFast() needs the last move)
     move_history.push(move);
 
     // Flip side to move
@@ -867,9 +1025,7 @@ void Engine::pushMoveFast(const Move& move)
 
     // --- 2. Handle captures ---
     if (move.capture != Piece::NONE) {
-        ull& cap_bb = access_pieces_of_color(
-            move.capture,
-            utility::representation::opposite_color(move.color));
+        ull& cap_bb = access_pieces_of_color(move.capture, game_board.turn);
 
         if (move.is_en_passent_capture) {
             ull behind_mask = (move.color == Color::WHITE)
@@ -891,18 +1047,10 @@ void Engine::pushMoveFast(const Move& move)
 
     if (move.is_castle_move) {
 
-        // // if pushing a castle turn castling status on in gameboard.
-        // if (move.color == ShumiChess::Color::WHITE) {
-        //    game_board.bCastledWhite = true;  // I dont care which side i castled.
-        // } else {
-        //    game_board.bCastledBlack = true;  // I dont care which side i castled.
-        // }
-
-        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
+        ull& friendly_rooks = access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(move.color);
+        //ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         //
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
-        // cout << "PUSHING: Friendly rooks are:";
-        // utility::representation::print_bitboard(friendly_rooks);
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
@@ -914,7 +1062,7 @@ void Engine::pushMoveFast(const Move& move)
                 friendly_rooks |= (1ULL<<60);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
-             //                rnbqkbnr                                                       RNBQKBNR
+            //                 rnbqkbnr                                                       RNBQKBNR
             // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
                 friendly_rooks &= ~(1ULL<<0);
@@ -957,7 +1105,8 @@ void Engine::popMoveFast()
         ull& promo_bb = access_pieces_of_color(move.promotion, move.color);
         promo_bb &= ~to_mask;
 
-        ull& pawn_bb = access_pieces_of_color(Piece::PAWN, move.color);
+        //sull& pawn_bb = access_pieces_of_color(Piece::PAWN, move.color);
+        ull& pawn_bb = access_pieces_of_color_tp<ShumiChess::Piece::PAWN>(move.color);
         pawn_bb |= from_mask;
     } else {
         ull& piece_bb = access_pieces_of_color(move.piece_type, move.color);
@@ -984,18 +1133,12 @@ void Engine::popMoveFast()
 
     if (move.is_castle_move) {
 
-        // // if popping a castle turn castling status off in gameboard.
-        // if (move.color == ShumiChess::Color::WHITE) {
-        //    game_board.bCastledWhite = false;  // I dont care which side i castled.
-        // } else {
-        //    game_board.bCastledBlack = false;  // I dont care which side i castled.
-        // }
-
-        //assert(0 && "popMoveFast(): castling should never appear in fast path");
+        //assert() && "popMoveFast(): castling should never appear in fast path");
         // get pointer to the rook? Which rook?
-        ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
+        ull& friendly_rooks = access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(move.color);
+        //ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         // ! Bet we can make this part of push a func and do something fancy with to and from
-        //  at least keep standard with push implimentation.
+        //  at least keep standard with pushMoveFast implementation.
 
         // the castles move has not been popped yet
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
@@ -1054,6 +1197,32 @@ ull& Engine::access_pieces_of_color(Piece piece, Color color) {
             std::cout << "Unexpected piece type in access_pieces_of_color: " << piece << std::endl;
             assert(0);
             return this->game_board.white_king;
+    }
+}
+// In a header (or in the .cpp but then explicitly instantiated), since it's a template.
+template <Piece P> ull& Engine::access_pieces_of_color_tp(Color color)
+{
+    if constexpr (P == Piece::PAWN) {
+        return (color != 0) ? this->game_board.black_pawns
+                            : this->game_board.white_pawns;
+    } else if constexpr (P == Piece::ROOK) {
+        return (color != 0) ? this->game_board.black_rooks
+                            : this->game_board.white_rooks;
+    } else if constexpr (P == Piece::KNIGHT) {
+        return (color != 0) ? this->game_board.black_knights
+                            : this->game_board.white_knights;
+    } else if constexpr (P == Piece::BISHOP) {
+        return (color != 0) ? this->game_board.black_bishops
+                            : this->game_board.white_bishops;
+    } else if constexpr (P == Piece::QUEEN) {
+        return (color != 0) ? this->game_board.black_queens
+                            : this->game_board.white_queens;
+    } else if constexpr (P == Piece::KING) {
+        return (color != 0) ? this->game_board.black_king
+                            : this->game_board.white_king;
+    } else {
+        static_assert(P != P, "Unexpected Piece in access_pieces_of_color_tp");
+        return this->game_board.white_king; // unreachable, but keeps compiler happy
     }
 }
 
@@ -1344,6 +1513,7 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
          // Diagonal moves
         ull all_pieces_but_self = game_board.get_pieces() & ~single_bishop;
+        assert(all_pieces_but_self != 0);
         int square = utility::bit::bitboard_to_lowest_square(single_bishop);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
 
@@ -1370,6 +1540,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 
         // Diagonal and straight moves
         ull all_pieces_but_self = game_board.get_pieces() & ~single_queen;
+        assert(all_pieces_but_self != 0);
         int square = utility::bit::bitboard_to_lowest_square(single_queen);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
 
@@ -1407,79 +1578,86 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
     #ifndef DEBUG_NO_CASTLING
 
+        Color enemy_color = utility::representation::opposite_color(color);
+
         // castling, NOTE: a Rook must exist in the right place to castle the king.
         ull squares_inbetween;
         ull needed_rook_location;
         ull actual_rooks_location;
         ull king_origin_square;
+        bool b_no_inbetween_squares_in_check;
         
         if (color == Color::WHITE) {
-            if (game_board.white_castle_rights & (0b00000001)) {
-                //assert(!game_board.bCastledWhite);
-                // Move is a White king side castle
+            if (game_board.white_castle_rights & (0b00000001)) {    // White kside casling is allowed
                 squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
-                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                    !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {   
-                    // King square, and squares inbetween are empty and not in check
-                    needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
-                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-                    if (actual_rooks_location & needed_rook_location) {
-                        // Rook is on correct square for castling
-                        king_origin_square = 1ULL<<1;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                            , color, false, false, 0ULL, false, true);
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {   
+                    // No pieces inbetween the king square and king rook square. 
+                    b_no_inbetween_squares_in_check = !is_square_in_check(enemy_color, king) && !is_square_in_check(enemy_color, king>>1) && !is_square_in_check(enemy_color, king>>2);
+                    if (b_no_inbetween_squares_in_check) { 
+                        // King square, and squares inbetween (3 squares total) are not in check
+                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            // Rook is on correct square for castling
+                            king_origin_square = 1ULL<<1;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , color, false, false, 0ULL, false, true);
+                        }
                     }
                 }
             }
-            if (game_board.white_castle_rights & (0b00000010)) {
-                // Move is a White queen side castle
-                //assert(!game_board.bCastledWhite);
+            if (game_board.white_castle_rights & (0b00000010)) {    // White qside casling is allowed
                 squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
-                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                        !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
-                    needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
-                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-
-                    if (actual_rooks_location & needed_rook_location) {
-                        // Rook is on correct square for castling
-                        king_origin_square = 1ULL<<5;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                            , color, false, false, 0ULL, false, true);
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                    // No pieces inbetween the king square and queen rook square. 
+                    b_no_inbetween_squares_in_check = !is_square_in_check(enemy_color, king) && !is_square_in_check(enemy_color, king<<1) && !is_square_in_check(enemy_color, king<<2);
+                    if (b_no_inbetween_squares_in_check) { 
+                        // King square, and squares inbetween (3 squares total) are not in check (note that the knight square can be in check to castle qside)
+                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            // Rook is on correct square for castling
+                            king_origin_square = 1ULL<<5;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , color, false, false, 0ULL, false, true);
+                        }
                     }
                 }
             }
         } else if (color == Color::BLACK) {
-            if (game_board.black_castle_rights & (0b00000001)) {
-                //assert(!game_board.bCastledBlack);
-                // Move is a black king side castle
+            if (game_board.black_castle_rights & (0b00000001)) {;        // Black kside casling is allowed
                 squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                        !is_square_in_check(color, king) && !is_square_in_check(color, king>>1) && !is_square_in_check(color, king>>2) ) {
-                    // King square, and squares inbetween are empty and not in check
-                    needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                    if (actual_rooks_location & needed_rook_location) {
-                        // Rook is on correct square for castling
-                        king_origin_square = 1ULL<<57;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                            , color, false, false, 0ULL, false, true);
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                    // No pieces inbetween the king square and king rook square
+                    b_no_inbetween_squares_in_check = !is_square_in_check(enemy_color, king) && !is_square_in_check(enemy_color, king>>1) && !is_square_in_check(enemy_color, king>>2);
+                    if (b_no_inbetween_squares_in_check) { 
+                        // King square, and squares inbetween are empty and not in check
+                        needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            // Rook is on correct square for castling
+                            king_origin_square = 1ULL<<57;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , color, false, false, 0ULL, false, true);
+                        }
                     }
                 }
             }
-            if (game_board.black_castle_rights & (0b00000010)) {
-                // Move is a Black queen side castle
-                //assert(!game_board.bCastledBlack);
+            if (game_board.black_castle_rights & (0b00000010)) {         // Black qside casling is allowed
                 squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                if (((squares_inbetween & ~all_pieces) == squares_inbetween) &&
-                        !is_square_in_check(color, king) && !is_square_in_check(color, king<<1) && !is_square_in_check(color, king<<2) ) {
-                    // King square, and squares inbetween are empty and not in check
-                    needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                    if (actual_rooks_location & needed_rook_location) {
-                        // Rook is on correct square for castling
-                        king_origin_square = 1ULL<<61;
-                        add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                            , color, false, false, 0ULL, false, true);
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                    // No pieces inbetween the king square and king rook square (note that the knight square can be in check to castle qside)
+                    b_no_inbetween_squares_in_check = !is_square_in_check(enemy_color, king) && !is_square_in_check(enemy_color, king<<1) && !is_square_in_check(enemy_color, king<<2);
+                    if (b_no_inbetween_squares_in_check) { 
+                        // King square, and squares inbetween are empty and not in check
+                        needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            // Rook is on correct square for castling
+                            king_origin_square = 1ULL<<61;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , color, false, false, 0ULL, false, true);
+                        }
                     }
                 }
             }

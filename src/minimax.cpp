@@ -1663,7 +1663,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
         // memoization at leaf
         if (Features_mask & _FEATURE_TT) {
-            //if (!bFast) {
 
                 // Salt the entry
                 unsigned mode  = salt_the_TT(b_is_Quiet);
@@ -1675,9 +1674,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
                 slot.movee    = the_best_move;   // or bestMove, etc.
                 slot.depth    = top_deepening;
-            //}
+
         }
-        //endif
+
 
         in_check = engine.is_king_in_check(engine.game_board.turn);
 
@@ -2254,9 +2253,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                                 print_mismatch(cout, "bq", found_bq, engine.game_board.black_queens);
                                 print_mismatch(cout, "bk", found_bk, engine.game_board.black_king);
 
-                                // print_mismatch(cout, "whit", found_white_castled, engine.game_board.bCastledWhite);
-                                // print_mismatch(cout, "blac", found_black_castled, engine.game_board.bCastledBlack);
-
                                 //  found_move_history
 
                                 // cout << "  depth-> " << depth << " mv->" << engine.computer_ply_so_far 
@@ -2358,9 +2354,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     slot.bb_bk = engine.game_board.black_king;
 
                     slot.move_history_debug = engine.move_history;
-    
-                    // slot.white_castled_debug = engine.game_board.bCastledWhite;
-                    // slot.black_castled_debug = engine.game_board.bCastledBlack;
 
                     // Position specific debug 1
                     // --- Special debug for cxd4 / 338 ---

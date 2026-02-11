@@ -88,6 +88,7 @@ inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) 
 //    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
 //    2. The lsb is zeroed on the input "bitboard"
 inline ull lsb_and_pop(ull& bitboard) {
+    assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
     bitboard = bitboard & (~lsb_fast);
@@ -96,6 +97,7 @@ inline ull lsb_and_pop(ull& bitboard) {
 
 // It finds the index (0–63) of the least-significant 1-bit in bitboard, clears that bit in the original variable, and returns the index.
 inline ull lsb_and_pop_to_square(ull& bitboard) {
+    assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     int square = __builtin_ctzll(bitboard);
     ull lsb_fast = 1ULL << square;
@@ -109,9 +111,16 @@ inline int square_to_bitboard(int square) {
 
 // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
 // (how many zeros are at the right end of the binary number, before you hit the first 1 bit)
-// Returns 64 if bitboard == 0.
+// Returns 64 if bitboard == 0? Maybe but ChatBot says no.
 // BUT for a "h1=0" system like this, this means scanning from h1 to a1, h2 to a2, and so on to a8.
-inline int bitboard_to_lowest_square(ull bitboard) {
+inline int bitboard_to_lowest_square(ull bitboard) {  
+    //assert(bitboard != 0);
+    if (bitboard == 0ULL) { return 64; }        // __builtin_ctzll(0) is undefined
+    return __builtin_ctzll(bitboard);
+};
+// Im used for debugging only
+inline int bitboard_to_lowest_square_safe(ull bitboard) {  
+    assert(bitboard != 0);
     return __builtin_ctzll(bitboard);
 };
 
@@ -119,10 +128,14 @@ inline int bitboard_to_lowest_square(ull bitboard) {
 // Returns 64 if bitboard == 0.
 // !TODO is this an instruction? https://www.felixcloutier.com/x86/bsr.html
 // talked about here: https://www.felixcloutier.com/x86/bsr.html
+// inline int bitboard_to_highest_square(ull bitboard) {
+//     if (bitboard == 0ULL) { return 64; }
+//     return 63 - (__builtin_clzll(bitboard | 1));
+// };
 inline int bitboard_to_highest_square(ull bitboard) {
-    // idk if this is optimal, but it works, from chatgpt tbh
-    return 63 - (__builtin_clzll(bitboard | 1));
-};
+    if (bitboard == 0ULL) { return 64; }        // __builtin_clzll(0) is undefined
+    return 63 - __builtin_clzll(bitboard);
+}
 
 } // end namespace bit
 

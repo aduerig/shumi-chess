@@ -86,10 +86,6 @@ class GameBoard {
 
         void set_zobrist();
 
-        // // Castled status. This is different than castle priviledge, this tracks wether it actully happens.
-        // bool bCastledWhite;
-        // bool bCastledBlack;
-
         template <Piece p>
         inline ull get_pieces_template() {
             if constexpr (p == Piece::PAWN) { return black_pawns | white_pawns; }

@@ -21,6 +21,7 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 
 /////////// Debug ////////////////////////////////////////////////////////////////////////////////////
+// These should all be off, except for temporary debug.
 
 //#define _DEBUGGING_PUSH_POP_FAST
 
@@ -112,6 +113,7 @@ class Engine {
 
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
+        template <Piece P> ull& access_pieces_of_color_tp(Color color);
 
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
@@ -125,27 +127,8 @@ class Engine {
 
         int get_minor_piece_move_number (const vector <Move> mvs);       
 
-        inline bool in_check_after_move(Color color, const Move& move) {
-            // NOTE: is this the most effecient way to do this (push()/pop())?
-            #ifdef _DEBUGGING_PUSH_POP_FAST
-                std::string temp_fen_before = game_board.to_fen();
-            #endif
-            pushMoveFast(move);           
-            bool bReturn = is_king_in_check(color);
-            popMoveFast();
-            #ifdef _DEBUGGING_PUSH_POP_FAST
-                std::string temp_fen_after = game_board.to_fen();
-                if (temp_fen_before != temp_fen_after) {
-                    std::cout << "\x1b[31m";
-                    std::cout << "PROBLEM WITH PUSH POP FAST!!!!!" << std::endl;
-                    std::cout << "FEN before  push/pop: " << temp_fen_before  << std::endl;
-                    std::cout << "FEN after   push/pop: " << temp_fen_after   << std::endl;
-                    std::cout << "\x1b[0m";
-                    assert(0);
-                }
-            #endif
-            return bReturn;
-        }
+        bool in_check_after_move(Color color, const Move& move);
+        bool in_check_after_move_fast(Color color, const Move& move);
 
         string syzygy_path = "C:\\tb\\syzygy\\";
 
@@ -172,60 +155,79 @@ class Engine {
 
         // This is the "classical" approach
         // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
-        //inline ull get_diagonal_attacks(ull bitboard) {
         inline ull get_diagonal_attacks(ull all_pieces_but_self, int square) {
-
-            // ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-            // int square = utility::bit::bitboard_to_lowest_square(bitboard);
+            ull ne_attacks = 0;
+            ull nw_attacks = 0;
+            ull se_attacks = 0;
+            ull sw_attacks = 0;
+            int blocked_square = 0;
 
             // up right
             ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
-            int blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_ne);
-            ull ne_attacks = ~north_east_square_ray[blocked_square] & north_east_square_ray[square];
-
+            //if (masked_blockers_ne!=0) {
+                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_ne);
+                ne_attacks = ~north_east_square_ray[blocked_square] & north_east_square_ray[square];
+            //}
+           
             // up left
             ull masked_blockers_nw = all_pieces_but_self & north_west_square_ray[square];
-            blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_nw);
-            ull nw_attacks = ~north_west_square_ray[blocked_square] & north_west_square_ray[square];
+            //if (masked_blockers_nw!=0) {
+                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_nw);
+                nw_attacks = ~north_west_square_ray[blocked_square] & north_west_square_ray[square];
+            //}
 
             // down right
             ull masked_blockers_se = all_pieces_but_self & south_east_square_ray[square];
-            blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_se);
-            ull se_attacks = ~south_east_square_ray[blocked_square] & south_east_square_ray[square];
+            //if (masked_blockers_se!=0) {
+                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_se);
+                se_attacks = ~south_east_square_ray[blocked_square] & south_east_square_ray[square];
+            //}
 
             // down left
             ull masked_blockers_sw = all_pieces_but_self & south_west_square_ray[square];
-            blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_sw);
-            ull sw_attacks = ~south_west_square_ray[blocked_square] & south_west_square_ray[square];
+            //if (masked_blockers_sw!=0) {
+                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_sw);
+                sw_attacks = ~south_west_square_ray[blocked_square] & south_west_square_ray[square];
+            //}
 
             return ne_attacks | nw_attacks | se_attacks | sw_attacks;
         }
 
-        //inline ull get_straight_attacks(ull bitboard) {
         inline ull get_straight_attacks(ull all_pieces_but_self, int square) {
-
-            // ull all_pieces_but_self = game_board.get_pieces() & ~bitboard;
-            // int square = utility::bit::bitboard_to_lowest_square(bitboard);
+            ull n_attacks = 0;
+            ull s_attacks = 0;
+            ull e_attacks = 0;
+            ull w_attacks = 0;
+            int blocked_square=0;
 
             // north
             ull masked_blockers_n = all_pieces_but_self & north_square_ray[square];
-            int blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_n);
-            ull n_attacks = ~north_square_ray[blocked_square] & north_square_ray[square];
+            //if (masked_blockers_n) {
+                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_n);
+                n_attacks = ~north_square_ray[blocked_square] & north_square_ray[square];
+            //}
 
             // south 
             ull masked_blockers_s = all_pieces_but_self & south_square_ray[square];
-            blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_s);
-            ull s_attacks = ~south_square_ray[blocked_square] & south_square_ray[square];
+            //if (masked_blockers_s) {
+                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_s);
+                s_attacks = ~south_square_ray[blocked_square] & south_square_ray[square];
+            //}
 
             // left
             ull masked_blockers_w = all_pieces_but_self & west_square_ray[square];
-            blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_w);
-            ull w_attacks = ~west_square_ray[blocked_square] & west_square_ray[square];
+            //if (masked_blockers_w) {
+                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_w);
+                w_attacks = ~west_square_ray[blocked_square] & west_square_ray[square];
+            //}
 
             // right
             ull masked_blockers_e = all_pieces_but_self & east_square_ray[square];
-            blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_e);
-            ull e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
+            //if (masked_blockers_e) {
+                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_e);
+                e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
+            //}
+
             return n_attacks | s_attacks | w_attacks | e_attacks;
         }
 
@@ -266,9 +268,17 @@ class Engine {
         void print_bitboard_to_file(ull bb, FILE* fp);
 
         bool has_unquiet_move(const vector<ShumiChess::Move>& moves);
+
+        // Note: Should we also include:
+        //  captures of queen
+        //  captures of rook (optional)
+        //  only checking captures (a capture that gives check).
+        //  only checks that are “near king” (checker lands in king zone: 1–2 squares away / same ring). 
         bool inline is_unquiet_move(ShumiChess::Move mv) {
            return (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE); 
         }
+
+
         vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
         vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(
                                         const vector<ShumiChess::Move>& moves,      // Input

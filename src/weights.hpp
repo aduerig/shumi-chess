@@ -62,9 +62,9 @@ public:
     static constexpr int KNIGHT_HOLE_WGHT = -25;        // A knight sitting in a hole.
 
     // Doubled pawns
-    static constexpr int DOUBLED_WGHT      = -28;       // One slam for each pawn more than one on a file
-    static constexpr int DOUBLED_ROOK_WGHT = -33;          // Same, but doubled pawn on rook file
-    static constexpr int DOUBLED_OPEN_FILE_WGHT   = -20;   // Extra penalty per "extra pawn" if the file is open of enemy pawns
+    static constexpr int DOUBLED_WGHT      = -25;           // One slam for each pawn more than one on a file
+    static constexpr int DOUBLED_ROOK_WGHT = -29;           // Same, but doubled pawn on rook file
+    static constexpr int DOUBLED_OPEN_FILE_WGHT   = -20;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
     // base = PASSED_PAWN_SLOPE_WGHT*adv*adv + PASSED_PAWN_YINRCPT_WGHT;
@@ -80,9 +80,9 @@ public:
     static constexpr int PASSED_PAWN_YINRCPT_WGHT = 20;
 
     // Pawn controlling center squares: (one per qualifiing pawn)
-    static constexpr int PAWN_ON_CTR_DEF_WGHT = 25;     // center e4,d4 (white); e5,d5, (black) "defensive" center squares
+    static constexpr int PAWN_ON_CTR_DEF_WGHT = 23;     // center e4,d4 (white); e5,d5, (black) "defensive" center squares
     static constexpr int PAWN_ON_CTR_OFF_WGHT = 35;     // center e4,d4 (black); e5,d5, (white) "offensive" center squares
-    static constexpr int PAWN_ON_ADV_CTR_WGHT = 20;     // "advanced center" e6,d6 (White); or e3,d3 (Black)
+    static constexpr int PAWN_ON_ADV_CTR_WGHT = 22;     // "advanced center" e6,d6 (White); or e3,d3 (Black)
     static constexpr int PAWN_ON_ADV_FLK_WGHT = 10;     // "advanced flank" c4,f4 (black); c5,f5 (White)
 
     static constexpr int KNIGHT_ON_CTR_WGHT = 16;  // Knight controlling center squares (per square)
@@ -91,16 +91,16 @@ public:
     static constexpr int TWO_BISHOPS_WGHT = 16;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
-    static constexpr int QUEEN_OUT_EARLY_WGHT = -100;   // for center squares only
-    static constexpr int BISHOP_PATTERN_WGHT = -50;     // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
-    static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30;     // only in opening. Boo hoo, no Bird opening.
-    static constexpr int DEVELOPMENT_OPENING = 9;    // Opening only.  Only minor pieces, off theier starting square.
+    static constexpr int QUEEN_OUT_EARLY_WGHT = -120;   // for center squares only
+    static constexpr int BISHOP_PATTERN_WGHT = -110;     // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
+    static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
+    static constexpr int DEVELOPMENT_OPENING = 11;      // Opening only.  Only minor pieces, off theier starting square.
 
-    static constexpr int ROOK_CONNECTED_WGHT = 100;    // if any connected rook pair exists (one bonus only)
+    static constexpr int ROOK_CONNECTED_WGHT = 90;     // if any connected rook pair exists (one bonus only)
 
     // Rooks on open or semi open files
-    static constexpr int ROOK_ON_OPEN_FILE    = 10;    // open=2x, semi-open=1x
-    static constexpr int KING_ON_FILE_WGHT    = 8;     // extra per rook if enemy king on same file (even if pieces beweent he king ans rook)
+    static constexpr int ROOK_ON_OPEN_FILE    = 10;     // open=2x, semi-open=1x
+    static constexpr int KING_ON_FILE_WGHT    = 8;      // extra per rook if enemy king on same file (even if pieces beweent he king ans rook)
 
     static constexpr int MAJOR_ON_RANK7_WGHT = 20;             // Rook or queen on 7th rank
     static constexpr int MAJOR_ON_RANK8_WGHT = 10;             // Rook or queen on 8th rank

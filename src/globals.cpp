@@ -120,6 +120,25 @@ Move MoveSet3(Color c, Piece p, ull frm, ull to, Piece a, Piece b)
     return m;
 }
 
+//
+// Precomputes 8 directional "ray" bitboards for every board square (0..63).
+//
+// A "ray" is a 64-bit mask with 1-bits on every square reachable by sliding
+// from the origin square in a given direction until the edge of the board
+// (origin square itself is NOT included).
+//
+// These tables support fast rook/bishop/queen move generation:
+//   - masked_blockers = all_pieces & ray[square]   (pieces that block that ray)
+//   - if blockers exist, trim the ray past the nearest blocker
+//   - if no blockers exist, the attack set is the full ray
+//
+// square_to_x[s] and square_to_y[s] store file/rank coordinates derived from
+// the engine’s square indexing (here: x = s % 8, y = s / 8).
+//
+// Sentinel index 64:
+//   ray[64] is set to 0 for every direction. This allows code to use 64 as a
+//   "no blocker" sentinel (e.g., blockerSquare = 64) without out-of-bounds
+//   access: ~ray[64] & ray[square] becomes (~0) & ray[square] == ray[square].
 
 array<ull, 64> square_to_y = {};
 array<ull, 64> square_to_x = {};
@@ -171,6 +190,7 @@ void initialize_rays() {
             }
         }
     }
+    // Sentinals for the "64" case, when 
     north_east_square_ray[64] = 0ULL;
     north_west_square_ray[64] = 0ULL;
     south_east_square_ray[64] = 0ULL;

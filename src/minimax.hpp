@@ -225,9 +225,6 @@ public:
         if (engine.game_board.turn == ShumiChess::BLACK) mode |= (1u << 0);   // bit0 = color
         if (b_is_Quiet)                                  mode |= (1u << 1);   // bit1 = quiet
 
-        // if (engine.game_board.bCastledWhite) mode |= (1u << 2);        // bit 4
-        // if (engine.game_board.bCastledBlack) mode |= (1u << 3);        // bit 5
-
         return mode;
     }
 

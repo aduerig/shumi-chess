@@ -393,7 +393,7 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
     ull king_bb = (color1 == ShumiChess::WHITE) ? white_king : black_king;
     if (!king_bb) return false;  // safety
 
-    int king_sq = utility::bit::bitboard_to_lowest_square(king_bb);
+    int king_sq = utility::bit::bitboard_to_lowest_square_safe(king_bb);
     int file    = king_sq % 8;   // 0 = h, 1 = g, 2 = f, 3 = e, 4 = d, 5 = c, 6 = b, 7 = a
     int rank    = king_sq / 8;   // 0 = rank 1, 7 = rank 8
 
@@ -426,16 +426,6 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
 
     return !blocked;
 }
-
-// bool GameBoard::bHasCastled(Color color1) const {
-//     bool b_has_castled = false;
-//     if (color1 == ShumiChess::WHITE) {
-//         b_has_castled = bCastledWhite;
-//     } else {
-//         b_has_castled = bCastledBlack;
-//     }
-//     return b_has_castled;
-// }
 
 //
 // The total of material for that color. Uses centipawn_score_of(). Returns centipawns. Always positive. 
