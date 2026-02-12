@@ -53,6 +53,8 @@ GameState play_game(Engine& engine, int& total_moves) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
+    // to ensure asserts are compiled out
+    assert(0);
     Engine engine;
 
     int total = 5000;
