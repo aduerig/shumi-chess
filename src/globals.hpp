@@ -138,26 +138,26 @@ enum Row {
     ROW_8 = 7
 };
 
-enum Col {
-    COL_A = 0,
-    COL_B = 1,
-    COL_C = 2,
-    COL_D = 3,
-    COL_E = 4,
-    COL_F = 5,
-    COL_G = 6,
-    COL_H = 7
-};
+// enum Col {
+//     COL_A = 0,
+//     COL_B = 1,
+//     COL_C = 2,
+//     COL_D = 3,
+//     COL_E = 4,
+//     COL_F = 5,
+//     COL_G = 6,
+//     COL_H = 7
+// };
 
 enum ColHA {
-    COLH_H = 0,
-    COLH_G = 1,
-    COLH_F = 2,
-    COLH_E = 3,
-    COLH_D = 4,
-    COLH_C = 5,
-    COLH_B = 6,
-    COLH_A = 7
+    COL_H = 0,
+    COL_G = 1,
+    COL_F = 2,
+    COL_E = 3,
+    COL_D = 4,
+    COL_C = 5,
+    COL_B = 6,
+    COL_A = 7
 };
 
 

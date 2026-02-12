@@ -489,7 +489,7 @@ bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull s
     // pawns that can reach (capture to) this square
     const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
  
-    // Enemy pawn capture sources that could attack `square_bb`.
+    // Enemy pawn capture sources that could attack target `square_bb`.
     ull square_just_behind_target;  // “the square one rank behind square_bb, from the pawn’s point of view.” (opposite the pawn’s capture direction)
 
     if (enemy_color == Color::BLACK) {
@@ -503,17 +503,17 @@ bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull s
     //      (as if there was a pawn on square_just_behind_target).
     // 2. Mask out the rook file on the opposite side of the board.
     //
-    ull FILE_H = col_masks[COL_H];
-    ull FILE_A = col_masks[COL_A];
-    ull FILE_H2 = col_masksHA[ColHA::COLH_H];
-    ull FILE_A2 = col_masksHA[ColHA::COLH_A];
-    assert(FILE_H == FILE_H2);
-    assert(FILE_A == FILE_A2);
+    //ull FILE_H = col_masks[COL_H];
+    //ull FILE_A = col_masks[COL_A];
+    ull FILE_H = col_masksHA[ColHA::COL_H];
+    ull FILE_A = col_masksHA[ColHA::COL_A];
+    //assert(FILE_H == FILE_H);
+    //assert(FILE_A == FILE_A);
 
     //ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
     //ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1); 
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H2) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A2) << 1);
+    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
+    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
 
     // Squares where an enemy pawn could sit and capture onto square_bb (the target).
     ull reachable_pawns = towardA_from_target | towardH_from_target;
@@ -583,12 +583,12 @@ bool Engine::is_square_in_check2(const ShumiChess::Color enemy_color, const ull 
         square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
     }
     
-    ull FILE_H = col_masks[COL_H];
-    ull FILE_A = col_masks[COL_A];
-    ull FILE_H2 = col_masksHA[ColHA::COLH_H];
-    ull FILE_A2 = col_masksHA[ColHA::COLH_A];
-    assert(FILE_H == FILE_H2);
-    assert(FILE_A == FILE_A2);
+    //ull FILE_H = col_masks[COL_H];
+    //ull FILE_A = col_masks[COL_A];
+    ull FILE_H = col_masksHA[ColHA::COL_H];
+    ull FILE_A = col_masksHA[ColHA::COL_A];
+    //assert(FILE_H == FILE_H);
+    //assert(FILE_A == FILE_A);
 
     //
     // 1. Get the squares attacking the target diagonally, from "left" and "right" side. 
@@ -597,8 +597,8 @@ bool Engine::is_square_in_check2(const ShumiChess::Color enemy_color, const ull 
     //
     //ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1); 
     //ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H2) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A2) << 1);
+    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
+    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
 
     // Squares where an enemy pawn could sit and capture onto square_bb.
     ull reachable_pawns = towardA_from_target | towardH_from_target;
@@ -1467,8 +1467,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull pawn_enpassant_rank_mask;
     ull far_right_row;
     ull far_left_row;
-    ull far_right_row2;
-    ull far_left_row2;
+    //ull far_right_row2;
+    //ull far_left_row2;
 
     // grab variables that will be used several times
     if (color == Color::WHITE) {
@@ -1477,12 +1477,12 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         pawn_starting_rank_mask       = row_masks[Row::ROW_2];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
 
-        far_right_row                 = col_masks[Col::COL_H];
-        far_left_row                  = col_masks[Col::COL_A];
-        far_right_row2                = col_masksHA[ColHA::COLH_H];
-        far_left_row2                 = col_masksHA[ColHA::COLH_A];
-        assert(far_right_row == far_right_row2);
-        assert(far_left_row  == far_left_row2);
+        //far_right_row2                = col_masks[Col::COL_H];
+        //far_left_row2                 = col_masks[Col::COL_A];
+        far_right_row                 = col_masksHA[ColHA::COL_H];
+        far_left_row                  = col_masksHA[ColHA::COL_A];
+        //assert(far_right_row == far_right_row2);
+        //assert(far_left_row  == far_left_row2);
 
 
     } else {
@@ -1491,12 +1491,12 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         pawn_starting_rank_mask       = row_masks[Row::ROW_7];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
 
-        far_right_row                 = col_masks[Col::COL_A];
-        far_left_row                  = col_masks[Col::COL_H];
-        far_right_row2                = col_masksHA[ColHA::COLH_A];
-        far_left_row2                 = col_masksHA[ColHA::COLH_H];
-        assert(far_right_row == far_right_row2);
-        assert(far_left_row  == far_left_row2);
+        //far_right_row2                = col_masks[Col::COL_A];
+        //far_left_row2                 = col_masks[Col::COL_H];
+        far_right_row                 = col_masksHA[ColHA::COL_A];
+        far_left_row                  = col_masksHA[ColHA::COL_H];
+        //assert(far_right_row == far_right_row2);
+        //assert(far_left_row  == far_left_row2);
     }
 
 
@@ -1540,8 +1540,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         // Look for (and add if its there), attacks forward left and forward right, also includes promotions like this
         // "Forward" means away from the pawns' back or "1st" rank.
-        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row2, color, 9);
-        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row2, color, 7);
+        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
+        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row, color, 7);
         
         // normal attacks is set to nonzero if enemy pieces are in the pawns "crosshairs"
         ull normal_attacks = attack_fleft & all_enemy_pieces;

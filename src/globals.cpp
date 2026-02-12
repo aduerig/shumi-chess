@@ -32,16 +32,16 @@ vector<ull> row_masks = {
     a_row << 56
 };
 
-vector<ull> col_masks = {
-    h_col << 7,
-    h_col << 6,
-    h_col << 5,
-    h_col << 4,
-    h_col << 3,
-    h_col << 2,
-    h_col << 1,
-    h_col
-};
+// vector<ull> col_masks = {
+//     h_col << 7,
+//     h_col << 6,
+//     h_col << 5,
+//     h_col << 4,
+//     h_col << 3,
+//     h_col << 2,
+//     h_col << 1,
+//     h_col
+// };
 
 vector<ull> col_masksHA = {
     h_col,         // H-file

@@ -529,21 +529,21 @@ int GameBoard::queen_still_home(Color color)
 int GameBoard::pawns_attacking_square(Color c, int sq) {
     ull bitBoard = (1ULL << sq);
 
-    const ull FILE_H = col_masks[Col::COL_H];
-    const ull FILE_A = col_masks[Col::COL_A];
+    //const ull FILE_H = col_masks[Col::COL_H];
+    //const ull FILE_A = col_masks[Col::COL_A];
 
-    const ull FILE_H2 = col_masksHA[ColHA::COLH_H];   // H-file (h1=0 file index)
-    const ull FILE_A2 = col_masksHA[ColHA::COLH_A];   // A-file (h1=0 file index)
-    assert(FILE_H == FILE_H2);
-    assert(FILE_A == FILE_A2);
+    const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
+    const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
+    //assert(FILE_H == FILE_H);
+    //assert(FILE_A == FILE_A);
 
     ull origins;
     if (c == Color::WHITE) {
         // white pawn origins that attack sq: from (sq-7) and (sq-9)
-        origins = ((bitBoard & ~FILE_A2) >> 7) | ((bitBoard & ~FILE_H2) >> 9);
+        origins = ((bitBoard & ~FILE_A) >> 7) | ((bitBoard & ~FILE_H) >> 9);
     } else {
         // black pawn origins that attack sq: from (sq+7) and (sq+9)
-        origins = ((bitBoard & ~FILE_H2) << 7) | ((bitBoard & ~FILE_A2) << 9);
+        origins = ((bitBoard & ~FILE_H) << 7) | ((bitBoard & ~FILE_A) << 9);
     }
 
     ull pawns = get_pieces_template<Piece::PAWN>(c);
@@ -798,9 +798,9 @@ int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
     for (int file = 0; file < 8; ++file) {
 
         // Count rooks on this file (col_masks indexed A..H, your file is 0=H..7=A)
-        const ull file_mask  = col_masks[7 - file];
-        const ull file_mask2 = col_masksHA[file];
-        assert(file_mask == file_mask2);
+        //const ull file_mask2  = col_masks[7 - file];
+        const ull file_mask = col_masksHA[file];
+        //assert(file_mask == file_mask2);
 
         const int nRooksOnFile = bits_in(rooks & file_mask);
         if (!nRooksOnFile) continue;
@@ -1100,10 +1100,10 @@ int GameBoard::count_pawn_holes_cp(Color c,
     holes_bb = 0ULL;
 
     // Friendly pawns (you can replace this with a stored all-pawns-bb later)
-    ull Pawns2 = 0ULL;
-    for (int file = 0; file < 8; ++file) Pawns2 |= pawnInfo.p[friendlyP].file_bb[file];
+    //ull Pawns2 = 0ULL;
+    //for (int file = 0; file < 8; ++file) Pawns2 |= pawnInfo.p[friendlyP].file_bb[file];
     ull Pawns = get_pieces_template<Piece::PAWN>(c);
-    assert(Pawns == Pawns2);      // col_masks
+    //assert(Pawns == Pawns2);      // col_masks
 
     if (!Pawns) return 0;
 
@@ -1221,10 +1221,10 @@ int GameBoard::count_passed_pawns_cp(Color c,
     passed_pawns = 0ULL;
 
     // Friendly pawns (already summarized)
-    ull my_pawns2 = 0ULL;
-    for (int f = 0; f < 8; ++f) my_pawns2 |= pawnInfo.p[friendlyP].file_bb[f];
+    //ull my_pawns2 = 0ULL;
+    //for (int f = 0; f < 8; ++f) my_pawns2 |= pawnInfo.p[friendlyP].file_bb[f];
     ull my_pawns = get_pieces_template<Piece::PAWN>(c);
-    assert(my_pawns == my_pawns2);      // col_masks
+    //assert(my_pawns == my_pawns2);      // col_masks
 
     if (!my_pawns) return 0;            // I have no pawns
 
@@ -2149,26 +2149,26 @@ bool GameBoard::is_king_in_check_new(Color color)
     const Color enemy = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
     // --- 3. pawn attacks ---
-    const ull FILE_A = col_masks[Col::COL_A];
-    const ull FILE_H = col_masks[Col::COL_H];
+    //const ull FILE_A = col_masks[Col::COL_A];
+    //const ull FILE_H = col_masks[Col::COL_H];
 
-    const ull FILE_A2 = col_masksHA[ColHA::COLH_A];   // A-file (h1=0 file index)
-    const ull FILE_H2 = col_masksHA[ColHA::COLH_H];   // H-file (h1=0 file index)
-    assert(FILE_A == FILE_A2);
-    assert(FILE_H == FILE_H2);
+    const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
+    const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
+    //assert(FILE_A == FILE_A);
+    //assert(FILE_H == FILE_H);
 
     ull bit = (1ULL << king_sq);
     ull pawn_attackers;
     if (color == Color::WHITE)
     {
         // enemy (black) pawns that attack downwards (south)
-        pawn_attackers = (((bit & ~FILE_H2) << 7) | ((bit & ~FILE_A2) << 9))
+        pawn_attackers = (((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9))
                        & get_pieces_template<Piece::PAWN>(enemy);
     }
     else
     {
         // enemy (white) pawns that attack upwards (north)
-        pawn_attackers = (((bit & ~FILE_A2) >> 7) | ((bit & ~FILE_H2) >> 9))
+        pawn_attackers = (((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9))
                        & get_pieces_template<Piece::PAWN>(enemy);
     }
 
@@ -2483,12 +2483,12 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         wp | wn | wb | wr | wq | wk |
         bp | bn | bb | br | bq | bk;
 
-    const ull FILE_A = col_masks[Col::COL_A];
-    const ull FILE_H = col_masks[Col::COL_H];
-    const ull FILE_A2 = col_masksHA[ColHA::COLH_A];
-    const ull FILE_H2 = col_masksHA[ColHA::COLH_H];
-    assert(FILE_H == FILE_H2);
-    assert(FILE_A == FILE_A2);
+    // ull FILE_A = col_masks[Col::COL_A];
+    // const ull FILE_H = col_masks[Col::COL_H];
+    const ull FILE_A = col_masksHA[ColHA::COL_A];
+    const ull FILE_H = col_masksHA[ColHA::COL_H];
+    //assert(FILE_H == FILE_H);
+    //assert(FILE_A == FILE_A);
 
     // Helper: piece type of a given bit for given color (using local boards)
     auto piece_type_of = [&](Color c, ull bb1) -> Piece
@@ -2524,9 +2524,9 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         ull pawns = (c == Color::WHITE) ? wp : bp;
         ull origins;
         if (c == Color::WHITE){
-            origins = ((bit & ~FILE_A2) >> 7) | ((bit & ~FILE_H2) >> 9);
+            origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
         } else {
-            origins = ((bit & ~FILE_H2) << 7) | ((bit & ~FILE_A2) << 9);
+            origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
         }
         atk |= (origins & pawns);
 
@@ -2715,10 +2715,10 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             ull pawns = (c == Color::WHITE) ? wp_local : bp_local;
             ull origins;
             if (c == Color::WHITE) {
-                origins = ((bit & ~FILE_A2) >> 7) | ((bit & ~FILE_H2) >> 9);
+                origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
             }
             else {
-                origins = ((bit & ~FILE_H2) << 7) | ((bit & ~FILE_A2) << 9);
+                origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
             }
             atk |= (origins & pawns);
 
