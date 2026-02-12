@@ -481,6 +481,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
 
     int cp_score_position_temp = 0;
     bool bOK;
+    bool bOK2;
     int icp_temp;
 
 
@@ -490,7 +491,11 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
 
     // Get the friendly pawns summary (used by all the "count_" functions below)
     PawnFileInfo pawnFileInfo;
+    PawnFileInfo pawnFileInfo2;
     bOK = engine.game_board.build_pawn_file_summary(color, pawnFileInfo.p[friendlyP]);
+    //bOK2 = engine.game_board.build_pawn_file_summary2(color, pawnFileInfo2.p[friendlyP]);
+    //assert(bOK==bOK2);
+    //assert(pawnFileInfo.p[friendlyP] == pawnFileInfo2.p[friendlyP]);
 
     if (bOK) {      // There are friendly pawns
 
@@ -889,9 +894,12 @@ int g_this_depth = 6;
 //   This the entry point into the C to get a minimax AI move.
 //   It does "Iterative deepening". This is a "root position".
 //
+//     i_time_requested         -  requested time to spend (milliseconds)
+//     max_deepening_requested  -  requested depth
+//
 //////////////////////////////////////////////////////////////////////////////////
 //
-// This is a "root position". The next fhuman move triggers a new root position
+// This is a "root position". The next human move triggers a new root position
 Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int feat) {  
 
     long long now_s;    // milliseconds 
@@ -1265,18 +1273,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     int itemp2=0;
     PawnFileInfo pawnFileInfo;
 
-    //isOK = engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[friendlyP]);
-    //isOK = isOK && engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[enemyP]);
-    //if (isOK) itemp1 = engine.game_board.count_passed_pawns_cp(Color::WHITE, pawnFileInfo,passed_pawns);
-    //if (isOK) itemp1 = engine.game_board.count_pawn_holes_cp(Color::WHITE, pawnFileInfo, holes);
-    //if (isOK) itemp1 = engine.game_board.rooks_file_status_cp(Color::WHITE, pawnFileInfo);
-    
-
-    // = engine.game_board.build_pawn_file_summary(Color::BLACK, pawnFileInfo.p[friendlyP]);
-    //isOK = isOK && engine.game_board.build_pawn_file_summary(Color::WHITE, pawnFileInfo.p[enemyP]);
-    //if (isOK) itemp2 = engine.game_board.count_passed_pawns_cp(Color::BLACK, pawnFileInfo,passed_pawns);
-    //if (isOK) itemp2 = engine.game_board.count_pawn_holes_cp(Color::BLACK, pawnFileInfo, holes);
-    //if (isOK) itemp2 = engine.game_board.rooks_file_status_cp(Color::BLACK, pawnFileInfo);
     
     dcp_temp = engine.game_board.kings_far_apart(Color::WHITE);
     //double dcp_temp = engine.game_board.kings_close_toegather_cp(Color::WHITE);

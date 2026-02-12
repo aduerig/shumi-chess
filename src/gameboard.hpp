@@ -21,12 +21,27 @@ namespace ShumiChess {
 constexpr uint8_t king_side_castle  = 0b00000001;
 constexpr uint8_t queen_side_castle = 0b00000010;
 
+
 struct PInfo {
     int file_count[8]; // = {0};        // Count of pawns on this file
     ull file_bb[8]; // = {0ULL};        // Bitboard of pawns on this file
     unsigned files_present; // = 0;     // Bitmask of which files contain >= 1 pawn
     int advancedSq[8];
 };
+
+inline bool operator==(const PInfo& a, const PInfo& b) {
+    if (a.files_present != b.files_present) return false;
+
+    for (int i = 0; i < 8; ++i) {
+        if (a.file_count[i] != b.file_count[i]) return false;
+        if (a.file_bb[i]    != b.file_bb[i])    return false;
+        if (a.advancedSq[i] != b.advancedSq[i]) return false;
+    }
+    return true;
+}
+
+
+
 struct PawnFileInfo {
     PInfo p[2];   // [0] friendly, [1] enemy
 };
@@ -230,6 +245,8 @@ class GameBoard {
         int rook_7th_rankness_cp(Color c);
 
         bool build_pawn_file_summary(Color c, PInfo& p);
+        bool build_pawn_file_summary2(Color c, PInfo& p);
+
         bool any_piece_ahead_on_file(Color c, int sq, ull pieces) const;
         std::string sqToString2(int f, int r) const; // H1=0, 
         std::string sqToString(int sq) const; // H1=0, 
@@ -237,13 +254,13 @@ class GameBoard {
         // "Positional "pawn" routines.
         int count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
         int count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo
-                                    , ull& holes) const;
+                                , ull& holes);  // output
         int count_knights_on_holes_cp(Color c, ull holes_bb);
 
-        int count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
-        //int count_passed_pawns_cp(Color c, ull& passedPawns);
+        int count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo);
+
         int count_passed_pawns_cp(Color c, const PawnFileInfo& pawnInfo,
-                                    ull& passed_pawns) const;
+                                    ull& passed_pawns);
         int rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo);
 
 

@@ -9,14 +9,18 @@
 
 using namespace std;
 
+
 namespace ShumiChess {
 
+// Bitboard of the "a" row (rank)
 ull a_row = 1ULL << 0 | 1ULL << 1 | 1ULL << 2 | 1ULL << 3 |
             1ULL << 4 | 1ULL << 5 | 1ULL << 6 | 1ULL << 7;
 
-ull a_col = 1ULL << 0 | 1ULL << 8 | 1ULL << 16 | 1ULL << 24 |
+// Bitboard of the "h" column (file)
+ull h_col = 1ULL << 0 | 1ULL << 8 | 1ULL << 16 | 1ULL << 24 |
             1ULL << 32 | 1ULL << 40 | 1ULL << 48 | 1ULL << 56;
 
+// bitboards of the various rows (ranks) and columns (files)
 vector<ull> row_masks = {
     a_row,
     a_row << 8,
@@ -29,14 +33,25 @@ vector<ull> row_masks = {
 };
 
 vector<ull> col_masks = {
-    a_col << 7,
-    a_col << 6,
-    a_col << 5,
-    a_col << 4,
-    a_col << 3,
-    a_col << 2,
-    a_col << 1,
-    a_col
+    h_col << 7,
+    h_col << 6,
+    h_col << 5,
+    h_col << 4,
+    h_col << 3,
+    h_col << 2,
+    h_col << 1,
+    h_col
+};
+
+vector<ull> col_masksHA = {
+    h_col,         // H-file
+    h_col << 1,    // G-file
+    h_col << 2,    // F-file
+    h_col << 3,    // E-file
+    h_col << 4,    // D-file
+    h_col << 5,    // C-file
+    h_col << 6,    // B-file
+    h_col << 7     // A-file
 };
 
 

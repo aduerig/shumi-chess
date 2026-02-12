@@ -456,7 +456,7 @@ bool Engine::is_king_in_check(const ShumiChess::Color color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
 
     Color enemy_color = utility::representation::opposite_color(color);
-    bool bReturn =  is_square_in_check(enemy_color, friendly_king);
+    bool bReturn =  is_square_in_check2(enemy_color, friendly_king);
      
     return bReturn;
 }
@@ -467,11 +467,14 @@ bool Engine::is_king_in_check(const ShumiChess::Color color) {
 // Determines if a square is "in check". All bitboards are assummed to be "h1=0"
 // IMPORTANT: It is known that IN ALL CALLERS, square_bb is the bitboard for a single King.
 // Inputs: "square_bb" is a bitboard (must be one bit set)
+
+
 bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull square_bb) {
 
     assert (game_board.bits_in(square_bb) == 1);
    
-    const int square = utility::bit::bitboard_to_lowest_square_safe(square_bb);
+    // This guy does not check for inputs of zero. We are relying on the aseert() above.
+    const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
 
     // knights that can reach (capture to) this square
     const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
@@ -487,21 +490,115 @@ bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull s
     const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
  
     // Enemy pawn capture sources that could attack `square_bb`.
-    ull pawn_from_squares;
+    ull square_just_behind_target;  // “the square one rank behind square_bb, from the pawn’s point of view.” (opposite the pawn’s capture direction)
+
     if (enemy_color == Color::BLACK) {
-        pawn_from_squares = (square_bb & ~row_masks[ROW_8]) << 8;
+        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
     }
     else {
-        pawn_from_squares = (square_bb & ~row_masks[ROW_1]) >> 8;
+        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
+    }
+    //
+    // 1. Get the squares attacking the target diagonally, from "left" and "right" side. 
+    //      (as if there was a pawn on square_just_behind_target).
+    // 2. Mask out the rook file on the opposite side of the board.
+    //
+    ull FILE_H = col_masks[COL_H];
+    ull FILE_A = col_masks[COL_A];
+    ull FILE_H2 = col_masksHA[ColHA::COLH_H];
+    ull FILE_A2 = col_masksHA[ColHA::COLH_A];
+    assert(FILE_H == FILE_H2);
+    assert(FILE_A == FILE_A2);
+
+    //ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
+    //ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1); 
+    ull towardH_from_target = ((square_just_behind_target & ~FILE_H2) >> 1);
+    ull towardA_from_target = ((square_just_behind_target & ~FILE_A2) << 1);
+
+    // Squares where an enemy pawn could sit and capture onto square_bb (the target).
+    ull reachable_pawns = towardA_from_target | towardH_from_target;
+  
+    if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square_bb
+
+
+    // Now look at "sliders" (queens, rooks, bishops)
+    const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
+    const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
+    const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
+
+    ull deadly_diags = themQueens | themBishops;
+    ull deadly_straights = themQueens | themRooks;
+    if (!(deadly_straights | deadly_diags)) return false;   // No sliders on board
+
+    // Look at both diagonal and straight moves
+    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
+    assert(all_pieces_but_self != 0ULL);       // There must be someone else on the board, right?
+
+    ull straight_attacks_from_passed_sq = 0ULL;
+    ull diagonal_attacks_from_passed_sq = 0ULL;
+
+    if (deadly_straights) {
+        straight_attacks_from_passed_sq = get_straight_attacks(all_pieces_but_self, square);
+    }
+
+    if (deadly_diags) {
+        diagonal_attacks_from_passed_sq = get_diagonal_attacks(all_pieces_but_self, square);
+    }
+
+    // bishop, rook, queens that can reach (capture to) this square
+    if (deadly_straights & straight_attacks_from_passed_sq) return true;    // for queen and rook straight attacks
+    if (deadly_diags     & diagonal_attacks_from_passed_sq) return true;    // for queen and bishop straight attacks
+
+    return false;
+
+}
+
+
+bool Engine::is_square_in_check2(const ShumiChess::Color enemy_color, const ull square_bb) {
+
+    assert (game_board.bits_in(square_bb) == 1);
+   
+    // This guy does not check for inputs of zero. We are relying on the aseert() above.
+    const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
+
+    // knights that can reach (capture to) this square
+    const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
+    const ull reachable_knights = tables::movegen::knight_attack_table[square];
+    if (reachable_knights & themKnights) return true;   // Knight attacks this square
+
+    // kings that can reach (capture to) this square
+    const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
+    const ull reachable_kings   = tables::movegen::king_attack_table[square];
+    if (reachable_kings   & themKing)    return true;   // King attacks this square
+
+    // pawns that can reach (capture to) this square
+    const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
+ 
+    // Enemy pawn capture sources that could attack `square_bb`.
+    ull square_just_behind_target;
+    if (enemy_color == Color::BLACK) {
+        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
+    }
+    else {
+        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
     }
     
-    // Mask out the rook file on the opposite side of the board
-    // Newer code clarification. (note: these COL_A, and COL_H constants are backwards!)
-    // Shift one file toward A (i.e., left on the board). Mask out the H-file first to prevent wraparound H→A.
-    ull towardA_from_target = ((pawn_from_squares & ~col_masks[COL_A]) << 1);   // col_masks[COL_A] == H-file in your current mask layout
+    ull FILE_H = col_masks[COL_H];
+    ull FILE_A = col_masks[COL_A];
+    ull FILE_H2 = col_masksHA[ColHA::COLH_H];
+    ull FILE_A2 = col_masksHA[ColHA::COLH_A];
+    assert(FILE_H == FILE_H2);
+    assert(FILE_A == FILE_A2);
 
-    // Shift one file toward H (i.e., right on the board). Mask out the A-file first to prevent wraparound A→H.
-    ull towardH_from_target = ((pawn_from_squares & ~col_masks[COL_H]) >> 1);   // col_masks[COL_H] == A-file in your current mask layout
+    //
+    // 1. Get the squares attacking the target diagonally, from "left" and "right" side. 
+    //      (as if there was a pawn on square_just_behind_target).
+    // 2. Mask out the rook file on the opposite side of the board.
+    //
+    //ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1); 
+    //ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
+    ull towardH_from_target = ((square_just_behind_target & ~FILE_H2) >> 1);
+    ull towardA_from_target = ((square_just_behind_target & ~FILE_A2) << 1);
 
     // Squares where an enemy pawn could sit and capture onto square_bb.
     ull reachable_pawns = towardA_from_target | towardH_from_target;
@@ -1370,6 +1467,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull pawn_enpassant_rank_mask;
     ull far_right_row;
     ull far_left_row;
+    ull far_right_row2;
+    ull far_left_row2;
 
     // grab variables that will be used several times
     if (color == Color::WHITE) {
@@ -1377,15 +1476,27 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
         pawn_starting_rank_mask       = row_masks[Row::ROW_2];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
+
         far_right_row                 = col_masks[Col::COL_H];
         far_left_row                  = col_masks[Col::COL_A];
+        far_right_row2                = col_masksHA[ColHA::COLH_H];
+        far_left_row2                 = col_masksHA[ColHA::COLH_A];
+        assert(far_right_row == far_right_row2);
+        assert(far_left_row  == far_left_row2);
+
+
     } else {
         enemy_starting_rank_mask      = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
         pawn_starting_rank_mask       = row_masks[Row::ROW_7];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
+
         far_right_row                 = col_masks[Col::COL_A];
         far_left_row                  = col_masks[Col::COL_H];
+        far_right_row2                = col_masksHA[ColHA::COLH_A];
+        far_left_row2                 = col_masksHA[ColHA::COLH_H];
+        assert(far_right_row == far_right_row2);
+        assert(far_left_row  == far_left_row2);
     }
 
 
@@ -1429,8 +1540,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         // Look for (and add if its there), attacks forward left and forward right, also includes promotions like this
         // "Forward" means away from the pawns' back or "1st" rank.
-        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
-        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row, color, 7);
+        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row2, color, 9);
+        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row2, color, 7);
         
         // normal attacks is set to nonzero if enemy pieces are in the pawns "crosshairs"
         ull normal_attacks = attack_fleft & all_enemy_pieces;
@@ -1446,8 +1557,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         if (enpassant_end_location) {
 
             // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
-            int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
-            int dest_pawn_square = utility::bit::bitboard_to_lowest_square(one_move_forward);
+            // int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
+            // int dest_pawn_square = utility::bit::bitboard_to_lowest_square(one_move_forward);
       
             add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN
                 , color, true, false, 0ULL, true, false);

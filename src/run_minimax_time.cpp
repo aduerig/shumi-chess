@@ -28,15 +28,25 @@ int main(int argc, char** argv) {
     Engine engine;
     MinimaxAI minimax_ai(engine);
 
-    int time_to_use = 30;
+    int time_to_use = 1000;
+    int depth_to_use = 10;
     if (argc < 2) {
-        cout << "You entered no argument for 'time_to_use', using default value of 1" << endl;
+        //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {
         time_to_use = atoi(argv[1]);
-        cout << "You entered time_to_use of: " << time_to_use << endl;
+        //cout << "You entered time_to_use of: " << time_to_use << endl;
     }
+    cout << "using level= " << depth_to_use << "  msec = " << time_to_use << endl;
+
     // minimax_ai.get_move(time_to_use);
-    minimax_ai.get_move_iterative_deepening(time_to_use, 7, 0);
+    minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, 0);
     cout << "Got a move at time_to_use: " << time_to_use << endl;
     return 0;
 }
+
+//      run: cmake --build C:\programming\shumi-chess\build --config RelWithDebInfo
+//      look in: C:\programming\shumi-chess\build\bin\RelWithDebInfo
+
+// 1. is_square_in_check2() is top killer, called only by is_king_in_check().   
+// 2. is_king_in_check() is called in : a. the old in_check_after_move(), sandwiched between popMoveFast() and pushMoveFast().
+// also  is_king_in_check() is used in b. in_check_after_move_fast(), sandwiched in a similar way..

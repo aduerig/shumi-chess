@@ -149,12 +149,25 @@ enum Col {
     COL_H = 7
 };
 
+enum ColHA {
+    COLH_H = 0,
+    COLH_G = 1,
+    COLH_F = 2,
+    COLH_E = 3,
+    COLH_D = 4,
+    COLH_C = 5,
+    COLH_B = 6,
+    COLH_A = 7
+};
+
+
 // TODO move all this to movegen
 
 extern ull a_row;
 extern ull a_col;
 extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
+extern std::vector<ull> col_masksHA;
 
 extern uint64_t zobrist_piece_square[12][64];
 extern uint64_t zobrist_enpassant[8];           // not used yet

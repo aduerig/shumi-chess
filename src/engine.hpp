@@ -145,6 +145,7 @@ class Engine {
 
         bool is_king_in_check(const Color);
         bool is_square_in_check(const Color, const ull);
+        bool is_square_in_check2(const Color, const ull);
 
         void add_pawn_moves_to_vector(vector<Move>&, Color);
         void add_knight_moves_to_vector(vector<Move>&, Color);
