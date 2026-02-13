@@ -248,7 +248,7 @@ bool Engine::in_check_after_move(Color color, const Move& move) {
 
     pushMoveFast(move);   
 
-    bool bReturn = is_king_in_check(color);
+    bool bReturn = is_king_in_check2(color);
 
     popMoveFast();
     
@@ -378,7 +378,7 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
     // After the edits above, the bitboards represent the "after-move" position
     // in every way that can affect attacks on the king. So a plain king-in-check test
     // answers the question.
-    const bool bReturn = is_king_in_check(color);
+    const bool bReturn = is_king_in_check2(color);
 
     // Restore all mutated bitboards (this does the "pop")
     if (pRooks) *pRooks = rooksOld;
@@ -460,6 +460,16 @@ bool Engine::is_king_in_check(const ShumiChess::Color color) {
      
     return bReturn;
 }
+
+bool Engine::is_king_in_check2(const ShumiChess::Color color) {
+    ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
+
+    Color enemy_color = utility::representation::opposite_color(color);
+    bool bReturn =  is_square_in_check2(enemy_color, friendly_king);
+     
+    return bReturn;
+}
+
 
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////

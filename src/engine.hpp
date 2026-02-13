@@ -144,6 +144,7 @@ class Engine {
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
 
         bool is_king_in_check(const Color);
+        bool is_king_in_check2(const Color);
         bool is_square_in_check(const Color, const ull);
         bool is_square_in_check2(const Color, const ull);
 
@@ -156,81 +157,104 @@ class Engine {
 
         // This is the "classical" approach
         // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
-        inline ull get_diagonal_attacks(ull all_pieces_but_self, int square) {
-            ull ne_attacks = 0;
-            ull nw_attacks = 0;
-            ull se_attacks = 0;
-            ull sw_attacks = 0;
-            int blocked_square = 0;
+        
+        
+        
+        inline ull get_diagonal_attacks(ull all_pieces_but_self, int square)
+        {
+            ull ne_attacks;
+            ull nw_attacks;
+            ull se_attacks;
+            ull sw_attacks;
+            int blocked_square;
 
             // up right
             ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
-            //if (masked_blockers_ne!=0) {
-                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_ne);
+            if (masked_blockers_ne != 0ULL) {
+                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_ne);
                 ne_attacks = ~north_east_square_ray[blocked_square] & north_east_square_ray[square];
-            //}
-           
+            } else {
+                ne_attacks = north_east_square_ray[square];
+            }
+
             // up left
             ull masked_blockers_nw = all_pieces_but_self & north_west_square_ray[square];
-            //if (masked_blockers_nw!=0) {
-                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_nw);
+            if (masked_blockers_nw != 0ULL) {
+                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_nw);
                 nw_attacks = ~north_west_square_ray[blocked_square] & north_west_square_ray[square];
-            //}
+            } else {
+                nw_attacks = north_west_square_ray[square];
+            }
 
             // down right
             ull masked_blockers_se = all_pieces_but_self & south_east_square_ray[square];
-            //if (masked_blockers_se!=0) {
-                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_se);
+            if (masked_blockers_se != 0ULL) {
+                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_se);
                 se_attacks = ~south_east_square_ray[blocked_square] & south_east_square_ray[square];
-            //}
+            } else {
+                se_attacks = south_east_square_ray[square];
+            }
 
             // down left
             ull masked_blockers_sw = all_pieces_but_self & south_west_square_ray[square];
-            //if (masked_blockers_sw!=0) {
-                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_sw);
+            if (masked_blockers_sw != 0ULL) {
+                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_sw);
                 sw_attacks = ~south_west_square_ray[blocked_square] & south_west_square_ray[square];
-            //}
+            } else {
+                sw_attacks = south_west_square_ray[square];
+            }
 
-            return ne_attacks | nw_attacks | se_attacks | sw_attacks;
+            return (ne_attacks | nw_attacks | se_attacks | sw_attacks);
         }
 
-        inline ull get_straight_attacks(ull all_pieces_but_self, int square) {
-            ull n_attacks = 0;
-            ull s_attacks = 0;
-            ull e_attacks = 0;
-            ull w_attacks = 0;
-            int blocked_square=0;
+                   
+        inline ull get_straight_attacks(ull all_pieces_but_self, int square)
+        {
+            ull n_attacks;
+            ull s_attacks;
+            ull e_attacks;
+            ull w_attacks;
+            int blocked_square;
 
             // north
             ull masked_blockers_n = all_pieces_but_self & north_square_ray[square];
-            //if (masked_blockers_n) {
-                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_n);
+            if (masked_blockers_n) {
+                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_n);
                 n_attacks = ~north_square_ray[blocked_square] & north_square_ray[square];
-            //}
+            } else {
+                n_attacks = north_square_ray[square];
+            }
 
-            // south 
+            // south
             ull masked_blockers_s = all_pieces_but_self & south_square_ray[square];
-            //if (masked_blockers_s) {
-                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_s);
+            if (masked_blockers_s) {
+                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_s);
                 s_attacks = ~south_square_ray[blocked_square] & south_square_ray[square];
-            //}
+            } else {
+                s_attacks = south_square_ray[square];
+            }
 
             // left
             ull masked_blockers_w = all_pieces_but_self & west_square_ray[square];
-            //if (masked_blockers_w) {
-                blocked_square = utility::bit::bitboard_to_lowest_square(masked_blockers_w);
+            if (masked_blockers_w) {
+                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_w);
                 w_attacks = ~west_square_ray[blocked_square] & west_square_ray[square];
-            //}
+            } else {
+                w_attacks = west_square_ray[square];
+            }
 
             // right
             ull masked_blockers_e = all_pieces_but_self & east_square_ray[square];
-            //if (masked_blockers_e) {
-                blocked_square = utility::bit::bitboard_to_highest_square(masked_blockers_e);
+            if (masked_blockers_e) {
+                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_e);
                 e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
-            //}
+            } else {
+                e_attacks = east_square_ray[square];
+            }
 
-            return n_attacks | s_attacks | w_attacks | e_attacks;
+            return (n_attacks | s_attacks | w_attacks | e_attacks);
         }
+
 
         void move_into_string(ShumiChess::Move m);
         void move_into_string_full(ShumiChess::Move m);

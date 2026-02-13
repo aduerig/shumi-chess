@@ -492,10 +492,19 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
     // Get the friendly pawns summary (used by all the "count_" functions below)
     PawnFileInfo pawnFileInfo;
     PawnFileInfo pawnFileInfo2;
-    bOK = engine.game_board.build_pawn_file_summary(color, pawnFileInfo.p[friendlyP]);
-    //bOK2 = engine.game_board.build_pawn_file_summary2(color, pawnFileInfo2.p[friendlyP]);
-    //assert(bOK==bOK2);
+    //bOK2 = engine.game_board.build_pawn_file_summary(color, pawnFileInfo2.p[friendlyP]);
+    bOK = engine.game_board.build_pawn_file_summary_fast(color, pawnFileInfo.p[friendlyP]);
+    // assert(bOK==bOK2);
+    // if (!(pawnFileInfo.p[friendlyP] == pawnFileInfo2.p[friendlyP])) {
+    //     engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[friendlyP], pawnFileInfo2.p[friendlyP]);
+    //     string out = gameboard_to_string2(engine.game_board);
+    //     cout << out << endl;
+    //     cout << " \nside= " << friendlyP << "\n";
+    //     engine.game_board.validate_row_col_masks_h1_0();
+    // }
     //assert(pawnFileInfo.p[friendlyP] == pawnFileInfo2.p[friendlyP]);
+
+    
 
     if (bOK) {      // There are friendly pawns
 
@@ -505,8 +514,12 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
         Color enemyColor = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
         // Get the enemy pawns summary (used by all the "count_" functions below)
-        bOK = engine.game_board.build_pawn_file_summary(enemyColor, pawnFileInfo.p[enemyP]);
-        //if (!bOK) // false if enemy color has no pawns
+        //bOK2 = engine.game_board.build_pawn_file_summary(enemyColor, pawnFileInfo2.p[enemyP]);
+        bOK = engine.game_board.build_pawn_file_summary_fast(enemyColor, pawnFileInfo.p[enemyP]);
+        //assert(bOK==bOK2);
+        //assert(pawnFileInfo.p[enemyP] == pawnFileInfo2.p[enemyP]);
+        //if (!bOK) // false if enemy color has no pawns  NOTE: is this right? I guess we stil
+        // work on friendly pawns, even if there are no enemy pawns.
 
         // Add code to discourage isolated pawns.
         icp_temp = engine.game_board.count_isolated_pawns_cp(color, pawnFileInfo);
@@ -1080,28 +1093,40 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
             cout << " Best: " << engine.move_string;
         #endif
 
-        //
-        //  If diff_s < 0  → now is before requested_end_time (time remaining).
-        //  If diff_s == 0 → exactly at the requested end time.
-        //  If diff_s > 0  → now is after requested_end_time (you’ve gone over).
-        now_s = (long long)chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
-        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
-        diff_s = now_s - end_s;
+        // //
+        // //  If diff_s < 0  → now is before requested_end_time (time remaining).
+        // //  If diff_s == 0 → exactly at the requested end time.
+        // //  If diff_s > 0  → now is after requested_end_time (you’ve gone over).
+        // now_s = (long long)chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
+        // end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
+        // diff_s = now_s - end_s;
 
-        // Elapsed time for all deepenings up to now (milliseconds)
-        elapsed_time = now_s - (ull)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
+        // // Elapsed time for all deepenings up to now (milliseconds)
+        // elapsed_time = now_s - (ull)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
+
+
+        auto now_time = chrono::high_resolution_clock::now();
+
+        elapsed_time = (ull)chrono::duration_cast<chrono::milliseconds>(now_time - start_time).count();
+        diff_s = (long long)elapsed_time - (long long)i_time_requested;
+
+        // (Optional: keep these only for your printout)
+        now_s = (long long)chrono::duration_cast<chrono::milliseconds>(now_time.time_since_epoch()).count();
+        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
+
 
         depth++;
 
         // time based ending of thinking
-        bThinkingOverByTime = (diff_s > 0);
+        //bThinkingOverByTime = (diff_s > 0);
+        bThinkingOverByTime = (elapsed_time >= (ull)i_time_requested);
+
 
         // depth based ending of thinking
         bThinkingOverByDepth = (depth >= (maximum_deepening+1));
 
         // we are done thinking if both time and depth is ended OR simple endgame is on.
         bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
-
 
     } while (!bThinkingOver);
 
@@ -1110,8 +1135,8 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     cout << "\x1b[33m\nWent to depth " << (depth - 1)  
         << " elapsed msec= " << elapsed_time << " requested msec= " << i_time_requested 
         << std::fixed << std::setprecision(1)
-        << "    time overshoot= " << (elapsed_time / i_time_requested)
-        //<< " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth 
+        << "    time overshoot= " << (elapsed_time / i_time_requested) << " " << now_s << " " << end_s << " " << diff_s
+        << " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth 
         << "\x1b[0m" << endl;
 
 

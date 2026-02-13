@@ -264,12 +264,12 @@ minimax_ai_get_move(PyObject* self, PyObject* args) {
 static PyObject*
 minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 {
-    int milliseconds = 1;      // required
+    int milliseconds;      // required
     int max_deepening;     // required
     int argument = 0;      // optional, default 0
 
     // required int, required int, optional int
-    if (!PyArg_ParseTuple(args, "di|i",
+    if (!PyArg_ParseTuple(args, "ii|i",
                           &milliseconds,
                           &max_deepening,
                           &argument))
@@ -283,6 +283,7 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     Py_BEGIN_ALLOW_THREADS;
 
     // Pass arguments through to the engine, get the opponents move.
+    //cout << "wiggle " << milliseconds << "\n";
     gotten_move = minimax_ai->get_move_iterative_deepening(
         milliseconds+1,
         max_deepening,

@@ -8,6 +8,8 @@
 
 #include "gameboard.hpp"
 #include "weights.hpp"
+#include <intrin.h>   // _BitScanForward64 / _BitScanReverse64
+
 //
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG
@@ -51,7 +53,8 @@ namespace ShumiChess {
         bool no_pieces_on_same_square = are_bit_boards_valid();
         assert(no_pieces_on_same_square);
 
-
+        // Note: debug only, please remove me.
+        validate_row_col_masks_h1_0();
 
     }
 
@@ -920,23 +923,25 @@ std::string GameBoard::sqToString(int sq) const
 // Outputs:
 //   file_count[8]   Number of friendly pawns on each file (0..7 in h1=0 indexing:
 //                   f = s % 8 => 0=H ... 7=A).
-//   file_bb[8]      Bitboard of friendly pawns restricted to each file.
+//   file_bb[8]      Bitboard of friendly pawns (restricted to each file).
 //                   (file_bb[f] contains all pawns whose square has file index f.)
 //   files_present   Bitmask of which files contain >= 1 friendly pawn.
 //                   Bit f is set iff file_count[f] > 0.
+//   advancedSq[8]   the square index of the side’s most advanced pawn on that file (or -1)
 //
 // Return value:
 //   true  if the side has at least one pawn
 //   false if the side has no pawns (caller can skip pawn-structure work).
 //
 bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
-    const ull Pawns = get_pieces_template<Piece::PAWN>(c);
-    if (!Pawns) return false;     
 
     // Initialize structure elements
     for (int i = 0; i < 8; ++i) { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; }
     pinfo.files_present = 0;
-  
+
+    const ull Pawns = get_pieces_template<Piece::PAWN>(c);
+    if (!Pawns) return false;     
+
     ull tmp = Pawns;
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp);
@@ -958,53 +963,165 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
             if (isMoreAdv) pinfo.advancedSq[f] = s;
         }
     }
+
+    ull union_files = 0ULL;
+    for (int i = 0; i < 8; ++i) union_files |= pinfo.file_bb[i];
+    assert(union_files == Pawns);
+
     return true;
 }
 
 
-bool GameBoard::build_pawn_file_summary2(Color c, PInfo& pinfo)
+bool GameBoard::build_pawn_file_summary_fast(Color c, PInfo& pinfo)
 {
-    const ull Pawns = get_pieces_template<Piece::PAWN>(c);
-    if (!Pawns) return false;
-
-    // Initialize structure elements
+    // ALWAYS initialize outputs, even if there are no pawns.
     for (int i = 0; i < 8; ++i) { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; }
     pinfo.files_present = 0;
 
-    
-    const ull FILE_H_MASK = 0x0101010101010101ULL;   // squares 0,8,16,...56 (H-file in h1=0 system)
+    const ull Pawns = get_pieces_template<Piece::PAWN>(c);
+    if (!Pawns) return false;
 
     for (int f = 0; f < 8; ++f) {
 
-        const ull file_mask = (FILE_H_MASK << f);     // matches f = (s % 8)
-        const ull bb = (Pawns & file_mask);
-
+        // col_masksHA is indexed in true h1=0 file order: f=0 is H-file ... f=7 is A-file
+        const ull bb = (Pawns & col_masksHA[f]);
         pinfo.file_bb[f] = bb;
 
-        if (!bb) {
-            pinfo.file_count[f] = 0;
-            pinfo.advancedSq[f] = -1;
-        } else {
-            pinfo.files_present |= (1u << f);
-            pinfo.file_count[f] = bits_in(bb);
+        if (!bb) continue;
 
-            // Most advanced pawn on this file:
-            //  - WHITE: highest rank => largest square index (within this file mask)
-            //  - BLACK: lowest  rank => smallest square index (within this file mask)
-            //
-            // This matches the rank-based intent of build_pawn_file_summary().
-            if (c == Color::WHITE) {
-                // highest square on this file
-                pinfo.advancedSq[f] = 63 - __builtin_clzll(bb);
-            } else {
-                // lowest square on this file
-                pinfo.advancedSq[f] = __builtin_ctzll(bb);
-            }
+        pinfo.files_present |= (1u << f);
+        pinfo.file_count[f] = bits_in(bb);
+
+        // advancedSq[f] must match build_pawn_file_summary():
+        //  WHITE: most advanced pawn = highest rank on that file = largest square index in bb
+        //  BLACK: most advanced pawn = lowest  rank on that file = smallest square index in bb
+        if (c == Color::WHITE) {
+            // largest set-bit index = 63 - clz(bb)
+            //pinfo.advancedSq[f] = 63 - __builtin_clzll(bb);
+            pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square(bb);
+        } else {
+            // smallest set-bit index = ctz(bb)
+            //pinfo.advancedSq[f] = __builtin_ctzll(bb);
+            pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square(bb);
         }
     }
 
     return true;
 }
+
+
+void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
+{
+    if (a.files_present != b.files_present) {
+        printf("PInfo mismatch: files_present a=0x%X b=0x%X\n", a.files_present, b.files_present);
+        //return;
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        if (a.file_count[i] != b.file_count[i]) {
+            printf("PInfo mismatch: file_count[%d] a=%d b=%d\n", i, a.file_count[i], b.file_count[i]);
+            //return;
+        }
+        if (a.file_bb[i] != b.file_bb[i]) {
+            printf("PInfo mismatch: file_bb[%d] a=0x%016llX b=0x%016llX\n", i,
+                   (unsigned long long)a.file_bb[i], (unsigned long long)b.file_bb[i]);
+            //return;
+        }
+        if (a.advancedSq[i] != b.advancedSq[i]) {
+            printf("PInfo mismatch: advancedSq[%d] a=%d b=%d\n", i, a.advancedSq[i], b.advancedSq[i]);
+            //return;
+        }
+    }
+
+    //printf("PInfo mismatch: (unexpected) no field differed\n");
+}
+
+
+static void print_bb64(ull bb)
+{
+    // Prints rank 8 down to 1, and files A..H in your h1=0 mapping
+    // (pure debug visualization; you can change formatting later).
+    for (int r = 7; r >= 0; --r) {
+        for (int f = 7; f >= 0; --f) {   // f=7 is A, f=0 is H
+            int sq = r * 8 + f;
+            ull bit = (1ULL << sq);
+            std::printf("%c ", (bb & bit) ? '1' : '.');
+        }
+        std::printf("\n");
+    }
+}
+
+// Note: debug only, please remove me.
+void GameBoard::validate_row_col_masks_h1_0()
+{
+    //printf("\nder\n");
+    // 1) Each row mask must match (sq/8 == r)
+    for (int r = 0; r < 8; ++r) {
+        ull expect = 0ULL;
+        for (int f = 0; f < 8; ++f) {
+            int sq = r * 8 + f;
+            expect |= (1ULL << sq);
+        }
+
+        if (row_masks[r] != expect) {
+            std::printf("ROW MASK MISMATCH r=%d\n", r);
+            std::printf("expected:\n"); print_bb64(expect);
+            std::printf("actual:\n");   print_bb64(row_masks[r]);
+            assert(0);
+        }
+    }
+
+    // 2) Each file mask must match (sq%8 == f)
+    for (int f = 0; f < 8; ++f) {
+        ull expect = 0ULL;
+        for (int r = 0; r < 8; ++r) {
+            int sq = r * 8 + f;
+            expect |= (1ULL << sq);
+        }
+
+        if (col_masksHA[f] != expect) {
+            std::printf("FILE MASK MISMATCH f=%d (this f is sq%%8)\n", f);
+            std::printf("expected:\n"); print_bb64(expect);
+            std::printf("actual:\n");   print_bb64(col_masksHA[f]);
+            assert(0);
+        }
+    }
+
+    // 3) Every square must be in exactly one row and exactly one file
+    for (int sq = 0; sq < 64; ++sq) {
+        ull bit = (1ULL << sq);
+
+        int rowHits = 0;
+        int colHits = 0;
+
+        for (int r = 0; r < 8; ++r) if (row_masks[r] & bit) ++rowHits;
+        for (int f = 0; f < 8; ++f) if (col_masksHA[f] & bit) ++colHits;
+
+        if (rowHits != 1 || colHits != 1) {
+            std::printf("SQUARE MEMBERSHIP BAD sq=%d rowHits=%d colHits=%d\n", sq, rowHits, colHits);
+            assert(0);
+        }
+    }
+
+    // 4) Intersection identity: row[r] & file[f] must be exactly bit(r*8+f)
+    for (int r = 0; r < 8; ++r) {
+        for (int f = 0; f < 8; ++f) {
+            int sq = r * 8 + f;
+            ull expect = (1ULL << sq);
+            ull got = row_masks[r] & col_masksHA[f];
+
+            if (got != expect) {
+                std::printf("INTERSECTION BAD r=%d f=%d (expect sq=%d)\n", r, f, sq);
+                std::printf("expected one-bit:\n"); print_bb64(expect);
+                std::printf("got:\n");             print_bb64(got);
+                assert(0);
+            }
+        }
+    }
+
+    std::printf("validate_row_col_masks_h1_0(): OK\n");
+}
+
 
 
 // Returns true if there is any bit set in `file_pieces` strictly ahead of sq toward promotion.
@@ -1053,10 +1170,12 @@ int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) co
             }
 
             if (get_major_pieces(c)) {
-                bool is_blocked = any_piece_ahead_on_file(c,
-                                                        pawnInfo.p[friendlyP].advancedSq[file],
-                                                        pawnInfo.p[enemyP].file_bb[file]);
-                if (!is_blocked) this_cp *= (3/2);
+                bool is_blocked;
+                int sq = pawnInfo.p[friendlyP].advancedSq[file];
+                if (sq != -1) {
+                    is_blocked = any_piece_ahead_on_file(c, sq, pawnInfo.p[enemyP].file_bb[file]);
+                    if (!is_blocked) this_cp *= (3/2);
+                }
             }
 
             isolated_cp += this_cp;
@@ -2132,123 +2251,120 @@ int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
 }
 
 
-bool GameBoard::is_king_in_check_new(Color color)
-{
-    // --- 1. find king square ---
-    ull king_bb = (color == Color::WHITE) ? white_king : black_king;
-    if (!king_bb) return false;  // should never happen
-    int king_sq = utility::bit::lsb_and_pop_to_square(king_bb);
+// bool GameBoard::is_king_in_check_new(Color color)
+// {
+//     // --- 1. find king square ---
+//     ull king_bb = (color == Color::WHITE) ? white_king : black_king;
+//     if (!king_bb) return false;  // should never happen
+//     int king_sq = utility::bit::lsb_and_pop_to_square(king_bb);
 
-    // --- 2. occupancy of all pieces ---
-    const ull occ =
-        white_pawns | white_knights | white_bishops | white_rooks |
-        white_queens | white_king |
-        black_pawns | black_knights | black_bishops | black_rooks |
-        black_queens | black_king;
+//     // --- 2. occupancy of all pieces ---
+//     const ull occ =
+//         white_pawns | white_knights | white_bishops | white_rooks |
+//         white_queens | white_king |
+//         black_pawns | black_knights | black_bishops | black_rooks |
+//         black_queens | black_king;
 
-    const Color enemy = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+//     const Color enemy = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
-    // --- 3. pawn attacks ---
-    //const ull FILE_A = col_masks[Col::COL_A];
-    //const ull FILE_H = col_masks[Col::COL_H];
+//     // --- 3. pawn attacks ---
+//     //const ull FILE_A = col_masks[Col::COL_A];
+//     //const ull FILE_H = col_masks[Col::COL_H];
 
-    const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
-    const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
-    //assert(FILE_A == FILE_A);
-    //assert(FILE_H == FILE_H);
+//     const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
+//     const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
+//     //assert(FILE_A == FILE_A);
+//     //assert(FILE_H == FILE_H);
 
-    ull bit = (1ULL << king_sq);
-    ull pawn_attackers;
-    if (color == Color::WHITE)
-    {
-        // enemy (black) pawns that attack downwards (south)
-        pawn_attackers = (((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9))
-                       & get_pieces_template<Piece::PAWN>(enemy);
-    }
-    else
-    {
-        // enemy (white) pawns that attack upwards (north)
-        pawn_attackers = (((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9))
-                       & get_pieces_template<Piece::PAWN>(enemy);
-    }
+//     ull bit = (1ULL << king_sq);
+//     ull pawn_attackers;
+//     if (color == Color::WHITE)
+//     {
+//         // enemy (black) pawns that attack downwards (south)
+//         pawn_attackers = (((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9))
+//                        & get_pieces_template<Piece::PAWN>(enemy);
+//     }
+//     else
+//     {
+//         // enemy (white) pawns that attack upwards (north)
+//         pawn_attackers = (((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9))
+//                        & get_pieces_template<Piece::PAWN>(enemy);
+//     }
 
+//     if (pawn_attackers) return true;
 
+//     // --- 4. knight attacks ---
+//     ull knight_attackers =
+//         tables::movegen::knight_attack_table[king_sq] &
+//         get_pieces_template<Piece::KNIGHT>(enemy);
+//     if (knight_attackers) return true;
 
+//     // --- 5. king adjacency (opposing king) ---
+//     ull king_attackers =
+//         tables::movegen::king_attack_table[king_sq] &
+//         get_pieces_template<Piece::KING>(enemy);
+//     if (king_attackers) return true;
 
-    if (pawn_attackers) return true;
+//     // --- 6. bishop/queen diagonals ---
+//     {
+//         ull bishops = get_pieces_template<Piece::BISHOP>(enemy);
+//         ull queens  = get_pieces_template<Piece::QUEEN >(enemy);
 
-    // --- 4. knight attacks ---
-    ull knight_attackers =
-        tables::movegen::knight_attack_table[king_sq] &
-        get_pieces_template<Piece::KNIGHT>(enemy);
-    if (knight_attackers) return true;
+//         int r0 = king_sq / 8;
+//         int c0 = king_sq % 8;
 
-    // --- 5. king adjacency (opposing king) ---
-    ull king_attackers =
-        tables::movegen::king_attack_table[king_sq] &
-        get_pieces_template<Piece::KING>(enemy);
-    if (king_attackers) return true;
+//         // 4 diagonal directions
+//         const int dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
+//         for (auto& d : dirs)
+//         {
+//             int r = r0, c = c0;
+//             while (true)
+//             {
+//                 r += d[0]; c += d[1];
+//                 if (r < 0 || r > 7 || c < 0 || c > 7) break;
+//                 int sq = r * 8 + c;
+//                 ull bb = 1ULL << sq;
+//                 if (occ & bb)
+//                 {
+//                     if ((bb & bishops) || (bb & queens))
+//                         return true;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
 
-    // --- 6. bishop/queen diagonals ---
-    {
-        ull bishops = get_pieces_template<Piece::BISHOP>(enemy);
-        ull queens  = get_pieces_template<Piece::QUEEN >(enemy);
+//     // --- 7. rook/queen orthogonals ---
+//     {
+//         ull rooks  = get_pieces_template<Piece::ROOK >(enemy);
+//         ull queens = get_pieces_template<Piece::QUEEN>(enemy);
 
-        int r0 = king_sq / 8;
-        int c0 = king_sq % 8;
+//         int r0 = king_sq / 8;
+//         int c0 = king_sq % 8;
 
-        // 4 diagonal directions
-        const int dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
-        for (auto& d : dirs)
-        {
-            int r = r0, c = c0;
-            while (true)
-            {
-                r += d[0]; c += d[1];
-                if (r < 0 || r > 7 || c < 0 || c > 7) break;
-                int sq = r * 8 + c;
-                ull bb = 1ULL << sq;
-                if (occ & bb)
-                {
-                    if ((bb & bishops) || (bb & queens))
-                        return true;
-                    break;
-                }
-            }
-        }
-    }
+//         const int dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
+//         for (auto& d : dirs)
+//         {
+//             int r = r0, c = c0;
+//             while (true)
+//             {
+//                 r += d[0]; c += d[1];
+//                 if (r < 0 || r > 7 || c < 0 || c > 7) break;
+//                 int sq = r * 8 + c;
+//                 ull bb = 1ULL << sq;
+//                 if (occ & bb)
+//                 {
+//                     if ((bb & rooks) || (bb & queens))
+//                         return true;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
 
-    // --- 7. rook/queen orthogonals ---
-    {
-        ull rooks  = get_pieces_template<Piece::ROOK >(enemy);
-        ull queens = get_pieces_template<Piece::QUEEN>(enemy);
-
-        int r0 = king_sq / 8;
-        int c0 = king_sq % 8;
-
-        const int dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
-        for (auto& d : dirs)
-        {
-            int r = r0, c = c0;
-            while (true)
-            {
-                r += d[0]; c += d[1];
-                if (r < 0 || r > 7 || c < 0 || c > 7) break;
-                int sq = r * 8 + c;
-                ull bb = 1ULL << sq;
-                if (occ & bb)
-                {
-                    if ((bb & rooks) || (bb & queens))
-                        return true;
-                    break;
-                }
-            }
-        }
-    }
-
-    // --- 8. if no attackers found ---
-    return false;
-}
+//     // --- 8. if no attackers found ---
+//     return false;
+// }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////

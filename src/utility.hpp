@@ -139,6 +139,11 @@ inline int bitboard_to_highest_square(ull bitboard) {
     if (bitboard == 0ULL) { return 64; }        // __builtin_clzll(0) is undefined
     return 63 - __builtin_clzll(bitboard);
 }
+inline int bitboard_to_highest_square_fast(ull bitboard) {
+    return 63 - __builtin_clzll(bitboard);
+}
+
+
 
 } // end namespace bit
 

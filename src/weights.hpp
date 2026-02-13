@@ -91,7 +91,7 @@ public:
     static constexpr int TWO_BISHOPS_WGHT = 16;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
-    static constexpr int QUEEN_OUT_EARLY_WGHT = -120;   // for center squares only
+    static constexpr int QUEEN_OUT_EARLY_WGHT = -130;   // for center squares only
     static constexpr int BISHOP_PATTERN_WGHT = -120;     // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
     static constexpr int DEVELOPMENT_OPENING = 11;      // Opening only.  Only minor pieces, off theier starting square.

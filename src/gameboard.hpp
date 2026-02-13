@@ -238,14 +238,16 @@ class GameBoard {
         int bishop_pawn_pattern_cp(Color color);       // Stupid bishop blocking pawn
         int queen_still_home(Color color);          // Stupid queen move too early
 
-        bool is_king_in_check_new(Color color);
+        //bool is_king_in_check_new(Color color);
 
         int two_bishops_cp(Color c) const;
         int rook_connectiveness_cp(Color c) const;
         int rook_7th_rankness_cp(Color c);
 
         bool build_pawn_file_summary(Color c, PInfo& p);
-        bool build_pawn_file_summary2(Color c, PInfo& p);
+        bool build_pawn_file_summary_fast(Color c, PInfo& p);
+        void dump_pinfo_mismatch(const PInfo& a, const PInfo& b);
+        void validate_row_col_masks_h1_0();
 
         bool any_piece_ahead_on_file(Color c, int sq, ull pieces) const;
         std::string sqToString2(int f, int r) const; // H1=0, 

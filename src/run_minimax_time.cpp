@@ -48,6 +48,7 @@ int main(int argc, char** argv) {
 //      run: cmake --build C:\programming\shumi-chess\build --config RelWithDebInfo
 //      look in: C:\programming\shumi-chess\build\bin\RelWithDebInfo
 
-// 1. is_square_in_check2() is top killer, called only by is_king_in_check().   
+// 1. is_square_in_check2() is top time waster, called only by is_king_in_check().  
+//    in_check_after_move_fast() is also very high on list of time wasters. 
 // 2. is_king_in_check() is called in : a. the old in_check_after_move(), sandwiched between popMoveFast() and pushMoveFast().
-// also  is_king_in_check() is used in b. in_check_after_move_fast(), sandwiched in a similar way..
+//    also  is_king_in_check() is used in  b. in_check_after_move_fast(), sandwiched in a similar way.
