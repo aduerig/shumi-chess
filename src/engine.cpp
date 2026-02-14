@@ -1352,12 +1352,15 @@ void Engine::add_move_to_vector(vector<Move>& moves,
     constexpr ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
     constexpr ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
-    // "from" square better be single bit.
+    // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
 
     // for all "to" squares and add them as moves
     while (bitboard_to) {
+
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
+        assert(game_board.bits_in(single_bitboard_to) == 1);
+        
         Piece piece_captured = Piece::NONE;
         if (capture) {
             if (!is_en_passent_capture) {
@@ -1367,40 +1370,6 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                 piece_captured = Piece::PAWN;
             }
         }
-
-
-
-       
-        // Move new_move = {};
-
-        // new_move.color = color;
-        // new_move.piece_type = piece;
-        // new_move.from = single_bitboard_from;
-        // new_move.to = single_bitboard_to;
-        // new_move.capture = piece_captured;
-        // new_move.en_passant_rights = en_passant_rights;
-        // new_move.is_en_passent_capture = is_en_passent_capture;
-        // new_move.is_castle_move = is_castle;
-
-        // // castling rights
-        // ull from_or_to = (single_bitboard_from | single_bitboard_to);
-        // if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
-        // if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
-        // if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
-        // if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
-
-        // if (!promotion) {
-        //     new_move.promotion = Piece::NONE;
-        //     // Add new move to the list of moves.  
-        //     moves.emplace_back(new_move);
-        // }
-        // else {
-        //     // A promotion. Add all possible promotion moves.
-        //     for (const auto promo_piece : promotion_values) {
-        //         moves.push_back(new_move);                  // copy new_move into vector
-        //         moves.back().promotion = promo_piece;       // change only this field (in the vector)
-        //     }
-        // }
 
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),

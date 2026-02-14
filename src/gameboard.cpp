@@ -2562,6 +2562,9 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     tmp = to_bb;
     int to_sq   = utility::bit::lsb_and_pop_to_square(tmp);
 
+
+
+    
     // There must be an enemy victim on 'to_sq' for a normal capture
     Piece victim = get_piece_type_on_bitboard(to_bb);
 

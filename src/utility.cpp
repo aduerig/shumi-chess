@@ -29,7 +29,7 @@ char nth_letter(int n)
 }
 
 //
-// Converts a one-hit square bitboard (exactly one bit set) into its ACN string,
+// Converts a one-bit bitboard (exactly one bit set) into its ACN string,
 // e.g. (1ULL << sq) -> "e4".
 // ACN here means Algebraic Coordinate Notation: file 'a'..'h' + rank '1'..'8'.
 //

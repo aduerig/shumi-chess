@@ -53,6 +53,8 @@ struct Move {
   
     ull from = 0ULL;   // bitboard (but with only one bit set)
     ull to = 0ULL;     // bitboard (but with only one bit set)
+    // uint8_t fromSQ = 0;
+    // uint8_t toSQ = 0;
     ull en_passant_rights = 0;              // Note this is a bitboard?
 
     Color color = ShumiChess::WHITE;
