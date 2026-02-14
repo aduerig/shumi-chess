@@ -83,10 +83,12 @@ inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) 
     }
     return bitboard >> amount;
 };
-
+//
+// 
+// "1-bitboard" means a bitboard with only 1 bit set.
 // This function does 2 things:
-//    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
-//    2. The lsb is zeroed on the input "bitboard"
+//    1. Returns only the least significant bit (LSB) as a 1-bitboard — all higher bits are zero.
+//    2. The LSB is zeroed on the input "bitboard"
 inline ull lsb_and_pop(ull& bitboard) {
     assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
@@ -95,8 +97,8 @@ inline ull lsb_and_pop(ull& bitboard) {
     return lsb_fast;
 };
 
-// It finds the index (0–63) of the least-significant 1-bit in bitboard, clears that bit in the original variable, and returns the index.
-inline ull lsb_and_pop_to_square(ull& bitboard) {
+// Same as lsb_and_pop() but returns square index instead of 1-bitboard.
+inline int lsb_and_pop_to_square(ull& bitboard) {
     assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     int square = __builtin_ctzll(bitboard);
@@ -105,8 +107,16 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
     return square;
 };
 
-inline int square_to_bitboard(int square) {
-    return 1ULL << (square - 1);
+// returns a 1-bitboard
+inline ull square_to_bitboard_fast(int square) {
+    return 1ULL << square;
+};
+inline ull square_to_bitboard(int square) {
+    if ( (square<0) || (square>63) ) {
+        assert(0);
+        return 0ULL;
+    }
+    return 1ULL << square;
 };
 
 // Returns the number of trailing zeros in the binary representation of a 64-bit integer.

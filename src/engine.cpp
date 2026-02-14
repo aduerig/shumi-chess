@@ -308,8 +308,12 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
     ull* pRooks   = nullptr;
     ull  rooksOld = 0;
 
-    const ull from_mask = move.from;
-    const ull to_mask   = move.to;
+    const ull from_mask2 = move.from;
+    const ull to_mask2   = move.to;
+    const ull from_mask  = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull to_mask    = utility::bit::square_to_bitboard(move.toSQ);
+    assert(from_mask == from_mask2);
+    assert(to_mask == to_mask2);
 
     // --- 1) Moving piece leaves `from` (always) ---
     // This changes occupancy on `from`, which is one of the only squares that can
@@ -355,20 +359,20 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Queenside castle
             if (move.color == ShumiChess::Color::WHITE) {
-                (*pRooks) &= ~(1ULL << 7);      // game_board.square_a1
-                (*pRooks) |=  (1ULL << 4);      // game_board.square_d1
+                (*pRooks) &= ~(1ULL << game_board.square_a1);
+                (*pRooks) |=  (1ULL << game_board.square_d1);
             } else {
-                (*pRooks) &= ~(1ULL << 63);     // game_board.square_a8
-                (*pRooks) |=  (1ULL << 60);     // game_board.square_d8
+                (*pRooks) &= ~(1ULL << game_board.square_a8);
+                (*pRooks) |=  (1ULL << game_board.square_d8);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Kingside castle
             if (move.color == ShumiChess::Color::WHITE) {
-                (*pRooks) &= ~(1ULL << 0);      // game_board.square_h1
-                (*pRooks) |=  (1ULL << 2);      // game_board.square_f1
+                (*pRooks) &= ~(1ULL << game_board.square_h1);
+                (*pRooks) |=  (1ULL << game_board.square_f1);
             } else {
-                (*pRooks) &= ~(1ULL << 56);     // game_board.square_h8
-                (*pRooks) |=  (1ULL << 58);     // game_board.square_f8
+                (*pRooks) &= ~(1ULL << game_board.square_h8);
+                (*pRooks) |=  (1ULL << game_board.square_f8);
             }
         } else {
             assert(0);
@@ -803,8 +807,12 @@ void Engine::pushMove(const Move& move) {
     moving_piece &= ~move.from;
 
     // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
-    int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    int square_from2 = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    int square_to2   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    int square_from = move.fromSQ;
+    int square_to   = move.toSQ;
+    assert(square_from == square_from2);
+    assert(square_to == square_to2); 
 
     // zobrist_key "push" update (for normal moves, remove piece from from square)
     game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_from);
@@ -868,13 +876,13 @@ void Engine::pushMove(const Move& move) {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 7;   // game_board.square_a1
                 rook_to_sq = 4;     // game_board.square_d1
-                friendly_rooks &= ~(1ULL<<7);
-                friendly_rooks |= (1ULL<<4);
+                friendly_rooks &= ~(1ULL <<7);
+                friendly_rooks |= (1ULL <<4);
             } else {
                 rook_from_sq = 63;  // game_board.square_a8
                 rook_to_sq = 60;    // game_board.square_d8              
-                friendly_rooks &= ~(1ULL<<63);
-                friendly_rooks |= (1ULL<<60);
+                friendly_rooks &= ~(1ULL <<63);
+                friendly_rooks |= (1ULL <<60);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
              //                rnbqkbnr                                                       RNBQKBNR
@@ -882,14 +890,14 @@ void Engine::pushMove(const Move& move) {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 0;   // game_board.square_h1
                 rook_to_sq = 2;     // game_board.square_f1
-                friendly_rooks &= ~(1ULL<<0);
-                friendly_rooks |= (1ULL<<2);
+                friendly_rooks &= ~(1ULL <<0);
+                friendly_rooks |= (1ULL <<2);
                 //assert (this->game_board.white_castle_rights);
             } else {
                 rook_from_sq = 56;  // game_board.square_h8
                 rook_to_sq = 58;    // game_board.square_f8               
-                friendly_rooks &= ~(1ULL<<56);
-                friendly_rooks |= (1ULL<<58);
+                friendly_rooks &= ~(1ULL <<56);
+                friendly_rooks |= (1ULL <<58);
             }
         } else {        // Something wrong, its not a castle
             assert(0);
@@ -1006,8 +1014,13 @@ void Engine::popMove() {
     this->game_board.halfmove = this->halfway_move_state.top();
     this->halfway_move_state.pop();
 
-    int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    int square_from2 = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    int square_to2   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    int square_from = move.fromSQ;
+    int square_to   = move.toSQ;
+    assert(square_from == square_from2);
+    assert(square_to == square_to2); 
+
 
     // pop the "actual move". This removes the piece from its square and puts it back to where it was.
     ull& moving_piece = access_pieces_of_color(move.piece_type, move.color);
@@ -1067,13 +1080,13 @@ void Engine::popMove() {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 4;       // game_board.square_d1
                 rook_to_sq = 7;         // game_board.square_a1
-                friendly_rooks &= ~(1ULL<<4);
-                friendly_rooks |= (1ULL<<7);
+                friendly_rooks &= ~(1ULL <<4);
+                friendly_rooks |= (1ULL <<7);
             } else {
                 rook_from_sq = 60;      // game_board.square_d8
                 rook_to_sq = 63;        // game_board.square_a8
-                friendly_rooks &= ~(1ULL<<60);
-                friendly_rooks |= (1ULL<<63);
+                friendly_rooks &= ~(1ULL <<60);
+                friendly_rooks |= (1ULL <<63);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       rnbqkbnr
@@ -1081,13 +1094,13 @@ void Engine::popMove() {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 2;       // game_board.square_f1
                 rook_to_sq = 0;         // game_board.square_h1
-                friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
-                friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
+                friendly_rooks &= ~(1ULL <<2);    // Remove white king rook from f1
+                friendly_rooks |= (1ULL <<0);     // Add white king rook back to a1
             } else {
                 rook_from_sq = 58;      // game_board.square_f8
                 rook_to_sq = 56;        // game_board.square_h8
-                friendly_rooks &= ~(1ULL<<58);
-                friendly_rooks |= (1ULL<<56);
+                friendly_rooks &= ~(1ULL <<58);
+                friendly_rooks |= (1ULL <<56);
             }
 
             
@@ -1162,22 +1175,22 @@ void Engine::pushMoveFast(const Move& move)
             //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<7);
-                friendly_rooks |= (1ULL<<4);
+                friendly_rooks &= ~(1ULL <<7);
+                friendly_rooks |= (1ULL <<4);
             } else {           
-                friendly_rooks &= ~(1ULL<<63);
-                friendly_rooks |= (1ULL<<60);
+                friendly_rooks &= ~(1ULL <<63);
+                friendly_rooks |= (1ULL <<60);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       RNBQKBNR
             // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<0);
-                friendly_rooks |= (1ULL<<2);
+                friendly_rooks &= ~(1ULL <<0);
+                friendly_rooks |= (1ULL <<2);
                 //assert (this->game_board.white_castle_rights);
             } else {
-                friendly_rooks &= ~(1ULL<<56);
-                friendly_rooks |= (1ULL<<58);
+                friendly_rooks &= ~(1ULL <<56);
+                friendly_rooks |= (1ULL <<58);
             }
         } else {        // Something wrong, its not a castle
             assert(0);
@@ -1252,21 +1265,21 @@ void Engine::popMoveFast()
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<4);
-                friendly_rooks |= (1ULL<<7);
+                friendly_rooks &= ~(1ULL <<4);
+                friendly_rooks |= (1ULL <<7);
             } else {
-                friendly_rooks &= ~(1ULL<<60);
-                friendly_rooks |= (1ULL<<63);
+                friendly_rooks &= ~(1ULL <<60);
+                friendly_rooks |= (1ULL <<63);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       rnbqkbnr
             // Popping a Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
-                friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
+                friendly_rooks &= ~(1ULL <<2);    // Remove white king rook from f1
+                friendly_rooks |= (1ULL <<0);     // Add white king rook back to a1
             } else {
-                friendly_rooks &= ~(1ULL<<58);
-                friendly_rooks |= (1ULL<<56);
+                friendly_rooks &= ~(1ULL <<58);
+                friendly_rooks |= (1ULL <<56);
             }
 
         } else {
@@ -1386,6 +1399,9 @@ void Engine::add_move_to_vector(vector<Move>& moves,
             new_move.piece_type = piece;
             new_move.from = single_bitboard_from;
             new_move.to = single_bitboard_to;
+            new_move.fromSQ = utility::bit::bitboard_to_lowest_square_safe(single_bitboard_from);
+            new_move.toSQ   = utility::bit::bitboard_to_lowest_square_safe(single_bitboard_to);
+
             new_move.capture = piece_captured;
             new_move.en_passant_rights = en_passant_rights;
             new_move.is_en_passent_capture = is_en_passent_capture;
@@ -1411,8 +1427,12 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                 // Fill it in
                 new_move.color = color;
                 new_move.piece_type = piece;
+
                 new_move.from = single_bitboard_from;
                 new_move.to = single_bitboard_to;
+                new_move.fromSQ = utility::bit::bitboard_to_lowest_square_safe(single_bitboard_from);
+                new_move.toSQ   = utility::bit::bitboard_to_lowest_square_safe(single_bitboard_to);                
+
                 new_move.capture = piece_captured;
                 new_move.en_passant_rights = en_passant_rights;
                 new_move.is_en_passent_capture = is_en_passent_capture;
@@ -1689,7 +1709,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<1;
+                            king_origin_square = 1ULL <<1;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }
@@ -1707,7 +1727,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<5;
+                            king_origin_square = 1ULL <<5;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }
@@ -1726,7 +1746,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<57;
+                            king_origin_square = 1ULL <<57;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }
@@ -1744,7 +1764,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<61;
+                            king_origin_square = 1ULL <<61;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }
@@ -1959,7 +1979,10 @@ char Engine::get_piece_char(Piece p) const {
 // Returns character, for the rank of the "from" square
 char Engine::rank_from_move(const Move& m) const
 {
-    int from_sq = utility::bit::bitboard_to_lowest_square(m.from);
+    int from_sq2 = utility::bit::bitboard_to_lowest_square(m.from);
+    int from_sq = m.fromSQ;
+    assert(from_sq == from_sq2);
+
     int rank    = from_sq >> 3;             // 0..7 for ranks 1..8
     return '1' + rank;                      // '1'..'8'
 }
@@ -1967,7 +1990,10 @@ char Engine::rank_from_move(const Move& m) const
 // Returns character, for the file of the "from" square
 char Engine::file_to_move(const Move& m) const
 {
-    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 0..63
+    int to_sq2 = utility::bit::bitboard_to_lowest_square(m.to); // 0..63
+    int to_sq = m.toSQ;
+    assert(to_sq == to_sq2);
+
     int file  = to_sq & 7;     // within-rank index 0..7
     file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
@@ -1976,14 +2002,20 @@ char Engine::file_to_move(const Move& m) const
 /// Returns character, for the rank of the "to" square
 char Engine::rank_to_move(const Move& m) const
 {
-    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 
+    int to_sq2 = utility::bit::bitboard_to_lowest_square(m.to); // 0..63
+    int to_sq = m.toSQ;
+    assert(to_sq == to_sq2);
+
     int rank  = to_sq / 8;   // 0=rank 1, 1=rank 2, ..., 7=rank 8
     return '1' + rank;       // convert to character '1'..'8'
 }
 
 char Engine::file_from_move(const Move& m) const
 {
-    int from_sq = utility::bit::bitboard_to_lowest_square(m.from); // 0..63
+    int from_sq2 = utility::bit::bitboard_to_lowest_square(m.from); // 0..63
+    int from_sq = m.fromSQ;
+    assert(from_sq == from_sq2);
+
     int file  = from_sq & 7;     // within-rank index 0..7
     file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'

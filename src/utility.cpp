@@ -19,6 +19,7 @@ namespace representation {
 ull acn_to_bitboard_conversion(const string& acn) {
     int square_number = 0;
     square_number += ('h' - acn.at(0)) + 8 * (acn.at(1) - '1');
+    assert(square_number<64);
     return 1ULL << square_number;
 }
 
