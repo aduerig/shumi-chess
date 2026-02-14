@@ -804,7 +804,10 @@ void Engine::pushMove(const Move& move) {
     
     // Remove the piece from where it was
     ull& moving_piece = access_pieces_of_color(move.piece_type, move.color);
-    moving_piece &= ~move.from;
+    ull move_from2= move.from;
+    ull move_from = utility::bit::square_to_bitboard(move.fromSQ);
+    assert(move_from == move_from2);
+    moving_piece &= ~move_from;
 
     // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
     int square_from2 = utility::bit::bitboard_to_lowest_square_safe(move.from);
@@ -1024,8 +1027,16 @@ void Engine::popMove() {
 
     // pop the "actual move". This removes the piece from its square and puts it back to where it was.
     ull& moving_piece = access_pieces_of_color(move.piece_type, move.color);
+
+    ull move_to2 = move.to;
+    ull move_to = utility::bit::square_to_bitboard(move.toSQ);
+    assert(move_to == move_to2);   
     moving_piece &= ~move.to;
-    moving_piece |= move.from;
+
+    ull move_from2 = move.from;
+    ull move_from = utility::bit::square_to_bitboard(move.fromSQ);
+    assert(move_from == move_from2);
+    moving_piece |= move_from;
 
     assert((move.piece_type + move.color * 6) < 12);
     game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + move.color * 6, square_from);
@@ -1815,13 +1826,16 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
         bool isCastles=false;
   
         if (the_move.piece_type == Piece::KING) {
-            int from_sq = utility::bit::bitboard_to_lowest_square(the_move.from); // 0..63
+
+            int from_sq2 = utility::bit::bitboard_to_lowest_square(the_move.from); // 0..63
+            int from_sq = the_move.fromSQ; // 0..63
+            assert(from_sq == from_sq2);
 
             if ( (from_sq == game_board.square_e1) || (from_sq == game_board.square_e8) )
             {
-                int to_sq = utility::bit::bitboard_to_lowest_square(the_move.to); // 0..63
-
-                //printf("quyyy %ld\n", to_sq);
+                int to_sq2 = utility::bit::bitboard_to_lowest_square(the_move.to); // 0..63
+                int to_sq = the_move.toSQ; // 0..63
+                assert(to_sq == to_sq2);
 
                 if ( (to_sq == game_board.square_g1) || (to_sq == game_board.square_g8) ) {
                      MoveText += "O-O";
