@@ -3,6 +3,11 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+
+#ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
+#undef NDEBUG
+#endif
+#include <assert.h>
 #include <cassert>
 
 #include "globals.hpp"
@@ -28,6 +33,19 @@ char nth_letter(int n)
     assert(n >= 0 && n <= 25);
     return "abcdefghijklmnopqrstuvwxyz"[n];
 }
+
+// square: 0..63 (h1=0). Returns "h1".."a8".
+string square_to_acn(int square)
+{
+    assert((unsigned)square < 64);
+
+    int file = square % 8;       // 0=H ... 7=A
+    int rank = square / 8;       // 0..7  (rank 1..8)
+
+    // If nth_letter(0)=="a", then we want nth_letter(7-file) to get H..A ordering.
+    return nth_letter(7 - file) + to_string(rank + 1);
+}
+
 
 //
 // Converts a one-bit bitboard (exactly one bit set) into its ACN string,

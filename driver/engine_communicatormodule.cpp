@@ -126,8 +126,16 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
 
     ShumiChess::Move found_move = {};
     for (const auto move : last_moves) {
-        if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
-            to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
+
+        string str_frm = utility::representation::bitboard_to_acn_conversion(move.from);
+        string str_frm2 = utility::representation::square_to_acn(move.fromSQ);
+        string str_to = utility::representation::bitboard_to_acn_conversion(move.to);
+        string str_to2 = utility::representation::square_to_acn(move.toSQ);
+
+        assert(str_frm == str_frm2);
+        assert(str_to == str_to2);
+
+        if ( (from_square_acn == str_frm) && (to_square_acn == str_to) ) {
             found_move = move;
         }
     }

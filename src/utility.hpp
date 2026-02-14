@@ -77,6 +77,7 @@ inline std::string colorize(AColor color, const std::string& text) {
 
 namespace bit {
 
+
 inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) {
     if (color == ShumiChess::WHITE) {
         return bitboard << amount;
@@ -159,6 +160,7 @@ inline int bitboard_to_highest_square_fast(ull bitboard) {
 
 namespace representation {
 
+string square_to_acn(int square);
 ull acn_to_bitboard_conversion(const std::string&);
 std::string bitboard_to_acn_conversion(ull);
 
@@ -205,7 +207,12 @@ inline std::string square_to_position_string(ull square) {
 };
 
 inline std::string move_to_string(ShumiChess::Move move) {
-    return square_to_position_string(move.from) + square_to_position_string(move.to);
+    string strng;
+    string strng2;
+    strng2 = square_to_position_string(move.from) + square_to_position_string(move.to);
+    strng = square_to_acn(move.fromSQ) + square_to_acn(move.toSQ);
+    assert(strng == strng2);
+    return strng;
 };
 
 

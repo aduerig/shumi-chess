@@ -6,6 +6,7 @@
 #undef NDEBUG
 #endif
 #include <assert.h>
+#include <utility.hpp>
 
 using namespace std;
 
@@ -111,8 +112,8 @@ Move MoveSet(Color c, Piece p, ull frm, ull to)
     m.piece_type = p;
     m.from = frm;
     m.to = to;
-    // m.fromSQ = utility::bit::bitboard_to_lowest_square_safe(frm);
-    // m.toSQ =  utility::bit::bitboard_to_lowest_square_safe(to);
+    m.fromSQ = utility::bit::bitboard_to_lowest_square_safe(frm);
+    m.toSQ =  utility::bit::bitboard_to_lowest_square_safe(to);
     return m;
 }
 Move MoveSet2(Color c, Piece p, ull frm, ull to, Piece a)
@@ -122,8 +123,8 @@ Move MoveSet2(Color c, Piece p, ull frm, ull to, Piece a)
     m.piece_type = p;
     m.from = frm;
     m.to = to;
-    //m.fromSQ = utility::bit::bitboard_to_lowest_square_safe(frm);
-    //m.toSQ =  utility::bit::bitboard_to_lowest_square_safe(to);
+    m.fromSQ = utility::bit::bitboard_to_lowest_square_safe(frm);
+    m.toSQ =  utility::bit::bitboard_to_lowest_square_safe(to);
     m.capture = a;
     return m;
 }
@@ -134,8 +135,8 @@ Move MoveSet3(Color c, Piece p, ull frm, ull to, Piece a, Piece b)
     m.piece_type = p;
     m.from = frm;
     m.to = to;
-    //m.fromSQ = utility::bit::bitboard_to_lowest_square_safe(frm);
-    //m.toSQ =  utility::bit::bitboard_to_lowest_square_safe(to);
+    m.fromSQ = utility::bit::bitboard_to_lowest_square_safe(frm);
+    m.toSQ =  utility::bit::bitboard_to_lowest_square_safe(to);
     m.capture = a;
     m.promotion = b;
     return m;

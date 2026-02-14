@@ -1147,8 +1147,12 @@ void Engine::pushMoveFast(const Move& move)
     // Flip side to move
     game_board.turn = utility::representation::opposite_color(move.color);
 
-    ull from_mask = move.from;
-    ull to_mask   = move.to;
+    const ull from_mask2 = move.from;
+    const ull to_mask2   = move.to;
+    const ull from_mask  = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull to_mask    = utility::bit::square_to_bitboard(move.toSQ);
+    assert(from_mask == from_mask2);
+    assert(to_mask == to_mask2);
 
     // --- 1. Remove moving piece from origin ---
     ull& src_bb = access_pieces_of_color(move.piece_type, move.color);
@@ -1228,8 +1232,12 @@ void Engine::popMoveFast()
     // Flip side back
     game_board.turn = move.color;
 
-    ull from_mask = move.from;
-    ull to_mask   = move.to;
+    const ull from_mask2 = move.from;
+    const ull to_mask2   = move.to;
+    const ull from_mask  = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull to_mask    = utility::bit::square_to_bitboard(move.toSQ);
+    assert(from_mask == from_mask2);
+    assert(to_mask == to_mask2);
 
     // --- 1. Undo promotion or normal move ---
     if (move.promotion != Piece::NONE) {
