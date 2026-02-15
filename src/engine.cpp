@@ -355,20 +355,20 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
         if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Queenside castle
             if (move.color == ShumiChess::Color::WHITE) {
-                (*pRooks) &= ~(1ULL << 7);      // game_board.square_a1
-                (*pRooks) |=  (1ULL << 4);      // game_board.square_d1
+                (*pRooks) &= ~(1ULL << game_board.square_a1);
+                (*pRooks) |=  (1ULL << game_board.square_d1);
             } else {
-                (*pRooks) &= ~(1ULL << 63);     // game_board.square_a8
-                (*pRooks) |=  (1ULL << 60);     // game_board.square_d8
+                (*pRooks) &= ~(1ULL << game_board.square_a8);
+                (*pRooks) |=  (1ULL << game_board.square_d8);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Kingside castle
             if (move.color == ShumiChess::Color::WHITE) {
-                (*pRooks) &= ~(1ULL << 0);      // game_board.square_h1
-                (*pRooks) |=  (1ULL << 2);      // game_board.square_f1
+                (*pRooks) &= ~(1ULL << game_board.square_h1);
+                (*pRooks) |=  (1ULL << game_board.square_f1);
             } else {
-                (*pRooks) &= ~(1ULL << 56);     // game_board.square_h8
-                (*pRooks) |=  (1ULL << 58);     // game_board.square_f8
+                (*pRooks) &= ~(1ULL << game_board.square_h8);
+                (*pRooks) |=  (1ULL << game_board.square_f8);
             }
         } else {
             assert(0);
@@ -868,13 +868,13 @@ void Engine::pushMove(const Move& move) {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 7;   // game_board.square_a1
                 rook_to_sq = 4;     // game_board.square_d1
-                friendly_rooks &= ~(1ULL<<7);
-                friendly_rooks |= (1ULL<<4);
+                friendly_rooks &= ~(1ULL <<7);
+                friendly_rooks |= (1ULL <<4);
             } else {
                 rook_from_sq = 63;  // game_board.square_a8
                 rook_to_sq = 60;    // game_board.square_d8              
-                friendly_rooks &= ~(1ULL<<63);
-                friendly_rooks |= (1ULL<<60);
+                friendly_rooks &= ~(1ULL <<63);
+                friendly_rooks |= (1ULL <<60);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
              //                rnbqkbnr                                                       RNBQKBNR
@@ -882,14 +882,14 @@ void Engine::pushMove(const Move& move) {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 0;   // game_board.square_h1
                 rook_to_sq = 2;     // game_board.square_f1
-                friendly_rooks &= ~(1ULL<<0);
-                friendly_rooks |= (1ULL<<2);
+                friendly_rooks &= ~(1ULL <<0);
+                friendly_rooks |= (1ULL <<2);
                 //assert (this->game_board.white_castle_rights);
             } else {
                 rook_from_sq = 56;  // game_board.square_h8
                 rook_to_sq = 58;    // game_board.square_f8               
-                friendly_rooks &= ~(1ULL<<56);
-                friendly_rooks |= (1ULL<<58);
+                friendly_rooks &= ~(1ULL <<56);
+                friendly_rooks |= (1ULL <<58);
             }
         } else {        // Something wrong, its not a castle
             assert(0);
@@ -1067,13 +1067,13 @@ void Engine::popMove() {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 4;       // game_board.square_d1
                 rook_to_sq = 7;         // game_board.square_a1
-                friendly_rooks &= ~(1ULL<<4);
-                friendly_rooks |= (1ULL<<7);
+                friendly_rooks &= ~(1ULL <<4);
+                friendly_rooks |= (1ULL <<7);
             } else {
                 rook_from_sq = 60;      // game_board.square_d8
                 rook_to_sq = 63;        // game_board.square_a8
-                friendly_rooks &= ~(1ULL<<60);
-                friendly_rooks |= (1ULL<<63);
+                friendly_rooks &= ~(1ULL <<60);
+                friendly_rooks |= (1ULL <<63);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       rnbqkbnr
@@ -1081,13 +1081,13 @@ void Engine::popMove() {
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 2;       // game_board.square_f1
                 rook_to_sq = 0;         // game_board.square_h1
-                friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
-                friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
+                friendly_rooks &= ~(1ULL <<2);    // Remove white king rook from f1
+                friendly_rooks |= (1ULL <<0);     // Add white king rook back to a1
             } else {
                 rook_from_sq = 58;      // game_board.square_f8
                 rook_to_sq = 56;        // game_board.square_h8
-                friendly_rooks &= ~(1ULL<<58);
-                friendly_rooks |= (1ULL<<56);
+                friendly_rooks &= ~(1ULL <<58);
+                friendly_rooks |= (1ULL <<56);
             }
 
             
@@ -1162,22 +1162,22 @@ void Engine::pushMoveFast(const Move& move)
             //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<7);
-                friendly_rooks |= (1ULL<<4);
+                friendly_rooks &= ~(1ULL <<7);
+                friendly_rooks |= (1ULL <<4);
             } else {           
-                friendly_rooks &= ~(1ULL<<63);
-                friendly_rooks |= (1ULL<<60);
+                friendly_rooks &= ~(1ULL <<63);
+                friendly_rooks |= (1ULL <<60);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       RNBQKBNR
             // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<0);
-                friendly_rooks |= (1ULL<<2);
+                friendly_rooks &= ~(1ULL <<0);
+                friendly_rooks |= (1ULL <<2);
                 //assert (this->game_board.white_castle_rights);
             } else {
-                friendly_rooks &= ~(1ULL<<56);
-                friendly_rooks |= (1ULL<<58);
+                friendly_rooks &= ~(1ULL <<56);
+                friendly_rooks |= (1ULL <<58);
             }
         } else {        // Something wrong, its not a castle
             assert(0);
@@ -1252,21 +1252,21 @@ void Engine::popMoveFast()
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<4);
-                friendly_rooks |= (1ULL<<7);
+                friendly_rooks &= ~(1ULL <<4);
+                friendly_rooks |= (1ULL <<7);
             } else {
-                friendly_rooks &= ~(1ULL<<60);
-                friendly_rooks |= (1ULL<<63);
+                friendly_rooks &= ~(1ULL <<60);
+                friendly_rooks |= (1ULL <<63);
             }
         } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       rnbqkbnr
             // Popping a Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
-                friendly_rooks &= ~(1ULL<<2);    // Remove white king rook from f1
-                friendly_rooks |= (1ULL<<0);     // Add white king rook back to a1
+                friendly_rooks &= ~(1ULL <<2);    // Remove white king rook from f1
+                friendly_rooks |= (1ULL <<0);     // Add white king rook back to a1
             } else {
-                friendly_rooks &= ~(1ULL<<58);
-                friendly_rooks |= (1ULL<<56);
+                friendly_rooks &= ~(1ULL <<58);
+                friendly_rooks |= (1ULL <<56);
             }
 
         } else {
@@ -1352,12 +1352,15 @@ void Engine::add_move_to_vector(vector<Move>& moves,
     constexpr ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
     constexpr ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
-    // "from" square better be single bit.
+    // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
 
     // for all "to" squares and add them as moves
     while (bitboard_to) {
+
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
+        assert(game_board.bits_in(single_bitboard_to) == 1);
+        
         Piece piece_captured = Piece::NONE;
         if (capture) {
             if (!is_en_passent_capture) {
@@ -1367,40 +1370,6 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                 piece_captured = Piece::PAWN;
             }
         }
-
-
-
-       
-        // Move new_move = {};
-
-        // new_move.color = color;
-        // new_move.piece_type = piece;
-        // new_move.from = single_bitboard_from;
-        // new_move.to = single_bitboard_to;
-        // new_move.capture = piece_captured;
-        // new_move.en_passant_rights = en_passant_rights;
-        // new_move.is_en_passent_capture = is_en_passent_capture;
-        // new_move.is_castle_move = is_castle;
-
-        // // castling rights
-        // ull from_or_to = (single_bitboard_from | single_bitboard_to);
-        // if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
-        // if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
-        // if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
-        // if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
-
-        // if (!promotion) {
-        //     new_move.promotion = Piece::NONE;
-        //     // Add new move to the list of moves.  
-        //     moves.emplace_back(new_move);
-        // }
-        // else {
-        //     // A promotion. Add all possible promotion moves.
-        //     for (const auto promo_piece : promotion_values) {
-        //         moves.push_back(new_move);                  // copy new_move into vector
-        //         moves.back().promotion = promo_piece;       // change only this field (in the vector)
-        //     }
-        // }
 
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),
@@ -1720,7 +1689,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<1;
+                            king_origin_square = 1ULL <<1;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }
@@ -1738,7 +1707,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<5;
+                            king_origin_square = 1ULL <<5;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }
@@ -1757,7 +1726,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<57;
+                            king_origin_square = 1ULL <<57;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }
@@ -1775,7 +1744,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                         if (actual_rooks_location & needed_rook_location) {
                             // Rook is on correct square for castling
-                            king_origin_square = 1ULL<<61;
+                            king_origin_square = 1ULL <<61;
                             add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , color, false, false, 0ULL, false, true);
                         }

@@ -502,16 +502,11 @@ inline double lerp(double a, double b, double t) { return a + (b - a) * t; }
 
 int GameBoard::queen_still_home(Color color)
 {
-    // h1 = 0 indexing:
-    // d1 = 4
-    // d8 = 60
-    const int sq_d1 = 4;
-    const int sq_d8 = 60;
 
     if (color == Color::WHITE)
     {
         // Is there still a white queen on d1?
-        ull mask = (1ULL << sq_d1);
+        ull mask = (1ULL << square_d1);
 
         // Return 1 if queen hasn't moved (still on d1),
         // 0 if it has moved off d1.
@@ -520,7 +515,7 @@ int GameBoard::queen_still_home(Color color)
     else // BLACK
     {
         // Is there still a black queen on d8?
-        ull mask = (1ULL << sq_d8);
+        ull mask = (1ULL << square_d8);
 
         return (black_queens & mask) ? 1 : 0;
     }
@@ -2251,121 +2246,6 @@ int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
 }
 
 
-// bool GameBoard::is_king_in_check_new(Color color)
-// {
-//     // --- 1. find king square ---
-//     ull king_bb = (color == Color::WHITE) ? white_king : black_king;
-//     if (!king_bb) return false;  // should never happen
-//     int king_sq = utility::bit::lsb_and_pop_to_square(king_bb);
-
-//     // --- 2. occupancy of all pieces ---
-//     const ull occ =
-//         white_pawns | white_knights | white_bishops | white_rooks |
-//         white_queens | white_king |
-//         black_pawns | black_knights | black_bishops | black_rooks |
-//         black_queens | black_king;
-
-//     const Color enemy = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
-
-//     // --- 3. pawn attacks ---
-//     //const ull FILE_A = col_masks[Col::COL_A];
-//     //const ull FILE_H = col_masks[Col::COL_H];
-
-//     const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
-//     const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
-//     //assert(FILE_A == FILE_A);
-//     //assert(FILE_H == FILE_H);
-
-//     ull bit = (1ULL << king_sq);
-//     ull pawn_attackers;
-//     if (color == Color::WHITE)
-//     {
-//         // enemy (black) pawns that attack downwards (south)
-//         pawn_attackers = (((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9))
-//                        & get_pieces_template<Piece::PAWN>(enemy);
-//     }
-//     else
-//     {
-//         // enemy (white) pawns that attack upwards (north)
-//         pawn_attackers = (((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9))
-//                        & get_pieces_template<Piece::PAWN>(enemy);
-//     }
-
-//     if (pawn_attackers) return true;
-
-//     // --- 4. knight attacks ---
-//     ull knight_attackers =
-//         tables::movegen::knight_attack_table[king_sq] &
-//         get_pieces_template<Piece::KNIGHT>(enemy);
-//     if (knight_attackers) return true;
-
-//     // --- 5. king adjacency (opposing king) ---
-//     ull king_attackers =
-//         tables::movegen::king_attack_table[king_sq] &
-//         get_pieces_template<Piece::KING>(enemy);
-//     if (king_attackers) return true;
-
-//     // --- 6. bishop/queen diagonals ---
-//     {
-//         ull bishops = get_pieces_template<Piece::BISHOP>(enemy);
-//         ull queens  = get_pieces_template<Piece::QUEEN >(enemy);
-
-//         int r0 = king_sq / 8;
-//         int c0 = king_sq % 8;
-
-//         // 4 diagonal directions
-//         const int dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
-//         for (auto& d : dirs)
-//         {
-//             int r = r0, c = c0;
-//             while (true)
-//             {
-//                 r += d[0]; c += d[1];
-//                 if (r < 0 || r > 7 || c < 0 || c > 7) break;
-//                 int sq = r * 8 + c;
-//                 ull bb = 1ULL << sq;
-//                 if (occ & bb)
-//                 {
-//                     if ((bb & bishops) || (bb & queens))
-//                         return true;
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-
-//     // --- 7. rook/queen orthogonals ---
-//     {
-//         ull rooks  = get_pieces_template<Piece::ROOK >(enemy);
-//         ull queens = get_pieces_template<Piece::QUEEN>(enemy);
-
-//         int r0 = king_sq / 8;
-//         int c0 = king_sq % 8;
-
-//         const int dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
-//         for (auto& d : dirs)
-//         {
-//             int r = r0, c = c0;
-//             while (true)
-//             {
-//                 r += d[0]; c += d[1];
-//                 if (r < 0 || r > 7 || c < 0 || c > 7) break;
-//                 int sq = r * 8 + c;
-//                 ull bb = 1ULL << sq;
-//                 if (occ & bb)
-//                 {
-//                     if ((bb & rooks) || (bb & queens))
-//                         return true;
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-
-//     // --- 8. if no attackers found ---
-//     return false;
-// }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2562,6 +2442,9 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     tmp = to_bb;
     int to_sq   = utility::bit::lsb_and_pop_to_square(tmp);
 
+
+
+    
     // There must be an enemy victim on 'to_sq' for a normal capture
     Piece victim = get_piece_type_on_bitboard(to_bb);
 
