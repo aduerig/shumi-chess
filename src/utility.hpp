@@ -105,8 +105,10 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
     return square;
 };
 
-inline int square_to_bitboard(int square) {
-    return 1ULL << (square - 1);
+inline ull square_to_bitboard(int square) {
+    assert (square >= 0);
+    assert (square < 64);
+    return 1ULL << square;
 };
 
 // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
@@ -300,5 +302,12 @@ static inline void trim(std::string &s) {
 }
 
 } // end namespace string
+
+
+
+
+
+
+
 
 } // end namespace utility

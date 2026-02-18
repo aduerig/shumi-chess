@@ -443,10 +443,16 @@ int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
 
     cp_score_mat_temp += cp_pawns_only_temp;
     
-    cp_score_mat_temp += bits_in(get_pieces(color, Piece::KNIGHT)) * centipawn_score_of(Piece::KNIGHT);
-    cp_score_mat_temp += bits_in(get_pieces(color, Piece::BISHOP)) * centipawn_score_of(Piece::BISHOP);
-    cp_score_mat_temp += bits_in(get_pieces(color, Piece::ROOK))   * centipawn_score_of(Piece::ROOK);
-    cp_score_mat_temp += bits_in(get_pieces(color, Piece::QUEEN))  * centipawn_score_of(Piece::QUEEN);
+    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::KNIGHT)) * centipawn_score_of(Piece::KNIGHT);
+    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::BISHOP)) * centipawn_score_of(Piece::BISHOP);
+    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::ROOK))   * centipawn_score_of(Piece::ROOK);
+    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::QUEEN))  * centipawn_score_of(Piece::QUEEN);
+
+    cp_score_mat_temp += bits_in(get_pieces_template<Piece::KNIGHT>(color)) * centipawn_score_of(Piece::KNIGHT);
+    cp_score_mat_temp += bits_in(get_pieces_template<Piece::BISHOP>(color)) * centipawn_score_of(Piece::BISHOP);
+    cp_score_mat_temp += bits_in(get_pieces_template<Piece::ROOK>(color))   * centipawn_score_of(Piece::ROOK);
+    cp_score_mat_temp += bits_in(get_pieces_template<Piece::QUEEN>(color))  * centipawn_score_of(Piece::QUEEN);
+
 
     // // Add up the scores for each piece
     // int cp_score_mat_temp = 0;                    // no pawns in this one
@@ -466,28 +472,28 @@ int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
     // }
     // cp_score_mat_temp += cp_pawns_only_temp;
 
-    if (global_debug_flag) {
+    // if (global_debug_flag) {
         
-        const int nP = bits_in(get_pieces(color, Piece::PAWN));
-        const int nN = bits_in(get_pieces(color, Piece::KNIGHT));
-        const int nB = bits_in(get_pieces(color, Piece::BISHOP));
-        const int nR = bits_in(get_pieces(color, Piece::ROOK));
-        const int nQ = bits_in(get_pieces(color, Piece::QUEEN));
-        const int nK = bits_in(get_pieces(color, Piece::KING));
+    //     const int nP = bits_in(get_pieces(color, Piece::PAWN));
+    //     const int nN = bits_in(get_pieces(color, Piece::KNIGHT));
+    //     const int nB = bits_in(get_pieces(color, Piece::BISHOP));
+    //     const int nR = bits_in(get_pieces(color, Piece::ROOK));
+    //     const int nQ = bits_in(get_pieces(color, Piece::QUEEN));
+    //     const int nK = bits_in(get_pieces(color, Piece::KING));
 
-        printf("MATDBG color=%d  PAWN=%d KNIGHT=%d BISHOP=%d ROOK=%d QUEEN=%d KING=%d\n",
-               (int)color, nP, nN, nB, nR, nQ, nK);
+    //     printf("MATDBG color=%d  PAWN=%d KNIGHT=%d BISHOP=%d ROOK=%d QUEEN=%d KING=%d\n",
+    //            (int)color, nP, nN, nB, nR, nQ, nK);
 
-        // Optional extra: show the centipawn contributions too
-        const int cpP = nP * centipawn_score_of(Piece::PAWN);
-        const int cpN = nN * centipawn_score_of(Piece::KNIGHT);
-        const int cpB = nB * centipawn_score_of(Piece::BISHOP);
-        const int cpR = nR * centipawn_score_of(Piece::ROOK);
-        const int cpQ = nQ * centipawn_score_of(Piece::QUEEN);
+    //     // Optional extra: show the centipawn contributions too
+    //     const int cpP = nP * centipawn_score_of(Piece::PAWN);
+    //     const int cpN = nN * centipawn_score_of(Piece::KNIGHT);
+    //     const int cpB = nB * centipawn_score_of(Piece::BISHOP);
+    //     const int cpR = nR * centipawn_score_of(Piece::ROOK);
+    //     const int cpQ = nQ * centipawn_score_of(Piece::QUEEN);
 
-        printf("MATDBG cp: P=%d N=%d B=%d R=%d Q=%d  total(noK)=%d\n",
-               cpP, cpN, cpB, cpR, cpQ, (cpP + cpN + cpB + cpR + cpQ));
-    }
+    //     printf("MATDBG cp: P=%d N=%d B=%d R=%d Q=%d  total(noK)=%d\n",
+    //            cpP, cpN, cpB, cpR, cpQ, (cpP + cpN + cpB + cpR + cpQ));
+    // }
 
     return cp_score_mat_temp;
 }
@@ -523,7 +529,7 @@ int GameBoard::queen_still_home(Color color)
 
 
 
-
+// Returns count of pawns attacking the given square
 int GameBoard::pawns_attacking_square(Color c, int sq) {
     ull bitBoard = (1ULL << sq);
 
@@ -1847,15 +1853,15 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
 // -----------------------------------------------------------------------------
 int GameBoard::development_opening_cp(Color c) {
     // Very conservative "opening" gate:
-    // If queens are gone, or lots of pawns are gone, don't apply this.
-    const ull wq = get_pieces(Color::WHITE, Piece::QUEEN);
-    const ull bq = get_pieces(Color::BLACK, Piece::QUEEN);
-    if (!wq || !bq) return 0;
 
-    // const ull wp = get_pieces(Color::WHITE, Piece::PAWN);
-    // const ull bp = get_pieces(Color::BLACK, Piece::PAWN);
-    // const int pawnCount = bits_in(wp) + bits_in(bp);
-    // if (pawnCount < 12) return 0;   // opening likely over
+    // If queens are gone, or lots of pawns are gone, don't apply this.
+    //const ull wq = get_pieces(Color::WHITE, Piece::QUEEN);
+    const ull wq = get_pieces_template<Piece::QUEEN, Color::WHITE>();
+
+    //const ull bq = get_pieces(Color::BLACK, Piece::QUEEN);
+    const ull bq = get_pieces_template<Piece::QUEEN, Color::BLACK>();
+
+    if (!wq || !bq) return 0;
 
     // Starting squares for minors
     ull start_knights = 0;
@@ -1869,8 +1875,11 @@ int GameBoard::development_opening_cp(Color c) {
         start_bishops = (1ULL << square_c8) | (1ULL << square_f8);
     }
 
-    const ull my_knights = get_pieces(c, Piece::KNIGHT);
-    const ull my_bishops = get_pieces(c, Piece::BISHOP);
+    //const ull my_knights = get_pieces(c, Piece::KNIGHT);
+    const ull my_knights = get_pieces_template<Piece::KNIGHT>(c);
+  
+    //const ull my_bishops = get_pieces(c, Piece::BISHOP);
+    const ull my_bishops = get_pieces_template<Piece::BISHOP>(c);
 
     // Count how many minors are NOT on their original squares.
     // (If a piece was captured, it simply won't be counted as "developed".)
@@ -1991,17 +2000,48 @@ int GameBoard::king_center_manhattan_dist(Color c)
     return iReturn;
 }
 
+// remove asserts
+int GameBoard::sliders_and_knights_attacking_square2(Color attacker_color, int sq)
+{
+    const ull occ = get_pieces();
 
+    // Knights
+    const ull knights = get_pieces_template<Piece::KNIGHT>(attacker_color);
+    ull attackers = tables::movegen::knight_attack_table[sq] & knights;
+
+    // Sliders
+    const ull bishops = get_pieces_template<Piece::BISHOP>(attacker_color);
+    const ull rooks   = get_pieces_template<Piece::ROOK >(attacker_color);
+    const ull queens  = get_pieces_template<Piece::QUEEN>(attacker_color);
+
+    const ull deadly_diags     = bishops | queens;
+    const ull deadly_straights = rooks   | queens;
+
+    // These helpers already stop at the first blocker and INCLUDE the blocker square.
+    // So intersecting with (bishops|queens) etc. gives the *attacking pieces*.
+    if (deadly_diags) {
+        const ull diag_attacks = get_diagonal_attacks(occ, sq);
+        attackers |= (diag_attacks & deadly_diags);
+    }
+
+    if (deadly_straights) {
+        const ull straight_attacks = get_straight_attacks(occ, sq);
+        attackers |= (straight_attacks & deadly_straights);
+    }
+
+    return bits_in(attackers);
+}
 
 
 int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq)
 {
     // occupancy of all pieces on board
-    ull occ =
-        white_pawns   | white_knights | white_bishops | white_rooks |
-        white_queens  | white_king    |
-        black_pawns   | black_knights | black_bishops | black_rooks |
-        black_queens  | black_king;
+    ull occ = get_pieces();
+    // ull occ =
+    //     white_pawns   | white_knights | white_bishops | white_rooks |
+    //     white_queens  | white_king    |
+    //     black_pawns   | black_knights | black_bishops | black_rooks |
+    //     black_queens  | black_king;
 
     // -----------------------
     // Knights
@@ -2206,7 +2246,10 @@ int GameBoard::attackers_on_enemy_king_near_cp(Color attacker_color)
 
         int sq = king_near_squares[i];
         // sliders are queens, bishops, and rooks
-        total += sliders_and_knights_attacking_square(attacker_color, sq);
+        int nAttackers = sliders_and_knights_attacking_square2(attacker_color, sq);
+        //int nAttackers2  = sliders_and_knights_attacking_square(attacker_color, sq);
+        //assert(nAttackers == nAttackers2);
+        total += nAttackers;
 
         total += pawns_attacking_square(attacker_color,  sq);
 
@@ -2238,8 +2281,12 @@ int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
     while (tmp) {
 
         int sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
-        total += sliders_and_knights_attacking_square(attacker_color, sq);
 
+        //total += sliders_and_knights_attacking_square(attacker_color, sq);
+        int nAttackers = sliders_and_knights_attacking_square2(attacker_color, sq);
+        //int nAttackers2  = sliders_and_knights_attacking_square(attacker_color, sq);
+        //assert(nAttackers == nAttackers2);
+        total += nAttackers;
     }
 
     return total;

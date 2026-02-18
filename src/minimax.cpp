@@ -560,7 +560,6 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
         // Add code to discourage stupid occupation of d3/d6 with bishop, when pawn on d2/d7. 
         // Note: this is gross
         icp_temp = engine.game_board.bishop_pawn_pattern_cp(color);
-        //assert (iZeroToThirty>=0);
         cp_score_position_temp += icp_temp;   // centipawns
     }
 
@@ -835,7 +834,6 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_displa
         }
         
         // Aspiration (just a guard right now)
-        //assert ((alpha <= d_Return_score) && (d_Return_score <= beta));
         //printf("alpha, this, beta %f  %f  %f", alpha, d_Return_score, beta);
         assert((alpha <= d_Return_score) && (d_Return_score <= beta));
    
@@ -1299,17 +1297,23 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     PawnFileInfo pawnFileInfo;
 
     
-    dcp_temp = engine.game_board.kings_far_apart(Color::WHITE);
+    //dcp_temp = engine.game_board.kings_far_apart(Color::WHITE);
     //double dcp_temp = engine.game_board.kings_close_toegather_cp(Color::WHITE);
-    itemp1 = (int)dcp_temp;
+    //itemp1 = (int)dcp_temp;
 
-    dcp_temp = engine.game_board.kings_far_apart(Color::BLACK);
+    //dcp_temp = engine.game_board.kings_far_apart(Color::BLACK);
     //double dcp_temp = engine.game_board.kings_close_toegather_cp(Color::WHITE);
-    itemp2 = (int)dcp_temp;
+    //itemp2 = (int)dcp_temp;
 
     //itemp2 = engine.game_board.king_center_manhattan_dist(Color::WHITE);
-    itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
-    itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
+    //itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
+    //itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
+
+    vector<Move> some_moves;
+    some_moves.clear(); 
+    engine.get_psuedo_legal_moves(Color::WHITE, some_moves);
+    itemp1 = some_moves.size();
+
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
     global_debug_flag = false;
@@ -1318,6 +1322,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     utemp1 = TTable.size();
     utemp2 = TTable2.size();
+   
     cout << "TT: " << utemp1 << " mtches= " << NhitsTT << "       TT2: " << utemp2 << " mtches= " << NhitsTT2 << endl;
  
     //engine.debug_print_repetition_table();
@@ -1364,10 +1369,28 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     double alpha_in = alpha;   //  save original alpha window lower bound
     double beta_in = beta;   //  save original alpha window lower bound
 
-    // I eat a lot of time. Expensive.
-    std::vector<Move> legal_moves = engine.get_legal_moves();
-    vector<Move>* p_moves_to_loop_over = &legal_moves;
+    // I eat a lot of time. Expensive.s
+    //std::vector<Move> legal_moves2 = engine.get_legal_moves(engine.game_board.turn);
+    std::vector<Move> legal_moves = engine.get_legal_moves_fast(engine.game_board.turn);
 
+    // remove asserts
+    // bool bOK = engine.assert_same_moves(legal_moves, legal_moves2);
+    // if (!bOK) {
+    //     cout << "legal_moves:  ";
+    //     string s1 = engine.moves_into_string(legal_moves);
+    //     cout << s1;
+
+    //     cout << "legal_moves2: ";
+    //     string s2 = engine.moves_into_string(legal_moves2);
+    //     cout << s2;
+
+    //     string out = gameboard_to_string2(engine.game_board);
+    //     cout << out;
+
+    //     assert(0);
+    // }
+
+    vector<Move>* p_moves_to_loop_over = &legal_moves;
 
     nodes_visited++;
     if (depth==0) nodes_visited_depth_zero++;
@@ -1924,7 +1947,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             double childBeta  = -alpha;
 
             if (bRootWideWindowForRandom) {
-                //assert(0);
                 childAlpha = -HUGE_SCORE;
                 childBeta  =  HUGE_SCORE;
             }
@@ -2432,8 +2454,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     }     // END adding an entry to the TT2 feature
  
     assert(beta_in == beta);
-    //assert(alpha_in < d_best_score && d_best_score < beta)
-    //assert(alpha_in <= (d_best_score+FLT_EPSILON));
 
     #ifdef _DEBUGGING_MOVE_CHAIN    // Print summary: best move and best score
         int nChars;

@@ -84,9 +84,9 @@ class GameBoard {
         // ? do we care about non standard gameboards / moves
         // ? would one consider an extra bit for if we should look at this val
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
-        ull en_passant_rights {0}; 
+        ull en_passant_rights = 0;     
 
-        uint64_t zobrist_key {0};
+        uint64_t zobrist_key = 0;
 
         // move clocks
         uint8_t halfmove;  // Used only to apply the "fifty-move draw" rule in chess
@@ -94,7 +94,7 @@ class GameBoard {
 
         // Constructors
         explicit GameBoard();
-        explicit GameBoard(const std::string&);
+        explicit GameBoard(const std::string& fen_notation);
 
         // Member methods
         const std::string to_fen(bool bFullFEN=true);
@@ -271,6 +271,7 @@ class GameBoard {
         int get_king_near_squares(Color defender_color, int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
+        int sliders_and_knights_attacking_square2(Color attacker_color, int sq);
         int attackers_on_enemy_king_near_cp(Color attacker_color);
         int attackers_on_enemy_passed_pawns(Color attacker_color,
                                                ull passed_white_pwns,

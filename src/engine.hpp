@@ -119,6 +119,10 @@ class Engine {
 
         vector<Move> get_legal_moves();
         vector<Move> get_legal_moves(Color);
+        vector<Move> get_legal_moves_fast(Color color);
+        bool assert_same_moves(const std::vector<Move>& a,
+                                const std::vector<Move>& b);
+
         void get_psuedo_legal_moves(Color, vector<Move>& all_psuedo_legal_moves);
 
         // Storage buffers (they live here to avoid extra allocation during the game)        
@@ -129,6 +133,8 @@ class Engine {
 
         bool in_check_after_move(Color color, const Move& move);
         bool in_check_after_move_fast(Color color, const Move& move);
+        bool in_check_after_king_move(Color color, const Move& move);
+
 
         string syzygy_path = "C:\\tb\\syzygy\\";
 
@@ -145,8 +151,22 @@ class Engine {
 
         bool is_king_in_check(const Color);
         bool is_king_in_check2(const Color);
+        bool is_square_in_check0(const Color, const ull);
         bool is_square_in_check(const Color, const ull);
-        bool is_square_in_check2(const Color, const ull);
+        bool is_square_in_check3(const Color, const ull);
+        bool is_square_attacked_with_masks(
+            const ShumiChess::Color enemy_color,
+            const ull square_bb,     // 1-bit bb of target square
+            const int square,        // 0..63, must match square_bb
+            const ull occ_BB,        // occupancy bitboard to use (can be "after-move")
+            const ull themKnights,
+            const ull themKing,
+            const ull themPawns,
+            const ull themQueens,
+            const ull themRooks,
+            const ull themBishops
+        );
+
 
         void add_pawn_moves_to_vector(vector<Move>&, Color);
         void add_knight_moves_to_vector(vector<Move>&, Color);
@@ -159,105 +179,53 @@ class Engine {
         // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
         
         
-        
-        inline ull get_diagonal_attacks(ull all_pieces_but_self, int square)
+
+        inline ull Engine::squares_between_exclusive(int kingSq, int checkerSq) const
         {
-            ull ne_attacks;
-            ull nw_attacks;
-            ull se_attacks;
-            ull sw_attacks;
-            int blocked_square;
+            // Returns squares strictly between kingSq and checkerSq if aligned (rank/file/diag),
+            // else returns 0.
+            // Uses your ray tables: north_square_ray[], etc.
 
-            // up right
-            ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
-            if (masked_blockers_ne != 0ULL) {
-                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_ne);
-                ne_attacks = ~north_east_square_ray[blocked_square] & north_east_square_ray[square];
-            } else {
-                ne_attacks = north_east_square_ray[square];
+            const ull kingBB    = (1ULL << kingSq);
+            const ull checkerBB = (1ULL << checkerSq);
+
+            // Same file/rank:
+            if (north_square_ray[kingSq] & checkerBB) {
+                return north_square_ray[kingSq] & ~north_square_ray[checkerSq];
+            }
+            if (south_square_ray[kingSq] & checkerBB) {
+                return south_square_ray[kingSq] & ~south_square_ray[checkerSq];
+            }
+            if (east_square_ray[kingSq] & checkerBB) {
+                return east_square_ray[kingSq] & ~east_square_ray[checkerSq];
+            }
+            if (west_square_ray[kingSq] & checkerBB) {
+                return west_square_ray[kingSq] & ~west_square_ray[checkerSq];
             }
 
-            // up left
-            ull masked_blockers_nw = all_pieces_but_self & north_west_square_ray[square];
-            if (masked_blockers_nw != 0ULL) {
-                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_nw);
-                nw_attacks = ~north_west_square_ray[blocked_square] & north_west_square_ray[square];
-            } else {
-                nw_attacks = north_west_square_ray[square];
+            // Diagonals:
+            if (north_east_square_ray[kingSq] & checkerBB) {
+                return north_east_square_ray[kingSq] & ~north_east_square_ray[checkerSq];
+            }
+            if (north_west_square_ray[kingSq] & checkerBB) {
+                return north_west_square_ray[kingSq] & ~north_west_square_ray[checkerSq];
+            }
+            if (south_east_square_ray[kingSq] & checkerBB) {
+                return south_east_square_ray[kingSq] & ~south_east_square_ray[checkerSq];
+            }
+            if (south_west_square_ray[kingSq] & checkerBB) {
+                return south_west_square_ray[kingSq] & ~south_west_square_ray[checkerSq];
             }
 
-            // down right
-            ull masked_blockers_se = all_pieces_but_self & south_east_square_ray[square];
-            if (masked_blockers_se != 0ULL) {
-                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_se);
-                se_attacks = ~south_east_square_ray[blocked_square] & south_east_square_ray[square];
-            } else {
-                se_attacks = south_east_square_ray[square];
-            }
-
-            // down left
-            ull masked_blockers_sw = all_pieces_but_self & south_west_square_ray[square];
-            if (masked_blockers_sw != 0ULL) {
-                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_sw);
-                sw_attacks = ~south_west_square_ray[blocked_square] & south_west_square_ray[square];
-            } else {
-                sw_attacks = south_west_square_ray[square];
-            }
-
-            return (ne_attacks | nw_attacks | se_attacks | sw_attacks);
+            (void)kingBB; // quiet unused warning if you remove some branches
+            return 0ULL;
         }
 
-                   
-        inline ull get_straight_attacks(ull all_pieces_but_self, int square)
-        {
-            ull n_attacks;
-            ull s_attacks;
-            ull e_attacks;
-            ull w_attacks;
-            int blocked_square;
-
-            // north
-            ull masked_blockers_n = all_pieces_but_self & north_square_ray[square];
-            if (masked_blockers_n) {
-                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_n);
-                n_attacks = ~north_square_ray[blocked_square] & north_square_ray[square];
-            } else {
-                n_attacks = north_square_ray[square];
-            }
-
-            // south
-            ull masked_blockers_s = all_pieces_but_self & south_square_ray[square];
-            if (masked_blockers_s) {
-                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_s);
-                s_attacks = ~south_square_ray[blocked_square] & south_square_ray[square];
-            } else {
-                s_attacks = south_square_ray[square];
-            }
-
-            // left
-            ull masked_blockers_w = all_pieces_but_self & west_square_ray[square];
-            if (masked_blockers_w) {
-                blocked_square = utility::bit::bitboard_to_lowest_square_fast(masked_blockers_w);
-                w_attacks = ~west_square_ray[blocked_square] & west_square_ray[square];
-            } else {
-                w_attacks = west_square_ray[square];
-            }
-
-            // right
-            ull masked_blockers_e = all_pieces_but_self & east_square_ray[square];
-            if (masked_blockers_e) {
-                blocked_square = utility::bit::bitboard_to_highest_square_fast(masked_blockers_e);
-                e_attacks = ~east_square_ray[blocked_square] & east_square_ray[square];
-            } else {
-                e_attacks = east_square_ray[square];
-            }
-
-            return (n_attacks | s_attacks | w_attacks | e_attacks);
-        }
 
 
         void move_into_string(ShumiChess::Move m);
         void move_into_string_full(ShumiChess::Move m);
+        string moves_into_string(const std::vector<Move>& mvs);
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
@@ -360,6 +328,58 @@ class Engine {
         std::vector<int> boundary_stack; // index into key_stack
 
         //void debug_print_repetition_table() const;
+
+
+        struct PinnedInfo
+        {
+            ull pinnedMask;          // bit i = 1 => my piece on square i is pinned
+            ull allowedMask[64];     // for pinned square i: squares it may move to (including capture of pinner)
+                                    // for non-pinned squares: can be 0
+
+            void clear()
+            {
+                pinnedMask = 0ULL;
+                for (int i = 0; i < 64; i++) allowedMask[i] = 0ULL;
+            }
+
+            bool isPinned(int fromSq) const
+            {
+                // fromSq must be 0..63
+                return (pinnedMask & (1ULL << fromSq)) != 0ULL;
+            }
+
+            bool moveObeysPinLine(int fromSq, int toSq) const
+            {
+                // Only valid if isPinned(fromSq) is true
+                return (allowedMask[fromSq] & (1ULL << toSq)) != 0ULL;
+            }
+        };
+
+        struct CheckInfo
+        {
+            int numCheckers = 0;
+            ull checkerBB   = 0ULL;   // 1-bit if single check, else 0
+            ull captureMask = 0ULL;   // squares that can capture checker (single check)
+            ull blockMask   = 0ULL;   // squares that block slider check (single check)
+            ull toHelpMask  = 0ULL;   // captureMask | blockMask
+
+            bool toSquareHelps(int toSq) const
+            {
+                return (toHelpMask & (1ULL << toSq)) != 0ULL;
+            }
+        };
+
+        PinnedInfo ShumiChess::Engine::compute_pins(Color color);
+
+
+        inline int get_king_square(Color c)
+        {
+            ull k = game_board.get_pieces_template<Piece::KING>(c);
+            assert(k != 0ULL);
+            return utility::bit::bitboard_to_lowest_square_fast(k);
+        }
+
+        CheckInfo find_checkers_and_blockmask(Color color);
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
 
