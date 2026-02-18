@@ -136,7 +136,7 @@ bool global_debug_flag = 0;
 
 #define DISPLAY_DEEPING
 
-#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
+//#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
     #include <thread>
     #include <cstdio>

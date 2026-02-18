@@ -83,3 +83,5 @@ int main(int argc, char** argv) {
 // 6. get_psuedo_legal_moves() is not a big time waster at all. It gets all legal moves, assumming they dont
 //    put the king in check.
 //
+
+// c0bf456

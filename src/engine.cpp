@@ -512,9 +512,6 @@ std::vector<Move> Engine::get_legal_moves_fast(Color color)
 
     get_psuedo_legal_moves(color, psuedo_legal_moves);
 
-    // Helper: Move.toSq (computed from 1-bit bb)
-    // (You said you don't keep fromSq/toSq in Move anymore.)
-    // We'll just compute toSq/fromSq when needed.
 
     if (!in_check_before_move) {
 
