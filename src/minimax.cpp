@@ -2513,11 +2513,12 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
     const bool have_last = !engine.move_history.empty();
     const ull  last_to   = have_last ? engine.move_history.top().to : 0ULL;
 
-    
-    //      2. unquiet moves (captures/promotions, sorted by MVV-LVA).  Captures more importent than promotions.
+    //  The tiers: (top tiers are sorted earlier)
+    //      1. PV from the previous iteration (previous deepening’s best). 
+    //      2. Unquiet moves (captures/promotions, sorted by MVV-LVA).  Captures more importent than promotions.
     //         If capture to the "from" square of last move, give it higher priority.
-    //      3. killer moves (quiet, bubbled to the front of the "cutoff" quiet slice)
-    //      4. remaining quiet moves.
+    //      3. Killer moves (quiet, bubbled to the front of the "cutoff" quiet slice)
+    //      4. Remaining quiet moves.
     //
     if (Features_mask &_FEATURE_UNQUIET_SORT) {
         // --- 1. Partition unquiet moves (captures/promotions) to the front ---
@@ -2542,12 +2543,18 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 // This is the third tier", as in SEE is the third tier (centipawns)
                 if (a.capture != ShumiChess::Piece::NONE)
                 {
-                    int seeA = engine.game_board.SEE_for_capture(engine.game_board.turn, a, nullptr);
+                    //int seeA2 = engine.game_board.SEE_for_capture(engine.game_board.turn, a, nullptr);
+                    int seeA = engine.game_board.SEE_for_capture_new(engine.game_board.turn, a, nullptr);
+                    //assert(seeA == seeA2);
+
                     if (seeA < 0) keyA += seeA * 100;   // negative pulls it way downc in the sort
                 }
                 if (b.capture != ShumiChess::Piece::NONE)
                 {
-                    int seeB = engine.game_board.SEE_for_capture(engine.game_board.turn, b, nullptr);
+                    //int seeB2 = engine.game_board.SEE_for_capture(engine.game_board.turn, b, nullptr);
+                    int seeB = engine.game_board.SEE_for_capture_new(engine.game_board.turn, b, nullptr);
+                    //assert(seeB == seeB2);
+
                     if (seeB < 0) keyB += seeB * 100;
                 }
 

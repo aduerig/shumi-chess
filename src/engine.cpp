@@ -155,8 +155,14 @@ void Engine::reset_engine() {         // New game.
     // "half chess"
     //game_board = GameBoard("3qkbnr/2pppppp/8/8/8/8/2PPPPPP/3QKBNR w KQkq - 0 1");
 
+    // 360 chess
+    // string aFEN = game_board.random_960_FEN_strict();
+    // game_board = GameBoard(aFEN);
+
     game_board = GameBoard();
 
+
+    
     //////////////////////////////////////////////////////////////////////.
 
 
@@ -1952,6 +1958,7 @@ template <Piece P> ull& Engine::access_pieces_of_color_tp(Color color)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 //
 // Fills in a Move data structure based on a single "from" square, and multiple "to" squares.
 //
@@ -2019,6 +2026,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
         {
             // A promotion. Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
+
                 // Get address of next slot in the vector.
                 moves.emplace_back();
                 Move& new_move = moves.back();
@@ -2816,7 +2824,10 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
             // its either a capture or a promotion (or both)
 
             // Very late in analysis! So discard negative SEE captures below one pawn.
-            int testValue = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+            //int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+            int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
+            //assert(testValue == testValue2);
+
             if (qPlys > MAX_QPLY2) {
 
                 if (testValue > 0) {     // centipawns

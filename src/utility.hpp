@@ -91,6 +91,7 @@ inline ull lsb_and_pop(ull& bitboard) {
     assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
+    // "pop" or remove the bit from the returned bitboard
     bitboard = bitboard & (~lsb_fast);
     return lsb_fast;
 };
@@ -101,6 +102,7 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     int square = __builtin_ctzll(bitboard);
     ull lsb_fast = 1ULL << square;
+    // "pop" or remove the bit from the returned bitboard
     bitboard = bitboard & (~lsb_fast);
     return square;
 };

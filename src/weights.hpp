@@ -53,13 +53,13 @@ public:
 
     // Isolated pawns.
     //      One count for each instance.
-    //      1.5 times as bad for isolated pawns on open files.
+    //      1.5 times as bad for isolated pawns on open files (ragrdless of wether a rook/quuen is on the file)
     static constexpr int ISOLANI_WGHT  = -18;
     static constexpr int ISOLANI_ROOK_WGHT  = -17;    // Rook pawns can be isolated too.
 
     // Backward pawns (holes)
-    static constexpr int PAWN_HOLE_WGHT = -18;          // A hole is the square direclty ahead of a backward pawn.
-    static constexpr int KNIGHT_HOLE_WGHT = -25;        // A knight sitting in a hole.
+    static constexpr int PAWN_HOLE_WGHT = -18;        // A hole is the square direclty ahead of a backward pawn.
+    static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
 
     // Doubled pawns
     static constexpr int DOUBLED_WGHT      = -25;           // One slam for each pawn more than one on a file
@@ -91,19 +91,20 @@ public:
     static constexpr int TWO_BISHOPS_WGHT = 16;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
-    static constexpr int QUEEN_OUT_EARLY_WGHT = -100;   // for center squares only
-    static constexpr int BISHOP_PATTERN_WGHT = -120;     // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
+    static constexpr int QUEEN_OUT_EARLY_WGHT = -80;    // for center squares only. only in opening.
+    static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
+
     static constexpr int DEVELOPMENT_OPENING = 11;      // Opening only.  Only minor pieces, off theier starting square.
 
-    static constexpr int ROOK_CONNECTED_WGHT = 90;     // if any connected rook pair exists (one bonus only)
+    static constexpr int ROOK_CONNECTED_WGHT = 90;      // if any connected rook pair exists (one bonus only)
 
     // Rooks on open or semi open files
     static constexpr int ROOK_ON_OPEN_FILE    = 10;     // open=2x, semi-open=1x
     static constexpr int KING_ON_FILE_WGHT    = 8;      // extra per rook if enemy king on same file (even if pieces beweent he king ans rook)
 
-    static constexpr int MAJOR_ON_RANK7_WGHT = 20;             // Rook or queen on 7th rank
-    static constexpr int MAJOR_ON_RANK8_WGHT = 10;             // Rook or queen on 8th rank
+    static constexpr int MAJOR_ON_RANK7_WGHT = 20;      // Rook or queen on 7th rank
+    static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank
 
     static constexpr int KNIGHT_ON_EDGE_WGHT = -10;     // knight on edge penatly (doubled if knight in corner)
 

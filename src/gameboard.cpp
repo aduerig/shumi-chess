@@ -533,13 +533,8 @@ int GameBoard::queen_still_home(Color color)
 int GameBoard::pawns_attacking_square(Color c, int sq) {
     ull bitBoard = (1ULL << sq);
 
-    //const ull FILE_H = col_masks[Col::COL_H];
-    //const ull FILE_A = col_masks[Col::COL_A];
-
     const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
     const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
-    //assert(FILE_H == FILE_H);
-    //assert(FILE_A == FILE_A);
 
     ull origins;
     if (c == Color::WHITE) {
@@ -1220,10 +1215,7 @@ int GameBoard::count_pawn_holes_cp(Color c,
     holes_bb = 0ULL;
 
     // Friendly pawns (you can replace this with a stored all-pawns-bb later)
-    //ull Pawns2 = 0ULL;
-    //for (int file = 0; file < 8; ++file) Pawns2 |= pawnInfo.p[friendlyP].file_bb[file];
     ull Pawns = get_pieces_template<Piece::PAWN>(c);
-    //assert(Pawns == Pawns2);      // col_masks
 
     if (!Pawns) return 0;
 
@@ -2000,7 +1992,7 @@ int GameBoard::king_center_manhattan_dist(Color c)
     return iReturn;
 }
 
-// remove asserts
+// Sliders and knights = all pieces except the king.
 int GameBoard::sliders_and_knights_attacking_square2(Color attacker_color, int sq)
 {
     const ull occ = get_pieces();
@@ -2327,6 +2319,100 @@ int GameBoard::rand_new()
     return dist(rng);
 }
 
+
+///////////////////////////////////////////////////////////////
+
+std::string GameBoard::random_960_FEN_strict()
+{
+    // Files 0..7 correspond to a..h in the FEN string.
+    // On rank 1, a1 is dark. So even files (0,2,4,6) are dark; odd files (1,3,5,7) are light.
+    std::vector<int> remaining;
+    remaining.reserve(8);
+    for (int i = 0; i < 8; ++i) {
+        remaining.push_back(i);
+    }
+
+    char rank1[8];
+    for (int i = 0; i < 8; ++i) rank1[i] = '?';
+
+    // --- 1) Bishops on opposite colors ---
+    int darkSquares[4]  = { 0, 2, 4, 6 };
+    int lightSquares[4] = { 1, 3, 5, 7 };
+
+    int b1_file = darkSquares[rand_new() % 4];
+    int b2_file = lightSquares[rand_new() % 4];
+
+    rank1[b1_file] = 'B';
+    rank1[b2_file] = 'B';
+
+    // Remove those files from remaining
+    for (size_t i = 0; i < remaining.size(); ) {
+        if (remaining[i] == b1_file || remaining[i] == b2_file) {
+            remaining.erase(remaining.begin() + (int)i);
+        } else {
+            ++i;
+        }
+    }
+
+    // --- 2) Queen on a remaining square ---
+    {
+        int idx = rand_new() % (int)remaining.size();
+        int q_file = remaining[idx];
+        rank1[q_file] = 'Q';
+        remaining.erase(remaining.begin() + idx);
+    }
+
+    // --- 3) Two knights on remaining squares ---
+    for (int k = 0; k < 2; ++k) {
+        int idx = rand_new() % (int)remaining.size();
+        int n_file = remaining[idx];
+        rank1[n_file] = 'N';
+        remaining.erase(remaining.begin() + idx);
+    }
+
+    // --- 4) Remaining three squares: R, K, R with king between rooks ---
+    // Sort the remaining files and place R-K-R in that order.
+    std::sort(remaining.begin(), remaining.end()); // size should be 3
+    {
+        int r1_file = remaining[0];
+        int k_file  = remaining[1];
+        int r2_file = remaining[2];
+
+        rank1[r1_file] = 'R';
+        rank1[k_file]  = 'K';
+        rank1[r2_file] = 'R';
+    }
+
+    // Build rank8 as lowercase mirror of rank1
+    char rank8[8];
+    for (int i = 0; i < 8; ++i) {
+        char c = rank1[i];
+        if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
+        rank8[i] = c;
+    }
+
+    // Convert rank arrays to strings
+    std::string sRank8(rank8, rank8 + 8);
+    std::string sRank7("pppppppp");
+    std::string sRank6("8");
+    std::string sRank5("8");
+    std::string sRank4("8");
+    std::string sRank3("8");
+    std::string sRank2("PPPPPPPP");
+    std::string sRank1(rank1, rank1 + 8);
+
+    // FEN: ranks 8..1, side to move, castling, ep, halfmove, fullmove.
+    // For now: no castling rights ("-") so your current orthodox-castling code won’t try.
+    std::string fen =
+        sRank8 + "/" + sRank7 + "/" + sRank6 + "/" + sRank5 + "/" +
+        sRank4 + "/" + sRank3 + "/" + sRank2 + "/" + sRank1 +
+        " w - - 0 1";
+
+    return fen;
+}
+
+
+
 ///////////////////////////////////////////////////////////////
 //
 // Returns a FEN. White has a lone king. Black has king + (queen or rook). No other pieces or pawns.
@@ -2340,6 +2426,7 @@ int GameBoard::rand_new()
 // Note: This does NOT does not try to ensure the position is reachable from the initial position.
 //
 ///////////////////////////////////////////////////////////////
+
 
 std::string GameBoard::random_kqk_fen(bool doQueen) {
 
@@ -2479,7 +2566,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     assert (bits_in(to_bb) == 1);
 
     if (from_bb == 0ULL || to_bb == 0ULL) {   
-        assert(0);      // NULL bitboards, should never happen.
+        assert(0);      // NULL bitboards in the Move, should never happen.
         return 0;
     }
 
@@ -2490,8 +2577,6 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     int to_sq   = utility::bit::lsb_and_pop_to_square(tmp);
 
 
-
-    
     // There must be an enemy victim on 'to_sq' for a normal capture
     Piece victim = get_piece_type_on_bitboard(to_bb);
 
@@ -2514,129 +2599,99 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         return 0;
     }
 
-    auto piece_cp = [&](Piece p) -> int
-    {
-        return centipawn_score_of(p);
-    };
-
-    // Get local mutable copies of all piece bitboards and occupancy
+    // Get local mutable copies of all piece bitboards
     ull wp = white_pawns,   wn = white_knights, wb = white_bishops,
         wr = white_rooks,   wq = white_queens,  wk = white_king;
+
     ull bp = black_pawns,   bn = black_knights, bb = black_bishops,
         br = black_rooks,   bq = black_queens,  bk = black_king;
 
-    ull occ =
-        wp | wn | wb | wr | wq | wk |
-        bp | bn | bb | br | bq | bk;
+    ull occ = get_pieces();
 
-    // ull FILE_A = col_masks[Col::COL_A];
-    // const ull FILE_H = col_masks[Col::COL_H];
     const ull FILE_A = col_masksHA[ColHA::COL_A];
     const ull FILE_H = col_masksHA[ColHA::COL_H];
-    //assert(FILE_H == FILE_H);
-    //assert(FILE_A == FILE_A);
 
-    // Helper: piece type of a given bit for given color (using local boards)
-    auto piece_type_of = [&](Color c, ull bb1) -> Piece
-    {
-        if (c == Color::WHITE)
-        {
-            if (bb1 & wp) return Piece::PAWN;
-            if (bb1 & wn) return Piece::KNIGHT;
-            if (bb1 & wb) return Piece::BISHOP;
-            if (bb1 & wr) return Piece::ROOK;
-            if (bb1 & wq) return Piece::QUEEN;
-            if (bb1 & wk) return Piece::KING;
-        }
-        else
-        {
-            if (bb1 & bp) return Piece::PAWN;
-            if (bb1 & bn) return Piece::KNIGHT;
-            if (bb1 & bb) return Piece::BISHOP;
-            if (bb1 & br) return Piece::ROOK;
-            if (bb1 & bq) return Piece::QUEEN;
-            if (bb1 & bk) return Piece::KING;
-        }
-        return Piece::NONE;
-    };
-
-    // Helper: attackers on 'to_sq' for color c, using local boards & occ
-    auto attackers_on_initial = [&](Color c, ull occ_now) -> ull
-    {
-        ull atk = 0ULL;
-        ull bit = (1ULL << to_sq);
-
-        // Pawns (origins that attack to_sq)
-        ull pawns = (c == Color::WHITE) ? wp : bp;
-        ull origins;
-        if (c == Color::WHITE){
-            origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
-        } else {
-            origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
-        }
-        atk |= (origins & pawns);
-
-        // Knights
-        ull knights = (c == Color::WHITE) ? wn : bn;
-        atk |= tables::movegen::knight_attack_table[to_sq] & knights;
-
-        // Kings
-        ull kings = (c == Color::WHITE) ? wk : bk;
-        atk |= tables::movegen::king_attack_table[to_sq] & kings;
-
-        // Bishops / Queens on diagonals
-        ull bishops = (c == Color::WHITE) ? wb : bb;
-        ull queens  = (c == Color::WHITE) ? wq : bq;
-
-        int r0 = to_sq / 8;
-        int c0 = to_sq % 8;
-
-        const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
-        for (int k = 0; k < 4; ++k) {
-            int r = r0;
-            int f = c0;
-            while (true) {
-                r += diag_dirs[k][0];
-                f += diag_dirs[k][1];
-                if (r < 0 || r > 7 || f < 0 || f > 7) break;
-                int s2  = r * 8 + f;
-                ull bb2 = 1ULL << s2;
-                if (occ_now & bb2)
-                {
-                    if ((bb2 & bishops) || (bb2 & queens))
-                        atk |= bb2;
-                    break;
-                }
-            }
-        }
-
-        // Rooks / Queens on ranks/files
-        ull rooks = (c == Color::WHITE) ? wr : br;
-        const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
-        for (int k = 0; k < 4; ++k) {
-            int r = r0;
-            int f = c0;
-            while (true) {
-                r += ortho_dirs[k][0];
-                f += ortho_dirs[k][1];
-                if (r < 0 || r > 7 || f < 0 || f > 7) break;
-                int s2  = r * 8 + f;
-                ull bb2 = 1ULL << s2;
-                if (occ_now & bb2)
-                {
-                    if ((bb2 & rooks) || (bb2 & queens))
-                        atk |= bb2;
-                    break;
-                }
-            }
-        }
-
-        return atk;
-    };
+ 
 
     // Optional debug: dump initial attackers
     if (fpDebug)
     {
+        // Helper: attackers on 'to_sq' for color c, using local boards & occ
+        auto attackers_on_initial = [&](Color c, ull occ_now) -> ull
+        {
+            ull atk = 0ULL;
+            ull bit = (1ULL << to_sq);
+
+            // Pawns (origins that attack to_sq)
+            ull pawns = (c == Color::WHITE) ? wp : bp;
+            
+            ull origins;
+            if (c == Color::WHITE){
+                origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
+            } else {
+                origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
+            }
+            atk |= (origins & pawns);
+
+            // Knights
+            ull knights = (c == Color::WHITE) ? wn : bn;
+            atk |= tables::movegen::knight_attack_table[to_sq] & knights;
+
+            // Kings
+            ull kings = (c == Color::WHITE) ? wk : bk;
+            atk |= tables::movegen::king_attack_table[to_sq] & kings;
+
+            // Bishops / Queens on diagonals
+            ull bishops = (c == Color::WHITE) ? wb : bb;
+            ull queens  = (c == Color::WHITE) ? wq : bq;
+
+            int r0 = to_sq / 8;
+            int c0 = to_sq % 8;
+
+            const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
+            for (int k = 0; k < 4; ++k) {
+                int r = r0;
+                int f = c0;
+                while (true) {
+                    r += diag_dirs[k][0];
+                    f += diag_dirs[k][1];
+                    if (r < 0 || r > 7 || f < 0 || f > 7) break;
+                    int s2  = r * 8 + f;
+                    ull bb2 = 1ULL << s2;
+                    if (occ_now & bb2)
+                    {
+                        if ((bb2 & bishops) || (bb2 & queens))
+                            atk |= bb2;
+                        break;
+                    }
+                }
+            }
+
+            // Rooks / Queens on ranks/files
+            ull rooks = (c == Color::WHITE) ? wr : br;
+            const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
+            for (int k = 0; k < 4; ++k) {
+                int r = r0;
+                int f = c0;
+                while (true) {
+                    r += ortho_dirs[k][0];
+                    f += ortho_dirs[k][1];
+                    if (r < 0 || r > 7 || f < 0 || f > 7) break;
+                    int s2  = r * 8 + f;
+                    ull bb2 = 1ULL << s2;
+                    if (occ_now & bb2)
+                    {
+                        if ((bb2 & rooks) || (bb2 & queens))
+                            atk |= bb2;
+                        break;
+                    }
+                }
+            }
+
+            return atk;
+        };
+
+
         ull att_w0 = attackers_on_initial(Color::WHITE, occ);
         ull att_b0 = attackers_on_initial(Color::BLACK, occ);
 
@@ -2668,12 +2723,13 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
         dump_attackers("white", att_w0);
         dump_attackers("black", att_b0);
-    }
+
+    }   // END debug
 
     // === Apply the FORCED first capture mv by 'side' ===
 
     int balance = 0;
-    balance += piece_cp(victim);   // side captures victim
+    balance += centipawn_score_of(victim);   // side captures victim
 
     ull to_mask = (1ULL << to_sq);
 
@@ -2737,7 +2793,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     Piece target_piece  = mover;
     Color target_color  = side;
     Color root_side     = side;
-    Color next_stm      = (side == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    Color next_clr      = (side == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
     // === Recursive SEE on this square after the first forced capture ===
     auto see_rec = [&](auto &&self,
@@ -2842,7 +2898,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             ull br2   = br_local, bq2 = bq_local, bk2 = bk_local;
 
             // Material change from root_side's point of view:
-            int val = piece_cp(target_piece_local);
+            int val = centipawn_score_of(target_piece_local);
             int new_balance = balance_local;
             if (stm == root_side)
                 new_balance += val;
@@ -2869,7 +2925,9 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             }
 
             // Figure out what piece is attacking (before we remove it)
-            Piece attacker_piece = piece_type_of(stm, attacker_bb);
+            //Piece attacker_piece2 = piece_type_of(stm, attacker_bb);
+            Piece attacker_piece = get_piece_type_on_bitboard(stm, attacker_bb);
+            //assert(attacker_piece == attacker_piece2);
 
             // Remove attacker from its original square
             if (stm == Color::WHITE) {
@@ -2936,7 +2994,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     };
 
     int result = see_rec(see_rec,
-                         next_stm,
+                         next_clr,
                          target_piece, target_color,
                          occ,
                          wp, wn, wb, wr, wq, wk,
@@ -2952,6 +3010,505 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
     }
 
     return result;
+}
+
+
+
+int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
+{
+    // from and to are BITBOARDS (ull) with exactly one bit set.
+    ull from_bb = mv.from;
+    ull to_bb   = mv.to;
+    assert (bits_in(from_bb) == 1);
+    assert (bits_in(to_bb) == 1);
+
+    if (from_bb == 0ULL || to_bb == 0ULL) {   
+        assert(0);      // NULL bitboards in the Move, should never happen.
+        return 0;
+    }
+
+    // Convert bitboards to 0..63 square indices (h1 = 0) using your helper
+    ull tmp = from_bb;
+    int from_sq = utility::bit::lsb_and_pop_to_square(tmp);
+    tmp = to_bb;
+    int to_sq   = utility::bit::lsb_and_pop_to_square(tmp);
+
+
+    // There must be an enemy victim on 'to_sq' for a normal capture
+    Piece victim = get_piece_type_on_bitboard(to_bb);
+
+    if (victim == Piece::NONE) {
+        //assert(0);
+        return 0;  // ignore en passant etc. for SEE for now
+    }
+
+    // Identify the victim on 'to_sq'
+    Color victim_color = get_color_on_bitboard(to_bb);
+    if (victim_color == clr) {   
+        assert(0);     // Caller should prevent this. Cant take your own piece!
+        return 0;
+    }
+
+    // Identify the moving piece on 'from_sq'
+    Piece mover = get_piece_type_on_bitboard(from_bb);
+    if (mover == Piece::NONE) {
+        assert(0);      // Caller should prevent this. Cant take nothing!
+        return 0;
+    }
+
+    // Get local mutable copies of all piece bitboards
+    ull wp = white_pawns,   wn = white_knights, wb = white_bishops,
+        wr = white_rooks,   wq = white_queens,  wk = white_king;
+
+    ull bp = black_pawns,   bn = black_knights, bb = black_bishops,
+        br = black_rooks,   bq = black_queens,  bk = black_king;
+
+    ull occ = get_pieces();
+
+    const ull FILE_A = col_masksHA[ColHA::COL_A];
+    const ull FILE_H = col_masksHA[ColHA::COL_H];
+
+ 
+    // === Apply the FORCED first capture mv by 'color' ===
+
+    int balance = 0;
+    balance += centipawn_score_of(victim);   // color captures victim
+
+    ull to_mask = (1ULL << to_sq);
+
+    // Remove victim from its color's bitboard
+    if (victim_color == Color::WHITE) {
+        if (victim == Piece::PAWN)   wp &= ~to_mask;
+        else if (victim == Piece::KNIGHT) wn &= ~to_mask;
+        else if (victim == Piece::BISHOP) wb &= ~to_mask;
+        else if (victim == Piece::ROOK)   wr &= ~to_mask;
+        else if (victim == Piece::QUEEN)  wq &= ~to_mask;
+        else if (victim == Piece::KING)   wk &= ~to_mask;
+    } else {
+        if (victim == Piece::PAWN)   bp &= ~to_mask;
+        else if (victim == Piece::KNIGHT) bn &= ~to_mask;
+        else if (victim == Piece::BISHOP) bb &= ~to_mask;
+        else if (victim == Piece::ROOK)   br &= ~to_mask;
+        else if (victim == Piece::QUEEN)  bq &= ~to_mask;
+        else if (victim == Piece::KING)   bk &= ~to_mask;
+    }
+
+    // Remove mover from its original square
+    if (clr == Color::WHITE) {
+        if (mover == Piece::PAWN)   wp &= ~from_bb;
+        else if (mover == Piece::KNIGHT) wn &= ~from_bb;
+        else if (mover == Piece::BISHOP) wb &= ~from_bb;
+        else if (mover == Piece::ROOK)   wr &= ~from_bb;
+        else if (mover == Piece::QUEEN)  wq &= ~from_bb;
+        else if (mover == Piece::KING)   wk &= ~from_bb;
+    } else {
+        if (mover == Piece::PAWN)   bp &= ~from_bb;
+        else if (mover == Piece::KNIGHT) bn &= ~from_bb;
+        else if (mover == Piece::BISHOP) bb &= ~from_bb;
+        else if (mover == Piece::ROOK)   br &= ~from_bb;
+        else if (mover == Piece::QUEEN)  bq &= ~from_bb;
+        else if (mover == Piece::KING)   bk &= ~from_bb;
+    }
+
+    // Place mover on to_sq
+    if (clr == Color::WHITE) {
+        if (mover == Piece::PAWN)   wp |= to_mask;
+        else if (mover == Piece::KNIGHT) wn |= to_mask;
+        else if (mover == Piece::BISHOP) wb |= to_mask;
+        else if (mover == Piece::ROOK)   wr |= to_mask;
+        else if (mover == Piece::QUEEN)  wq |= to_mask;
+        else if (mover == Piece::KING)   wk |= to_mask;
+    } else {
+        if (mover == Piece::PAWN)   bp |= to_mask;
+        else if (mover == Piece::KNIGHT) bn |= to_mask;
+        else if (mover == Piece::BISHOP) bb |= to_mask;
+        else if (mover == Piece::ROOK)   br |= to_mask;
+        else if (mover == Piece::QUEEN)  bq |= to_mask;
+        else if (mover == Piece::KING)   bk |= to_mask;
+    }
+
+    // Update occupancy
+    occ &= ~from_bb;   // clear original square of mover
+    occ &= ~to_mask;   // clear victim
+    occ |=  to_mask;   // mover now on to_sq
+
+    // After the first forced capture, the target is now the mover on to_sq
+    Piece target_piece  = mover;
+    Color target_color  = clr;
+    Color root_side     = clr;
+    Color next_clr      = (clr == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+    SEEBoards b0;
+    b0.wp = wp; b0.wn = wn; b0.wb = wb; b0.wr = wr; b0.wq = wq; b0.wk = wk;
+    b0.bp = bp; b0.bn = bn; b0.bb = bb; b0.br = br; b0.bq = bq; b0.bk = bk;
+
+    int result = SEE_recursive(next_clr,
+                        root_side,
+                        to_sq,
+                        target_piece,
+                        target_color,
+                        occ,
+                        b0,             // all the bitboards
+                        balance);
+
+    if (fpDebug) {
+        fprintf(fpDebug,
+                "debug final: move(from_sq=%d,to_sq=%d) clt=%s SEE=%d\n",
+                from_sq, to_sq,
+                (clr == Color::WHITE ? "WHITE" : "BLACK"),
+                result);
+    }
+
+    return result;
+}
+
+//
+// Returns a bitboard of all pieces of color `c` that currently attack the
+// square `sq`, using the *local SEE board state* instead of the real board.
+//
+// This function is used during Static Exchange Evaluation (SEE).  It does not
+// read the GameBoard’s live bitboards; instead it uses the supplied SEEBoards
+// snapshot `b` plus the supplied occupancy `occ_now`, which represent a
+// hypothetical capture sequence in progress.
+//
+// Attacks detected:
+//   - pawn capture sources
+//   - knight attacks (table lookup)
+//   - king attacks (table lookup)
+//   - sliding attacks from bishops/queens (diagonals)
+//   - sliding attacks from rooks/queens (ranks/files)
+//
+// Important properties:
+//   • `sq` is a 0..63 index (h1 = 0 convention)
+//   • `occ_now` must match the board state represented in `b`
+//   • Only the first blocker in each ray is considered (correct for SEE)
+//   • Returned bitboard may contain multiple attackers
+//
+// This routine is intentionally side-effect free and fast, since it is called
+// repeatedly during SEE recursion.
+//
+
+// Returns a bitboard of all pieces of color `c` that currently attack the
+// square `sq`, using the *local SEE board state* instead of the real board.
+//
+// This function is used during Static Exchange Evaluation (SEE).  It does not
+// read the GameBoard’s live bitboards; instead it uses the supplied SEEBoards
+// snapshot `b` plus the supplied occupancy `occ_now`, which represent a
+// hypothetical capture sequence in progress.
+//
+// Attacks detected:
+//   - pawn capture sources
+//   - knight attacks (table lookup)
+//   - king attacks (table lookup)
+//   - sliding attacks from bishops/queens (diagonals)
+//   - sliding attacks from rooks/queens (ranks/files)
+//
+// Important properties:
+//   • `sq` is a 0..63 index (h1 = 0 convention)
+//   • `occ_now` must match the board state represented in `b`
+//   • Only the first blocker in each ray is considered (correct for SEE)
+//   • Returned bitboard may contain multiple attackers
+//
+// This routine is intentionally side-effect free and fast, since it is called
+// repeatedly during SEE recursion.
+ull GameBoard::SEE_attackers_on_square_local(Color c,
+                                             int sq,
+                                             ull occ_now,
+                                             const SEEBoards& b) const
+{
+    ull atk = 0ULL;
+    const ull bit = (1ULL << sq);
+
+    const ull FILE_A = col_masksHA[ColHA::COL_A];
+    const ull FILE_H = col_masksHA[ColHA::COL_H];
+
+    // -----------------------
+    // Pawns (origins that attack sq)
+    // -----------------------
+    const ull pawns = (c == Color::WHITE) ? b.wp : b.bp;
+
+    ull origins = 0ULL;
+    if (c == Color::WHITE)
+    {
+        origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
+    }
+    else
+    {
+        origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
+    }
+    atk |= (origins & pawns);
+
+    // -----------------------
+    // Knights
+    // -----------------------
+    const ull knights = (c == Color::WHITE) ? b.wn : b.bn;
+    atk |= (tables::movegen::knight_attack_table[sq] & knights);
+
+    // -----------------------
+    // Kings
+    // -----------------------
+    const ull kings = (c == Color::WHITE) ? b.wk : b.bk;
+    atk |= (tables::movegen::king_attack_table[sq] & kings);
+
+    // -----------------------
+    // Sliders via your ray-attack helpers
+    // -----------------------
+    const ull all_pieces_but_self = occ_now & ~bit;
+
+    // Diagonals: bishops/queens
+    {
+        const ull bishops = (c == Color::WHITE) ? b.wb : b.bb;
+        const ull queens  = (c == Color::WHITE) ? b.wq : b.bq;
+
+        const ull diag_attacks = get_diagonal_attacks(all_pieces_but_self, sq);
+        atk |= (diag_attacks & (bishops | queens));
+    }
+
+    // Straights: rooks/queens
+    {
+        const ull rooks  = (c == Color::WHITE) ? b.wr : b.br;
+        const ull queens = (c == Color::WHITE) ? b.wq : b.bq;
+
+        const ull straight_attacks = get_straight_attacks(all_pieces_but_self, sq);
+        atk |= (straight_attacks & (rooks | queens));
+    }
+
+    return atk;
+}
+
+
+
+
+
+
+// ull GameBoard::SEE_attackers_on_square_local(Color c,
+//                                              int sq,
+//                                              ull occ_now,
+//                                              const SEEBoards& b) const
+// {
+//     ull atk = 0ULL;
+//     ull bit = (1ULL << sq);
+
+//     const ull FILE_A = col_masksHA[ColHA::COL_A];
+//     const ull FILE_H = col_masksHA[ColHA::COL_H];
+
+
+//     // Pawns (origins that attack sq)
+//     ull pawns = (c == Color::WHITE) ? b.wp : b.bp;
+
+//     ull origins = 0ULL;
+//     if (c == Color::WHITE) {
+//         origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
+//     } else {
+//         origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
+//     }
+//     atk |= (origins & pawns);
+
+//     // Knights
+//     ull knights = (c == Color::WHITE) ? b.wn : b.bn;
+//     atk |= (tables::movegen::knight_attack_table[sq] & knights);
+
+//     // Kings
+//     ull kings = (c == Color::WHITE) ? b.wk : b.bk;
+//     atk |= (tables::movegen::king_attack_table[sq] & kings);
+
+//     // Bishops / Queens on diagonals
+//     {
+//         ull bishops = (c == Color::WHITE) ? b.wb : b.bb;
+//         ull queens  = (c == Color::WHITE) ? b.wq : b.bq;
+
+//         int r0 = sq / 8;
+//         int f0 = sq % 8;
+
+//         const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
+//         for (int k = 0; k < 4; ++k)
+//         {
+//             int r = r0;
+//             int f = f0;
+//             while (true)
+//             {
+//                 r += diag_dirs[k][0];
+//                 f += diag_dirs[k][1];
+//                 if (r < 0 || r > 7 || f < 0 || f > 7) break;
+
+//                 int s2  = r * 8 + f;
+//                 ull bb2 = (1ULL << s2);
+
+//                 if (occ_now & bb2)
+//                 {
+//                     if ((bb2 & bishops) || (bb2 & queens))
+//                     {
+//                         atk |= bb2;
+//                     }
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+
+//     // Rooks / Queens on ranks/files
+//     {
+//         ull rooks  = (c == Color::WHITE) ? b.wr : b.br;
+//         ull queens = (c == Color::WHITE) ? b.wq : b.bq;
+
+//         int r0 = sq / 8;
+//         int f0 = sq % 8;
+
+//         const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
+//         for (int k = 0; k < 4; ++k)
+//         {
+//             int r = r0;
+//             int f = f0;
+//             while (true)
+//             {
+//                 r += ortho_dirs[k][0];
+//                 f += ortho_dirs[k][1];
+//                 if (r < 0 || r > 7 || f < 0 || f > 7) break;
+
+//                 int s2  = r * 8 + f;
+//                 ull bb2 = (1ULL << s2);
+
+//                 if (occ_now & bb2)
+//                 {
+//                     if ((bb2 & rooks) || (bb2 & queens))
+//                     {
+//                         atk |= bb2;
+//                     }
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+
+//     return atk;
+// }
+
+
+
+int GameBoard::SEE_recursive(Color stm,
+                       Color root_side,
+                       int to_sq,
+                       Piece target_piece,
+                       Color target_color,
+                       ull occ_local,
+                       const SEEBoards& b_local,
+                       int balance_local)
+{
+    int best = balance_local;
+
+    // const ull FILE_A = col_masksHA[ColHA::COL_A];
+    // const ull FILE_H = col_masksHA[ColHA::COL_H];
+
+    // attackers for stm on to_sq
+    ull atk_side = SEE_attackers_on_square_local(stm, to_sq, occ_local, b_local);
+    if (!atk_side) return best;     // No more attackers
+
+
+    ull tmp_atk = atk_side;
+    while (tmp_atk) {
+
+        ull attacker_bb = tmp_atk & (~tmp_atk + 1ULL);   // LS1B
+        tmp_atk &= ~attacker_bb;
+
+        // Copy state
+        SEEBoards b2 = b_local;
+        ull occ2 = occ_local;
+
+        // Material swing is the value of the current target on to_sq
+        int val = centipawn_score_of(target_piece);
+        int new_balance = balance_local;
+
+        if (stm == root_side) new_balance += val;
+        else                  new_balance -= val;
+
+        ull to_mask_local = (1ULL << to_sq);
+
+        // Remove the captured target from its bitboard
+        if (target_color == Color::WHITE) {
+            if      (target_piece == Piece::PAWN)   b2.wp &= ~to_mask_local;
+            else if (target_piece == Piece::KNIGHT) b2.wn &= ~to_mask_local;
+            else if (target_piece == Piece::BISHOP) b2.wb &= ~to_mask_local;
+            else if (target_piece == Piece::ROOK)   b2.wr &= ~to_mask_local;
+            else if (target_piece == Piece::QUEEN)  b2.wq &= ~to_mask_local;
+            else if (target_piece == Piece::KING)   b2.wk &= ~to_mask_local;
+        } else {
+            if      (target_piece == Piece::PAWN)   b2.bp &= ~to_mask_local;
+            else if (target_piece == Piece::KNIGHT) b2.bn &= ~to_mask_local;
+            else if (target_piece == Piece::BISHOP) b2.bb &= ~to_mask_local;
+            else if (target_piece == Piece::ROOK)   b2.br &= ~to_mask_local;
+            else if (target_piece == Piece::QUEEN)  b2.bq &= ~to_mask_local;
+            else if (target_piece == Piece::KING)   b2.bk &= ~to_mask_local;
+        }
+
+        // Identify attacker piece (you already have this overload in your code)
+        Piece attacker_piece = get_piece_type_on_bitboard(stm, attacker_bb);
+
+        // Remove attacker from its origin square
+        if (stm == Color::WHITE) {
+            if      (attacker_bb & b2.wp) b2.wp &= ~attacker_bb;
+            else if (attacker_bb & b2.wn) b2.wn &= ~attacker_bb;
+            else if (attacker_bb & b2.wb) b2.wb &= ~attacker_bb;
+            else if (attacker_bb & b2.wr) b2.wr &= ~attacker_bb;
+            else if (attacker_bb & b2.wq) b2.wq &= ~attacker_bb;
+            else if (attacker_bb & b2.wk) b2.wk &= ~attacker_bb;
+        } else {
+            if      (attacker_bb & b2.bp) b2.bp &= ~attacker_bb;
+            else if (attacker_bb & b2.bn) b2.bn &= ~attacker_bb;
+            else if (attacker_bb & b2.bb) b2.bb &= ~attacker_bb;
+            else if (attacker_bb & b2.br) b2.br &= ~attacker_bb;
+            else if (attacker_bb & b2.bq) b2.bq &= ~attacker_bb;
+            else if (attacker_bb & b2.bk) b2.bk &= ~attacker_bb;
+        }
+
+        // Place attacker onto to_sq
+        if (stm == Color::WHITE) {
+            if      (attacker_piece == Piece::PAWN)   b2.wp |= to_mask_local;
+            else if (attacker_piece == Piece::KNIGHT) b2.wn |= to_mask_local;
+            else if (attacker_piece == Piece::BISHOP) b2.wb |= to_mask_local;
+            else if (attacker_piece == Piece::ROOK)   b2.wr |= to_mask_local;
+            else if (attacker_piece == Piece::QUEEN)  b2.wq |= to_mask_local;
+            else if (attacker_piece == Piece::KING)   b2.wk |= to_mask_local;
+        } else {
+            if      (attacker_piece == Piece::PAWN)   b2.bp |= to_mask_local;
+            else if (attacker_piece == Piece::KNIGHT) b2.bn |= to_mask_local;
+            else if (attacker_piece == Piece::BISHOP) b2.bb |= to_mask_local;
+            else if (attacker_piece == Piece::ROOK)   b2.br |= to_mask_local;
+            else if (attacker_piece == Piece::QUEEN)  b2.bq |= to_mask_local;
+            else if (attacker_piece == Piece::KING)   b2.bk |= to_mask_local;
+        }
+
+        // Update occupancy
+        occ2 &= ~attacker_bb;
+        occ2 &= ~to_mask_local;
+        occ2 |=  to_mask_local;
+
+        // Next ply: the new target is the attacker now sitting on to_sq
+        Piece new_target_piece = attacker_piece;
+        Color new_target_color = stm;
+
+        //Color next = (stm == Color::WHITE) ? Color::BLACK : Color::WHITE;
+        Color next = utility::representation::opposite_color(stm);
+
+        int child = SEE_recursive(next,
+                            root_side,
+                            to_sq,
+                            new_target_piece,
+                            new_target_color,
+                            occ2,
+                            b2,
+                            new_balance);
+
+        if (stm == root_side)
+        {
+            if (child > best) best = child;
+        }
+        else
+        {
+            if (child < best) best = child;
+        }
+    }
+
+    return best;
 }
 
 

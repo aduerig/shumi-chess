@@ -137,7 +137,7 @@ class GameBoard {
 
         template <Color c>
         inline ull get_pieces_template() {
-            if constexpr (c == Color::WHITE) { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }   
+            if constexpr (c == Color::WHITE)      { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }   
             else if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king; }
             else {assert(0);return 0;}
         }
@@ -195,8 +195,6 @@ class GameBoard {
                    black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king;
         }
 
-        // Piece get_piece_type_on_bitboard_using_templates(ull bitboard);
-        //Piece get_piece_type_on_bitboard(ull);
         inline Piece get_piece_type_on_bitboard(ull bitboard) {
             //assert(bits_in(bitboard) == 1);
             if (bitboard & (white_pawns   | black_pawns))   return Piece::PAWN;
@@ -208,7 +206,51 @@ class GameBoard {
             return Piece::NONE;
         }
 
+        template <Color c>
+        inline Piece get_piece_type_on_bitboard_template(ull bitboard)
+        {
+            assert(bits_in(bitboard) == 1);
 
+            if constexpr (c == Color::WHITE) {
+                if (bitboard & white_pawns)   return Piece::PAWN;
+                if (bitboard & white_rooks)   return Piece::ROOK;
+                if (bitboard & white_knights) return Piece::KNIGHT;
+                if (bitboard & white_bishops) return Piece::BISHOP;
+                if (bitboard & white_queens)  return Piece::QUEEN;
+                if (bitboard & white_king)    return Piece::KING;
+                return Piece::NONE;
+            } else if constexpr (c == Color::BLACK) {
+                if (bitboard & black_pawns)   return Piece::PAWN;
+                if (bitboard & black_rooks)   return Piece::ROOK;
+                if (bitboard & black_knights) return Piece::KNIGHT;
+                if (bitboard & black_bishops) return Piece::BISHOP;
+                if (bitboard & black_queens)  return Piece::QUEEN;
+                if (bitboard & black_king)    return Piece::KING;
+                return Piece::NONE;
+            } else {
+                assert(0);
+                return Piece::NONE;
+            }
+        }
+
+        inline Piece get_piece_type_on_bitboard(Color c, ull bb1) {
+            if (c == Color::WHITE) {
+                if (bb1 & white_pawns) return Piece::PAWN;
+                if (bb1 & white_knights) return Piece::KNIGHT;
+                if (bb1 & white_bishops) return Piece::BISHOP;
+                if (bb1 & white_rooks) return Piece::ROOK;
+                if (bb1 & white_queens) return Piece::QUEEN;
+                if (bb1 & white_king) return Piece::KING;
+            } else {
+                if (bb1 & black_pawns) return Piece::PAWN;
+                if (bb1 & black_knights) return Piece::KNIGHT;
+                if (bb1 & black_bishops) return Piece::BISHOP;
+                if (bb1 & black_rooks) return Piece::ROOK;
+                if (bb1 & black_queens) return Piece::QUEEN;
+                if (bb1 & black_king) return Piece::KING;
+            }
+            return Piece::NONE;
+        };     
 
 
         Color get_color_on_bitboard(ull);
@@ -267,6 +309,8 @@ class GameBoard {
 
 
         std::string random_kqk_fen(bool doQueen);
+        std::string random_960_FEN_strict(void);
+
 
         int get_king_near_squares(Color defender_color, int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
@@ -311,6 +355,25 @@ class GameBoard {
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);
         int SEE_for_capture_new(Color side, const Move &mv, FILE* fpDebug);
+
+        struct SEEBoards
+        {
+            ull wp, wn, wb, wr, wq, wk;
+            ull bp, bn, bb, br, bq, bk;
+        };
+
+        ull GameBoard::SEE_attackers_on_square_local(Color c,
+                                             int sq,
+                                             ull occ_now,
+                                             const SEEBoards& b) const;
+        int GameBoard::SEE_recursive(Color stm,
+                            Color root_side,
+                            int to_sq,
+                            Piece target_piece,
+                            Color target_color,
+                            ull occ_local,
+                            const SEEBoards& b_local,
+                            int balance_local);
 
         const endgameTablePos to_egt();
 
