@@ -526,7 +526,9 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
         cp_score_position_temp += (icp_temp);   // centipawns
 
         // Add code to discourage backward pawns/pawn holes
-        icp_temp = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
+        //int icp_temp2 = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
+        int icp_temp = engine.game_board.count_pawn_holes_cp2(color, pawnFileInfo, holes_bb);
+        //assert(icp_temp==icp_temp2);
         cp_score_position_temp += (icp_temp);   // centipawns
 
         icp_temp = engine.game_board.count_knights_on_holes_cp(color, holes_bb);

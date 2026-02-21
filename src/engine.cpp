@@ -159,6 +159,8 @@ void Engine::reset_engine() {         // New game.
     // string aFEN = game_board.random_960_FEN_strict();
     // game_board = GameBoard(aFEN);
 
+    //game_board = GameBoard("r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14");
+
     game_board = GameBoard();
 
 
@@ -357,7 +359,9 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
         pRooks   = &access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(move.color);
         rooksOld = *pRooks;
 
-        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+        ull move_to_bb = move.to;
+
+        if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Queenside castle
             if (move.color == ShumiChess::Color::WHITE) {
                 (*pRooks) &= ~(1ULL << game_board.square_a1);
@@ -366,7 +370,7 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
                 (*pRooks) &= ~(1ULL << game_board.square_a8);
                 (*pRooks) |=  (1ULL << game_board.square_d8);
             }
-        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+        } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Kingside castle
             if (move.color == ShumiChess::Color::WHITE) {
                 (*pRooks) &= ~(1ULL << game_board.square_h1);
@@ -539,7 +543,7 @@ std::vector<Move> Engine::get_legal_moves_fast(Color color)
 
             } else {
 
-                // En-passant is special (removes a pawn NOT on move.to), so don't “shortcut” it.
+                // En-passant is special (removes a pawn NOT on move to square), so don't “shortcut” it.
                 if (move.is_en_passent_capture) {
 
                     legal = !in_check_after_move_fast(color, move);
@@ -612,17 +616,19 @@ std::vector<Move> Engine::get_legal_moves_fast(Color color)
 
                     } else {
 
-                        // En-passant: the "captured piece square" is BEHIND move.to.
+                        // En-passant: the "captured piece square" is BEHIND move to square
                         // If that captured pawn is the checker, EP is a valid "capture the checker".
                         // Also allow the normal toSq-help test (harmless).
+
+                        ull move_to_bb = move.to;
                         ull epCapturedBB = 0ULL;
                         if (color == Color::WHITE) {
-                            epCapturedBB = (move.to >> 8);
+                            epCapturedBB = (move_to_bb >> 8);
                         } else {
-                            epCapturedBB = (move.to << 8);
+                            epCapturedBB = (move_to_bb << 8);
                         }
 
-                        if (checkInfo.toHelpMask & move.to) {
+                        if (checkInfo.toHelpMask & move_to_bb) {
                             helps = true;
                         } else if (checkInfo.captureMask & epCapturedBB) {
                             helps = true;
@@ -1455,7 +1461,8 @@ void Engine::pushMove(const Move& move) {
             // Enpassent capture
             
             // Looks at the rank just "forward" of this pawn, on the same file?
-            ull target_pawn_bitboard = (move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8);
+            ull move_to_bb = move.to;
+            ull target_pawn_bitboard = (move.color == ShumiChess::Color::WHITE ? move_to_bb >> 8 : move_to_bb << 8);
 
             // Gets the number of leading zeros in the pawn butboard. So this is the first pawn in the list?
             int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bitboard);
@@ -1483,7 +1490,9 @@ void Engine::pushMove(const Move& move) {
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
         // cout << "PUSHING: Friendly rooks are:";
         // utility::representation::print_bitboard(friendly_rooks);
-        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+
+        ull move_to_bb = move.to;
+        if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
@@ -1497,7 +1506,7 @@ void Engine::pushMove(const Move& move) {
                 friendly_rooks &= ~(1ULL <<63);
                 friendly_rooks |= (1ULL <<60);
             }
-        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+        } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
              //                rnbqkbnr                                                       RNBQKBNR
             // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
@@ -1655,9 +1664,11 @@ void Engine::popMove() {
 
     if (move.capture != Piece::NONE) {
 
+        ull move_to_bb = move.to;
         if (move.is_en_passent_capture) {
             // Looks at the rank just "forward" of this pawn, on the same file?
-            ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move.to >> 8 : move.to << 8;
+
+            ull target_pawn_bitboard = move.color == ShumiChess::Color::WHITE ? move_to_bb >> 8 : move_to_bb << 8;
 
             int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bitboard);
             
@@ -1666,7 +1677,7 @@ void Engine::popMove() {
 
         } else {
 
-            access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move.to;
+            access_pieces_of_color(move.capture, utility::representation::opposite_color(move.color)) |= move_to_bb;
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + utility::representation::opposite_color(move.color) * 6, square_to);
         }
 
@@ -1681,8 +1692,9 @@ void Engine::popMove() {
         // ! Bet we can make this part of push a func and do something fancy with to and from
         //  at least keep standard with push implimentation.
 
+        ull move_to_bb = move.to; 
         // the castles move has not been popped yet
-        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+        if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
@@ -1696,7 +1708,7 @@ void Engine::popMove() {
                 friendly_rooks &= ~(1ULL <<60);
                 friendly_rooks |= (1ULL <<63);
             }
-        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+        } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       rnbqkbnr
             // Popping a Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
@@ -1779,7 +1791,10 @@ void Engine::pushMoveFast(const Move& move)
         //ull& friendly_rooks = access_pieces_of_color(ShumiChess::Piece::ROOK, move.color);
         //
         //TODO  Figure out the generic 2 if (castle side) solution, not 4 (castle side x color)
-        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+
+        ull move_to_bb = move.to;
+
+        if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
@@ -1789,7 +1804,7 @@ void Engine::pushMoveFast(const Move& move)
                 friendly_rooks &= ~(1ULL <<63);
                 friendly_rooks |= (1ULL <<60);
             }
-        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+        } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       RNBQKBNR
             // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
@@ -1869,7 +1884,10 @@ void Engine::popMoveFast()
         //  at least keep standard with pushMoveFast implementation.
 
         // the castles move has not been popped yet
-        if (move.to & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+
+        ull move_to_bb = move.to;
+
+        if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             //          rnbqkbnr                                                       rnbqkbnr   
             // Popping a Queenside Castle
             if (move.color == ShumiChess::Color::WHITE) {
@@ -1879,7 +1897,7 @@ void Engine::popMoveFast()
                 friendly_rooks &= ~(1ULL <<60);
                 friendly_rooks |= (1ULL <<63);
             }
-        } else if (move.to & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+        } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             //                 rnbqkbnr                                                       rnbqkbnr
             // Popping a Kingside Castle
             if (move.color == ShumiChess::Color::WHITE) {
@@ -2434,9 +2452,8 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
 
             if ( (from_sq == game_board.square_e1) || (from_sq == game_board.square_e8) )
             {
-                int to_sq = utility::bit::bitboard_to_lowest_square(the_move.to); // 0..63
-
-                //printf("quyyy %ld\n", to_sq);
+                ull move_to_bb = the_move.to;
+                int to_sq = utility::bit::bitboard_to_lowest_square(move_to_bb); // 0..63
 
                 if ( (to_sq == game_board.square_g1) || (to_sq == game_board.square_g8) ) {
                      MoveText += "O-O";
@@ -2490,7 +2507,7 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
             if (b_is_capture) safe_push_back(MoveText,'x');
 
 
-            // Add ".to" information
+            // Add "to" information
             if (b_is_pawn_move && !b_is_capture) {
                 // Omit the "from" column, for pawn moves that are not captures.
                 thisChar = rank_to_move(the_move);
@@ -2802,7 +2819,7 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
 //    Input:   a moves vector
 //    Returns: ordered vector of unquiet moves (captures first, promotions second).
 //      • Captures: sorted by MVV-LVA (bigger victim, smaller attacker = higher).
-//      • Small recapture bonus in sort if mv.to == opponent’s last “to” square.
+//      • Small recapture bonus in sort if mv_to == opponent’s last “to” square.
 //      • Non-capture promotions: keep only QUEEN promotions; appended after captures.
 // Notes: O(U^2) sort due to linear insertion; U is usually small. (<5)
 //
@@ -3172,7 +3189,6 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
         if (mv.capture == Piece::NONE)
             continue;
 
-        fprintf(fp, "\n%s  %llu  %llu \n", san.c_str(), mv.to, mv.from);
 
         // SEE for this *specific* capture from the mover's point of view
         int see_value = game_board.SEE_for_capture(mv.color, mv, fp);

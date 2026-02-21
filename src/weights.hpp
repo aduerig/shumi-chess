@@ -81,9 +81,9 @@ public:
 
     // Pawn controlling center squares: (one per qualifiing pawn)
     static constexpr int PAWN_ON_CTR_DEF_WGHT = 24;     // center e4,d4 (white); and e5,d5, (black) "defensive" center squares
-    static constexpr int PAWN_ON_CTR_OFF_WGHT = 36;     // center e5,d5 (white); and e4,d4, (white) "offensive" center squares
-    static constexpr int PAWN_ON_ADV_CTR_WGHT = 22;     // "advanced center" e6,d6 (White); or e3,d3 (Black)
-    static constexpr int PAWN_ON_ADV_FLK_WGHT = 10;     // "advanced flank" c4,f4 (black); c5,f5 (White)
+    static constexpr int PAWN_ON_CTR_OFF_WGHT = 35;     // center e5,d5 (white); and e4,d4, (white) "offensive" center squares
+    static constexpr int PAWN_ON_ADV_CTR_WGHT = 21;     // "advanced center" e6,d6 (White); or e3,d3 (Black)
+    static constexpr int PAWN_ON_ADV_FLK_WGHT = 9;      // "advanced flank" c4,f4 (black); c5,f5 (White)
 
     static constexpr int KNIGHT_ON_CTR_WGHT = 15;  // Knight controlling center squares (per square)
     static constexpr int BISHOP_ON_CTR_WGHT = 19;  // Bishop controlling center squares (per square)
@@ -91,7 +91,7 @@ public:
     static constexpr int TWO_BISHOPS_WGHT = 16;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
-    static constexpr int QUEEN_OUT_EARLY_WGHT = -80;    // for center squares only. only in opening.
+    static constexpr int QUEEN_OUT_EARLY_WGHT = -70;    // for center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
 

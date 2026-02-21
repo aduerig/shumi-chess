@@ -23,10 +23,11 @@ constexpr uint8_t queen_side_castle = 0b00000010;
 
 
 struct PInfo {
-    int file_count[8]; // = {0};        // Count of pawns on this file
-    ull file_bb[8]; // = {0ULL};        // Bitboard of pawns on this file
-    unsigned files_present; // = 0;     // Bitmask of which files contain >= 1 pawn
-    int advancedSq[8];
+    int file_count[8];          // Count of pawns on this file
+    ull file_bb[8];             // Bitboard of pawns on this file
+    unsigned files_present;     // Bitmask of which files contain >= 1 pawn
+    int advancedSq[8];          // Square index of the side’s most advanced pawn on that file (or -1)
+    int rearSq[8];              // Square index of the side’s least advanced pawn on that file (or -1)
 };
 
 inline bool operator==(const PInfo& a, const PInfo& b) {
@@ -293,11 +294,12 @@ class GameBoard {
 
         bool any_piece_ahead_on_file(Color c, int sq, ull pieces) const;
         std::string sqToString2(int f, int r) const; // H1=0, 
-        std::string sqToString(int sq) const; // H1=0, 
 
         // "Positional "pawn" routines.
         int count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
         int count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo
+                                , ull& holes);  // output
+        int count_pawn_holes_cp2(Color c, const PawnFileInfo& pawnInfo
                                 , ull& holes);  // output
         int count_knights_on_holes_cp(Color c, ull holes_bb);
 

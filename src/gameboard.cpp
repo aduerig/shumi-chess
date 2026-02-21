@@ -397,8 +397,8 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
     if (!king_bb) return false;  // safety
 
     int king_sq = utility::bit::bitboard_to_lowest_square_safe(king_bb);
-    int file    = king_sq % 8;   // 0 = h, 1 = g, 2 = f, 3 = e, 4 = d, 5 = c, 6 = b, 7 = a
-    int rank    = king_sq / 8;   // 0 = rank 1, 7 = rank 8
+    int file    = king_sq & 7;   // 0 = h, 1 = g, 2 = f, 3 = e, 4 = d, 5 = c, 6 = b, 7 = a
+    int rank    = king_sq >> 3;   // 0 = rank 1, 7 = rank 8
 
     int homeRank = (color1 == ShumiChess::WHITE) ? 0 : 7;
 
@@ -536,7 +536,8 @@ int GameBoard::pawns_attacking_square(Color c, int sq) {
     const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
     const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
 
-    ull origins;
+    ull origins;        // squares where a pawn would have to stand to attack the target
+
     if (c == Color::WHITE) {
         // white pawn origins that attack sq: from (sq-7) and (sq-9)
         origins = ((bitBoard & ~FILE_A) >> 7) | ((bitBoard & ~FILE_H) >> 9);
@@ -622,8 +623,8 @@ int GameBoard::knights_attacking_center_squares_cp(Color c)
 // This sees through all material
 int GameBoard::bishops_attacking_square(Color c, int sq)
 {
-    const int tf = sq % 8;   // 0..7 (h1=0 => 0=H ... 7=A) 
-    const int tr = sq / 8;   // 0..7
+    const int tf = sq & 7;   // 0..7 (h1=0 => 0=H ... 7=A) 
+    const int tr = sq >> 3;   // 0..7
 
     const int diag_sum  = tf + tr;   // NE-SW diagonal id
     const int diag_diff = tf - tr;   // NW-SE diagonal id
@@ -634,8 +635,8 @@ int GameBoard::bishops_attacking_square(Color c, int sq)
     while (bishops)
     {
         const int s = utility::bit::lsb_and_pop_to_square(bishops);
-        const int f = s % 8;
-        const int r = s / 8;
+        const int f = s & 7;    //s % 8;
+        const int r = s >> 3;   //s >> 3;
         if ((f + r) == diag_sum || (f - r) == diag_diff) count++;
     }
 
@@ -662,7 +663,7 @@ int GameBoard::bishops_attacking_center_squares_cp(Color c)
 // Return true if all squares strictly between a and b on the same rank are empty.
 static inline bool clear_between_rank(ull occupancy, int a, int b)
 {
-    const int ra = a / 8;
+    const int ra = a >> 3;
     int fa = a % 8, fb = b % 8;
     if (fa > fb) std::swap(fa, fb);
 
@@ -677,7 +678,7 @@ static inline bool clear_between_rank(ull occupancy, int a, int b)
 static inline bool clear_between_file(ull occupancy, int a, int b)
 {
     const int fa = a % 8;
-    int ra = a / 8, rb = b / 8;
+    int ra = a >> 3, rb = b >> 3;
     if (ra > rb) std::swap(ra, rb);
 
     for (int r = ra + 1; r < rb; ++r) {
@@ -772,10 +773,10 @@ int GameBoard::rook_connectiveness_cp(Color c) const {
     for (int i = 0; i < n; ++i) {
         for (int j = i + 1; j < n; ++j) {
             const int s1 = sqs[i], s2 = sqs[j];
-            if ((s1 / 8 == s2 / 8) && clear_between_rank(occupancy, s1, s2)) {
+            if ((s1 >> 3 == s2 >> 3) && clear_between_rank(occupancy, s1, s2)) {
                 return (Weights::ROOK_CONNECTED_WGHT);
             }
-            if ((s1 % 8 == s2 % 8) && clear_between_file(occupancy, s1, s2)) {
+            if (((s1 % 8) == (s2 % 8)) && clear_between_file(occupancy, s1, s2)) {
                 return (Weights::ROOK_CONNECTED_WGHT);
             }
         }
@@ -842,7 +843,7 @@ int GameBoard::rook_7th_rankness_cp(Color c)   /* now counts R+Q; +1 each on ene
     int score_cp = 0;
     while (bigPieces) {
         int s = utility::bit::lsb_and_pop_to_square(bigPieces); // 0..63
-        int rnk = (s / 8);
+        int rnk = s >> 3;   //(s >> 3);
         if (rnk == seventh_rank) score_cp += Weights::MAJOR_ON_RANK7_WGHT;
         if (rnk == eight_rank) score_cp += Weights::MAJOR_ON_RANK8_WGHT;
     }
@@ -903,13 +904,6 @@ std::string GameBoard::sqToString2(int f, int r) const
     return std::string{file, rank};
 }
 
-std::string GameBoard::sqToString(int sq) const
-{
-    return sqToString2(sq % 8, sq / 8);
-}
-
-
-
 //
 // This summarizes where our pawns are by file, without mutating any bitboards.
 //
@@ -942,8 +936,9 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp);
         //assert(Pawns & (1ULL << s));
-        int f = s % 8;
-        int r = (s / 8);
+
+        const int f = s & 7;     // s % 8;
+        const int r = s >> 3;    // s >> 3
 
         ++pinfo.file_count[f];
 
@@ -953,16 +948,16 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
         if (pinfo.advancedSq[f] == -1) {
             pinfo.advancedSq[f] = s;
         } else {
-            int prev_r = pinfo.advancedSq[f] / 8;
+            int prev_r = pinfo.advancedSq[f] >> 3;
             bool isMoreAdv = (c == Color::WHITE) ? (r > prev_r) : (r < prev_r);
 
             if (isMoreAdv) pinfo.advancedSq[f] = s;
         }
     }
 
-    ull union_files = 0ULL;
-    for (int i = 0; i < 8; ++i) union_files |= pinfo.file_bb[i];
-    assert(union_files == Pawns);
+    //ull union_files = 0ULL;
+    //for (int i = 0; i < 8; ++i) union_files |= pinfo.file_bb[i];
+    //assert(union_files == Pawns);
 
     return true;
 }
@@ -971,7 +966,13 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 bool GameBoard::build_pawn_file_summary_fast(Color c, PInfo& pinfo)
 {
     // ALWAYS initialize outputs, even if there are no pawns.
-    for (int i = 0; i < 8; ++i) { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; }
+    for (int i = 0; i < 8; ++i) 
+    { 
+        pinfo.file_count[i] = 0; 
+        pinfo.file_bb[i] = 0ULL; 
+        pinfo.advancedSq[i] = -1; 
+        pinfo.rearSq[i] = -1;   
+    }
     pinfo.files_present = 0;
 
     const ull Pawns = get_pieces_template<Piece::PAWN>(c);
@@ -993,12 +994,13 @@ bool GameBoard::build_pawn_file_summary_fast(Color c, PInfo& pinfo)
         //  BLACK: most advanced pawn = lowest  rank on that file = smallest square index in bb
         if (c == Color::WHITE) {
             // largest set-bit index = 63 - clz(bb)
-            //pinfo.advancedSq[f] = 63 - __builtin_clzll(bb);
             pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square(bb);
+            pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square(bb); 
         } else {
             // smallest set-bit index = ctz(bb)
             //pinfo.advancedSq[f] = __builtin_ctzll(bb);
             pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square(bb);
+            pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square(bb);  
         }
     }
 
@@ -1123,7 +1125,7 @@ void GameBoard::validate_row_col_masks_h1_0()
 // Returns true if there is any bit set in `file_pieces` strictly ahead of sq toward promotion.
 bool GameBoard::any_piece_ahead_on_file(Color c, int sq, ull file_pieces) const
 {
-    const int r = sq / 8;
+    const int r = sq >> 3;
 
     ull ranks_ahead;
     if (c == Color::WHITE) {
@@ -1180,25 +1182,7 @@ int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) co
 
     return isolated_cp;
 }
-
-
-
-int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
-
-    // Friendly knights (h1=0 bitboard)
-    ull knights = get_pieces_template<Piece::KNIGHT>(c);
-    if (!knights || !holes_bb) return 0;
-
-    // Knights sitting on holes
-    ull on_holes = knights & holes_bb;
-
-    // Count them
-    int n = bits_in(on_holes);
-
-    return (n * Weights::KNIGHT_HOLE_WGHT);
-}
-
-
+//
 // Finds pawn-structure "holes":
 // For each friendly pawn, mark the square directly in front of it as a hole if no friendly pawn can
 // attack that square (i.e., there is no friendly pawn on an adjacent file that is on the same rank
@@ -1226,8 +1210,8 @@ int GameBoard::count_pawn_holes_cp(Color c,
 
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp);
-        int f = s % 8;
-        int r = s / 8;
+        int f = s & 7;      //s % 8;
+        int r = s >> 3;     //s / 8;
 
         // Square directly in front of the pawn (ignore pawns already on 7th/2nd edge appropriately)
         int front_sq;
@@ -1265,12 +1249,6 @@ int GameBoard::count_pawn_holes_cp(Color c,
 
         if (!can_be_attacked) {
 
-            // I am a hole
-            // if (global_debug_flag) {
-            //     cout << "hole from pawn " << sqToString(s)
-            //         << " -> " << sqToString(front_sq) << "\n";
-            // }
-
             holes_bb |= (1ULL << front_sq);
             holes++;
         }
@@ -1278,6 +1256,74 @@ int GameBoard::count_pawn_holes_cp(Color c,
 
     return (holes*Weights::PAWN_HOLE_WGHT);
 }
+
+int GameBoard::count_pawn_holes_cp2(Color c,
+                               const PawnFileInfo& pawnInfo,
+                               ull& holes_bb) {
+    int holes = 0;
+    holes_bb = 0ULL;
+
+    ull Pawns = get_pieces_template<Piece::PAWN>(c);
+    if (!Pawns) return 0;
+
+    const unsigned files_present = pawnInfo.p[friendlyP].files_present;
+
+    ull tmp = Pawns;
+
+    while (tmp) {
+        int s = utility::bit::lsb_and_pop_to_square(tmp);
+        int f = s & 7;
+        int r = s >> 3;
+
+        int front_sq;
+        if (c == Color::WHITE) {
+            if (r == 7) continue;
+            front_sq = s + 8;
+        } else {
+            if (r == 0) continue;
+            front_sq = s - 8;
+        }
+
+        // Check adjacent files existence (bitmask) then support using rearSq[] ranks (no masks).
+        bool can_be_attacked = false;
+
+        if (c == Color::WHITE)
+        {
+            if (f > 0 && (files_present & (1u << (f - 1))))
+            {
+                int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
+                if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
+            }
+            if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1))))
+            {
+                int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
+                if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
+            }
+        }
+        else
+        {
+            if (f > 0 && (files_present & (1u << (f - 1))))
+            {
+                int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
+                if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
+            }
+            if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1))))
+            {
+                int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
+                if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
+            }
+        }
+
+        if (!can_be_attacked) {
+            holes_bb |= (1ULL << front_sq);
+            holes++;
+        }
+    }
+
+    return (holes * Weights::PAWN_HOLE_WGHT);
+}
+
+
 
 
 int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) {
@@ -1345,8 +1391,8 @@ int GameBoard::count_passed_pawns_cp(Color c,
 
     while (tmp) {
         int s = utility::bit::lsb_and_pop_to_square(tmp); // 0..63
-        int f = s % 8;                                    // 0..7 (0=H ... 7=A)
-        int r = s / 8;                                    // 0..7 (White's view)
+        int f = s & 7;      //  s % 8;                    // 0..7 (0=H ... 7=A)
+        int r = s >> 3;     //  s >> 3;                    // 0..7 (White's view)
 
         // Enemy pawns on same file and adjacent files
         ull enemy_files = pawnInfo.p[enemyP].file_bb[f];
@@ -1414,6 +1460,21 @@ int GameBoard::count_passed_pawns_cp(Color c,
 
 
 
+int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
+
+    // Friendly knights (h1=0 bitboard)
+    ull knights = get_pieces_template<Piece::KNIGHT>(c);
+    if (!knights || !holes_bb) return 0;
+
+    // Knights sitting on holes
+    ull on_holes = knights & holes_bb;
+
+    // Count them
+    int n = bits_in(on_holes);
+
+    return (n * Weights::KNIGHT_HOLE_WGHT);
+}
+
 
 
 //
@@ -1435,8 +1496,8 @@ int GameBoard::king_edgeness_cp(Color color)
 int GameBoard::piece_edgeness(ull kbb) {   
     int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63
 
-    int r = sq / 8;              // 0..7
-    int f = sq % 8;              // 0..7
+    int r = sq >> 3;              // 0..7
+    int f = sq & 7;              // 0..7
     int dr = std::min(std::abs(r - 3), std::abs(r - 4));
     int df = std::min(std::abs(f - 3), std::abs(f - 4));
     int ring = std::max(dr, df); // 0..3
@@ -1584,8 +1645,8 @@ int GameBoard::get_king_near_squares(Color defender_color, int king_near_squares
     ull tmp = kbb;  // dont mutate the bitboards
     int king_sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
 
-    int king_row = king_sq / 8;
-    int king_col = king_sq % 8;
+    int king_row = king_sq >> 3;
+    int king_col = king_sq & 7;
 
     // collect king square and all neighbors in a 3x3 box
     for (int dr = -1; dr <= 1; ++dr) {
@@ -1612,8 +1673,8 @@ int GameBoard::kings_in_opposition(Color color)
     int w_sq = utility::bit::lsb_and_pop_to_square(wk_temp);
     int b_sq = utility::bit::lsb_and_pop_to_square(bk_temp);
 
-    int wr = w_sq / 8, wc = w_sq % 8;
-    int br = b_sq / 8, bc = b_sq % 8;
+    int wr = w_sq >> 3, wc = w_sq & 7;
+    int br = b_sq >> 3, bc = b_sq & 7;
 
     int dr = std::abs(wr - br);
     int dc = std::abs(wc - bc);
@@ -1765,10 +1826,10 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     double dfakeDist;
 
     // Get coordinates of the square numbers
-    int xEnemy = enemyKingSq % 8;
-    int yEnemy = enemyKingSq / 8;
-    int xFrien = frienKingSq % 8;
-    int yFrien = frienKingSq / 8;
+    int xEnemy = enemyKingSq & 7;
+    int yEnemy = enemyKingSq >> 3;
+    int xFrien = frienKingSq & 7;
+    int yFrien = frienKingSq >> 3;
    
     // Method 1 (it stinks)
     //double dfakeDist = (double)(abs(xEnemy - xFrien) +  abs(yEnemy - yFrien));
@@ -1828,8 +1889,8 @@ int GameBoard::is_knight_on_edge_cp(Color color) {
     
     while (knghts) {
         int s  = utility::bit::lsb_and_pop_to_square(knghts); // 0..63  
-        const int f = s % 8;            // h1=0 → 0=H ... 7=A
-        const int r = s / 8;            // rank index 0..7 (White's view)
+        const int f = s & 7;    //  s % 8;            // h1=0 → 0=H ... 7=A
+        const int r = s >> 3;   //  s >> 3;            // rank index 0..7 (White's view)
         if ((f==0) || (f==7)) pointsOff += Weights::KNIGHT_ON_EDGE_WGHT;      // I am on a or h file
         if ((r==0) || (r==7)) pointsOff += Weights::KNIGHT_ON_EDGE_WGHT;      // I am on eight or first rank
     }
@@ -1975,8 +2036,8 @@ int GameBoard::king_center_manhattan_dist(Color c)
     // king square 0..63 (non-mutating if you have a non-pop lsb routine; otherwise copy is fine)
     int ks = utility::bit::lsb_and_pop_to_square(kbb);
 
-    int f = ks % 8;
-    int r = ks / 8;
+    int f = ks & 7;
+    int r = ks >> 3;
 
     int dx1 = f - 3; if (dx1 < 0) dx1 = -dx1;
     int dx2 = f - 4; if (dx2 < 0) dx2 = -dx2;
@@ -1992,7 +2053,7 @@ int GameBoard::king_center_manhattan_dist(Color c)
     return iReturn;
 }
 
-// Sliders and knights = all pieces except the king.
+// Sliders and knights = all pieces except pawns and the king.
 int GameBoard::sliders_and_knights_attacking_square2(Color attacker_color, int sq)
 {
     const ull occ = get_pieces();
@@ -2029,11 +2090,6 @@ int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq
 {
     // occupancy of all pieces on board
     ull occ = get_pieces();
-    // ull occ =
-    //     white_pawns   | white_knights | white_bishops | white_rooks |
-    //     white_queens  | white_king    |
-    //     black_pawns   | black_knights | black_bishops | black_rooks |
-    //     black_queens  | black_king;
 
     // -----------------------
     // Knights
@@ -2050,8 +2106,8 @@ int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq
         ull bishops = get_pieces_template<Piece::BISHOP>(attacker_color);
         ull queens  = get_pieces_template<Piece::QUEEN >(attacker_color);
 
-        int r0 = sq / 8;
-        int c0 = sq % 8;
+        int c0 = sq & 7;
+        int r0 = sq >> 3;
 
         // NE (+1,+1)
         {
@@ -2138,8 +2194,8 @@ int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq
         ull rooks  = get_pieces_template<Piece::ROOK >(attacker_color);
         ull queens = get_pieces_template<Piece::QUEEN>(attacker_color);
 
-        int r0 = sq / 8;
-        int c0 = sq % 8;
+        int r0 = sq >> 3;
+        int c0 = sq & 7;
 
         // North (+1,0)
         {
@@ -2645,8 +2701,8 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             ull bishops = (c == Color::WHITE) ? wb : bb;
             ull queens  = (c == Color::WHITE) ? wq : bq;
 
-            int r0 = to_sq / 8;
-            int c0 = to_sq % 8;
+            int c0 = to_sq & 7;
+            int r0 = to_sq >> 3;
 
             const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
             for (int k = 0; k < 4; ++k) {
@@ -2833,8 +2889,8 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             ull bishops = (c == Color::WHITE) ? wb_local : bb_local;
             ull queens  = (c == Color::WHITE) ? wq_local : bq_local;
 
-            int r0 = to_sq / 8;
-            int c0 = to_sq % 8;
+            int r0 = to_sq >> 3;
+            int c0 = to_sq & 7;
 
             const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
             for (int k = 0; k < 4; ++k) {
@@ -3317,8 +3373,8 @@ ull GameBoard::SEE_attackers_on_square_local(Color c,
 //         ull bishops = (c == Color::WHITE) ? b.wb : b.bb;
 //         ull queens  = (c == Color::WHITE) ? b.wq : b.bq;
 
-//         int r0 = sq / 8;
-//         int f0 = sq % 8;
+//         int r0 = sq >> 3;
+//         int f0 = sq & 7;
 
 //         const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
 //         for (int k = 0; k < 4; ++k)
@@ -3351,8 +3407,8 @@ ull GameBoard::SEE_attackers_on_square_local(Color c,
 //         ull rooks  = (c == Color::WHITE) ? b.wr : b.br;
 //         ull queens = (c == Color::WHITE) ? b.wq : b.bq;
 
-//         int r0 = sq / 8;
-//         int f0 = sq % 8;
+//         int r0 = sq >> 3;
+//         int f0 = sq & 7;
 
 //         const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
 //         for (int k = 0; k < 4; ++k)
