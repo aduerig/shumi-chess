@@ -385,7 +385,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
 
             case CRAZY_IVAN:
                 // Assign to cp_score_position_temp
-                bonus_cp = engine.game_board.center_closeness_bonus(color);
+                bonus_cp = engine.game_board.center_closeness_bonus2(color);
                 assert(bonus_cp >= 0);
                 cp_score_position_temp = bonus_cp;
                 break;  

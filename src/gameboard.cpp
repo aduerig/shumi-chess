@@ -1629,6 +1629,25 @@ int GameBoard::center_closeness_bonus(Color c) {
 }
 
 
+int GameBoard::center_closeness_bonus2(Color c)
+{
+    int bonus = 0;
+
+    ull pieces =
+        (c==Color::WHITE)
+        ? (white_knights | white_bishops | white_rooks | white_queens)
+        : (black_knights | black_bishops | black_rooks | black_queens);
+
+    while (pieces)
+    {
+        int sq = utility::bit::lsb_and_pop_to_square(pieces);
+        bonus += GameBoard::CENTER_SCORE[sq];
+    }
+
+    return bonus * Weights::CENTER_OCCUPY_PIECES_WGHT;
+}
+
+
 // Fills an array of up to 9 squares around the king (including the king square).
 // Returns how many valid squares were written.
 // king_near_squares_out[i] are square indices 0..63.

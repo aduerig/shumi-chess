@@ -30,7 +30,7 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 // #include <cstddef>  // size_t
 // #include <cmath>    // std::abs
 
-inline constexpr int MAX_MOVES = 128;
+inline constexpr int MAX_MOVES = 256;
 
 inline constexpr double TINY_SCORE       = 1.0e-15;  // pawns
 inline constexpr double VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)

@@ -266,6 +266,7 @@ class GameBoard {
         int moved_f_pawn_early_cp(Color c) const;
 
         int center_closeness_bonus(Color c);
+        int center_closeness_bonus2(Color c);
 
         int pawns_attacking_square(Color c, int sq);
         int pawns_attacking_center_squares_cp(Color c);
@@ -479,6 +480,20 @@ class GameBoard {
         static constexpr int square_a8 = 63;
 
         Weights wghts;
+
+        // Used only in crazy Ivan.
+        int CENTER_SCORE[64] = {
+                    /* h1=0 layout assumed */
+                    0,1,1,2,2,1,1,0,
+                    1,2,2,3,3,2,2,1,
+                    1,2,3,4,4,3,2,1,
+                    2,3,4,5,5,4,3,2,
+                    2,3,4,5,5,4,3,2,
+                    1,2,3,4,4,3,2,1,
+                    1,2,2,3,3,2,2,1,
+                    0,1,1,2,2,1,1,0
+        };
+
 
 };
 } // end namespace ShumiChess
