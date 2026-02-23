@@ -503,10 +503,12 @@ vector<Move> Engine::get_legal_moves(Color color) {
 }
 
 // remove asserts (SHUMI_ASSERTS)
-std::vector<Move> Engine::get_legal_moves_fast(Color color)
+void Engine::get_legal_moves_fast(Color color)
 {
     psuedo_legal_moves.clear();
-    all_legal_moves.clear();
+
+    vector<Move>& MovesOut = all_legal_moves;
+    MovesOut.clear();
 
     const bool in_check_before_move = is_king_in_check2(color);
 
@@ -562,7 +564,7 @@ std::vector<Move> Engine::get_legal_moves_fast(Color color)
             }
 
             if (legal) {
-                all_legal_moves.push_back(move);
+                MovesOut.push_back(move);
             }
         }
 
@@ -658,12 +660,12 @@ std::vector<Move> Engine::get_legal_moves_fast(Color color)
             }
 
             if (legal) {
-                all_legal_moves.push_back(move);
+                MovesOut.push_back(move);
             }
         }
     }
 
-    return all_legal_moves;
+    return;
 }
 
 

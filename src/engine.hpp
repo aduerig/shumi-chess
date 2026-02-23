@@ -119,7 +119,7 @@ class Engine {
 
         vector<Move> get_legal_moves();
         vector<Move> get_legal_moves(Color);
-        vector<Move> get_legal_moves_fast(Color color);
+        void get_legal_moves_fast(Color color);
         bool assert_same_moves(const std::vector<Move>& a,
                                 const std::vector<Move>& b);
 
