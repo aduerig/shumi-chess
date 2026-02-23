@@ -111,7 +111,11 @@ void Engine::reset_engine() {         // New game.
     // Initialize storage buffers (they are here to avoid extra allocation during the game)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
     psuedo_legal_moves.reserve(MAX_MOVES); 
-    all_legal_moves.reserve(MAX_MOVES);
+
+    for (int iMove=0;iMove<MAX_PLY0;iMove++) {
+        all_legal_moves[iMove].reserve(MAX_MOVES);
+    }
+    //all_legal_moves.reserve(MAX_MOVES);
 
     ///////////////////////////////////////////////////////////////////////
     //
@@ -208,7 +212,11 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
     psuedo_legal_moves.reserve(MAX_MOVES); 
-    all_legal_moves.reserve(MAX_MOVES);
+
+    for (int iMove=0;iMove<MAX_PLY0;iMove++) {
+        all_legal_moves[iMove].reserve(MAX_MOVES);
+    }
+    //all_legal_moves.reserve(MAX_MOVES);
 
     game_board = GameBoard(fen);
 
@@ -238,13 +246,15 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
     
 }
 
-// understand why this is ok (vector can be returned even though on stack), move ellusion? 
-// https://stackoverflow.com/questions/15704565/efficient-way-to-return-f-stdvector-in-c
-
 
 vector<Move> Engine::get_legal_moves() {
     Color color = game_board.turn;
-    return get_legal_moves(color);
+    vector<Move> MovesOut;
+    get_legal_moves(color, MovesOut);
+
+    // Note: understand why this is ok (vector can be returned even though on stack), move ellusion? 
+    // https://stackoverflow.com/questions/15704565/efficient-way-to-return-f-stdvector-in-c
+    return MovesOut;
 }
 
 bool Engine::in_check_after_move(Color color, const Move& move) {
@@ -474,12 +484,12 @@ bool Engine::in_check_after_king_move(Color color, const Move& move)
 
 
 
-vector<Move> Engine::get_legal_moves(Color color) {
+void Engine::get_legal_moves(Color color, vector<Move>& MovesOut) {
 
     // These are kept as class members, rather than local vriables, for speed reasons only.
     // No need for benchmarks, its plain faster.
     psuedo_legal_moves.clear(); 
-    all_legal_moves.clear();
+    MovesOut.clear();
 
     //
     // Get "psuedo_legal" moves. Those that does not put the king in check, and do not 
@@ -495,19 +505,18 @@ vector<Move> Engine::get_legal_moves(Color color) {
             // King is NOT in check after making the move
 
             // Add this move to the list of legal moves.
-            all_legal_moves.emplace_back(move);
+            MovesOut.emplace_back(move);
         }
     }
 
-    return all_legal_moves;
+    return;
 }
 
 // remove asserts (SHUMI_ASSERTS)
-void Engine::get_legal_moves_fast(Color color)
+void Engine::get_legal_moves_fast(Color color, vector<Move>& MovesOut)
 {
     psuedo_legal_moves.clear();
 
-    vector<Move>& MovesOut = all_legal_moves;
     MovesOut.clear();
 
     const bool in_check_before_move = is_king_in_check2(color);
@@ -2957,8 +2966,11 @@ string Engine::moves_into_string(const std::vector<Move>& mvs)
 // Warning: this function is expensive. Should be called only for making formal PGN or move files.
 void Engine::move_into_string_full(ShumiChess::Move m) {
 
+    vector<Move> moves;
+    moves.clear();
+
     // Warning: this function is expensive. Should be called only for making formal PGN or move files.
-    vector<ShumiChess::Move> moves = get_legal_moves(game_board.turn);
+    get_legal_moves(game_board.turn, moves);
 
 
     bitboards_to_algebraic(game_board.turn, m

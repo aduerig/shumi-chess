@@ -118,16 +118,21 @@ class Engine {
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
         vector<Move> get_legal_moves();
-        vector<Move> get_legal_moves(Color);
-        void get_legal_moves_fast(Color color);
+        void get_legal_moves(Color c, vector<Move>& MovesOut);
+        void get_legal_moves_fast(Color color, vector<Move>& MovesOut);
         bool assert_same_moves(const std::vector<Move>& a,
                                 const std::vector<Move>& b);
 
         void get_psuedo_legal_moves(Color, vector<Move>& all_psuedo_legal_moves);
 
         // Storage buffers (they live here to avoid extra allocation during the game)        
+
+   
         vector<Move> psuedo_legal_moves; 
-        vector<Move> all_legal_moves;
+        
+        #define MAX_PLY0 100
+        vector<Move> all_legal_moves[MAX_PLY0];
+        //vector<Move> all_legal_moves;
 
         int get_minor_piece_move_number (const vector <Move> mvs);       
 
