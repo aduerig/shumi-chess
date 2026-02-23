@@ -116,7 +116,6 @@ void Engine::reset_engine() {         // New game.
         all_legal_moves[iMove].reserve(MAX_MOVES);
         all_unquiet_moves[iMove].reserve(MAX_MOVES);
     }
-    //all_legal_moves.reserve(MAX_MOVES);
 
     ///////////////////////////////////////////////////////////////////////
     //
@@ -219,7 +218,6 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
         all_legal_moves[iMove].reserve(MAX_MOVES);
         all_unquiet_moves[iMove].reserve(MAX_MOVES);
     }
-    //all_legal_moves.reserve(MAX_MOVES);
 
     game_board = GameBoard(fen);
 
@@ -2108,6 +2106,8 @@ void Engine::add_move_to_vector(vector<Move>& moves,
 void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
     // get just pawns of correct color
     ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
+    if (!pawns) return;
+
 
     ull enemy_starting_rank_mask;
     ull pawn_enemy_starting_rank_mask;
@@ -2119,6 +2119,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     //ull far_left_row2;
 
     // grab variables that will be used several times
+    // "Forward" means away from the pawns' back or "1st" rank.
+    //
     if (color == Color::WHITE) {
         enemy_starting_rank_mask      = row_masks[Row::ROW_8];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
@@ -2127,8 +2129,6 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         far_right_row                 = col_masksHA[ColHA::COL_H];
         far_left_row                  = col_masksHA[ColHA::COL_A];
-
-
     } else {
         enemy_starting_rank_mask      = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
@@ -2137,7 +2137,6 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
         far_right_row                 = col_masksHA[ColHA::COL_A];
         far_left_row                  = col_masksHA[ColHA::COL_H];
-
     }
 
 
@@ -2149,16 +2148,16 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         // "pawns" is not an original. (you can mutate it)
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         
-        // Look to see if square just forward of me is empty.
+        // Look to see if square just forward of me is empty. Add moving there if so.
         ull one_move_forward = utility::bit::bitshift_by_color(single_pawn & ~pawn_enemy_starting_rank_mask, color, 8); 
         ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
-        ull spaces_to_move = one_move_forward_not_blocked;
 
-        if (spaces_to_move) add_move_to_vector(all_psuedo_legal_moves, single_pawn, spaces_to_move, Piece::PAWN
+        if (one_move_forward_not_blocked) add_move_to_vector(all_psuedo_legal_moves
+            , single_pawn, one_move_forward_not_blocked, Piece::PAWN
             , color, false, false
             , 0ULL, false, false);
 
-        // Look for (and add if its there), a move up two ranks
+        // Look for (and add if its there), a move up two ranks. Add moving there if so.
         ull is_doublable = single_pawn & pawn_starting_rank_mask;
         if (is_doublable) {
            
@@ -2169,28 +2168,31 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
             ull move_forward_two_blocked = move_forward_two & ~all_pieces;
 
-            if (move_forward_two_blocked) add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN
+            // Look for (and add if its there), En passant
+            if (move_forward_two_blocked) add_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, move_forward_two_blocked, Piece::PAWN
                 , color, false, false
                 , move_forward_one_blocked, false, false);
         }
 
         // Look for (and add if its there), promotions
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
-        ull promotion_not_blocked = potential_promotion & ~all_pieces;
-        ull promo_squares = promotion_not_blocked;
-        if (promo_squares) add_move_to_vector(all_psuedo_legal_moves, single_pawn, promo_squares, Piece::PAWN
+        ull promo_not_blocked = potential_promotion & ~all_pieces;
+        if (promo_not_blocked) add_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, promo_not_blocked, Piece::PAWN
                 , color, false, true
                 , 0ULL, false, false);
 
         // Look for (and add if its there), attacks forward left and forward right, also includes promotions like this
-        // "Forward" means away from the pawns' back or "1st" rank.
+        // "Forward" or "F" means away from the pawns' back or "1st" rank.
         ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
         ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row, color, 7);
         
         // normal attacks is set to nonzero if enemy pieces are in the pawns "crosshairs"
         ull normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, normal_attacks, Piece::PAWN
+        if (normal_attacks) add_move_to_vector(all_psuedo_legal_moves
+                    , single_pawn, normal_attacks, Piece::PAWN
                     , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
                     , 0ULL, false, false);
 
@@ -2198,14 +2200,15 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         // TODO improvement here, cause we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
         //      of code here to get the speed upgrade. Works fine as is
 
-        ull enpassant_end_location = (attack_fleft | attack_fright) & game_board.en_passant_rights;
-        if (enpassant_end_location) {
+        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
+        if (enpassant_end_loc) {
 
             // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
             // int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
             // int dest_pawn_square = utility::bit::bitboard_to_lowest_square(one_move_forward);
       
-            add_move_to_vector(all_psuedo_legal_moves, single_pawn, enpassant_end_location, Piece::PAWN
+            if (enpassant_end_loc) add_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, enpassant_end_loc, Piece::PAWN
                 , color, true, false
                 , 0ULL, true, false);
         }
@@ -2214,6 +2217,8 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull knights = game_board.get_pieces_template<Piece::KNIGHT>(color);
+    if (!knights) return;
+
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -2237,6 +2242,8 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
 void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
+    if (!rooks) return;
+
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -2265,6 +2272,8 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull bishops = game_board.get_pieces_template<Piece::BISHOP>(color);
+    if (!bishops) return;
+
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -2294,6 +2303,8 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
 void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);
+    if (!queens) return;
+
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull own_pieces = game_board.get_pieces(color);
 
@@ -2324,6 +2335,8 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
 // assumes 1 king exists per color
 void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull king = game_board.get_pieces_template<Piece::KING>(color);
+    //if (!king) return;    // Has to be a king, right?
+
     ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
     ull all_pieces = game_board.get_pieces();
     ull own_pieces = game_board.get_pieces(color);

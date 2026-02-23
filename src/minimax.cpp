@@ -1379,12 +1379,10 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     assert(nPlys < MAX_PLY0);
     vector<Move>& MovesOut = engine.all_legal_moves[nPlys];
-    //vector<Move>& MovesOut = engine.all_legal_moves;
 
     engine.get_legal_moves_fast(engine.game_board.turn, MovesOut);
 
     vector<Move>& legal_moves = MovesOut;
-    //vector<Move> legal_moves = MovesOut;
 
  
 

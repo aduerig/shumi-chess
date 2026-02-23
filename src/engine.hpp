@@ -132,7 +132,6 @@ class Engine {
         
         #define MAX_PLY0 100
         vector<Move> all_legal_moves[MAX_PLY0];
-        //vector<Move> all_legal_moves;
 
         vector<Move> all_unquiet_moves[MAX_PLY0];
 
