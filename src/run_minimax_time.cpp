@@ -55,33 +55,3 @@ int main(int argc, char** argv) {
 //      run: cmake --build C:\programming\shumi-chess\build --config RelWithDebInfo
 //      look in: C:\programming\shumi-chess\build\bin\RelWithDebInfo
 
-//
-// 1. is_square_in_check() is top time waster.
-// 2. in_check_after_move_fast() is third highest on the list of time wasters.
-// 3. is_square_in_check() is called only by is_king_in_check2().
-// 4. is_king_in_check2() is called in : 
-//   4a. the in_check_after_move(), sandwiched between popMoveFast() and pushMoveFast():
-//      pushMoveFast(move);   
-//      bool bReturn = is_king_in_check2(color);
-//      popMoveFast();
-//
-//   4b. in_check_after_move_fast(), sandwiched in a similar way:
-//        ... code imitating a fast push but only doing what is needed "It is strictly a fast "after-move is king attacked?" query."
-//        const bool bReturn = is_king_in_check2(color);
-//        ... doing imiating a pop (of the above push)
-//
-//
-// 5. in_check_after_move_fast() is called from get_legal_moves() (also high on the time waster list). lIke so:
-//      get_psuedo_legal_moves(color, psuedo_legal_moves);
-//      for (const Move& move : psuedo_legal_moves) {
-//          bool bKingInCheck = in_check_after_move_fast(color, move);
-//          if (!bKingInCheck) {
-//              all_legal_moves.emplace_back(move);
-//          }
-//      }
-//
-// 6. get_psuedo_legal_moves() is not a big time waster at all. It gets all legal moves, assumming they dont
-//    put the king in check.
-//
-
-// c0bf456

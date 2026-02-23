@@ -1372,24 +1372,24 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     double beta_in = beta;   //  save original alpha window lower bound
 
     // I eat a lot of time. Expensive.s
-    std::vector<Move> legal_moves2 = engine.get_legal_moves(engine.game_board.turn);
+    //std::vector<Move> legal_moves2 = engine.get_legal_moves(engine.game_board.turn);
     std::vector<Move> legal_moves = engine.get_legal_moves_fast(engine.game_board.turn);
 
-    bool bOK = engine.assert_same_moves(legal_moves, legal_moves2);
-    if (!bOK) {
-        cout << "legal_moves:  ";
-        string s1 = engine.moves_into_string(legal_moves);
-        cout << s1;
+    // bool bOK = engine.assert_same_moves(legal_moves, legal_moves2);
+    // if (!bOK) {
+    //     cout << "legal_moves:  ";
+    //     string s1 = engine.moves_into_string(legal_moves);
+    //     cout << s1;
 
-        cout << "legal_moves2: ";
-        string s2 = engine.moves_into_string(legal_moves2);
-        cout << s2;
+    //     cout << "legal_moves2: ";
+    //     string s2 = engine.moves_into_string(legal_moves2);
+    //     cout << s2;
 
-        string out = gameboard_to_string2(engine.game_board);
-        cout << out;
+    //     string out = gameboard_to_string2(engine.game_board);
+    //     cout << out;
 
-        assert(0);
-    }
+    //     assert(0);
+    // }
 
     vector<Move>* p_moves_to_loop_over = &legal_moves;
 
