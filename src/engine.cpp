@@ -114,6 +114,7 @@ void Engine::reset_engine() {         // New game.
 
     for (int iMove=0;iMove<MAX_PLY0;iMove++) {
         all_legal_moves[iMove].reserve(MAX_MOVES);
+        all_unquiet_moves[iMove].reserve(MAX_MOVES);
     }
     //all_legal_moves.reserve(MAX_MOVES);
 
@@ -211,10 +212,12 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
 
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
+
     psuedo_legal_moves.reserve(MAX_MOVES); 
 
     for (int iMove=0;iMove<MAX_PLY0;iMove++) {
         all_legal_moves[iMove].reserve(MAX_MOVES);
+        all_unquiet_moves[iMove].reserve(MAX_MOVES);
     }
     //all_legal_moves.reserve(MAX_MOVES);
 
@@ -2003,6 +2006,10 @@ void Engine::add_move_to_vector(vector<Move>& moves,
     constexpr ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
     constexpr ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
+    constexpr ull castle_touch = (W_KSIDE_MASK | W_QSIDE_MASK | B_KSIDE_MASK | B_QSIDE_MASK);
+
+    //if (!bitboard_to) return;
+
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
 
@@ -2044,6 +2051,14 @@ void Engine::add_move_to_vector(vector<Move>& moves,
 
             // castling rights
             ull from_or_to = (single_bitboard_from | single_bitboard_to);
+
+            // if (from_or_to & castle_touch) {
+            //     if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
+            //     if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
+            //     if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
+            //     if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+            // }
+
             if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
             if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
             if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
@@ -2053,6 +2068,8 @@ void Engine::add_move_to_vector(vector<Move>& moves,
         }
         else
         {
+            ull from_or_to = (single_bitboard_from | single_bitboard_to);
+
             // A promotion. Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
@@ -2071,7 +2088,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                 new_move.is_castle_move = is_castle;
 
                 // castling rights
-                ull from_or_to = (single_bitboard_from | single_bitboard_to);
+
                 if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
                 if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
                 if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
@@ -2137,7 +2154,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
         ull spaces_to_move = one_move_forward_not_blocked;
 
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, spaces_to_move, Piece::PAWN
+        if (spaces_to_move) add_move_to_vector(all_psuedo_legal_moves, single_pawn, spaces_to_move, Piece::PAWN
             , color, false, false
             , 0ULL, false, false);
 
@@ -2152,7 +2169,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
             ull move_forward_two_blocked = move_forward_two & ~all_pieces;
 
-            add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN
+            if (move_forward_two_blocked) add_move_to_vector(all_psuedo_legal_moves, single_pawn, move_forward_two_blocked, Piece::PAWN
                 , color, false, false
                 , move_forward_one_blocked, false, false);
         }
@@ -2161,7 +2178,7 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
         ull promotion_not_blocked = potential_promotion & ~all_pieces;
         ull promo_squares = promotion_not_blocked;
-        add_move_to_vector(all_psuedo_legal_moves, single_pawn, promo_squares, Piece::PAWN
+        if (promo_squares) add_move_to_vector(all_psuedo_legal_moves, single_pawn, promo_squares, Piece::PAWN
                 , color, false, true
                 , 0ULL, false, false);
 
@@ -2811,19 +2828,19 @@ bool Engine::has_unquiet_move(const vector<ShumiChess::Move>& moves) {
     return bReturn;
 }
 
-void Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut ) {
+// void Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut ) {
 
-    MovesOut.clear();
-    for (const ShumiChess::Move& mv : moves) {
-        if (is_unquiet_move(mv))
-        {
-            MovesOut.push_back(mv);
-            // Have an object? push_back(obj) / push_back(std::move(obj)).
-            // Have constructor args? emplace_back(args...).
-        }
-    }
-    return;
-}
+//     MovesOut.clear();
+//     for (const ShumiChess::Move& mv : moves) {
+//         if (is_unquiet_move(mv))
+//         {
+//             MovesOut.push_back(mv);
+//             // Have an object? push_back(obj) / push_back(std::move(obj)).
+//             // Have constructor args? emplace_back(args...).
+//         }
+//     }
+//     return;
+// }
 
 //
 // Reduce to tactical (“unquiet”) moves and orders them.

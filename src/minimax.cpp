@@ -1376,7 +1376,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // engine.get_legal_moves(engine.game_board.turn, legal_moves2);
 
 
-    
+
     assert(nPlys < MAX_PLY0);
     vector<Move>& MovesOut = engine.all_legal_moves[nPlys];
     //vector<Move>& MovesOut = engine.all_legal_moves;
@@ -1601,7 +1601,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     }   // END TT2 feature
 
 
-    vector<ShumiChess::Move> unquiet_moves;   // This MUST be declared as local in this function (not in the class) or horrible crashes
+    //vector<Move> unquiet_moves;   // This MUST be declared as local in this function (not in the class) or horrible crashes
 
 
     // Only one of me, per deepening.
@@ -1747,8 +1747,11 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         } else {
 
             // Obtain moves to use in the limited search. (Quiescence)
-            unquiet_moves.reserve(MAX_MOVES);
-            engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, unquiet_moves);
+            // unquiet_moves.reserve(MAX_MOVES);
+            // engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, unquiet_moves);
+            engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
+
+            vector<Move>& unquiet_moves = engine.all_unquiet_moves[nPlys];
 
             // If quiet (not in check & no tactics), just return stand-pat
             if (unquiet_moves.empty()) {

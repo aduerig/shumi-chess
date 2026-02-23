@@ -134,6 +134,8 @@ class Engine {
         vector<Move> all_legal_moves[MAX_PLY0];
         //vector<Move> all_legal_moves;
 
+        vector<Move> all_unquiet_moves[MAX_PLY0];
+
         int get_minor_piece_move_number (const vector <Move> mvs);       
 
         bool in_check_after_move(Color color, const Move& move);
@@ -277,7 +279,7 @@ class Engine {
         }
 
 
-        void reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut);
+        //void reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut);
         void reduce_to_unquiet_moves_MVV_LVA(
                                         const vector<ShumiChess::Move>& moves,      // Input
                                         //const Move& move_last,                      // input
