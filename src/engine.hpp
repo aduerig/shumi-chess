@@ -272,12 +272,12 @@ class Engine {
         }
 
 
-        vector<ShumiChess::Move> reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves);
-        vector<ShumiChess::Move> reduce_to_unquiet_moves_MVV_LVA(
+        void reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut);
+        void reduce_to_unquiet_moves_MVV_LVA(
                                         const vector<ShumiChess::Move>& moves,      // Input
                                         //const Move& move_last,                      // input
                                         int qPlys,
-                                        vector<ShumiChess::Move>& vReturn           // output
+                                        vector<ShumiChess::Move>& MovesOut           // output
                                     );
 
         double d_bestScore_at_root = 0.0;       // in abs coordinates

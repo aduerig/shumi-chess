@@ -2800,18 +2800,18 @@ bool Engine::has_unquiet_move(const vector<ShumiChess::Move>& moves) {
     return bReturn;
 }
 
-vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves) {
+void Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut ) {
 
-    vector<ShumiChess::Move> vReturn;
+    MovesOut.clear();
     for (const ShumiChess::Move& mv : moves) {
         if (is_unquiet_move(mv))
         {
-            vReturn.push_back(mv); // or: vReturn.emplace_back(mv);
+            MovesOut.push_back(mv);
             // Have an object? push_back(obj) / push_back(std::move(obj)).
             // Have constructor args? emplace_back(args...).
         }
     }
-    return vReturn;
+    return;
 }
 
 //
@@ -2823,14 +2823,16 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves(const vector<ShumiChess
 //      • Non-capture promotions: keep only QUEEN promotions; appended after captures.
 // Notes: O(U^2) sort due to linear insertion; U is usually small. (<5)
 //
-vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
+void Engine::reduce_to_unquiet_moves_MVV_LVA(
                 const vector<ShumiChess::Move>& moves,       // input
                 //const Move& move_last,                       // input
                 int qPlys,
-                vector<ShumiChess::Move>& vReturn            // output
+                vector<ShumiChess::Move>& MovesOut            // output
             )
 {
 
+    MovesOut.clear();
+    
     // recapture bias: if a capture lands on opponent's last-to square, try it earlier
     const bool have_last = !move_history.empty();
     const ull  last_to   = have_last ? move_history.top().to : 0ULL;
@@ -2883,14 +2885,14 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
 
                 if (have_last && mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
  
-                auto it = vReturn.begin();
-                for (; it != vReturn.end(); ++it) {
+                auto it = MovesOut.begin();
+                for (; it != MovesOut.end(); ++it) {
                     // Only compare against other captures; promos-without-capture stay after captures
                     if ((it->capture != ShumiChess::Piece::NONE) && (key > mvv_lva_key(*it))) {
                         break;
                     }
                 }
-                vReturn.insert(it, mv);
+                MovesOut.insert(it, mv);
             
             // Its a Promotion (without capture)
             } else {
@@ -2899,11 +2901,11 @@ vector<ShumiChess::Move> Engine::reduce_to_unquiet_moves_MVV_LVA(
                 if (mv.promotion != Piece::QUEEN)    // DO NOT push non queen promotions up in the list
                     continue;
                 else
-                    vReturn.push_back(mv);
+                    MovesOut.push_back(mv);
             }
         }
     }
-    return vReturn;
+    return;
 }
 
 
