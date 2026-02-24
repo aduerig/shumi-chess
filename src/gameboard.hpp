@@ -365,11 +365,11 @@ class GameBoard {
             ull bp, bn, bb, br, bq, bk;
         };
 
-        ull GameBoard::SEE_attackers_on_square_local(Color c,
+        ull SEE_attackers_on_square_local(Color c,
                                              int sq,
                                              ull occ_now,
                                              const SEEBoards& b) const;
-        int GameBoard::SEE_recursive(Color stm,
+        int SEE_recursive(Color stm,
                             Color root_side,
                             int to_sq,
                             Piece target_piece,

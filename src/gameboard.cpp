@@ -8,7 +8,9 @@
 
 #include "gameboard.hpp"
 #include "weights.hpp"
+#if defined(_MSC_VER)
 #include <intrin.h>   // _BitScanForward64 / _BitScanReverse64
+#endif
 
 //
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.

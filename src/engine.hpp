@@ -99,7 +99,7 @@ class Engine {
         // Member methods
         void reset_engine();                // New game
         void reset_engine(const string&);   // new game (with FEN)
-        void Engine::reset_all_but_FEN();
+        void reset_all_but_FEN();
 
 
         void pushMove(const Move&);
@@ -190,7 +190,7 @@ class Engine {
         
         
 
-        inline ull Engine::squares_between_exclusive(int kingSq, int checkerSq) const
+        inline ull squares_between_exclusive(int kingSq, int checkerSq) const
         {
             // Returns squares strictly between kingSq and checkerSq if aligned (rank/file/diag),
             // else returns 0.
@@ -379,7 +379,7 @@ class Engine {
             }
         };
 
-        PinnedInfo ShumiChess::Engine::compute_pins(Color color);
+        PinnedInfo compute_pins(Color color);
 
 
         inline int get_king_square(Color c)
