@@ -151,11 +151,13 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
         python_engine.pushMove(found_move);
         
         //++python_engine.repetition_table[python_engine.game_board.zobrist_key];
-        python_engine.key_stack.push_back(python_engine.game_board.zobrist_key);
+        python_engine.three_time_rep_stack.push_back(python_engine.game_board.zobrist_key);
      
+        // Add only "reversable" moves to the 3-time rep stack.
+        // note: ireversable moves ?
         bool bReversable = python_engine.game_board.isReversableMove(found_move);
         if (!bReversable) {
-            python_engine.boundary_stack.push_back((int)python_engine.key_stack.size() - 1);
+            python_engine.boundary_stack.push_back((int)python_engine.three_time_rep_stack.size() - 1);
         }
 
 

@@ -195,10 +195,7 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
     //engine.repetition_table[key_now] = 1;
 
     uint64_t key_now = engine.game_board.zobrist_key;
-    engine.key_stack.push_back(engine.game_board.zobrist_key);
-    // if (move_is_irreversible) {
-    //     boundary_stack.push_back((int)key_stack.size() - 1);
-    // }
+    engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
 
     // Set default features
     Features_mask = _DEFAULT_FEATURES_MASK;
@@ -1942,7 +1939,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             #endif
 
             //++engine.repetition_table[engine.game_board.zobrist_key];
-            engine.key_stack.push_back(engine.game_board.zobrist_key);
+            engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
 
             // Pauls plan (concerning windowing)
             bool bRootWideWindowForRandom = false;
@@ -1986,12 +1983,17 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             //if (engine.repetition_table[engine.game_board.zobrist_key] == 0) {
             //    engine.repetition_table.erase(engine.game_board.zobrist_key);
             //}
-            engine.key_stack.pop_back();
+            // We are done with the recursion. Remove zkey from the 3-time rep collector.
+            assert(!engine.three_time_rep_stack.empty());   // Better not be empty, we just pushed a move up above.
+            //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() <= (int)engine.three_time_rep_stack.size());
+            engine.three_time_rep_stack.pop_back();
             while (!engine.boundary_stack.empty() &&
-                engine.boundary_stack.back() >= (int)engine.key_stack.size()) {
+                engine.boundary_stack.back() >= (int)engine.three_time_rep_stack.size()) {
                 engine.boundary_stack.pop_back();
             }
-            
+            //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() < (int)engine.three_time_rep_stack.size());
+
+
             engine.popMove();
 
 
@@ -2207,13 +2209,15 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
 
 
-
+        //
+        // Calculate "cnt", number of times this zobrist has been seen in the three_time_rep_stack.
+        // This is so we don't add the same position to the TT2 twice.
+        //
         int start = engine.boundary_stack.empty() ? 0 : engine.boundary_stack.back();
-
         int cnt = 0;
-        uint64_t key = engine.game_board.zobrist_key;
-        for (int i = start; i < (int)engine.key_stack.size(); ++i) {
-            if (engine.key_stack[i] == key) ++cnt;
+        uint64_t zkey = engine.game_board.zobrist_key;
+        for (int i = start; i < (int)engine.three_time_rep_stack.size(); ++i) {
+            if (engine.three_time_rep_stack[i] == zkey) ++cnt;
         }
 
         bool bStoreThis = ( (depth > iLimit) && 

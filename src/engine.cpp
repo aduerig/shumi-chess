@@ -108,15 +108,6 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 void Engine::reset_engine() {         // New game.
     std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
 
-    // Initialize storage buffers (they are here to avoid extra allocation during the game)
-    move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
-    psuedo_legal_moves.reserve(MAX_MOVES); 
-
-    for (int iMove=0;iMove<MAX_PLY0;iMove++) {
-        all_legal_moves[iMove].reserve(MAX_MOVES);
-        all_unquiet_moves[iMove].reserve(MAX_MOVES);
-    }
-
     ///////////////////////////////////////////////////////////////////////
     //
     // Debug only. You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. enter fen. FEN setup. Setup the FEN
@@ -167,47 +158,25 @@ void Engine::reset_engine() {         // New game.
 
     game_board = GameBoard();
 
-
-    
-    //////////////////////////////////////////////////////////////////////.
-
-
-    move_history = stack<Move>();
-
-    halfway_move_state = stack<int>();
-    halfway_move_state.push(0);
-
-    en_passant_history = stack<ull>();
-    en_passant_history.push(0);
-
-    castle_opportunity_history = stack<uint8_t>();
-    castle_opportunity_history.push(0b1111);
-
-    computer_ply_so_far = 0;       // real moves in whole game
-    ply_so_far = 0;     // ply played in game so far
-    game_white_time_msec = 0;     // total white thinking time for game 
-    game_black_time_msec = 0;     // total black thinking time for game
-
-    // These things are cleared every game.
-    gamePGN.clear();
-
-    //repetition_table.clear();
-    key_stack.clear();
-    boundary_stack.clear();
-
-    reason_for_draw = DRAW_NULL;
-
-
+    reset_all_but_FEN();
 }
 //
 // By "reset engine" is meant: "new game". 
 //
 void Engine::reset_engine(const string& fen) {      // New game (with fen)
 
-    d_bestScore_at_root = 0.0;
+    game_board = GameBoard(fen);
 
     //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
     std::cout << "\x1b[94mNew Game (from FEN) \x1b[0m" << endl;
+
+    reset_all_but_FEN();
+}
+
+
+void Engine::reset_all_but_FEN()
+{
+    d_bestScore_at_root = 0.0;
 
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -218,8 +187,6 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
         all_legal_moves[iMove].reserve(MAX_MOVES);
         all_unquiet_moves[iMove].reserve(MAX_MOVES);
     }
-
-    game_board = GameBoard(fen);
 
     move_history = stack<Move>();
 
@@ -242,11 +209,15 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
     gamePGN.clear();
 
     //repetition_table.clear();
-    key_stack.clear();
-    boundary_stack.clear();
-    
-}
 
+    // Three time repition
+    three_time_rep_stack.clear();
+    boundary_stack.clear();
+    three_time_rep_stack.reserve(MAX_MOVES);
+    boundary_stack.reserve(MAX_MOVES);
+    
+    reason_for_draw = DRAW_NULL;
+}
 
 vector<Move> Engine::get_legal_moves() {
     Color color = game_board.turn;
@@ -839,7 +810,14 @@ ShumiChess::Engine::PinnedInfo ShumiChess::Engine::compute_pins(Color color)
 
 // Doesn't factor in check 
  void Engine::get_psuedo_legal_moves(Color color, vector<Move>& all_psuedo_legal_moves) {
+   
     
+    all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
+    all_own_pieces = game_board.get_pieces(color);
+    all_pieces = (all_own_pieces | all_enemy_pieces); 
+    //
+    // Note: the order here will matter. First moves are looked at first, unless they are later resorted
+    // by sort_moves_for_search().
     add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
     add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
     add_pawn_moves_to_vector(all_psuedo_legal_moves, color); 
@@ -850,17 +828,6 @@ ShumiChess::Engine::PinnedInfo ShumiChess::Engine::compute_pins(Color color)
     return;
 }
 
-int Engine::get_minor_piece_move_number (const vector <Move> mvs)
-{
-    int iReturn = 0;
-    for (Move m : mvs) {
-
-        if  ( (m.piece_type == KNIGHT) ||  (m.piece_type == BISHOP) ) {
-            iReturn++;
-        }
-    }
-    return iReturn;
-}
 
 bool Engine::is_king_in_check(const ShumiChess::Color color) {
     ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
@@ -876,7 +843,7 @@ bool Engine::is_king_in_check2(const ShumiChess::Color color) {
 
     Color enemy_color = utility::representation::opposite_color(color);
     //bool bReturn3 =  is_square_in_check(enemy_color, friendly_king);
-    bool bReturn =  is_square_in_check3(enemy_color, friendly_king);
+    bool bReturn =  is_square_in_check2(enemy_color, friendly_king);
     //assert(bReturn == bReturn3);
 
     return bReturn;
@@ -1050,7 +1017,7 @@ bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull s
 }
 
 
-bool Engine::is_square_in_check3(Color enemy_color, ull square_bb)
+bool Engine::is_square_in_check2(Color enemy_color, ull square_bb)
 {
     assert(game_board.bits_in(square_bb) == 1);
     int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
@@ -1336,7 +1303,7 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
             return GameState::DRAW;
         }
 
-        // Three time repetition
+        // Detect three time repetition
         // auto it = repetition_table.find(game_board.zobrist_key);
         // if (it != repetition_table.end()) {
         //     //assert(0);
@@ -1350,11 +1317,12 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
         //         return GameState::DRAW;
         //     }
         // }
+        // Count how many times this zobrist appears in the 3-time rep table
         int start = boundary_stack.empty() ? 0 : boundary_stack.back();
         int count = 0;
         uint64_t cur = game_board.zobrist_key;
-        for (int i = start; i < (int)key_stack.size(); ++i) {
-            if (key_stack[i] == cur) count++;
+        for (int i = start; i < (int)three_time_rep_stack.size(); ++i) {
+            if (three_time_rep_stack[i] == cur) count++;
         }
         if (count >= THREE_TIME_REP) {
             // threefold repetition draw
@@ -2007,6 +1975,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
     constexpr ull castle_touch = (W_KSIDE_MASK | W_QSIDE_MASK | B_KSIDE_MASK | B_QSIDE_MASK);
 
     //if (!bitboard_to) return;
+    assert(game_board.bits_in(en_passant_rights) <= 1);
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
@@ -2108,15 +2077,16 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
     if (!pawns) return;
 
+    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
+    // ull all_own_pieces = game_board.get_pieces(color);
+    // ull all_pieces = (all_own_pieces | all_enemy_pieces); 
 
     ull enemy_starting_rank_mask;
     ull pawn_enemy_starting_rank_mask;
     ull pawn_starting_rank_mask;
     ull pawn_enpassant_rank_mask;
-    ull far_right_row;
-    ull far_left_row;
-    //ull far_right_row2;
-    //ull far_left_row2;
+    ull far_right_col;
+    ull far_left_col;
 
     // grab variables that will be used several times
     // "Forward" means away from the pawns' back or "1st" rank.
@@ -2127,23 +2097,21 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         pawn_starting_rank_mask       = row_masks[Row::ROW_2];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
 
-        far_right_row                 = col_masksHA[ColHA::COL_H];
-        far_left_row                  = col_masksHA[ColHA::COL_A];
+        far_right_col                 = col_masksHA[ColHA::COL_H];
+        far_left_col                  = col_masksHA[ColHA::COL_A];
     } else {
         enemy_starting_rank_mask      = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
         pawn_starting_rank_mask       = row_masks[Row::ROW_7];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
 
-        far_right_row                 = col_masksHA[ColHA::COL_A];
-        far_left_row                  = col_masksHA[ColHA::COL_H];
+        far_right_col                 = col_masksHA[ColHA::COL_A];
+        far_left_col                  = col_masksHA[ColHA::COL_H];
     }
 
-
-    ull all_pieces = game_board.get_pieces();
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-
     while (pawns) {
+
+        ull normal_attacks;
         // pop and get one pawn bitboard. This gets the pawn, but also removes it from "pawns" but who cares.
         // "pawns" is not an original. (you can mutate it)
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
@@ -2163,16 +2131,15 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
            
             // Look to see both squares just forward of me is empty. (TODO share more code with single pushes above)
             ull move_forward_one = utility::bit::bitshift_by_color(single_pawn, color, 8);
-            ull move_forward_one_blocked = move_forward_one & ~all_pieces;
+            ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
 
-            ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_blocked, color, 8);
-            ull move_forward_two_blocked = move_forward_two & ~all_pieces;
+            ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_unblocked, color, 8);
+            ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
 
-            // Look for (and add if its there), En passant
-            if (move_forward_two_blocked) add_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, move_forward_two_blocked, Piece::PAWN
+            if (move_forward_two_unblocked) add_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, move_forward_two_unblocked, Piece::PAWN
                 , color, false, false
-                , move_forward_one_blocked, false, false);
+                , move_forward_one_unblocked, false, false);    // Note: ??? Why move_forward_one_unblocked?
         }
 
         // Look for (and add if its there), promotions
@@ -2184,12 +2151,12 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                 , 0ULL, false, false);
 
         // Look for (and add if its there), attacks forward left and forward right, also includes promotions like this
-        // "Forward" or "F" means away from the pawns' back or "1st" rank.
-        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_row, color, 9);
-        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_row, color, 7);
+        // "Forward" or "f" means away from the pawns' back or "1st" rank. We mask off the "far" cols to prevent wrapping.
+        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_col, color, 9);
+        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_col, color, 7);
         
-        // normal attacks is set to nonzero if enemy pieces are in the pawns "crosshairs"
-        ull normal_attacks = attack_fleft & all_enemy_pieces;
+        // normal attacks is set to nonzero, if enemy pieces are in the pawns "crosshairs"
+        normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
         if (normal_attacks) add_move_to_vector(all_psuedo_legal_moves
                     , single_pawn, normal_attacks, Piece::PAWN
@@ -2217,14 +2184,18 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull knights = game_board.get_pieces_template<Piece::KNIGHT>(color);
-    if (!knights) return;
+    //if (!knights) return;
 
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    ull own_pieces = game_board.get_pieces(color);
+    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
+    // ull all_own_pieces = game_board.get_pieces(color);
+    // ull all_pieces = (all_own_pieces | all_enemy_pieces); 
 
     while (knights) {
         ull single_knight = utility::bit::lsb_and_pop(knights);
-        ull avail_attacks = tables::movegen::knight_attack_table[utility::bit::bitboard_to_lowest_square(single_knight)];
+        assert(single_knight);
+
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
+        ull avail_attacks = tables::movegen::knight_attack_table[square];
         
         // captures
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -2233,7 +2204,7 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
             , 0ULL, false, false);
 
         // all else
-        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
         add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
             , color, false, false
             , 0ULL, false, false);
@@ -2242,18 +2213,21 @@ void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 
 void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
-    if (!rooks) return;
+    //if (!rooks) return;
 
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    ull own_pieces = game_board.get_pieces(color);
+    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
+    // ull all_own_pieces = game_board.get_pieces(color);
+    // ull all_pieces = (all_own_pieces | all_enemy_pieces); 
 
     while (rooks) {
 
         ull single_rook = utility::bit::lsb_and_pop(rooks);
+        assert(single_rook);
 
         // Straight moves 
-        ull all_pieces_but_self = game_board.get_pieces() & ~single_rook;
-        int square = utility::bit::bitboard_to_lowest_square(single_rook);       
+        //assert(game_board.get_pieces() == all_pieces);
+        ull all_pieces_but_self = all_pieces & ~single_rook;
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_rook);       
         ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
 
         // captures
@@ -2263,7 +2237,7 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             , 0ULL, false, false);
     
         // all else
-        ull non_attack_moves = avail_attacks & (~own_pieces & ~enemy_piece_attacks);
+        ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
         add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
             , color, false, false
             , 0ULL, false, false);
@@ -2272,19 +2246,21 @@ void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
 
 void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
     ull bishops = game_board.get_pieces_template<Piece::BISHOP>(color);
-    if (!bishops) return;
+    //if (!bishops) return;
 
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    ull own_pieces = game_board.get_pieces(color);
-
+    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
+    // ull all_own_pieces = game_board.get_pieces(color);
+    // ull all_pieces = (all_own_pieces | all_enemy_pieces);
+    
     while (bishops) {
 
         ull single_bishop = utility::bit::lsb_and_pop(bishops);
+        assert(single_bishop);
 
          // Diagonal moves
-        ull all_pieces_but_self = game_board.get_pieces() & ~single_bishop;
-        assert(all_pieces_but_self != 0);
-        int square = utility::bit::bitboard_to_lowest_square(single_bishop);
+        //assert(game_board.get_pieces() == all_pieces);
+        ull all_pieces_but_self = all_pieces & ~single_bishop;
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
 
         // captures
@@ -2294,7 +2270,7 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
             , 0ULL, false, false);
     
         // all else
-        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
         add_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
             , color, false, false
             , 0ULL, false, false);
@@ -2302,20 +2278,23 @@ void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Co
 }
 
 void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);
-    if (!queens) return;
+    ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);   // Dont mutate the bitboards
+    //if (!queens) return;
 
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    ull own_pieces = game_board.get_pieces(color);
+    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
+    // ull all_own_pieces = game_board.get_pieces(color);
+    // ull all_pieces = (all_own_pieces | all_enemy_pieces);
 
     while (queens) {
 
-        ull single_queen = utility::bit::lsb_and_pop(queens);       // To get it to a single bit
+        ull single_queen = utility::bit::lsb_and_pop(queens);       // To get it to a 1-bitboard
+        assert(single_queen);
 
         // Diagonal and straight moves
-        ull all_pieces_but_self = game_board.get_pieces() & ~single_queen;
-        assert(all_pieces_but_self != 0);
-        int square = utility::bit::bitboard_to_lowest_square(single_queen);
+        //assert(game_board.get_pieces() == all_pieces);
+        ull all_pieces_but_self = all_pieces & ~single_queen;
+
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
 
         // captures
@@ -2325,7 +2304,7 @@ void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Col
             , 0ULL, false, false);
     
         // all else
-        ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
         add_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
             , color, false, false
             , 0ULL, false, false);
@@ -2337,9 +2316,9 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
     ull king = game_board.get_pieces_template<Piece::KING>(color);
     //if (!king) return;    // Has to be a king, right?
 
-    ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    ull all_pieces = game_board.get_pieces();
-    ull own_pieces = game_board.get_pieces(color);
+    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
+    // ull all_own_pieces = game_board.get_pieces(color);
+    // ull all_pieces = (all_own_pieces | all_enemy_pieces);
 
     ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
 
@@ -2350,7 +2329,7 @@ void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
         , 0ULL, false, false);
 
     // non-capture moves
-    ull non_attack_moves = avail_attacks & ~own_pieces & ~enemy_piece_attacks;
+    ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
     add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
         , color, false, false
         , 0ULL, false, false);

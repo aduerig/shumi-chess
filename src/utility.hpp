@@ -117,6 +117,8 @@ inline ull square_to_bitboard(int square) {
 // (how many zeros are at the right end of the binary number, before you hit the first 1 bit)
 // Returns 64 if bitboard == 0? Maybe but ChatBot says no.
 // BUT for a "h1=0" system like this, this means scanning from h1 to a1, h2 to a2, and so on to a8.
+
+// I require that someone has screened for bitboard == 0
 inline int bitboard_to_lowest_square_fast(ull bitboard) {  
     return __builtin_ctzll(bitboard);
 };

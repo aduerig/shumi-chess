@@ -99,6 +99,8 @@ class Engine {
         // Member methods
         void reset_engine();                // New game
         void reset_engine(const string&);   // new game (with FEN)
+        void Engine::reset_all_but_FEN();
+
 
         void pushMove(const Move&);
         void popMove();
@@ -133,9 +135,7 @@ class Engine {
         #define MAX_PLY0 100
         vector<Move> all_legal_moves[MAX_PLY0];
 
-        vector<Move> all_unquiet_moves[MAX_PLY0];
-
-        int get_minor_piece_move_number (const vector <Move> mvs);       
+        vector<Move> all_unquiet_moves[MAX_PLY0];   
 
         bool in_check_after_move(Color color, const Move& move);
         bool in_check_after_move_fast(Color color, const Move& move);
@@ -159,7 +159,7 @@ class Engine {
         bool is_king_in_check2(const Color);
         bool is_square_in_check0(const Color, const ull);
         bool is_square_in_check(const Color, const ull);
-        bool is_square_in_check3(const Color, const ull);
+        bool is_square_in_check2(const Color, const ull);
         bool is_square_attacked_with_masks(
             const ShumiChess::Color enemy_color,
             const ull square_bb,     // 1-bit bb of target square
@@ -180,6 +180,10 @@ class Engine {
         void add_queen_moves_to_vector(vector<Move>&, Color);
         void add_king_moves_to_vector(vector<Move>&, Color);
         void add_rook_moves_to_vector(vector<Move>&, Color);
+
+        ull all_enemy_pieces;
+        ull all_own_pieces;
+        ull all_pieces; 
 
         // This is the "classical" approach
         // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
@@ -330,11 +334,11 @@ class Engine {
         bool flip_a_coin(void);
    
         //std::unordered_map<uint64_t, int> repetition_table;
-        std::vector<uint64_t> key_stack;
-        std::vector<int> boundary_stack; // index into key_stack
-
         //void debug_print_repetition_table() const;
 
+        // These stacks handled in parallel
+        std::vector<uint64_t> three_time_rep_stack; // zobrist keys representing positions
+        std::vector<int> boundary_stack; // indices into three_time_rep_stack
 
         struct PinnedInfo
         {
