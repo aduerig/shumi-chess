@@ -43,12 +43,14 @@ engine_communicator_systemcall(PyObject* self, PyObject* args) {
 
 
 
-ShumiChess::Engine python_engine;
+// Initialized lazily in PyInit_engine_communicator() to avoid static
+// initialization order fiasco (globals.cpp lookup tables may not be ready yet).
+static ShumiChess::Engine* python_engine = nullptr;
 vector<ShumiChess::Move> last_moves;
 
 static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
-    vector<ShumiChess::Move> moves = python_engine.get_legal_moves();
+    vector<ShumiChess::Move> moves = python_engine->get_legal_moves();
     last_moves = moves;
     vector<string> moves_readable;
     // map function that loads into moves_string
@@ -70,7 +72,7 @@ engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
 
 static PyObject* engine_communicator_print_from_c(PyObject* self, PyObject* args) {
 
-    //python_engine.       
+    //python_engine->       
     
     return Py_BuildValue(""); // this is None in Python
 
@@ -81,18 +83,18 @@ static PyObject* engine_communicator_print_from_c(PyObject* self, PyObject* args
 static PyObject*
 engine_communicator_get_piece_positions(PyObject* self, PyObject* args) {
     vector<pair<string, ull>> pieces = {
-        make_pair("black_pawn", python_engine.game_board.black_pawns),
-        make_pair("black_rook", python_engine.game_board.black_rooks),
-        make_pair("black_knight", python_engine.game_board.black_knights),
-        make_pair("black_bishop", python_engine.game_board.black_bishops),
-        make_pair("black_queen", python_engine.game_board.black_queens),
-        make_pair("black_king", python_engine.game_board.black_king),
-        make_pair("white_pawn", python_engine.game_board.white_pawns),
-        make_pair("white_rook", python_engine.game_board.white_rooks),
-        make_pair("white_knight", python_engine.game_board.white_knights),
-        make_pair("white_bishop", python_engine.game_board.white_bishops),
-        make_pair("white_queen", python_engine.game_board.white_queens),
-        make_pair("white_king", python_engine.game_board.white_king)
+        make_pair("black_pawn", python_engine->game_board.black_pawns),
+        make_pair("black_rook", python_engine->game_board.black_rooks),
+        make_pair("black_knight", python_engine->game_board.black_knights),
+        make_pair("black_bishop", python_engine->game_board.black_bishops),
+        make_pair("black_queen", python_engine->game_board.black_queens),
+        make_pair("black_king", python_engine->game_board.black_king),
+        make_pair("white_pawn", python_engine->game_board.white_pawns),
+        make_pair("white_rook", python_engine->game_board.white_rooks),
+        make_pair("white_knight", python_engine->game_board.white_knights),
+        make_pair("white_bishop", python_engine->game_board.white_bishops),
+        make_pair("white_queen", python_engine->game_board.white_queens),
+        make_pair("white_king", python_engine->game_board.white_king)
     };
 
     PyObject* python_all_pieces_dict = PyDict_New();
@@ -133,31 +135,31 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     }
 
 
-    python_engine.users_last_move = found_move;
+    python_engine->users_last_move = found_move;
 
     // Add to PGN
-    python_engine.ply_so_far++;
-    python_engine.gamePGN.addMe(found_move, python_engine);
+    python_engine->ply_so_far++;
+    python_engine->gamePGN.addMe(found_move, *python_engine);
 
 
-    python_engine.move_history = stack<ShumiChess::Move>();
-    //python_engine.move_history.push(found_move);
+    python_engine->move_history = stack<ShumiChess::Move>();
+    //python_engine->move_history.push(found_move);
 
     if (found_move.piece_type == 6)       // Piece::NONE is 6
     {
         cout << "\x1b[1;31m" << " You are full of it " << "\x1b[0m" << endl;
     } else {
         // Tell the engine the move
-        python_engine.pushMove(found_move);
+        python_engine->pushMove(found_move);
         
-        //++python_engine.repetition_table[python_engine.game_board.zobrist_key];
-        python_engine.three_time_rep_stack.push_back(python_engine.game_board.zobrist_key);
+        //++python_engine->repetition_table[python_engine->game_board.zobrist_key];
+        python_engine->three_time_rep_stack.push_back(python_engine->game_board.zobrist_key);
      
         // Add only "reversable" moves to the 3-time rep stack.
         // note: ireversable moves ?
-        bool bReversable = python_engine.game_board.isReversableMove(found_move);
+        bool bReversable = python_engine->game_board.isReversableMove(found_move);
         if (!bReversable) {
-            python_engine.boundary_stack.push_back((int)python_engine.three_time_rep_stack.size() - 1);
+            python_engine->boundary_stack.push_back((int)python_engine->three_time_rep_stack.size() - 1);
         }
 
 
@@ -174,7 +176,7 @@ engine_communicator_set_random_number_of_moves(PyObject* self, PyObject* args) {
     }
     //cout << "random!" << randomMoveCount << endl;
 
-    python_engine.set_random_on_next_move(randomMoveCount);
+    python_engine->set_random_on_next_move(randomMoveCount);
 
     return Py_BuildValue("");
 }
@@ -189,12 +191,12 @@ engine_communicator_get_pgn(PyObject* self, PyObject* args) {
     //cout << "get_pgn!" << endl;
 
     // char out[1028];
-    // python_engine.print_move_history_to_buffer(out, 1028);
+    // python_engine->print_move_history_to_buffer(out, 1028);
     // cout << out << endl;
 
     string sPGN;
 
-    sPGN = python_engine.gamePGN.spitout();
+    sPGN = python_engine->gamePGN.spitout();
 
     return Py_BuildValue("s", sPGN.c_str());
     //return Py_BuildValue("");
@@ -207,7 +209,7 @@ engine_communicator_get_pgn(PyObject* self, PyObject* args) {
 static PyObject*
 engine_communicator_game_over(PyObject* self, PyObject* args) {
     // returns constant (GameState C constant) 
-    return Py_BuildValue("i", (int) python_engine.is_game_over());
+    return Py_BuildValue("i", (int) python_engine->is_game_over());
 }
 
 // By "reset engine" is meant: "new game". 
@@ -219,9 +221,9 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args) {
         return nullptr; 
     }
     if (fen_string != nullptr) {
-        python_engine.reset_engine(fen_string);
+        python_engine->reset_engine(fen_string);
     } else {
-        python_engine.reset_engine();
+        python_engine->reset_engine();
     }
     Py_RETURN_NONE;
 }
@@ -230,7 +232,7 @@ engine_communicator_reset_engine(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_fen(PyObject* self, PyObject* args) {
-    return Py_BuildValue("s", python_engine.game_board.to_fen().c_str());
+    return Py_BuildValue("s", python_engine->game_board.to_fen().c_str());
 }
 
 static PyObject*
@@ -241,20 +243,20 @@ engine_communicator_get_features_default(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_move_number(PyObject* self, PyObject* args) {
-    //PyObject* ret = Py_BuildValue("i", python_engine.computer_ply_so_far);    // real moves in whole game
-    PyObject* ret = Py_BuildValue("i", ((python_engine.ply_so_far+1)/2));    // real moves in whole game
+    //PyObject* ret = Py_BuildValue("i", python_engine->computer_ply_so_far);    // real moves in whole game
+    PyObject* ret = Py_BuildValue("i", ((python_engine->ply_so_far+1)/2));    // real moves in whole game
     return ret;
 }
 
 static PyObject*
 engine_communicator_get_engine(PyObject* self, PyObject* args) {
     // Create Python capsule with a pointer to the Engine object
-    PyObject* engine_capsule = PyCapsule_New((void * ) &python_engine, "engineptr", NULL);
+    PyObject* engine_capsule = PyCapsule_New((void * ) python_engine, "engineptr", NULL);
     return engine_capsule;
 }
 
 
-MinimaxAI* minimax_ai = new MinimaxAI(python_engine);
+static MinimaxAI* minimax_ai = nullptr;
 static PyObject*
 minimax_ai_get_move(PyObject* self, PyObject* args) {
     ShumiChess::Move gotten_move = minimax_ai->get_move();
@@ -386,7 +388,7 @@ engine_communicator_get_game_timeb(PyObject* self, PyObject* args) {
 
 static PyObject* 
 engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
-    int iCPScore = python_engine.get_best_score_at_root();
+    int iCPScore = python_engine->get_best_score_at_root();
 
     double iPawnScore = minimax_ai->engine.convert_from_CP(iCPScore);
 
@@ -473,6 +475,14 @@ PyInit_engine_communicator(void) {
     auto now = chrono::high_resolution_clock::now().time_since_epoch();
     auto us  = duration_cast<microseconds>(now).count();
     std::srand(static_cast<unsigned>(us));  // higher-resolution seed
+
+    // Construct engine and AI here (not as globals) to avoid static
+    // initialization order fiasco — lookup tables in globals.cpp must
+    // be ready before Engine's constructor touches them.
+    if (!python_engine) {
+        python_engine = new ShumiChess::Engine();
+        minimax_ai = new MinimaxAI(*python_engine);
+    }
 
     PyObject* m = PyModule_Create(&engine_communicatormodule);
     if (m == NULL) {return NULL;}
