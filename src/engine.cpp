@@ -57,7 +57,7 @@ int PGN::addMe(Move& m, Engine& e)
     // Add the move number to the string (PGN needs this)
     if (e.game_board.turn == ShumiChess::WHITE) {
         char sztmp[16];
-        sprintf(sztmp, "%i. ", (e.ply_so_far/2+1));
+        snprintf(sztmp, sizeof(sztmp), "%i. ", (e.ply_so_far/2+1));
         
         text += sztmp;
     }
@@ -3040,7 +3040,7 @@ void Engine::print_move_history_to_buffer(char *out, size_t out_size)
 //
 // Prints the move history from oldest → most recent 
 // Uses: nPly = -2, isInCheck = false, bFormated = false
-void Engine::print_move_history_to_file(FILE* fp, char* psz) {
+void Engine::print_move_history_to_file(FILE* fp, const char* psz) {
 
     //int ierr = fputs("\nhistory: ", fp);
     int ierr = fprintf(fp, " (%03ld) %s:", (long)move_history.size(), psz);
@@ -3161,7 +3161,7 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
     print_tabOver(nPly, fp);
 
     // print prestring
-    if (preString != "") {
+    if (preString[0] != '\0') {
         ierr = fputs(preString, fp);
         assert (ierr!=EOF);
     }
@@ -3193,7 +3193,7 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
     // All legal moves for the current side to move
     std::vector<Move> moves = get_legal_moves();
 
-    fprintf(fp, "ddebug_SEE_for_all_captures: %ld\n", (int)moves.size());
+    fprintf(fp, "ddebug_SEE_for_all_captures: %d\n", (int)moves.size());
 
     for (const Move& mv : moves)
     {

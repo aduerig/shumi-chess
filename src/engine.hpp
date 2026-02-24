@@ -394,7 +394,7 @@ class Engine {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
 
         void print_move_history_to_buffer(char *out, size_t out_size);
-        void print_move_history_to_file(FILE* fp, char* psz);
+        void print_move_history_to_file(FILE* fp, const char* psz);
         void print_move_history_to_file0(FILE* fp, std::stack<ShumiChess::Move> tmp);
 
         int print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs

@@ -15,6 +15,15 @@ if is_windows():
     if not any(arg.startswith("--plat-name") for arg in sys.argv):
         sys.argv.append("--plat-name=win-amd64")
 
+if sys.platform == 'darwin':
+    import platform
+    # Only build for the native architecture to match the CMake-built static library
+    os.environ['ARCHFLAGS'] = f'-arch {platform.machine()}'
+    # Match deployment target with CMake's default (current OS version) to avoid linker warnings
+    mac_ver = platform.mac_ver()[0]
+    if mac_ver:
+        os.environ.setdefault('MACOSX_DEPLOYMENT_TARGET', mac_ver)
+
 
 release_mode = 'release'
 if '--release' in sys.argv:
