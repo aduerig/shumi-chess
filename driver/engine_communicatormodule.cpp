@@ -406,12 +406,12 @@ engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
         assert (mate_in_number > 0.0);
 
         if (iPawnScore >= 0.0) {
-            sprintf(szScore, "#%.1f", mate_in_number);
+            snprintf(szScore, sizeof(szScore), "#%.1f", mate_in_number);
         } else {
-            sprintf(szScore, "-#%.1f", mate_in_number);
+            snprintf(szScore, sizeof(szScore), "-#%.1f", mate_in_number);
         }
     } else {
-        sprintf(szScore, "%.2f", iPawnScore);
+        snprintf(szScore, sizeof(szScore), "%.2f", iPawnScore);
     }
 
     return Py_BuildValue("s", szScore);

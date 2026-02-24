@@ -48,7 +48,7 @@ if release_mode == 'debug':
         extra_compile_args += ['-g', '-O0']
 else:
     if not is_windows():
-        extra_compile_args += ['-Ofast']
+        extra_compile_args += ['-O3', '-ffast-math']
 
 the_module = Extension(
     'engine_communicator',
