@@ -55,8 +55,7 @@ namespace ShumiChess {
         bool no_pieces_on_same_square = are_bit_boards_valid();
         assert(no_pieces_on_same_square);
 
-        // Note: debug only, please remove me.
-        validate_row_col_masks_h1_0();
+
 
     }
 
@@ -140,6 +139,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         }
     }
 
+    // "this" here is a GameBoard.
     if (fen_components[3] != "-") { 
         this->en_passant_rights = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
     }
@@ -433,69 +433,26 @@ bool GameBoard::bHasCastled_fake(Color color1) const {
 }
 
 //
-// The total of material for that color. Uses centipawn_score_of(). Returns centipawns. Always positive. 
+// The total of material for that color. Uses centipawn_score_of(). Returns centipawns. Always positive.
+// Kings have no material value. 
 int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
     ull pieces_bitboard;
     int cp_board_score;
 
-    const ull itemp   = get_pieces_template<Piece::PAWN> (color);
+    //const ull itemp   = get_pieces_template<Piece::PAWN> (color);
 
     int cp_score_mat_temp = 0;                    // no pawns in this one
+
+    // Set the return variable
     cp_pawns_only_temp = bits_in(get_pieces(color, Piece::PAWN))   * centipawn_score_of(Piece::PAWN);
 
     cp_score_mat_temp += cp_pawns_only_temp;
     
-    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::KNIGHT)) * centipawn_score_of(Piece::KNIGHT);
-    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::BISHOP)) * centipawn_score_of(Piece::BISHOP);
-    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::ROOK))   * centipawn_score_of(Piece::ROOK);
-    // cp_score_mat_temp += bits_in(get_pieces(color, Piece::QUEEN))  * centipawn_score_of(Piece::QUEEN);
-
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::KNIGHT>(color)) * centipawn_score_of(Piece::KNIGHT);
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::BISHOP>(color)) * centipawn_score_of(Piece::BISHOP);
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::ROOK>(color))   * centipawn_score_of(Piece::ROOK);
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::QUEEN>(color))  * centipawn_score_of(Piece::QUEEN);
 
-
-    // // Add up the scores for each piece
-    // int cp_score_mat_temp = 0;                    // no pawns in this one
-    // for (Piece piece_type = Piece::ROOK;
-    //     piece_type <= Piece::QUEEN;
-    //     piece_type = static_cast<Piece>(static_cast<int>(piece_type) + 1))     // increment
-    // {    
-    //     // Get bitboard of all pieces on board of this type and color
-    //     pieces_bitboard = get_pieces(color, piece_type);
-    //     // Adds for the piece value multiplied by how many of that piece there is (using centipawns)
-    //     cp_board_score = centipawn_score_of(piece_type);
-    //     int nPieces = bits_in(pieces_bitboard);
-    //     //cp_score_mat_temp += (int)(((double)nPieces * (double)cp_board_score));
-    //     cp_score_mat_temp += nPieces * cp_board_score;
-    //     // This return must always be positive.
-    //     assert (cp_score_mat_temp>=0);
-    // }
-    // cp_score_mat_temp += cp_pawns_only_temp;
-
-    // if (global_debug_flag) {
-        
-    //     const int nP = bits_in(get_pieces(color, Piece::PAWN));
-    //     const int nN = bits_in(get_pieces(color, Piece::KNIGHT));
-    //     const int nB = bits_in(get_pieces(color, Piece::BISHOP));
-    //     const int nR = bits_in(get_pieces(color, Piece::ROOK));
-    //     const int nQ = bits_in(get_pieces(color, Piece::QUEEN));
-    //     const int nK = bits_in(get_pieces(color, Piece::KING));
-
-    //     printf("MATDBG color=%d  PAWN=%d KNIGHT=%d BISHOP=%d ROOK=%d QUEEN=%d KING=%d\n",
-    //            (int)color, nP, nN, nB, nR, nQ, nK);
-
-    //     // Optional extra: show the centipawn contributions too
-    //     const int cpP = nP * centipawn_score_of(Piece::PAWN);
-    //     const int cpN = nN * centipawn_score_of(Piece::KNIGHT);
-    //     const int cpB = nB * centipawn_score_of(Piece::BISHOP);
-    //     const int cpR = nR * centipawn_score_of(Piece::ROOK);
-    //     const int cpQ = nQ * centipawn_score_of(Piece::QUEEN);
-
-    //     printf("MATDBG cp: P=%d N=%d B=%d R=%d Q=%d  total(noK)=%d\n",
-    //            cpP, cpN, cpB, cpR, cpQ, (cpP + cpN + cpB + cpR + cpQ));
-    // }
 
     return cp_score_mat_temp;
 }
@@ -551,48 +508,131 @@ int GameBoard::pawns_attacking_square(Color c, int sq) {
     ull pawns = get_pieces_template<Piece::PAWN>(c);
     return bits_in(origins & pawns);
 }
+//
+// Unlike the above, this one takes a bitboard (with multiple squares).
+// This only works if no pawn can attack more than one of the squares in the bitboard at once.
+// So putting e4,d4 toegather is ok (for pawns)
+int GameBoard::pawns_attacking_square_multi(Color c, ull bitBoard) {;
+
+    const ull FILE_H = col_masksHA[ColHA::COL_H];   // H-file (h1=0 file index)
+    const ull FILE_A = col_masksHA[ColHA::COL_A];   // A-file (h1=0 file index)
+
+    ull origins;        // squares where a pawn would have to stand to attack the target
+
+    if (c == Color::WHITE) {
+        // white pawn origins that attack sq: from (sq-7) and (sq-9)
+        origins = ((bitBoard & ~FILE_A) >> 7) | ((bitBoard & ~FILE_H) >> 9);
+    } else {
+        // black pawn origins that attack sq: from (sq+7) and (sq+9)
+        origins = ((bitBoard & ~FILE_H) << 7) | ((bitBoard & ~FILE_A) << 9);
+    }
+
+    ull pawns = get_pieces_template<Piece::PAWN>(c);
+    return bits_in(origins & pawns);
+}
 
 
 int GameBoard::pawns_attacking_center_squares_cp(Color c)
 {
     // Offensive .vs. defensive center squares. Like Offensive center the best.
     int sum = 0;
+    //int sumA, sumB;
+    int temp;
+    //int temp2;
 
     if (c == Color::WHITE) {
 
-        // Offensive center (near enemy)
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
+        // remove me
 
-        // Defensive center (near friendly king)
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
+        // Offensive center (near enemy)
+        //sumA = Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e5);
+        //sumB = Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d5);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_CTR_OFF_WGHT*pawns_attacking_square_multi(c, squares_e5_d5);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // } 
+        sum += temp;
+
+        // Defensive center (nearer to friendly king)
+        //sumA = Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e4);
+        //sumB = Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d4);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_CTR_DEF_WGHT*pawns_attacking_square_multi(c, squares_e4_d4);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // }
+        sum += temp;
 
         // Advanced center
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
+        //sumA = Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e6);
+        //sumB = Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d6);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_ADV_CTR_WGHT*pawns_attacking_square_multi(c, squares_e6_d6);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // } 
+        sum += temp;
 
         // Advanced flank center
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c5);
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f5);
+        //sumA = Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c5);
+        //sumB = Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f5);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_ADV_FLK_WGHT*pawns_attacking_square_multi(c, squares_f5_c5);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // } 
+        sum += temp;
 
     } else {
 
         // Offensive center (near enemy)
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
+        //sumA = Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_e4);
+        //sumB = Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square(c, square_d4);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_CTR_OFF_WGHT*pawns_attacking_square_multi(c, squares_e4_d4);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // }
+        sum += temp;
 
         // Defensive center (near friendly king)
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
+        //sumA = Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_e5);
+        //sumB = Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square(c, square_d5);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_CTR_DEF_WGHT*pawns_attacking_square_multi(c, squares_e5_d5);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // }
+        sum += temp;
 
         // Advanced center
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
+        //sumA = Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_e3);
+        //sumB = Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square(c, square_d3);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_ADV_CTR_WGHT*pawns_attacking_square_multi(c, squares_e3_d3);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // } 
+        sum += temp;
 
         // Advanced flank center
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c4);
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f4);
+        //sumA = Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_c4);
+        //sumB = Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square(c, square_f4);
+        //temp2 = (sumA+sumB);
+        temp = Weights::PAWN_ON_ADV_FLK_WGHT*pawns_attacking_square_multi(c, squares_f4_c4);
+        // if (temp!=temp2) {
+        //     cout << temp << " " << temp2 << '\n';
+        //     assert(0);
+        // } 
+        sum += temp;
     }
 
     return sum;
@@ -899,7 +939,7 @@ bool GameBoard::isReversableMove(const Move& m)
     return true;
 }
 
-std::string GameBoard::sqToString2(int f, int r) const
+std::string GameBoard::sqToString(int f, int r) const
 {
     char file = 'h' - f;   // 0=H ... 7=A
     char rank = '1' + r;   // 0=1 ... 7=8
@@ -928,7 +968,8 @@ std::string GameBoard::sqToString2(int f, int r) const
 bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
     // Initialize structure elements
-    for (int i = 0; i < 8; ++i) { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; }
+    for (int i = 0; i < 8; ++i) 
+    { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; pinfo.rearSq[i] = -1; }
     pinfo.files_present = 0;
 
     const ull Pawns = get_pieces_template<Piece::PAWN>(c);
@@ -963,18 +1004,25 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
     return true;
 }
-
-
+//
+// struct PInfo {
+//     int file_count[8];          // Count of pawns on this file
+//     ull file_bb[8];             // Bitboard of pawns on this file
+//     unsigned files_present;     // Bitmask of which files contain >= 1 pawn
+//     int advancedSq[8];          // Square index of the side’s most advanced pawn on that file (or -1)
+//     int rearSq[8];              // Square index of the side’s least advanced pawn on that file (or -1)
+// };
 bool GameBoard::build_pawn_file_summary_fast(Color c, PInfo& pinfo)
 {
     // ALWAYS initialize outputs, even if there are no pawns.
-    for (int i = 0; i < 8; ++i) 
-    { 
-        pinfo.file_count[i] = 0; 
-        pinfo.file_bb[i] = 0ULL; 
-        pinfo.advancedSq[i] = -1; 
-        pinfo.rearSq[i] = -1;   
-    }
+    //for (int i = 0; i < 8; ++i) 
+    //{ 
+        //pinfo.file_count[i] = 0;      // inited in "if (!bb)"
+        //pinfo.file_bb[i] = 0ULL;      // Always set anyway
+        //pinfo.advancedSq[i] = -1;     // inited in "if (!bb)"
+        //pinfo.rearSq[i] = -1;         // inited in "if (!bb)"
+    //}
+
     pinfo.files_present = 0;
 
     const ull Pawns = get_pieces_template<Piece::PAWN>(c);
@@ -986,24 +1034,43 @@ bool GameBoard::build_pawn_file_summary_fast(Color c, PInfo& pinfo)
         const ull bb = (Pawns & col_masksHA[f]);
         pinfo.file_bb[f] = bb;
 
-        if (!bb) continue;
+        if (!bb) {
+            pinfo.file_count[f]=0; 
+            pinfo.advancedSq[f]=-1; 
+            pinfo.rearSq[f]=-1;
+            continue;
+        }
 
         pinfo.files_present |= (1u << f);
+
         pinfo.file_count[f] = bits_in(bb);
+        // int test = bits_in_fast(bb);
+        // if (test!=pinfo.file_count[f]) {
+        //     cout << test << " " << pinfo.file_count[f] << '\n';
+        //     string out = utility::representation::gameboard_to_string(*this);
+        //     cout << out << endl;
+        //     assert(0);
+        // }
 
         // advancedSq[f] must match build_pawn_file_summary():
         //  WHITE: most advanced pawn = highest rank on that file = largest square index in bb
         //  BLACK: most advanced pawn = lowest  rank on that file = smallest square index in bb
         if (c == Color::WHITE) {
             // largest set-bit index = 63 - clz(bb)
-            pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square(bb);
-            pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square(bb); 
+            pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square_fast(bb);
+            pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square_fast(bb); 
         } else {
             // smallest set-bit index = ctz(bb)
             //pinfo.advancedSq[f] = __builtin_ctzll(bb);
-            pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square(bb);
-            pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square(bb);  
+            pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square_fast(bb);
+            pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square_fast(bb);  
         }
+
+
+
+
+
+
     }
 
     return true;
@@ -1031,6 +1098,10 @@ void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
             printf("PInfo mismatch: advancedSq[%d] a=%d b=%d\n", i, a.advancedSq[i], b.advancedSq[i]);
             //return;
         }
+        if (a.advancedSq[i] != b.rearSq[i]) {
+            printf("PInfo mismatch: rearSq[%d] a=%d b=%d\n", i, a.advancedSq[i], b.advancedSq[i]);
+            //return;
+        }
     }
 
     //printf("PInfo mismatch: (unexpected) no field differed\n");
@@ -1051,7 +1122,7 @@ static void print_bb64(ull bb)
     }
 }
 
-// Note: debug only, please remove me.
+// Note: debug only. 
 void GameBoard::validate_row_col_masks_h1_0()
 {
     //printf("\nder\n");
@@ -1067,7 +1138,7 @@ void GameBoard::validate_row_col_masks_h1_0()
             std::printf("ROW MASK MISMATCH r=%d\n", r);
             std::printf("expected:\n"); print_bb64(expect);
             std::printf("actual:\n");   print_bb64(row_masks[r]);
-            assert(0);
+            assert(0);          // To force an exit
         }
     }
 
@@ -1083,7 +1154,7 @@ void GameBoard::validate_row_col_masks_h1_0()
             std::printf("FILE MASK MISMATCH f=%d (this f is sq%%8)\n", f);
             std::printf("expected:\n"); print_bb64(expect);
             std::printf("actual:\n");   print_bb64(col_masksHA[f]);
-            assert(0);
+            assert(0);          // To force an exit
         }
     }
 
@@ -1099,7 +1170,7 @@ void GameBoard::validate_row_col_masks_h1_0()
 
         if (rowHits != 1 || colHits != 1) {
             std::printf("SQUARE MEMBERSHIP BAD sq=%d rowHits=%d colHits=%d\n", sq, rowHits, colHits);
-            assert(0);
+            assert(0);          // To force an exit
         }
     }
 
@@ -1114,7 +1185,7 @@ void GameBoard::validate_row_col_masks_h1_0()
                 std::printf("INTERSECTION BAD r=%d f=%d (expect sq=%d)\n", r, f, sq);
                 std::printf("expected one-bit:\n"); print_bb64(expect);
                 std::printf("got:\n");             print_bb64(got);
-                assert(0);
+                assert(0);          // To force an exit
             }
         }
     }
@@ -1194,7 +1265,7 @@ int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) co
 //   holes_bb: bitboard (h1=0) of all hole squares found.
 // Returns:
 //   count of holes (one per pawn that creates such a hole).
-int GameBoard::count_pawn_holes_cp(Color c,
+int GameBoard::count_pawn_holes_cp_old(Color c,
                                const PawnFileInfo& pawnInfo,
                                ull& holes_bb) {
     int holes = 0;
@@ -1259,7 +1330,7 @@ int GameBoard::count_pawn_holes_cp(Color c,
     return (holes*Weights::PAWN_HOLE_WGHT);
 }
 
-int GameBoard::count_pawn_holes_cp2(Color c,
+int GameBoard::count_pawn_holes_cp(Color c,
                                const PawnFileInfo& pawnInfo,
                                ull& holes_bb) {
     int holes = 0;
@@ -1560,78 +1631,11 @@ int GameBoard::moved_f_pawn_early_cp(Color c) const
     return itemp * Weights::F_PAWN_MOVED_EARLY_WGHT;
 }
 
-
-
-
-// Used only in CRAZY_IVAN
-// Piece occuptation squares scaled for closeness to center.
-int GameBoard::center_closeness_bonus(Color c) {
-
-    int bonus = 0;
-
-    ull nBB = 0ULL, bBB = 0ULL, rBB = 0ULL, qBB = 0ULL;
-
-    if (c == Color::WHITE) {
-        nBB = white_knights;
-        bBB = white_bishops;
-        rBB = white_rooks;
-        qBB = white_queens;
-    } else {
-        nBB = black_knights;
-        bBB = black_bishops;
-        rBB = black_rooks;
-        qBB = black_queens;
-    }
-
-    // Knights (divide by 3)
-    ull tmp = nBB;
-    while (tmp) {
-        int sq = utility::bit::lsb_and_pop_to_square(tmp);
-        ull one = 1ULL << sq;
-        int ring = piece_edgeness(one);    // 0=center .. 3=edge
-        int centerness = 3 - ring;            // 3=center .. 0=edge
-        if (centerness < 0) centerness = 0;
-        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
-    }
-
-    // Bishops (divide by 3)
-    tmp = bBB;
-    while (tmp) {
-        int sq = utility::bit::lsb_and_pop_to_square(tmp);
-        ull one = 1ULL << sq;
-        int ring = piece_edgeness(one);
-        int centerness = 3 - ring;
-        if (centerness < 0) centerness = 0;
-        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 3;
-    }
-
-    // Rooks (divide by 5)
-    tmp = rBB;
-    while (tmp) {
-        int sq = utility::bit::lsb_and_pop_to_square(tmp);
-        ull one = 1ULL << sq;
-        int ring = piece_edgeness(one);
-        int centerness = 3 - ring;
-        if (centerness < 0) centerness = 0;
-        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 5;
-    }
-
-    // Queens (divide by 9)
-    tmp = qBB;
-    while (tmp) {
-        int sq = utility::bit::lsb_and_pop_to_square(tmp);
-        ull one = 1ULL << sq;
-        int ring = piece_edgeness(one);
-        int centerness = 3 - ring;
-        if (centerness < 0) centerness = 0;
-        bonus += (Weights::CENTER_OCCUPY_PIECES_WGHT * centerness) / 9;
-    }
-
-    return bonus;
-}
-
-
-int GameBoard::center_closeness_bonus2(Color c)
+//
+// Used only in CRAZY_IVAN. CRAZY_IVAN is designed for maximum speed, and doesnt care about anything else.
+// Some sort of "texture" must be provided though, or it moves the same piece back and forth. 
+//
+int GameBoard::center_closeness_bonus(Color c)
 {
     int bonus = 0;
 
@@ -1874,8 +1878,8 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 }
 
 
-// Color has king only, or king with a 1/2 minor pieces.
-// So discounting pawns, basically it means no more than "4 points" in material.
+// Color has king only, or king with 1 or 2 minor pieces.
+// So discounting pawns, basically it means no more than "6 points" in material.
 bool GameBoard::hasNoMajorPieces(Color attacker_color) {
     ull enemyBigPieces;
     ull enemySmallPieces;
@@ -2075,7 +2079,7 @@ int GameBoard::king_center_manhattan_dist(Color c)
 }
 
 // Sliders and knights = all pieces except pawns and the king.
-int GameBoard::sliders_and_knights_attacking_square2(Color attacker_color, int sq)
+int GameBoard::sliders_and_knights_attacking_square_fast(Color attacker_color, int sq)
 {
     const ull occ = get_pieces();
 
@@ -2315,7 +2319,7 @@ int GameBoard::attackers_on_enemy_king_near_cp(Color attacker_color)
 
         int sq = king_near_squares[i];
         // sliders are queens, bishops, and rooks
-        int nAttackers = sliders_and_knights_attacking_square2(attacker_color, sq);
+        int nAttackers = sliders_and_knights_attacking_square_fast(attacker_color, sq);
         //int nAttackers2  = sliders_and_knights_attacking_square(attacker_color, sq);
         //assert(nAttackers == nAttackers2);
         total += nAttackers;
@@ -2352,7 +2356,7 @@ int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
         int sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
 
         //total += sliders_and_knights_attacking_square(attacker_color, sq);
-        int nAttackers = sliders_and_knights_attacking_square2(attacker_color, sq);
+        int nAttackers = sliders_and_knights_attacking_square_fast(attacker_color, sq);
         //int nAttackers2  = sliders_and_knights_attacking_square(attacker_color, sq);
         //assert(nAttackers == nAttackers2);
         total += nAttackers;
@@ -2398,7 +2402,9 @@ int GameBoard::rand_new()
 
 
 ///////////////////////////////////////////////////////////////
-
+// Pawns in normal positions, all other pieces on back rank. Same number of pieces as regular setup.
+// Position symetric for white and black. Each side gets one bishop of each color. KIng must
+// lie between the two rooks.
 std::string GameBoard::random_960_FEN_strict()
 {
     // Files 0..7 correspond to a..h in the FEN string.
@@ -2503,7 +2509,6 @@ std::string GameBoard::random_960_FEN_strict()
 // Note: This does NOT does not try to ensure the position is reachable from the initial position.
 //
 ///////////////////////////////////////////////////////////////
-
 
 std::string GameBoard::random_kqk_fen(bool doQueen) {
 

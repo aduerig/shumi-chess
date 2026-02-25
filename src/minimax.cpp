@@ -291,13 +291,11 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
     //
     int mat_cp_white = 0;
     int mat_cp_black = 0;
-    //int pawns_cp_white = 0;
-    //int pawns_cp_black = 0;
 
     int tempsum = 0;
     int tempsumNP = 0;
     int cp_score_material_all = 0;
-    int cp_score_pawns_only = 0;
+    //int cp_score_pawns_only = 0;
     
 
     //
@@ -313,14 +311,12 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
 
         if (color1 == ShumiChess::WHITE) {
             mat_cp_white = cp_score_mat_temp;
-            //pawns_cp_white = cp_pawns_only_temp;
         } else {
             mat_cp_black = cp_score_mat_temp;
-            //pawns_cp_black = cp_pawns_only_temp;
         }
 
         tempsum += cp_score_mat_temp;
-        tempsumNP += cp_score_mat_temp - cp_pawns_only_temp;
+        tempsumNP += cp_score_mat_temp - cp_pawns_only_temp;    // "NP" means no pawns.
    
         // Take color into acccount
         if (color1 != for_color) 
@@ -329,7 +325,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
             cp_pawns_only_temp *= -1;
         }
         cp_score_material_all += cp_score_mat_temp;
-        cp_score_pawns_only += cp_pawns_only_temp;
+        //cp_score_pawns_only += cp_pawns_only_temp;
 
     }   // END loop over both colors
 
@@ -338,19 +334,12 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
     cp_score_material_avg = tempsum / 2;
     //cp_score_material_NP_avg = tempsumNP / 2;
 
-    //int mat_np_white = mat_cp_white - pawns_cp_white;
-    //int mat_np_black = mat_cp_black - pawns_cp_black;
-    //assert(mat_np_white>=0);
-    //assert(mat_np_black>=0);
-    //cp_score_material_NP_avg = (mat_np_white + mat_np_black) / 2;   // NEW
-    //if (is_debug) printf("\nmat: %ld", cp_score_material_all);
-
-    // ??? Note: display only
+    // ??? Note: for display only
     engine.material_centPawns = cp_score_material_all;
 
     assert (cp_score_material_avg >= 0);
     int nPhase = phaseOfGame(cp_score_material_avg); 
-
+    //
     //
     // Positional considerations only
     //
@@ -358,7 +347,6 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
     bool isOK;
     int test;
 
- 
 
     // if either side has "only a king", opening/middle terms are skipped for both WHITE and BLACK.
 
@@ -366,7 +354,8 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
 
         int cp_score_position_temp = 0;        // positional considerations only
 
-        Color enemy_of_color = (color == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
+        Color enemy_of_color = utility::representation::opposite_color(color);
+        //Color enemy_of_color = (color == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
 
         // Has king only, or king with a single minor piece.
         bool NoMajorPiecesEnemy   = engine.game_board.hasNoMajorPieces(enemy_of_color);
@@ -382,7 +371,7 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
 
             case CRAZY_IVAN:
                 // Assign to cp_score_position_temp
-                bonus_cp = engine.game_board.center_closeness_bonus2(color);
+                bonus_cp = engine.game_board.center_closeness_bonus(color);
                 assert(bonus_cp >= 0);
                 cp_score_position_temp = bonus_cp;
                 break;  
@@ -477,8 +466,8 @@ int MinimaxAI::evaluate_board(Color for_color, EvalPersons evp
 int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int nPhase) {
 
     int cp_score_position_temp = 0;
-    bool bOK;
-    bool bOK2;
+    bool b_pawns_friend;
+    bool b_pawns_friend2;
     int icp_temp;
 
 
@@ -489,30 +478,30 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
     // Get the friendly pawns summary (used by all the "count_" functions below)
     PawnFileInfo pawnFileInfo;
     PawnFileInfo pawnFileInfo2;
-    //bOK2 = engine.game_board.build_pawn_file_summary(color, pawnFileInfo2.p[friendlyP]);
-    bOK = engine.game_board.build_pawn_file_summary_fast(color, pawnFileInfo.p[friendlyP]);
-    // assert(bOK==bOK2);
+    b_pawns_friend = engine.game_board.build_pawn_file_summary(color, pawnFileInfo2.p[friendlyP]);
+    //b_pawns_friend2  = engine.game_board.build_pawn_file_summary_fast(color, pawnFileInfo.p[friendlyP]);
+    // assert(b_pawns_friend==b_pawns_friend2);
     // if (!(pawnFileInfo.p[friendlyP] == pawnFileInfo2.p[friendlyP])) {
     //     engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[friendlyP], pawnFileInfo2.p[friendlyP]);
-    //     string out = gameboard_to_string2(engine.game_board);
+    //     string out = gameboard_to_string(engine.game_board);
     //     cout << out << endl;
     //     cout << " \nside= " << friendlyP << "\n";
-    //     engine.game_board.validate_row_col_masks_h1_0();
     // }
-    //assert(pawnFileInfo.p[friendlyP] == pawnFileInfo2.p[friendlyP]);
+    // assert(pawnFileInfo.p[friendlyP] == pawnFileInfo2.p[friendlyP]);
 
     
 
-    if (bOK) {      // There are friendly pawns
+    if (b_pawns_friend) {      // There are friendly pawns
 
+        bool b_pawns_enemy;
         ull holes_bb = 0ULL;
         ull passed_pawns = 0ULL;
 
-        Color enemyColor = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+        Color enemyColor = utility::representation::opposite_color(color);
 
         // Get the enemy pawns summary (used by all the "count_" functions below)
         //bOK2 = engine.game_board.build_pawn_file_summary(enemyColor, pawnFileInfo2.p[enemyP]);
-        bOK = engine.game_board.build_pawn_file_summary_fast(enemyColor, pawnFileInfo.p[enemyP]);
+        b_pawns_enemy = engine.game_board.build_pawn_file_summary(enemyColor, pawnFileInfo.p[enemyP]);
         //assert(bOK==bOK2);
         //assert(pawnFileInfo.p[enemyP] == pawnFileInfo2.p[enemyP]);
         //if (!bOK) // false if enemy color has no pawns  NOTE: is this right? I guess we stil
@@ -523,8 +512,8 @@ int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int n
         cp_score_position_temp += (icp_temp);   // centipawns
 
         // Add code to discourage backward pawns/pawn holes
-        //int icp_temp2 = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
-        int icp_temp = engine.game_board.count_pawn_holes_cp2(color, pawnFileInfo, holes_bb);
+        //int icp_temp2 = engine.game_board.count_pawn_holes_cp_old(color, pawnFileInfo, holes_bb);
+        int icp_temp = engine.game_board.count_pawn_holes_cp(color, pawnFileInfo, holes_bb);
         //assert(icp_temp==icp_temp2);
         cp_score_position_temp += (icp_temp);   // centipawns
 
@@ -834,8 +823,10 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_displa
         
         // Aspiration (just a guard right now)
         //printf("alpha, this, beta %f  %f  %f", alpha, d_Return_score, beta);
-        assert((alpha <= d_Return_score) && (d_Return_score <= beta));
-   
+        #define ALPHA_BETA_FUZZ 1.0e10
+        //assert((alpha <= d_Return_score) && (d_Return_score <= beta));
+        assert( d_Return_score >= alpha - ALPHA_BETA_FUZZ &&
+                d_Return_score <= beta  + ALPHA_BETA_FUZZ);     
 
         // // --- What WOULD happen if the score were outside [alpha, beta] ---
         // // With an infinite window these branches are unreachable right now,
@@ -963,7 +954,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         clear_file_keep_fp(fpDebug);
     #endif
 
-    // NOTE: In 2 computer mode this is in plys. If one human, its in moves.
+    // NOTE: In 2 computers playing this is in plys. If one human, its in moves.
     engine.computer_ply_so_far++;                      // Increment real moves in whole game
     cout << "\x1b[94m\n\nMove: " << engine.computer_ply_so_far << "\x1b[0m";
 
@@ -1032,7 +1023,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         // zips through these, that it runs out of depth before the time limit.
         if (depth>=MAXIMUM_DEEPENING) {
             //cout << "\x1b[31m \nOver Deepening " << depth << "\x1b[0m" << endl;
-            //cout << gameboard_to_string(engine.game_board) << endl;
+            //cout << gameboard_to_string_old(engine.game_board) << endl;
             //assert(0);      // NOTE: this happens close to draws. Noone knows why.
             break;   // Stop deepening, no more depths.
         }
@@ -1066,7 +1057,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
             //     #ifdef _DEBUGGING_TO_FILE1
             //         //engine.print_move_history_to_file(fpDebug);    // debug only
-            //         cout << gameboard_to_string2(engine.game_board) << endl;
+            //         cout << gameboard_to_string(engine.game_board) << endl;
             //         assert(0);
             //     #endif
 
@@ -1393,7 +1384,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     //     string s2 = engine.moves_into_string(legal_moves2);
     //     cout << s2;
 
-    //     string out = gameboard_to_string2(engine.game_board);
+    //     string out = gameboard_to_string(engine.game_board);
     //     cout << out;
 
     //     assert(0);
@@ -1431,7 +1422,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         // If a draw by 50/3/insuffieceint time, then we can get in loop here, where each deepeining is only 
         // 1 msec so it runs off to many levels. 
         // 
-        //cout << gameboard_to_string(engine.game_board) << endl;
+        //cout << gameboard_to_string_old(engine.game_board) << endl;
         assert(0);    
     }
 
@@ -1608,7 +1599,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
             #ifdef _DEBUGGING_TO_FILE1
                 //engine.print_move_history_to_file(fpDebug, "forc");    // debug only
-                cout << gameboard_to_string2(engine.game_board) << endl;
+                cout << gameboard_to_string(engine.game_board) << endl;
                 assert(0);
             #endif
 
@@ -2257,9 +2248,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
                         if (!bBothScoresMates) {
 
-                            int iThreshold;
-                        
-                            iThreshold = BURP2_THRESHOLD_CP;
+                            int iThreshold = BURP2_THRESHOLD_CP;
 
                             //assert(0);  // to maske sure we get here.
 
@@ -2322,7 +2311,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                                 // << " , " << abs(foundScore - cp_score_temp)
                                 // << endl;
                                 
-                                string out = gameboard_to_string2(engine.game_board);
+                                string out = gameboard_to_string(engine.game_board);
                                 cout << out << endl;
 
                                 //isFailure = true;

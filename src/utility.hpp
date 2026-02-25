@@ -82,7 +82,7 @@ inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) 
         return bitboard << amount;
     }
     return bitboard >> amount;
-};
+}
 
 // This function does 2 things:
 //    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
@@ -94,7 +94,7 @@ inline ull lsb_and_pop(ull& bitboard) {
     // "pop" or remove the bit from the returned bitboard
     bitboard = bitboard & (~lsb_fast);
     return lsb_fast;
-};
+}
 
 // It finds the index (0–63) of the least-significant 1-bit in bitboard, clears that bit in the original variable, and returns the index.
 inline ull lsb_and_pop_to_square(ull& bitboard) {
@@ -105,13 +105,13 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
     // "pop" or remove the bit from the returned bitboard
     bitboard = bitboard & (~lsb_fast);
     return square;
-};
+}
 
 inline ull square_to_bitboard(int square) {
     assert (square >= 0);
     assert (square < 64);
     return 1ULL << square;
-};
+}
 
 // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
 // (how many zeros are at the right end of the binary number, before you hit the first 1 bit)
@@ -121,17 +121,17 @@ inline ull square_to_bitboard(int square) {
 // I require that someone has screened for bitboard == 0
 inline int bitboard_to_lowest_square_fast(ull bitboard) {  
     return __builtin_ctzll(bitboard);
-};
+}
 inline int bitboard_to_lowest_square(ull bitboard) {  
     //assert(bitboard != 0);
     if (bitboard == 0ULL) { return 64; }        // __builtin_ctzll(0) is undefined
     return __builtin_ctzll(bitboard);
-};
+}
 // Im used for debugging only
 inline int bitboard_to_lowest_square_safe(ull bitboard) {  
     assert(bitboard != 0);
     return __builtin_ctzll(bitboard);
-};
+}
 
 // Returns the number of leading zeros in the binary representation of a 64-bit integer.
 // Returns 64 if bitboard == 0.
@@ -202,7 +202,7 @@ inline std::string square_to_position_string(ull square) {
 
 inline std::string move_to_string(ShumiChess::Move move) {
     return square_to_position_string(move.from) + square_to_position_string(move.to);
-};
+}
 
 
 inline std::string piece_to_string(ShumiChess::Piece piece) {
@@ -266,8 +266,8 @@ struct MoveHash {
 };
 std::string bitboard_to_string(ull);
 void print_bitboard(ull);
+std::string gameboard_to_string_old(ShumiChess::GameBoard);
 std::string gameboard_to_string(ShumiChess::GameBoard);
-std::string gameboard_to_string2(ShumiChess::GameBoard);
 std::string colorize_board_string(const std::string& plain);
 std::string widen_board(const std::string& plain);
 void print_gameboard(ShumiChess::GameBoard);

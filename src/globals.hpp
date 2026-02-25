@@ -63,9 +63,9 @@ enum Piece {     // Pieces must be in this order!
 // Now its at 32 Whopee.
 struct Move {
   
-    ull from = 0ULL;   // bitboard (but with only one bit set)
-    ull to = 0ULL;     // bitboard (but with only one bit set)
-    ull en_passant_rights = 0;              // Note this is a bitboard?
+    ull from = 0ULL;   // 1-bitboard (but with only one bit set)
+    ull to = 0ULL;     // 1-bitboard (but with only one bit set)
+    ull en_passant_rights = 0ULL;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.

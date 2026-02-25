@@ -78,14 +78,15 @@ class GameBoard {
         uint8_t black_castle_rights = 0b00000000;
         uint8_t white_castle_rights = 0b00000000;
 
-        // NOTE: why is this a ull? Should it be coded into a unint8_t like castling privilidges?
+        // NOTE: why is this a ull? Should it be coded into a unint8_t like castling privilidges? NO. see summary.txt
         //square behind enpassantable pawn after moving
         //0 is impossible state in conventional game
         // ? is this right way to represent this
         // ? do we care about non standard gameboards / moves
         // ? would one consider an extra bit for if we should look at this val
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
-        ull en_passant_rights = 0;     
+        //
+        ull en_passant_rights = 0;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
         uint64_t zobrist_key = 0;
 
@@ -234,6 +235,7 @@ class GameBoard {
             }
         }
 
+        // Returns the first matching Piece type found.
         inline Piece get_piece_type_on_bitboard(Color c, ull bb1) {
             if (c == Color::WHITE) {
                 if (bb1 & white_pawns) return Piece::PAWN;
@@ -266,9 +268,9 @@ class GameBoard {
         int moved_f_pawn_early_cp(Color c) const;
 
         int center_closeness_bonus(Color c);
-        int center_closeness_bonus2(Color c);
 
         int pawns_attacking_square(Color c, int sq);
+        int pawns_attacking_square_multi(Color c, ull sqs);
         int pawns_attacking_center_squares_cp(Color c);
 
         int knights_attacking_square(Color c, int sq);
@@ -294,13 +296,13 @@ class GameBoard {
         void validate_row_col_masks_h1_0();
 
         bool any_piece_ahead_on_file(Color c, int sq, ull pieces) const;
-        std::string sqToString2(int f, int r) const; // H1=0, 
+        std::string sqToString(int f, int r) const; // H1=0, 
 
         // "Positional "pawn" routines.
         int count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
-        int count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo
+        int count_pawn_holes_cp_old(Color c, const PawnFileInfo& pawnInfo
                                 , ull& holes);  // output
-        int count_pawn_holes_cp2(Color c, const PawnFileInfo& pawnInfo
+        int count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo
                                 , ull& holes);  // output
         int count_knights_on_holes_cp(Color c, ull holes_bb);
 
@@ -318,7 +320,7 @@ class GameBoard {
         int get_king_near_squares(Color defender_color, int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
-        int sliders_and_knights_attacking_square2(Color attacker_color, int sq);
+        int sliders_and_knights_attacking_square_fast(Color attacker_color, int sq);
         int attackers_on_enemy_king_near_cp(Color attacker_color);
         int attackers_on_enemy_passed_pawns(Color attacker_color,
                                                ull passed_white_pwns,
@@ -424,6 +426,18 @@ class GameBoard {
                 return (int)__builtin_popcountll(bb);
             #endif
         }
+
+        inline int bits_in_fast(ull bb) const {
+            if (!bb) return 0;
+
+            ull bb2 = bb & (bb - 1);
+            if (!bb2) return 1;
+
+            if ((bb2 & (bb2 - 1)) == 0) return 2;
+
+            return 3;   // means "3 or more"
+        }
+
         // inline int bits_in(ull bb) const {
         //     int n = 0;
         //     while (bb) { bb &= (bb - 1); ++n; }    // The K&R or Kernighan trick
@@ -478,6 +492,18 @@ class GameBoard {
         static constexpr int square_c8 = 61;
         static constexpr int square_b8 = 62;
         static constexpr int square_a8 = 63;
+
+        // center squares
+        static constexpr ull squares_e4_d4 = (1ull<<square_e4) | (1ull<<square_d4); 
+        static constexpr ull squares_e5_d5 = (1ull<<square_e5) | (1ull<<square_d5); 
+
+        // "advanced" center squares
+        static constexpr ull squares_e6_d6 = (1ull<<square_e6) | (1ull<<square_d6); 
+        static constexpr ull squares_e3_d3 = (1ull<<square_e3) | (1ull<<square_d3); 
+
+        // "flanking" center squares
+        static constexpr ull squares_f4_c4 = (1ull<<square_f4) | (1ull<<square_c4); 
+        static constexpr ull squares_f5_c5 = (1ull<<square_f5) | (1ull<<square_c5);   
 
         Weights wghts;
 

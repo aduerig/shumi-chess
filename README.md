@@ -16,21 +16,21 @@ we're back
 
 
 ## intro
-This project is a hobby C++ engine written by OhMesch and ADuerig, and later refined and maintained by PDuerig. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also avaliable. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
+This project is a hobby C++ engine written by OhMesch and ADuerig, and later refined and maintained by PDuerig. It functions as a fast library exposing useful chess functions such as `generate_legal_moves`. A python module `engine_communicator` is also available. There is a serviceable python gui to see the engine in action at `driver/show_board.py`.
 
-This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering, killer moves, SEE.
+This project has AI to make intelligent chess moves, it is called "MinimaxAI". MinimaxAI uses at least the following technologies: Bit Boards, Nwegamax, Alpha/Beta, Iterative deepening, acquiescence, descending MVV-LVA order, PV ordering, killer moves, SEE.
 
 See players (minimaxAI) in * See [players](doc/players.md) for more better desciptions of checked in "MinimaxAI", as far as speed or "intelligence".
 
 ## current issue log 
     Not prioritized. No particular order to them. All issues classified as either: a. Bug, or b. Failure (to chess requirements), or c. Sloth (slowdown) or d. Feature. ~~Crossed out~~ items are done, but under testing.
 
-  * Bug: Get FEN button gives scrambled result when computer playyer is playing. Maybe this is OK, The scrambled FEN is seen both in the FEN box and the terminal of VSC. 
-  * Sloth: Move structure is to big (32 bytes). For example look at en_passant_rights, or .tp and .from.
+  * Bug: Get FEN button gives scrambled result when computer player is playing. Maybe this is OK, The scrambled FEN is seen both in the FEN box and the terminal of VSC. Probably just needs screening. 
+  * Sloth: Move structure is too big (32 bytes). For example look at en_passant_rights, or .tp and .from.
   * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG".
   * Bug: Forces promotions for the human to be to a queen. Problem with the interface I suppose. Need a new feature here.
   * Bug: Weird interface bug prevents shumi from promotion to other than queen. "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1". (after white moves Ka2). Shumi comes up with c1=N. c1=Q leads to a stalemate and is not even considered by the engine. c1=N is the correct move and is checkmate. At every depth, the AI and engine correctly choses c1=N. But the interface somehow makes the c1=N move, translates it to c1=Q which is stalemate and the game is over and a draw.
-  * ~~Bug: Can't seem to get evaluator to want to trade when it is ahead.~~
+  * Bug: Can't seem to get evaluator to want to trade when it is ahead.
   * ~~Feature: No ability to truely randomize response without ruining play. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.~~
   * Bug: "Some time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. Not always seen, not frequent. No error, just looks strange. Evidence shows that this comes from a king leaving the board. This condition not handled well.
   * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the randomAI as opposed to minimaxAI move. Maybe easy change See get_ai_move_threaded().
@@ -41,9 +41,9 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. Its now 20, for testing only.
   * Sloth: No true Transposition table (TT2) implemented. This is a problem in MinimaxAI. Comment: Wrong, its "slightly" implemented. Its used for repeat position ID, but not for move sorting. The current transposition table stores only positions, and not moves also. 
-  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + ~~History heuristics~~, aspiration, ~SEE~). These changes do not rely on TT2 or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all, disabled now.
+  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + ~~History heuristics~~, aspiration, ~~SEE~~). These changes do not rely on TT2 or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all, disabled now.
   * Failure: Fifty move rule, and 3 time rep technically need a player to call it. Here the computer just calls it when it sees it. This is normal for chess engines and will never be fixed. 
-  * Failure: bitboards_to_algebriac() does not do disambiguation. Too hard for now. Also does not postfix checks with a "+" either. The function is debug for human consumption only.
+  * Failure: bitboards_to_algebriac() does not postfix checks with a "+". The function is debug for human consumption only.
   * Failure: Trading motivator in eval only looks at pieces, not pawns.
   * Failure: See to put rooks on passed pawn files. or maybe all pieces to put attack on passed pawns.
    * Bug: Disappearing pieces. Only in the python, display, peices are really there. Infrequent. But repeatible, 
@@ -53,24 +53,24 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 * See [brainStorm](doc/brainStorm.md) for more future directions.
 
 ## recommended usage (for python scripts/run_tests.py -dD and -tT)
-  fast 5 minute play: -t200 -d6     (for autoplay of computers)
-  for half hour game: -t1200 -d8
+  fast 5 minute play: -t1000 -d7     (also for autoplay of computers)
+  for 20 minute game: -t1500 -d8
   for long game     : -t2000 -d9    long game
 
   or you can use "-wd", "-wt", "bd", or "bt", to set the t and d arguments for one side only (black or white)
-  You can also use "-rN" where N is some ineger like 2, when it will play N "random moves" in a row. This move is randomly
+  You can also use "-rN" where N is some integer like 2, when it will play N "random moves" in a row. This move is randomly
   chosen as one of the best withen a small delta. Watch out, these "random moves" reduce ability. Also of note is the "f0xF" feature for a hexidecimal number F (see Features.hpp for constants).
 
 ## Keystrokes active in app
   * esc  - Exit app
-  * 1    - Pause play. Useful when playing computers against each other so you can look at the position before the game moves on. You can then hit "Get FEN" button, which will deposit the FEN into the clipboard. Timers not paused, so times will include the pause interval. One key hit again, releases the pause
+  * 1    - Pause play. Useful when playing computers against each other so you can look at the position before the game moves on. You can then hit "Get FEN" button, which will deposit the FEN into the clipboard. Timers not paused, so times will include the pause interval. One key hit again, releases the pause.
 
 ## change log
   * Abandoned 10/11/2025
   * see ...
 
 ## building
-This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and several simple engine commands for the purposes of a GUI (a somewhat simple GUI is provided). There is also two AI's builty on the engine: a. RandomAI, and MinimaxAI. RandomAI is what you think, looks at all legal moves and selects a random response. MinimaxAI is much different using many technologies such as alpha/beta, iterative deepening, quiessence, SEE, and so on, for move choice.
+This project uses CMAKE for C++ parts of the engine. It also exposes a python module written in C++ that can access the board state, and several simple engine commands for the purposes of a GUI (a somewhat simple GUI is provided). There is also two AI's builty on the engine: a. RandomAI, and MinimaxAI. RandomAI is what you think, looks at all legal moves and selects a random response. MinimaxAI is much different using many technologies such as alpha/beta, negamax, iterative deepening, quiessence, SEE, and so on, for move choice.
 
 * use the python files in the `scripts/` folder
 * Run before compilation to compile with clang

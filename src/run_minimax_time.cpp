@@ -26,10 +26,13 @@ using namespace std::chrono;
 
 int main(int argc, char** argv) {
 
-    assert(0);      //To ensure no asserts are on here in this build.
+    assert(0);       // To insure that asserts are compiled out
 
     string FENString =  "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
     Engine engine(FENString);
+
+    string out = utility::representation::gameboard_to_string(engine.game_board);
+    cout << out << endl;
 
     //Engine engine;
 

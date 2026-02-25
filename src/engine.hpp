@@ -99,8 +99,6 @@ class Engine {
         // Member methods
         void reset_engine();                // New game
         void reset_engine(const string&);   // new game (with FEN)
-        void reset_all_but_FEN();
-
 
         void pushMove(const Move&);
         void popMove();
@@ -324,7 +322,7 @@ class Engine {
         #define DRAW_50MOVERULE  3
         #define DRAW_INSUFFMATER 4
         #define DRAW_AGREEMENT   5
-        #define DRAW_ADMIN       6    // tounyement director is closing the hall.
+        #define DRAW_ADMIN       6    // tournement director is closing the hall.
         int reason_for_draw = DRAW_NULL;
 
         int get_best_score_at_root();
@@ -414,6 +412,10 @@ class Engine {
                                             , FILE* fp);
 
         void debug_SEE_for_all_captures(FILE* fp);
+
+    private:
+        void reset_all_but_FEN();
+
 
     };
 

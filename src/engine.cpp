@@ -217,6 +217,10 @@ void Engine::reset_all_but_FEN()
     boundary_stack.reserve(MAX_MOVES);
     
     reason_for_draw = DRAW_NULL;
+
+    // Checks a bunch of things in the bitboards for validity. Only throws asserts if something wrong.
+    game_board.validate_row_col_masks_h1_0();
+
 }
 
 vector<Move> Engine::get_legal_moves() {
@@ -226,6 +230,8 @@ vector<Move> Engine::get_legal_moves() {
 
     // Note: understand why this is ok (vector can be returned even though on stack), move ellusion? 
     // https://stackoverflow.com/questions/15704565/efficient-way-to-return-f-stdvector-in-c
+    // Chatbot says: Returning std::vector by value is safe and efficient, because of NRVO,
+    // or "Named Return Value Optimization".
     return MovesOut;
 }
 
@@ -249,7 +255,7 @@ bool Engine::in_check_after_move(Color color, const Move& move) {
             std::cout << "FEN before  push/pop: " << temp_fen_before  << std::endl;
             std::cout << "FEN after   push/pop: " << temp_fen_after   << std::endl;
             std::cout << "\x1b[0m";
-            assert(0);
+            assert(0);              // To force an exit
         }
     #endif
     return bReturn;
@@ -362,7 +368,7 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
                 (*pRooks) |=  (1ULL << game_board.square_f8);
             }
         } else {
-            assert(0);
+            assert(0);          // To force an exit
         }
     }
 
@@ -1366,15 +1372,6 @@ int Engine::get_best_score_at_root() {
     //     // if (color1 != for_color) cp_score_mat_temp *= -1;
 
 
-
-
-
-
-    //     material_centPawns += cp_score_mat_temp;
-
-    // }
-
-    //return (material_centPawns/100);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1473,7 +1470,7 @@ void Engine::pushMove(const Move& move) {
 
         ull move_to_bb = move.to;
         if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
-            //          rnbqkbnr                                                       RNBQKBNR
+            //             rnbqkbnr                                                       RNBQKBNR
             // Queenside Castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 7;   // game_board.square_a1
@@ -1487,7 +1484,7 @@ void Engine::pushMove(const Move& move) {
                 friendly_rooks |= (1ULL <<60);
             }
         } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
-             //                rnbqkbnr                                                       RNBQKBNR
+             //                   rnbqkbnr                                                       RNBQKBNR
             // Kingside castle (black or white)
             if (move.color == ShumiChess::Color::WHITE) {
                 rook_from_sq = 0;   // game_board.square_h1
@@ -1525,6 +1522,7 @@ void Engine::pushMove(const Move& move) {
         game_board.zobrist_key ^= zobrist_enpassant[old_ep_file];
     }
 
+    // / En passant part B. Note: here is the transfer from the enemy pawn move to the board. 
     this->game_board.en_passant_rights = move.en_passant_rights;
 
     // Zobrist: add new en passant (if any)
@@ -1583,7 +1581,7 @@ void Engine::popMove() {
         game_board.zobrist_key ^= zobrist_enpassant[prev_ep_file];
     }
 
-    // 3. Now actually restore en_passant_rights and pop the stack
+    // 3. Now actually restore en passant rights and pop the stack
     this->game_board.en_passant_rights = this->en_passant_history.top();
     this->en_passant_history.pop();
 
@@ -1964,7 +1962,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                                 ull single_bitboard_from, 
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece, Color color, bool capture, bool promotion,
-                                ull en_passant_rights,
+                                ull en_passant_rghts,
                                 bool is_en_passent_capture, bool is_castle) {
     // Castled bitmaps
     constexpr ull W_KSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000;
@@ -1974,8 +1972,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
 
     constexpr ull castle_touch = (W_KSIDE_MASK | W_QSIDE_MASK | B_KSIDE_MASK | B_QSIDE_MASK);
 
-    //if (!bitboard_to) return;
-    assert(game_board.bits_in(en_passant_rights) <= 1);
+    assert(game_board.bits_in(en_passant_rghts) <= 1);     // exploratory assert
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
@@ -1992,7 +1989,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                 piece_captured = game_board.get_piece_type_on_bitboard(single_bitboard_to);
             }
             else {
-                piece_captured = Piece::PAWN;
+                piece_captured = Piece::PAWN;       // En passant always takes a pawn
             }
         }
 
@@ -2012,7 +2009,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
             new_move.from = single_bitboard_from;
             new_move.to = single_bitboard_to;
             new_move.capture = piece_captured;
-            new_move.en_passant_rights = en_passant_rights;
+            new_move.en_passant_rights = en_passant_rghts;
             new_move.is_en_passent_capture = is_en_passent_capture;
             new_move.is_castle_move = is_castle;
 
@@ -2032,12 +2029,12 @@ void Engine::add_move_to_vector(vector<Move>& moves,
             if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
 
             new_move.promotion = Piece::NONE;
-        }
-        else
-        {
+
+        } else {
+            // Its a promotion
             ull from_or_to = (single_bitboard_from | single_bitboard_to);
 
-            // A promotion. Add all possible promotion moves.
+            // Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
                 // Get address of next slot in the vector.
@@ -2050,12 +2047,11 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                 new_move.from = single_bitboard_from;
                 new_move.to = single_bitboard_to;
                 new_move.capture = piece_captured;
-                new_move.en_passant_rights = en_passant_rights;
+                new_move.en_passant_rights = en_passant_rghts;
                 new_move.is_en_passent_capture = is_en_passent_capture;
                 new_move.is_castle_move = is_castle;
 
                 // castling rights
-
                 if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
                 if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
                 if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
@@ -2136,10 +2132,20 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
             ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_unblocked, color, 8);
             ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
 
+            // Only pawns that advance 2 squares can be taken en passent. So here we store 
+            // the square where the en passent ends up. But this is highly weird.
+            // Here are the parts of this: 
+            //    A. We are storing it into a move, of the OPPOSITE side as the en-passent mover.
+            //    B. When this "double pawn" move is pushMove()ed, then this field is copied to the board.
+            //    C. Here below, if the board has a non zero here, we constuct an enpassent move.
+            //
+            // En passant part A. Store en passent end square into a move, of the OPPOSITE side as the en-passent mover
+            ull en_passent_target = move_forward_one_unblocked;
+            
             if (move_forward_two_unblocked) add_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, move_forward_two_unblocked, Piece::PAWN
                 , color, false, false
-                , move_forward_one_unblocked, false, false);    // Note: ??? Why move_forward_one_unblocked?
+                , en_passent_target, false, false);
         }
 
         // Look for (and add if its there), promotions
@@ -2163,22 +2169,30 @@ void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Colo
                     , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
                     , 0ULL, false, false);
 
-        // enpassant attacks
+        // Enpassant attacks
         // TODO improvement here, cause we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
         //      of code here to get the speed upgrade. Works fine as is
 
-        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
-        if (enpassant_end_loc) {
+        ull enpassant_end_loc;
+        //ull enpassant_end_loc2;     // remove me
+        // En passant part C. If the board has a non zero here, we constuct an enpassent move.
+        // Note: Intresting that only one en passant can occur on any move.
+        
+        // remove me
+        //enpassant_end_loc2 = (attack_fleft | attack_fright) & game_board.en_passant_rights;
 
-            // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
-            // int origin_pawn_square = utility::bit::bitboard_to_lowest_square(single_pawn);
-            // int dest_pawn_square = utility::bit::bitboard_to_lowest_square(one_move_forward);
-      
-            if (enpassant_end_loc) add_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, enpassant_end_loc, Piece::PAWN
-                , color, true, false
-                , 0ULL, true, false);
-        }
+        ull enpassant_end_loc_left  = attack_fleft  & game_board.en_passant_rights;
+        ull enpassant_end_loc_right = attack_fright & game_board.en_passant_rights;
+
+        assert((enpassant_end_loc_left & enpassant_end_loc_right) == 0ULL);    // En passants from both left and right can never both hold enpassant moves
+        enpassant_end_loc = enpassant_end_loc_left | enpassant_end_loc_right; 
+        //assert(enpassant_end_loc == enpassant_end_loc2);         // remove me
+
+        if (enpassant_end_loc) add_move_to_vector(all_psuedo_legal_moves
+            , single_pawn, enpassant_end_loc, Piece::PAWN
+            , color, true, false
+            , 0ULL, true, false);
+ 
     }
 }
 

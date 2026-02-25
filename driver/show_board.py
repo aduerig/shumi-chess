@@ -865,6 +865,7 @@ try:
 
             move_number = engine_communicator.get_move_number()
 
+            # DRAW_ADMIN
             DEBUG_MAX_MOVES = 150  # or whatever cap you want
 
             # "admin" draw (used for debug only)

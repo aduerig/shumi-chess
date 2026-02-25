@@ -76,7 +76,7 @@ void print_bitboard(ull bitboard) {
 
 
 
-std::string gameboard_to_string(GameBoard gameboard) {
+std::string gameboard_to_string_old(GameBoard gameboard) {
     unordered_map<ull, char> bitboard_to_letter = {
         {gameboard.white_bishops, 'B'},
         {gameboard.white_knights, 'N'},
@@ -171,11 +171,11 @@ std::string widen_board(const std::string& plain)
     return out;
 }
 
-std::string gameboard_to_string2(GameBoard gameboard) {
+std::string gameboard_to_string(GameBoard gameboard) {
     string plain;
     string colored;
     string colored2;
-    plain = gameboard_to_string(gameboard);
+    plain = gameboard_to_string_old(gameboard);
     colored = widen_board(plain);
     colored2 = colorize_board_string(colored);
     return colored2;
@@ -183,7 +183,7 @@ std::string gameboard_to_string2(GameBoard gameboard) {
     
 
 void print_gameboard(GameBoard gameboard) {
-    cout << gameboard_to_string(gameboard) << endl;
+    cout << gameboard_to_string_old(gameboard) << endl;
 }
 
 string stringify(Piece piece) {

@@ -1,3 +1,51 @@
 
-1. Once both sides castled, all castle-motivators off.
-2. Problem: if only one side castled, the castled side might "overmotivate"
+How EN Passant is accomplished in Shumi. 
+----------------------------------------
+
+backround:
+    Shumi is a chess machine that uses bitboards to store the position and pieces. There are twelve bitboards, for each 
+    color and piece. 
+    
+
+summary of Parts:
+
+    B. Pawn move generation (double-push detection) puts a value into the Move field (en_passant_rights 1-bitboard).
+
+    C. pushMove() copies that Move field into the GameBoard field.
+
+    D. Next ply, pawn move generation checks the GameBoard field (nonzero means EP is possible).
+        EP move generation uses the stored value as the landing square target (by checking pawn attacks onto it).
+
+
+details:
+
+    The steps of the En Passant algorithm are as follow sequentially.
+
+        Part A: Lets start with some unknown move just having been pushed (pushMove()).
+    At this point Shumi needs a list of all legal moves from this position. These are derived seperatly by 
+    piece: (pawn, knight, queen, etc), so there is six routines, and one particular routine that derives all legal pawn 
+    moves for whomever's move it is, called add_pawn_moves_to_vector(). 
+
+        Part B: In add_pawn_moves_to_vector(), it looks for legal pawn moves up 2 squares. Once it has found such 
+    a move, it stores it away in the list of legal moves. Each move is stored in a Move structure. But also in the 
+    Move structure we have a "en_passant_rights" slot. Its a bitboard, but containing only one bit (a "1-bitboard").
+    In the case of 2-move pawn moves we store the square where the pawn moving up one square would end up. All other moves 
+    store zero here.
+  
+        Part C: When we push moves, we copy this "slot value" into a same named slot in the GameBoard object. So we copy 
+    the field value from the Move object - into the GameBoard object. Now only 2-pawn moves have non-zero here, the rest
+    of the moves just pass through a "zero".
+
+        Part D. After the push we are in the same situation as Part A above, just one ply down. We need legal pawn moves 
+    so we will call add_pawn_moves_to_vector(). Now there is code in add_pawn_moves_to_vector() - seperate from the code 
+    summarized in part A - that looks for a non-zero "slot value" in the GameBoard object. If one is found, then there may 
+    potentially be an en passant.  All we need to do is see if a pawn is "attacking diagonally", the "slot square" - if so 
+    there is an en passant. This trick works because when we originaly stored this value we made it to be exactly the square
+    that is the target square of the en passant move.
+    
+            Objections:
+    First of all, "en_passant_rights" is a hideous name as it has nothing to do with "rights". 
+    Second of all, it requires that the "slot" field be ull. That seems wasteful. But it seems to me both the derivation
+    and the usage of the "slot value" require use of bitboards. So I might have to add overhead to pack and unpack a 1-bitboard
+    into a square (int). Hard to see which is faster.
+

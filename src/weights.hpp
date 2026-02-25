@@ -58,7 +58,7 @@ public:
     static constexpr int ISOLANI_ROOK_WGHT  = -17;    // Rook pawns can be isolated too.
 
     // Backward pawns (holes)
-    static constexpr int PAWN_HOLE_WGHT = -18;        // A hole is the square direclty ahead of a backward pawn.
+    static constexpr int PAWN_HOLE_WGHT = -20;        // A hole is the square direclty ahead of a backward pawn.
     static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
 
     // Doubled pawns
@@ -91,11 +91,11 @@ public:
     static constexpr int TWO_BISHOPS_WGHT = 16;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
-    static constexpr int QUEEN_OUT_EARLY_WGHT = -70;    // for center squares only. only in opening.
+    static constexpr int QUEEN_OUT_EARLY_WGHT = -50;    // for center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
 
-    static constexpr int DEVELOPMENT_OPENING = 11;      // Opening only.  Only minor pieces, off theier starting square.
+    static constexpr int DEVELOPMENT_OPENING = 11;      // Opening only.  Only minor pieces, off their starting square.
 
     static constexpr int ROOK_CONNECTED_WGHT = 90;      // if any connected rook pair exists (one bonus only)
 
