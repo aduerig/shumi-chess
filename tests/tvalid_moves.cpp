@@ -22,13 +22,15 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
     for (ShumiChess::Move move : legal_moves) {
 
         string before_fen = engine.game_board.to_fen();
-        engine.pushMove(move);
+        if (move.color == ShumiChess::Color::WHITE) engine.pushMove_t<ShumiChess::Color::WHITE>(move);
+        else                                        engine.pushMove_t<ShumiChess::Color::BLACK>(move);
 
         recurse_moves_and_fill_fens(fen_holder, depth + 1, max_depth, engine);
         if (depth == max_depth) {
             fen_holder.push_back(engine.game_board.to_fen());
         }
-        engine.popMove();
+        if (move.color == ShumiChess::Color::WHITE) engine.popMove_t<ShumiChess::Color::WHITE>();
+        else                                        engine.popMove_t<ShumiChess::Color::BLACK>();
         string after_fen = engine.game_board.to_fen();
 
         if (before_fen != after_fen) {
@@ -201,9 +203,11 @@ TEST_P(ValidMoves, PushPopFenValidation) {
 
     for (const auto& move : legal_moves) {
         string before_fen = test_engine.game_board.to_fen();
-        test_engine.pushMove(move);
+        if (move.color == ShumiChess::Color::WHITE) test_engine.pushMove_t<ShumiChess::Color::WHITE>(move);
+        else                                        test_engine.pushMove_t<ShumiChess::Color::BLACK>(move);
         string in_between_fen = test_engine.game_board.to_fen();
-        test_engine.popMove();
+        if (move.color == ShumiChess::Color::WHITE) test_engine.popMove_t<ShumiChess::Color::WHITE>();
+        else                                        test_engine.popMove_t<ShumiChess::Color::BLACK>();
         string after_fen = test_engine.game_board.to_fen();
         if (before_fen != after_fen) {
             utility::representation::cout_move_info(move);

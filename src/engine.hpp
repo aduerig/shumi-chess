@@ -100,12 +100,12 @@ class Engine {
         void reset_engine();                // New game
         void reset_engine(const string&);   // new game (with FEN)
 
-        void pushMove(const Move&);
-        void popMove();
+        template<Color c> void pushMove_t(const Move&);
+        template<Color c> void popMove_t();
 
         // Same as above, Omits castling, zobrist, history stacks, halfmove/fullmove counters, repetition, etc.
-        void pushMoveFast(const Move&);
-        void popMoveFast();
+        template<Color c> void pushMoveFast_t(const Move&);
+        template<Color c> void popMoveFast_t();
         
         GameState is_game_over();
         GameState is_game_over(vector<Move>&);
@@ -118,13 +118,10 @@ class Engine {
         void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
         vector<Move> get_legal_moves();
-        void get_legal_moves(Color c, vector<Move>& MovesOut);
-        void get_legal_moves_fast(Color color, vector<Move>& MovesOut);
         template<Color c> void get_legal_moves_fast_t(vector<Move>& MovesOut);
         bool assert_same_moves(const std::vector<Move>& a,
                                 const std::vector<Move>& b);
 
-        void get_psuedo_legal_moves(Color, vector<Move>& all_psuedo_legal_moves);
         template<Color c> void get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves);
 
         // Storage buffers (they live here to avoid extra allocation during the game)        
@@ -137,9 +134,7 @@ class Engine {
 
         vector<Move> all_unquiet_moves[MAX_PLY0];   
 
-        bool in_check_after_move(Color color, const Move& move);
-        bool in_check_after_move_fast(Color color, const Move& move);
-        bool in_check_after_king_move(Color color, const Move& move);
+        template<Color c> bool in_check_after_move_fast_t(const Move& move);
         template<Color c> bool in_check_after_king_move_t(const Move& move);
 
 
@@ -156,10 +151,6 @@ class Engine {
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
 
-        bool is_king_in_check2(const Color);
-        bool is_square_in_check0(const Color, const ull);
-        bool is_square_in_check2(const Color, const ull);
-
         // Template variants (compile-time color)
         template<Color c> bool is_king_in_check2_t();
         template<Color enemy_c> bool is_square_in_check0_t(const ull);
@@ -169,28 +160,7 @@ class Engine {
             const ull themKnights, const ull themKing, const ull themPawns,
             const ull themQueens, const ull themRooks, const ull themBishops);
 
-        bool is_square_attacked_with_masks(
-            const ShumiChess::Color enemy_color,
-            const ull square_bb,     // 1-bit bb of target square
-            const int square,        // 0..63, must match square_bb
-            const ull occ_BB,        // occupancy bitboard to use (can be "after-move")
-            const ull themKnights,
-            const ull themKing,
-            const ull themPawns,
-            const ull themQueens,
-            const ull themRooks,
-            const ull themBishops
-        );
 
-
-        void add_pawn_moves_to_vector(vector<Move>&, Color);
-        void add_knight_moves_to_vector(vector<Move>&, Color);
-        void add_bishop_moves_to_vector(vector<Move>&, Color);
-        void add_queen_moves_to_vector(vector<Move>&, Color);
-        void add_king_moves_to_vector(vector<Move>&, Color);
-        void add_rook_moves_to_vector(vector<Move>&, Color);
-
-        // Template variants (compile-time color)
         template<Color c> void add_pawn_moves_to_vector_t(vector<Move>&);
         template<Color c> void add_knight_moves_to_vector_t(vector<Move>&);
         template<Color c> void add_bishop_moves_to_vector_t(vector<Move>&);
@@ -395,16 +365,8 @@ class Engine {
             }
         };
 
-        PinnedInfo compute_pins(Color color);
         template<Color c> PinnedInfo compute_pins_t();
 
-
-        inline int get_king_square(Color c)
-        {
-            ull k = game_board.get_pieces_template<Piece::KING>(c);
-            assert(k != 0ULL);
-            return utility::bit::bitboard_to_lowest_square_fast(k);
-        }
 
         template<Color c>
         inline int get_king_square_t()
@@ -414,7 +376,6 @@ class Engine {
             return utility::bit::bitboard_to_lowest_square_fast(k);
         }
 
-        CheckInfo find_checkers_and_blockmask(Color color);
         template<Color c> CheckInfo find_checkers_and_blockmask_t();
 
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.

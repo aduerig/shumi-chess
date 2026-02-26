@@ -342,37 +342,6 @@ bool GameBoard::are_bit_boards_valid() const {
     }
     return true; // no overlaps found
 }
-//
-// Returns in cp.
-// Delevers bonus points based on castling.
-//  Two things (bools) about castling. 
-//      1. Can you castle or not?  (do you have the priviledge)  
-//      2. Whether YOU have castled or not. The latter IS NOT stored in a FEN by the way. It has to be a bollean 
-//          maintained by the push/pop.
-//
-int GameBoard::get_castled_bonus_cp(Color color1, int phase) const {
-    if (color1 == Color::WHITE) return get_castled_bonus_cp_t<Color::WHITE>(phase);
-    else                        return get_castled_bonus_cp_t<Color::BLACK>(phase);
-}
-
-//
-// “Returns true if king is on home rank and positioned near an edge, and there are no friendly 
-// rooks between the king and that edge.”
-//
-bool GameBoard::bHasCastled_fake(Color color1) const {
-    if (color1 == Color::WHITE) return bHasCastled_fake_t<Color::WHITE>();
-    else                        return bHasCastled_fake_t<Color::BLACK>();
-}
-
-//
-// The total of material for that color. Uses centipawn_score_of(). Returns centipawns. Always positive.
-// Kings have no material value. 
-int GameBoard::get_material_for_color(Color color, int& cp_pawns_only_temp) {
-    if (color == Color::WHITE) return get_material_for_color_t<Color::WHITE>(cp_pawns_only_temp);
-    else                       return get_material_for_color_t<Color::BLACK>(cp_pawns_only_temp);
-}
-
-
 
 //
 // “lerp” stands for Linear intERPolation.
@@ -403,48 +372,10 @@ int GameBoard::queen_still_home(Color color)
 
 
 
-// Returns count of pawns attacking the given square
-int GameBoard::pawns_attacking_square(Color c, int sq) {
-    if (c == Color::WHITE) return pawns_attacking_square_t<Color::WHITE>(sq);
-    else                   return pawns_attacking_square_t<Color::BLACK>(sq);
-}
-
-int GameBoard::pawns_attacking_center_squares_cp(Color c)
-{
-    if (c == Color::WHITE) return pawns_attacking_center_squares_cp_t<Color::WHITE>();
-    else                   return pawns_attacking_center_squares_cp_t<Color::BLACK>();
-}
 
 
 
 
-
-int GameBoard::knights_attacking_square(Color c, int sq)
-{
-    if (c == Color::WHITE) return knights_attacking_square_t<Color::WHITE>(sq);
-    else                   return knights_attacking_square_t<Color::BLACK>(sq);
-}
-
-int GameBoard::knights_attacking_center_squares_cp(Color c)
-{
-    if (c == Color::WHITE) return knights_attacking_center_squares_cp_t<Color::WHITE>();
-    else                   return knights_attacking_center_squares_cp_t<Color::BLACK>();
-}
-
-
-//
-// This sees through all material
-int GameBoard::bishops_attacking_square(Color c, int sq)
-{
-    if (c == Color::WHITE) return bishops_attacking_square_t<Color::WHITE>(sq);
-    else                   return bishops_attacking_square_t<Color::BLACK>(sq);
-}
-
-int GameBoard::bishops_attacking_center_squares_cp(Color c)
-{
-    if (c == Color::WHITE) return bishops_attacking_center_squares_cp_t<Color::WHITE>();
-    else                   return bishops_attacking_center_squares_cp_t<Color::BLACK>();
-}
 
 
 
@@ -480,43 +411,11 @@ static inline bool clear_between_file(ull occupancy, int a, int b)
 }
 
 
-//  2 or more bishops helps out
-int GameBoard::two_bishops_cp(Color c) const {
-    if (c == Color::WHITE) return two_bishops_cp_t<Color::WHITE>();
-    else                   return two_bishops_cp_t<Color::BLACK>();
-}
-
-// Stupid bishop blocking pawn (king bishop blocking queen pawn)
-int GameBoard::bishop_pawn_pattern_cp(Color color) {
-    if (color == Color::WHITE) return bishop_pawn_pattern_cp_t<Color::WHITE>();
-    else                       return bishop_pawn_pattern_cp_t<Color::BLACK>();
-}
 
 
 
-//
-// Returns ROOK_CONNECTED_WGHT if any connected rook pair exists
-int GameBoard::rook_connectiveness_cp(Color c) const {
-    if (c == Color::WHITE) return rook_connectiveness_cp_t<Color::WHITE>();
-    else                   return rook_connectiveness_cp_t<Color::BLACK>();
-}
 
 
-int GameBoard::rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo)
-{
-    if (c == Color::WHITE) return rooks_file_status_cp_t<Color::WHITE>(pawnInfo);
-    else                   return rooks_file_status_cp_t<Color::BLACK>(pawnInfo);
-}
-
-
-//
-// Returns in cp.
-// Rooks or queens on 7th or 8th ranks
-int GameBoard::rook_7th_rankness_cp(Color c)
-{
-    if (c == Color::WHITE) return rook_7th_rankness_cp_t<Color::WHITE>();
-    else                   return rook_7th_rankness_cp_t<Color::BLACK>();
-}
 //
 // returns true only if "insufficient material
 // NOTE: known errors here: this logic declares the following positions drawn, when they are not:
@@ -630,21 +529,6 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
     return true;
 }
-//
-// struct PInfo {
-//     int file_count[8];          // Count of pawns on this file
-//     ull file_bb[8];             // Bitboard of pawns on this file
-//     unsigned files_present;     // Bitmask of which files contain >= 1 pawn
-//     int advancedSq[8];          // Square index of the side’s most advanced pawn on that file (or -1)
-//     int rearSq[8];              // Square index of the side’s least advanced pawn on that file (or -1)
-// };
-bool GameBoard::build_pawn_file_summary_fast(Color c, PInfo& pinfo)
-{
-    if (c == Color::WHITE) return build_pawn_file_summary_fast_t<Color::WHITE>(pinfo);
-    else                   return build_pawn_file_summary_fast_t<Color::BLACK>(pinfo);
-}
-
-
 void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
 {
     if (a.files_present != b.files_present) {
@@ -763,24 +647,8 @@ void GameBoard::validate_row_col_masks_h1_0()
 
 
 
-// Returns true if there is any bit set in `file_pieces` strictly ahead of sq toward promotion.
-bool GameBoard::any_piece_ahead_on_file(Color c, int sq, ull file_pieces) const
-{
-    if (c == Color::WHITE) return any_piece_ahead_on_file_t<Color::WHITE>(sq, file_pieces);
-    else                   return any_piece_ahead_on_file_t<Color::BLACK>(sq, file_pieces);
-}
 
 
-
-//
-// Isolated pawns.
-//      One count for each instance. Rook pawns can be isolated too.
-//      1.5 times as bad for isolated pawns on open files
-//
-int GameBoard::count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const {
-    if (c == Color::WHITE) return count_isolated_pawns_cp_t<Color::WHITE>(pawnInfo);
-    else                   return count_isolated_pawns_cp_t<Color::BLACK>(pawnInfo);
-}
 //
 // Finds pawn-structure "holes":
 // For each friendly pawn, mark the square directly in front of it as a hole if no friendly pawn can
@@ -856,64 +724,13 @@ int GameBoard::count_pawn_holes_cp_old(Color c,
     return (holes*Weights::PAWN_HOLE_WGHT);
 }
 
-int GameBoard::count_pawn_holes_cp2(Color c,
-                               const PawnFileInfo& pawnInfo,
-                               ull& holes_bb) {
-    if (c == Color::WHITE) return count_pawn_holes_cp2_t<Color::WHITE>(pawnInfo, holes_bb);
-    else                   return count_pawn_holes_cp2_t<Color::BLACK>(pawnInfo, holes_bb);
-}
 
 
 
 
-int GameBoard::count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo) {
-    if (c == Color::WHITE) return count_doubled_pawns_cp_t<Color::WHITE>(pawnInfo);
-    else                   return count_doubled_pawns_cp_t<Color::BLACK>(pawnInfo);
-}
 
 
 
-
-//
-// Passed pawns bonus in centipawns: (from that side's perspective)
-//  - 10 cp on 2cnd/3rd rank
-//  - 15 cp on 4th
-//  - 20 cp on 5th
-//  - 25 co on 6th rank
-//  - 30 cp on 7th rank
-//
-// A "passed pawn" has no enemy pawns on its own file or adjacent files on any rank ahead of it (toward promotion).
-// A "protected passed pawn" is a passed pawn that is defended by one of our pawns:
-// i.e., a friendly pawn sits on a square that attacks this pawn's square (diagonally from behind).
-// int GameBoard::count_passed_pawns_cp(Color c, ull& passed_pawns) {
-//
-// Passed pawns bonus in centipawns.
-// A passed pawn has no enemy pawns on its file or adjacent files on any rank ahead (toward promotion).
-// Also awards extra bonus if the passed pawn is protected by a friendly pawn.
-//
-int GameBoard::count_passed_pawns_cp(Color c,
-                                    const PawnFileInfo& pawnInfo,
-                                    ull& passed_pawns) {
-    if (c == Color::WHITE) return count_passed_pawns_cp_t<Color::WHITE>(pawnInfo, passed_pawns);
-    else                   return count_passed_pawns_cp_t<Color::BLACK>(pawnInfo, passed_pawns);
-}
-
-
-
-int GameBoard::count_knights_on_holes_cp(Color c, ull holes_bb) {
-    if (c == Color::WHITE) return count_knights_on_holes_cp_t<Color::WHITE>(holes_bb);
-    else                   return count_knights_on_holes_cp_t<Color::BLACK>(holes_bb);
-}
-
-
-
-//
-// Returns smaller values near the center. 0 for the inner ring (center) 3 for outer ring (edge squares)
-int GameBoard::king_edgeness_cp(Color color)
-{
-    if (color == Color::WHITE) return king_edgeness_cp_t<Color::WHITE>();
-    else                       return king_edgeness_cp_t<Color::BLACK>();
-}
 
 // 0 = center, 3 = edge
 int GameBoard::piece_edgeness(ull kbb) {   
@@ -929,28 +746,6 @@ int GameBoard::piece_edgeness(ull kbb) {
     if (ring > 3) ring = 3;
 
     return ring;  // 0 = center, 3 = edge
-}
-
-//
-// Returns true if the given color's queen is on one of the 4 center squares:
-// d4, e4, d5, e5  (i.e., (3,3), (4,3), (3,4), (4,4) in file/rank 0..7).
-//
-// NOTE: If there is no queen (bitboard == 0), returns false.
-// NOTE: If there are multiple queens (promotion), returns true if ANY queen is on a center square.
-//
-int GameBoard::queenOnCenterSquare_cp(Color c)
-{
-    if (c == Color::WHITE) return queenOnCenterSquare_cp_t<Color::WHITE>();
-    else                   return queenOnCenterSquare_cp_t<Color::BLACK>();
-}
-
-// Penalize moving the f-pawn in the opening.
-// This is a small "king-safety / loosened diagonals" heuristic: f2/f7 is a sensitive pawn.
-// Returns 0 if the f-pawn is still on its starting square; otherwise returns a small negative score.
-int GameBoard::moved_f_pawn_early_cp(Color c) const
-{
-    if (c == Color::WHITE) return moved_f_pawn_early_cp_t<Color::WHITE>();
-    else                   return moved_f_pawn_early_cp_t<Color::BLACK>();
 }
 
 //
@@ -976,14 +771,6 @@ int GameBoard::center_closeness_bonus(Color c)
 }
 
 
-// Fills an array of up to 9 squares around the king (including the king square).
-// Returns how many valid squares were written.
-// king_near_squares_out[i] are square indices 0..63.
-int GameBoard::get_king_near_squares(Color defender_color, int king_near_squares_out[9])
-{
-    if (defender_color == Color::WHITE) return get_king_near_squares_t<Color::WHITE>(king_near_squares_out);
-    else                               return get_king_near_squares_t<Color::BLACK>(king_near_squares_out);
-}
 
 
 int GameBoard::kings_in_opposition(Color color)
@@ -1176,14 +963,6 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
 }
 
 
-// Color has king only, or king with 1 or 2 minor pieces.
-// So discounting pawns, basically it means no more than "6 points" in material.
-bool GameBoard::hasNoMajorPieces(Color attacker_color) {
-    if (attacker_color == Color::WHITE) return hasNoMajorPieces_t<Color::WHITE>();
-    else                               return hasNoMajorPieces_t<Color::BLACK>();
-}
-
-
 bool GameBoard::is_king_highest_piece() {
     if (white_queens || black_queens) return false;
     if (white_rooks || black_rooks) return false;
@@ -1192,39 +971,10 @@ bool GameBoard::is_king_highest_piece() {
 }
 
 
-// Corners are twice as bad as the edges.
-int GameBoard::is_knight_on_edge_cp(Color color) {
-    if (color == Color::WHITE) return is_knight_on_edge_cp_t<Color::WHITE>();
-    else                       return is_knight_on_edge_cp_t<Color::BLACK>();
-}
-
-
-// -----------------------------------------------------------------------------
-// Opening development bonus.
-// "Development" here means ONLY: minor pieces (knights + bishops) moved off
-// their original squares.  (No queen/king/rooks: those lead to silly moves.)
-// This is intentionally a small, background nudge and is applied ONLY in the opening.
-// -----------------------------------------------------------------------------
-int GameBoard::development_opening_cp(Color c) {
-    if (c == Color::WHITE) return development_opening_cp_t<Color::WHITE>();
-    else                   return development_opening_cp_t<Color::BLACK>();
-}
 
 
 
 
-
-double GameBoard::kings_close_toegather_cp(Color attacker_color) {
-    if (attacker_color == Color::WHITE) return kings_close_toegather_cp_t<Color::WHITE>();
-    else                               return kings_close_toegather_cp_t<Color::BLACK>();
-}
-
-
-// Returns 2 to MAX_DIST inclusive. 2 if in opposition, MAX_DIST if in opposite corners.
-double GameBoard::kings_far_apart(Color attacker_color) {
-    if (attacker_color == Color::WHITE) return kings_far_apart_t<Color::WHITE>();
-    else                               return kings_far_apart_t<Color::BLACK>();
-}
 
 
 //
@@ -1260,14 +1010,6 @@ int GameBoard::king_center_manhattan_dist(Color c)
 
     return iReturn;
 }
-
-// Sliders and knights = all pieces except pawns and the king.
-int GameBoard::sliders_and_knights_attacking_square2(Color attacker_color, int sq)
-{
-    if (attacker_color == Color::WHITE) return sliders_and_knights_attacking_square2_t<Color::WHITE>(sq);
-    else                               return sliders_and_knights_attacking_square2_t<Color::BLACK>(sq);
-}
-
 
 int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq)
 {
@@ -1460,13 +1202,6 @@ int GameBoard::sliders_and_knights_attacking_square(Color attacker_color, int sq
     return bits_in(any_attackers);
 }
 
-// Attackers are NOT kings. Otherwise everybody else.
-int GameBoard::attackers_on_enemy_king_near_cp(Color attacker_color)
-{
-    if (attacker_color == Color::WHITE) return attackers_on_enemy_king_near_cp_t<Color::WHITE>();
-    else                               return attackers_on_enemy_king_near_cp_t<Color::BLACK>();
-}
-
 // Counts sliders+knights attacking the enemy's passed pawns.
 // passed_white_pwns / passed_black_pwns are bitboards of all passed pawns.
 int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
@@ -1491,8 +1226,9 @@ int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
 
         int sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
 
-        //total += sliders_and_knights_attacking_square(attacker_color, sq);
-        int nAttackers = sliders_and_knights_attacking_square2(attacker_color, sq);
+        int nAttackers = (attacker_color == Color::WHITE)
+            ? sliders_and_knights_attacking_square2_t<Color::WHITE>(sq)
+            : sliders_and_knights_attacking_square2_t<Color::BLACK>(sq);
         //int nAttackers2  = sliders_and_knights_attacking_square(attacker_color, sq);
         //assert(nAttackers == nAttackers2);
         total += nAttackers;

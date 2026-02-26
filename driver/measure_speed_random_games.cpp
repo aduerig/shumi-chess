@@ -43,7 +43,9 @@ GameState play_game(Engine& engine, int& total_moves) {
             break;
         }
         total_moves++;
-        engine.pushMove(get_random_move(all_moves));
+        Move rm = get_random_move(all_moves);
+        if (rm.color == Color::WHITE) engine.pushMove_t<Color::WHITE>(rm);
+        else                          engine.pushMove_t<Color::BLACK>(rm);
         result = engine.is_game_over();
     }
     engine.reset_engine();

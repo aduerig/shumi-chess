@@ -150,7 +150,8 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
         cout << "\x1b[1;31m" << " You are full of it " << "\x1b[0m" << endl;
     } else {
         // Tell the engine the move
-        python_engine->pushMove(found_move);
+        if (found_move.color == ShumiChess::Color::WHITE) python_engine->pushMove_t<ShumiChess::Color::WHITE>(found_move);
+        else                                               python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);
         
         //++python_engine->repetition_table[python_engine->game_board.zobrist_key];
         python_engine->three_time_rep_stack.push_back(python_engine->game_board.zobrist_key);

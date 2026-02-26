@@ -1,7 +1,18 @@
 #include <gtest/gtest.h>
 
+#include "engine.hpp"
 #include "gameboard.hpp"
 #include "globals.hpp"
+
+inline void test_pushMove(ShumiChess::Engine& e, const ShumiChess::Move& m) {
+    if (m.color == ShumiChess::Color::WHITE) e.pushMove_t<ShumiChess::Color::WHITE>(m);
+    else                                     e.pushMove_t<ShumiChess::Color::BLACK>(m);
+}
+
+inline void test_popMove(ShumiChess::Engine& e) {
+    if (e.game_board.turn == ShumiChess::Color::WHITE) e.popMove_t<ShumiChess::Color::BLACK>();
+    else                                               e.popMove_t<ShumiChess::Color::WHITE>();
+}
 
 namespace ShumiChess {
 bool operator==(const ShumiChess::GameBoard& a, const ShumiChess::GameBoard& b) {
