@@ -148,11 +148,17 @@ public:
     int cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black);
 
     //int cp_score_positional_get_pawn_things(ShumiChess::Color color, int nPhase); 
-    int cp_score_positional_get_opening_cp(ShumiChess::Color color, int nPhase); 
-    int cp_score_positional_get_middle_cp(ShumiChess::Color color); 
+    int cp_score_positional_get_opening_cp(ShumiChess::Color color, int nPhase);
+    int cp_score_positional_get_middle_cp(ShumiChess::Color color);
     int cp_score_positional_get_end(ShumiChess::Color color, int nPly,
                                     bool noMajorPiecesFriend, bool noMajorPiecesEnemy
-                                ); 
+                                );
+
+    // Template variants (compile-time color)
+    template<ShumiChess::Color c> int cp_score_positional_get_opening_cp_t(int nPhase);
+    template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t();
+    template<ShumiChess::Color c> int cp_score_positional_get_end_t(int nPly, bool noMajorPiecesFriend, bool noMajorPiecesEnemy);
+    template<ShumiChess::Color for_color> int evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPosition);
 
     int evaluate_board(ShumiChess::Color for_color, ShumiChess::EvalPersons evp, bool isQuietPosition
                    //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr

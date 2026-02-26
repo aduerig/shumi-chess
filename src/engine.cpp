@@ -388,76 +388,7 @@ bool Engine::in_check_after_move_fast(Color color, const Move& move)
 
 // NOTE: This is intended ONLY for king moves. Faster than in_check_after_move_fast().
 // It answers: "After this KING move, is the king's destination square attacked?"
-bool Engine::in_check_after_king_move(Color color, const Move& move)
-{
-    assert(move.piece_type == Piece::KING);
-    assert(move.color == color);
-
-
-    const Color enemy = utility::representation::opposite_color(color);
-
-    ull occ_BB = game_board.get_pieces();
-
-    const ull fromBB = move.from;
-    const ull toBB   = move.to;
-    const int toSQ   = utility::bit::bitboard_to_lowest_square_fast(toBB);
-
-    assert(game_board.bits_in(fromBB) == 1);
-    assert(game_board.bits_in(toBB)   == 1);
-
-
-    // Remove king from fromSq
-    occ_BB &= ~fromBB;
-
-    // If capture, remove captured piece from occupancy at toSq
-    if (move.capture != Piece::NONE) occ_BB &= ~toBB;
-
-    // Place king on toSq
-    occ_BB |= toBB;
-
-    // Handle rook occupancy for castling
-    if (move.is_castle_move) {
-        ull rookFrom_BB = 0ULL;
-        ull rookTo_BB   = 0ULL;
-
-        if (color == Color::WHITE) {
-            if (toSQ == game_board.square_g1) { rookFrom_BB = (1ULL << game_board.square_h1); rookTo_BB = (1ULL << game_board.square_f1); }
-            else if (toSQ == game_board.square_c1) { rookFrom_BB = (1ULL << game_board.square_a1); rookTo_BB = (1ULL << game_board.square_d1); }
-            else assert(0);
-        } else {
-            if (toSQ == game_board.square_g8) { rookFrom_BB = (1ULL << game_board.square_h8); rookTo_BB = (1ULL << game_board.square_f8); }
-            else if (toSQ == game_board.square_c8) { rookFrom_BB = (1ULL << game_board.square_a8); rookTo_BB = (1ULL << game_board.square_d8); }
-            else assert(0);
-        }
-
-        occ_BB &= ~rookFrom_BB;
-        occ_BB |=  rookTo_BB;
-    }
-
-    // --- Build "enemy piece" masks, adjusted for king capture ---
-    ull themKnights = game_board.get_pieces_template<Piece::KNIGHT>(enemy);
-    ull themKing    = game_board.get_pieces_template<Piece::KING>(enemy);
-    ull themPawns   = game_board.get_pieces_template<Piece::PAWN>(enemy);
-    ull themQueens  = game_board.get_pieces_template<Piece::QUEEN>(enemy);
-    ull themRooks   = game_board.get_pieces_template<Piece::ROOK>(enemy);
-    ull themBishops = game_board.get_pieces_template<Piece::BISHOP>(enemy);
-
-    if (move.capture != Piece::NONE) {
-        // captured piece is on toBB (king cannot capture en-passant)
-        if (move.capture == Piece::KNIGHT) themKnights &= ~toBB;
-        if (move.capture == Piece::KING)   themKing    &= ~toBB;
-        if (move.capture == Piece::PAWN)   themPawns   &= ~toBB;
-        if (move.capture == Piece::QUEEN)  themQueens  &= ~toBB;
-        if (move.capture == Piece::ROOK)   themRooks   &= ~toBB;
-        if (move.capture == Piece::BISHOP) themBishops &= ~toBB;
-    }
-
-    // Now call a new attack test that uses these locals + occ_BB.
-    return is_square_attacked_with_masks(enemy, toBB, toSQ, occ_BB,
-                               themKnights, themKing, themPawns,
-                               themQueens, themRooks, themBishops);
-
-}
+// Original in_check_after_king_move replaced by template wrapper at bottom of file
 
 
 
@@ -490,170 +421,7 @@ void Engine::get_legal_moves(Color color, vector<Move>& MovesOut) {
     return;
 }
 
-// remove asserts (SHUMI_ASSERTS)
-void Engine::get_legal_moves_fast(Color color, vector<Move>& MovesOut)
-{
-    psuedo_legal_moves.clear();
-
-    MovesOut.clear();
-
-    const bool in_check_before_move = is_king_in_check2(color);
-
-    PinnedInfo pinnedInfo;
-    CheckInfo  checkInfo;
-
-    if (!in_check_before_move) {
-        pinnedInfo = compute_pins(color);
-    } else {
-        checkInfo  = find_checkers_and_blockmask(color);
-        pinnedInfo = compute_pins(color);
-    }
-
-    get_psuedo_legal_moves(color, psuedo_legal_moves);
-
-
-    if (!in_check_before_move) {
-
-        // Not in check BEFORE move is made.
-        for (const Move& move : psuedo_legal_moves) {
-
-            bool legal = false;
-
-            if (move.piece_type == Piece::KING) {
-
-                legal = !in_check_after_king_move(color, move);
-
-                #ifdef SHUMI_ASSERTS
-                {
-                    const bool legal2 = !in_check_after_move_fast(color, move);
-                    assert(legal == legal2);
-                }
-                #endif
-
-            } else {
-
-                // En-passant is special (removes a pawn NOT on move to square), so don't “shortcut” it.
-                if (move.is_en_passent_capture) {
-
-                    legal = !in_check_after_move_fast(color, move);
-
-                } else {
-
-                    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-                    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
-
-                    if (!pinnedInfo.isPinned(fromSq)) {
-                        legal = true;
-                    } else {
-                        legal = pinnedInfo.moveObeysPinLine(fromSq, toSq);
-                    }
-                }
-            }
-
-            if (legal) {
-                MovesOut.push_back(move);
-            }
-        }
-
-    } else {
-
-        // In check BEFORE move is made.
-        for (const Move& move : psuedo_legal_moves) {
-
-            bool legal = false;
-
-            if (checkInfo.numCheckers >= 2) {
-
-                // Double-check: only king moves can be legal
-                if (move.piece_type == Piece::KING) {
-
-                    legal = !in_check_after_king_move(color, move);
-
-                    #ifdef SHUMI_ASSERTS
-                    {
-                        const bool legal2 = !in_check_after_move_fast(color, move);
-                        assert(legal == legal2);
-                    }
-                    #endif
-                }
-
-            } else {
-
-                // Single check
-                if (move.piece_type == Piece::KING) {
-
-                    legal = !in_check_after_king_move(color, move);
-
-                    #ifdef SHUMI_ASSERTS
-                    {
-                        const bool legal2 = !in_check_after_move_fast(color, move);
-                        assert(legal == legal2);
-                    }
-                    #endif
-
-                } else {
-
-                    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-                    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
-
-                    bool helps = false;
-
-                    if (!move.is_en_passent_capture) {
-
-                        // Normal case: must capture checker OR block check ray by moving toSq.
-                        helps = checkInfo.toSquareHelps(toSq);
-
-                    } else {
-
-                        // En-passant: the "captured piece square" is BEHIND move to square
-                        // If that captured pawn is the checker, EP is a valid "capture the checker".
-                        // Also allow the normal toSq-help test (harmless).
-
-                        ull move_to_bb = move.to;
-                        ull epCapturedBB = 0ULL;
-                        if (color == Color::WHITE) {
-                            epCapturedBB = (move_to_bb >> 8);
-                        } else {
-                            epCapturedBB = (move_to_bb << 8);
-                        }
-
-                        if (checkInfo.toHelpMask & move_to_bb) {
-                            helps = true;
-                        } else if (checkInfo.captureMask & epCapturedBB) {
-                            helps = true;
-                        } else {
-                            helps = false;
-                        }
-                    }
-
-                    if (helps) {
-
-                        if (move.is_en_passent_capture) {
-
-                            // EP is tricky: removing the pawn can uncover a rook/bishop check.
-                            // So do the full “after move king attacked?” test.
-                            legal = !in_check_after_move_fast(color, move);
-
-                        } else {
-
-                            if (!pinnedInfo.isPinned(fromSq)) {
-                                legal = true;
-                            } else {
-                                legal = pinnedInfo.moveObeysPinLine(fromSq, toSq);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (legal) {
-                MovesOut.push_back(move);
-            }
-        }
-    }
-
-    return;
-}
+// Original get_legal_moves_fast replaced by template wrapper at bottom of file
 
 
 
@@ -757,506 +525,17 @@ static inline void process_pin_ray(
 }
 
 
-// ============================================================================
-// Engine function
-// ============================================================================
-ShumiChess::Engine::PinnedInfo ShumiChess::Engine::compute_pins(Color color)
-{
-    PinnedInfo info;
-    info.clear();
+// Original compute_pins replaced by template wrapper at bottom of file
 
-    const Color enemy = utility::representation::opposite_color(color);
 
-    const int kingSq = get_king_square(color);
-    const ull kingBB = (1ULL << kingSq);
-    (void)kingBB;           // so you don’t get an “unused variable” warning on kingBB ?
 
-    const ull occ      = game_board.get_pieces();
-    const ull myPieces = game_board.get_pieces(color);
+// Original get_psuedo_legal_moves replaced by template wrapper at bottom of file
 
-    const ull themQueens  = game_board.get_pieces_template<Piece::QUEEN>(enemy);
-    const ull themRooks   = game_board.get_pieces_template<Piece::ROOK>(enemy);
-    const ull themBishops = game_board.get_pieces_template<Piece::BISHOP>(enemy);
 
-    const ull enemyStraight = themQueens | themRooks;
-    const ull enemyDiag     = themQueens | themBishops;
+// Original is_king_in_check2 and is_square_in_check0 replaced by template wrappers at bottom of file
 
-    // Straight rays (these magic functions fill in "info")
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    north_square_ray.data()
-                    , true,  true);
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    south_square_ray.data()
-                    , false, true);
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    west_square_ray.data()
-                    ,  true,  true);
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    east_square_ray.data()
-                    ,  false, true);
-
-    // Diagonal rays (these magic functions fill in "info")
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    north_east_square_ray.data()
-                    , true,  false);
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    north_west_square_ray.data()
-                    , true,  false);
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    south_east_square_ray.data()
-                    , false, false);
-    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
-                    south_west_square_ray.data()
-                    , false, false);
-
-    return info;
-}
-
-
-
-// Doesn't factor in check 
- void Engine::get_psuedo_legal_moves(Color color, vector<Move>& all_psuedo_legal_moves) {
-   
-    
-    all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    all_own_pieces = game_board.get_pieces(color);
-    all_pieces = (all_own_pieces | all_enemy_pieces); 
-    //
-    // Note: the order here will matter. First moves are looked at first, unless they are later resorted
-    // by sort_moves_for_search().
-    add_knight_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_bishop_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_pawn_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_queen_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_king_moves_to_vector(all_psuedo_legal_moves, color); 
-    add_rook_moves_to_vector(all_psuedo_legal_moves, color); 
-
-    return;
-}
-
-
-bool Engine::is_king_in_check(const ShumiChess::Color color) {
-    ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
-
-    Color enemy_color = utility::representation::opposite_color(color);
-    bool bReturn =  is_square_in_check(enemy_color, friendly_king);
-     
-    return bReturn;
-}
-
-bool Engine::is_king_in_check2(const ShumiChess::Color color) {
-    ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
-
-    Color enemy_color = utility::representation::opposite_color(color);
-    //bool bReturn3 =  is_square_in_check(enemy_color, friendly_king);
-    bool bReturn =  is_square_in_check2(enemy_color, friendly_king);
-    //assert(bReturn == bReturn3);
-
-    return bReturn;
-}
-
-
-//
-////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Determines if a square is "in check". All bitboards are assummed to be "h1=0"
-// IMPORTANT: It is known that IN ALL CALLERS, square_bb is the bitboard for a single King.
-// Inputs: "square_bb" is a bitboard (must be one bit set)
-
-bool Engine::is_square_in_check0(const ShumiChess::Color enemy_color, const ull square_bb) {
-
-    assert (game_board.bits_in(square_bb) == 1);
-   
-    // This guy does not check for inputs of zero. We are relying on the assert() above.
-    const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
-
-    // knights that can reach (capture to) this square
-    const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
-    const ull reachable_knights = tables::movegen::knight_attack_table[square];
-    if (reachable_knights & themKnights) return true;   // Knight attacks this square
-
-    // kings that can reach (capture to) this square
-    const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
-    const ull reachable_kings   = tables::movegen::king_attack_table[square];
-    if (reachable_kings   & themKing)    return true;   // King attacks this square
-
-    // pawns that can reach (capture to) this square
-    const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
- 
-    // Enemy pawn capture sources that could attack target `square_bb`.
-    ull square_just_behind_target;  // “the square one rank behind square_bb, from the pawn’s point of view.” (opposite the pawn’s capture direction)
-
-    if (enemy_color == Color::BLACK) {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
-    }
-    else {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
-    }
-    //
-    // 1. Get the squares attacking the target diagonally, from "left" and "right" side. 
-    //      (as if there was a pawn on square_just_behind_target).
-    // 2. Mask out the rook file on the opposite side of the board.
-    //
-    ull FILE_H = col_masksHA[ColHA::COL_H];
-    ull FILE_A = col_masksHA[ColHA::COL_A];
-
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
-
-    // Squares where an enemy pawn could sit and capture onto square_bb (the target).
-    ull reachable_pawns = towardA_from_target | towardH_from_target;
-  
-    if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square_bb
-
-
-    // Now look at "sliders" (queens, rooks, bishops)
-    const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
-    const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
-    const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
-
-    ull deadly_diags = themQueens | themBishops;
-    ull deadly_straights = themQueens | themRooks;
-    if (!(deadly_straights | deadly_diags)) return false;   // No sliders on board
-
-    // Look at both diagonal and straight moves
-    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
-    assert(all_pieces_but_self != 0ULL);       // There must be someone else on the board, right?
-
-    ull straight_attacks_from_passed_sq = 0ULL;
-    ull diagonal_attacks_from_passed_sq = 0ULL;
-
-    if (deadly_straights) {
-        straight_attacks_from_passed_sq = get_straight_attacks(all_pieces_but_self, square);
-    }
-
-    if (deadly_diags) {
-        diagonal_attacks_from_passed_sq = get_diagonal_attacks(all_pieces_but_self, square);
-    }
-
-    // bishop, rook, queens that can reach (capture to) this square
-    if (deadly_straights & straight_attacks_from_passed_sq) return true;    // for queen and rook straight attacks
-    if (deadly_diags     & diagonal_attacks_from_passed_sq) return true;    // for queen and bishop straight attacks
-
-    return false;
-
-}
-
-
-bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull square_bb) {
-
-    assert (game_board.bits_in(square_bb) == 1);
-   
-    // This guy does not check for inputs of zero. We are relying on the aseert() above.
-    const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
-
-    // knights that can reach (capture to) this square
-    const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
-    const ull reachable_knights = tables::movegen::knight_attack_table[square];
-    if (reachable_knights & themKnights) return true;   // Knight attacks this square
-
-    // kings that can reach (capture to) this square
-    const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
-    const ull reachable_kings   = tables::movegen::king_attack_table[square];
-    if (reachable_kings   & themKing)    return true;   // King attacks this square
-
-    // pawns that can reach (capture to) this square
-    const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
- 
-    // Enemy pawn capture sources that could attack target `square_bb`.
-    ull square_just_behind_target;  // “the square one rank behind square_bb, from the pawn’s point of view.” (opposite the pawn’s capture direction)
-
-    if (enemy_color == Color::BLACK) {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
-    }
-    else {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
-    }
-    //
-    // 1. Get the squares attacking the target diagonally, from "left" and "right" side. 
-    //      (as if there was a pawn on square_just_behind_target).
-    // 2. Mask out the rook file on the opposite side of the board.
-    //
-    ull FILE_H = col_masksHA[ColHA::COL_H];
-    ull FILE_A = col_masksHA[ColHA::COL_A];
-
-    //ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    //ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1); 
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
-
-    // Squares where an enemy pawn could sit and capture onto square_bb (the target).
-    ull reachable_pawns = towardA_from_target | towardH_from_target;
-  
-    if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square_bb
-
-
-    // Now look at "sliders" (queens, rooks, bishops)
-    const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
-    const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
-    const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
-
-    ull deadly_diags = themQueens | themBishops;
-    ull deadly_straights = themQueens | themRooks;
-    if (!(deadly_straights | deadly_diags)) return false;   // No sliders on board
-
-    // Look at both diagonal and straight moves
-    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
-    assert(all_pieces_but_self != 0ULL);       // There must be someone else on the board, right?
-
-    ull straight_attacks_from_passed_sq = 0ULL;
-    ull diagonal_attacks_from_passed_sq = 0ULL;
-
-    if (deadly_straights) {
-        straight_attacks_from_passed_sq = get_straight_attacks(all_pieces_but_self, square);
-    }
-
-    if (deadly_diags) {
-        diagonal_attacks_from_passed_sq = get_diagonal_attacks(all_pieces_but_self, square);
-    }
-
-    // bishop, rook, queens that can reach (capture to) this square
-    if (deadly_straights & straight_attacks_from_passed_sq) return true;    // for queen and rook straight attacks
-    if (deadly_diags     & diagonal_attacks_from_passed_sq) return true;    // for queen and bishop straight attacks
-
-    return false;
-
-}
-
-
-bool Engine::is_square_in_check2(Color enemy_color, ull square_bb)
-{
-    assert(game_board.bits_in(square_bb) == 1);
-    int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
-
-    ull themKnights = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
-    ull themKing    = game_board.get_pieces_template<Piece::KING>(enemy_color);
-    ull themPawns   = game_board.get_pieces_template<Piece::PAWN>(enemy_color);
-    ull themQueens  = game_board.get_pieces_template<Piece::QUEEN>(enemy_color);
-    ull themRooks   = game_board.get_pieces_template<Piece::ROOK>(enemy_color);
-    ull themBishops = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
-
-    ull occ_BB = game_board.get_pieces();
-
-    return is_square_attacked_with_masks(enemy_color, square_bb, square, occ_BB,
-                                         themKnights, themKing, themPawns,
-                                         themQueens, themRooks, themBishops);
-}
-
-bool Engine::is_square_attacked_with_masks(
-    const ShumiChess::Color enemy_color,
-    const ull square_bb,     // 1-bit bb of target square
-    const int square,        // 0..63, must match square_bb
-    const ull occ_BB,        // occupancy bitboard to use (can be "after-move")
-    const ull themKnights,
-    const ull themKing,
-    const ull themPawns,
-    const ull themQueens,
-    const ull themRooks,
-    const ull themBishops
-)
-{
-    assert(game_board.bits_in(square_bb) == 1);
-    // Optional consistency check (debug only):
-    // assert(square == utility::bit::bitboard_to_lowest_square_fast(square_bb));
-
-    // Knights
-    if (tables::movegen::knight_attack_table[square] & themKnights) return true;
-
-    // Kings
-    if (tables::movegen::king_attack_table[square] & themKing) return true;
-
-    // Pawns
-    ull square_just_behind_target;
-    if (enemy_color == Color::BLACK) {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
-    } else {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
-    }
-
-    ull FILE_H = col_masksHA[ColHA::COL_H];
-    ull FILE_A = col_masksHA[ColHA::COL_A];
-
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
-
-    ull reachable_pawns = towardA_from_target | towardH_from_target;
-    if (reachable_pawns & themPawns) return true;
-
-    // Sliders
-    ull deadly_diags     = themQueens | themBishops;
-    ull deadly_straights = themQueens | themRooks;
-    if (!(deadly_diags | deadly_straights)) return false;
-
-    // Use the provided occupancy (not game_board.get_pieces())
-    ull all_pieces_but_self = occ_BB & ~square_bb;
-
-    ull straight_attacks_from_sq = 0ULL;
-    ull diagonal_attacks_from_sq = 0ULL;
-
-    if (deadly_straights) {
-        straight_attacks_from_sq = get_straight_attacks(all_pieces_but_self, square);
-        if (deadly_straights & straight_attacks_from_sq) return true;
-    }
-
-    if (deadly_diags) {
-        diagonal_attacks_from_sq = get_diagonal_attacks(all_pieces_but_self, square);
-        if (deadly_diags & diagonal_attacks_from_sq) return true;
-    }
-
-    return false;
-}
-
-
-Engine::CheckInfo Engine::find_checkers_and_blockmask(Color color)
-{
-    CheckInfo info;
-
-    const Color enemy = utility::representation::opposite_color(color);
-
-    const int kingSq = get_king_square(color);
-    const ull kingBB = (1ULL << kingSq);
-
-    // Enemy pieces
-    const ull themKnights = game_board.get_pieces_template<Piece::KNIGHT>(enemy);
-    const ull themPawns   = game_board.get_pieces_template<Piece::PAWN>(enemy);
-    const ull themQueens  = game_board.get_pieces_template<Piece::QUEEN>(enemy);
-    const ull themRooks   = game_board.get_pieces_template<Piece::ROOK>(enemy);
-    const ull themBishops = game_board.get_pieces_template<Piece::BISHOP>(enemy);
-
-    // ------------------------------------------------------------
-    // 1) Knight checkers
-    // ------------------------------------------------------------
-    ull knight_checkers = tables::movegen::knight_attack_table[kingSq] & themKnights;
-    while (knight_checkers)
-    {
-        ull chk = utility::bit::lsb_and_pop(knight_checkers);
-
-        info.numCheckers++;
-        if (info.numCheckers == 1) info.checkerBB = chk;
-        else info.checkerBB = 0ULL;
-
-        if (info.numCheckers >= 2)
-        {
-            info.captureMask = 0ULL;
-            info.blockMask   = 0ULL;
-            info.toHelpMask  = 0ULL;
-            info.checkerBB   = 0ULL;
-            return info;
-        }
-    }
-
-    // ------------------------------------------------------------
-    // 2) Pawn checkers (same logic as is_square_in_check)
-    // ------------------------------------------------------------
-    ull square_just_behind_target;
-    if (enemy == Color::BLACK) {
-        square_just_behind_target = (kingBB & ~row_masks[ROW_8]) << 8;
-    } else {
-        square_just_behind_target = (kingBB & ~row_masks[ROW_1]) >> 8;
-    }
-
-    const ull FILE_H = col_masksHA[ColHA::COL_H];
-    const ull FILE_A = col_masksHA[ColHA::COL_A];
-
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
-
-    ull pawn_sources  = towardA_from_target | towardH_from_target;
-    ull pawn_checkers = pawn_sources & themPawns;
-
-    while (pawn_checkers)
-    {
-        ull chk = utility::bit::lsb_and_pop(pawn_checkers);
-
-        info.numCheckers++;
-        if (info.numCheckers == 1) info.checkerBB = chk;
-        else info.checkerBB = 0ULL;
-
-        if (info.numCheckers >= 2)
-        {
-            info.captureMask = 0ULL;
-            info.blockMask   = 0ULL;
-            info.toHelpMask  = 0ULL;
-            info.checkerBB   = 0ULL;
-            return info;
-        }
-    }
-
-    // ------------------------------------------------------------
-    // 3) Slider checkers (COUNT ALL OF THEM, not just one)
-    // ------------------------------------------------------------
-    const ull occ             = game_board.get_pieces();
-    const ull occ_without_king = occ & ~kingBB;
-
-    const ull deadly_straights = themQueens | themRooks;
-    const ull deadly_diags     = themQueens | themBishops;
-
-    if (deadly_straights) {
-        ull straight_attacks  = get_straight_attacks(occ_without_king, kingSq);
-        ull straight_checkers = straight_attacks & deadly_straights;
-
-        while (straight_checkers)
-        {
-            ull chk = utility::bit::lsb_and_pop(straight_checkers);
-
-            info.numCheckers++;
-            if (info.numCheckers == 1) info.checkerBB = chk;
-            else info.checkerBB = 0ULL;
-
-            if (info.numCheckers >= 2)
-            {
-                info.captureMask = 0ULL;
-                info.blockMask   = 0ULL;
-                info.toHelpMask  = 0ULL;
-                info.checkerBB   = 0ULL;
-                return info;
-            }
-        }
-    }
-
-    if (deadly_diags) {
-        ull diag_attacks  = get_diagonal_attacks(occ_without_king, kingSq);
-        ull diag_checkers = diag_attacks & deadly_diags;
-
-        while (diag_checkers) {
-            ull chk = utility::bit::lsb_and_pop(diag_checkers);
-
-            info.numCheckers++;
-            if (info.numCheckers == 1) info.checkerBB = chk;
-            else info.checkerBB = 0ULL;
-
-            if (info.numCheckers >= 2) {
-                info.captureMask = 0ULL;
-                info.blockMask   = 0ULL;
-                info.toHelpMask  = 0ULL;
-                info.checkerBB   = 0ULL;
-                return info;
-            }
-        }
-    }
-
-    // ------------------------------------------------------------
-    // 4) Build masks
-    // ------------------------------------------------------------
-    if (info.numCheckers == 0) {
-        info.checkerBB   = 0ULL;
-        info.captureMask = 0ULL;
-        info.blockMask   = 0ULL;
-        info.toHelpMask  = 0ULL;
-        return info;
-    }
-
-    // If we got here, numCheckers == 1
-    info.captureMask = info.checkerBB;
-
-    const int checkerSq = utility::bit::bitboard_to_lowest_square_fast(info.checkerBB);
-
-    // For knight/pawn checks, this should return 0ULL (fine).
-    info.blockMask = squares_between_exclusive(kingSq, checkerSq);
-
-    info.toHelpMask = info.captureMask | info.blockMask;
-    return info;
-}
+// Original is_square_in_check2, is_square_attacked_with_masks, and find_checkers_and_blockmask
+// replaced by template wrappers at bottom of file
 
 
 
@@ -2068,384 +1347,7 @@ void Engine::add_move_to_vector(vector<Move>& moves,
 
 }
 
-void Engine::add_pawn_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {    
-    // get just pawns of correct color
-    ull pawns = game_board.get_pieces_template<Piece::PAWN>(color);
-    if (!pawns) return;
-
-    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    // ull all_own_pieces = game_board.get_pieces(color);
-    // ull all_pieces = (all_own_pieces | all_enemy_pieces); 
-
-    ull enemy_starting_rank_mask;
-    ull pawn_enemy_starting_rank_mask;
-    ull pawn_starting_rank_mask;
-    ull pawn_enpassant_rank_mask;
-    ull far_right_col;
-    ull far_left_col;
-
-    // grab variables that will be used several times
-    // "Forward" means away from the pawns' back or "1st" rank.
-    //
-    if (color == Color::WHITE) {
-        enemy_starting_rank_mask      = row_masks[Row::ROW_8];
-        pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
-        pawn_starting_rank_mask       = row_masks[Row::ROW_2];
-        pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
-
-        far_right_col                 = col_masksHA[ColHA::COL_H];
-        far_left_col                  = col_masksHA[ColHA::COL_A];
-    } else {
-        enemy_starting_rank_mask      = row_masks[Row::ROW_1];
-        pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
-        pawn_starting_rank_mask       = row_masks[Row::ROW_7];
-        pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
-
-        far_right_col                 = col_masksHA[ColHA::COL_A];
-        far_left_col                  = col_masksHA[ColHA::COL_H];
-    }
-
-    while (pawns) {
-
-        ull normal_attacks;
-        // pop and get one pawn bitboard. This gets the pawn, but also removes it from "pawns" but who cares.
-        // "pawns" is not an original. (you can mutate it)
-        ull single_pawn = utility::bit::lsb_and_pop(pawns);
-        
-        // Look to see if square just forward of me is empty. Add moving there if so.
-        ull one_move_forward = utility::bit::bitshift_by_color(single_pawn & ~pawn_enemy_starting_rank_mask, color, 8); 
-        ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
-
-        if (one_move_forward_not_blocked) add_move_to_vector(all_psuedo_legal_moves
-            , single_pawn, one_move_forward_not_blocked, Piece::PAWN
-            , color, false, false
-            , 0ULL, false, false);
-
-        // Look for (and add if its there), a move up two ranks. Add moving there if so.
-        ull is_doublable = single_pawn & pawn_starting_rank_mask;
-        if (is_doublable) {
-           
-            // Look to see both squares just forward of me is empty. (TODO share more code with single pushes above)
-            ull move_forward_one = utility::bit::bitshift_by_color(single_pawn, color, 8);
-            ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
-
-            ull move_forward_two = utility::bit::bitshift_by_color(move_forward_one_unblocked, color, 8);
-            ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
-
-            // Only pawns that advance 2 squares can be taken en passent. So here we store 
-            // the square where the en passent ends up. But this is highly weird.
-            // Here are the parts of this: 
-            //    A. We are storing it into a move, of the OPPOSITE side as the en-passent mover.
-            //    B. When this "double pawn" move is pushMove()ed, then this field is copied to the board.
-            //    C. Here below, if the board has a non zero here, we constuct an enpassent move.
-            //
-            // En passant part A. Store en passent end square into a move, of the OPPOSITE side as the en-passent mover
-            ull en_passent_target = move_forward_one_unblocked;
-            
-            if (move_forward_two_unblocked) add_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, move_forward_two_unblocked, Piece::PAWN
-                , color, false, false
-                , en_passent_target, false, false);
-        }
-
-        // Look for (and add if its there), promotions
-        ull potential_promotion = utility::bit::bitshift_by_color(single_pawn & pawn_enemy_starting_rank_mask, color, 8); 
-        ull promo_not_blocked = potential_promotion & ~all_pieces;
-        if (promo_not_blocked) add_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, promo_not_blocked, Piece::PAWN
-                , color, false, true
-                , 0ULL, false, false);
-
-        // Look for (and add if its there), attacks forward left and forward right, also includes promotions like this
-        // "Forward" or "f" means away from the pawns' back or "1st" rank. We mask off the "far" cols to prevent wrapping.
-        ull attack_fleft = utility::bit::bitshift_by_color(single_pawn & ~far_left_col, color, 9);
-        ull attack_fright = utility::bit::bitshift_by_color(single_pawn & ~far_right_col, color, 7);
-        
-        // normal attacks is set to nonzero, if enemy pieces are in the pawns "crosshairs"
-        normal_attacks = attack_fleft & all_enemy_pieces;
-        normal_attacks |= attack_fright & all_enemy_pieces;
-        if (normal_attacks) add_move_to_vector(all_psuedo_legal_moves
-                    , single_pawn, normal_attacks, Piece::PAWN
-                    , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
-                    , 0ULL, false, false);
-
-        // Enpassant attacks
-        // TODO improvement here, cause we KNOW that enpassant results in the capture of a pawn, but it adds a lot 
-        //      of code here to get the speed upgrade. Works fine as is
-
-        ull enpassant_end_loc;
-        //ull enpassant_end_loc2;     // remove me
-        // En passant part C. If the board has a non zero here, we constuct an enpassent move.
-        // Note: Intresting that only one en passant can occur on any move.
-        
-        // remove me
-        //enpassant_end_loc2 = (attack_fleft | attack_fright) & game_board.en_passant_rights;
-
-        ull enpassant_end_loc_left  = attack_fleft  & game_board.en_passant_rights;
-        ull enpassant_end_loc_right = attack_fright & game_board.en_passant_rights;
-
-        assert((enpassant_end_loc_left & enpassant_end_loc_right) == 0ULL);    // En passants from both left and right can never both hold enpassant moves
-        enpassant_end_loc = enpassant_end_loc_left | enpassant_end_loc_right; 
-        //assert(enpassant_end_loc == enpassant_end_loc2);         // remove me
-
-        if (enpassant_end_loc) add_move_to_vector(all_psuedo_legal_moves
-            , single_pawn, enpassant_end_loc, Piece::PAWN
-            , color, true, false
-            , 0ULL, true, false);
- 
-    }
-}
-
-void Engine::add_knight_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull knights = game_board.get_pieces_template<Piece::KNIGHT>(color);
-    //if (!knights) return;
-
-    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    // ull all_own_pieces = game_board.get_pieces(color);
-    // ull all_pieces = (all_own_pieces | all_enemy_pieces); 
-
-    while (knights) {
-        ull single_knight = utility::bit::lsb_and_pop(knights);
-        assert(single_knight);
-
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
-        ull avail_attacks = tables::movegen::knight_attack_table[square];
-        
-        // captures
-        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
-            , color, true, false
-            , 0ULL, false, false);
-
-        // all else
-        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
-            , color, false, false
-            , 0ULL, false, false);
-    }
-}
-
-void Engine::add_rook_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull rooks = game_board.get_pieces_template<Piece::ROOK>(color);
-    //if (!rooks) return;
-
-    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    // ull all_own_pieces = game_board.get_pieces(color);
-    // ull all_pieces = (all_own_pieces | all_enemy_pieces); 
-
-    while (rooks) {
-
-        ull single_rook = utility::bit::lsb_and_pop(rooks);
-        assert(single_rook);
-
-        // Straight moves 
-        //assert(game_board.get_pieces() == all_pieces);
-        ull all_pieces_but_self = all_pieces & ~single_rook;
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_rook);       
-        ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
-
-        // captures
-        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
-            , color, true, false
-            , 0ULL, false, false);
-    
-        // all else
-        ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
-            , color, false, false
-            , 0ULL, false, false);
-    }
-}
-
-void Engine::add_bishop_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull bishops = game_board.get_pieces_template<Piece::BISHOP>(color);
-    //if (!bishops) return;
-
-    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    // ull all_own_pieces = game_board.get_pieces(color);
-    // ull all_pieces = (all_own_pieces | all_enemy_pieces);
-    
-    while (bishops) {
-
-        ull single_bishop = utility::bit::lsb_and_pop(bishops);
-        assert(single_bishop);
-
-         // Diagonal moves
-        //assert(game_board.get_pieces() == all_pieces);
-        ull all_pieces_but_self = all_pieces & ~single_bishop;
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
-        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
-
-        // captures
-        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
-            , color, true, false
-            , 0ULL, false, false);
-    
-        // all else
-        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
-            , color, false, false
-            , 0ULL, false, false);
-    }
-}
-
-void Engine::add_queen_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull queens = game_board.get_pieces_template<Piece::QUEEN>(color);   // Dont mutate the bitboards
-    //if (!queens) return;
-
-    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    // ull all_own_pieces = game_board.get_pieces(color);
-    // ull all_pieces = (all_own_pieces | all_enemy_pieces);
-
-    while (queens) {
-
-        ull single_queen = utility::bit::lsb_and_pop(queens);       // To get it to a 1-bitboard
-        assert(single_queen);
-
-        // Diagonal and straight moves
-        //assert(game_board.get_pieces() == all_pieces);
-        ull all_pieces_but_self = all_pieces & ~single_queen;
-
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
-        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
-
-        // captures
-        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
-            , color, true, false
-            , 0ULL, false, false);
-    
-        // all else
-        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
-            , color, false, false
-            , 0ULL, false, false);
-    }
-}
-
-// assumes 1 king exists per color
-void Engine::add_king_moves_to_vector(vector<Move>& all_psuedo_legal_moves, Color color) {
-    ull king = game_board.get_pieces_template<Piece::KING>(color);
-    //if (!king) return;    // Has to be a king, right?
-
-    // ull all_enemy_pieces = game_board.get_pieces(utility::representation::opposite_color(color));
-    // ull all_own_pieces = game_board.get_pieces(color);
-    // ull all_pieces = (all_own_pieces | all_enemy_pieces);
-
-    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
-
-    // captures
-    ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-    add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
-        , color, true, false
-        , 0ULL, false, false);
-
-    // non-capture moves
-    ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-    add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
-        , color, false, false
-        , 0ULL, false, false);
-    
-
-    #ifndef DEBUG_NO_CASTLING
-
-        Color enemy_color = utility::representation::opposite_color(color);
-
-        // castling, NOTE: a Rook must exist in the right place to castle the king.
-        ull squares_inbetween;
-        ull needed_rook_location;
-        ull actual_rooks_location;
-        ull king_origin_square;
-        bool b_no_inbetween_squares_in_check;
-        
-        if (color == Color::WHITE) {
-            if (game_board.white_castle_rights & (0b00000001)) {    // White kside casling is allowed
-                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {   
-                    // No pieces inbetween the king square and king rook square. 
-                    b_no_inbetween_squares_in_check = !is_square_in_check0(enemy_color, king) && !is_square_in_check0(enemy_color, king>>1) && !is_square_in_check0(enemy_color, king>>2);
-                    if (b_no_inbetween_squares_in_check) { 
-                        // King square, and squares inbetween (3 squares total) are not in check
-                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            // Rook is on correct square for castling
-                            king_origin_square = 1ULL <<1;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , color, false, false
-                                , 0ULL, false, true);
-                        }
-                    }
-                }
-            }
-            if (game_board.white_castle_rights & (0b00000010)) {    // White qside casling is allowed
-                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    // No pieces inbetween the king square and queen rook square. 
-                    b_no_inbetween_squares_in_check = !is_square_in_check0(enemy_color, king) && !is_square_in_check0(enemy_color, king<<1) && !is_square_in_check0(enemy_color, king<<2);
-                    if (b_no_inbetween_squares_in_check) { 
-                        // King square, and squares inbetween (3 squares total) are not in check (note that the knight square can be in check to castle qside)
-                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            // Rook is on correct square for castling
-                            king_origin_square = 1ULL <<5;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , color, false, false
-                                , 0ULL, false, true);
-                        }
-                    }
-                }
-            }
-        } else if (color == Color::BLACK) {
-            if (game_board.black_castle_rights & (0b00000001)) {;        // Black kside casling is allowed
-                squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    // No pieces inbetween the king square and king rook square
-                    b_no_inbetween_squares_in_check = !is_square_in_check0(enemy_color, king) && !is_square_in_check0(enemy_color, king>>1) && !is_square_in_check0(enemy_color, king>>2);
-                    if (b_no_inbetween_squares_in_check) { 
-                        // King square, and squares inbetween are empty and not in check
-                        needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            // Rook is on correct square for castling
-                            king_origin_square = 1ULL <<57;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , color, false, false
-                                , 0ULL, false, true);
-                        }
-                    }
-                }
-            }
-            if (game_board.black_castle_rights & (0b00000010)) {         // Black qside casling is allowed
-                squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    // No pieces inbetween the king square and king rook square (note that the knight square can be in check to castle qside)
-                    b_no_inbetween_squares_in_check = !is_square_in_check0(enemy_color, king) && !is_square_in_check0(enemy_color, king<<1) && !is_square_in_check0(enemy_color, king<<2);
-                    if (b_no_inbetween_squares_in_check) { 
-                        // King square, and squares inbetween are empty and not in check
-                        needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            // Rook is on correct square for castling
-                            king_origin_square = 1ULL <<61;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , color, false, false
-                                , 0ULL, false, true);
-                        }
-                    }
-                }
-            }
-        } else {
-            cout << "Unexpected color in king moves: " << color << endl;
-            assert(0);
-        }
-
-    #endif
-
-}
+// Original move gen functions replaced by template wrappers at bottom of file
 
 
 inline void safe_push_back(std::string &s, char c) {
@@ -2696,13 +1598,6 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
         cout << "\033[1;34m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
-    // Is this a way to resign?
-    //killTheKing(ShumiChess::BLACK);
-}
-
-
-void Engine::killTheKing(Color color) {
-    game_board.black_king = 0;
 }
 
 // void Engine::debug_print_repetition_table() const {
@@ -3260,6 +2155,824 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
 }
 
 
+
+
+// ============================================================================
+// Template implementations (compile-time Color)
+// ============================================================================
+
+// --- Phase 2: Move generation templates ---
+
+template<Color c>
+void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+    ull pawns = game_board.get_pieces_template<Piece::PAWN, c>();
+    if (!pawns) return;
+
+    constexpr Color color = c;
+
+    ull enemy_starting_rank_mask;
+    ull pawn_enemy_starting_rank_mask;
+    ull pawn_starting_rank_mask;
+    ull pawn_enpassant_rank_mask;
+    ull far_right_col;
+    ull far_left_col;
+
+    if constexpr (c == Color::WHITE) {
+        enemy_starting_rank_mask      = row_masks[Row::ROW_8];
+        pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
+        pawn_starting_rank_mask       = row_masks[Row::ROW_2];
+        pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
+        far_right_col                 = col_masksHA[ColHA::COL_H];
+        far_left_col                  = col_masksHA[ColHA::COL_A];
+    } else {
+        enemy_starting_rank_mask      = row_masks[Row::ROW_1];
+        pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
+        pawn_starting_rank_mask       = row_masks[Row::ROW_7];
+        pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
+        far_right_col                 = col_masksHA[ColHA::COL_A];
+        far_left_col                  = col_masksHA[ColHA::COL_H];
+    }
+
+    while (pawns) {
+        ull normal_attacks;
+        ull single_pawn = utility::bit::lsb_and_pop(pawns);
+
+        ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
+        ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
+
+        if (one_move_forward_not_blocked) add_move_to_vector(all_psuedo_legal_moves
+            , single_pawn, one_move_forward_not_blocked, Piece::PAWN
+            , color, false, false
+            , 0ULL, false, false);
+
+        ull is_doublable = single_pawn & pawn_starting_rank_mask;
+        if (is_doublable) {
+            ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
+            ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
+
+            ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
+            ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
+
+            if (move_forward_two_unblocked) add_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, move_forward_two_unblocked, Piece::PAWN
+                , color, false, false
+                , move_forward_one_unblocked, false, false);
+        }
+
+        ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
+        ull promo_not_blocked = potential_promotion & ~all_pieces;
+        if (promo_not_blocked) add_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, promo_not_blocked, Piece::PAWN
+                , color, false, true
+                , 0ULL, false, false);
+
+        ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
+        ull attack_fright = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_right_col, 7);
+
+        normal_attacks = attack_fleft & all_enemy_pieces;
+        normal_attacks |= attack_fright & all_enemy_pieces;
+        if (normal_attacks) add_move_to_vector(all_psuedo_legal_moves
+                    , single_pawn, normal_attacks, Piece::PAWN
+                    , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
+                    , 0ULL, false, false);
+
+        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
+        if (enpassant_end_loc) {
+            if (enpassant_end_loc) add_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, enpassant_end_loc, Piece::PAWN
+                , color, true, false
+                , 0ULL, true, false);
+        }
+    }
+}
+
+template<Color c>
+void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+    ull knights = game_board.get_pieces_template<Piece::KNIGHT, c>();
+
+    while (knights) {
+        ull single_knight = utility::bit::lsb_and_pop(knights);
+        assert(single_knight);
+
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
+        ull avail_attacks = tables::movegen::knight_attack_table[square];
+
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
+            , c, true, false
+            , 0ULL, false, false);
+
+        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+        add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
+            , c, false, false
+            , 0ULL, false, false);
+    }
+}
+
+template<Color c>
+void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+    ull rooks = game_board.get_pieces_template<Piece::ROOK, c>();
+
+    while (rooks) {
+        ull single_rook = utility::bit::lsb_and_pop(rooks);
+        assert(single_rook);
+
+        ull all_pieces_but_self = all_pieces & ~single_rook;
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_rook);
+        ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
+
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
+            , c, true, false
+            , 0ULL, false, false);
+
+        ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
+        add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
+            , c, false, false
+            , 0ULL, false, false);
+    }
+}
+
+template<Color c>
+void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+    ull bishops = game_board.get_pieces_template<Piece::BISHOP, c>();
+
+    while (bishops) {
+        ull single_bishop = utility::bit::lsb_and_pop(bishops);
+        assert(single_bishop);
+
+        ull all_pieces_but_self = all_pieces & ~single_bishop;
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
+        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
+
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
+            , c, true, false
+            , 0ULL, false, false);
+
+        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+        add_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
+            , c, false, false
+            , 0ULL, false, false);
+    }
+}
+
+template<Color c>
+void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+    ull queens = game_board.get_pieces_template<Piece::QUEEN, c>();
+
+    while (queens) {
+        ull single_queen = utility::bit::lsb_and_pop(queens);
+        assert(single_queen);
+
+        ull all_pieces_but_self = all_pieces & ~single_queen;
+        int square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
+        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
+
+        ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+        add_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
+            , c, true, false
+            , 0ULL, false, false);
+
+        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+        add_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
+            , c, false, false
+            , 0ULL, false, false);
+    }
+}
+
+template<Color c>
+void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+    ull king = game_board.get_pieces_template<Piece::KING, c>();
+
+    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
+
+    ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+    add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
+        , c, true, false
+        , 0ULL, false, false);
+
+    ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+    add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
+        , c, false, false
+        , 0ULL, false, false);
+
+    #ifndef DEBUG_NO_CASTLING
+
+        constexpr Color enemy_color = utility::representation::opposite_color_v<c>;
+
+        ull squares_inbetween;
+        ull needed_rook_location;
+        ull actual_rooks_location;
+        ull king_origin_square;
+        bool b_no_inbetween_squares_in_check;
+
+        if constexpr (c == Color::WHITE) {
+            if (game_board.white_castle_rights & (0b00000001)) {
+                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king>>1) && !is_square_in_check0_t<enemy_color>(king>>2);
+                    if (b_no_inbetween_squares_in_check) {
+                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            king_origin_square = 1ULL <<1;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , c, false, false
+                                , 0ULL, false, true);
+                        }
+                    }
+                }
+            }
+            if (game_board.white_castle_rights & (0b00000010)) {
+                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king<<1) && !is_square_in_check0_t<enemy_color>(king<<2);
+                    if (b_no_inbetween_squares_in_check) {
+                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            king_origin_square = 1ULL <<5;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , c, false, false
+                                , 0ULL, false, true);
+                        }
+                    }
+                }
+            }
+        } else {
+            if (game_board.black_castle_rights & (0b00000001)) {
+                squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king>>1) && !is_square_in_check0_t<enemy_color>(king>>2);
+                    if (b_no_inbetween_squares_in_check) {
+                        needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            king_origin_square = 1ULL <<57;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , c, false, false
+                                , 0ULL, false, true);
+                        }
+                    }
+                }
+            }
+            if (game_board.black_castle_rights & (0b00000010)) {
+                squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king<<1) && !is_square_in_check0_t<enemy_color>(king<<2);
+                    if (b_no_inbetween_squares_in_check) {
+                        needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                        if (actual_rooks_location & needed_rook_location) {
+                            king_origin_square = 1ULL <<61;
+                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                , c, false, false
+                                , 0ULL, false, true);
+                        }
+                    }
+                }
+            }
+        }
+
+    #endif
+}
+
+template<Color c>
+void Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
+
+    all_enemy_pieces = game_board.get_pieces_template<enemy>();
+    all_own_pieces = game_board.get_pieces_template<c>();
+    all_pieces = (all_own_pieces | all_enemy_pieces);
+
+    add_knight_moves_to_vector_t<c>(all_psuedo_legal_moves);
+    add_bishop_moves_to_vector_t<c>(all_psuedo_legal_moves);
+    add_pawn_moves_to_vector_t<c>(all_psuedo_legal_moves);
+    add_queen_moves_to_vector_t<c>(all_psuedo_legal_moves);
+    add_king_moves_to_vector_t<c>(all_psuedo_legal_moves);
+    add_rook_moves_to_vector_t<c>(all_psuedo_legal_moves);
+}
+
+// Runtime wrappers for move generation
+void Engine::add_pawn_moves_to_vector(vector<Move>& m, Color color) {
+    if (color == Color::WHITE) add_pawn_moves_to_vector_t<Color::WHITE>(m);
+    else                       add_pawn_moves_to_vector_t<Color::BLACK>(m);
+}
+void Engine::add_knight_moves_to_vector(vector<Move>& m, Color color) {
+    if (color == Color::WHITE) add_knight_moves_to_vector_t<Color::WHITE>(m);
+    else                       add_knight_moves_to_vector_t<Color::BLACK>(m);
+}
+void Engine::add_bishop_moves_to_vector(vector<Move>& m, Color color) {
+    if (color == Color::WHITE) add_bishop_moves_to_vector_t<Color::WHITE>(m);
+    else                       add_bishop_moves_to_vector_t<Color::BLACK>(m);
+}
+void Engine::add_rook_moves_to_vector(vector<Move>& m, Color color) {
+    if (color == Color::WHITE) add_rook_moves_to_vector_t<Color::WHITE>(m);
+    else                       add_rook_moves_to_vector_t<Color::BLACK>(m);
+}
+void Engine::add_queen_moves_to_vector(vector<Move>& m, Color color) {
+    if (color == Color::WHITE) add_queen_moves_to_vector_t<Color::WHITE>(m);
+    else                       add_queen_moves_to_vector_t<Color::BLACK>(m);
+}
+void Engine::add_king_moves_to_vector(vector<Move>& m, Color color) {
+    if (color == Color::WHITE) add_king_moves_to_vector_t<Color::WHITE>(m);
+    else                       add_king_moves_to_vector_t<Color::BLACK>(m);
+}
+void Engine::get_psuedo_legal_moves(Color color, vector<Move>& m) {
+    if (color == Color::WHITE) get_psuedo_legal_moves_t<Color::WHITE>(m);
+    else                       get_psuedo_legal_moves_t<Color::BLACK>(m);
+}
+
+// --- Phase 3: Check detection templates ---
+
+template<Color enemy_c>
+bool Engine::is_square_in_check0_t(const ull square_bb) {
+    assert(game_board.bits_in(square_bb) == 1);
+    const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
+
+    const ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();
+    if (tables::movegen::knight_attack_table[square] & themKnights) return true;
+
+    const ull themKing = game_board.get_pieces_template<Piece::KING, enemy_c>();
+    if (tables::movegen::king_attack_table[square] & themKing) return true;
+
+    const ull themPawns = game_board.get_pieces_template<Piece::PAWN, enemy_c>();
+
+    ull square_just_behind_target;
+    if constexpr (enemy_c == Color::BLACK) {
+        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
+    } else {
+        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
+    }
+
+    ull FILE_H = col_masksHA[ColHA::COL_H];
+    ull FILE_A = col_masksHA[ColHA::COL_A];
+    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
+    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
+    ull reachable_pawns = towardA_from_target | towardH_from_target;
+    if (reachable_pawns & themPawns) return true;
+
+    const ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy_c>();
+    const ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy_c>();
+    const ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy_c>();
+
+    ull deadly_diags = themQueens | themBishops;
+    ull deadly_straights = themQueens | themRooks;
+    if (!(deadly_straights | deadly_diags)) return false;
+
+    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
+    assert(all_pieces_but_self != 0ULL);
+
+    if (deadly_straights) {
+        ull straight_attacks_from_passed_sq = get_straight_attacks(all_pieces_but_self, square);
+        if (deadly_straights & straight_attacks_from_passed_sq) return true;
+    }
+    if (deadly_diags) {
+        ull diagonal_attacks_from_passed_sq = get_diagonal_attacks(all_pieces_but_self, square);
+        if (deadly_diags & diagonal_attacks_from_passed_sq) return true;
+    }
+    return false;
+}
+
+template<Color enemy_c>
+bool Engine::is_square_attacked_with_masks_t(
+    const ull square_bb, const int square, const ull occ_BB,
+    const ull themKnights, const ull themKing, const ull themPawns,
+    const ull themQueens, const ull themRooks, const ull themBishops)
+{
+    assert(game_board.bits_in(square_bb) == 1);
+
+    if (tables::movegen::knight_attack_table[square] & themKnights) return true;
+    if (tables::movegen::king_attack_table[square] & themKing) return true;
+
+    ull square_just_behind_target;
+    if constexpr (enemy_c == Color::BLACK) {
+        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
+    } else {
+        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
+    }
+
+    ull FILE_H = col_masksHA[ColHA::COL_H];
+    ull FILE_A = col_masksHA[ColHA::COL_A];
+    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
+    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
+    ull reachable_pawns = towardA_from_target | towardH_from_target;
+    if (reachable_pawns & themPawns) return true;
+
+    ull deadly_diags     = themQueens | themBishops;
+    ull deadly_straights = themQueens | themRooks;
+    if (!(deadly_diags | deadly_straights)) return false;
+
+    ull all_pieces_but_self = occ_BB & ~square_bb;
+
+    if (deadly_straights) {
+        ull straight_attacks_from_sq = get_straight_attacks(all_pieces_but_self, square);
+        if (deadly_straights & straight_attacks_from_sq) return true;
+    }
+    if (deadly_diags) {
+        ull diagonal_attacks_from_sq = get_diagonal_attacks(all_pieces_but_self, square);
+        if (deadly_diags & diagonal_attacks_from_sq) return true;
+    }
+    return false;
+}
+
+template<Color enemy_c>
+bool Engine::is_square_in_check2_t(const ull square_bb) {
+    assert(game_board.bits_in(square_bb) == 1);
+    int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
+
+    ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();
+    ull themKing    = game_board.get_pieces_template<Piece::KING, enemy_c>();
+    ull themPawns   = game_board.get_pieces_template<Piece::PAWN, enemy_c>();
+    ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy_c>();
+    ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy_c>();
+    ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy_c>();
+
+    ull occ_BB = game_board.get_pieces();
+
+    return is_square_attacked_with_masks_t<enemy_c>(square_bb, square, occ_BB,
+                                         themKnights, themKing, themPawns,
+                                         themQueens, themRooks, themBishops);
+}
+
+template<Color c>
+bool Engine::is_king_in_check2_t() {
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
+    ull friendly_king = game_board.get_pieces_template<Piece::KING, c>();
+    return is_square_in_check2_t<enemy>(friendly_king);
+}
+
+template<Color c>
+Engine::PinnedInfo Engine::compute_pins_t() {
+    PinnedInfo info;
+    info.clear();
+
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
+
+    const int kingSq = get_king_square_t<c>();
+    const ull kingBB = (1ULL << kingSq);
+    (void)kingBB;
+
+    const ull occ      = game_board.get_pieces();
+    const ull myPieces = game_board.get_pieces_template<c>();
+
+    const ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy>();
+    const ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy>();
+    const ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy>();
+
+    const ull enemyStraight = themQueens | themRooks;
+    const ull enemyDiag     = themQueens | themBishops;
+
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    north_square_ray.data(), true,  true);
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    south_square_ray.data(), false, true);
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    west_square_ray.data(),  true,  true);
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    east_square_ray.data(),  false, true);
+
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    north_east_square_ray.data(), true,  false);
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    north_west_square_ray.data(), true,  false);
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    south_east_square_ray.data(), false, false);
+    process_pin_ray(this, info, kingSq, occ, myPieces, enemyStraight, enemyDiag,
+                    south_west_square_ray.data(), false, false);
+
+    return info;
+}
+
+template<Color c>
+Engine::CheckInfo Engine::find_checkers_and_blockmask_t() {
+    CheckInfo info;
+
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
+
+    const int kingSq = get_king_square_t<c>();
+    const ull kingBB = (1ULL << kingSq);
+
+    const ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy>();
+    const ull themPawns   = game_board.get_pieces_template<Piece::PAWN, enemy>();
+    const ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy>();
+    const ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy>();
+    const ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy>();
+
+    // 1) Knight checkers
+    ull knight_checkers = tables::movegen::knight_attack_table[kingSq] & themKnights;
+    while (knight_checkers) {
+        ull chk = utility::bit::lsb_and_pop(knight_checkers);
+        info.numCheckers++;
+        if (info.numCheckers == 1) info.checkerBB = chk;
+        else info.checkerBB = 0ULL;
+        if (info.numCheckers >= 2) {
+            info.captureMask = 0ULL; info.blockMask = 0ULL; info.toHelpMask = 0ULL; info.checkerBB = 0ULL;
+            return info;
+        }
+    }
+
+    // 2) Pawn checkers
+    ull square_just_behind_target;
+    if constexpr (enemy == Color::BLACK) {
+        square_just_behind_target = (kingBB & ~row_masks[ROW_8]) << 8;
+    } else {
+        square_just_behind_target = (kingBB & ~row_masks[ROW_1]) >> 8;
+    }
+    const ull FILE_H = col_masksHA[ColHA::COL_H];
+    const ull FILE_A = col_masksHA[ColHA::COL_A];
+    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
+    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
+    ull pawn_sources  = towardA_from_target | towardH_from_target;
+    ull pawn_checkers = pawn_sources & themPawns;
+
+    while (pawn_checkers) {
+        ull chk = utility::bit::lsb_and_pop(pawn_checkers);
+        info.numCheckers++;
+        if (info.numCheckers == 1) info.checkerBB = chk;
+        else info.checkerBB = 0ULL;
+        if (info.numCheckers >= 2) {
+            info.captureMask = 0ULL; info.blockMask = 0ULL; info.toHelpMask = 0ULL; info.checkerBB = 0ULL;
+            return info;
+        }
+    }
+
+    // 3) Slider checkers
+    const ull occ             = game_board.get_pieces();
+    const ull occ_without_king = occ & ~kingBB;
+    const ull deadly_straights = themQueens | themRooks;
+    const ull deadly_diags     = themQueens | themBishops;
+
+    if (deadly_straights) {
+        ull straight_attacks  = get_straight_attacks(occ_without_king, kingSq);
+        ull straight_checkers = straight_attacks & deadly_straights;
+        while (straight_checkers) {
+            ull chk = utility::bit::lsb_and_pop(straight_checkers);
+            info.numCheckers++;
+            if (info.numCheckers == 1) info.checkerBB = chk;
+            else info.checkerBB = 0ULL;
+            if (info.numCheckers >= 2) {
+                info.captureMask = 0ULL; info.blockMask = 0ULL; info.toHelpMask = 0ULL; info.checkerBB = 0ULL;
+                return info;
+            }
+        }
+    }
+
+    if (deadly_diags) {
+        ull diag_attacks  = get_diagonal_attacks(occ_without_king, kingSq);
+        ull diag_checkers = diag_attacks & deadly_diags;
+        while (diag_checkers) {
+            ull chk = utility::bit::lsb_and_pop(diag_checkers);
+            info.numCheckers++;
+            if (info.numCheckers == 1) info.checkerBB = chk;
+            else info.checkerBB = 0ULL;
+            if (info.numCheckers >= 2) {
+                info.captureMask = 0ULL; info.blockMask = 0ULL; info.toHelpMask = 0ULL; info.checkerBB = 0ULL;
+                return info;
+            }
+        }
+    }
+
+    // 4) Build masks
+    if (info.numCheckers == 0) {
+        info.checkerBB = 0ULL; info.captureMask = 0ULL; info.blockMask = 0ULL; info.toHelpMask = 0ULL;
+        return info;
+    }
+
+    info.captureMask = info.checkerBB;
+    const int checkerSq = utility::bit::bitboard_to_lowest_square_fast(info.checkerBB);
+    info.blockMask = squares_between_exclusive(kingSq, checkerSq);
+    info.toHelpMask = info.captureMask | info.blockMask;
+    return info;
+}
+
+template<Color c>
+bool Engine::in_check_after_king_move_t(const Move& move) {
+    assert(move.piece_type == Piece::KING);
+    assert(move.color == c);
+
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
+
+    ull occ_BB = game_board.get_pieces();
+    const ull fromBB = move.from;
+    const ull toBB   = move.to;
+    const int toSQ   = utility::bit::bitboard_to_lowest_square_fast(toBB);
+
+    assert(game_board.bits_in(fromBB) == 1);
+    assert(game_board.bits_in(toBB)   == 1);
+
+    occ_BB &= ~fromBB;
+    if (move.capture != Piece::NONE) occ_BB &= ~toBB;
+    occ_BB |= toBB;
+
+    if (move.is_castle_move) {
+        ull rookFrom_BB = 0ULL;
+        ull rookTo_BB   = 0ULL;
+        if constexpr (c == Color::WHITE) {
+            if (toSQ == game_board.square_g1) { rookFrom_BB = (1ULL << game_board.square_h1); rookTo_BB = (1ULL << game_board.square_f1); }
+            else if (toSQ == game_board.square_c1) { rookFrom_BB = (1ULL << game_board.square_a1); rookTo_BB = (1ULL << game_board.square_d1); }
+            else assert(0);
+        } else {
+            if (toSQ == game_board.square_g8) { rookFrom_BB = (1ULL << game_board.square_h8); rookTo_BB = (1ULL << game_board.square_f8); }
+            else if (toSQ == game_board.square_c8) { rookFrom_BB = (1ULL << game_board.square_a8); rookTo_BB = (1ULL << game_board.square_d8); }
+            else assert(0);
+        }
+        occ_BB &= ~rookFrom_BB;
+        occ_BB |=  rookTo_BB;
+    }
+
+    ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy>();
+    ull themKing    = game_board.get_pieces_template<Piece::KING, enemy>();
+    ull themPawns   = game_board.get_pieces_template<Piece::PAWN, enemy>();
+    ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy>();
+    ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy>();
+    ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy>();
+
+    if (move.capture != Piece::NONE) {
+        if (move.capture == Piece::KNIGHT) themKnights &= ~toBB;
+        if (move.capture == Piece::KING)   themKing    &= ~toBB;
+        if (move.capture == Piece::PAWN)   themPawns   &= ~toBB;
+        if (move.capture == Piece::QUEEN)  themQueens  &= ~toBB;
+        if (move.capture == Piece::ROOK)   themRooks   &= ~toBB;
+        if (move.capture == Piece::BISHOP) themBishops &= ~toBB;
+    }
+
+    return is_square_attacked_with_masks_t<enemy>(toBB, toSQ, occ_BB,
+                               themKnights, themKing, themPawns,
+                               themQueens, themRooks, themBishops);
+}
+
+template<Color c>
+void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
+    psuedo_legal_moves.clear();
+    MovesOut.clear();
+
+    constexpr Color color = c;
+
+    const bool in_check_before_move = is_king_in_check2_t<c>();
+
+    PinnedInfo pinnedInfo;
+    CheckInfo  checkInfo;
+
+    if (!in_check_before_move) {
+        pinnedInfo = compute_pins_t<c>();
+    } else {
+        checkInfo  = find_checkers_and_blockmask_t<c>();
+        pinnedInfo = compute_pins_t<c>();
+    }
+
+    get_psuedo_legal_moves_t<c>(psuedo_legal_moves);
+
+    if (!in_check_before_move) {
+        for (const Move& move : psuedo_legal_moves) {
+            bool legal = false;
+
+            if (move.piece_type == Piece::KING) {
+                legal = !in_check_after_king_move_t<c>(move);
+            } else {
+                if (move.is_en_passent_capture) {
+                    legal = !in_check_after_move_fast(color, move);
+                } else {
+                    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
+                    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+                    if (!pinnedInfo.isPinned(fromSq)) {
+                        legal = true;
+                    } else {
+                        legal = pinnedInfo.moveObeysPinLine(fromSq, toSq);
+                    }
+                }
+            }
+            if (legal) MovesOut.push_back(move);
+        }
+    } else {
+        for (const Move& move : psuedo_legal_moves) {
+            bool legal = false;
+
+            if (checkInfo.numCheckers >= 2) {
+                if (move.piece_type == Piece::KING) {
+                    legal = !in_check_after_king_move_t<c>(move);
+                }
+            } else {
+                if (move.piece_type == Piece::KING) {
+                    legal = !in_check_after_king_move_t<c>(move);
+                } else {
+                    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
+                    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+
+                    bool helps = false;
+                    if (!move.is_en_passent_capture) {
+                        helps = checkInfo.toSquareHelps(toSq);
+                    } else {
+                        ull move_to_bb = move.to;
+                        ull epCapturedBB = 0ULL;
+                        if constexpr (c == Color::WHITE) {
+                            epCapturedBB = (move_to_bb >> 8);
+                        } else {
+                            epCapturedBB = (move_to_bb << 8);
+                        }
+                        if (checkInfo.toHelpMask & move_to_bb) helps = true;
+                        else if (checkInfo.captureMask & epCapturedBB) helps = true;
+                        else helps = false;
+                    }
+
+                    if (helps) {
+                        if (move.is_en_passent_capture) {
+                            legal = !in_check_after_move_fast(color, move);
+                        } else {
+                            if (!pinnedInfo.isPinned(fromSq)) {
+                                legal = true;
+                            } else {
+                                legal = pinnedInfo.moveObeysPinLine(fromSq, toSq);
+                            }
+                        }
+                    }
+                }
+            }
+            if (legal) MovesOut.push_back(move);
+        }
+    }
+}
+
+// Runtime wrappers for check detection and legal moves
+bool Engine::is_king_in_check2(const Color color) {
+    if (color == Color::WHITE) return is_king_in_check2_t<Color::WHITE>();
+    else                       return is_king_in_check2_t<Color::BLACK>();
+}
+
+bool Engine::is_square_in_check0(const Color enemy_color, const ull square_bb) {
+    if (enemy_color == Color::WHITE) return is_square_in_check0_t<Color::WHITE>(square_bb);
+    else                             return is_square_in_check0_t<Color::BLACK>(square_bb);
+}
+
+bool Engine::is_square_in_check2(Color enemy_color, ull square_bb) {
+    if (enemy_color == Color::WHITE) return is_square_in_check2_t<Color::WHITE>(square_bb);
+    else                             return is_square_in_check2_t<Color::BLACK>(square_bb);
+}
+
+bool Engine::is_square_attacked_with_masks(
+    const Color enemy_color, const ull square_bb, const int square, const ull occ_BB,
+    const ull themKnights, const ull themKing, const ull themPawns,
+    const ull themQueens, const ull themRooks, const ull themBishops)
+{
+    if (enemy_color == Color::WHITE)
+        return is_square_attacked_with_masks_t<Color::WHITE>(square_bb, square, occ_BB, themKnights, themKing, themPawns, themQueens, themRooks, themBishops);
+    else
+        return is_square_attacked_with_masks_t<Color::BLACK>(square_bb, square, occ_BB, themKnights, themKing, themPawns, themQueens, themRooks, themBishops);
+}
+
+Engine::PinnedInfo Engine::compute_pins(Color color) {
+    if (color == Color::WHITE) return compute_pins_t<Color::WHITE>();
+    else                       return compute_pins_t<Color::BLACK>();
+}
+
+Engine::CheckInfo Engine::find_checkers_and_blockmask(Color color) {
+    if (color == Color::WHITE) return find_checkers_and_blockmask_t<Color::WHITE>();
+    else                       return find_checkers_and_blockmask_t<Color::BLACK>();
+}
+
+bool Engine::in_check_after_king_move(Color color, const Move& move) {
+    if (color == Color::WHITE) return in_check_after_king_move_t<Color::WHITE>(move);
+    else                       return in_check_after_king_move_t<Color::BLACK>(move);
+}
+
+void Engine::get_legal_moves_fast(Color color, vector<Move>& MovesOut) {
+    if (color == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(MovesOut);
+    else                       get_legal_moves_fast_t<Color::BLACK>(MovesOut);
+}
+
+// Explicit template instantiations
+template void Engine::add_pawn_moves_to_vector_t<Color::WHITE>(vector<Move>&);
+template void Engine::add_pawn_moves_to_vector_t<Color::BLACK>(vector<Move>&);
+template void Engine::add_knight_moves_to_vector_t<Color::WHITE>(vector<Move>&);
+template void Engine::add_knight_moves_to_vector_t<Color::BLACK>(vector<Move>&);
+template void Engine::add_bishop_moves_to_vector_t<Color::WHITE>(vector<Move>&);
+template void Engine::add_bishop_moves_to_vector_t<Color::BLACK>(vector<Move>&);
+template void Engine::add_rook_moves_to_vector_t<Color::WHITE>(vector<Move>&);
+template void Engine::add_rook_moves_to_vector_t<Color::BLACK>(vector<Move>&);
+template void Engine::add_queen_moves_to_vector_t<Color::WHITE>(vector<Move>&);
+template void Engine::add_queen_moves_to_vector_t<Color::BLACK>(vector<Move>&);
+template void Engine::add_king_moves_to_vector_t<Color::WHITE>(vector<Move>&);
+template void Engine::add_king_moves_to_vector_t<Color::BLACK>(vector<Move>&);
+template void Engine::get_psuedo_legal_moves_t<Color::WHITE>(vector<Move>&);
+template void Engine::get_psuedo_legal_moves_t<Color::BLACK>(vector<Move>&);
+
+template bool Engine::is_king_in_check2_t<Color::WHITE>();
+template bool Engine::is_king_in_check2_t<Color::BLACK>();
+template bool Engine::is_square_in_check0_t<Color::WHITE>(const ull);
+template bool Engine::is_square_in_check0_t<Color::BLACK>(const ull);
+template bool Engine::is_square_in_check2_t<Color::WHITE>(const ull);
+template bool Engine::is_square_in_check2_t<Color::BLACK>(const ull);
+template bool Engine::is_square_attacked_with_masks_t<Color::WHITE>(const ull, const int, const ull, const ull, const ull, const ull, const ull, const ull, const ull);
+template bool Engine::is_square_attacked_with_masks_t<Color::BLACK>(const ull, const int, const ull, const ull, const ull, const ull, const ull, const ull, const ull);
+template Engine::PinnedInfo Engine::compute_pins_t<Color::WHITE>();
+template Engine::PinnedInfo Engine::compute_pins_t<Color::BLACK>();
+template Engine::CheckInfo Engine::find_checkers_and_blockmask_t<Color::WHITE>();
+template Engine::CheckInfo Engine::find_checkers_and_blockmask_t<Color::BLACK>();
+template bool Engine::in_check_after_king_move_t<Color::WHITE>(const Move&);
+template bool Engine::in_check_after_king_move_t<Color::BLACK>(const Move&);
+template void Engine::get_legal_moves_fast_t<Color::WHITE>(vector<Move>&);
+template void Engine::get_legal_moves_fast_t<Color::BLACK>(vector<Move>&);
 
 
 } // end namespace ShumiChess
