@@ -10,9 +10,13 @@ add_executable(
 #     MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
 # )
 
-target_include_directories(unit_tests 
-    PUBLIC 
+target_include_directories(unit_tests
+    PUBLIC
     ../src
+)
+
+target_compile_definitions(unit_tests PRIVATE
+    TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/test_data/"
 )
 
 target_link_libraries(

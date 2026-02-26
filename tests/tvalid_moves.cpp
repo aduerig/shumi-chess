@@ -86,7 +86,7 @@ vector<string> get_filenames_to_test_positions(fs::path folder_to_search) {
     return all_filenames;
 }
 
-fs::path test_data_path = "tests/test_data/";
+fs::path test_data_path = TEST_DATA_DIR;
 vector<string>  test_filenames = get_filenames_to_test_positions(test_data_path);
 
 // uncomment if need just one file
