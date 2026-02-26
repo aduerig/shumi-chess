@@ -3,10 +3,13 @@ import itertools
 import os
 import time
 
+this_file_dir = os.path.dirname(os.path.realpath(__file__))
+test_data_out_dir = os.path.join(this_file_dir, '..', 'test_data')
+
 # Treat as BFS problem
 def generateMoveTestDataFileSpeedEfficient(base_board, depth, out_file):
     with open(out_file, 'w+') as file:
-        file.write('Starting Fen: {}\n'.format(base_board.fen(en_passant_rights="fen")))
+        file.write('Starting Fen: {}\n'.format(base_board.fen(en_passant="fen")))
 
         curr_depth = 0
         curr_board_queue = [base_board]
@@ -17,7 +20,7 @@ def generateMoveTestDataFileSpeedEfficient(base_board, depth, out_file):
                 for move in curr_board.legal_moves:
                     curr_board.push(move)
                     if curr_depth == depth - 1:
-                        file.write(curr_board.fen(en_passant_rights="fen") + '\n')
+                        file.write(curr_board.fen(en_passant="fen") + '\n')
                     if curr_depth + 1 < depth:
                         child_board_queue.append(curr_board.copy(stack=0))
                     curr_board.pop()
@@ -53,30 +56,29 @@ def generateMoveTestDataFileMemEfficient(board, depth, out_file):
         for board_generator in legal_board_generators_by_depth:
             file.write('DEPTH: ' + str(curr_depth) + '\n')
             for board in board_generator:
-                file.write(board.fen(en_passant_rights="fen") + '\n')
+                file.write(board.fen(en_passant="fen") + '\n')
             curr_depth+=1
 
 
 def generate_all_files_in_depth(start_fen: str, depth: int, board_name: str = 'unknown') -> None:
-    global test_data_out_dir;
+    tic = time.perf_counter()
+    generated_any = False
     for curr_depth in range(1, depth + 1):
-        tic = time.perf_counter()
         out_path = os.path.join(test_data_out_dir, "{}_depth_{}.dat".format(board_name, curr_depth))
-        if not os.path.exists(out_path):
+        if not os.path.exists(out_path) or os.path.getsize(out_path) == 0:
             generateMoveTestDataFileSpeedEfficient(chess.Board(start_fen), curr_depth, out_path)
-    # ? is this seconds?
-    print(f"{board_name} to depth {depth} generation complete. Seconds taken: {time.perf_counter() - tic:0.2f}")
+            generated_any = True
+    elapsed = time.perf_counter() - tic
+    if generated_any:
+        print(f"{board_name} to depth {depth} generation complete. Seconds taken: {elapsed:0.2f}")
+    else:
+        print(f"{board_name} to depth {depth} already exists, skipping.")
 
 
-if __name__ == "__main__":
-    this_file_path = os.path.dirname(os.path.realpath(__file__))
-    test_data_path = os.path.join(this_file_path, '..', 'test_data')
-    if not os.path.exists(test_data_path):
-        print('Did not find directory at {}, creating it'.format(test_data_path))
-        os.mkdir(test_data_path)
-
-    global test_data_out_dir;
-    test_data_out_dir = os.path.relpath(test_data_path)
+def generate_all():
+    if not os.path.exists(test_data_out_dir):
+        print('Did not find directory at {}, creating it'.format(test_data_out_dir))
+        os.mkdir(test_data_out_dir)
 
     generate_all_files_in_depth('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 4, 'normal')
     generate_all_files_in_depth('4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1', 4, 'pawns')
@@ -89,3 +91,7 @@ if __name__ == "__main__":
     generate_all_files_in_depth('kn6/5P2/8/8/8/8/5p2/KN6 w - - 0 1', 5, 'promotion')
 
     generate_all_files_in_depth('4k3/pp1p1ppp/8/4pP2/1Pp1P3/8/P1PP2PP/4K3 w HAha - 0 1', 3, 'enpassant')
+
+
+if __name__ == "__main__":
+    generate_all()
