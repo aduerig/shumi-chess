@@ -104,7 +104,7 @@ class GameBoard {
         void set_zobrist();
 
         template <Piece p>
-        inline ull get_pieces_template() {
+        inline ull get_pieces_template() const {
             if constexpr (p == Piece::PAWN) { return black_pawns | white_pawns; }
             if constexpr (p == Piece::ROOK) { return black_rooks | white_rooks; }
             if constexpr (p == Piece::KNIGHT) { return black_knights | white_knights; }
@@ -113,33 +113,33 @@ class GameBoard {
             if constexpr (p == Piece::KING) { return black_king | white_king; }
         };
 
-        template <Piece p, Color c>  
-        inline ull get_pieces_template() {
+        template <Piece p, Color c>
+        inline ull get_pieces_template() const {
             if constexpr (p == Piece::PAWN && c == Color::BLACK) { return black_pawns; }
-            if constexpr (p == Piece::PAWN && c == Color::WHITE) { return white_pawns; }   
+            if constexpr (p == Piece::PAWN && c == Color::WHITE) { return white_pawns; }
             if constexpr (p == Piece::ROOK && c == Color::BLACK) { return black_rooks; }
             if constexpr (p == Piece::ROOK && c == Color::WHITE) { return white_rooks; }
             if constexpr (p == Piece::KNIGHT && c == Color::BLACK) { return black_knights; }
-            if constexpr (p == Piece::KNIGHT && c == Color::WHITE) { return white_knights; }     
+            if constexpr (p == Piece::KNIGHT && c == Color::WHITE) { return white_knights; }
             if constexpr (p == Piece::BISHOP && c == Color::BLACK) { return black_bishops; }
-            if constexpr (p == Piece::BISHOP && c == Color::WHITE) { return white_bishops; }    
+            if constexpr (p == Piece::BISHOP && c == Color::WHITE) { return white_bishops; }
             if constexpr (p == Piece::QUEEN && c == Color::BLACK) { return black_queens; }
-            if constexpr (p == Piece::QUEEN && c == Color::WHITE) { return white_queens; } 
+            if constexpr (p == Piece::QUEEN && c == Color::WHITE) { return white_queens; }
             if constexpr (p == Piece::KING && c == Color::BLACK) { return black_king; }
             if constexpr (p == Piece::KING && c == Color::WHITE) { return white_king; }
-        }; 
+        };
 
         template <Piece p>
-        inline ull get_pieces_template(Color c) {
-            if (c == Color::BLACK) { 
-                return get_pieces_template<p, Color::BLACK>(); 
+        inline ull get_pieces_template(Color c) const {
+            if (c == Color::BLACK) {
+                return get_pieces_template<p, Color::BLACK>();
             }
-            return get_pieces_template<p, Color::WHITE>(); 
+            return get_pieces_template<p, Color::WHITE>();
         };
 
         template <Color c>
-        inline ull get_pieces_template() {
-            if constexpr (c == Color::WHITE)      { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }   
+        inline ull get_pieces_template() const {
+            if constexpr (c == Color::WHITE)      { return white_pawns | white_rooks | white_knights | white_bishops | white_queens | white_king; }
             else if constexpr (c == Color::BLACK) { return black_pawns | black_rooks | black_knights | black_bishops | black_queens | black_king; }
             else {assert(0);return 0;}
         }
@@ -262,54 +262,74 @@ class GameBoard {
         
         bool insufficient_material_simple();
 
+        template<Color c> int king_edgeness_cp_t();
         int king_edgeness_cp(Color color);
         int piece_edgeness(ull pieces);
+        template<Color c> int queenOnCenterSquare_cp_t();
         int queenOnCenterSquare_cp(Color c);
+        template<Color c> int moved_f_pawn_early_cp_t() const;
         int moved_f_pawn_early_cp(Color c) const;
 
         int center_closeness_bonus(Color c);
 
+        template<Color c> int pawns_attacking_square_t(int sq);
         int pawns_attacking_square(Color c, int sq);
-        int pawns_attacking_square_multi(Color c, ull sqs);
+        template<Color c> int pawns_attacking_center_squares_cp_t();
         int pawns_attacking_center_squares_cp(Color c);
 
+        template<Color c> int knights_attacking_square_t(int sq);
         int knights_attacking_square(Color c, int sq);
+        template<Color c> int knights_attacking_center_squares_cp_t();
         int knights_attacking_center_squares_cp(Color for_color);
 
+        template<Color c> int bishops_attacking_center_squares_cp_t();
         int bishops_attacking_center_squares_cp(Color c);
-        int bishops_attacking_square(Color c, int sq);   
+        template<Color c> int bishops_attacking_square_t(int sq);
+        int bishops_attacking_square(Color c, int sq);
 
         int king_castle_happiness(Color c) const;
 
+        template<Color c> int bishop_pawn_pattern_cp_t();
         int bishop_pawn_pattern_cp(Color color);       // Stupid bishop blocking pawn
         int queen_still_home(Color color);          // Stupid queen move too early
 
         //bool is_king_in_check_new(Color color);
 
+        template<Color c> int two_bishops_cp_t() const;
         int two_bishops_cp(Color c) const;
+        template<Color c> int rook_connectiveness_cp_t() const;
         int rook_connectiveness_cp(Color c) const;
+        template<Color c> int rook_7th_rankness_cp_t();
         int rook_7th_rankness_cp(Color c);
 
         bool build_pawn_file_summary(Color c, PInfo& p);
+        template<Color c> bool build_pawn_file_summary_fast_t(PInfo& p);
         bool build_pawn_file_summary_fast(Color c, PInfo& p);
         void dump_pinfo_mismatch(const PInfo& a, const PInfo& b);
         void validate_row_col_masks_h1_0();
 
+        template<Color c> bool any_piece_ahead_on_file_t(int sq, ull pieces) const;
         bool any_piece_ahead_on_file(Color c, int sq, ull pieces) const;
         std::string sqToString(int f, int r) const; // H1=0, 
 
         // "Positional "pawn" routines.
+        template<Color c> int count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const;
         int count_isolated_pawns_cp(Color c, const PawnFileInfo& pawnInfo) const;
         int count_pawn_holes_cp_old(Color c, const PawnFileInfo& pawnInfo
                                 , ull& holes);  // output
-        int count_pawn_holes_cp(Color c, const PawnFileInfo& pawnInfo
+        template<Color c> int count_pawn_holes_cp2_t(const PawnFileInfo& pawnInfo, ull& holes);
+        int count_pawn_holes_cp2(Color c, const PawnFileInfo& pawnInfo
                                 , ull& holes);  // output
+        template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
         int count_knights_on_holes_cp(Color c, ull holes_bb);
 
+        template<Color c> int count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo);
         int count_doubled_pawns_cp(Color c, const PawnFileInfo& pawnInfo);
 
+        template<Color c> int count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed_pawns);
         int count_passed_pawns_cp(Color c, const PawnFileInfo& pawnInfo,
                                     ull& passed_pawns);
+        template<Color c> int rooks_file_status_cp_t(const PawnFileInfo& pawnInfo);
         int rooks_file_status_cp(Color c, const PawnFileInfo& pawnInfo);
 
 
@@ -317,10 +337,13 @@ class GameBoard {
         std::string random_960_FEN_strict(void);
 
 
+        template<Color c> int get_king_near_squares_t(int king_near_squares_out[9]);
         int get_king_near_squares(Color defender_color, int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
         int sliders_and_knights_attacking_square(Color attacker_color, int sq);
-        int sliders_and_knights_attacking_square_fast(Color attacker_color, int sq);
+        template<Color c> int sliders_and_knights_attacking_square2_t(int sq);
+        int sliders_and_knights_attacking_square2(Color attacker_color, int sq);
+        template<Color c> int attackers_on_enemy_king_near_cp_t();
         int attackers_on_enemy_king_near_cp(Color attacker_color);
         int attackers_on_enemy_passed_pawns(Color attacker_color,
                                                ull passed_white_pwns,
@@ -333,11 +356,16 @@ class GameBoard {
         int get_Manhattan_distance(int x1, int y1, int x2, int y2);   
         double get_board_distance(int x1, int y1, int x2, int y2);
         //int get_board_distance_100(int x1, int y1, int x2, int y2) const;
+        template<Color c> double kings_close_toegather_cp_t();
         double kings_close_toegather_cp(Color attacker_color);
+        template<Color c> double kings_far_apart_t();
         double kings_far_apart(Color attacker_color);
         int king_center_manhattan_dist(Color c);
+        template<Color c> int is_knight_on_edge_cp_t();
         int is_knight_on_edge_cp(Color color);
+        template<Color c> int development_opening_cp_t();
         int development_opening_cp(Color color);
+        template<Color c> bool hasNoMajorPieces_t();
         bool hasNoMajorPieces(Color attacker_color);
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
@@ -352,9 +380,12 @@ class GameBoard {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();
 
+        template<Color c> int get_castled_bonus_cp_t(int phase) const;
         int get_castled_bonus_cp(Color color1, int phase) const;
+        template<Color c> int get_material_for_color_t(int& cp_pawns_only_temp);
         int get_material_for_color(ShumiChess::Color color1, int& cp_pawns_only_temp);
         //bool bHasCastled(Color color1) const;
+        template<Color c> bool bHasCastled_fake_t() const;
         bool bHasCastled_fake(Color color1) const;
 
         // returns 0 if sq has no attackers. 

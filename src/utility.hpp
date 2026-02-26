@@ -84,6 +84,13 @@ inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) 
     return bitboard >> amount;
 }
 
+// Compile-time color bitshift
+template<ShumiChess::Color c>
+inline ull bitshift_by_color_t(ull bitboard, int amount) {
+    if constexpr (c == ShumiChess::WHITE) return bitboard << amount;
+    else                                  return bitboard >> amount;
+}
+
 // This function does 2 things:
 //    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
 //    2. The lsb is zeroed on the input "bitboard"
@@ -174,6 +181,11 @@ std::string bitboard_to_acn_conversion(ull);
 inline constexpr ShumiChess::Color opposite_color(const ShumiChess::Color color) {
     return (ShumiChess::Color) (1 - (int) color);                      // I depend on WHITE=0, BLACK=1
 }
+
+// Compile-time opposite color
+template<ShumiChess::Color c>
+inline constexpr ShumiChess::Color opposite_color_v =
+    (c == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
 
 
 // inline constexpr string color_str(const ShumiChess::Color color) {
