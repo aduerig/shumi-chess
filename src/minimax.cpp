@@ -1374,7 +1374,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }
 
 
-        in_check = engine.is_king_in_check(engine.game_board.turn);
+        in_check = engine.is_king_in_check2(engine.game_board.turn);
 
         if (in_check) {
             // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 

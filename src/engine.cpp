@@ -532,98 +532,7 @@ static inline void process_pin_ray(
 // Original get_psuedo_legal_moves replaced by template wrapper at bottom of file
 
 
-bool Engine::is_king_in_check(const ShumiChess::Color color) {
-    ull friendly_king = this->game_board.get_pieces_template<Piece::KING>(color);
-
-    Color enemy_color = utility::representation::opposite_color(color);
-    bool bReturn =  is_square_in_check(enemy_color, friendly_king);
-     
-    return bReturn;
-}
-
 // Original is_king_in_check2 and is_square_in_check0 replaced by template wrappers at bottom of file
-
-
-bool Engine::is_square_in_check(const ShumiChess::Color enemy_color, const ull square_bb) {
-
-    assert (game_board.bits_in(square_bb) == 1);
-   
-    // This guy does not check for inputs of zero. We are relying on the aseert() above.
-    const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
-
-    // knights that can reach (capture to) this square
-    const ull themKnights  = game_board.get_pieces_template<Piece::KNIGHT>(enemy_color);
-    const ull reachable_knights = tables::movegen::knight_attack_table[square];
-    if (reachable_knights & themKnights) return true;   // Knight attacks this square
-
-    // kings that can reach (capture to) this square
-    const ull themKing     = game_board.get_pieces_template<Piece::KING>  (enemy_color);
-    const ull reachable_kings   = tables::movegen::king_attack_table[square];
-    if (reachable_kings   & themKing)    return true;   // King attacks this square
-
-    // pawns that can reach (capture to) this square
-    const ull themPawns    = game_board.get_pieces_template<Piece::PAWN>  (enemy_color);
- 
-    // Enemy pawn capture sources that could attack target `square_bb`.
-    ull square_just_behind_target;  // “the square one rank behind square_bb, from the pawn’s point of view.” (opposite the pawn’s capture direction)
-
-    if (enemy_color == Color::BLACK) {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
-    }
-    else {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
-    }
-    //
-    // 1. Get the squares attacking the target diagonally, from "left" and "right" side. 
-    //      (as if there was a pawn on square_just_behind_target).
-    // 2. Mask out the rook file on the opposite side of the board.
-    //
-    ull FILE_H = col_masksHA[ColHA::COL_H];
-    ull FILE_A = col_masksHA[ColHA::COL_A];
-
-    //ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    //ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1); 
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
-
-    // Squares where an enemy pawn could sit and capture onto square_bb (the target).
-    ull reachable_pawns = towardA_from_target | towardH_from_target;
-  
-    if (reachable_pawns   & themPawns)   return true;    // Pawn attacks this square_bb
-
-
-    // Now look at "sliders" (queens, rooks, bishops)
-    const ull themQueens   = game_board.get_pieces_template<Piece::QUEEN> (enemy_color);
-    const ull themRooks    = game_board.get_pieces_template<Piece::ROOK>  (enemy_color);
-    const ull themBishops  = game_board.get_pieces_template<Piece::BISHOP>(enemy_color);
-
-    ull deadly_diags = themQueens | themBishops;
-    ull deadly_straights = themQueens | themRooks;
-    if (!(deadly_straights | deadly_diags)) return false;   // No sliders on board
-
-    // Look at both diagonal and straight moves
-    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
-    assert(all_pieces_but_self != 0ULL);       // There must be someone else on the board, right?
-
-    ull straight_attacks_from_passed_sq = 0ULL;
-    ull diagonal_attacks_from_passed_sq = 0ULL;
-
-    if (deadly_straights) {
-        straight_attacks_from_passed_sq = get_straight_attacks(all_pieces_but_self, square);
-    }
-
-    if (deadly_diags) {
-        diagonal_attacks_from_passed_sq = get_diagonal_attacks(all_pieces_but_self, square);
-    }
-
-    // bishop, rook, queens that can reach (capture to) this square
-    if (deadly_straights & straight_attacks_from_passed_sq) return true;    // for queen and rook straight attacks
-    if (deadly_diags     & diagonal_attacks_from_passed_sq) return true;    // for queen and bishop straight attacks
-
-    return false;
-
-}
-
 
 // Original is_square_in_check2, is_square_attacked_with_masks, and find_checkers_and_blockmask
 // replaced by template wrappers at bottom of file
@@ -1689,13 +1598,6 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
         cout << "\033[1;34m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
-    // Is this a way to resign?
-    //killTheKing(ShumiChess::BLACK);
-}
-
-
-void Engine::killTheKing(Color color) {
-    game_board.black_king = 0;
 }
 
 // void Engine::debug_print_repetition_table() const {

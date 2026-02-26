@@ -35,8 +35,8 @@ TEST_P(IsKingInCheck, IsKingInCheck) {
     Engine black_safe_white_check_engine{GetParam()};
 
     //string debugStr;
-    ASSERT_TRUE (black_safe_white_check_engine.is_king_in_check(Color::WHITE));
-    ASSERT_FALSE(black_safe_white_check_engine.is_king_in_check(Color::BLACK));
+    ASSERT_TRUE (black_safe_white_check_engine.is_king_in_check2(Color::WHITE));
+    ASSERT_FALSE(black_safe_white_check_engine.is_king_in_check2(Color::BLACK));
 
 }
 INSTANTIATE_TEST_SUITE_P(IsKingInCheck, IsKingInCheck, testing::ValuesIn(white_in_check_black_is_safe_fens));

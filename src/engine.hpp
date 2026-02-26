@@ -156,10 +156,8 @@ class Engine {
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
 
-        bool is_king_in_check(const Color);
         bool is_king_in_check2(const Color);
         bool is_square_in_check0(const Color, const ull);
-        bool is_square_in_check(const Color, const ull);
         bool is_square_in_check2(const Color, const ull);
 
         // Template variants (compile-time color)
@@ -279,7 +277,6 @@ class Engine {
         void set_random_on_next_move(int randomMoveCount);
         
         int user_request_next_move = 7;    // Note: make me go aways. I am for changing the deepening inbetweem moves
-        void killTheKing(Color color);     // Note: The idea. is that you can resign by deleting your king. Sort of works.
 
         void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list
             , bool b_convert_to_abs_score, bool b_sort_descending, FILE* fp);
