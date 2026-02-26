@@ -16,19 +16,21 @@ generate_script = root_dir / 'tests' / 'generate_test_data' / 'generate_depth_te
 
 
 def check_test_data():
-    if not test_data_dir.exists() or not any(test_data_dir.iterdir()):
-        print_cyan("Test data is missing! The test_data directory is empty or doesn't exist.")
+    has_data = test_data_dir.exists() and any(test_data_dir.glob('*.dat'))
+    if not has_data:
+        print_cyan("Test data is missing! Generating it now...")
         print_cyan(f"  Directory: {test_data_dir}")
-        answer = input("Would you like to generate the test data now? [Y/n] ").strip().lower()
-        if answer in ('', 'y', 'yes'):
-            print_cyan("Generating test data...")
-            # Import and run the generation script directly
-            sys.path.insert(0, str(generate_script.parent))
-            import generate_depth_test_data
-            generate_depth_test_data.generate_all()
-            print_cyan("Test data generation complete.")
-        else:
-            print("Skipping test data generation. Tests that depend on it may fail.")
+        sys.path.insert(0, str(generate_script.parent))
+        import generate_depth_test_data
+        generate_depth_test_data.generate_all()
+        print_cyan("Test data generation complete.")
+
+    # Hard check: don't let tests run without data
+    if not test_data_dir.exists() or not any(test_data_dir.glob('*.dat')):
+        print_red("ERROR: Test data still missing after generation attempt. Cannot run tests.")
+        print_red(f"  Expected .dat files in: {test_data_dir}")
+        print_red(f"  Try running manually: python {generate_script}")
+        sys.exit(1)
 
 
 parser = argparse.ArgumentParser()
