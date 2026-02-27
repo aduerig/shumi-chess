@@ -243,11 +243,15 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
                 engine_communicator.set_random_number_of_moves(args.rand)       
 
             move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, features_mask)
-            from_acn, to_acn = move[0:2], move[2:4]
-
+            # from_acn, to_acn = move[0:2], move[2:4]
+            from_acn = move[0:2]
+            to_acn = move[2:4]
+            # fargo 2 Recieve the move[5] chraracter and somehow get it to step 3
+            #   from and to get there somehow. Do I just invent some field?
 
         if ai_is_thinking:
             ai_move_queue.put((from_acn, to_acn))
+
     except Exception:
         if ai_is_thinking:
             ai_move_queue.put(None)
@@ -804,6 +808,7 @@ def make_move(from_acn, to_acn):
     if last_move_indicator:
         last_move_indicator.undraw()
 
+    # Fargo 5 we have to pass the promotion piece throughg here
     engine_communicator.make_move_two_acn(from_acn, to_acn)
 
     legal_moves = engine_communicator.get_legal_moves()
@@ -929,9 +934,10 @@ try:
             if ai_is_thinking:
                 try:
                     from_acn, to_acn = ai_move_queue.get_nowait()
-                    #print('make_move...')
+ 
+                    # Fargo 4 pass the promotion piece from step 3. to the move routine
                     make_move(from_acn, to_acn)
-                    #print('made_move...')
+
                     game_state_might_change = True
                     ai_is_thinking = False
                     continue

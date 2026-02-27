@@ -756,13 +756,14 @@ int GameBoard::center_closeness_bonus(Color c)
 {
     int bonus = 0;
 
+    //constexpr ull pieces = get_pieces_template(c);
+    //ull pieces = get_pieces();
     ull pieces =
         (c==Color::WHITE)
         ? (white_knights | white_bishops | white_rooks | white_queens)
         : (black_knights | black_bishops | black_rooks | black_queens);
 
-    while (pieces)
-    {
+    while (pieces) {
         int sq = utility::bit::lsb_and_pop_to_square(pieces);
         bonus += GameBoard::CENTER_SCORE[sq];
     }

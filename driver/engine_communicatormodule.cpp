@@ -126,6 +126,15 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
+    //
+    //  Fargo 5.
+    //  This is bizzare. 
+    //  Python has passed us an acn move (2 squares), But an acn move does not have information 
+    //  about piece promotion. UCI does, but not acn. SO Here we stupidly just look for the last move in the list 
+    //  of legal moves that matchs this acn. Only in the case of promotion, are there ever multiple moves with the same acn.
+    //  However I note there that better be one move in the list of legal moves, or the engine is insane. Stupidly here
+    // we do not flag this condition. BUT anyway, by sheer luck the queen promotion is the last in the list of moves, that is
+    // how they are added. But the bizarra part is that this move originated in the engine in C, was passed to python, back to C again.
     ShumiChess::Move found_move = {};
     for (const auto move : last_moves) {
         if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
@@ -133,7 +142,8 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
             found_move = move;
         }
     }
-
+ //  Fargo 6.  Must flag this condition we always should get a move
+    //////////assert(0);
 
     python_engine->users_last_move = found_move;
 
@@ -295,6 +305,10 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
         argument
     );
 
+    // "convert" the SAN form of the move (algebriac) into ACN, which is simply 2 squares so is always 4 characters.
+    // fargo 1 - Remove the promotion piece from Move, append it onto the end of the acn notation.
+    //           this is called UCI.
+    // Use piece_to_charactor() to add it.
     move_in_acn_notation = utility::representation::move_to_string(gotten_move);
 
     Py_END_ALLOW_THREADS;
@@ -435,8 +449,8 @@ static PyMethodDef engine_communicator_methods[] = {
     // These are move generation engines
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
     {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
-    {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
 
+    {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},      // new game
     {"print_from_c",  engine_communicator_print_from_c, METH_VARARGS, ""},
     {"get_legal_moves",  engine_communicator_get_legal_moves, METH_VARARGS, ""},
