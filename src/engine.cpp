@@ -157,9 +157,9 @@ void Engine::reset_engine() {         // New game.
     // under promotion examples
     //game_board = GameBoard("7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1");
     //game_board = GameBoard("8/8/8/8/1pk5/8/2p5/K7 w - - 0 1");
-    game_board = GameBoard("k7/8/8/4P3/8/4K3/8/8 w KQk - 6 8");
+    //game_board = GameBoard("k7/8/8/4P3/8/4K3/8/8 w KQk - 6 8");
 
-    //game_board = GameBoard();
+    game_board = GameBoard();
 
     reset_all_but_FEN();
 }
