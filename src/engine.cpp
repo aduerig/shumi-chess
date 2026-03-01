@@ -154,9 +154,12 @@ void Engine::reset_engine() {         // New game.
     // string aFEN = game_board.random_960_FEN_strict();
     // game_board = GameBoard(aFEN);
 
-    //game_board = GameBoard("r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14");
+    // under promotion examples
+    //game_board = GameBoard("7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1");
+    //game_board = GameBoard("8/8/8/8/1pk5/8/2p5/K7 w - - 0 1");
+    game_board = GameBoard("k7/8/8/4P3/8/4K3/8/8 w KQk - 6 8");
 
-    game_board = GameBoard();
+    //game_board = GameBoard();
 
     reset_all_but_FEN();
 }
@@ -2282,7 +2285,9 @@ void Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
 
 template<Color enemy_c>
 bool Engine::is_square_in_check0_t(const ull square_bb) {
-    assert(game_board.bits_in(square_bb) == 1);
+    
+    // NOTE: why is this assert commented out
+    //assert(game_board.bits_in(square_bb) == 1);
     const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
 
     const ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();

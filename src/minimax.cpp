@@ -292,7 +292,7 @@ void MinimaxAI::resign() {
 // person MrShumi = {100, -10, -30, +14, 20, 20, 20};  // All of these are integer and are applied in centipawns
 // int pers_index = 0;
 
-// Original cp_score_positional_get_opening_cp and cp_score_positional_get_middle_cp
+// Original cp_score_positional_get_opening and cp_score_positional_get_middle
 // replaced by template wrappers at bottom of file
 
 
@@ -2904,10 +2904,10 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
             case UNCLE_SHUMI:
             {
                 if (!NoMajorPiecesEnemy) {
-                    test = cp_score_positional_get_opening_cp(color, nPhase);
+                    test = cp_score_positional_get_opening(color, nPhase);
                     cp_score_position_temp += test;
 
-                    test = cp_score_positional_get_middle_cp(color);
+                    test = cp_score_positional_get_middle(color);
                     cp_score_position_temp += test;
                 }
 
@@ -2935,12 +2935,12 @@ int MinimaxAI::evaluate_board(ShumiChess::Color for_color, ShumiChess::EvalPerso
         return evaluate_board_t<ShumiChess::Color::BLACK>(evp, isQuietPosition);
 }
 
-int MinimaxAI::cp_score_positional_get_opening_cp(ShumiChess::Color color, int nPhase) {
+int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPhase) {
     if (color == ShumiChess::Color::WHITE) return cp_score_positional_get_opening_cp_t<ShumiChess::Color::WHITE>(nPhase);
     else                                    return cp_score_positional_get_opening_cp_t<ShumiChess::Color::BLACK>(nPhase);
 }
 
-int MinimaxAI::cp_score_positional_get_middle_cp(ShumiChess::Color color) {
+int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
     if (color == ShumiChess::Color::WHITE) return cp_score_positional_get_middle_cp_t<ShumiChess::Color::WHITE>();
     else                                    return cp_score_positional_get_middle_cp_t<ShumiChess::Color::BLACK>();
 }

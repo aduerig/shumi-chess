@@ -243,14 +243,18 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
                 engine_communicator.set_random_number_of_moves(args.rand)       
 
             move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, features_mask)
-            # from_acn, to_acn = move[0:2], move[2:4]
+       
+            # Recieve the acn, and the move[5] chraracter promotion char.  
             from_acn = move[0:2]
-            to_acn = move[2:4]
-            # fargo 2 Recieve the move[5] chraracter and somehow get it to step 3
-            #   from and to get there somehow. Do I just invent some field?
+            to_acn   = move[2:4]
+            promo_piece = "#"       
+            if len(move) > 4:       # this should always be true (len(move) > 4)
+                promo_piece = move[4]
+
+
 
         if ai_is_thinking:
-            ai_move_queue.put((from_acn, to_acn))
+            ai_move_queue.put((from_acn, to_acn, promo_piece))
 
     except Exception:
         if ai_is_thinking:
@@ -426,11 +430,6 @@ def get_fen(button_obj):
     set_fen_text.setText(fen)               # <-- put FEN into the entry box
     pyperclip.copy(fen)                     # <-- put FEN into the clipboard
 
-
-# engine_communicator.make_move_two_acn(from_acn, to_acn)
-# legal_moves = engine_communicator.get_legal_moves()
-
-
 def output_pgn(button_obj):
     #print('output pgn')
     #engine_communicator.get_pgn()    // clipboard
@@ -456,7 +455,10 @@ def output_fens_depth_1(button_obj):
 
     for choice in reversed(legal_moves):
         from_acn, to_acn = choice[0:2], choice[2:4]
-        engine_communicator.make_move_two_acn(from_acn, to_acn)
+
+        # Note: is " " correct below? 
+        engine_communicator.make_move_two_acn(from_acn, to_acn, " ")
+
         fen = engine_communicator.get_fen()
         shumi_fens.append(fen)
         engine_communicator.pop()
@@ -801,15 +803,14 @@ def unfocus_and_stop_dragging():
 
 
 
-def make_move(from_acn, to_acn):
+def make_move(from_acn, to_acn, promo_piece_str):
     global legal_moves, player_index, last_move_indicator
 
     # Remove the previous move's indicator
     if last_move_indicator:
         last_move_indicator.undraw()
 
-    # Fargo 5 we have to pass the promotion piece throughg here
-    engine_communicator.make_move_two_acn(from_acn, to_acn)
+    engine_communicator.make_move_two_acn(from_acn, to_acn, promo_piece_str)
 
     legal_moves = engine_communicator.get_legal_moves()
     fen = engine_communicator.get_fen()
@@ -933,10 +934,9 @@ try:
             # Make the computer's move
             if ai_is_thinking:
                 try:
-                    from_acn, to_acn = ai_move_queue.get_nowait()
+                    from_acn, to_acn, promo_piece = ai_move_queue.get_nowait()
  
-                    # Fargo 4 pass the promotion piece from step 3. to the move routine
-                    make_move(from_acn, to_acn)
+                    make_move(from_acn, to_acn, promo_piece)
 
                     game_state_might_change = True
                     ai_is_thinking = False
@@ -969,7 +969,9 @@ try:
                             temp = acn_focused
                             #print('making move', temp, 'to', acn_clicked)
                             unfocus_and_stop_dragging()
-                            make_move(temp, acn_clicked)
+
+                            make_move(temp, acn_clicked, "?")
+
                             game_state_might_change = True
                             avail_moves = []
                             continue
@@ -1016,7 +1018,7 @@ try:
             #             temp = acn_focused
             #             print('making move', temp, 'to', x_y_to_acn[(left_released_x, left_released_y)])
             #             unfocus_and_stop_dragging()
-            #             make_move(temp, x_y_to_acn[(left_released_x, left_released_y)])
+            #             make_move(temp, x_y_to_acn[(left_released_x, left_released_y)], ' ')
             #             game_state_might_change = True
             #             avail_moves = []
             #         elif acn_focused and (left_released_x, left_released_y) != acn_to_x_y[acn_focused]:

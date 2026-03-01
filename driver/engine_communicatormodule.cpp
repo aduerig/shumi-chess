@@ -16,10 +16,25 @@
 
 #include <gameboard.hpp>
 
+#include <cstdio>
+#include <cstdlib>
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG
 #endif
 #include <assert.h>
+
+#define SHUMI_FATAL(MSG)                                                     \
+    do {                                                                     \
+        std::fprintf(stderr, "\nFATAL: %s\n  at %s:%d\n", (MSG), __FILE__, __LINE__); \
+        std::fflush(stderr);                                                 \
+        std::abort(); /* or std::exit(EXIT_FAILURE) */                       \
+    } while (0)
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 
@@ -47,11 +62,13 @@ engine_communicator_systemcall(PyObject* self, PyObject* args) {
 // initialization order fiasco (globals.cpp lookup tables may not be ready yet).
 static ShumiChess::Engine* python_engine = nullptr;
 vector<ShumiChess::Move> last_moves;
+ShumiChess::Color last_mover;
 
 static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
     vector<ShumiChess::Move> moves = python_engine->get_legal_moves();
     last_moves = moves;
+    last_mover = python_engine->game_board.turn;
     vector<string> moves_readable;
     // map function that loads into moves_string
     transform(
@@ -114,36 +131,93 @@ engine_communicator_get_piece_positions(PyObject* self, PyObject* args) {
     return python_all_pieces_dict;
 }
 
+
 static PyObject*
-engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
+engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
+{
     char* from_square_c_str;
     char* to_square_c_str;
+    char* promo_piece_c_str;
 
-    if(!PyArg_ParseTuple(args, "ss", &from_square_c_str, &to_square_c_str)) {
+    if (!PyArg_ParseTuple(args, "sss", &from_square_c_str, &to_square_c_str, &promo_piece_c_str)) {
         return NULL;
     }
+
+    char promo_piece_char = promo_piece_c_str[0];   // first character (e.g. ' ' or 'N')
+
+
+    cout << "engine_communicator_make_move_two_acn " << from_square_c_str << to_square_c_str << "\n"; 
+
+
+    //ShumiChess::Color next_mover = utility::representation::opposite_color(last_mover);
+    //
+    // We only get a '?' for the promotion character only when the human makes a move.
+    // In this case all we have is the ACN, (derived from the mouse) which doesn't encapsulate 
+    // promotions. So we dont know if the promotion character should be ' ' or 'Q'.
+
+    char this_rank_char = to_square_c_str[1];
+    int this_rank = this_rank_char - '0';
+    int queening_rank;
+    if (last_mover == ShumiChess::WHITE) queening_rank = 8;
+    else                                 queening_rank = 1;
+
+   
+    ull bit_board_from_square = utility::representation::acn_to_bitboard_conversion(from_square_c_str);
+    //ull bit_board_to_square = utility::representation::acn_to_bitboard_conversion(to_square_c_str);
+
+    ShumiChess::Piece pp = python_engine->game_board.get_piece_type_on_bitboard(bit_board_from_square);
+
+    bool bPawnMoving = (pp==ShumiChess::Piece::PAWN);
+
+    if (promo_piece_char == '?') {  // This is a human move.
+        if (bPawnMoving && (queening_rank == this_rank)) {
+            promo_piece_char = 'Q';     // Humans always promote to queen
+        }
+        else {
+            promo_piece_char = ' ';     // No promotion
+        }
+    }
+
+    // cout << "\033[31m"
+    //     << " to:" << to_square_c_str
+    //     << " promoChar:" << promo_piece_char << ":end\n"
+    //     << " queenRank:" << queening_rank << " thisrow: " << this_rank
+    //     << " wee " << bPawnMoving
+    //     << " end\n"
+    //     << "\033[0m";
+
 
     string from_square_acn(from_square_c_str);
     string to_square_acn(to_square_c_str);
 
     //
-    //  Fargo 5.
-    //  This is bizzare. 
-    //  Python has passed us an acn move (2 squares), But an acn move does not have information 
-    //  about piece promotion. UCI does, but not acn. SO Here we stupidly just look for the last move in the list 
-    //  of legal moves that matchs this acn. Only in the case of promotion, are there ever multiple moves with the same acn.
-    //  However I note there that better be one move in the list of legal moves, or the engine is insane. Stupidly here
-    // we do not flag this condition. BUT anyway, by sheer luck the queen promotion is the last in the list of moves, that is
-    // how they are added. But the bizarra part is that this move originated in the engine in C, was passed to python, back to C again.
+    //  Python has passed us an acn move (2 squares, 4 characters), and a fifth character, which
+    //  is either ' ' or the promotion piece. 
     ShumiChess::Move found_move = {};
+    bool is_found_move = false;
     for (const auto move : last_moves) {
-        if (from_square_acn == utility::representation::bitboard_to_acn_conversion(move.from) && 
-            to_square_acn == utility::representation::bitboard_to_acn_conversion(move.to)) {
+        string from_str = utility::representation::bitboard_to_acn_conversion(move.from);
+        string to_str = utility::representation::bitboard_to_acn_conversion(move.to);
+        char cpromo = utility::representation::piece_to_charactor(move.promotion);
+
+        if ( (from_square_acn == from_str) && (to_square_acn == to_str) && (promo_piece_char == cpromo) ) {
+            
+            if (is_found_move) {
+                 // This should never happen
+                SHUMI_FATAL("Two or more moves matched ACN+promo (ambiguous move mapping)");
+            }
+        
+            is_found_move = true;
             found_move = move;
         }
     }
- //  Fargo 6.  Must flag this condition we always should get a move
-    //////////assert(0);
+    //  We always should get a move
+    if (!is_found_move) {
+        // This should never happen
+        SHUMI_FATAL("No moves matched ACN+promo");
+    }
+
+
 
     python_engine->users_last_move = found_move;
 
@@ -161,7 +235,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args) {
     } else {
         // Tell the engine the move
         if (found_move.color == ShumiChess::Color::WHITE) python_engine->pushMove_t<ShumiChess::Color::WHITE>(found_move);
-        else                                               python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);
+        else                                              python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);
         
         //++python_engine->repetition_table[python_engine->game_board.zobrist_key];
         python_engine->three_time_rep_stack.push_back(python_engine->game_board.zobrist_key);
@@ -305,11 +379,18 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
         argument
     );
 
-    // "convert" the SAN form of the move (algebriac) into ACN, which is simply 2 squares so is always 4 characters.
-    // fargo 1 - Remove the promotion piece from Move, append it onto the end of the acn notation.
-    //           this is called UCI.
-    // Use piece_to_charactor() to add it.
+    // "Convert" the SAN form of the move (algebriac) into ACN. ACN is simply 2 squares so is 
+    // always 4 characters. But ACN cannot represent promotions. So we add the promotion character
+    // as the fifth character. (the piece we are promoting to). The 5 character string is called UCI.
+    // However unlike ACN , the extra character is captailized
+
     move_in_acn_notation = utility::representation::move_to_string(gotten_move);
+    char cpromo = utility::representation::piece_to_charactor(gotten_move.promotion);
+
+    // cout << "\033[31m"
+    //         << " move in acn:" << move_in_acn_notation
+    //         << " promoch:" << cpromo << "\033[0m\n";
+    move_in_acn_notation += cpromo;
 
     Py_END_ALLOW_THREADS;
 
