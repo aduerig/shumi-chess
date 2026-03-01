@@ -721,7 +721,7 @@ int GameBoard::count_pawn_holes_cp_old(Color c,
         }
     }
 
-    return (holes*Weights::PAWN_HOLE_WGHT);
+    return (holes*wghts.GetWeight(PAWN_HOLE));
 }
 
 
@@ -768,7 +768,7 @@ int GameBoard::center_closeness_bonus(Color c)
         bonus += GameBoard::CENTER_SCORE[sq];
     }
 
-    return bonus * Weights::CENTER_OCCUPY_PIECES_WGHT;
+    return bonus *wghts.GetWeight(CENTER_OCCUPY_PIECES);
 }
 
 
@@ -2529,7 +2529,11 @@ int GameBoard::get_castled_bonus_cp_t(int phase) const {
     }
     b_has_castled = bHasCastled_fake_t<c>();
 
-    int icode = (b_has_castled ? Weights::HAS_CASTLED_WGHT : 0) + i_can_castle * Weights::CAN_CASTLE_WGHT;
+
+    assert(Weights::HAS_CASTLED_WGHT == wghts.GetWeight(HAS_CASTLED));
+    assert(Weights::CAN_CASTLE_WGHT == wghts.GetWeight(CAN_CASTLE));
+
+    int icode = (b_has_castled ?wghts.GetWeight(HAS_CASTLED) : 0) + i_can_castle *wghts.GetWeight(CAN_CASTLE);
 
     int final_cp;
 
@@ -2582,29 +2586,29 @@ int GameBoard::pawns_attacking_center_squares_cp_t()
     int sum = 0;
 
     if constexpr (c == Color::WHITE) {
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square_t<c>(square_e5);
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square_t<c>(square_d5);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_OFF) * pawns_attacking_square_t<c>(square_e5);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_OFF) * pawns_attacking_square_t<c>(square_d5);
 
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square_t<c>(square_e4);
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square_t<c>(square_d4);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_square_t<c>(square_e4);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_square_t<c>(square_d4);
 
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square_t<c>(square_e6);
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square_t<c>(square_d6);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_square_t<c>(square_e6);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_square_t<c>(square_d6);
 
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square_t<c>(square_c5);
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square_t<c>(square_f5);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_square_t<c>(square_c5);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_square_t<c>(square_f5);
     } else {
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square_t<c>(square_e4);
-        sum += Weights::PAWN_ON_CTR_OFF_WGHT * pawns_attacking_square_t<c>(square_d4);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_OFF) * pawns_attacking_square_t<c>(square_e4);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_OFF) * pawns_attacking_square_t<c>(square_d4);
 
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square_t<c>(square_e5);
-        sum += Weights::PAWN_ON_CTR_DEF_WGHT * pawns_attacking_square_t<c>(square_d5);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_square_t<c>(square_e5);
+        sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_square_t<c>(square_d5);
 
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square_t<c>(square_e3);
-        sum += Weights::PAWN_ON_ADV_CTR_WGHT * pawns_attacking_square_t<c>(square_d3);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_square_t<c>(square_e3);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_square_t<c>(square_d3);
 
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square_t<c>(square_c4);
-        sum += Weights::PAWN_ON_ADV_FLK_WGHT * pawns_attacking_square_t<c>(square_f4);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_square_t<c>(square_c4);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_square_t<c>(square_f4);
     }
 
     return sum;
@@ -2629,7 +2633,7 @@ int GameBoard::knights_attacking_center_squares_cp_t()
     itemp += knights_attacking_square_t<c>(square_e5);
     itemp += knights_attacking_square_t<c>(square_d5);
 
-    return (itemp * Weights::KNIGHT_ON_CTR_WGHT);
+    return (itemp * wghts.GetWeight(KNIGHT_ON_CTR));
 }
 
 // ---------- bishops_attacking_square_t ----------
@@ -2667,7 +2671,7 @@ int GameBoard::bishops_attacking_center_squares_cp_t()
     itemp += bishops_attacking_square_t<c>(square_e5);
     itemp += bishops_attacking_square_t<c>(square_d5);
 
-    return (itemp*Weights::BISHOP_ON_CTR_WGHT);
+    return (itemp*wghts.GetWeight(BISHOP_ON_CTR));
 }
 
 // ---------- two_bishops_cp_t ----------
@@ -2676,7 +2680,7 @@ int GameBoard::two_bishops_cp_t() const {
     ull friendlyBishops = get_pieces_template<Piece::BISHOP, c>();
     int bishops = bits_in(friendlyBishops);
 
-    if (bishops >= 2) return Weights::TWO_BISHOPS_WGHT;
+    if (bishops >= 2) return wghts.GetWeight(TWO_BISHOPS);
     return 0;
 }
 
@@ -2689,7 +2693,7 @@ int GameBoard::bishop_pawn_pattern_cp_t() {
 
         if ( (white_bishops & bishop_mask) &&
              (white_pawns   & pawn_mask) ) {
-            return Weights::BISHOP_PATTERN_WGHT;
+            return wghts.GetWeight(BISHOP_PATTERN);
         }
 
         bishop_mask = (1ULL << square_e2);
@@ -2697,7 +2701,7 @@ int GameBoard::bishop_pawn_pattern_cp_t() {
 
         if ( (white_bishops & bishop_mask) &&
              (white_pawns   & pawn_mask) ) {
-            return Weights::BISHOP_PATTERN_WGHT;
+            return wghts.GetWeight(BISHOP_PATTERN);
         }
     } else {
         ull bishop_mask = (1ULL << square_d6);
@@ -2705,7 +2709,7 @@ int GameBoard::bishop_pawn_pattern_cp_t() {
 
         if ( (black_bishops & bishop_mask) &&
              (black_pawns   & pawn_mask) ) {
-            return Weights::BISHOP_PATTERN_WGHT;
+            return wghts.GetWeight(BISHOP_PATTERN);
         }
 
         bishop_mask = (1ULL << square_e7);
@@ -2713,7 +2717,7 @@ int GameBoard::bishop_pawn_pattern_cp_t() {
 
         if ( (black_bishops & bishop_mask) &&
              (black_pawns   & pawn_mask) ) {
-            return Weights::BISHOP_PATTERN_WGHT;
+            return wghts.GetWeight(BISHOP_PATTERN);
         }
     }
     return 0;
@@ -2743,10 +2747,10 @@ int GameBoard::rook_connectiveness_cp_t() const {
         for (int j = i + 1; j < n; ++j) {
             const int s1 = sqs[i], s2 = sqs[j];
             if ((s1 >> 3 == s2 >> 3) && clear_between_rank(occupancy, s1, s2)) {
-                return (Weights::ROOK_CONNECTED_WGHT);
+                return (wghts.GetWeight(ROOK_CONNECTED));
             }
             if (((s1 % 8) == (s2 % 8)) && clear_between_file(occupancy, s1, s2)) {
-                return (Weights::ROOK_CONNECTED_WGHT);
+                return (wghts.GetWeight(ROOK_CONNECTED));
             }
         }
     }
@@ -2779,10 +2783,10 @@ int GameBoard::rooks_file_status_cp_t(const PawnFileInfo& pawnInfo)
         else if (!ownPawnOnFile &&  oppPawnOnFile)  file_mult = 1;
         else continue;
 
-        score_cp += nRooksOnFile * file_mult * Weights::ROOK_ON_OPEN_FILE;
+        score_cp += nRooksOnFile * file_mult * wghts.GetWeight(ROOK_ON_OPEN_FILE);
 
         if (enemy_king & file_mask) {
-            score_cp += nRooksOnFile * file_mult * Weights::KING_ON_FILE_WGHT;
+            score_cp += nRooksOnFile * file_mult * wghts.GetWeight(KING_ON_FILE);
         }
     }
 
@@ -2806,8 +2810,8 @@ int GameBoard::rook_7th_rankness_cp_t()
     while (bigPieces) {
         int s = utility::bit::lsb_and_pop_to_square(bigPieces);
         int rnk = s >> 3;
-        if (rnk == seventh_rank) score_cp += Weights::MAJOR_ON_RANK7_WGHT;
-        if (rnk == eight_rank) score_cp += Weights::MAJOR_ON_RANK8_WGHT;
+        if (rnk == seventh_rank) score_cp += wghts.GetWeight(MAJOR_ON_RANK7);
+        if (rnk == eight_rank) score_cp += wghts.GetWeight(MAJOR_ON_RANK8);
     }
     return score_cp;
 }
@@ -2884,9 +2888,9 @@ int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
 
             assert(Weights::ISOLANI_ROOK_WGHT == wghts.GetWeight(ISOLANI_ROOK));
             if ((file==0)||(file==7)) {
-                this_cp = (k*Weights::ISOLANI_ROOK_WGHT);
+                this_cp = (k*wghts.GetWeight(ISOLANI_ROOK));
             } else {
-                this_cp = (k*Weights::ISOLANI_WGHT);
+                this_cp = (k*wghts.GetWeight(ISOLANI));
             }
 
             if (get_major_pieces(c)) {
@@ -2967,7 +2971,7 @@ int GameBoard::count_pawn_holes_cp2_t(const PawnFileInfo& pawnInfo, ull& holes_b
         }
     }
 
-    return (holes * Weights::PAWN_HOLE_WGHT);
+    return (holes * wghts.GetWeight(PAWN_HOLE));
 }
 
 // ---------- count_knights_on_holes_cp_t ----------
@@ -2979,7 +2983,7 @@ int GameBoard::count_knights_on_holes_cp_t(ull holes_bb) {
     ull on_holes = knights & holes_bb;
     int n = bits_in(on_holes);
 
-    return (n * Weights::KNIGHT_HOLE_WGHT);
+    return (n * wghts.GetWeight(KNIGHT_HOLE));
 }
 
 // ---------- count_doubled_pawns_cp_t ----------
@@ -2993,13 +2997,13 @@ int GameBoard::count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) {
         int k = pawnInfo.p[friendlyP].file_count[file];
         if (k < 2) continue;
 
-        int weight = (file == 0 || file == 7) ? Weights::DOUBLED_ROOK_WGHT : Weights::DOUBLED_WGHT;
+        int weight = (file == 0 || file == 7) ? wghts.GetWeight(DOUBLED_ROOK) : wghts.GetWeight(DOUBLED);
 
         int extras = (k - 1);
         int this_cp = extras * weight;
 
         if (pawnInfo.p[enemyP].file_count[file] == 0) {
-            this_cp += extras * Weights::DOUBLED_OPEN_FILE_WGHT;
+            this_cp += extras * wghts.GetWeight(DOUBLED_OPEN_FILE);
         }
 
         total += this_cp;
@@ -3047,7 +3051,7 @@ int GameBoard::count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed
             else                             adv = (7 - r);
 
             assert ((adv>0) && (adv<7));
-            int base = Weights::PASSED_PAWN_SLOPE_WGHT*adv*adv + Weights::PASSED_PAWN_YINRCPT_WGHT;
+            int base = wghts.GetWeight(PASSED_PAWN_SLOPE)*adv*adv + wghts.GetWeight(PASSED_PAWN_YINRCPT);
 
             ull protect_mask = 0ULL;
             if constexpr (c == Color::WHITE) {
@@ -3081,7 +3085,7 @@ int GameBoard::king_edgeness_cp_t()
     assert(kbb != 0ULL);
     int edgeCode = piece_edgeness(kbb);
 
-    return (edgeCode*Weights::KING_EDGE_WGHT);
+    return (edgeCode*wghts.GetWeight(KING_EDGE));
 }
 
 // ---------- queenOnCenterSquare_cp_t ----------
@@ -3097,7 +3101,7 @@ int GameBoard::queenOnCenterSquare_cp_t()
     itemp += ((q & (1ULL << square_e5)) != 0ULL);
     itemp += ((q & (1ULL << square_d5)) != 0ULL);
 
-    return itemp * Weights::QUEEN_OUT_EARLY_WGHT;
+    return itemp * wghts.GetWeight(QUEEN_OUT_EARLY);
 }
 
 // ---------- moved_f_pawn_early_cp_t ----------
@@ -3112,7 +3116,7 @@ int GameBoard::moved_f_pawn_early_cp_t() const
     int itemp = 0;
     itemp += ((p & (1ULL << startSq)) == 0ULL);
 
-    return itemp * Weights::F_PAWN_MOVED_EARLY_WGHT;
+    return itemp * wghts.GetWeight(F_PAWN_MOVED_EARLY);
 }
 
 // ---------- get_king_near_squares_t ----------
@@ -3189,7 +3193,7 @@ int GameBoard::attackers_on_enemy_king_near_cp_t()
         total += pawns_attacking_square_t<c>(sq);
     }
 
-    return (total*Weights::ATTACKERS_ON_KING_WGHT);
+    return (total*wghts.GetWeight(ATTACKERS_ON_KING));
 }
 
 // ---------- kings_far_apart_t ----------
@@ -3238,7 +3242,7 @@ double GameBoard::kings_close_toegather_cp_t() {
 
     double dFarness = MAX_DIST - dkk;
     assert (dFarness>=0.0);
-    return (int)(dFarness * Weights::KINGS_CLOSE_TOGETHER_WGHT);
+    return (int)(dFarness * wghts.GetWeight(KINGS_CLOSE_TOGETHER));
 }
 
 // ---------- hasNoMajorPieces_t ----------
@@ -3269,8 +3273,8 @@ int GameBoard::is_knight_on_edge_cp_t() {
         int s  = utility::bit::lsb_and_pop_to_square(knghts);
         const int f = s & 7;
         const int r = s >> 3;
-        if ((f==0) || (f==7)) pointsOff += Weights::KNIGHT_ON_EDGE_WGHT;
-        if ((r==0) || (r==7)) pointsOff += Weights::KNIGHT_ON_EDGE_WGHT;
+        if ((f==0) || (f==7)) pointsOff += wghts.GetWeight(KNIGHT_ON_EDGE);
+        if ((r==0) || (r==7)) pointsOff += wghts.GetWeight(KNIGHT_ON_EDGE);
     }
     return pointsOff;
 }
@@ -3306,7 +3310,7 @@ int GameBoard::development_opening_cp_t() {
     const int developed = (knights_total - knights_on_start) + (bishops_total - bishops_on_start);
     if (developed <= 0) return 0;
 
-    return developed * Weights::DEVELOPMENT_OPENING;
+    return developed * wghts.GetWeight(DEVELOPMENT_OPENING);
 }
 
 
