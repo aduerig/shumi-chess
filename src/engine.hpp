@@ -152,9 +152,9 @@ class Engine {
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
 
         // Template variants (compile-time color)
-        template<Color c> bool is_king_in_check2_t();
-        template<Color enemy_c> bool is_square_in_check0_t(const ull);
-        template<Color enemy_c> bool is_square_in_check2_t(const ull);
+        template<Color c> bool is_king_in_check_t();
+        //template<Color enemy_c> bool is_square_in_check0_t(const ull);
+        template<Color enemy_c> bool is_square_in_check_t(const ull);
         template<Color enemy_c> bool is_square_attacked_with_masks_t(
             const ull square_bb, const int square, const ull occ_BB,
             const ull themKnights, const ull themKing, const ull themPawns,

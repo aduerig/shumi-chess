@@ -777,9 +777,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         << " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth 
         << "\x1b[0m" << endl;
 
-
-    string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
-
     // If the first move, MAYBE randomize the response some.
     if ( (d_Return_score != ABORT_SCORE) && (d_Return_score != ONLY_MOVE_SCORE) ) {
 
@@ -915,7 +912,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     int itemp3, itemp4;
     
     
-    isOK = false; // engine.game_board.bHasCastled_fake(ShumiChess::WHITE);
+    isOK = false;
 
     iPhase = phase_of_game_full();
     char szTemp[128];
@@ -925,7 +922,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     //isOK = engine.game_board.isReversableMove(best_move);
 
     global_debug_flag = true;
-    //itemp = engine.game_board.get_castled_bonus_cp(Color::WHITE, iPhase);
 
     // test harness for testing isolated/doubled/passed pawns
     ull passed_pawns;
@@ -1024,24 +1020,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(MovesOut);
 
     vector<Move>& legal_moves = MovesOut;
-
- 
-
-    // bool bOK = engine.assert_same_moves(legal_moves, legal_moves2);
-    // if (!bOK) {
-    //     cout << "legal_moves:  ";
-    //     string s1 = engine.moves_into_string(legal_moves);
-    //     cout << s1;
-
-    //     cout << "legal_moves2: ";
-    //     string s2 = engine.moves_into_string(legal_moves2);
-    //     cout << s2;
-
-    //     string out = gameboard_to_string(engine.game_board);
-    //     cout << out;
-
-    //     assert(0);
-    // }
 
     vector<Move>* p_moves_to_loop_over = &legal_moves;
 
@@ -1251,7 +1229,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             cout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
 
             #ifdef _DEBUGGING_TO_FILE1
-                //engine.print_move_history_to_file(fpDebug, "forc");    // debug only
+                // Show board
                 cout << gameboard_to_string(engine.game_board) << endl;
                 assert(0);
             #endif
@@ -1331,7 +1309,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 have_tt_eval = true;
             }
         }
-        //#endif
 
         //
         // evaluate (main call)
@@ -1379,8 +1356,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
         in_check = (engine.game_board.turn == Color::WHITE)
-            ? engine.is_king_in_check2_t<Color::WHITE>()
-            : engine.is_king_in_check2_t<Color::BLACK>();
+            ? engine.is_king_in_check_t<Color::WHITE>()
+            : engine.is_king_in_check_t<Color::BLACK>();
 
         if (in_check) {
             // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
@@ -1391,8 +1368,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         } else {
 
             // Obtain moves to use in the limited search. (Quiescence)
-            // unquiet_moves.reserve(MAX_MOVES);
-            // engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, unquiet_moves);
             engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
 
             vector<Move>& unquiet_moves = engine.all_unquiet_moves[nPlys];
@@ -1971,6 +1946,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                                 // << " , " << abs(foundScore - cp_score_temp)
                                 // << endl;
                                 
+                                // Show board
                                 string out = gameboard_to_string(engine.game_board);
                                 cout << out << endl;
 
@@ -2211,6 +2187,8 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 // This is the third tier", as in SEE is the third tier (centipawns)
                 if (a.capture != ShumiChess::Piece::NONE)
                 {
+                    
+                    // remove me!
                     //int seeA2 = engine.game_board.SEE_for_capture(engine.game_board.turn, a, nullptr);
                     int seeA = engine.game_board.SEE_for_capture_new(engine.game_board.turn, a, nullptr);
                     //assert(seeA == seeA2);
@@ -2219,6 +2197,8 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 }
                 if (b.capture != ShumiChess::Piece::NONE)
                 {
+                    
+                    // remove me!
                     //int seeB2 = engine.game_board.SEE_for_capture(engine.game_board.turn, b, nullptr);
                     int seeB = engine.game_board.SEE_for_capture_new(engine.game_board.turn, b, nullptr);
                     //assert(seeB == seeB2);
@@ -2458,8 +2438,9 @@ Move MinimaxAI::get_move(int depth) {
         else                         engine.popMove_t<Color::BLACK>();
     }
     
-    string color = engine.game_board.turn == Color::BLACK ? "BLACK" : "WHITE";
-    cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move chose move: for " + color + " player") << endl;
+    string colorString = color_to_string(engine.game_board.turn);
+    
+    cout << colorize(AColor::BRIGHT_CYAN, "Minimax AI get_move chose move: for " + colorString + " player") << endl;
     cout << colorize(AColor::BRIGHT_YELLOW, "Visited: " + format_with_commas(nodes_visited) + "  " + format_with_commas(nodes_visited_depth_zero) + " nodes total") << endl;
 
     chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time;
@@ -2720,7 +2701,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
         icp_temp = engine.game_board.count_isolated_pawns_cp_t<c>(pawnFileInfo);
         cp_score_position_temp += icp_temp;
 
-        icp_temp = engine.game_board.count_pawn_holes_cp2_t<c>(pawnFileInfo, holes_bb);
+        icp_temp = engine.game_board.count_pawn_holes_cp_t<c>(pawnFileInfo, holes_bb);
         cp_score_position_temp += icp_temp;
 
         icp_temp = engine.game_board.count_knights_on_holes_cp_t<c>(holes_bb);

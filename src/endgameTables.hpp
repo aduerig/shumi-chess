@@ -24,7 +24,7 @@ struct endgameTablePos
                           // constants and map later.
 
     int squares[3];       // Square indices 0..63 in **a1 = 0** format.
-                          // IMPORTANT: you use h1 = 0 internally, so when
+                          // IMPORTANT: you use h1=0, so when
                           // you fill this array you must convert from your
                           // h1=0 to a1=0 (flip files).
 

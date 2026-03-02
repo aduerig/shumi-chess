@@ -167,10 +167,10 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 
     ShumiChess::Piece pp = python_engine->game_board.get_piece_type_on_bitboard(bit_board_from_square);
 
-    bool bPawnMoving = (pp==ShumiChess::Piece::PAWN);
+    bool b_pawn_moving = (pp==ShumiChess::Piece::PAWN);
 
     if (promo_piece_char == '?') {  // This is a human move.
-        if (bPawnMoving && (queening_rank == this_rank)) {
+        if (b_pawn_moving && (queening_rank == this_rank)) {
             promo_piece_char = 'Q';     // Humans always promote to queen
         }
         else {

@@ -21,6 +21,7 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
     vector<ShumiChess::Move> legal_moves = engine.get_legal_moves();
     for (ShumiChess::Move move : legal_moves) {
 
+        // Get FEN
         string before_fen = engine.game_board.to_fen();
         if (move.color == ShumiChess::Color::WHITE) engine.pushMove_t<ShumiChess::Color::WHITE>(move);
         else                                        engine.pushMove_t<ShumiChess::Color::BLACK>(move);

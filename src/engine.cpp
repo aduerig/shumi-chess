@@ -108,6 +108,8 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 void Engine::reset_engine() {         // New game.
     std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
 
+    // Setup the board
+    //
     ///////////////////////////////////////////////////////////////////////
     //
     // Debug only. You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. enter fen. FEN setup. Setup the FEN
@@ -154,12 +156,21 @@ void Engine::reset_engine() {         // New game.
     // string aFEN = game_board.random_960_FEN_strict();
     // game_board = GameBoard(aFEN);
 
-    // under promotion examples
-    //game_board = GameBoard("7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1");
-    //game_board = GameBoard("8/8/8/8/1pk5/8/2p5/K7 w - - 0 1");
-    //game_board = GameBoard("k7/8/8/4P3/8/4K3/8/8 w KQk - 6 8");
+
+
+    //game_board = GameBoard("r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14");
+
+    // This may be a bad FEN...
+    //game_board = GameBoard("r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14");
+
+    //game_board = GameBoard("r2q1rk1/1p2ppbp/N5p1/4N3/2n5/1P6/1B1P1PPP/R1R1Q1K1 b - - 0 16");
 
     game_board = GameBoard();
+
+    // Show board (debug only)
+    string out = utility::representation::gameboard_to_string(game_board);
+    cout << out << endl;
+
 
     reset_all_but_FEN();
 }
@@ -238,7 +249,7 @@ vector<Move> Engine::get_legal_moves() {
 template<Color c>
 bool Engine::in_check_after_move_fast_t(const Move& move)
 {
-    constexpr Color enemy = (c == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    constexpr Color enemy = utility::representation::opposite_color(c);
 
     assert(move.piece_type != Piece::NONE);
 
@@ -314,7 +325,7 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
         }
     }
 
-    const bool bReturn = is_king_in_check2_t<c>();
+    const bool bReturn = is_king_in_check_t<c>();
 
     // Restore all mutated bitboards
     if (pRooks) *pRooks = rooksOld;
@@ -465,9 +476,9 @@ GameState Engine::is_game_over() {
 GameState Engine::is_game_over(vector<Move>& legal_moves) {
     if (legal_moves.size() == 0) {
         // if no moves, then gave is over. Either somebody wins or its a stalemate
-        if ( (!game_board.white_king) || (is_square_in_check0_t<Color::BLACK>(game_board.white_king)) ) {
+        if ( (!game_board.white_king) || (is_square_in_check_t<Color::BLACK>(game_board.white_king)) ) {
             return GameState::BLACKWIN;     // Checkmate
-        } else if ( (!game_board.black_king) || (is_square_in_check0_t<Color::WHITE>(game_board.black_king)) ) {
+        } else if ( (!game_board.black_king) || (is_square_in_check_t<Color::WHITE>(game_board.black_king)) ) {
             return GameState::WHITEWIN;     // Checkmate
         }
         else {
@@ -535,26 +546,12 @@ GameState Engine::is_game_over(vector<Move>& legal_moves) {
 int Engine::get_best_score_at_root() {
 
     //cout << reason_for_draw << endl;
-    //cout << "ouch" << endl;
 
     int material_centPawns = 0;
     //int pawns_only_centPawns = 0;
 
-    Color for_color = Color::WHITE;     // This makes the score absolute
-
     material_centPawns = (int)(d_bestScore_at_root*100.0);
     return material_centPawns;
-
-
-    // for (const auto& color1 : array<Color, 2>{Color::WHITE, Color::BLACK}) {
-
-    //     // Get the centipawn value for this color
-    //     int cp_score_mat_temp;
-
-    //     // cp_score_mat_temp = game_board.get_material_for_color(color1, pawns_only_centPawns);
-    //     // assert (cp_score_mat_temp>=0);    // no negative value pieces
-    //     // if (color1 != for_color) cp_score_mat_temp *= -1;
-
 
 }
 
@@ -563,7 +560,7 @@ int Engine::get_best_score_at_root() {
 template<Color c>
 void Engine::pushMove_t(const Move& move) {
 
-    constexpr Color enemy = (c == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    constexpr Color enemy = utility::representation::opposite_color(c);
 
     assert(move.piece_type != NONE);
 
@@ -717,7 +714,7 @@ void Engine::pushMove_t(const Move& move) {
 template<Color c>
 void Engine::popMove_t() {
 
-    constexpr Color enemy = (c == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    constexpr Color enemy = utility::representation::opposite_color(c);
 
     const Move move = move_history.top();
     move_history.pop();
@@ -861,7 +858,7 @@ void Engine::popMove_t() {
 template<Color c>
 void Engine::pushMoveFast_t(const Move& move)
 {
-    constexpr Color enemy = (c == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    constexpr Color enemy = utility::representation::opposite_color(c); 
 
     assert(move.piece_type != Piece::NONE);
 
@@ -934,7 +931,7 @@ void Engine::pushMoveFast_t(const Move& move)
 template<Color c>
 void Engine::popMoveFast_t()
 {
-    constexpr Color enemy = (c == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    constexpr Color enemy = utility::representation::opposite_color(c);
 
     assert(!move_history.empty());
     Move move = move_history.top();
@@ -1598,9 +1595,27 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
             // its either a capture or a promotion (or both)
 
             // Very late in analysis! So discard negative SEE captures below one pawn.
-            //int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+
+            
+            // remove me!
             int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
-            //assert(testValue == testValue2);
+            // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+            // if (testValue != testValue2) {
+            //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
+            //     move_into_string(mv);
+            //     cout << "mv " << move_string.c_str() << '\n';
+
+            //     // Show board
+            //     string out = utility::representation::gameboard_to_string(game_board);
+            //     cout << out << endl;
+
+            //     // Show FEN
+            //     cout << game_board.to_fen().c_str() << '\n';
+
+            //     assert(0);
+            // }
+
+
 
             if (qPlys > MAX_QPLY2) {
 
@@ -2198,7 +2213,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             if (game_board.white_castle_rights & (0b00000001)) {
                 squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king>>1) && !is_square_in_check0_t<enemy_color>(king>>2);
+                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
                     if (b_no_inbetween_squares_in_check) {
                         needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
@@ -2214,7 +2229,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             if (game_board.white_castle_rights & (0b00000010)) {
                 squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king<<1) && !is_square_in_check0_t<enemy_color>(king<<2);
+                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
                     if (b_no_inbetween_squares_in_check) {
                         needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
@@ -2231,7 +2246,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             if (game_board.black_castle_rights & (0b00000001)) {
                 squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king>>1) && !is_square_in_check0_t<enemy_color>(king>>2);
+                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
                     if (b_no_inbetween_squares_in_check) {
                         needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
@@ -2247,7 +2262,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             if (game_board.black_castle_rights & (0b00000010)) {
                 squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check0_t<enemy_color>(king) && !is_square_in_check0_t<enemy_color>(king<<1) && !is_square_in_check0_t<enemy_color>(king<<2);
+                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
                     if (b_no_inbetween_squares_in_check) {
                         needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
@@ -2281,58 +2296,25 @@ void Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
     add_rook_moves_to_vector_t<c>(all_psuedo_legal_moves);
 }
 
-// --- Phase 3: Check detection templates ---
-
 template<Color enemy_c>
-bool Engine::is_square_in_check0_t(const ull square_bb) {
-    
-    // NOTE: why is this assert commented out
-    //assert(game_board.bits_in(square_bb) == 1);
-    const int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
+bool Engine::is_square_in_check_t(const ull square_bb) {
+    assert(game_board.bits_in(square_bb) == 1);
+    int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
 
-    const ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();
-    if (tables::movegen::knight_attack_table[square] & themKnights) return true;
+    ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();
+    ull themKing    = game_board.get_pieces_template<Piece::KING, enemy_c>();
+    ull themPawns   = game_board.get_pieces_template<Piece::PAWN, enemy_c>();
+    ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy_c>();
+    ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy_c>();
+    ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy_c>();
 
-    const ull themKing = game_board.get_pieces_template<Piece::KING, enemy_c>();
-    if (tables::movegen::king_attack_table[square] & themKing) return true;
+    ull occ_BB = game_board.get_pieces();
 
-    const ull themPawns = game_board.get_pieces_template<Piece::PAWN, enemy_c>();
-
-    ull square_just_behind_target;
-    if constexpr (enemy_c == Color::BLACK) {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_8]) << 8;
-    } else {
-        square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
-    }
-
-    ull FILE_H = col_masksHA[ColHA::COL_H];
-    ull FILE_A = col_masksHA[ColHA::COL_A];
-    ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
-    ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
-    ull reachable_pawns = towardA_from_target | towardH_from_target;
-    if (reachable_pawns & themPawns) return true;
-
-    const ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy_c>();
-    const ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy_c>();
-    const ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy_c>();
-
-    ull deadly_diags = themQueens | themBishops;
-    ull deadly_straights = themQueens | themRooks;
-    if (!(deadly_straights | deadly_diags)) return false;
-
-    ull all_pieces_but_self = game_board.get_pieces() & ~square_bb;
-    assert(all_pieces_but_self != 0ULL);
-
-    if (deadly_straights) {
-        ull straight_attacks_from_passed_sq = get_straight_attacks(all_pieces_but_self, square);
-        if (deadly_straights & straight_attacks_from_passed_sq) return true;
-    }
-    if (deadly_diags) {
-        ull diagonal_attacks_from_passed_sq = get_diagonal_attacks(all_pieces_but_self, square);
-        if (deadly_diags & diagonal_attacks_from_passed_sq) return true;
-    }
-    return false;
+    return is_square_attacked_with_masks_t<enemy_c>(square_bb, square, occ_BB,
+                                         themKnights, themKing, themPawns,
+                                         themQueens, themRooks, themBishops);
 }
+
 
 template<Color enemy_c>
 bool Engine::is_square_attacked_with_masks_t(
@@ -2376,30 +2358,18 @@ bool Engine::is_square_attacked_with_masks_t(
     return false;
 }
 
-template<Color enemy_c>
-bool Engine::is_square_in_check2_t(const ull square_bb) {
-    assert(game_board.bits_in(square_bb) == 1);
-    int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
-
-    ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();
-    ull themKing    = game_board.get_pieces_template<Piece::KING, enemy_c>();
-    ull themPawns   = game_board.get_pieces_template<Piece::PAWN, enemy_c>();
-    ull themQueens  = game_board.get_pieces_template<Piece::QUEEN, enemy_c>();
-    ull themRooks   = game_board.get_pieces_template<Piece::ROOK, enemy_c>();
-    ull themBishops = game_board.get_pieces_template<Piece::BISHOP, enemy_c>();
-
-    ull occ_BB = game_board.get_pieces();
-
-    return is_square_attacked_with_masks_t<enemy_c>(square_bb, square, occ_BB,
-                                         themKnights, themKing, themPawns,
-                                         themQueens, themRooks, themBishops);
-}
 
 template<Color c>
-bool Engine::is_king_in_check2_t() {
+bool Engine::is_king_in_check_t() {
     constexpr Color enemy = utility::representation::opposite_color_v<c>;
     ull friendly_king = game_board.get_pieces_template<Piece::KING, c>();
-    return is_square_in_check2_t<enemy>(friendly_king);
+
+    // remove me!
+    //bool b_king_in_check2 = is_square_in_check0_t<enemy>(friendly_king);
+    bool b_king_in_check = is_square_in_check_t<enemy>(friendly_king);
+    //assert (b_king_in_check2 == b_king_in_check);
+
+    return b_king_in_check;
 }
 
 template<Color c>
@@ -2609,7 +2579,7 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
 
     constexpr Color color = c;
 
-    const bool in_check_before_move = is_king_in_check2_t<c>();
+    const bool in_check_before_move = is_king_in_check_t<c>();
 
     PinnedInfo pinnedInfo;
     CheckInfo  checkInfo;
@@ -2630,6 +2600,8 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
             if (move.piece_type == Piece::KING) {
                 legal = !in_check_after_king_move_t<c>(move);
             } else {
+                //
+                // This is where the time is saved. Here we DONT 
                 if (move.is_en_passent_capture) {
                     legal = !in_check_after_move_fast_t<c>(move);
                 } else {
@@ -2644,7 +2616,7 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
             }
             if (legal) MovesOut.push_back(move);
         }
-    } else {
+    } else {            // (in_check_before_move)
         for (const Move& move : psuedo_legal_moves) {
             bool legal = false;
 
@@ -2709,12 +2681,12 @@ template void Engine::add_king_moves_to_vector_t<Color::BLACK>(vector<Move>&);
 template void Engine::get_psuedo_legal_moves_t<Color::WHITE>(vector<Move>&);
 template void Engine::get_psuedo_legal_moves_t<Color::BLACK>(vector<Move>&);
 
-template bool Engine::is_king_in_check2_t<Color::WHITE>();
-template bool Engine::is_king_in_check2_t<Color::BLACK>();
-template bool Engine::is_square_in_check0_t<Color::WHITE>(const ull);
-template bool Engine::is_square_in_check0_t<Color::BLACK>(const ull);
-template bool Engine::is_square_in_check2_t<Color::WHITE>(const ull);
-template bool Engine::is_square_in_check2_t<Color::BLACK>(const ull);
+template bool Engine::is_king_in_check_t<Color::WHITE>();
+template bool Engine::is_king_in_check_t<Color::BLACK>();
+//template bool Engine::is_square_in_check0_t<Color::WHITE>(const ull);
+//template bool Engine::is_square_in_check0_t<Color::BLACK>(const ull);
+template bool Engine::is_square_in_check_t<Color::WHITE>(const ull);
+template bool Engine::is_square_in_check_t<Color::BLACK>(const ull);
 template bool Engine::is_square_attacked_with_masks_t<Color::WHITE>(const ull, const int, const ull, const ull, const ull, const ull, const ull, const ull, const ull);
 template bool Engine::is_square_attacked_with_masks_t<Color::BLACK>(const ull, const int, const ull, const ull, const ull, const ull, const ull, const ull, const ull);
 template Engine::PinnedInfo Engine::compute_pins_t<Color::WHITE>();

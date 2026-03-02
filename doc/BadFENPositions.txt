@@ -155,7 +155,10 @@ rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KB1R w KQkq - 0 1   // then move a3
 // Test rooks doubled on 7th rank
 r2r3k/1R4pp/4R3/2p2p2/8/5P2/3B1P1P/6K1 w - - 3 33
 
-
+    // under promotion examples
+    //game_board = GameBoard("7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1");
+    //game_board = GameBoard("8/8/8/8/1pk5/8/2p5/K7 w - - 0 1");
+    //game_board = GameBoard("k7/8/8/4P3/8/4K3/8/8 w KQk - 6 8");
 
 endgames
 ========

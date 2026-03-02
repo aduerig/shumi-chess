@@ -299,9 +299,8 @@ class GameBoard {
 
         // "Positional "pawn" routines.
         template<Color c> int count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const;
-        int count_pawn_holes_cp_old(Color c, const PawnFileInfo& pawnInfo
-                                , ull& holes);  // output
-        template<Color c> int count_pawn_holes_cp2_t(const PawnFileInfo& pawnInfo, ull& holes);
+       
+        template<Color c> int count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes);
         template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
 
         template<Color c> int count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo);
@@ -351,7 +350,6 @@ class GameBoard {
 
         template<Color c> int get_castled_bonus_cp_t(int phase) const;
         template<Color c> int get_material_for_color_t(int& cp_pawns_only_temp);
-        //bool bHasCastled(Color color1) const;
         template<Color c> bool bHasCastled_fake_t() const;
 
         // returns 0 if sq has no attackers. 

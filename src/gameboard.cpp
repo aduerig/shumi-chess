@@ -646,92 +646,6 @@ void GameBoard::validate_row_col_masks_h1_0()
 }
 
 
-
-
-
-//
-// Finds pawn-structure "holes":
-// For each friendly pawn, mark the square directly in front of it as a hole if no friendly pawn can
-// attack that square (i.e., there is no friendly pawn on an adjacent file that is on the same rank
-// or behind this pawn from our perspective).
-//
-// Outputs:
-//   holes_bb: bitboard (h1=0) of all hole squares found.
-// Returns:
-//   count of holes (one per pawn that creates such a hole).
-int GameBoard::count_pawn_holes_cp_old(Color c,
-                               const PawnFileInfo& pawnInfo,
-                               ull& holes_bb) {
-    int holes = 0;
-    holes_bb = 0ULL;
-
-    // Friendly pawns (you can replace this with a stored all-pawns-bb later)
-    ull Pawns = get_pieces_template<Piece::PAWN>(c);
-
-    if (!Pawns) return 0;
-
-    // Quick reject for “no adjacent files anywhere” checks
-    const unsigned files_present = pawnInfo.p[friendlyP].files_present;
-
-    ull tmp = Pawns;
-
-    while (tmp) {
-        int s = utility::bit::lsb_and_pop_to_square(tmp);
-        int f = s & 7;      //s % 8;
-        int r = s >> 3;     //s / 8;
-
-        // Square directly in front of the pawn (ignore pawns already on 7th/2nd edge appropriately)
-        int front_sq;
-        if (c == Color::WHITE) {
-            if (r == 7) continue;            // shouldn't happen for a pawn, but safe
-            front_sq = s + 8;
-        } else {
-            if (r == 0) continue;            // shouldn't happen for a pawn, but safe
-            front_sq = s - 8;
-        }
-
-        // For the hole test, we need to know:
-        // Is there any friendly pawn on an adjacent file that is on the same rank or behind this pawn
-        // (from this side's perspective)?
-        //
-        // Use a "behind_or_same" mask (same as your backward routine).
-        ull behind_or_same_mask;
-        if (c == Color::WHITE) {
-            int end = (r + 1) * 8;                              // ranks 0..r inclusive
-            behind_or_same_mask = (end >= 64) ? ~0ULL : ((1ULL << end) - 1ULL);
-        } else {
-            int start = r * 8;                                   // ranks r..7 inclusive
-            behind_or_same_mask = (start <= 0) ? ~0ULL : (~((1ULL << start) - 1ULL));
-        }
-
-        // Check adjacent files existence (bitmask) then actual support (bitboard)
-        bool can_be_attacked = false;
-
-        if (f > 0 && (files_present & (1u << (f - 1)))) {
-            if (pawnInfo.p[friendlyP].file_bb[f - 1] & behind_or_same_mask) can_be_attacked = true;
-        }
-        if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
-            if (pawnInfo.p[friendlyP].file_bb[f + 1] & behind_or_same_mask) can_be_attacked = true;
-        }
-
-        if (!can_be_attacked) {
-
-            holes_bb |= (1ULL << front_sq);
-            holes++;
-        }
-    }
-
-    return (holes*wghts.GetWeight(PAWN_HOLE));
-}
-
-
-
-
-
-
-
-
-
 // 0 = center, 3 = edge
 int GameBoard::piece_edgeness(ull kbb) {   
     int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63
@@ -1210,8 +1124,7 @@ int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
                                                ull passed_black_pwns)
 {
     // enemy (the one who owns the passed pawns we are attacking)
-    Color defender_color =
-        (attacker_color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    Color defender_color = utility::representation::opposite_color(attacker_color);
 
     // pick the enemy passed pawns bitboard
     ull enemy_passed =
@@ -1525,7 +1438,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         return 0;
     }
 
-    // Convert bitboards to 0..63 square indices (h1 = 0) using your helper
+    // Convert bitboards to 0..63 square indices (h1=0)
     ull tmp = from_bb;
     int from_sq = utility::bit::lsb_and_pop_to_square(tmp);
     tmp = to_bb;
@@ -1653,7 +1566,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         fprintf(fpDebug,
                 "debug (before forced capture): side=%s from_bb=0x%016llx to_bb=0x%016llx "
                 "from_sq=%d to_sq=%d victim=%d mover=%d\n",
-                (side == Color::WHITE ? "WHITE" : "BLACK"),
+                utility::representation::color_to_string(side).c_str(),
                 (unsigned long long)from_bb,
                 (unsigned long long)to_bb,
                 from_sq, to_sq,
@@ -1960,7 +1873,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
         fprintf(fpDebug,
                 "debug final: move(from_sq=%d,to_sq=%d) side=%s SEE=%d\n",
                 from_sq, to_sq,
-                (side == Color::WHITE ? "WHITE" : "BLACK"),
+                utility::representation::color_to_string(side).c_str(),
                 result);
     }
 
@@ -1968,7 +1881,28 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 }
 
 
-
+// -----------------------------------------------------------------------------
+// Static Exchange Evaluation (SEE) for a *single* capture move.
+//
+// Given a capture move `mv` (where mv.from and mv.to are 1-bitboards),
+// this routine estimates the net material gain/loss in centipawns assuming
+// optimal recaptures on the destination square.
+// Positive value returned means the capture is materially profitable for the side to move.
+// Zero value means the capture is materially neutral after exchanges.
+//   1) It identifies the moving piece (mover) on `from` and the captured piece
+//      (victim) on `to`. If there is no victim (e.g. en-passant), it returns 0.
+//   2) It "plays" the forced first capture on local copies of all piece
+//      bitboards + occupancy: removes the victim, moves the mover to `to_sq`,
+//      and updates `occ`.
+//   3) It then calls SEE_recursive() for alternating recaptures on `to_sq`,
+//      treating the mover (now on `to_sq`) as the current target.
+//   4) Returns the resulting net score from the perspective of `clr` (the side
+//      making the initial capture), in centipawns. 
+//
+// Notes / assumptions:
+// - SEE is purely material-based and local to the target square; it does not
+//   consider check, pins, discovered tactics beyond what SEE_recursive models.
+// -----------------------------------------------------------------------------
 int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
 {
     // from and to are BITBOARDS (ull) with exactly one bit set.
@@ -1994,7 +1928,7 @@ int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
 
     if (victim == Piece::NONE) {
         //assert(0);
-        return 0;  // ignore en passant etc. for SEE for now
+        return 0;  // ignore en passant etc. for SEE, for now
     }
 
     // Identify the victim on 'to_sq'
@@ -2110,7 +2044,7 @@ int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
         fprintf(fpDebug,
                 "debug final: move(from_sq=%d,to_sq=%d) clt=%s SEE=%d\n",
                 from_sq, to_sq,
-                (clr == Color::WHITE ? "WHITE" : "BLACK"),
+                utility::representation::color_to_string(clr).c_str(),
                 result);
     }
 
@@ -2134,32 +2068,7 @@ int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
 //   - sliding attacks from rooks/queens (ranks/files)
 //
 // Important properties:
-//   • `sq` is a 0..63 index (h1 = 0 convention)
-//   • `occ_now` must match the board state represented in `b`
-//   • Only the first blocker in each ray is considered (correct for SEE)
-//   • Returned bitboard may contain multiple attackers
-//
-// This routine is intentionally side-effect free and fast, since it is called
-// repeatedly during SEE recursion.
-//
-
-// Returns a bitboard of all pieces of color `c` that currently attack the
-// square `sq`, using the *local SEE board state* instead of the real board.
-//
-// This function is used during Static Exchange Evaluation (SEE).  It does not
-// read the GameBoard’s live bitboards; instead it uses the supplied SEEBoards
-// snapshot `b` plus the supplied occupancy `occ_now`, which represent a
-// hypothetical capture sequence in progress.
-//
-// Attacks detected:
-//   - pawn capture sources
-//   - knight attacks (table lookup)
-//   - king attacks (table lookup)
-//   - sliding attacks from bishops/queens (diagonals)
-//   - sliding attacks from rooks/queens (ranks/files)
-//
-// Important properties:
-//   • `sq` is a 0..63 index (h1 = 0 convention)
+//   • `sq` is a 0..63 index (h1=0 convention)
 //   • `occ_now` must match the board state represented in `b`
 //   • Only the first blocker in each ray is considered (correct for SEE)
 //   • Returned bitboard may contain multiple attackers
@@ -2183,12 +2092,9 @@ ull GameBoard::SEE_attackers_on_square_local(Color c,
     const ull pawns = (c == Color::WHITE) ? b.wp : b.bp;
 
     ull origins = 0ULL;
-    if (c == Color::WHITE)
-    {
+    if (c == Color::WHITE) {
         origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
-    }
-    else
-    {
+    } else {
         origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
     }
     atk |= (origins & pawns);
@@ -2211,133 +2117,22 @@ ull GameBoard::SEE_attackers_on_square_local(Color c,
     const ull all_pieces_but_self = occ_now & ~bit;
 
     // Diagonals: bishops/queens
-    {
-        const ull bishops = (c == Color::WHITE) ? b.wb : b.bb;
-        const ull queens  = (c == Color::WHITE) ? b.wq : b.bq;
 
-        const ull diag_attacks = get_diagonal_attacks(all_pieces_but_self, sq);
-        atk |= (diag_attacks & (bishops | queens));
-    }
+    const ull bishops = (c == Color::WHITE) ? b.wb : b.bb;
+    const ull queens  = (c == Color::WHITE) ? b.wq : b.bq;
+
+    const ull diag_attacks = get_diagonal_attacks(all_pieces_but_self, sq);
+    atk |= (diag_attacks & (bishops | queens));
 
     // Straights: rooks/queens
-    {
-        const ull rooks  = (c == Color::WHITE) ? b.wr : b.br;
-        const ull queens = (c == Color::WHITE) ? b.wq : b.bq;
 
-        const ull straight_attacks = get_straight_attacks(all_pieces_but_self, sq);
-        atk |= (straight_attacks & (rooks | queens));
-    }
+    const ull rooks  = (c == Color::WHITE) ? b.wr : b.br;
+
+    const ull straight_attacks = get_straight_attacks(all_pieces_but_self, sq);
+    atk |= (straight_attacks & (rooks | queens));
 
     return atk;
 }
-
-
-
-
-
-
-// ull GameBoard::SEE_attackers_on_square_local(Color c,
-//                                              int sq,
-//                                              ull occ_now,
-//                                              const SEEBoards& b) const
-// {
-//     ull atk = 0ULL;
-//     ull bit = (1ULL << sq);
-
-//     const ull FILE_A = col_masksHA[ColHA::COL_A];
-//     const ull FILE_H = col_masksHA[ColHA::COL_H];
-
-
-//     // Pawns (origins that attack sq)
-//     ull pawns = (c == Color::WHITE) ? b.wp : b.bp;
-
-//     ull origins = 0ULL;
-//     if (c == Color::WHITE) {
-//         origins = ((bit & ~FILE_A) >> 7) | ((bit & ~FILE_H) >> 9);
-//     } else {
-//         origins = ((bit & ~FILE_H) << 7) | ((bit & ~FILE_A) << 9);
-//     }
-//     atk |= (origins & pawns);
-
-//     // Knights
-//     ull knights = (c == Color::WHITE) ? b.wn : b.bn;
-//     atk |= (tables::movegen::knight_attack_table[sq] & knights);
-
-//     // Kings
-//     ull kings = (c == Color::WHITE) ? b.wk : b.bk;
-//     atk |= (tables::movegen::king_attack_table[sq] & kings);
-
-//     // Bishops / Queens on diagonals
-//     {
-//         ull bishops = (c == Color::WHITE) ? b.wb : b.bb;
-//         ull queens  = (c == Color::WHITE) ? b.wq : b.bq;
-
-//         int r0 = sq >> 3;
-//         int f0 = sq & 7;
-
-//         const int diag_dirs[4][2] = { {+1,+1}, {+1,-1}, {-1,+1}, {-1,-1} };
-//         for (int k = 0; k < 4; ++k)
-//         {
-//             int r = r0;
-//             int f = f0;
-//             while (true)
-//             {
-//                 r += diag_dirs[k][0];
-//                 f += diag_dirs[k][1];
-//                 if (r < 0 || r > 7 || f < 0 || f > 7) break;
-
-//                 int s2  = r * 8 + f;
-//                 ull bb2 = (1ULL << s2);
-
-//                 if (occ_now & bb2)
-//                 {
-//                     if ((bb2 & bishops) || (bb2 & queens))
-//                     {
-//                         atk |= bb2;
-//                     }
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-
-//     // Rooks / Queens on ranks/files
-//     {
-//         ull rooks  = (c == Color::WHITE) ? b.wr : b.br;
-//         ull queens = (c == Color::WHITE) ? b.wq : b.bq;
-
-//         int r0 = sq >> 3;
-//         int f0 = sq & 7;
-
-//         const int ortho_dirs[4][2] = { {+1,0}, {-1,0}, {0,+1}, {0,-1} };
-//         for (int k = 0; k < 4; ++k)
-//         {
-//             int r = r0;
-//             int f = f0;
-//             while (true)
-//             {
-//                 r += ortho_dirs[k][0];
-//                 f += ortho_dirs[k][1];
-//                 if (r < 0 || r > 7 || f < 0 || f > 7) break;
-
-//                 int s2  = r * 8 + f;
-//                 ull bb2 = (1ULL << s2);
-
-//                 if (occ_now & bb2)
-//                 {
-//                     if ((bb2 & rooks) || (bb2 & queens))
-//                     {
-//                         atk |= bb2;
-//                     }
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-
-//     return atk;
-// }
-
 
 
 int GameBoard::SEE_recursive(Color stm,
@@ -2350,9 +2145,6 @@ int GameBoard::SEE_recursive(Color stm,
                        int balance_local)
 {
     int best = balance_local;
-
-    // const ull FILE_A = col_masksHA[ColHA::COL_A];
-    // const ull FILE_H = col_masksHA[ColHA::COL_H];
 
     // attackers for stm on to_sq
     ull atk_side = SEE_attackers_on_square_local(stm, to_sq, occ_local, b_local);
@@ -2909,9 +2701,9 @@ int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
     return isolated_cp;
 }
 
-// ---------- count_pawn_holes_cp2_t ----------
+// ---------- count_pawn_holes_cp_t ----------
 template<Color c>
-int GameBoard::count_pawn_holes_cp2_t(const PawnFileInfo& pawnInfo, ull& holes_bb) {
+int GameBoard::count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes_bb) {
     int holes = 0;
     holes_bb = 0ULL;
 
@@ -3386,9 +3178,9 @@ template bool GameBoard::any_piece_ahead_on_file_t<Color::BLACK>(int, ull) const
 template int GameBoard::count_isolated_pawns_cp_t<Color::WHITE>(const PawnFileInfo&) const;
 template int GameBoard::count_isolated_pawns_cp_t<Color::BLACK>(const PawnFileInfo&) const;
 
-// count_pawn_holes_cp2_t
-template int GameBoard::count_pawn_holes_cp2_t<Color::WHITE>(const PawnFileInfo&, ull&);
-template int GameBoard::count_pawn_holes_cp2_t<Color::BLACK>(const PawnFileInfo&, ull&);
+// count_pawn_holes_cp_t
+template int GameBoard::count_pawn_holes_cp_t<Color::WHITE>(const PawnFileInfo&, ull&);
+template int GameBoard::count_pawn_holes_cp_t<Color::BLACK>(const PawnFileInfo&, ull&);
 
 // count_knights_on_holes_cp_t
 template int GameBoard::count_knights_on_holes_cp_t<Color::WHITE>(ull);

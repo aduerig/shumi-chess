@@ -967,7 +967,7 @@ try:
 
                         if acn_clicked in avail_moves:
                             temp = acn_focused
-                            #print('making move', temp, 'to', acn_clicked)
+
                             unfocus_and_stop_dragging()
 
                             make_move(temp, acn_clicked, "?")
@@ -988,7 +988,7 @@ try:
                         if acn_focused:
                             avail_moves = []
                             for move in legal_moves:
-                                from_square, to_square = move[:2], move[2:]
+                                from_square, to_square = move[0:2], move[2:4]
                                 if acn_focused == from_square:
                                     focused_x, focused_y = acn_to_x_y[to_square]
                                     avail_moves.append(to_square)

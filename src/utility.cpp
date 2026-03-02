@@ -125,26 +125,19 @@ std::string colorize_board_string(const std::string& plain)
 
     for (char c : plain)
     {
-        if (c == '\n' || c == '-' || c == ' ')
-        {
+        if (c == '\n' || c == '-' || c == ' ') {
             out.push_back(c);       // no color on board lines / empties
         }
-        else if (c >= 'A' && c <= 'Z')
-        {
-            // White pieces -> yellow
+        else if (c >= 'A' && c <= 'Z') {
             out += YELLOW;
             out.push_back(c);
             out += RESET;
         }
-        else if (c >= 'a' && c <= 'z')
-        {
-            // Black pieces -> light grey
+        else if (c >= 'a' && c <= 'z') {
             out += LIGHTRED;
             out.push_back(c);
             out += RESET;
-        }
-        else
-        {
+        } else {
             out.push_back(c);
         }
     }
