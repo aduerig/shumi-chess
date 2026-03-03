@@ -1064,8 +1064,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
     // Hard node-limit sentinel fuse
     // =====================================================================
-    if (nodes_visited > 9.0e7) {    // 10,000,000 1.0e7  a good number here
-        std::cout << "\x1b[31m\n! NODES VISITED trap#2 " << nodes_visited << "dep=" << depth << "  "
+    if (nodes_visited > 2.0e8) {    // 10,000,000 1.0e7  a good number here
+        std::cout << "\x1b[31m\n! NODES VISITED trap#2 " << nodes_visited << " dep=" << depth << "  "
                         << engine.get_best_score_at_root() << "\x1b[0m\n";
         //assert(0);
 
@@ -2458,116 +2458,6 @@ Move MinimaxAI::get_move() {
 
 
 
-// // Loop over all passed moves, find the best move by static evaluation.
-// // Returns a tuple of: best_score and best move
-// std::tuple<double, ShumiChess::Move>
-// MinimaxAI::best_move_static(ShumiChess::Color for_color,
-//                             const std::vector<ShumiChess::Move>& legal_moves,
-//                             //int nPly,
-//                             bool in_Check,
-//                             int depth,
-//                             bool bFast)
-// {
-//     double d_best_pawns;
-//     ShumiChess::Move bestMove = ShumiChess::Move{};
-
-
-//     // If there are no moves:
-//     // - not in check: return a single static (stand-pat) eval
-//     // - in check: treat as losing (no legal escapes here)
-//     if (legal_moves.empty()) {
-//         if (!in_Check) {
-
-//             bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
-
-//             int cp_score = evaluate_board(for_color, evp, b_is_Quiet);         // positive is good for 'color'
-           
-//             double best_score = engine.convert_from_CP(cp_score);
-
-//             return { best_score, ShumiChess::Move{} };
-//         }
-//         return { -HUGE_SCORE, ShumiChess::Move{} };
-//     }
-
-//     d_best_pawns = -HUGE_SCORE;
-//     int cp_score_best = 0;
-
-//     for (const auto& m : legal_moves) {
-
-//         assert(m.piece_type != Piece::NONE);
-//         engine.pushMove(m);
-
-//         // memoization
-//         bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
-
-//         int  cp_from_tt   = 0;
-//         bool have_tt_eval = false;
-
-//         #ifdef DOING_TT_EVAL2
-//             // Salt the entry
-//             unsigned mode  = salt_the_TT(b_is_Quiet);
-
-//             uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
-
-//             // Look for the entry in the TT
-//             auto it = TTable.find(evalKey);
-//             if (it != TTable.end()) {
-//                 const TTEntry &entry = it->second;
-//                 cp_from_tt   = entry.score_cp;
-//                 have_tt_eval = true;
-//             }
-//         #endif
-//         //
-//         // evaluate (side call)
-//         //
-//         if (have_tt_eval) {
-//             TT_ntrys1++;
-//             if (Features_mask & _FEATURE_TT) {
-//                 cp_score_best = evaluate_board(engine.game_board.turn, evp, b_is_Quiet);
-//                 if (cp_from_tt != cp_score_best) {
-//                     printf ("burp SIDE %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
-//                     assert(0);
-//                 }
-//             }
-//             cp_score_best = cp_from_tt;
-
-//         }
-//         else {
-//             cp_score_best = evaluate_board(engine.game_board.turn, evp, b_is_Quiet);
-//         }
-
-
-
-//         double d_score = engine.convert_from_CP(cp_score_best);
-    
-//         if (Features_mask & _FEATURE_TT) {
-//             if (!bFast) {
-//                 // Salt the entry
-//                 unsigned mode  = salt_the_TT(b_is_Quiet);
-
-//                 uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
-
-//                  // Store this position away into the TT
-//                 TTEntry &slot = TTable[evalKey];
-//                 slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
-//                 slot.movee    = Move{};
-//                 slot.depth    = top_deepening;
-//             }
-//         }
-
-//         engine.popMove();
-
-//         if (d_score > d_best_pawns) {
-//             d_best_pawns = d_score;
-//             bestMove = m;
-//         }
-//     }
-
-//     return { d_best_pawns, bestMove };
-// }
-
-
-
 ShumiChess::Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
                                              int delta_cp,
                                              int i_computer_ply_so_far,
@@ -2683,7 +2573,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
 
     int cp_score_position_temp = 0;
     bool bOK;
-    int icp_temp;
+    int icp_temp, icp_temp2;
 
     icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase);
     cp_score_position_temp += icp_temp;
@@ -2742,7 +2632,11 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
         cp_score_position_temp += icp_temp;
     }
 
-    icp_temp = engine.game_board.pawns_attacking_center_squares_cp_t<c>();
+    // remove me
+    //icp_temp2 = engine.game_board.pawns_attacking_center_squares_cp_t<c>();
+    icp_temp = engine.game_board.pawns_attacking_center_squares_cp_fast_t<c>();
+    //assert(icp_temp == icp_temp2);
+
     cp_score_position_temp += icp_temp;
 
     icp_temp = engine.game_board.knights_attacking_center_squares_cp_t<c>();

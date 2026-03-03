@@ -256,8 +256,14 @@ class Engine {
       
         void print_bitboard_to_file(ull bb, FILE* fp);
 
-        bool has_unquiet_move(const vector<ShumiChess::Move>& moves);
-
+        //bool has_unquiet_move(const vector<ShumiChess::Move>& moves);
+        inline bool has_unquiet_move(const vector<ShumiChess::Move>& moves) {
+            bool bReturn = false;
+            for (const ShumiChess::Move& mv : moves) {
+                if (is_unquiet_move(mv)) return true;
+            }
+            return bReturn;
+        }
         // Note: Should we also include:
         //  captures of queen
         //  captures of rook (optional)
@@ -284,7 +290,7 @@ class Engine {
         // Based on the fact that we prefer taking the biggest victim with the smallest attacker.
         inline int mvv_lva_key(const Move& m) {
 
-            if (m.capture == ShumiChess::Piece::NONE) assert(0);    // non-captures
+            if (m.capture == ShumiChess::Piece::NONE) assert(0);    // non-captures are illegal here
 
             int victim  = game_board.centipawn_score_of(m.capture);
             int attacker= game_board.centipawn_score_of(m.piece_type);

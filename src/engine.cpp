@@ -1542,30 +1542,6 @@ void Engine::move_and_score_to_string(const Move best_move, double d_best_move_v
 }
 
 //////////////////////////////////////////////////////////////////
-
-bool Engine::has_unquiet_move(const vector<ShumiChess::Move>& moves) {
-
-    bool bReturn = false;
-    for (const ShumiChess::Move& mv : moves) {
-        if (is_unquiet_move(mv)) return true;
-    }
-    return bReturn;
-}
-
-// void Engine::reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut ) {
-
-//     MovesOut.clear();
-//     for (const ShumiChess::Move& mv : moves) {
-//         if (is_unquiet_move(mv))
-//         {
-//             MovesOut.push_back(mv);
-//             // Have an object? push_back(obj) / push_back(std::move(obj)).
-//             // Have constructor args? emplace_back(args...).
-//         }
-//     }
-//     return;
-// }
-
 //
 // Reduce to tactical (“unquiet”) moves and orders them.
 //    Input:   a moves vector
@@ -1591,77 +1567,82 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
 
 
     for (const ShumiChess::Move& mv : moves) {
-        if (is_unquiet_move(mv)) {
-            // its either a capture or a promotion (or both)
-
-            // Very late in analysis! So discard negative SEE captures below one pawn.
-
-            
-            // remove me!
-            int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
-            // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
-            // if (testValue != testValue2) {
-            //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
-            //     move_into_string(mv);
-            //     cout << "mv " << move_string.c_str() << '\n';
-
-            //     // Show board
-            //     string out = utility::representation::gameboard_to_string(game_board);
-            //     cout << out << endl;
-
-            //     // Show FEN
-            //     cout << game_board.to_fen().c_str() << '\n';
-
-            //     assert(0);
-            // }
-
-
-
-            if (qPlys > MAX_QPLY2) {
-
-                if (testValue > 0) {     // centipawns
-                    #ifdef _DEBUGGING_TO_FILE 
-                       
-                        fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
-    
-                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                        
-                        print_move_history_to_file(fpDebug, "SEE hist");
-                        fputc('\n', fpDebug);
-                    #endif
-                }
-
-                if (testValue < -100) {     // centipawns
-                    #ifdef _DEBUGGING_TO_FILE 
-                       
-                        fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
-    
-                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                        
-                        print_move_history_to_file(fpDebug, "SEE hist");
-                        fputc('\n', fpDebug);
-                    #endif
-
-                    continue;
-                }
-            }
+        if (is_unquiet_move(mv)) {              // Captures and promotions    
 
             // If it's a capture, insert in descending MVV-LVA order
             if (mv.capture != ShumiChess::Piece::NONE) {
 
+                if (qPlys > MAX_QPLY2) {
+
+                    // Very late in analysis! So discard negative SEE captures below one pawn.
+                    int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
+                    
+                    // remove me!
+                    // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+                    // if (testValue != testValue2) {
+                    //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
+                    //     move_into_string(mv);
+                    //     cout << "mv " << move_string.c_str() << '\n';
+                    //     // Show board
+                    //     string out = utility::representation::gameboard_to_string(game_board);
+                    //     cout << out << endl;
+                    //     // Show FEN
+                    //     cout << game_board.to_fen().c_str() << '\n';
+                    //     assert(0);
+                    // }
+
+                    if (testValue > 0) {     // centipawns
+                        #ifdef _DEBUGGING_TO_FILE 
+                        
+                            fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
+        
+                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                            
+                            print_move_history_to_file(fpDebug, "SEE hist");
+                            fputc('\n', fpDebug);
+                        #endif
+                    }
+
+                    if (testValue <= -100) {     // centipawns
+                        #ifdef _DEBUGGING_TO_FILE 
+                        
+                            fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
+        
+                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                            
+                            print_move_history_to_file(fpDebug, "SEE hist");
+                            fputc('\n', fpDebug);
+                        #endif
+                        
+                        // Dont sort up this capture
+                        continue;
+                    }
+
+                }   // END is late in analysis
+
+
                 // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
                 // biggest victim with the smallest attacker.
                 int key = mvv_lva_key(mv);  // (call me on captures only)
-
                 if (have_last && mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
  
-                auto it = MovesOut.begin();
-                for (; it != MovesOut.end(); ++it) {
+                std::vector<ShumiChess::Move>::iterator it;
+                for (it = MovesOut.begin(); it != MovesOut.end(); ++it) {
                     // Only compare against other captures; promos-without-capture stay after captures
-                    if ((it->capture != ShumiChess::Piece::NONE) && (key > mvv_lva_key(*it))) {
-                        break;
+                    if (it->capture != ShumiChess::Piece::NONE) {
+                        int key0 = mvv_lva_key(*it);
+
+                        if (have_last && it->to == last_to) {
+                            key0 += 800;  // small recapture bump for opponent's last-to square
+                        }
+
+                        if (key > key0) {
+                            break;
+                        }
                     }
                 }
+
+
                 MovesOut.insert(it, mv);
             
             // Its a Promotion (without capture)
@@ -1673,8 +1654,10 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
                 else
                     MovesOut.push_back(mv);
             }
-        }
-    }
+
+        }       // END is unquiet move
+
+    }       // END loop over moves
     return;
 }
 

@@ -403,7 +403,6 @@ engine_communicator_wakeup(PyObject* self, PyObject* args) {
     return Py_BuildValue(""); // this is None in Python
 }
 
-// NOTE: unfinished
 static PyObject*
 engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
     char reason[32];

@@ -2351,7 +2351,8 @@ int GameBoard::get_material_for_color_t(int& cp_pawns_only_temp) {
     return cp_score_mat_temp;
 }
 
-// ---------- pawns_attacking_square_t ----------
+// Given a single square, returns a count of the pawns attacking that square.
+// Note: is en passant considered here?
 template<Color c>
 int GameBoard::pawns_attacking_square_t(int sq) {
     ull bitBoard = (1ULL << sq);
@@ -2370,8 +2371,30 @@ int GameBoard::pawns_attacking_square_t(int sq) {
     ull pawns = get_pieces_template<Piece::PAWN, c>();
     return bits_in(origins & pawns);
 }
+//
+// Given a multiple squares, returns a count of the pawns attacking those squares.
+// Warning: this only works if none of the squares in the bitboard can be attacked by the same pawn.
+// That is, if ypu place a pawn enywhere on the board, it wont attack more than one square in the passed squares.
+// otherwise it will undercount.
+template<Color c>
+int GameBoard::pawns_attacking_squares_t(ull bitBoard) {
 
-// ---------- pawns_attacking_center_squares_cp_t ----------
+    const ull FILE_H = col_masksHA[ColHA::COL_H];
+    const ull FILE_A = col_masksHA[ColHA::COL_A];
+
+    ull origins;
+
+    if constexpr (c == Color::WHITE) {
+        origins = ((bitBoard & ~FILE_A) >> 7) | ((bitBoard & ~FILE_H) >> 9);
+    } else {
+        origins = ((bitBoard & ~FILE_H) << 7) | ((bitBoard & ~FILE_A) << 9);
+    }
+
+    ull pawns = get_pieces_template<Piece::PAWN, c>();
+    return bits_in(origins & pawns);
+}
+
+
 template<Color c>
 int GameBoard::pawns_attacking_center_squares_cp_t()
 {
@@ -2405,6 +2428,39 @@ int GameBoard::pawns_attacking_center_squares_cp_t()
 
     return sum;
 }
+
+
+template<Color c>
+int GameBoard::pawns_attacking_center_squares_cp_fast_t()
+{
+    int sum = 0;
+
+    if constexpr (c == Color::WHITE) {
+
+        sum +=wghts.GetWeight(PAWN_ON_CTR_OFF) * pawns_attacking_squares_t<c>(squares_e5_d5);
+
+        sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_squares_t<c>(squares_e4_d4);
+
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_squares_t<c>(squares_e6_d6);
+
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_squares_t<c>(squares_f5_c5);
+
+    } else {
+
+        sum +=wghts.GetWeight(PAWN_ON_CTR_OFF) * pawns_attacking_squares_t<c>(squares_e4_d4);
+
+        sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_squares_t<c>(squares_e5_d5);
+
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_squares_t<c>(squares_e3_d3);
+
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_squares_t<c>(squares_f4_c4);
+
+    }
+
+    return sum;
+}
+
+
 
 // ---------- knights_attacking_square_t ----------
 template<Color c>
@@ -3125,10 +3181,15 @@ template int GameBoard::get_material_for_color_t<Color::BLACK>(int&);
 // pawns_attacking_square_t
 template int GameBoard::pawns_attacking_square_t<Color::WHITE>(int);
 template int GameBoard::pawns_attacking_square_t<Color::BLACK>(int);
+template int GameBoard::pawns_attacking_squares_t<Color::WHITE>(ull bitboard);
+template int GameBoard::pawns_attacking_squares_t<Color::BLACK>(ull bitboard);
 
 // pawns_attacking_center_squares_cp_t
 template int GameBoard::pawns_attacking_center_squares_cp_t<Color::WHITE>();
 template int GameBoard::pawns_attacking_center_squares_cp_t<Color::BLACK>();
+template int GameBoard::pawns_attacking_center_squares_cp_fast_t<Color::WHITE>();
+template int GameBoard::pawns_attacking_center_squares_cp_fast_t<Color::BLACK>();
+
 
 // knights_attacking_square_t
 template int GameBoard::knights_attacking_square_t<Color::WHITE>(int);

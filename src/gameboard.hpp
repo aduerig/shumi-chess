@@ -270,7 +270,9 @@ class GameBoard {
         int center_closeness_bonus(Color c);
 
         template<Color c> int pawns_attacking_square_t(int sq);
+        template<Color c> int pawns_attacking_squares_t(ull bitboard);
         template<Color c> int pawns_attacking_center_squares_cp_t();
+        template<Color c> int pawns_attacking_center_squares_cp_fast_t();
 
         template<Color c> int knights_attacking_square_t(int sq);
         template<Color c> int knights_attacking_center_squares_cp_t();

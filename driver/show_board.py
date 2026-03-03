@@ -456,7 +456,7 @@ def output_fens_depth_1(button_obj):
     for choice in reversed(legal_moves):
         from_acn, to_acn = choice[0:2], choice[2:4]
 
-        # Note: is " " correct below? 
+        # Note: is " " correct below? The " " indicates no promotion.
         engine_communicator.make_move_two_acn(from_acn, to_acn, " ")
 
         fen = engine_communicator.get_fen()

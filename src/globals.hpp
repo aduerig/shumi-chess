@@ -60,7 +60,7 @@ enum Piece {     // Pieces must be in this order!
 
 // TODO think about if this is the right way to represent a move
 // NOTE: Can this be a class? How would it help?
-// Now its at 32 Whopee.
+// Now its at 32 bytes Whopee.
 struct Move {
   
     ull from = 0ULL;   // 1-bitboard (but with only one bit set)
