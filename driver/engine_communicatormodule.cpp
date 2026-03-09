@@ -146,7 +146,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     char promo_piece_char = promo_piece_c_str[0];   // first character (e.g. ' ' or 'N')
 
 
-    cout << "engine_communicator_make_move_two_acn " << from_square_c_str << to_square_c_str << "\n"; 
+    //cout << "engine_communicator_make_move_two_acn " << from_square_c_str << to_square_c_str << "\n"; 
 
 
     //ShumiChess::Color next_mover = utility::representation::opposite_color(last_mover);

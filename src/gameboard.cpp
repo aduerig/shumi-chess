@@ -121,16 +121,16 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         switch (token)
         {
         case 'k':
-            this->black_castle_rights |= 1;
+            this->black_castle_rights |= CASTLE_KING;
             break;
         case 'q':
-            this->black_castle_rights |= 2;
+            this->black_castle_rights |= CASTLE_QUEEN;
             break;
         case 'K':
-            this->white_castle_rights |= 1;
+            this->white_castle_rights |= CASTLE_KING;
             break;
         case 'Q':
-            this->white_castle_rights |= 2; 
+            this->white_castle_rights |= CASTLE_QUEEN; 
             break;
         default:
             // std::cout << "Unexpected castling rights token: " << token << std::endl;
@@ -262,16 +262,16 @@ const string GameBoard::to_fen(bool bFullFEN) {
 
     // castling
     string castlestuff;
-    if (0b00000001 & white_castle_rights) {
+    if (CASTLE_KING & white_castle_rights) {
         castlestuff += 'K';
     }
-    if (0b00000010 & white_castle_rights) {
+    if (CASTLE_QUEEN & white_castle_rights) {
         castlestuff += 'Q';
     }
-    if (0b00000001 & black_castle_rights) {
+    if (CASTLE_KING & black_castle_rights) {
         castlestuff += 'k';
     }
-    if (0b00000010 & black_castle_rights) {
+    if (CASTLE_QUEEN & black_castle_rights) {
         castlestuff += 'q';
     }
     if (castlestuff.empty()) {
@@ -642,7 +642,7 @@ void GameBoard::validate_row_col_masks_h1_0()
         }
     }
 
-    std::printf("validate_row_col_masks_h1_0(): OK\n");
+    //std::printf("validate_row_col_masks_h1_0(): OK\n");
 }
 
 

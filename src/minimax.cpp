@@ -831,7 +831,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     if (std::fabs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;        // avoid negative zero
     string abs_score_string = to_string(d_best_move_value_abs);
 
-
+    // Show board
     engine.bitboards_to_algebraic(engine.game_board.turn, best_move
                 , (GameState::INPROGRESS)
                 , false
@@ -947,8 +947,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     vector<Move> some_moves;
     some_moves.clear(); 
-    engine.get_psuedo_legal_moves_t<Color::WHITE>(some_moves);
-    itemp1 = some_moves.size();
+    itemp1 = sizeof(Move);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -1014,10 +1013,26 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     assert(nPlys < MAX_PLY0);
     vector<Move>& MovesOut = engine.all_legal_moves[nPlys];
 
+    bool in_check = false;
+    if (depth == 0) {
+        in_check = (engine.game_board.turn == Color::WHITE)
+            ? engine.is_king_in_check_t<Color::WHITE>()
+            : engine.is_king_in_check_t<Color::BLACK>();
+    }
+
+    // Get all legal moves
+    if ( (depth == 0) && !in_check) {
+        //engine.game_board.b_unquiet_moves_only = true;        // Note: I should be a function parameter not a class member
+    }
+
+    //engine.n_legal_moves_found = 0;
     if (engine.game_board.turn == ShumiChess::Color::WHITE)
         engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(MovesOut);
     else
         engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(MovesOut);
+
+    engine.game_board.b_unquiet_moves_only = false;    // Note: I should be a function parameter not a class member
+
 
     vector<Move>& legal_moves = MovesOut;
 
@@ -1064,7 +1079,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
     // Hard node-limit sentinel fuse
     // =====================================================================
-    if (nodes_visited > 2.0e8) {    // 10,000,000 1.0e7  a good number here
+    if (nodes_visited > 3.0e8) {    // 300,000,000
         std::cout << "\x1b[31m\n! NODES VISITED trap#2 " << nodes_visited << " dep=" << depth << "  "
                         << engine.get_best_score_at_root() << "\x1b[0m\n";
         //assert(0);
@@ -1202,8 +1217,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 } else {
 
                     // Its a match but not a perfect match. Use the move for ordering anyway.
-                    bool is_in = is_move_in_list(entry.best_move, legal_moves);
-                    assert(is_in);
+                    // bool is_in = is_move_in_list(entry.best_move, legal_moves);
+                    // assert(is_in);
 
                     //TT2_match_move = entry.best_move;
 
@@ -1216,9 +1231,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
     }   // END TT2 feature
-
-
-    //vector<Move> unquiet_moves;   // This MUST be declared as local in this function (not in the class) or horrible crashes
 
 
     // Only one of me, per deepening.
@@ -1238,8 +1250,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }
     }
 
-    GameState state = engine.is_game_over(legal_moves);
+    GameState state = engine.is_game_over(engine.n_legal_moves_found);
+    //GameState state = engine.is_game_over(legal_moves.size());
 
+    // debug only
+    // char szTemp[256];
+    // sprintf(szTemp, "\nhello %ld  %ld  %ld\n", (int)legal_moves.size(), (int)state, (int)nLegMovesFound);
+    // fputs(szTemp, fpDebug);
 
     // =====================================================================
     // Terminal positions (game over)
@@ -1281,7 +1298,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // Quiescence entry when depth == 0
     // =====================================================================
     assert (depth >= 0);
-    bool in_check = false;
     double d_stand_pat = HUGE_SCORE;   // If we evaluate, it will be the evaluate score.
 
     if (depth == 0) {
@@ -1355,9 +1371,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }
 
 
-        in_check = (engine.game_board.turn == Color::WHITE)
-            ? engine.is_king_in_check_t<Color::WHITE>()
-            : engine.is_king_in_check_t<Color::BLACK>();
 
         if (in_check) {
             // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
@@ -1371,6 +1384,17 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
 
             vector<Move>& unquiet_moves = engine.all_unquiet_moves[nPlys];
+
+            // Show moves
+            // string mvss = engine.moves_into_string(unquiet_moves);
+            // int nChars = fputs("\n srt:", fpDebug);
+            // if (nChars == EOF) assert(0);
+            // nChars = fputs(mvss.c_str(), fpDebug);
+            // if (nChars == EOF) assert(0);
+            // nChars = fputs(":end\n", fpDebug);
+            // if (nChars == EOF) assert(0);
+
+            // cout << "\n" << "mvss " << mvss << "\n";
 
             // If quiet (not in check & no tactics), just return stand-pat
             if (unquiet_moves.empty()) {
@@ -1485,17 +1509,18 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 nChars = fputc('\n', fpDebug);
                 if (nChars == EOF) assert(0);
 
-                // Print move debug
-                sprintf(szDebug, "[%ld/%ld]", imovedebug, isizedebug);
+                // Print move number (out of) (this is printed as the move prefix)
+                sprintf(szDebug, "[%2d/%2d]", imovedebug, isizedebug);
 
-                // Print move (Move always starts a new line)
-                int nCharsInMove = engine.print_move_to_file2(m, nPlys, (GameState::INPROGRESS)
+                // Print move with prefix (Move always starts a new line)
+                int nCharsInMove = engine.print_move_to_file_with_prefix(m, nPlys, (GameState::INPROGRESS)
                                     , false, bSide, szDebug
+                                    , (depth==0)
                                     , fpDebug); 
                 if (nCharsInMove == EOF) assert(0);
 
-                sprintf(szDebug, " A=%.3f, B=%.3f", alpha, beta);
-                fprintf(fpDebug, szDebug);
+                //sprintf(szDebug, " A=%10.3f, B=%10.3f", alpha, beta);
+                //fprintf(fpDebug, szDebug);
             
             #endif
 
@@ -2149,8 +2174,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
     assert(depth>0);
 
     auto& moves = *p_moves_to_loop_over;
-    if (moves.empty()) 
-    {
+    if (moves.empty()) {
         return;
     }
 
@@ -2274,9 +2298,9 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
                 // item not first in list
                 // moves existing pv_move to front, preserving their relative order.
                 std::rotate(moves.begin(), it, it + 1);        
-                #ifdef _DEBUGGING_MOVE_CHAIN
-                    fprintf(fpDebug, "PV bubble");
-                #endif
+                // #ifdef _DEBUGGING_MOVE_CHAIN
+                //     fprintf(fpDebug, "PV bubble");
+                // #endif
             }
         }
 
@@ -2324,11 +2348,11 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
 // === straight forward minimax below ===
 double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, double beta) {
 
-    assert(0);
+    assert(0);          // To ensure we never get here
 
     nodes_visited++;
     vector<Move> moves = engine.get_legal_moves();
-    GameState state = engine.is_game_over(moves);
+    GameState state = engine.is_game_over(moves.size());
     
     if (state == GameState::BLACKWIN) {
         // Use of DBL_MAX + 1 not really valid, as DBL_MAX + 1 == DBL_MAX in doubles.

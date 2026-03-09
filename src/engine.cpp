@@ -168,8 +168,8 @@ void Engine::reset_engine() {         // New game.
     game_board = GameBoard();
 
     // Show board (debug only)
-    string out = utility::representation::gameboard_to_string(game_board);
-    cout << out << endl;
+    // string out = utility::representation::gameboard_to_string(game_board);
+    // cout << out << endl;
 
 
     reset_all_but_FEN();
@@ -237,7 +237,7 @@ void Engine::reset_all_but_FEN()
 
 }
 
-vector<Move> Engine::get_legal_moves() {
+vector<Move> Engine::get_legal_moves() {     // I am not called by recursion
     vector<Move> MovesOut;
     if (game_board.turn == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(MovesOut);
     else                                 get_legal_moves_fast_t<Color::BLACK>(MovesOut);
@@ -335,10 +335,6 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
 
     return bReturn;
 }
-
-
-// Original get_legal_moves_fast replaced by template wrapper at bottom of file
-
 
 
 bool Engine::assert_same_moves(const std::vector<Move>& a,
@@ -465,16 +461,16 @@ static inline void process_pin_ray(
 //
 
 //
-// I am called only from python, when the game is over. I am very waseful. as get_legal_moves() is very 
+// I am called only from python, when the game is over. I am very wasteful. as get_legal_moves() is very 
 // expensive
 GameState Engine::is_game_over() {
     vector<Move> legal_moves = get_legal_moves();
-    return is_game_over(legal_moves);
+    return is_game_over(legal_moves.size());
 }
 
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
-GameState Engine::is_game_over(vector<Move>& legal_moves) {
-    if (legal_moves.size() == 0) {
+GameState Engine::is_game_over(int n_leg_moves_found) {
+    if (n_leg_moves_found == 0) {
         // if no moves, then gave is over. Either somebody wins or its a stalemate
         if ( (!game_board.white_king) || (is_square_in_check_t<Color::BLACK>(game_board.white_king)) ) {
             return GameState::BLACKWIN;     // Checkmate
@@ -1060,12 +1056,14 @@ template <Piece P> ull& Engine::access_pieces_of_color_tp(Color color)
 //
 // Fills in a Move data structure based on a single "from" square, and multiple "to" squares.
 //
-void Engine::add_move_to_vector(vector<Move>& moves, 
+void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 ull single_bitboard_from, 
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece, Color color, bool capture, bool promotion,
                                 ull en_passant_rghts,
                                 bool is_en_passent_capture, bool is_castle) {
+
+
     // Castled bitmaps
     constexpr ull W_KSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000;
     constexpr ull W_QSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001;
@@ -1119,16 +1117,17 @@ void Engine::add_move_to_vector(vector<Move>& moves,
             ull from_or_to = (single_bitboard_from | single_bitboard_to);
 
             // if (from_or_to & castle_touch) {
-            //     if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
-            //     if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
-            //     if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
-            //     if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+            //     if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= CASTLE_KING;
+            //     if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= CASTLE_QUEEN;
+            //     if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= CASTLE_KING;
+            //     if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= CASTLE_QUEEN;
             // }
 
-            if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
-            if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
-            if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
-            if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+            // remove castling rights, if we just castled
+            if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= CASTLE_KING;
+            if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= CASTLE_QUEEN;
+            if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= CASTLE_KING;
+            if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= CASTLE_QUEEN;
 
             new_move.promotion = Piece::NONE;
 
@@ -1153,17 +1152,15 @@ void Engine::add_move_to_vector(vector<Move>& moves,
                 new_move.is_en_passent_capture = is_en_passent_capture;
                 new_move.is_castle_move = is_castle;
 
-                // castling rights
-                if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= 0b00000001;
-                if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= 0b00000010;
-                if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= 0b00000001;
-                if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= 0b00000010;
+                // remove castling rights, if we just castled
+                if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= CASTLE_KING;
+                if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= CASTLE_QUEEN;
+                if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= CASTLE_KING;
+                if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= CASTLE_QUEEN;
 
                 new_move.promotion = promo_piece;   // only difference from the non-promotion case 
             }
         }
-
-
 
     }       // END loop over all "to" squares of move
 
@@ -1543,6 +1540,7 @@ void Engine::move_and_score_to_string(const Move best_move, double d_best_move_v
 
 //////////////////////////////////////////////////////////////////
 //
+// only called in quissence.
 // Reduce to tactical (“unquiet”) moves and orders them.
 //    Input:   a moves vector
 //    Returns: ordered vector of unquiet moves (captures first, promotions second).
@@ -1613,7 +1611,7 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
                             print_move_history_to_file(fpDebug, "SEE hist");
                             fputc('\n', fpDebug);
                         #endif
-                        
+
                         // Dont sort up this capture
                         continue;
                     }
@@ -1642,7 +1640,6 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
                     }
                 }
 
-
                 MovesOut.insert(it, mv);
             
             // Its a Promotion (without capture)
@@ -1656,6 +1653,10 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
             }
 
         }       // END is unquiet move
+        else {
+            // is quiet move. We should not see these.
+            //assert(0);
+        }
 
     }       // END loop over moves
     return;
@@ -1842,9 +1843,10 @@ int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
 
 }
 
-int Engine::print_move_to_file2(const ShumiChess::Move m, int nPly, GameState gs
+int Engine::print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, GameState gs
                                     , bool isInCheck, bool bFlipColor
                                     , const char* preString
+                                    , bool bIsQuissence
                                     , FILE* fp
                                 ) {
     // NOTE: Here I am assumming the "human" player is white
@@ -1862,6 +1864,10 @@ int Engine::print_move_to_file2(const ShumiChess::Move m, int nPly, GameState gs
     print_move_to_file_from_string(move_string.c_str(), aColor, nPly
                                         , preString, ',', false
                                         , fp);
+
+    if (bIsQuissence) {
+        fputc('q', fp);
+    }
  
     return move_string.length();
 
@@ -1902,9 +1908,9 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
 
     // compose "..."+move (for Black) or just move (for White)
     if (turn == utility::representation::opposite_color(ShumiChess::BLACK)) {
-        snprintf(szValue, sizeof(szValue), "...%s", p_move_text);
+        snprintf(szValue, sizeof(szValue), "...%3s", p_move_text);
     } else {
-        snprintf(szValue, sizeof(szValue), "%s",    p_move_text);
+        snprintf(szValue, sizeof(szValue), "%3s",    p_move_text);
     }
 
     // print move as a single left-justified 8-char field: "...e4   " or "e4     "
@@ -2025,7 +2031,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
         ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
 
-        if (one_move_forward_not_blocked) add_move_to_vector(all_psuedo_legal_moves
+        if (one_move_forward_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
             , single_pawn, one_move_forward_not_blocked, Piece::PAWN
             , color, false, false
             , 0ULL, false, false);
@@ -2038,7 +2044,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
             ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
 
-            if (move_forward_two_unblocked) add_move_to_vector(all_psuedo_legal_moves
+            if (move_forward_two_unblocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, move_forward_two_unblocked, Piece::PAWN
                 , color, false, false
                 , move_forward_one_unblocked, false, false);
@@ -2046,7 +2052,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 
         ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
         ull promo_not_blocked = potential_promotion & ~all_pieces;
-        if (promo_not_blocked) add_move_to_vector(all_psuedo_legal_moves
+        if (promo_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, promo_not_blocked, Piece::PAWN
                 , color, false, true
                 , 0ULL, false, false);
@@ -2056,14 +2062,14 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 
         normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
-        if (normal_attacks) add_move_to_vector(all_psuedo_legal_moves
+        if (normal_attacks) add_psuedo_move_to_vector(all_psuedo_legal_moves
                     , single_pawn, normal_attacks, Piece::PAWN
                     , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
                     , 0ULL, false, false);
 
         ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
         if (enpassant_end_loc) {
-            if (enpassant_end_loc) add_move_to_vector(all_psuedo_legal_moves
+            if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, enpassant_end_loc, Piece::PAWN
                 , color, true, false
                 , 0ULL, true, false);
@@ -2083,12 +2089,12 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) 
         ull avail_attacks = tables::movegen::knight_attack_table[square];
 
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
             , c, true, false
             , 0ULL, false, false);
 
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
             , c, false, false
             , 0ULL, false, false);
     }
@@ -2107,12 +2113,12 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
 
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
             , c, true, false
             , 0ULL, false, false);
 
         ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
-        add_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
             , c, false, false
             , 0ULL, false, false);
     }
@@ -2131,12 +2137,12 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) 
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
 
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
             , c, true, false
             , 0ULL, false, false);
 
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
             , c, false, false
             , 0ULL, false, false);
     }
@@ -2155,12 +2161,12 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
 
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-        add_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
             , c, true, false
             , 0ULL, false, false);
 
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
             , c, false, false
             , 0ULL, false, false);
     }
@@ -2173,12 +2179,12 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
 
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-    add_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
+    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
         , c, true, false
         , 0ULL, false, false);
 
     ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-    add_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
+    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
         , c, false, false
         , 0ULL, false, false);
 
@@ -2193,7 +2199,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         bool b_no_inbetween_squares_in_check;
 
         if constexpr (c == Color::WHITE) {
-            if (game_board.white_castle_rights & (0b00000001)) {
+            if (game_board.white_castle_rights & CASTLE_KING) {
                 squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                     b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
@@ -2202,14 +2208,14 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                         if (actual_rooks_location & needed_rook_location) {
                             king_origin_square = 1ULL <<1;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , c, false, false
                                 , 0ULL, false, true);
                         }
                     }
                 }
             }
-            if (game_board.white_castle_rights & (0b00000010)) {
+            if (game_board.white_castle_rights & CASTLE_QUEEN) {
                 squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                     b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
@@ -2218,7 +2224,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                         if (actual_rooks_location & needed_rook_location) {
                             king_origin_square = 1ULL <<5;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , c, false, false
                                 , 0ULL, false, true);
                         }
@@ -2226,7 +2232,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                 }
             }
         } else {
-            if (game_board.black_castle_rights & (0b00000001)) {
+            if (game_board.black_castle_rights & CASTLE_KING) {
                 squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                     b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
@@ -2235,14 +2241,14 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                         if (actual_rooks_location & needed_rook_location) {
                             king_origin_square = 1ULL <<57;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , c, false, false
                                 , 0ULL, false, true);
                         }
                     }
                 }
             }
-            if (game_board.black_castle_rights & (0b00000010)) {
+            if (game_board.black_castle_rights & CASTLE_QUEEN) {
                 squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                 if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                     b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
@@ -2251,7 +2257,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                         actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                         if (actual_rooks_location & needed_rook_location) {
                             king_origin_square = 1ULL <<61;
-                            add_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                 , c, false, false
                                 , 0ULL, false, true);
                         }
@@ -2564,6 +2570,8 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
 
     const bool in_check_before_move = is_king_in_check_t<c>();
 
+    n_legal_moves_found = 0;
+
     PinnedInfo pinnedInfo;
     CheckInfo  checkInfo;
 
@@ -2597,7 +2605,19 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
                     }
                 }
             }
-            if (legal) MovesOut.push_back(move);
+            if (legal) {           
+                n_legal_moves_found++;      
+                bool b_add_me = true;       
+                if (game_board.b_unquiet_moves_only) {
+                    if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
+                        b_add_me = false;
+                        //assert(0);
+                    }
+                }   
+                if (b_add_me) {
+                    MovesOut.push_back(move);
+                }
+            }
         }
     } else {            // (in_check_before_move)
         for (const Move& move : psuedo_legal_moves) {
@@ -2643,9 +2663,23 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
                     }
                 }
             }
-            if (legal) MovesOut.push_back(move);
+            if (legal) {                
+                n_legal_moves_found++;      
+                bool b_add_me = true;       
+                if (game_board.b_unquiet_moves_only) {
+                    //if (!move.capture && !move.promotion && !move.is_en_passent_capture) {
+                    if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
+                        b_add_me = false;
+                        //assert(0);
+                    }
+                }   
+                if (b_add_me) {
+                    MovesOut.push_back(move);
+                }
+            }
         }
     }
+
 }
 
 // Explicit template instantiations

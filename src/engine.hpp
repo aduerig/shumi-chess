@@ -108,14 +108,16 @@ class Engine {
         template<Color c> void popMoveFast_t();
         
         GameState is_game_over();
-        GameState is_game_over(vector<Move>&);
+        GameState is_game_over(int nLegMovesFound);
         int i_randomize_next_move = 0;
 
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
         template <Piece P> ull& access_pieces_of_color_tp(Color color);
 
-        void add_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
+        void add_psuedo_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
+        int n_legal_moves_found = 0;
+
 
         vector<Move> get_legal_moves();
         template<Color c> void get_legal_moves_fast_t(vector<Move>& MovesOut);
@@ -273,8 +275,6 @@ class Engine {
            return (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE); 
         }
 
-
-        //void reduce_to_unquiet_moves(const vector<ShumiChess::Move>& moves, vector<ShumiChess::Move>& MovesOut);
         void reduce_to_unquiet_moves_MVV_LVA(
                                         const vector<ShumiChess::Move>& moves,      // Input
                                         //const Move& move_last,                      // input
@@ -394,9 +394,10 @@ class Engine {
                             , bool isInCheck, bool bFormated, bool bFlipColor
                             , FILE* fp);
 
-        int print_move_to_file2(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
+        int print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
                             , bool isInCheck, bool bFlipColor
                             , const char* preString
+                            , bool bIsQuissence
                             , FILE* fp);
         void print_tabOver(int nPly, FILE* fp);
 

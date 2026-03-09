@@ -75,8 +75,9 @@ class GameBoard {
         Color turn;
 
         // Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
-        uint8_t black_castle_rights = 0b00000000;
-        uint8_t white_castle_rights = 0b00000000;
+        // Note: why intialize with no rights?
+        uint8_t black_castle_rights = CASTLE_NONE;
+        uint8_t white_castle_rights = CASTLE_NONE;
 
         // NOTE: why is this a ull? Should it be coded into a unint8_t like castling privilidges? NO. see summary.txt
         //square behind enpassantable pawn after moving
@@ -517,6 +518,7 @@ class GameBoard {
                     0,1,1,2,2,1,1,0
         };
 
+        bool b_unquiet_moves_only = false;
 
 };
 } // end namespace ShumiChess

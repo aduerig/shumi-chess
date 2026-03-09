@@ -9,3 +9,22 @@ SOLVED: Bug fixed that allowed illegal bitboards is solved. No reason not to kee
 
 Here is a related point. In reality a chess player spends more time in "complex" positions. In the first order, complexity is simply the total number of moves (FOR BOTH SIDES). This would be fine for now. It would play a lot better if it spent more time in positions, in ratio to the total number of moves (for both sides), at the starting position. This is what human chessplayers do.
 SOLVED: There are far far more sophisticated ways to do this, see bug list.
+
+
+
+-------------------------------------------------------------------------------------------
+
+add_move_to_vector() must take an argument, and an "if" to discard anything but captures and promotions.
+
+add_move_to_vector() is ONLY called from the the family of routines: add_knight_moves_to_vector_t(). 
+
+the family of routines: add_knight_moves_to_vector_t(), are called ONLY from get_psuedo_legal_moves_t().
+
+get_psuedo_legal_moves_t()  ONLY called by get_legal_moves_fast_t()
+
+get_legal_moves_fast_t() is called by:
+    get_legal_moves
+    move_into_string_full
+    recursive_negamax
+
+the only one we care about is recursive_negamax(). The others "pass in" a flag of "false" for b_unquiet_moves_only. For recursive_negamax(), we pass in (depth==0).

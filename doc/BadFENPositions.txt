@@ -268,3 +268,9 @@ isolated pawns test.
 
 2r2rk1/pp1qn1pp/4ppbn/3p4/1p3PPQ/3BPN1P/PBPP4/1RR3K1 w - - 9 24 
 backwards pawn/holes test
+
+
+
+
+
+8/1Q6/8/2Q5/8/8/R3K3/1k2B3 b - - 42 91     Weird bug WHite cant seem to checkmate

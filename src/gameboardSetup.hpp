@@ -102,8 +102,8 @@
     // white_king   (0b00000000'00000000'00000000'00000000'00000000'00000000'00001000'00000000),  
 
     turn(WHITE),
-    black_castle_rights(0b00000011),
-    white_castle_rights(0b00000011),
+    black_castle_rights(CASTLE_EITHER),
+    white_castle_rights(CASTLE_EITHER),
     en_passant_rights(1),               // The square where the capturing pawn would land in an en-passant capture
     halfmove(0),
     fullmove(1) 

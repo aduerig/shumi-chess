@@ -545,7 +545,7 @@ material_text.setFill(color_rgb(200, 200, 200))
 material_text.setSize(12)
 material_text.draw(win)
 
-score = 4321 
+score = 0 
 material_text.setText(str(score))
 
 
@@ -862,6 +862,9 @@ if args.fen is not None:
 legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
 ai_is_thinking = False
+
+DEBUG_MAX_MOVES = 150  # or whatever cap you want    // # DRAW_ADMIN
+
 try:
     while True:
 
@@ -871,8 +874,7 @@ try:
 
             move_number = engine_communicator.get_move_number()
 
-            # DRAW_ADMIN
-            DEBUG_MAX_MOVES = 150  # or whatever cap you want
+  
 
             # "admin" draw (used for debug only)
             if move_number > DEBUG_MAX_MOVES:
@@ -1043,6 +1045,7 @@ try:
         gamover = engine_communicator.is_game_over()
 
         # "admin" draw (used for debug only)
+        move_number = engine_communicator.get_move_number()
         if move_number > DEBUG_MAX_MOVES:   
             gamover = engine_communicator.DRAW  
 
@@ -1069,9 +1072,9 @@ try:
 
         # update match timers
         iWhiteTime = engine_communicator.get_game_timew()
-        print("wht time=",iWhiteTime)
+        #print("wht time=",iWhiteTime)
         iBlackTime = engine_communicator.get_game_timeb()
-        print("blk time=",iBlackTime)
+        #print("blk time=",iBlackTime)
         iWhiteTimeMatch += iWhiteTime    
         iBlackTimeMatch += iBlackTime
         wht_time_text.setText(f'Wtim {round(iWhiteTimeMatch / 1000)}')

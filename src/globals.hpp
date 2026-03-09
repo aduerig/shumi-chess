@@ -58,6 +58,12 @@ enum Piece {     // Pieces must be in this order!
     NONE,
 };
 
+//                              12345678
+constexpr int CASTLE_NONE   = 0b00000000;
+constexpr int CASTLE_EITHER = 0b00000011;
+constexpr int CASTLE_KING   = 0b00000001;
+constexpr int CASTLE_QUEEN  = 0b00000010;
+
 // TODO think about if this is the right way to represent a move
 // NOTE: Can this be a class? How would it help?
 // Now its at 32 bytes Whopee.
@@ -72,8 +78,9 @@ struct Move {
 
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
-    uint8_t black_castle_rights = 0b00000011;
-    uint8_t white_castle_rights = 0b00000011;
+
+    uint8_t black_castle_rights = CASTLE_EITHER;
+    uint8_t white_castle_rights = CASTLE_EITHER;
 
     bool is_en_passent_capture = false;    // bools are hopefully 1 byte
     bool is_castle_move = false;
