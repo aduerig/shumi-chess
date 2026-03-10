@@ -1021,17 +1021,15 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     }
 
     // Get all legal moves
+    bool b_unquiet_moves_only = false;
     if ( (depth == 0) && !in_check) {
-        engine.game_board.b_unquiet_moves_only = true;        // Note: I should be a function parameter not a class member
+        b_unquiet_moves_only = true;        // Note: I should be a function parameter not a class member
     }
 
-    //engine.n_legal_moves_found = 0;
     if (engine.game_board.turn == ShumiChess::Color::WHITE)
-        engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(MovesOut);
+        engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(b_unquiet_moves_only, MovesOut);
     else
-        engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(MovesOut);
-
-    engine.game_board.b_unquiet_moves_only = false;    // Note: I should be a function parameter not a class member
+        engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(b_unquiet_moves_only, MovesOut);
 
 
     vector<Move>& legal_moves = MovesOut;

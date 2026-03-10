@@ -513,7 +513,5 @@ class GameBoard {
                     0,1,1,2,2,1,1,0
         };
 
-        bool b_unquiet_moves_only = false;
-
 };
 } // end namespace ShumiChess

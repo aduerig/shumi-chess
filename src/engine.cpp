@@ -237,10 +237,10 @@ void Engine::reset_all_but_FEN()
 
 }
 
-vector<Move> Engine::get_legal_moves() {     // I am not called by recursion
+vector<Move> Engine::get_legal_moves() {     // I am not called by recursion (get_legal_moves_fast_t() is)
     vector<Move> MovesOut;
-    if (game_board.turn == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(MovesOut);
-    else                                 get_legal_moves_fast_t<Color::BLACK>(MovesOut);
+    if (game_board.turn == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(false, MovesOut);
+    else                                 get_legal_moves_fast_t<Color::BLACK>(false, MovesOut);
     return MovesOut;
 }
 
@@ -1794,8 +1794,8 @@ void Engine::move_into_string_full(ShumiChess::Move m) {
     moves.clear();
 
     // Warning: this function is expensive. Should be called only for making formal PGN or move files.
-    if (game_board.turn == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(moves);
-    else                                 get_legal_moves_fast_t<Color::BLACK>(moves);
+    if (game_board.turn == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(false, moves);
+    else                                 get_legal_moves_fast_t<Color::BLACK>(false, moves);
 
 
     bitboards_to_algebraic(game_board.turn, m
@@ -2643,7 +2643,7 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
 }
 
 template<Color c>
-void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
+void Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& MovesOut) {
     psuedo_legal_moves.clear();
     MovesOut.clear();
 
@@ -2689,7 +2689,7 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
             if (legal) {           
                 n_legal_moves_found++;      
                 bool b_add_me = true;       
-                if (game_board.b_unquiet_moves_only) {
+                if (b_unquiet_moves_only) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
                         b_add_me = false;
                         //assert(0);
@@ -2747,7 +2747,7 @@ void Engine::get_legal_moves_fast_t(vector<Move>& MovesOut) {
             if (legal) {                
                 n_legal_moves_found++;      
                 bool b_add_me = true;       
-                if (game_board.b_unquiet_moves_only) {
+                if (b_unquiet_moves_only) {
                     //if (!move.capture && !move.promotion && !move.is_en_passent_capture) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
                         b_add_me = false;
@@ -2795,8 +2795,8 @@ template bool Engine::in_check_after_move_fast_t<Color::WHITE>(const Move&);
 template bool Engine::in_check_after_move_fast_t<Color::BLACK>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::WHITE>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::BLACK>(const Move&);
-template void Engine::get_legal_moves_fast_t<Color::WHITE>(vector<Move>&);
-template void Engine::get_legal_moves_fast_t<Color::BLACK>(vector<Move>&);
+template void Engine::get_legal_moves_fast_t<Color::WHITE>(bool b_unquiet_moves_only, vector<Move>&);
+template void Engine::get_legal_moves_fast_t<Color::BLACK>(bool b_unquiet_moves_only, vector<Move>&);
 template void Engine::pushMove_t<Color::WHITE>(const Move&);
 template void Engine::pushMove_t<Color::BLACK>(const Move&);
 template void Engine::popMove_t<Color::WHITE>();
