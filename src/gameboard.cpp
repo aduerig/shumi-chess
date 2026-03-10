@@ -35,7 +35,7 @@ namespace ShumiChess {
 
     GameBoard::GameBoard() : 
  
-    // IN this constructer, the bitboards are the input
+    // In this constructer, the bitboards are the input
     #include "gameboardSetup.hpp"
 
     {
@@ -55,6 +55,8 @@ namespace ShumiChess {
         bool no_pieces_on_same_square = are_bit_boards_valid();
         assert(no_pieces_on_same_square);
 
+        // Fills out the "chessboard" like view of the board
+        initialize_pieces_on_square();
 
 
     }
@@ -150,8 +152,10 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     // fullmove is Used only for display purposes.
     this->fullmove = std::stoi(fen_components[5]);
 
-
+    // Fills out the "chessboard" like view of the board
+    initialize_pieces_on_square();
     
+    // No multiple pieces on the same square.
     bool no_pieces_on_same_square = are_bit_boards_valid();
     assert(no_pieces_on_same_square);
 
@@ -300,20 +304,6 @@ const string GameBoard::to_fen(bool bFullFEN) {
     return utility::our_string::join(fen_components, " ");
 }
 
-
-// Piece GameBoard::get_piece_type_on_bitboard(ull bitboard) {
-//     vector<Piece> all_piece_types = { Piece::PAWN, Piece::ROOK, Piece::KNIGHT, Piece::BISHOP, Piece::QUEEN, Piece::KING };
-//     for (auto piece_type : all_piece_types) {
-//         if (get_pieces(piece_type) & bitboard) {
-//             return piece_type;
-//         }
-//     }
-//     return Piece::NONE;
-// }
-// Faster: assumes bitboard is a bitboard mask (can be 1-bit or multi-bit).
-// Returns the first matching Piece type found.
-
-
 Color GameBoard::get_color_on_bitboard(ull bitboard) {
     if (get_pieces(Color::WHITE) & bitboard) {
         return Color::WHITE;
@@ -321,6 +311,102 @@ Color GameBoard::get_color_on_bitboard(ull bitboard) {
         return Color::BLACK;
     }
 }
+
+//
+// Translate the bitboards to a "chessboard" like "pieces_on_square"
+void GameBoard::initialize_pieces_on_square(void)
+{
+    for (int sq = 0; sq < 64; ++sq) {
+        pieces_on_square[sq] = Piece::NONE;
+    }
+
+    ull bb;
+
+    bb = white_pawns;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::PAWN;
+    }
+
+    bb = black_pawns;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::PAWN;
+    }
+
+    bb = white_rooks;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::ROOK;
+    }
+
+    bb = black_rooks;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::ROOK;
+    }
+
+    bb = white_knights;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::KNIGHT;
+    }
+
+    bb = black_knights;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::KNIGHT;
+    }
+
+    bb = white_bishops;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::BISHOP;
+    }
+
+    bb = black_bishops;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::BISHOP;
+    }
+
+    bb = white_queens;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::QUEEN;
+    }
+
+    bb = black_queens;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::QUEEN;
+    }
+
+    bb = white_king;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::KING;
+    }
+
+    bb = black_king;
+    while (bb) {
+        ull one = utility::bit::lsb_and_pop(bb);
+        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        pieces_on_square[sq] = Piece::KING;
+    }
+}
+
 
 // Is there only zero or one pieces on each square?
 bool GameBoard::are_bit_boards_valid() const {
@@ -2313,11 +2399,11 @@ int GameBoard::get_castled_bonus_cp_t(int phase) const {
     bool b_has_castled = false;
 
     if constexpr (c == Color::WHITE) {
-        i_can_castle += (white_castle_rights & king_side_castle)  ? 1 : 0;
-        i_can_castle += (white_castle_rights & queen_side_castle) ? 1 : 0;
+        i_can_castle += (white_castle_rights & CASTLE_KING)  ? 1 : 0;
+        i_can_castle += (white_castle_rights & CASTLE_QUEEN) ? 1 : 0;
     } else {
-        i_can_castle += (black_castle_rights & king_side_castle)  ? 1 : 0;
-        i_can_castle += (black_castle_rights & queen_side_castle) ? 1 : 0;
+        i_can_castle += (black_castle_rights & CASTLE_KING)  ? 1 : 0;
+        i_can_castle += (black_castle_rights & CASTLE_QUEEN) ? 1 : 0;
     }
     b_has_castled = bHasCastled_fake_t<c>();
 

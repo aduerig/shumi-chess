@@ -103,9 +103,8 @@ class Engine {
         template<Color c> void pushMove_t(const Move&);
         template<Color c> void popMove_t();
 
-        // Same as above, Omits castling, zobrist, history stacks, halfmove/fullmove counters, repetition, etc.
-        template<Color c> void pushMoveFast_t(const Move&);
-        template<Color c> void popMoveFast_t();
+        template<Color c> void update_pieces_on_square_for_push_t(const Move& move);
+        template<Color c> void update_pieces_on_square_for_pop_t(const Move& move);
         
         GameState is_game_over();
         GameState is_game_over(int nLegMovesFound);
@@ -114,6 +113,8 @@ class Engine {
         // Returns direct pointer (reference) to a bit board.
         ull& access_pieces_of_color(Piece, Color);
         template <Piece P> ull& access_pieces_of_color_tp(Color color);
+        template <Color c> ull& access_pieces_of_color_tp(Piece piece);
+        template <Piece P, Color c> ull& access_pieces_of_color_tp();
 
         void add_psuedo_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
         int n_legal_moves_found = 0;
@@ -126,14 +127,13 @@ class Engine {
 
         template<Color c> void get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves);
 
-        // Storage buffers (they live here to avoid extra allocation during the game)        
 
-   
+        
+        // Storage buffers (they live here to avoid extra allocation during the game)        
         vector<Move> psuedo_legal_moves; 
         
         #define MAX_PLY0 100
         vector<Move> all_legal_moves[MAX_PLY0];
-
         vector<Move> all_unquiet_moves[MAX_PLY0];   
 
         template<Color c> bool in_check_after_move_fast_t(const Move& move);

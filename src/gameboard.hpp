@@ -14,13 +14,6 @@
 #define MAX_QPLY2 4        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
 
 namespace ShumiChess {
-// TODO think about copy and move constructors.
-// ? Will we ever want to copy?
-
-// NOTE: Use us constants everywhere.
-constexpr uint8_t king_side_castle  = 0b00000001;
-constexpr uint8_t queen_side_castle = 0b00000010;
-
 
 struct PInfo {
     int file_count[8];          // Count of pawns on this file
@@ -75,15 +68,14 @@ class GameBoard {
         Color turn;
 
         // Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
-        // Note: why intialize with no rights?
+        // Note: why intialize with no rights? Does it matter?
         uint8_t black_castle_rights = CASTLE_NONE;
         uint8_t white_castle_rights = CASTLE_NONE;
-
-        // NOTE: why is this a ull? Should it be coded into a unint8_t like castling privilidges? NO. see summary.txt
-        //square behind enpassantable pawn after moving
-        //0 is impossible state in conventional game
-        // ? is this right way to represent this
-        // ? do we care about non standard gameboards / moves
+        //
+        // EnPassant coding in the Gameboard structure. This is weird, but toegather with the Move element
+        // with the same name - it works. The disadvantage is it requires a ull, and storing it in a square
+        // is wasteful in time. See doc/EnPassent.txt for details.
+        // ? do we care about non standard gameboards / moves? I dont think so.
         // ? would one consider an extra bit for if we should look at this val
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
         //
@@ -199,7 +191,7 @@ class GameBoard {
         }
 
         inline Piece get_piece_type_on_bitboard(ull bitboard) {
-            //assert(bits_in(bitboard) == 1);
+            assert(bits_in(bitboard) == 1);
             if (bitboard & (white_pawns   | black_pawns))   return Piece::PAWN;
             if (bitboard & (white_rooks   | black_rooks))   return Piece::ROOK;
             if (bitboard & (white_knights | black_knights)) return Piece::KNIGHT;
@@ -258,6 +250,9 @@ class GameBoard {
 
 
         Color get_color_on_bitboard(ull);
+
+        Piece pieces_on_square[64];
+        void initialize_pieces_on_square(void);
 
         bool are_bit_boards_valid() const;
         

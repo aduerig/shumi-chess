@@ -1022,7 +1022,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     // Get all legal moves
     if ( (depth == 0) && !in_check) {
-        //engine.game_board.b_unquiet_moves_only = true;        // Note: I should be a function parameter not a class member
+        engine.game_board.b_unquiet_moves_only = true;        // Note: I should be a function parameter not a class member
     }
 
     //engine.n_legal_moves_found = 0;
