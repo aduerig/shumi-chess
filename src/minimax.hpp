@@ -190,7 +190,6 @@ public:
                                             , int qPlys
                                         );
 
-    //bool look_for_king_moves() const;
     int enemyKingSquare; 
 
     // Total of 4000 centipawns for each side.  Suppose minor pieces are all 300. 

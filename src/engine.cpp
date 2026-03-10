@@ -239,8 +239,9 @@ void Engine::reset_all_but_FEN()
 
 vector<Move> Engine::get_legal_moves() {     // I am not called by recursion (get_legal_moves_fast_t() is)
     vector<Move> MovesOut;
-    if (game_board.turn == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(false, MovesOut);
-    else                                 get_legal_moves_fast_t<Color::BLACK>(false, MovesOut);
+    int iLegalMoves;    // I am not used
+    if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE>(false, MovesOut);
+    else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK>(false, MovesOut);
     return MovesOut;
 }
 
@@ -249,7 +250,7 @@ vector<Move> Engine::get_legal_moves() {     // I am not called by recursion (ge
 template<Color c>
 bool Engine::in_check_after_move_fast_t(const Move& move)
 {
-    constexpr Color enemy = utility::representation::opposite_color(c);
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
 
     assert(move.piece_type != Piece::NONE);
 
@@ -556,7 +557,7 @@ int Engine::get_best_score_at_root() {
 template<Color c>
 void Engine::pushMove_t(const Move& move) {
 
-    constexpr Color enemy = utility::representation::opposite_color(c);
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
 
     assert(move.piece_type != NONE);
 
@@ -713,7 +714,7 @@ void Engine::pushMove_t(const Move& move) {
 template<Color c>
 void Engine::popMove_t() {
 
-    constexpr Color enemy = utility::representation::opposite_color(c);
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
 
     // Pop move history
     const Move move = move_history.top();
@@ -1736,7 +1737,7 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
         }       // END is unquiet move
         else {
             // is quiet move. We should not see these.
-            //assert(0);
+            assert(0);
         }
 
     }       // END loop over moves
@@ -1792,10 +1793,11 @@ void Engine::move_into_string_full(ShumiChess::Move m) {
 
     vector<Move> moves;
     moves.clear();
+    int iLegalMoves;    // I am not used
 
     // Warning: this function is expensive. Should be called only for making formal PGN or move files.
-    if (game_board.turn == Color::WHITE) get_legal_moves_fast_t<Color::WHITE>(false, moves);
-    else                                 get_legal_moves_fast_t<Color::BLACK>(false, moves);
+    if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE>(false, moves);
+    else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK>(false, moves);
 
 
     bitboards_to_algebraic(game_board.turn, m
@@ -2351,19 +2353,23 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 }
 
 template<Color c>
-void Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
+int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
     constexpr Color enemy = utility::representation::opposite_color_v<c>;
 
+    // Intialize some class variables that are used in all the children called by this function
     all_enemy_pieces = game_board.get_pieces_template<enemy>();
     all_own_pieces = game_board.get_pieces_template<c>();
     all_pieces = (all_own_pieces | all_enemy_pieces);
 
+    // Get all the psuedo legal moves.
     add_knight_moves_to_vector_t<c>(all_psuedo_legal_moves);
     add_bishop_moves_to_vector_t<c>(all_psuedo_legal_moves);
     add_pawn_moves_to_vector_t<c>(all_psuedo_legal_moves);
     add_queen_moves_to_vector_t<c>(all_psuedo_legal_moves);
     add_king_moves_to_vector_t<c>(all_psuedo_legal_moves);
     add_rook_moves_to_vector_t<c>(all_psuedo_legal_moves);
+
+    return all_psuedo_legal_moves.size();
 }
 
 template<Color enemy_c>
@@ -2643,15 +2649,17 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
 }
 
 template<Color c>
-void Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& MovesOut) {
-    psuedo_legal_moves.clear();
-    MovesOut.clear();
+int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& MovesOut) {
 
-    constexpr Color color = c;
+    psuedo_legal_moves.clear();
+    //assert(psuedo_legal_moves.capacity() == MAX_MOVES);
+
+    MovesOut.clear();
 
     const bool in_check_before_move = is_king_in_check_t<c>();
 
-    n_legal_moves_found = 0;
+    int n_legal_moves_found = 0;
+    int n_psuedo_legal_moves_found = 0;
 
     PinnedInfo pinnedInfo;
     CheckInfo  checkInfo;
@@ -2663,7 +2671,7 @@ void Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& Mov
         pinnedInfo = compute_pins_t<c>();
     }
 
-    get_psuedo_legal_moves_t<c>(psuedo_legal_moves);
+    n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c>(psuedo_legal_moves);
 
     if (!in_check_before_move) {
         for (const Move& move : psuedo_legal_moves) {
@@ -2692,7 +2700,6 @@ void Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& Mov
                 if (b_unquiet_moves_only) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
                         b_add_me = false;
-                        //assert(0);
                     }
                 }   
                 if (b_add_me) {
@@ -2748,10 +2755,9 @@ void Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& Mov
                 n_legal_moves_found++;      
                 bool b_add_me = true;       
                 if (b_unquiet_moves_only) {
-                    //if (!move.capture && !move.promotion && !move.is_en_passent_capture) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
+                    //if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) && (move.is_en_passent_capture==Piece::NONE) ) {
                         b_add_me = false;
-                        //assert(0);
                     }
                 }   
                 if (b_add_me) {
@@ -2760,7 +2766,8 @@ void Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& Mov
             }
         }
     }
-
+    assert(n_psuedo_legal_moves_found>= n_legal_moves_found);
+    return n_legal_moves_found;
 }
 
 // Explicit template instantiations
@@ -2776,8 +2783,8 @@ template void Engine::add_queen_moves_to_vector_t<Color::WHITE>(vector<Move>&);
 template void Engine::add_queen_moves_to_vector_t<Color::BLACK>(vector<Move>&);
 template void Engine::add_king_moves_to_vector_t<Color::WHITE>(vector<Move>&);
 template void Engine::add_king_moves_to_vector_t<Color::BLACK>(vector<Move>&);
-template void Engine::get_psuedo_legal_moves_t<Color::WHITE>(vector<Move>&);
-template void Engine::get_psuedo_legal_moves_t<Color::BLACK>(vector<Move>&);
+template int Engine::get_psuedo_legal_moves_t<Color::WHITE>(vector<Move>&);
+template int Engine::get_psuedo_legal_moves_t<Color::BLACK>(vector<Move>&);
 
 template bool Engine::is_king_in_check_t<Color::WHITE>();
 template bool Engine::is_king_in_check_t<Color::BLACK>();
@@ -2795,8 +2802,8 @@ template bool Engine::in_check_after_move_fast_t<Color::WHITE>(const Move&);
 template bool Engine::in_check_after_move_fast_t<Color::BLACK>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::WHITE>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::BLACK>(const Move&);
-template void Engine::get_legal_moves_fast_t<Color::WHITE>(bool b_unquiet_moves_only, vector<Move>&);
-template void Engine::get_legal_moves_fast_t<Color::BLACK>(bool b_unquiet_moves_only, vector<Move>&);
+template int Engine::get_legal_moves_fast_t<Color::WHITE>(bool b_unquiet_moves_only, vector<Move>&);
+template int Engine::get_legal_moves_fast_t<Color::BLACK>(bool b_unquiet_moves_only, vector<Move>&);
 template void Engine::pushMove_t<Color::WHITE>(const Move&);
 template void Engine::pushMove_t<Color::BLACK>(const Move&);
 template void Engine::popMove_t<Color::WHITE>();

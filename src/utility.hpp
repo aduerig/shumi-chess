@@ -181,7 +181,6 @@ std::string bitboard_to_acn_conversion(ull);
 inline constexpr ShumiChess::Color opposite_color(const ShumiChess::Color color) {
     return (ShumiChess::Color) (1 - (int) color);                      // I depend on WHITE=0, BLACK=1
 }
-
 // Compile-time opposite color
 template<ShumiChess::Color c>
 inline constexpr ShumiChess::Color opposite_color_v =

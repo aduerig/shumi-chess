@@ -1004,14 +1004,10 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     double alpha_in = alpha;   //  save original alpha window lower bound
     double beta_in = beta;   //  save original alpha window lower bound
 
-    // I eat a lot of time. Expensive.
-    // vector<Move> legal_moves2;
-    // engine.get_legal_moves(engine.game_board.turn, legal_moves2);
-
-
-
+    
     assert(nPlys < MAX_PLY0);
-    vector<Move>& MovesOut = engine.all_legal_moves[nPlys];
+    vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
+    vector<Move>* p_moves_to_loop_over = &legal_moves;
 
     bool in_check = false;
     if (depth == 0) {
@@ -1020,30 +1016,33 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             : engine.is_king_in_check_t<Color::BLACK>();
     }
 
+
+
+
     // Get all legal moves
     bool b_unquiet_moves_only = false;
     if ( (depth == 0) && !in_check) {
-        b_unquiet_moves_only = true;        // Note: I should be a function parameter not a class member
+        b_unquiet_moves_only = true;
     }
 
+    int n_legal_moves_found;
     if (engine.game_board.turn == ShumiChess::Color::WHITE)
-        engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(b_unquiet_moves_only, MovesOut);
+        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(b_unquiet_moves_only, legal_moves);
     else
-        engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(b_unquiet_moves_only, MovesOut);
+        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(b_unquiet_moves_only, legal_moves);
+    
+    // Look, if b_unquiet_moves_only is false, then n_legal_moves_found will be equal to legal_moves.size()
+    // if b_unquiet_moves_only is true, then n_legal_moves_found will be the count of moves, but 
+    // only unquiet moves will be in legal_moves.
+    #ifndef NDEBUG
+        if (!b_unquiet_moves_only) {
+            assert (n_legal_moves_found == legal_moves.size());
+        }
+    #endif
 
-
-    vector<Move>& legal_moves = MovesOut;
-
-    vector<Move>* p_moves_to_loop_over = &legal_moves;
 
     nodes_visited++;
     if (depth==0) nodes_visited_depth_zero++;
-
-
-
-    //bMoreDebug = true;
-    //debugMove = engine.move_string;
-
 
     if (stop_calculation) {
         cout << "\n! STOP CALCULATION requested \n";
@@ -1051,8 +1050,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         return { ABORT_SCORE, the_best_move };
     }
 
-
-    //bMoreDebug = false;
 
     // =====================================================================
     // asserts
@@ -1248,13 +1245,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }
     }
 
-    GameState state = engine.is_game_over(engine.n_legal_moves_found);
+    GameState state = engine.is_game_over(n_legal_moves_found);
     //GameState state = engine.is_game_over(legal_moves.size());
-
-    // debug only
-    // char szTemp[256];
-    // sprintf(szTemp, "\nhello %ld  %ld  %ld\n", (int)legal_moves.size(), (int)state, (int)nLegMovesFound);
-    // fputs(szTemp, fpDebug);
 
     // =====================================================================
     // Terminal positions (game over)
@@ -1301,7 +1293,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     if (depth == 0) {
 
         // Static board evaluation
-
         bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
 
         int  cp_from_tt   = 0;
@@ -1453,7 +1444,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         // On one hand why not, becasuse there could be a lot of responses, But on 
         // the otherhand there wont be that many. ANf we must be super fast here.
         //if ( (depth > 0) || (depth==0 && in_check) ) {
-        if (depth > 0) {
+        if (depth > 0) {  
             assert(p_moves_to_loop_over == &legal_moves);
   
             #ifdef _DEBUGGING_MOVE_SORT
@@ -1477,7 +1468,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }
 
         d_best_score = -HUGE_SCORE;
-        the_best_move = sorted_moves[0];   // Note: Is this the correct intialization? Why not HUGE_SCORE
+        the_best_move = sorted_moves[0];   // Note: Is this the correct intialization?
 
         //
         /////////////////////////////////////////////////////////////////////////////////////////
@@ -2163,16 +2154,14 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 //      3. killer moves (quiet, bubbled to the front of the "cutoff" quiet slice).
 //      4. remaining quiet moves.
 //  Sorts moves in place.
-//  I can be called at any depth, for depth==0 (Quiescence) or depth>0.
 //
-void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_loop_over   // input/output
+void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut   // input/output
                             , int depth, int nPlys, bool is_top_of_deepening)
 {
-    assert(p_moves_to_loop_over);
+    assert(pMovesInOut);
     assert(depth>0);
 
-    auto& moves = *p_moves_to_loop_over;
-    if (moves.empty()) {
+    if (pMovesInOut->empty()) {
         return;
     }
 
@@ -2189,14 +2178,14 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
     if (Features_mask &_FEATURE_UNQUIET_SORT) {
         // --- 1. Partition unquiet moves (captures/promotions) to the front ---
         auto it_split = std::partition(
-            moves.begin(), moves.end(),
+            pMovesInOut->begin(), pMovesInOut->end(),
             [&](const ShumiChess::Move& mv)
             {
                 return engine.is_unquiet_move(mv);
             });
 
         // --- 2. Sort the unquiet prefix using MVV-LVA ---
-        std::sort(moves.begin(), it_split,
+        std::sort(pMovesInOut->begin(), it_split,
             [&](const ShumiChess::Move& a, const ShumiChess::Move& b)
             {
                 // MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
@@ -2242,7 +2231,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
         if (Features_mask & _FEATURE_KILLER) {
             // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
             auto quiet_begin = it_split;
-            auto quiet_end   = moves.end();
+            auto quiet_end   = pMovesInOut->end();
 
             auto bring_front = [&](const ShumiChess::Move& km)
             {
@@ -2287,15 +2276,15 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
 
 
         if (!(pv_move == Move{})) {       
-            auto it = std::find(moves.begin(), moves.end(), pv_move);
-            if (it == moves.end()) {
+            auto it = std::find(pMovesInOut->begin(), pMovesInOut->end(), pv_move);
+            if (it == pMovesInOut->end()) {
                 // item not in the list
                 assert(0);
             }
-            else if (it != moves.begin()) {
+            else if (it != pMovesInOut->begin()) {
                 // item not first in list
                 // moves existing pv_move to front, preserving their relative order.
-                std::rotate(moves.begin(), it, it + 1);        
+                std::rotate(pMovesInOut->begin(), it, it + 1);        
                 // #ifdef _DEBUGGING_MOVE_CHAIN
                 //     fprintf(fpDebug, "PV bubble");
                 // #endif
@@ -2306,15 +2295,15 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
 
     //       0. move from the hash table hit (if any) 
     if (!(TT2_match_move == Move{})) {       
-        auto it = std::find(moves.begin(), moves.end(), TT2_match_move);
-        if (it == moves.end()) {
+        auto it = std::find(pMovesInOut->begin(), pMovesInOut->end(), TT2_match_move);
+        if (it == pMovesInOut->end()) {
             // item not in the list
             assert(0);
         }
-        else if (it != moves.begin()) {
+        else if (it != pMovesInOut->begin()) {
             // item in list, but not first in list already
             // moves existing pv_move to front, preserving their relative order.
-            std::rotate(moves.begin(), it, it + 1);        
+            std::rotate(pMovesInOut->begin(), it, it + 1);        
             #ifdef _DEBUGGING_MOVE_CHAIN
                 fprintf(fpDebug, "TT2_match_move bubble");
             #endif
@@ -2323,21 +2312,6 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* p_moves_to_
 
   
 }
-
-
-// bool MinimaxAI::look_for_king_moves() const
-// {
-//     int king_moves = 0;
-//     std::stack<ShumiChess::Move> tmp = engine.move_history; // copy; don't mutate engine
-
-//     while (!tmp.empty()) {
-//         ShumiChess::Move m = tmp.top(); tmp.pop();
-//         if (m.piece_type == ShumiChess::Piece::KING) {
-//             if (++king_moves >= 2) return true;
-//         }
-//     }
-//     return false;
-// }
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

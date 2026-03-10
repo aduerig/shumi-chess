@@ -117,15 +117,13 @@ class Engine {
         template <Piece P, Color c> ull& access_pieces_of_color_tp();
 
         void add_psuedo_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
-        int n_legal_moves_found = 0;
-
 
         vector<Move> get_legal_moves();
-        template<Color c> void get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& MovesOut);
+        template<Color c> int get_legal_moves_fast_t(bool b_unquiet_moves_only, vector<Move>& MovesOut);
         bool assert_same_moves(const std::vector<Move>& a,
                                 const std::vector<Move>& b);
 
-        template<Color c> void get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves);
+        template<Color c> int get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves);
 
 
         
