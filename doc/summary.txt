@@ -1,5 +1,55 @@
 
 
+Here is my current arctecture/
+1. Get all psuedo-legal moves in a buffer (psuedo_legql_moves).
+2. Check for full legality, copy into another buffer ("legal_moves") the 
+   subset of psuedo-legal moves that are also legal. (dont put me into check)
+3. Check for checkmate or stalemate, exit if so.
+4. Loop (recurse) over all legal_moves.
+
+However, I recently added a speed up for quissence only, that complicates step 2.
+In quissence I do not actually add legal_moves that are quiet. Howver, the checkmate/stalemate
+algorithm needs to know the real number of legal_moves, (quiet or unquiet). So for every
+legal_move I find, I increment a "count of legal moves", even though I do not add it to the array of
+legal moves. This system works well. SO the "count" is greater or equal to the number of actual legal_moves.
+
+But now, I am going to be also (in quissence only), not adding moves in step 1. I can also implement it
+so that I keep a seperate count of psuedo-legal moves, incremented always, even when we dont add the psuedo 
+legal move to legal_moves. 
+
+But now I am puzzled how to do step 3. If I change step 1 as discussed above. How do the two counts and actual sizes 
+of the buffers relate. Right now step 3 uses the "legal_move count". If that is zero, then the game is over. This works,
+but I feel if I use "psuedo_legal_moves count" this wont be correct. How can I do this right?
+
+
+
+
+
+
+
+
+
+
+
+
+Look at these lines:. The line assigning the_best_move, does not compile. What Am i missing?
+
+    vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
+    vector<Move>* p_moves_to_loop_over = &legal_moves;
+   ...
+   d_best_score = -HUGE_SCORE;
+   the_best_move = *p_moves_to_loop_over[0];   // Note: Is this the correct intialization?
+
+   //
+   /////////////////////////////////////////////////////////////////////////////////////////
+   //
+   // Look (recurse) over all moves chosen
+   //
+   int imovedebug = 0;
+   int isizedebug = p_moves_to_loop_over->size();
+   for (const Move& m : *p_moves_to_loop_over) {
+      int nChars;
+   ...
 
 
 

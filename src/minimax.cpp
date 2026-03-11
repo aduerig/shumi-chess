@@ -1027,15 +1027,16 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     int n_legal_moves_found;
     if (engine.game_board.turn == ShumiChess::Color::WHITE)
-        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(b_unquiet_moves_only, legal_moves);
+        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(b_unquiet_moves_only, false, legal_moves);
     else
-        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(b_unquiet_moves_only, legal_moves);
+        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(b_unquiet_moves_only, false, legal_moves);
     
     // Look, if b_unquiet_moves_only is false, then n_legal_moves_found will be equal to legal_moves.size()
     // if b_unquiet_moves_only is true, then n_legal_moves_found will be the count of moves, but 
     // only unquiet moves will be in legal_moves.
     #ifndef NDEBUG
         if (!b_unquiet_moves_only) {
+            // Change 0: legal_moves needs a size() that discounts "zero moves".
             assert (n_legal_moves_found == legal_moves.size());
         }
     #endif
@@ -1122,7 +1123,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         bool   found_white_castled = false;
         bool   found_black_castled = false;
 
-        int legalMovesSize = legal_moves.size();
+        //int legalMovesSize = legal_moves.size();
 
     #endif
 
@@ -1232,6 +1233,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     bool first_node_in_deepening = (top_deepening == depth);
 
     if (first_node_in_deepening) {
+        // Change 3: legal_moves needs a size() that discounts "zero moves".
         if (legal_moves.size() == 1) {
             cout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
 
@@ -1293,6 +1295,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     if (depth == 0) {
 
         // Static board evaluation
+        // Change 4: has_unquiet_move needs to discount "zero moves".
         bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
 
         int  cp_from_tt   = 0;
@@ -1370,6 +1373,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         } else {
 
             // Obtain moves to use in the limited search. (Quiescence)
+            // Change 6: reduce_to_unquiet_moves_MVV_LVA needs to discount "zero moves".
             engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
 
             vector<Move>& unquiet_moves = engine.all_unquiet_moves[nPlys];
@@ -1410,9 +1414,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         if (qPlys >= MAX_QPLY) {
             //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
             //std::cout << "\x1b[31m!" << "\x1b[0m";
-            // auto tup = best_move_static(engine.game_board.turn, (*p_moves_to_loop_over), in_check, depth, bFast);
-            // double scoreMe = std::get<0>(tup);
-            // ShumiChess::Move moveMe = std::get<1>(tup);
             
             nFarts++;
            
@@ -1432,13 +1433,11 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // Recurse over selected move set "moves_to_loop_over"
     // =====================================================================
     
+    // Change 7 : Need empty() function that discounts "zero moves"
     if (!p_moves_to_loop_over->empty()) {
-
-        const std::vector<Move>& sorted_moves = *p_moves_to_loop_over;
 
         bool b_use_this_move;
 
-        
         // Resort moves based on varoius things
         // Fascinating tradeoff. We could also call this if depth==0 and in check.
         // On one hand why not, becasuse there could be a lot of responses, But on 
@@ -1453,6 +1452,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
             bool is_top_of_deepening = (depth == top_deepening);
 
+            // Change 8 : sort_moves_for_search function that discounts "zero moves"
             sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
 
             #ifdef _DEBUGGING_MOVE_SORT
@@ -1468,7 +1468,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         }
 
         d_best_score = -HUGE_SCORE;
-        the_best_move = sorted_moves[0];   // Note: Is this the correct intialization?
+        // Change 9: ???
+        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
 
         //
         /////////////////////////////////////////////////////////////////////////////////////////
@@ -1476,9 +1477,10 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         // Look (recurse) over all moves chosen
         //
         int imovedebug = 0;
-        int isizedebug = sorted_moves.size();
-        for (const Move& m : sorted_moves) {
+        for (const Move& m : *p_moves_to_loop_over) {
             int nChars;
+
+            // Change 10, "continue" on "zero moves"
 
             imovedebug++;
 
@@ -1499,6 +1501,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 if (nChars == EOF) assert(0);
 
                 // Print move number (out of) (this is printed as the move prefix)
+                // Change 11, need a size() that ignores "zero moves"
+                int isizedebug = p_moves_to_loop_over->size();
                 sprintf(szDebug, "[%2d/%2d]", imovedebug, isizedebug);
 
                 // Print move with prefix (Move always starts a new line)
@@ -1935,7 +1939,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                                 print_mismatch(cout, "bt", foundBeta,          beta);
                                 print_mismatch(cout, "dr", foundDraw,          (state == GameState::DRAW));
                                 print_mismatch(cout, "ck", foundIsCheck,       in_check);
-                                print_mismatch(cout, "lm", foundLegalMoveSize, legalMovesSize);
+                                //print_mismatch(cout, "lm", foundLegalMoveSize, legalMovesSize);
                                 print_mismatch(cout, "rp", foundRepCount,      iRepCountNow);
                                 print_mismatch(cout, "nPlys", foundnPlys, nPlys);
 
@@ -2030,7 +2034,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     slot.nPlysDebug      = nPlys;
                     slot.drawDebug       = (state == GameState::DRAW);
                     slot.bIsInCheckDebug = in_check;
-                    slot.legalMovesSize  = legalMovesSize;
+                    //slot.legalMovesSize  = legalMovesSize;
 
                     int repCountNow = 0;
                     // auto itRepNow = engine.repetition_table.find(key);

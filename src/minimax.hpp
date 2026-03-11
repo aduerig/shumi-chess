@@ -112,7 +112,7 @@ public:
             int nPlysDebug;
             bool drawDebug;  // 0 = not draw, 1 = draw
             bool bIsInCheckDebug;
-            int legalMovesSize;
+            //int legalMovesSize;
             int repCountDebug;
             double dScoreDebug;
 
