@@ -1229,6 +1229,15 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     }   // END TT2 feature
 
 
+    if (n_legal_moves_found == 0) {
+        vector<Move> mvs;       // I am not used
+        int n_legal_moves_found2 = engine.get_legal_moves_fast(engine.game_board.turn, false, true, mvs);
+        
+        // The plan part B.
+        //assert(n_legal_moves_found == n_legal_moves_found2);
+        if (n_legal_moves_found2 != 0) n_legal_moves_found = n_legal_moves_found2;
+    }
+    
     // Only one of me, per deepening.
     bool first_node_in_deepening = (top_deepening == depth);
 

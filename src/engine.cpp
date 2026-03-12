@@ -2078,7 +2078,7 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
 // --- Phase 2: Move generation templates ---
 
 template<Color c>
-void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull pawns = game_board.get_pieces_template<Piece::PAWN, c>();
     if (!pawns) return;
 
@@ -2108,29 +2108,33 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     }
 
     while (pawns) {
+
         ull normal_attacks;
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
 
-        ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
-        ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
+        if (!unquiet_moves_only) {
 
-        if (one_move_forward_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
-            , single_pawn, one_move_forward_not_blocked, Piece::PAWN
-            , color, false, false
-            , 0ULL, false, false);
+            ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
+            ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
 
-        ull is_doublable = single_pawn & pawn_starting_rank_mask;
-        if (is_doublable) {
-            ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
-            ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
-
-            ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
-            ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
-
-            if (move_forward_two_unblocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, move_forward_two_unblocked, Piece::PAWN
+            if (one_move_forward_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, one_move_forward_not_blocked, Piece::PAWN
                 , color, false, false
-                , move_forward_one_unblocked, false, false);
+                , 0ULL, false, false);
+
+            ull is_doublable = single_pawn & pawn_starting_rank_mask;
+            if (is_doublable) {
+                ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
+                ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
+
+                ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
+                ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
+
+                if (move_forward_two_unblocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                    , single_pawn, move_forward_two_unblocked, Piece::PAWN
+                    , color, false, false
+                    , move_forward_one_unblocked, false, false);
+            }
         }
 
         ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
@@ -2161,7 +2165,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 }
 
 template<Color c>
-void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull knights = game_board.get_pieces_template<Piece::KNIGHT, c>();
 
     while (knights) {
@@ -2176,15 +2180,17 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) 
             , c, true, false
             , 0ULL, false, false);
 
-        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
-            , c, false, false
-            , 0ULL, false, false);
+        if (!unquiet_moves_only) {
+            ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
+                , c, false, false
+                , 0ULL, false, false);
+        }
     }
 }
 
 template<Color c>
-void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull rooks = game_board.get_pieces_template<Piece::ROOK, c>();
 
     while (rooks) {
@@ -2200,15 +2206,17 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             , c, true, false
             , 0ULL, false, false);
 
-        ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
-            , c, false, false
-            , 0ULL, false, false);
+        if (!unquiet_moves_only) {
+            ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
+                , c, false, false
+                , 0ULL, false, false);
+        }
     }
 }
 
 template<Color c>
-void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull bishops = game_board.get_pieces_template<Piece::BISHOP, c>();
 
     while (bishops) {
@@ -2224,15 +2232,17 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) 
             , c, true, false
             , 0ULL, false, false);
 
-        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
-            , c, false, false
-            , 0ULL, false, false);
+        if (!unquiet_moves_only) {
+            ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
+                , c, false, false
+                , 0ULL, false, false);
+        }
     }
 }
 
 template<Color c>
-void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull queens = game_board.get_pieces_template<Piece::QUEEN, c>();
 
     while (queens) {
@@ -2248,15 +2258,17 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             , c, true, false
             , 0ULL, false, false);
 
-        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
-            , c, false, false
-            , 0ULL, false, false);
+        if (!unquiet_moves_only) {
+            ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
+                , c, false, false
+                , 0ULL, false, false);
+        }
     }
 }
 
 template<Color c>
-void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
+void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull king = game_board.get_pieces_template<Piece::KING, c>();
 
     ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
@@ -2266,94 +2278,95 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         , c, true, false
         , 0ULL, false, false);
 
-    ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
-        , c, false, false
-        , 0ULL, false, false);
+    if (!unquiet_moves_only) {
+        ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
+            , c, false, false
+            , 0ULL, false, false);
 
-    #ifndef DEBUG_NO_CASTLING
+        #ifndef DEBUG_NO_CASTLING
 
-        constexpr Color enemy_color = utility::representation::opposite_color_v<c>;
+            constexpr Color enemy_color = utility::representation::opposite_color_v<c>;
 
-        ull squares_inbetween;
-        ull needed_rook_location;
-        ull actual_rooks_location;
-        ull king_origin_square;
-        bool b_no_inbetween_squares_in_check;
+            ull squares_inbetween;
+            ull needed_rook_location;
+            ull actual_rooks_location;
+            ull king_origin_square;
+            bool b_no_inbetween_squares_in_check;
 
-        if constexpr (c == Color::WHITE) {
-            if (game_board.white_castle_rights & CASTLE_KING) {
-                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
-                    if (b_no_inbetween_squares_in_check) {
-                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            king_origin_square = 1ULL <<1;
-                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , c, false, false
-                                , 0ULL, false, true);
+            if constexpr (c == Color::WHITE) {
+                if (game_board.white_castle_rights & CASTLE_KING) {
+                    squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
+                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
+                        if (b_no_inbetween_squares_in_check) {
+                            needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
+                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                            if (actual_rooks_location & needed_rook_location) {
+                                king_origin_square = 1ULL <<1;
+                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                    , c, false, false
+                                    , 0ULL, false, true);
+                            }
+                        }
+                    }
+                }
+                if (game_board.white_castle_rights & CASTLE_QUEEN) {
+                    squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
+                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
+                        if (b_no_inbetween_squares_in_check) {
+                            needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
+                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                            if (actual_rooks_location & needed_rook_location) {
+                                king_origin_square = 1ULL <<5;
+                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                    , c, false, false
+                                    , 0ULL, false, true);
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (game_board.black_castle_rights & CASTLE_KING) {
+                    squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
+                        if (b_no_inbetween_squares_in_check) {
+                            needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                            if (actual_rooks_location & needed_rook_location) {
+                                king_origin_square = 1ULL <<57;
+                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                    , c, false, false
+                                    , 0ULL, false, true);
+                            }
+                        }
+                    }
+                }
+                if (game_board.black_castle_rights & CASTLE_QUEEN) {
+                    squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
+                        if (b_no_inbetween_squares_in_check) {
+                            needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                            if (actual_rooks_location & needed_rook_location) {
+                                king_origin_square = 1ULL <<61;
+                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
+                                    , c, false, false
+                                    , 0ULL, false, true);
+                            }
                         }
                     }
                 }
             }
-            if (game_board.white_castle_rights & CASTLE_QUEEN) {
-                squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
-                    if (b_no_inbetween_squares_in_check) {
-                        needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            king_origin_square = 1ULL <<5;
-                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , c, false, false
-                                , 0ULL, false, true);
-                        }
-                    }
-                }
-            }
-        } else {
-            if (game_board.black_castle_rights & CASTLE_KING) {
-                squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
-                    if (b_no_inbetween_squares_in_check) {
-                        needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            king_origin_square = 1ULL <<57;
-                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , c, false, false
-                                , 0ULL, false, true);
-                        }
-                    }
-                }
-            }
-            if (game_board.black_castle_rights & CASTLE_QUEEN) {
-                squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                    b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
-                    if (b_no_inbetween_squares_in_check) {
-                        needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                        actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                        if (actual_rooks_location & needed_rook_location) {
-                            king_origin_square = 1ULL <<61;
-                            add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                , c, false, false
-                                , 0ULL, false, true);
-                        }
-                    }
-                }
-            }
-        }
-
-    #endif
+        #endif
+    }
 }
 
 template<Color c>
-int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
+int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     constexpr Color enemy = utility::representation::opposite_color_v<c>;
 
     // Intialize some class variables that are used in all the children called by this function
@@ -2362,12 +2375,12 @@ int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
     all_pieces = (all_own_pieces | all_enemy_pieces);
 
     // Get all the psuedo legal moves.
-    add_knight_moves_to_vector_t<c>(all_psuedo_legal_moves);
-    add_bishop_moves_to_vector_t<c>(all_psuedo_legal_moves);
-    add_pawn_moves_to_vector_t<c>(all_psuedo_legal_moves);
-    add_queen_moves_to_vector_t<c>(all_psuedo_legal_moves);
-    add_king_moves_to_vector_t<c>(all_psuedo_legal_moves);
-    add_rook_moves_to_vector_t<c>(all_psuedo_legal_moves);
+    add_knight_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
+    add_bishop_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
+    add_pawn_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
+    add_queen_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
+    add_king_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
+    add_rook_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
 
     return all_psuedo_legal_moves.size();
 }
@@ -2648,11 +2661,21 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
                                themQueens, themRooks, themBishops);
 }
 
+
+int Engine::get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut)
+{
+    if (c == Color::WHITE) {
+        return get_legal_moves_fast_t<Color::WHITE>(b_unquiet_moves_only, b_check_mode, MovesOut);
+    } else {
+        return get_legal_moves_fast_t<Color::BLACK>(b_unquiet_moves_only, b_check_mode, MovesOut);
+    }
+}
+
 template<Color c>
 int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut) {
 
     psuedo_legal_moves.clear();
-    //assert(psuedo_legal_moves.capacity() == MAX_MOVES);
+    assert(psuedo_legal_moves.capacity() == MAX_MOVES);
 
     MovesOut.clear();
 
@@ -2671,7 +2694,9 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
         pinnedInfo = compute_pins_t<c>();
     }
 
-    n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c>(psuedo_legal_moves);
+    // The plan part B.
+    // b_unquiet_moves_only
+    n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c>(psuedo_legal_moves, b_unquiet_moves_only);
 
     if (!in_check_before_move) {
         for (const Move& move : psuedo_legal_moves) {
@@ -2775,20 +2800,20 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
 }
 
 // Explicit template instantiations
-template void Engine::add_pawn_moves_to_vector_t<Color::WHITE>(vector<Move>&);
-template void Engine::add_pawn_moves_to_vector_t<Color::BLACK>(vector<Move>&);
-template void Engine::add_knight_moves_to_vector_t<Color::WHITE>(vector<Move>&);
-template void Engine::add_knight_moves_to_vector_t<Color::BLACK>(vector<Move>&);
-template void Engine::add_bishop_moves_to_vector_t<Color::WHITE>(vector<Move>&);
-template void Engine::add_bishop_moves_to_vector_t<Color::BLACK>(vector<Move>&);
-template void Engine::add_rook_moves_to_vector_t<Color::WHITE>(vector<Move>&);
-template void Engine::add_rook_moves_to_vector_t<Color::BLACK>(vector<Move>&);
-template void Engine::add_queen_moves_to_vector_t<Color::WHITE>(vector<Move>&);
-template void Engine::add_queen_moves_to_vector_t<Color::BLACK>(vector<Move>&);
-template void Engine::add_king_moves_to_vector_t<Color::WHITE>(vector<Move>&);
-template void Engine::add_king_moves_to_vector_t<Color::BLACK>(vector<Move>&);
-template int Engine::get_psuedo_legal_moves_t<Color::WHITE>(vector<Move>&);
-template int Engine::get_psuedo_legal_moves_t<Color::BLACK>(vector<Move>&);
+template void Engine::add_pawn_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_pawn_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_knight_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_knight_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_bishop_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_bishop_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_rook_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_rook_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_queen_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_queen_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_king_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_king_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
+template int Engine::get_psuedo_legal_moves_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
+template int Engine::get_psuedo_legal_moves_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
 
 template bool Engine::is_king_in_check_t<Color::WHITE>();
 template bool Engine::is_king_in_check_t<Color::BLACK>();
