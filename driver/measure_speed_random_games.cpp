@@ -36,7 +36,8 @@ GameState play_game(Engine& engine, int& total_moves) {
     GameState result = engine.is_game_over();
 
     while (result == GameState::INPROGRESS) {
-        vector<Move> all_moves = engine.get_legal_moves();
+        vector<Move> all_moves; 
+        engine.get_legal_moves_fast(engine.game_board.turn, false, false, all_moves);
         // checking for draws manually
         if (all_moves.size() == 0) {
             result = GameState::DRAW;

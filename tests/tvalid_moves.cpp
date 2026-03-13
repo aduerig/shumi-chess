@@ -18,7 +18,8 @@ void recurse_moves_and_fill_fens(vector<string>& fen_holder, int depth, int max_
     if (depth > max_depth) {
         return;
     }
-    vector<ShumiChess::Move> legal_moves = engine.get_legal_moves();
+    vector<ShumiChess::Move> legal_moves;
+    engine.get_legal_moves_fast(engine.game_board.turn, false, false, legal_moves);
     for (ShumiChess::Move move : legal_moves) {
 
         // Get FEN
@@ -200,7 +201,8 @@ TEST_P(ValidMoves, PushPopFenValidation) {
     test_engine.reset_engine(GetParam());
 
     // get all legal moves
-    auto legal_moves = test_engine.get_legal_moves();
+    vector<Move> legal_moves;
+    test_engine.get_legal_moves_fast(test_engine.game_board.turn, false, false, legal_moves);
 
     for (const auto& move : legal_moves) {
         string before_fen = test_engine.game_board.to_fen();
