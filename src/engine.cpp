@@ -94,10 +94,9 @@ Engine::Engine() {
 
 }
 
-//TODO what is right way to handle popping past default state here?
-// NOTE: what is this function?? Why is it so different than the default ctr?
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
-    move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
+    reset_all_but_FEN();
+    ShumiChess::initialize_rays();
 }
 
 
