@@ -118,7 +118,6 @@ class Engine {
 
         void add_psuedo_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, ull, bool, bool);
 
-        vector<Move> get_legal_moves();
         template<Color c> int get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);
         int get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);       
        
