@@ -66,7 +66,8 @@ ShumiChess::Color last_mover;
 
 static PyObject*
 engine_communicator_get_legal_moves(PyObject* self, PyObject* args) {
-    vector<ShumiChess::Move> moves = python_engine->get_legal_moves();
+    vector<ShumiChess::Move> moves;
+    python_engine->get_legal_moves_fast(python_engine->game_board.turn, false, false, moves);
     last_moves = moves;
     last_mover = python_engine->game_board.turn;
     vector<string> moves_readable;
@@ -448,7 +449,8 @@ engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
 static PyObject*
 engine_communicator_evaluate(PyObject* self, PyObject* args) {
 
-    std::vector<ShumiChess::Move> legal_moves = minimax_ai->engine.get_legal_moves();
+    std::vector<ShumiChess::Move> legal_moves;
+    minimax_ai->engine.get_legal_moves_fast(minimax_ai->engine.game_board.turn, false, false, legal_moves);
     bool b_is_Quiet = !minimax_ai->engine.has_unquiet_move(legal_moves);
     
     //minimax_ai->is_debug = true;

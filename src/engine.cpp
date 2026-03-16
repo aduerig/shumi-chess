@@ -233,16 +233,8 @@ void Engine::reset_all_but_FEN()
 
     // Checks a bunch of things in the bitboards for validity. Only throws asserts if something wrong.
     game_board.validate_row_col_masks_h1_0();
-
 }
 
-vector<Move> Engine::get_legal_moves() {     // I am not called by recursion (get_legal_moves_fast_t() is)
-    vector<Move> MovesOut;
-    int iLegalMoves;    // I am not used
-    if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE>(false, false, MovesOut);
-    else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK>(false, false, MovesOut);
-    return MovesOut;
-}
 
 // Templated "tiny make/unmake" check test.
 // Mutates only the bitboards affected by the move, tests king safety, then restores.
@@ -464,8 +456,8 @@ static inline void process_pin_ray(
 // I am called only from python, when the game is over. I am very wasteful. as get_legal_moves() is very 
 // expensive
 GameState Engine::is_game_over() {
-    vector<Move> legal_moves = get_legal_moves();
-    return is_game_over(legal_moves.size());
+    int moves_found = get_legal_moves_fast(game_board.turn, false, false, psuedo_legal_moves);
+    return is_game_over(moves_found);
 }
 
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
@@ -2013,7 +2005,8 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
 void Engine::debug_SEE_for_all_captures(FILE* fp)
 {
     // All legal moves for the current side to move
-    std::vector<Move> moves = get_legal_moves();
+    vector<Move> moves;
+    get_legal_moves_fast(Color::BLACK, game_board.turn, false, moves);
 
     fprintf(fp, "ddebug_SEE_for_all_captures: %d\n", (int)moves.size());
 

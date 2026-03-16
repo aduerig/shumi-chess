@@ -2359,7 +2359,8 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
     assert(0);          // To ensure we never get here
 
     nodes_visited++;
-    vector<Move> moves = engine.get_legal_moves();
+    vector<Move> moves;
+    engine.get_legal_moves_fast(engine.game_board.turn, false, false, moves);
     GameState state = engine.is_game_over(moves.size());
     
     if (state == GameState::BLACKWIN) {
@@ -2456,7 +2457,8 @@ Move MinimaxAI::get_move(int depth) {
 
     Move move_chosen;
     double dMax_move_value = -DBL_MAX;
-    vector<Move> moves = engine.get_legal_moves();
+    vector<Move> moves;
+    engine.get_legal_moves_fast(engine.game_board.turn, false, false, moves);
     for (Move& m : moves) {
         assert(m.piece_type != Piece::NONE);
         if (m.color == Color::WHITE) engine.pushMove_t<Color::WHITE>(m);
