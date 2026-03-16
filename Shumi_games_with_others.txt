@@ -1,7 +1,23 @@
 
 
-WHITE: Fidelity Excellence level5     BLACK: Uncle Shumi version=113s -d8 -t2000
+WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s -d8 -t2000
     Result: BLACK wins: 
-    Summary. Black plays the Qside consistently, yet whites king side attacks go nowhere. AT the end, when
-        the game is over black promotes to a rook to show off. (a Queen promotion wins the same way)
+    Summary: Black plays the Qside consistently, increasing pressure, and whites king side attacks go nowhere. Black
+        breaks through on qside, and AT the end, when
+        the game end, black promotes to a rook to show off. (a Queen promotion wins the same way)
     PGN: 1. d4 c6 2. e4 d5 3. e5 e6 4. Nc3 Nd7 5. Nf3 Bb4 6. Bd2 Ne7 7. Bd3 c5 8. a3 Bxc3 9. Bxc3 Nc6 10. dxc5 Nxc5 11. O-O Bd7 12. Qe2 Na4 13. Qd2 Rc8 14. Rfe1 Nxc3 15. Qxc3 Qb6 16. Qd2 O-O 17. Ng5 h6 18. Nh7 Rfd8 19. c3 Na5 20. Qe2 Kh8 21. Qc2 Nb3 22. Rad1 Nc5 23. Rb1 Ba4 24. Qe2 Nxd3 25. Qxd3 d4 26. Qe4 Bb3 27. c4 d3 28. c5 Qc6 29. Ng5 hxg5 30. Qb4 Bc2 31. Ra1 d2 32. Red1 Bxd1 33. Rxd1 Qxc5 34. Qe4 Qc1 35. Qf3 Qxd1 36. Qxd1 Rc1 37. f4 Rxd1 38. Kf2 Rh1 39. fxg5 Rd3 40. h4 d1=R 41. g3 Rh2  -/+
+
+WHITE: Uncle Shumi version=113a -d8 -t2000      BLACK:  Fidelity Excellence level5
+    Result: draw?
+    Summary: White plays the opening foolishly, dropping a pawn for no reason, ignoring devlopment, and
+        eventually losing another pawn. But white comes back in middle game, winning back a pawn, and 
+        giving black horrible pawn structure. Pawn structure so bad, black loses another pawn. Now we are even
+        and white survives his terrible opening. Excellence then dies.
+    PGN: 
+
+WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s -d8 -t2000
+    Result: White wins
+    Summary: Black loses a piece early, getting only a pawn and wrecking some pawn structure. But black 
+        defends stubbornly, until excellence crashes.
+
+    PGN:

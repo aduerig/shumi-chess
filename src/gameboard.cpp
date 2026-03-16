@@ -2218,23 +2218,20 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
     }
     b_has_castled = bHasCastled_fake_t<c>();
 
-
-    // stupid asserts
-    // assert(Weights::HAS_CASTLED_WGHT == wghts.GetWeight(HAS_CASTLED));
-    // assert(Weights::CAN_CASTLE_WGHT == wghts.GetWeight(CAN_CASTLE));
-
     int cpWght = wghts.GetWeight(HAS_CASTLED);
 
-    // weight for how good the fortress is.
-    int nGuardPawns = count_guard_pawn_files_234_t<c>(PInfoIn);
-    if (nGuardPawns==2) cpWght = cpWght * 2 / 3;
-    if (nGuardPawns==1) cpWght = cpWght * 1 / 3;
-    if (nGuardPawns==0) cpWght = 0;
+    if (b_has_castled) {
+        // weight for how good the fortress is.
+        int nGuardPawns = count_guard_pawn_files_234_t<c>(PInfoIn);
+        if (nGuardPawns==2) cpWght = cpWght * 2 / 3;
+        if (nGuardPawns==1) cpWght = cpWght * 1 / 3;
+        if (nGuardPawns==0) cpWght = 0;
+    }
 
     // Can castle //////////////////////////////////////////////
     int cpWght2 = wghts.GetWeight(CAN_CASTLE);
 
-    int icode = (b_has_castled ?cpWght : 0) + i_can_castle *cpWght2;
+    int icode = (b_has_castled ? cpWght : 0) + i_can_castle*cpWght2;
 
     int final_cp;
 
@@ -2276,11 +2273,12 @@ int GameBoard::count_guard_pawn_files_234_t(const PInfo& PInfoIn) const
     int k_file    = king_sq & 7;
     int k_rank    = king_sq >> 3;
 
-    constexpr int homeRank = (c == Color::WHITE) ? 0 : 7;
+    constexpr int homeRank =   (c == Color::WHITE) ? 0 : 7;
+    constexpr int homeRankp1 = (c == Color::WHITE) ? 1 : 6;
 
     // If king is not on home rank, or not clearly on one side,
     // do not count any "guard pawn files".
-    if (k_rank != homeRank) {
+    if (k_rank != homeRank) && (k_rank != homeRankp1)  {
         return 0;
     }
 
