@@ -930,7 +930,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     double dcp_temp;
     int itemp1=0;
     int itemp2=0;
-    PawnFileInfo pawnFileInfo;
 
     
     //dcp_temp = engine.game_board.kings_far_apart(Color::WHITE);
@@ -945,9 +944,19 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     //itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
     //itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
 
-    vector<Move> some_moves;
-    some_moves.clear(); 
-    itemp1 = sizeof(Move);
+    // vector<Move> some_moves;
+    // some_moves.clear(); 
+    // itemp1 = sizeof(Move);
+
+    PawnFileInfo pawnFileInfo;
+
+
+    bool bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::WHITE>( pawnFileInfo.p[0]);
+    itemp1 = engine.game_board.count_guard_pawn_files_234_t<Color::WHITE>(pawnFileInfo.p[0]);
+
+    bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::BLACK>( pawnFileInfo.p[1]);
+    itemp2 = engine.game_board.count_guard_pawn_files_234_t<Color::BLACK>(pawnFileInfo.p[1]);
+    //int nGuardPawns = engine.game_board.count_guard_pawn_files_234_t<c>(pawnFileInfo);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -2161,11 +2170,12 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 //
 //  Resort moves in this order (they will later be searched in this order):
-//      0. move from the hash table hit (if any) 
-//      1. PV (prevous deepenings best).
-//      2. unquiet moves (captures/promotions, sorted by MVV-LVA, and "last square")
-//      3. killer moves (quiet, bubbled to the front of the "cutoff" quiet slice).
-//      4. remaining quiet moves.
+//      TT move              (move from the hash table hit (if any))
+//      PV move              (prevous deepenings best).
+//      captures/promotions  (unquiet moves (captures/promotions, sorted by MVV-LVA, and "last square")
+//      castling
+//      killer moves         (quiet, bubbled to the front of the "cutoff" quiet slice).
+//      remaining quiet moves
 //  Sorts moves in place.
 //
 void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut   // input/output
@@ -2245,6 +2255,19 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
             // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
             auto quiet_begin = it_split;
             auto quiet_end   = pMovesInOut->end();
+
+
+            // 2.5  Bubble castling moves to the front of the quiet region ---
+            for (auto it = quiet_begin; it != quiet_end; ++it)
+            {
+                const ShumiChess::Move& mv = *it;
+
+                if (mv.is_castle_move)
+                {
+                    std::rotate(quiet_begin, it, it + 1);
+                    ++quiet_begin;   // if a second castle move exists, it goes just after the first
+                }
+            }
 
             auto bring_front = [&](const ShumiChess::Move& km)
             {
@@ -2584,11 +2607,12 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     bool bOK;
     int icp_temp, icp_temp2;
 
-    icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase);
-    cp_score_position_temp += icp_temp;
-
     PawnFileInfo pawnFileInfo;
     bOK = engine.game_board.build_pawn_file_summary_fast_t<c>( pawnFileInfo.p[friendlyP]);
+
+    icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnFileInfo.p[friendlyP] );
+    cp_score_position_temp += icp_temp;
+
 
     if (bOK) {
         ull holes_bb = 0ULL;

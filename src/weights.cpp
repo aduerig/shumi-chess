@@ -1,6 +1,6 @@
 
 #include "weights.hpp"
-
+#include <cmath>
 
 Weights::Weights()
 {
@@ -38,3 +38,10 @@ Weights::Weights()
     aW[CENTER_OCCUPY_PIECES] = CENTER_OCCUPY_PIECES_WGHT;
     aW[DEVELOPMENT_OPENING]  = DEVELOPMENT_OPENING;
 }
+
+    void Weights::multiply_weights(double dMult)
+    {
+        for (int i = 0; i < LAST_VALUE; i++) {
+            aW[i] = (int)std::round(aW[i] * dMult);
+        }
+    }

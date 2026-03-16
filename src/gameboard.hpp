@@ -286,6 +286,8 @@ class GameBoard {
         template<Color c> int two_bishops_cp_t() const;
         template<Color c> int rook_connectiveness_cp_t() const;
         template<Color c> int rook_7th_rankness_cp_t();
+        template<Color c> int bishop_blocked_on_both_original_squares_cp_t();
+
 
         bool build_pawn_file_summary(Color c, PInfo& p);
         template<Color c> bool build_pawn_file_summary_fast_t(PInfo& p);
@@ -313,7 +315,6 @@ class GameBoard {
 
         template<Color c> int get_king_near_squares_t(int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
-        int sliders_and_knights_attacking_square(Color attacker_color, int sq);
         template<Color c> int sliders_and_knights_attacking_square2_t(int sq);
         template<Color c> int attackers_on_enemy_king_near_cp_t();
         int attackers_on_enemy_passed_pawns(Color attacker_color,
@@ -346,9 +347,11 @@ class GameBoard {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();
 
-        template<Color c> int get_castled_bonus_cp_t(int phase) const;
+        template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const;
         template<Color c> int get_material_for_color_t(int& cp_pawns_only_temp);
         template<Color c> bool bHasCastled_fake_t() const;
+
+        template<Color c> int count_guard_pawn_files_234_t(const PInfo& PInfoIn) const;
 
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);
@@ -485,6 +488,7 @@ class GameBoard {
         static constexpr int square_c8 = 61;
         static constexpr int square_b8 = 62;
         static constexpr int square_a8 = 63;
+
 
         // center squares
         static constexpr ull squares_e4_d4 = (1ull<<square_e4) | (1ull<<square_d4); 
