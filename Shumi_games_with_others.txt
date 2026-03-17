@@ -21,3 +21,16 @@ WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s 
         defends stubbornly, until excellence crashes.
 
     PGN:
+
+
+WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s -d8 -t2000
+    Result: black wins
+    Summary: Black stumbles in sicilian book. ets an truely awful position, but somehow survives. In a brutal 
+        endgame black finally prevails.
+    PGN: 1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e5 5. Nb5 Bc5 6. Be3 Bxe3 7. Nd6 Kf8 8. fxe3 Qg5 9. Qf3 Qh4 10. g3 Qe7 11. Qd1 Qg5 12. Qd5 Qxe3 13. Be2 Nh6 14. Nc3 Qd4 15. Rf1 f6 16. Rd1 Qxd5 17. Nxd5 Nf7 18. Nc7 Nxd6 19. Nxa8 Nxe4 20. c3 Ne7 21. Nc7 Nc6 22. Bc4 Nc5 23. Nb5 Na4 24. Rf2 Nb6 25. Bb3 Ke7 26. Nd6 Na5 27. Bf7 Rf8 28. b4 Nc6 29. Bb3 Kd8 30. h3 h5 31. Rdd2 Kc7 32. Bf7 Na4 33. Rf3 h4 34. gxh4 Rh8 35. Bb3 Nb6 36. h5 Rxh5 37. Ne8 Kb8 38. Nxg7 Rg5 39. Ne8 f5 40. Nd6 f4 41. Nxc8 Kxc8 42. Kf2 Kc7 43. Rd1 d6 44. h4 Rh5 45. Rh1 Nd7 46. Bf7 Rh7 47. Bg6 Rg7 48. h5 Nf6 49. Bc2 Ng4 50. Ke2 Nh6 51. Bg6 Ne7 52. Rfh3 Nhf5 53. Bxf5 Nxf5 54. h6 Rh7 55. Kf3 Kd7 56. R1h2 Ke6 57. c4 Ne3 58. c5 d5 59. Rh5 Kf6 60. Rd2 Ke6 61. a4 d4 62. Re2 Kd5 63. a5 a6 64. Rd2 Ke6 65. Rf2 Kd5 66. Re2 Nc4 67. Re1 Ke6 68. Ke4 Kf6 69. Rh3 Ne3 70. Reh1 Nf5 71. R1h2 Ng3 72. Kd3 Nf1 73. Rh1 Ne3 74. Rh5 Ng4 75. Kc4 Ne3 76. Kd3 Ng4 77. Kc4 Kg6 78. R5h4 Ne3 79. Kd3 Nf5 80. Rg1 Kf6 81. Rh5 Ng3 82. Rh2 Kg5 83. Re1 Kf5 84. Kc4 Kf6 85. Rh3 Rh8 86. h7 Nf5 87. Kd3 Ke6 88. Re2 Kd5 89. Rh5 Ne3 90. Rf2 Ke6 91. Rh6 Kf7 92. Rh3 Nd5 93. Rb2 Nf6 94. Re2 Ke6 95. Reh2 Kf7 96. Rh1 Ke6 97. Rh6 Kf7 98. R6h2 Ke6 99. Rh3 Kf7 100. Ke2 Kf8 101. Kf3 Kf7 102. R1h2 Ke6 103. Rh6 Kf7 104. R6h4 Ke6 105. Rh1 Kf5 106. Rh6 e4 107. Kg2 d3 108. Kf1 e3 109. R1h3 Ke5 110. Ke1 Ne4 111. R3h5 Kd4 112. Rh1 f3 113. Rd6 Nxd6 114. Rh6 Rxh7 115. Kd1 Rxh6 116. Kc1 Kc3 117. Kb1 Kb3 118. cxd6 Rh1  -/+
+
+
+
+
+
+1kb1N3/pp1p2p1/1nn2p2/4p2r/1P6/1BP2R1P/P2R4/4K3 w - - 2 38

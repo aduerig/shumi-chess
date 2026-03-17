@@ -952,11 +952,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
 
     bool bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::WHITE>( pawnFileInfo.p[0]);
-    itemp1 = engine.game_board.count_guard_pawn_files_234_t<Color::WHITE>(pawnFileInfo.p[0]);
+    itemp1 = engine.game_board.get_castled_bonus_cp_t<Color::WHITE>(GamePhase::OPENING, pawnFileInfo.p[0]);
 
     bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::BLACK>( pawnFileInfo.p[1]);
-    itemp2 = engine.game_board.count_guard_pawn_files_234_t<Color::BLACK>(pawnFileInfo.p[1]);
-    //int nGuardPawns = engine.game_board.count_guard_pawn_files_234_t<c>(pawnFileInfo);
+    itemp2 = engine.game_board.get_castled_bonus_cp_t<Color::BLACK>(GamePhase::OPENING, pawnFileInfo.p[1]);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 

@@ -2177,11 +2177,12 @@ bool GameBoard::bHasCastled_fake_t() const {
 
     constexpr int homeRank = (c == Color::WHITE) ? 0 : 7;
 
+    // king must be on back rank
     if (!(rank == homeRank && (file <= 1 || file >= 5))) return false;
 
+    // cannot lock the rook in on edge file (rook must)
     bool blocked = false;
-
-    if (file <= 1) {
+    if (file <= 1) {    // Q side castle
         for (int f = file - 1; f >= 0; --f) {
             int sq = rank * 8 + f;
             if (occupied & (1ULL << sq)) {
@@ -2189,7 +2190,7 @@ bool GameBoard::bHasCastled_fake_t() const {
                 break;
             }
         }
-    } else {
+    } else {            // K side castle
         for (int f = file + 1; f <= 7; ++f) {
             int sq = rank * 8 + f;
             if (occupied & (1ULL << sq)) {
@@ -2276,26 +2277,25 @@ int GameBoard::count_guard_pawn_files_234_t(const PInfo& PInfoIn) const
     constexpr int homeRank =   (c == Color::WHITE) ? 0 : 7;
     constexpr int homeRankp1 = (c == Color::WHITE) ? 1 : 6;
 
-    // If king is not on home rank, or not clearly on one side,
-    // do not count any "guard pawn files".
-    if (k_rank != homeRank) && (k_rank != homeRankp1)  {
+    // If king is not on home ranks, do not count any "guard pawn files".
+    if ((k_rank != homeRank) && (k_rank != homeRankp1))  {
         return 0;
     }
 
     int file0, file1, file2;
 
-    if (k_file <= 1) {
+    if (k_file >= 6) {          // king on a, or b file
         // Queenside: a,b,c
-        file0 = 0;
-        file1 = 1;
-        file2 = 2;
-    } else if (k_file >= 5) {
-        // Kingside: f,g,h
-        file0 = 5;
+        file0 = 7;
         file1 = 6;
-        file2 = 7;
+        file2 = 5;
+    } else if (k_file <= 2) {   // king on f,g, or h file
+        // Kingside: f,g,h
+        file0 = 2;
+        file1 = 1;
+        file2 = 0;
     } else {
-        // King not clearly on one side.
+        // King not clearly on one side or the other.
         return 0;
     }
 
@@ -2924,8 +2924,9 @@ int GameBoard::count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed
                 }
             }
 
+            // protected passed pawns more bonus
             if ((my_pawns & protect_mask) != 0ULL) {
-                base += 100;
+                base += wghts.GetWeight(PASSED_PAWN_CONNECTED);
             }
 
             bonus_cp += base;

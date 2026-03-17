@@ -35,6 +35,7 @@ enum WghtIndxs
     ATTACKERS_ON_KING,
     CENTER_OCCUPY_PIECES,
     DEVELOPMENT_OPENING,
+    PASSED_PAWN_CONNECTED,
     LAST_VALUE              // I must be last
 };
 
@@ -49,7 +50,7 @@ public:
     // has_castled bonus must be > can_castle privilege or it will never castle.
     // castling is not actual "castling". It means getting the king to the side (on back rank), without trapping a rook.
     static constexpr int HAS_CASTLED_WGHT = 135;
-    static constexpr int CAN_CASTLE_WGHT = 40;
+    static constexpr int CAN_CASTLE_WGHT = 55;
 
     // Isolated pawns.
     //      One count for each instance.
@@ -62,8 +63,8 @@ public:
     static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
 
     // Doubled pawns
-    static constexpr int DOUBLED_WGHT      = -25;           // One slam for each pawn more than one on a file
-    static constexpr int DOUBLED_ROOK_WGHT = -28;           // Same, but doubled pawn on rook file
+    static constexpr int DOUBLED_WGHT      = -24;           // One slam for each pawn more than one on a file
+    static constexpr int DOUBLED_ROOK_WGHT = -24;           // Same, but doubled pawn on rook file
     static constexpr int DOUBLED_OPEN_FILE_WGHT   = -20;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
@@ -78,6 +79,7 @@ public:
     //    6       200                 200    // 7th rank
     static constexpr int PASSED_PAWN_SLOPE_WGHT = 5;
     static constexpr int PASSED_PAWN_YINRCPT_WGHT = 20;
+    static constexpr int PASSED_PAWN_CONNECTED_WGHT = 80;
 
     // Pawn controlling center squares: (one per qualifiing pawn)
     static constexpr int PAWN_ON_CTR_DEF_WGHT = 24;     // center e4,d4 (white); and e5,d5, (black) "defensive" center squares
