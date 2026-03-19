@@ -2994,28 +2994,28 @@ int GameBoard::bishop_blocked_on_both_original_squares_cp_t()
         if ( (bishops & (1ULL << square_f1)) &&
              (pawns   & (1ULL << square_e2)) &&
              (pawns   & (1ULL << square_g2)) ) {
-            pointsOff += wghts.GetWeight(BISHOP_BLOCKED_ON_BOTH_ORIGINAL_SQUARES);
+            pointsOff += wghts.GetWeight(BISHOP_PATTERN);
         }
 
         // White queen bishop on c1 blocked by pawns on b2 and d2
         if ( (bishops & (1ULL << square_c1)) &&
              (pawns   & (1ULL << square_b2)) &&
              (pawns   & (1ULL << square_d2)) ) {
-            pointsOff += wghts.GetWeight(BISHOP_BLOCKED_ON_BOTH_ORIGINAL_SQUARES);
+            pointsOff += wghts.GetWeight(BISHOP_PATTERN);
         }
     } else {
         // Black king bishop on f8 blocked by pawns on e7 and g7
         if ( (bishops & (1ULL << square_f8)) &&
              (pawns   & (1ULL << square_e7)) &&
              (pawns   & (1ULL << square_g7)) ) {
-            pointsOff += wghts.GetWeight(BISHOP_BLOCKED_ON_BOTH_ORIGINAL_SQUARES);
+            pointsOff += wghts.GetWeight(BISHOP_PATTERN);
         }
 
         // Black queen bishop on c8 blocked by pawns on b7 and d7
         if ( (bishops & (1ULL << square_c8)) &&
              (pawns   & (1ULL << square_b7)) &&
              (pawns   & (1ULL << square_d7)) ) {
-            pointsOff += wghts.GetWeight(BISHOP_BLOCKED_ON_BOTH_ORIGINAL_SQUARES);
+            pointsOff += wghts.GetWeight(BISHOP_PATTERN);
         }
     }
 

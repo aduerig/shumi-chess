@@ -452,9 +452,11 @@ class GameBoard {
         static constexpr int square_b1 = 6;
         static constexpr int square_a1 = 7;
 
+        static constexpr int square_g2 = 9;
         static constexpr int square_f2 = 10;
         static constexpr int square_e2 = 11;
         static constexpr int square_d2 = 12;
+        static constexpr int square_b2 = 14;
 
         static constexpr int square_h3 = 16;   // e3 - 3
         static constexpr int square_g3 = 17;   // e3 - 2
@@ -476,9 +478,11 @@ class GameBoard {
         static constexpr int square_e6 = 43;   // e4 + 16
         static constexpr int square_d6 = 44;   // d4 + 16
 
+        static constexpr int square_g7 = 49;
         static constexpr int square_f7 = 50;
         static constexpr int square_e7 = 51;
         static constexpr int square_d7 = 52;
+        static constexpr int square_b7 = 54;
 
         static constexpr int square_h8 = 56;
         static constexpr int square_g8 = 57;
