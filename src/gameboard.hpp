@@ -35,7 +35,6 @@ inline bool operator==(const PInfo& a, const PInfo& b) {
 }
 
 
-
 struct PawnFileInfo {
     PInfo p[2];   // [0] friendly, [1] enemy
 };
