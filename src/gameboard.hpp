@@ -46,7 +46,7 @@ struct PawnFileInfo {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr int VOLUME_CONTROL = 0.6;
+constexpr double VOLUME_CONTROL = 0.6;
 
 class GameBoard {
     public:
