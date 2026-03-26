@@ -224,6 +224,7 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
         Features_mask &= ~_FEATURE_DELTA_PRUNE;
     #endif
 
+    excluded_root_moves.clear();
 
 }
 
@@ -338,7 +339,7 @@ bool MinimaxAI::no_queens_on_board() {
 }
 
 // material_cp must be average material (positive)
-int MinimaxAI::phaseOfGame(int material_cp_avg) {
+int MinimaxAI::phase_of_game(int material_cp_avg) {
 
     int nPhase = GamePhase::OPENING;
     assert(material_cp_avg>=0);
@@ -384,7 +385,7 @@ int MinimaxAI::phaseOfGame(int material_cp_avg) {
 }
 
 
-// Same as phaseOfGame(), but gets the material(s) by itself. For display only.
+// Same as phase_of_game(), but gets the material(s) by itself. For display only.
 int MinimaxAI::phase_of_game_full() {
     int cp_score_material_avg_local = 0;
     {
@@ -402,7 +403,7 @@ int MinimaxAI::phase_of_game_full() {
 
     cp_score_material_avg_local = cp_score_material_avg_local / 2;
 
-    int nPhase = phaseOfGame(cp_score_material_avg_local); 
+    int nPhase = phase_of_game(cp_score_material_avg_local); 
     return nPhase;
 }
 
@@ -1048,6 +1049,31 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             assert (n_legal_moves_found == legal_moves.size());
         }
     #endif
+
+
+    // MultiPV      // remove excluded (already analyzed) moves from the list ONLY AT ROOT
+    if (is_from_root) {
+        for (int i = (int)legal_moves.size() - 1; i >= 0; i--) {
+            bool bExclude = false;
+
+            for (int j = 0; j < (int)excluded_root_moves.size(); j++) {
+                if (legal_moves[i] == excluded_root_moves[j]) {
+                    bExclude = true;
+                    break;
+                }
+            }
+
+            if (bExclude) {
+                assert(0);
+                legal_moves.erase(legal_moves.begin() + i);
+            }
+
+            if (legal_moves.empty()) {
+                //return;    // this better not happen!
+            }
+        }
+    }
+
 
 
     nodes_visited++;
@@ -2190,14 +2216,18 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     const bool have_last = !engine.move_history.empty();
     const ull  last_to   = have_last ? engine.move_history.top().to : 0ULL;
 
-    //  The tiers: (top tiers are sorted earlier)
-    //      1. PV from the previous iteration (previous deepening’s best). 
-    //      2. Unquiet moves (captures/promotions, sorted by MVV-LVA).  Captures more importent than promotions.
-    //         If capture to the "from" square of last move, give it higher priority.
-    //      3. Killer moves (quiet, bubbled to the front of the "cutoff" quiet slice)
+    //  The sort, from top to bottom. Items 0 and 1 done always, the rest done if the unquiet sort is on.
+    //      0. Move from the hash table hit (if any).
+    //      1. PV from the previous iteration (previous deepening’s best).
+    //      2. Unquiet moves (captures and promotions). Captures receive MVV-LVA-based
+    //         ordering; non-capture promotions stay in the unquiet region but do not
+    //         get an MVV-LVA base score here.
+    //      2.5 Bubble castling moves to the front of the quiet region.
+    //      3. Killer moves (quiet, bubbled to the front of the remaining quiet region).
     //      4. Remaining quiet moves.
-    //
+
     if (Features_mask &_FEATURE_UNQUIET_SORT) {
+
         // --- 1. Partition unquiet moves (captures/promotions) to the front ---
         auto it_split = std::partition(
             pMovesInOut->begin(), pMovesInOut->end(),
@@ -2779,7 +2809,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     engine.material_centPawns = cp_score_material_all;
 
     assert(cp_score_material_avg >= 0);
-    int nPhase = phaseOfGame(cp_score_material_avg);
+    int nPhase = phase_of_game(cp_score_material_avg);
 
     int cp_score_position = 0;
     bool isOK;
