@@ -13,7 +13,10 @@
 #define MAX_QPLY  7        // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
 #define MAX_QPLY2 4        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
 
+
 namespace ShumiChess {
+
+////////////////////////////////////////////////////////////////////////////////////////
 
 struct PInfo {
     int file_count[8];          // Count of pawns on this file
@@ -40,6 +43,10 @@ struct PawnFileInfo {
 };
 #define friendlyP 0 
 #define enemyP    1
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+constexpr int VOLUME_CONTROL = 0.6;
 
 class GameBoard {
     public:

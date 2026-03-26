@@ -155,16 +155,18 @@ void Engine::reset_engine() {         // New game.
     // string aFEN = game_board.random_960_FEN_strict();
     // game_board = GameBoard(aFEN);
 
+    #define OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
+    #define DUTCH_OPENING  "rnbqkbnr/ppppp1pp/8/5p2/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2"
+    #define E4_E5_OPENING  "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+    #define E4_E5_OPENING2 "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 2"
 
-    //game_board = GameBoard("r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14");
+    //game_board = GameBoard(OPENING_FEN);
 
-    // This may be a bad FEN...
-    //game_board = GameBoard("r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14");
-
-    //game_board = GameBoard("r2q1rk1/1p2ppbp/N5p1/4N3/2n5/1P6/1B1P1PPP/R1R1Q1K1 b - - 0 16");
 
     game_board = GameBoard();
+
+    ///////////////////////////////////////////////////////////////////////////////////
 
     // Show board (debug only)
     // string out = utility::representation::gameboard_to_string(game_board);
@@ -445,13 +447,6 @@ static inline void process_pin_ray(
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-// Notes:
-//     TODO should this check for draws by internally calling get legal moves and caching that and 
-//      returning on the actual call?, very slow calling get_legal_moves again.
-// NOTE: I complely agree this is wastefull. But it is not called in the "main line", it is only called as a 
-// "python method". The one below this, is the one called in actual play.
-//
-
 //
 // I am called only from python, when the game is over. I am very wasteful. as get_legal_moves() is very 
 // expensive
@@ -2104,16 +2099,19 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull normal_attacks;
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
 
+        // "quiet" pawn moves.
         if (!unquiet_moves_only) {
 
             ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
             ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
 
+            // single square moves
             if (one_move_forward_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, one_move_forward_not_blocked, Piece::PAWN
                 , color, false, false
                 , 0ULL, false, false);
 
+            // double square moves
             ull is_doublable = single_pawn & pawn_starting_rank_mask;
             if (is_doublable) {
                 ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
@@ -2129,6 +2127,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             }
         }
 
+        // promotions
         ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
         ull promo_not_blocked = potential_promotion & ~all_pieces;
         if (promo_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
@@ -2136,6 +2135,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                 , color, false, true
                 , 0ULL, false, false);
 
+        // attacks
         ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
         ull attack_fright = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_right_col, 7);
 
@@ -2146,6 +2146,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
                     , 0ULL, false, false);
 
+        // enpassant
         ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
         if (enpassant_end_loc) {
             if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
@@ -2166,12 +2167,14 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
 
         int square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
         ull avail_attacks = tables::movegen::knight_attack_table[square];
-
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+
+        // capture moves
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
             , c, true, false
             , 0ULL, false, false);
 
+        // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
@@ -2192,12 +2195,14 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull all_pieces_but_self = all_pieces & ~single_rook;
         int square = utility::bit::bitboard_to_lowest_square_fast(single_rook);
         ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
-
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+
+        // capture moves
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
             , c, true, false
             , 0ULL, false, false);
 
+        // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
@@ -2216,14 +2221,17 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
         assert(single_bishop);
 
         ull all_pieces_but_self = all_pieces & ~single_bishop;
+
         int square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
-
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+
+        // capture moves        
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
             , c, true, false
             , 0ULL, false, false);
 
+        // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
@@ -2244,12 +2252,14 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
         ull all_pieces_but_self = all_pieces & ~single_queen;
         int square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
-
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
+
+        // capture moves
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
             , c, true, false
             , 0ULL, false, false);
 
+        // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
@@ -2265,17 +2275,20 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
     ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
 
+    // capture moves
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
     add_psuedo_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
         , c, true, false
         , 0ULL, false, false);
 
+    // quiet moves
     if (!unquiet_moves_only) {
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
         add_psuedo_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
             , c, false, false
             , 0ULL, false, false);
 
+        // castling
         #ifndef DEBUG_NO_CASTLING
 
             constexpr Color enemy_color = utility::representation::opposite_color_v<c>;

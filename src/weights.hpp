@@ -97,7 +97,7 @@ public:
     static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
 
-    static constexpr int DEVELOPMENT_OPENING = 15;      // Opening only.  Counts minor pieces, off their starting square.
+    static constexpr int DEVELOPMENT_OPENING = 28;      // Opening only.  Counts minor pieces, off their starting square.
 
     static constexpr int ROOK_CONNECTED_WGHT = 90;      // if any connected rook pair exists (one bonus only)
 

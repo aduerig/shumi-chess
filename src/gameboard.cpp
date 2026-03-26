@@ -59,7 +59,7 @@ namespace ShumiChess {
         initialize_pieces_on_square();
 
 
-        wghts.multiply_weights(0.6);
+        wghts.multiply_weights(VOLUME_CONTROL);
     }
 
 
@@ -156,7 +156,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     // Fills out the "chessboard" like view of the board
     initialize_pieces_on_square();
     
-    wghts.multiply_weights(0.6);
+    wghts.multiply_weights(VOLUME_CONTROL);
 
     // No multiple pieces on the same square.
     bool no_pieces_on_same_square = are_bit_boards_valid();
