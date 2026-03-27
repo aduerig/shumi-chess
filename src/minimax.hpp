@@ -190,7 +190,6 @@ public:
                                             , int qPlys
                                         );
 
-    int enemyKingSquare; 
 
     // Total of 4000 centipawns for each side.  Suppose minor pieces are all 300. 
     // Say two minor pieces traded. Then 4*300=1200, and 8000-1200=6800
@@ -198,7 +197,7 @@ public:
     // 0 - opening, 1- middle, 2- ending, 3 - ? extreme ending?
 
 
-    int phaseOfGame(int material_cp);
+    int phase_of_game(int material_cp);
     int phase_of_game_full();
 
     bool no_queens_on_board();
@@ -208,6 +207,9 @@ public:
     ShumiChess::Move get_move(int);
     ShumiChess::Move get_move();
     // end oLD CHESS engine
+
+
+    std::vector<ShumiChess::Move> excluded_root_moves;
 
     //bool is_debug = false;
     int nFarts = 0;

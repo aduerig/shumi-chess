@@ -93,7 +93,7 @@ inline ull bitshift_by_color_t(ull bitboard, int amount) {
 
 // This function does 2 things:
 //    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
-//    2. The lsb is zeroed on the input "bitboard"
+//    2. The LSB is zeroed on the input "bitboard"
 inline ull lsb_and_pop(ull& bitboard) {
     assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
@@ -125,7 +125,7 @@ inline ull square_to_bitboard(int square) {
 // Returns 64 if bitboard == 0? Maybe but ChatBot says no.
 // BUT for a "h1=0" system like this, this means scanning from h1 to a1, h2 to a2, and so on to a8.
 
-// I require that someone has screened for bitboard == 0
+// I require that someone has screened for bitboard == 0 beforehand.
 inline int bitboard_to_lowest_square_fast(ull bitboard) {  
     return __builtin_ctzll(bitboard);
 }

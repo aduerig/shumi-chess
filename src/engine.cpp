@@ -111,7 +111,7 @@ void Engine::reset_engine() {         // New game.
     //
     ///////////////////////////////////////////////////////////////////////
     //
-    // Debug only. You can override the gameboard setup with fen positions as in: (enter FEN here) FEN enter now. enter fen. FEN setup. Setup the FEN
+    // Debug only. You can override the gameboard setup with fen positions as in:  FEN setup. Setup the FEN
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");       // bad
     //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
     
@@ -154,6 +154,8 @@ void Engine::reset_engine() {         // New game.
     // 360 chess
     // string aFEN = game_board.random_960_FEN_strict();
     // game_board = GameBoard(aFEN);
+
+    // (enter FEN here) FEN enter now. enter fen.
 
     #define OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -2288,7 +2290,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             , c, false, false
             , 0ULL, false, false);
 
-        // castling
+        // castling, yes castling is quiet.
         #ifndef DEBUG_NO_CASTLING
 
             constexpr Color enemy_color = utility::representation::opposite_color_v<c>;
