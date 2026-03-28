@@ -679,7 +679,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
             break;   // Stop deepening, no more depths.
         }
 
-        // the beast
+        // the beast    (excluded_root_moves)
         ret_val = do_a_deepening(depth, elapsed_time, null_move);
 
         d_Return_score = get<0>(ret_val);
@@ -689,8 +689,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
             break;   // Stop deepening, no more depths.
         } else if (d_Return_score == ONLY_MOVE_SCORE) {
             // We stopped analysis because there was only one legal move. We just play that.
-            // Intersting, what should be the score here? Note: Could instead use the last deepeining?
-            // instead this code makes us use the score from the last move.
+            // Intersting, what should be the score here? 
             b_Forced = true;
             d_best_move_value = 0.0;
             best_move = get<1>(ret_val);        // this was the only legal move.
@@ -1749,25 +1748,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // if (nChars == EOF) assert(0);
             #endif
 
-            // Store score
-            //std::string temp_fen_now = engine.game_board.to_fen();
-            //move_scores_table[temp_fen_now][m] = d_score_value;
-
-            // record (move, score)
-            //move_and_scores_list.emplace_back(m, d_score_value);
-
-            // CAUTION! THIS IS BROKEN CODE. DO NOT TOUCH
-             // Note: this should be done as a real random choice. (random over the moves possible). 
-            // This dumb approach favors moves near the end of the list
-   
-            // #ifdef RANDOMIZING_EQUAL_MOVES
-            // Only randomize near-equal scores at the top level
-            //bool is_at_bottom_root = ((top_deepening - depth) == 0);    // (depth == maximum_deepening) && 
-            //bool is_at_end_of_the_line = false;
-            //assert (!is_at_bottom_root);
-
-            //if (is_at_end_of_the_line) cout << "spud";
-
+        
             //double delta_score = (is_at_end_of_the_line ? 0.1 : 0.0);
             double delta_score = 0.0;     // personalities
 

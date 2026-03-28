@@ -2739,8 +2739,6 @@ int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
         if (!left && !right) {
             int this_cp;
 
-            // stupid asserts
-            //assert(Weights::ISOLANI_ROOK_WGHT == wghts.GetWeight(ISOLANI_ROOK));
             if ((file==0)||(file==7)) {
                 this_cp = (k*wghts.GetWeight(ISOLANI_ROOK));
             } else {
@@ -2748,11 +2746,13 @@ int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
             }
 
             if (get_major_pieces(c)) {
+                // only one penalty for open file, even if multuple isolated pawns.
                 bool is_blocked;
                 int sq = pawnInfo.p[friendlyP].advancedSq[file];
                 if (sq != -1) {
+                    // if no pawns between isolani and queening square, penalize more
                     is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfo.p[enemyP].file_bb[file]);
-                    if (!is_blocked) this_cp *= (3/2);
+                    if (!is_blocked) this_cp += GetWeight(ISOLANI_OPEN_FILE);
                 }
             }
 
@@ -2861,7 +2861,7 @@ int GameBoard::count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) {
         int this_cp = extras * weight;
 
         if (pawnInfo.p[enemyP].file_count[file] == 0) {
-            this_cp += extras * wghts.GetWeight(DOUBLED_OPEN_FILE);
+            this_cp += (extras * wghts.GetWeight(DOUBLED_OPEN_FILE));
         }
 
         total += this_cp;
@@ -3287,19 +3287,15 @@ template int GameBoard::rook_7th_rankness_cp_t<Color::BLACK>();
 template bool GameBoard::build_pawn_file_summary_fast_t<Color::WHITE>(PInfo&);
 template bool GameBoard::build_pawn_file_summary_fast_t<Color::BLACK>(PInfo&);
 
-// any_piece_ahead_on_file_t
 template bool GameBoard::any_piece_ahead_on_file_t<Color::WHITE>(int, ull) const;
 template bool GameBoard::any_piece_ahead_on_file_t<Color::BLACK>(int, ull) const;
 
-// count_isolated_pawns_cp_t
 template int GameBoard::count_isolated_pawns_cp_t<Color::WHITE>(const PawnFileInfo&) const;
 template int GameBoard::count_isolated_pawns_cp_t<Color::BLACK>(const PawnFileInfo&) const;
 
-// count_pawn_holes_cp_t
 template int GameBoard::count_pawn_holes_cp_t<Color::WHITE>(const PawnFileInfo&, ull&);
 template int GameBoard::count_pawn_holes_cp_t<Color::BLACK>(const PawnFileInfo&, ull&);
 
-// count_knights_on_holes_cp_t
 template int GameBoard::count_knights_on_holes_cp_t<Color::WHITE>(ull);
 template int GameBoard::count_knights_on_holes_cp_t<Color::BLACK>(ull);
 
