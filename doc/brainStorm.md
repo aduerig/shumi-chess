@@ -1,30 +1,43 @@
 
-**some thoughts. None of these have been done yet**
-
-It irritates me that "depth" counts down, not up. I understand why, and i don't want to change it but "depth" indicates a value increasing in value with more analysis. This is just something to keep in mind. In my debug I use "level", as in: "level= top_level-depth" But these names are messed up.
-SOLVED: There is now depth, and nPly. Both are units of "ply", depth is more complex, started at 1 then increases for each iteration of iterive deepeing. BUT decreased with every node down in analysis. Depth can never go to zero or below.
 
 I understand that using bitmap boards (in GameSetup.hpp) may interfere with the tests. But from a chess player's point of view, sometimes bitboards, sometimes FENs are preferable. So far, having a "load FEN" button, and allowing safe bitboard overrides (of the initial position) are both useful and fine.
-SOLVED: Bug fixed that allowed illegal bitboards is solved. No reason not to keep both inut methods now. I prefer FENS now anyway.
+SOLVED: Bug fixed that allowed illegal bitboards is solved. No reason not to keep both inut methods now. I prefer FENS now anyway. SO this should be fixed.
 
-Here is a related point. In reality a chess player spends more time in "complex" positions. In the first order, complexity is simply the total number of moves (FOR BOTH SIDES). This would be fine for now. It would play a lot better if it spent more time in positions, in ratio to the total number of moves (for both sides), at the starting position. This is what human chessplayers do.
+Related: Debug why FEN creation to OPENING_FEN fails tests.
+
+In reality a chess player spends more time in "complex" positions. In the first order, complexity is simply the total number of moves (FOR BOTH SIDES). This would be fine for now. It would play a lot better if it spent more time in positions, in ratio to the total number of moves (for both sides), at the starting position. This is what human chessplayers do.
 SOLVED: There are far far more sophisticated ways to do this, see bug list.
 
 
+Castling needs refinements:
+   1. "5"s role in guard pawns (f,c, pawns only 1/5, a,b,g,h file 2/5). This may encourage guard pawn (f,c)movement.
+   2. Account for guard pawns, in castle priviledge. Be careful, this may suppress guard pawn moves too much.
+   3. Castling when king on 2cnd rank (but behind guards?). This may encourage guard pawn movement. This may subvert the whole castling motivation. 
+   4. (DONE) Castling privledge shoultn't be 1/2 but 2/3 if one privledge still there. This may encourage guard pawn movement.
 
--------------------------------------------------------------------------------------------
+Currently, we obtain moves by piece. But later we sort the captures up front, isn't it faster to generate captures first, to avoid the sort? Yes and no, the generation algorithm is very effecient and would be comprimised in speed, by forcing captures first, then quiets. So routines like "add_knight_moves_to_vector_t()" would have to be called twice not once, like now. But maybe instead you maintain two lists, captures and quiet moves, and only call the routines once, then glue them toegather at the end. Now when this sort happens, sort_moves_for_search(), we can glue toegather four lists:
+   1. TT move      (only one move)
+   2. PV move      (only one move)
+   3. Captures     (many moves)
+   4. Quiet moves  (many moves)
+But a problem here, is that both lists: captures, and quiets, are sorted for other reasons. For what reasons?
+   1. Captures  (sorted by SEE)
+   2. Quiets    (killer moves bubbled up)
 
-add_move_to_vector() must take an argument, and an "if" to discard anything but captures and promotions.
+Note that sort_moves_for_search() is not called in qsearch. However of course we do move generation in qsearch also. SO we have to look at this, here again we would have two lists. In qsearch we call: sort_unquiet_moves_qsearch(). This has the potential of saving a lot of time in qsearch. Now there is no reduction (other than removing SEE bad captures).
+   1. Captures in quissence (MVV-LVA  used to sort them. SEE used to reject some captures). 
+      Also Recapture bias, 
+Note the Quiets in quissence, were not generated.
+I note that we definitly would save an if statment or two (In a for loop) by this trnasition
 
-add_move_to_vector() is ONLY called from the the family of routines: add_knight_moves_to_vector_t(). 
+The build_pawn_file_summary_fast() is too slow. Full Intialization may not be needed. It may not be needed (at least fully) on enemy pawns. Maybe it should be managed incremently, although than that gives work to the push/pop to maintain it. It only needs updating if a pawn move, pawn capture, or promotion. 
 
-the family of routines: add_knight_moves_to_vector_t(), are called ONLY from get_psuedo_legal_moves_t().
+Explore "magic bitboards"
+// !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, 
 
-get_psuedo_legal_moves_t()  ONLY called by get_legal_moves_fast_t()
 
-get_legal_moves_fast_t() is called by:
-    get_legal_moves
-    move_into_string_full
-    recursive_negamax
+Explore use SEE in regular search
 
-the only one we care about is recursive_negamax(). The others "pass in" a flag of "false" for b_unquiet_moves_only. For recursive_negamax(), we pass in (depth==0).
+Explore possibility of cloning "recursive_negamax", one for qsearch and one for regular search. Would this save time? You removee an if internally (if depth==0), but add one in the call? Maybe. This can only
+result in a little improvmenet, but is it worth the doubling on common code confusion.
+

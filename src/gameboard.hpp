@@ -335,6 +335,8 @@ class GameBoard {
         double get_board_distance(int x1, int y1, int x2, int y2);
         //int get_board_distance_100(int x1, int y1, int x2, int y2) const;
         template<Color c> double kings_close_toegather_cp_t();
+        template<Color c> double king_centerness_cp_t();
+        
         template<Color c> double kings_far_apart_t();
         int king_center_manhattan_dist(Color c);
         template<Color c> int is_knight_on_edge_cp_t();
@@ -355,9 +357,9 @@ class GameBoard {
 
         template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const;
         template<Color c> int get_material_for_color_t(int& cp_pawns_only_temp);
-        template<Color c> bool bHasCastled_fake_t() const;
+        template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
 
-        template<Color c> int count_guard_pawn_files_234_t(const PInfo& PInfoIn) const;
+        template<Color c> int count_guard_pawn_files_23_t(const PInfo& PInfoIn, int k_file) const;
 
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);

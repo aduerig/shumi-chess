@@ -136,7 +136,7 @@ inline int bitboard_to_lowest_square(ull bitboard) {
 }
 // Im used for debugging only
 inline int bitboard_to_lowest_square_safe(ull bitboard) {  
-    assert(bitboard != 0);
+    assert(bitboard != 0);                      // __builtin_ctzll(0) is undefined
     return __builtin_ctzll(bitboard);
 }
 
@@ -152,8 +152,10 @@ inline int bitboard_to_highest_square(ull bitboard) {
     if (bitboard == 0ULL) { return 64; }        // __builtin_clzll(0) is undefined
     return 63 - __builtin_clzll(bitboard);
 }
+
+// I require that someone has screened for bitboard == 0 beforehand.
 inline int bitboard_to_highest_square_fast(ull bitboard) {
-    return 63 - __builtin_clzll(bitboard);
+    return 63 - __builtin_clzll(bitboard);   // __builtin_clzll(0) is undefined
 }
 
 

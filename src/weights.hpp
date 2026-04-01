@@ -37,6 +37,7 @@ enum WghtIndxs
     DEVELOPMENT_OPENING,
     PASSED_PAWN_CONNECTED,
     ISOLANI_OPEN_FILE,
+    KING_CENTER_LATE,
     LAST_VALUE              // I must be last
 };
 
@@ -51,7 +52,7 @@ public:
     // has_castled bonus must be > can_castle privilege or it will never castle.
     // castling is not actual "castling". It means getting the king to the side (on back rank), without trapping a rook.
     static constexpr int HAS_CASTLED_WGHT = 135;
-    static constexpr int CAN_CASTLE_WGHT = 55;
+    static constexpr int CAN_CASTLE_WGHT = 47;
 
     // Isolated pawns.
     //      One count for each instance.
@@ -66,9 +67,9 @@ public:
     static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
 
     // Doubled pawns
-    static constexpr int DOUBLED_WGHT      = -24;           // One slam for each pawn more than one on a file
-    static constexpr int DOUBLED_ROOK_WGHT = -24;           // Same, but doubled pawn on rook file
-    static constexpr int DOUBLED_OPEN_FILE_WGHT   = -20;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
+    static constexpr int DOUBLED_WGHT      = -20;           // One slam for each pawn more than one on a file
+    static constexpr int DOUBLED_ROOK_WGHT = -20;           // Same, but doubled pawn on rook file
+    static constexpr int DOUBLED_OPEN_FILE_WGHT   = -18;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
     // base = PASSED_PAWN_SLOPE_WGHT*adv*adv + PASSED_PAWN_YINRCPT_WGHT;
@@ -90,17 +91,17 @@ public:
     static constexpr int PAWN_ON_ADV_CTR_WGHT = 21;     // "advanced center" e6,d6 (White); or e3,d3 (Black)
     static constexpr int PAWN_ON_ADV_FLK_WGHT = 9;      // "advanced flank" c4,f4 (black); c5,f5 (White)
 
-    static constexpr int KNIGHT_ON_CTR_WGHT = 15;  // Knight controlling center squares (per square)
-    static constexpr int BISHOP_ON_CTR_WGHT = 19;  // Bishop controlling center squares (per square)
+    static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
+    static constexpr int BISHOP_ON_CTR_WGHT = 19;  // Bishop controlling center squares (per square) (here we can look through other pieces)
 
-    static constexpr int TWO_BISHOPS_WGHT = 18;    // 2 or more bishops (only one bonus per side)
+    static constexpr int TWO_BISHOPS_WGHT = 19;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
     static constexpr int QUEEN_OUT_EARLY_WGHT = -50;    // for center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
 
-    static constexpr int DEVELOPMENT_OPENING_WGHT = 13;      // Opening only.  Counts minor pieces, off their starting square.
+    static constexpr int DEVELOPMENT_OPENING_WGHT = 12;      // Opening only.  Counts minor pieces, off their starting square.
 
     static constexpr int ROOK_CONNECTED_WGHT = 90;      // if any connected rook pair exists (one bonus only)
 
@@ -114,6 +115,8 @@ public:
     static constexpr int KNIGHT_ON_EDGE_WGHT = -10;     // knight on edge penatly (doubled if knight in corner)
 
     static constexpr int KING_EDGE_WGHT = 40;              // Only in ending, to force enemy king to edge
+
+    static constexpr int KING_CENTER_LATE_WGHT = 15;       // Only in ending, 
 
     static constexpr int KINGS_CLOSE_TOGETHER_WGHT = 30;   // Only in ending, to force enemy king to edge
 

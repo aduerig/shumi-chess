@@ -885,7 +885,8 @@ try:
 
             # once the game has really started (move > 2), erase this text.
             if move_number > 2:
-                game_over_text.setText("")
+                phase_text = engine_communicator.get_phase();
+                game_over_text.setText(phase_text)
 
             current_turn_text.setText(turn_text_values[player_index])
             curr_game_text.setText('Game {}'.format(curr_game))

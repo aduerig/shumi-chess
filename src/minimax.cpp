@@ -73,7 +73,7 @@ using namespace utility::bit;
 
 //#define DEBUGGING_KILLER_MOVES 
 
-bool global_debug_flag = 0;
+bool global_debug_flag = false;
 
 #ifdef _DEBUGGING_TO_FILE   // Data used for debug
     FILE *fpDebug = NULL;
@@ -341,16 +341,41 @@ bool MinimaxAI::no_queens_on_board() {
 // material_cp must be average material (positive)
 int MinimaxAI::phase_of_game(int material_cp_avg) {
 
+    int king_sq;
+    int k_file;
+    int k_rank;
+    ull king_bb;
+
     int nPhase = GamePhase::OPENING;
     assert(material_cp_avg>=0);
 
-    bool bWhiteCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::WHITE>();
-    bool bBlackCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::BLACK>();
+
+    // white castling
+    king_bb = engine.game_board.get_pieces(ShumiChess::Color::WHITE, Piece::KING);
+    if (!king_bb) {
+        assert(0);      // has to be a king!
+        return 0;
+    }
+    king_sq = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+    k_file  = king_sq & 7;
+    k_rank  = king_sq >> 3;
+    bool bWhiteCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::WHITE>(k_rank, k_file);
+
+    // black castling
+    king_bb = engine.game_board.get_pieces(ShumiChess::Color::BLACK, Piece::KING);
+    if (!king_bb) {
+        assert(0);      // has to be a king!
+        return 0;
+    }
+    king_sq = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+    k_file  = king_sq & 7;
+    k_rank  = king_sq >> 3;
+    bool bBlackCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::BLACK>(k_rank, k_file);
+
 
     //
     // Each side has MAX_CP_PER_SIDE centipawns at start. 
     //
-    //int lost_so_far = (MAX_CP_PER_SIDE - material_cp_avg)/100;  // Note: should I be rounded instead of truncated?
     int lost_so_far = (MAX_CP_PER_SIDE - material_cp_avg + 50) / 100;  // round to nearest pawn
 
  
@@ -360,12 +385,13 @@ int MinimaxAI::phase_of_game(int material_cp_avg) {
         //assert(0);
     }
 
-    // So 6 down is 2 pieces (per side). Or one piece and 3 pawns.
+    // So 6 down is 2 pieces (per side). Or one piece and 3 pawns.  40 is all pieces.
+    // 
     if      (lost_so_far < 5)  nPhase = GamePhase::OPENING;
-    else if (lost_so_far < 10) nPhase = GamePhase::MIDDLE_EARLY;
+    else if (lost_so_far < 8)  nPhase = GamePhase::MIDDLE_EARLY;
     else if (lost_so_far < 14) nPhase = GamePhase::MIDDLE;
-    else if (lost_so_far < 29) nPhase = GamePhase::ENDGAME;
-    else                       nPhase = GamePhase::ENDGAME_LATE;
+    else if (lost_so_far < 30) nPhase = GamePhase::ENDGAME;
+    else                       nPhase = GamePhase::ENDGAME_LATE; // only 10 points left
 
     bool b_both_castled = (bWhiteCstled && bBlackCstled);
     bool b_either_castled = (bWhiteCstled || bBlackCstled);
@@ -651,6 +677,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         killer2[ii] = {};
     }
 
+
+    ////////// loop over all "deepenings" /////////////////////////////////////////////////////////////////////////
+
+
     // Start each search with an empty root-move list for move randomization.
     MovesFromRoot.clear();
 
@@ -731,17 +761,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
             cout << " Best: " << engine.move_string;
         #endif
 
-        // //
-        // //  If diff_s < 0  → now is before requested_end_time (time remaining).
-        // //  If diff_s == 0 → exactly at the requested end time.
-        // //  If diff_s > 0  → now is after requested_end_time (you’ve gone over).
-        // now_s = (long long)chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now().time_since_epoch()).count();
-        // end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
-        // diff_s = now_s - end_s;
-
-        // // Elapsed time for all deepenings up to now (milliseconds)
-        // elapsed_time = now_s - (ull)chrono::duration_cast<chrono::milliseconds>(start_time.time_since_epoch()).count();
-
 
         auto now_time = chrono::high_resolution_clock::now();
 
@@ -767,6 +786,9 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
 
     } while (!bThinkingOver);
+
+
+    ////////// done with move production. Now do displays /////////////////////////////////////////////////////////////////////////
 
     //cout << endl << " Deep end " << depth << "          msec=" << std::setw(6) << elapsed_time << ' ';
 
@@ -821,7 +843,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         // }
     }
     MovesFromRoot.clear();
-
 
 
     // Convert to absolute score
@@ -895,9 +916,14 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
             << "%)\n\n";
     #endif
 
-    //engine.gamePGN.add(best_move, engine);
+    int iPhase = phase_of_game_full();
+    char szTemp[128];
+    const char* pszPhase = &szTemp[0];
+    pszPhase = str_from_GamePhase(iPhase);
+    engine.game_phase = iPhase;
 
-    /////////////////////////////////////////////////////////////////////////////////
+    
+    ////////// done with "main" move displays /////////////////////////////////////////////////////////////////////////
     //
     // Now done with making, and measuring and displaying the computer move. Ready for exit BUT
     // Debug only  playground   sandbox for testing evaluation functions
@@ -905,7 +931,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     bool isOK;
     double centerness;
 
-    int itemp, iNearSquares, iPhase;
+    int itemp, iNearSquares;
     int king_near_squares_out[9];
     ull utemp, utemp1, utemp2;
     double dTemp, dtemp1, dtemp2;
@@ -914,14 +940,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     
     isOK = false;
 
-    iPhase = phase_of_game_full();
-    char szTemp[128];
-    const char* pszPhase = &szTemp[0];
-    pszPhase = str_from_GamePhase(iPhase);
-
-    //isOK = engine.game_board.isReversableMove(best_move);
-
-    global_debug_flag = true;
 
     // test harness for testing isolated/doubled/passed pawns
     ull passed_pawns;
@@ -931,31 +949,20 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     int itemp1=0;
     int itemp2=0;
 
-    
-    //dcp_temp = engine.game_board.kings_far_apart(Color::WHITE);
-    //double dcp_temp = engine.game_board.kings_close_toegather_cp(Color::WHITE);
-    //itemp1 = (int)dcp_temp;
-
-    //dcp_temp = engine.game_board.kings_far_apart(Color::BLACK);
-    //double dcp_temp = engine.game_board.kings_close_toegather_cp(Color::WHITE);
-    //itemp2 = (int)dcp_temp;
-
-    //itemp2 = engine.game_board.king_center_manhattan_dist(Color::WHITE);
-    //itemp1 = engine.game_board.queenOnCenterSquare_cp(Color::WHITE);
-    //itemp2 = engine.game_board.queenOnCenterSquare_cp(Color::BLACK);
-
-    // vector<Move> some_moves;
-    // some_moves.clear(); 
-    // itemp1 = sizeof(Move);
-
     PawnFileInfo pawnFileInfo;
 
 
+global_debug_flag=false;
+
+    
     bool bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::WHITE>( pawnFileInfo.p[0]);
     itemp1 = engine.game_board.get_castled_bonus_cp_t<Color::WHITE>(GamePhase::OPENING, pawnFileInfo.p[0]);
 
     bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::BLACK>( pawnFileInfo.p[1]);
     itemp2 = engine.game_board.get_castled_bonus_cp_t<Color::BLACK>(GamePhase::OPENING, pawnFileInfo.p[1]);
+
+global_debug_flag = false;
+
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -1277,7 +1284,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     if (first_node_in_deepening) {
         // Change 3: legal_moves needs a size() that discounts "zero moves".
         if (legal_moves.size() == 1) {
-            cout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
+            //cout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
 
             #ifdef _DEBUGGING_TO_FILE1
                 // Show board
@@ -1391,16 +1398,16 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         // memoization at leaf
         if (Features_mask & _FEATURE_TT) {
 
-                // Salt the entry
-                unsigned mode  = salt_the_TT(b_is_Quiet);
+            // Salt the entry
+            unsigned mode  = salt_the_TT(b_is_Quiet);
 
-                uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
+            uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
 
-                 // Store this position away into the TT
-                TTEntry &slot = TTable[evalKey];
-                slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
-                slot.movee    = the_best_move;   // or bestMove, etc.
-                slot.depth    = top_deepening;
+                // Store this position away into the TT
+            TTEntry &slot = TTable[evalKey];
+            slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
+            slot.movee    = the_best_move;   // or bestMove, etc.
+            slot.depth    = top_deepening;
 
         }
 
@@ -1415,8 +1422,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         } else {
 
             // Obtain moves to use in the limited search. (Quiescence)
-            // Change 6: reduce_to_unquiet_moves_MVV_LVA needs to discount "zero moves".
-            engine.reduce_to_unquiet_moves_MVV_LVA(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
+            // Change 6: sort_unquiet_moves_qsearch needs to discount "zero moves".
+            engine.sort_unquiet_moves_qsearch(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
 
             vector<Move>& unquiet_moves = engine.all_unquiet_moves[nPlys];
 
@@ -2188,7 +2195,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
                             , int depth, int nPlys, bool is_top_of_deepening)
 {
     assert(pMovesInOut);
-    assert(depth>0);
+    assert(depth>0);            // This routine should never be called in qsearch
 
     if (pMovesInOut->empty()) {
         return;
@@ -2728,6 +2735,13 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, bool noMajorPiecesFrien
 
     if (nPhase == GamePhase::ENDGAME_LATE) {
     }
+
+    // King to center in end
+    if (nPhase >= GamePhase::ENDGAME) {
+        icp_temp = engine.game_board.king_centerness_cp_t<c>();
+        cp_score_position_temp += icp_temp;       
+    }
+
 
     if (noMajorPiecesEnemy) {
         dcp_temp = engine.game_board.kings_close_toegather_cp_t<c>();

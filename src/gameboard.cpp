@@ -560,6 +560,8 @@ std::string GameBoard::sqToString(int f, int r) const
     return std::string{file, rank};
 }
 
+
+// ---------- build_pawn_file_summary_fast_t ----------
 //
 // This summarizes where our pawns are by file, without mutating any bitboards.
 //
@@ -579,6 +581,43 @@ std::string GameBoard::sqToString(int f, int r) const
 //   true  if the side has at least one pawn
 //   false if the side has no pawns (caller can skip pawn-structure work).
 //
+template<Color c>
+bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
+{
+    for (int i = 0; i < 8; ++i)
+    {
+        pinfo.file_count[i] = 0;
+        pinfo.file_bb[i] = 0ULL;
+        pinfo.advancedSq[i] = -1;
+        pinfo.rearSq[i] = -1;
+    }
+    pinfo.files_present = 0;
+
+    const ull Pawns = get_pieces_template<Piece::PAWN, c>();
+    if (!Pawns) return false;
+
+    for (int f = 0; f < 8; ++f) {
+        const ull bb = (Pawns & col_masksHA[f]);
+        pinfo.file_bb[f] = bb;
+
+        if (!bb) continue;
+
+        pinfo.files_present |= (1u << f);
+        pinfo.file_count[f] = bits_in(bb);
+
+        if constexpr (c == Color::WHITE) {
+            pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square_fast(bb);
+            pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square_fast(bb);
+        } else {
+            pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square_fast(bb);
+            pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square_fast(bb);
+        }
+    }
+
+    return true;
+}
+
+
 bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
     // Initialize structure elements
@@ -737,6 +776,8 @@ void GameBoard::validate_row_col_masks_h1_0()
 
 // 0 = center, 3 = edge
 int GameBoard::piece_edgeness(ull kbb) {   
+
+    assert(kbb>0);
     int sq = utility::bit::lsb_and_pop_to_square(kbb);  // 0..63
 
     int r = sq >> 3;              // 0..7
@@ -779,7 +820,7 @@ int GameBoard::center_closeness_bonus(Color c)
 
 int GameBoard::kings_in_opposition(Color color)
 {
-    assert(white_king && black_king);
+    assert(white_king && black_king);          // Must be kings on board
 
     ull wk_temp = white_king;
     ull bk_temp = black_king;
@@ -2163,42 +2204,49 @@ int GameBoard::SEE_recursive(Color stm,
 
 // ---------- bHasCastled_fake_t ----------
 template<Color c>
-bool GameBoard::bHasCastled_fake_t() const {
-    ull occupied = 0;
-    ull rooks_bb = get_pieces_template<Piece::ROOK, c>();
-    occupied |= rooks_bb;
+bool GameBoard::bHasCastled_fake_t(int k_rank, int k_file) const {
+ 
+    // king must be on back ranks to be castled.
+    constexpr int homeRank   = (c == Color::WHITE) ? ROW_1 : ROW_8;
+    //constexpr int homeRankp1 = (c == Color::WHITE) ? ROW_2 : ROW_7;
+    //if ( (k_rank != homeRank) && (k_rank != homeRankp1) ) return false;
+    if (k_rank != homeRank) return false;
 
-    ull king_bb = get_pieces_template<Piece::KING, c>();
-    if (!king_bb) return false;
+    // If king still in "center", then you are not castled.
+    if ((k_file > COL_G) && (k_file < COL_C)) return false;  // king cannot be on f,e,d files 
 
-    int king_sq = utility::bit::bitboard_to_lowest_square_safe(king_bb);
-    int file    = king_sq & 7;
-    int rank    = king_sq >> 3;
 
-    constexpr int homeRank = (c == Color::WHITE) ? 0 : 7;
 
-    // king must be on back rank
-    if (!(rank == homeRank && (file <= 1 || file >= 5))) return false;
+    ull occupied = get_pieces_template<Piece::ROOK, c>();
 
-    // cannot lock the rook in on edge file (rook must)
+    // Cannot lock the rook in on edge file.
+    // Scan from the king toward the nearest edge along its rank.
+    // If a rook is found between the king and that edge, mark as blocked.
+    // This means the rook would be trapped behind the king on that side.
     bool blocked = false;
-    if (file <= 1) {    // Q side castle
-        for (int f = file - 1; f >= 0; --f) {
-            int sq = rank * 8 + f;
+    if (k_file <= COL_G) {      // K side castle
+        for (int f = k_file - 1; f >= 0; --f) {
+            int sq = k_rank * 8 + f;
             if (occupied & (1ULL << sq)) {
                 blocked = true;
                 break;
             }
         }
-    } else {            // K side castle
-        for (int f = file + 1; f <= 7; ++f) {
-            int sq = rank * 8 + f;
+    } else {                    // Q side castle
+        for (int f = k_file + 1; f <= 7; ++f) {
+            int sq = k_rank * 8 + f;
             if (occupied & (1ULL << sq)) {
                 blocked = true;
                 break;
             }
         }
     }
+
+
+    if (global_debug_flag) {
+        printf ("%d %d bHasCastled_fake_t %d %d\n", c, blocked, k_rank, k_file);
+    }
+
 
     return !blocked;
 }
@@ -2206,33 +2254,80 @@ bool GameBoard::bHasCastled_fake_t() const {
 // ---------- get_castled_bonus_cp_t ----------
 template<Color c>
 int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
-    int i_can_castle = 0;
+
+    int i_can_castleNumer = 0;
+    int i_can_castleDenom = 0;
+
     bool b_has_castled = false;
 
-    // Has castled //////////////////////////////////////////////
-    if constexpr (c == Color::WHITE) {
-        i_can_castle += (white_castle_rights & CASTLE_KING)  ? 1 : 0;
-        i_can_castle += (white_castle_rights & CASTLE_QUEEN) ? 1 : 0;
-    } else {
-        i_can_castle += (black_castle_rights & CASTLE_KING)  ? 1 : 0;
-        i_can_castle += (black_castle_rights & CASTLE_QUEEN) ? 1 : 0;
+
+    ull king_bb = get_pieces_template<Piece::KING, c>();
+    if (!king_bb) {
+        assert(0);      // has to be a king!
+        return 0;
     }
-    b_has_castled = bHasCastled_fake_t<c>();
+    const int king_sq = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+    const int k_file  = king_sq & 7;
+    const int k_rank  = king_sq >> 3;
+
+
+    // Has castled //////////////////////////////////////////////
+
+    b_has_castled = bHasCastled_fake_t<c>(k_rank, k_file);
+
+
 
     int cpWght = wghts.GetWeight(HAS_CASTLED);
 
     if (b_has_castled) {
         // weight for how good the fortress is.
-        int nGuardPawns = count_guard_pawn_files_234_t<c>(PInfoIn);
-        if (nGuardPawns==2) cpWght = cpWght * 2 / 3;
-        if (nGuardPawns==1) cpWght = cpWght * 1 / 3;
-        if (nGuardPawns==0) cpWght = 0;
+
+        constexpr int homeRank   = (c == Color::WHITE) ? ROW_1 : ROW_8;
+        constexpr int homeRankp1 = (c == Color::WHITE) ? ROW_2 : ROW_7;
+
+        // If king is not on home rank or one step off it, do not count guard pawns.
+        if ((k_rank != homeRank) && (k_rank != homeRankp1)) {
+            return 0;
+        }
+
+        // Take guard files into account
+        int nGuardPawns = count_guard_pawn_files_23_t<c>(PInfoIn, k_file);
+
+        if (global_debug_flag) {
+            printf ("%d count_guard_pawn_files_23_t %d\n", c, nGuardPawns);
+        }
+
+
+        if (nGuardPawns==3) cpWght = cpWght;
+        else if (nGuardPawns==2) cpWght = cpWght * 2 / 3;
+        else if (nGuardPawns==1) cpWght = cpWght * 1 / 3;
+        else if (nGuardPawns==0) cpWght = 0;
+        else assert(0);
     }
 
     // Can castle //////////////////////////////////////////////
-    int cpWght2 = wghts.GetWeight(CAN_CASTLE);
 
-    int icode = (b_has_castled ? cpWght : 0) + i_can_castle*cpWght2;
+    i_can_castleNumer = 0;
+    i_can_castleDenom = 1;
+    if constexpr (c == Color::WHITE) {
+        i_can_castleNumer += (white_castle_rights & CASTLE_KING)  ? 1 : 0;
+        i_can_castleNumer += (white_castle_rights & CASTLE_QUEEN) ? 1 : 0;
+    } else {
+        i_can_castleNumer += (black_castle_rights & CASTLE_KING)  ? 1 : 0;
+        i_can_castleNumer += (black_castle_rights & CASTLE_QUEEN) ? 1 : 0;
+    }
+
+    // Make "1" "3/2"
+    if (i_can_castleNumer==1) {
+        i_can_castleNumer=3;
+        i_can_castleDenom=2;
+    }
+
+    int cpWghtB = wghts.GetWeight(CAN_CASTLE);
+
+
+
+    int icode = (b_has_castled ? cpWght : 0) + cpWghtB*i_can_castleNumer/i_can_castleDenom;
 
     int final_cp;
 
@@ -2247,7 +2342,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 
 
 // Returns how many of the 3 guard files for the king's side
-// contain at least one friendly pawn on relative rank 2, 3, or 4.
+// contain at least one friendly pawn on relative rank 2, 3.
 //
 // White:
 //   queenside king  -> files a,b,c
@@ -2261,61 +2356,58 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 //
 // Returns:
 //   0..3   number of guard files that still have at least one pawn
-//          on relative rank 2/3/4 for this side.
+//          on relative rank 2/3 for this side.
+
+// Returns how many of the 3 guard files for the king's side
+// contain at least one friendly pawn on relative rank 2 or 3.
+//
+// White:
+//   queenside king -> files a,b,c
+//   kingside king  -> files f,g,h
+//
+// Black:
+//   same file logic, but relative ranks are mirrored.
+//
+// This does NOT check whether castling actually occurred.
+// It only checks whether a plausible 3-file pawn shelter exists
+// near the king's current side.
+//
+// Returns:
+//   0..3   number of guard files that still have at least one pawn
+//          on relative rank 2/3 for this side.
 template<Color c>
-int GameBoard::count_guard_pawn_files_234_t(const PInfo& PInfoIn) const
+int GameBoard::count_guard_pawn_files_23_t(const PInfo& PInfoIn, int k_file) const
 {
-    ull king_bb = get_pieces_template<Piece::KING, c>();
-    if (!king_bb) {
-        return 0;
+    int file0;
+    int file1;
+    int file2;
+    ull goodRanksMask;
+    int nGuardFiles = 0;
+
+    //assert(5 == col_masksHA[ColHA::COL_C]);
+    if (k_file >= COL_C) {
+        // King on a/b side -> guard files a,b,c
+        file0 = COL_A;
+        file1 = COL_B;
+        file2 = COL_C;
     }
-
-    int king_sq   = utility::bit::bitboard_to_lowest_square_safe(king_bb);
-    int k_file    = king_sq & 7;
-    int k_rank    = king_sq >> 3;
-
-    constexpr int homeRank =   (c == Color::WHITE) ? 0 : 7;
-    constexpr int homeRankp1 = (c == Color::WHITE) ? 1 : 6;
-
-    // If king is not on home ranks, do not count any "guard pawn files".
-    if ((k_rank != homeRank) && (k_rank != homeRankp1))  {
-        return 0;
+    else if (k_file <= COL_G) {
+        // King on f/g/h side -> guard files f,g,h
+        file0 = COL_F;
+        file1 = COL_G;
+        file2 = COL_H;
     }
-
-    int file0, file1, file2;
-
-    if (k_file >= 6) {          // king on a, or b file
-        // Queenside: a,b,c
-        file0 = 7;
-        file1 = 6;
-        file2 = 5;
-    } else if (k_file <= 2) {   // king on f,g, or h file
-        // Kingside: f,g,h
-        file0 = 2;
-        file1 = 1;
-        file2 = 0;
-    } else {
+    else {
         // King not clearly on one side or the other.
         return 0;
     }
 
-    ull goodRanksMask = 0ULL;
-
     if constexpr (c == Color::WHITE) {
-        // White relative ranks 2,3,4  -> absolute ranks 1,2,3
-        goodRanksMask =
-            0x00000000000000FFULL |   // rank 2
-            0x000000000000FF00ULL |   // rank 3
-            0x0000000000FF0000ULL;    // rank 4
-    } else {
-        // Black relative ranks 2,3,4 -> absolute ranks 6,5,4
-        goodRanksMask =
-            0x00000000FF000000ULL |   // rank 4
-            0x0000FF0000000000ULL |   // rank 5
-            0x00FF000000000000ULL;    // rank 6
+        goodRanksMask = row_masks[ROW_2] | row_masks[ROW_3];
     }
-
-    int nGuardFiles = 0;
+    else {
+        goodRanksMask = row_masks[ROW_7] | row_masks[ROW_6];
+    }
 
     if (PInfoIn.file_bb[file0] & goodRanksMask) {
         ++nGuardFiles;
@@ -2331,9 +2423,6 @@ int GameBoard::count_guard_pawn_files_234_t(const PInfo& PInfoIn) const
 
     return nGuardFiles;
 }
-
-
-
 
 
 
@@ -2669,42 +2758,6 @@ int GameBoard::rook_7th_rankness_cp_t()
     return score_cp;
 }
 
-// ---------- build_pawn_file_summary_fast_t ----------
-template<Color c>
-bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
-{
-    for (int i = 0; i < 8; ++i)
-    {
-        pinfo.file_count[i] = 0;
-        pinfo.file_bb[i] = 0ULL;
-        pinfo.advancedSq[i] = -1;
-        pinfo.rearSq[i] = -1;
-    }
-    pinfo.files_present = 0;
-
-    const ull Pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!Pawns) return false;
-
-    for (int f = 0; f < 8; ++f) {
-        const ull bb = (Pawns & col_masksHA[f]);
-        pinfo.file_bb[f] = bb;
-
-        if (!bb) continue;
-
-        pinfo.files_present |= (1u << f);
-        pinfo.file_count[f] = bits_in(bb);
-
-        if constexpr (c == Color::WHITE) {
-            pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square(bb);
-            pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square(bb);
-        } else {
-            pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square(bb);
-            pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square(bb);
-        }
-    }
-
-    return true;
-}
 
 // ---------- any_piece_ahead_on_file_t ----------
 template<Color c>
@@ -2752,7 +2805,7 @@ int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
                 if (sq != -1) {
                     // if no pawns between isolani and queening square, penalize more
                     is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfo.p[enemyP].file_bb[file]);
-                    if (!is_blocked) this_cp += GetWeight(ISOLANI_OPEN_FILE);
+                    if (!is_blocked) this_cp += wghts.GetWeight(ISOLANI_OPEN_FILE);
                 }
             }
 
@@ -2937,6 +2990,8 @@ int GameBoard::count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed
 }
 
 // ---------- king_edgeness_cp_t ----------
+
+// 0 = center, 3 = edge
 template<Color c>
 int GameBoard::king_edgeness_cp_t()
 {
@@ -3030,7 +3085,8 @@ int GameBoard::get_king_near_squares_t(int king_near_squares_out[9])
     int count = 0;
 
     ull kbb = get_pieces_template<Piece::KING, c>();
-    assert(kbb != 0ULL);
+    assert(kbb != 0ULL);    // Must be a king
+
     ull tmp = kbb;
     int king_sq = utility::bit::lsb_and_pop_to_square(tmp);
 
@@ -3149,6 +3205,17 @@ double GameBoard::kings_close_toegather_cp_t() {
     return (int)(dFarness * wghts.GetWeight(KINGS_CLOSE_TOGETHER));
 }
 
+// ---------- king_centerness_cp_t ----------
+template<Color c>
+double GameBoard::king_centerness_cp_t() {
+    double dkk = kings_far_apart_t<c>();
+
+    double dFarness = MAX_DIST - dkk;
+    assert (dFarness>=0.0);
+    return (int)(dFarness * wghts.GetWeight(KING_CENTER_LATE));
+}
+
+
 // ---------- hasNoMajorPieces_t ----------
 template<Color c>
 bool GameBoard::hasNoMajorPieces_t() {
@@ -3223,8 +3290,8 @@ int GameBoard::development_opening_cp_t() {
 // ============================================================================
 
 // bHasCastled_fake_t
-template bool GameBoard::bHasCastled_fake_t<Color::WHITE>() const;
-template bool GameBoard::bHasCastled_fake_t<Color::BLACK>() const;
+template bool GameBoard::bHasCastled_fake_t<Color::WHITE>(int k_rank, int k_file) const;
+template bool GameBoard::bHasCastled_fake_t<Color::BLACK>(int k_rank, int k_file) const;
 
 // get_castled_bonus_cp_t
 template int GameBoard::get_castled_bonus_cp_t<Color::WHITE>(int,const PInfo& PInfoIn) const;
@@ -3338,6 +3405,9 @@ template double GameBoard::kings_far_apart_t<Color::BLACK>();
 // kings_close_toegather_cp_t
 template double GameBoard::kings_close_toegather_cp_t<Color::WHITE>();
 template double GameBoard::kings_close_toegather_cp_t<Color::BLACK>();
+
+template double GameBoard::king_centerness_cp_t<Color::WHITE>();
+template double GameBoard::king_centerness_cp_t<Color::BLACK>();
 
 // hasNoMajorPieces_t
 template bool GameBoard::hasNoMajorPieces_t<Color::WHITE>();

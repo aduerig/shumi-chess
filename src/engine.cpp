@@ -137,16 +137,22 @@ void Engine::reset_engine() {         // New game.
     //game_board = GameBoard("r1bqkbnr/ppppp1pp/2n2p2/8/8/1PN2N2/P1PPPPPP/R1BQKB1R b KQkq - 3 3");
 
     // Or you can pick a random simple endgame FEN. (maybe)
-    // vector<Move> v;
-    // int itrys = 0;
-    // do {  
-    //     string stemp = game_board.random_kqk_fen(false);
-    //     game_board = GameBoard(stemp);
-    //     v = get_legal_moves(ShumiChess::WHITE);
-    //     ++itrys;
-    //     assert(itrys < 4);
+    // {
+    //     vector<Move> v;
+    //     v.reserve(MAX_MOVES);
+    //     psuedo_legal_moves.reserve(MAX_MOVES); 
+    //     int itrys = 0;
+    //     do {  
+    //         string stemp = game_board.random_kqk_fen(false);
+    //         game_board = GameBoard(stemp);
+    //         //python_engine->get_legal_moves_fast(python_engine->game_board.turn, false, false, v);
+    //         get_legal_moves_fast(ShumiChess::WHITE, false, false, v);
 
-    // } while (v.size() == 0);
+    //         ++itrys;
+    //         assert(itrys < 4);
+
+    //     } while (v.size() == 0);
+    // }
 
     // "half chess"
     //game_board = GameBoard("3qkbnr/2pppppp/8/8/8/8/2PPPPPP/3QKBNR w KQkq - 0 1");
@@ -163,7 +169,9 @@ void Engine::reset_engine() {         // New game.
     #define E4_E5_OPENING  "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
     #define E4_E5_OPENING2 "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 2"
 
-    //game_board = GameBoard(OPENING_FEN);
+    #define TEST_FEN "rr6/ppp2ppp/5n2/2np1k2/3P4/8/PPPB1PPP/2K2R1R b - - 7 17"
+
+    //game_board = GameBoard(TEST_FEN);
 
 
     game_board = GameBoard();
@@ -1619,7 +1627,7 @@ void Engine::move_and_score_to_string(const Move best_move, double d_best_move_v
 //      • Non-capture promotions: keep only QUEEN promotions; appended after captures.
 // Notes: O(U^2) sort due to linear insertion; U is usually small. (<5)
 //
-void Engine::reduce_to_unquiet_moves_MVV_LVA(
+void Engine::sort_unquiet_moves_qsearch(
                 const vector<ShumiChess::Move>& moves,       // input
                 //const Move& move_last,                       // input
                 int qPlys,
@@ -1629,103 +1637,99 @@ void Engine::reduce_to_unquiet_moves_MVV_LVA(
 
     MovesOut.clear();
     
-    // recapture bias: if a capture lands on opponent's last-to square, try it earlier
+    // Recapture bias: if a capture lands on opponent's last-to square, try it earlest
     const bool have_last = !move_history.empty();
     const ull  last_to   = have_last ? move_history.top().to : 0ULL;
 
-
     for (const ShumiChess::Move& mv : moves) {
-        if (is_unquiet_move(mv)) {              // Captures and promotions    
 
-            // If it's a capture, insert in descending MVV-LVA order
-            if (mv.capture != ShumiChess::Piece::NONE) {
+        // If it's a capture, insert in descending MVV-LVA order
+        if (mv.capture != ShumiChess::Piece::NONE) {
 
-                if (qPlys > MAX_QPLY2) {
+            if (qPlys > MAX_QPLY2) {
 
-                    // Very late in analysis! So discard negative SEE captures below one pawn.
-                    int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
+                // Very late in analysis! So discard negative SEE captures below one pawn.
+                int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
+                
+                // remove me!
+                // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+                // if (testValue != testValue2) {
+                //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
+                //     move_into_string(mv);
+                //     cout << "mv " << move_string.c_str() << '\n';
+                //     // Show board
+                //     string out = utility::representation::gameboard_to_string(game_board);
+                //     cout << out << endl;
+                //     // Show FEN
+                //     cout << game_board.to_fen().c_str() << '\n';
+                //     assert(0);
+                // }
+
+                if (testValue > 0) {     // centipawns
+                    #ifdef _DEBUGGING_TO_FILE 
                     
-                    // remove me!
-                    // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
-                    // if (testValue != testValue2) {
-                    //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
-                    //     move_into_string(mv);
-                    //     cout << "mv " << move_string.c_str() << '\n';
-                    //     // Show board
-                    //     string out = utility::representation::gameboard_to_string(game_board);
-                    //     cout << out << endl;
-                    //     // Show FEN
-                    //     cout << game_board.to_fen().c_str() << '\n';
-                    //     assert(0);
-                    // }
-
-                    if (testValue > 0) {     // centipawns
-                        #ifdef _DEBUGGING_TO_FILE 
+                        fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
+    
+                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
                         
-                            fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
-        
-                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                            
-                            print_move_history_to_file(fpDebug, "SEE hist");
-                            fputc('\n', fpDebug);
-                        #endif
-                    }
-
-                    if (testValue <= -100) {     // centipawns
-                        #ifdef _DEBUGGING_TO_FILE 
-                        
-                            fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
-        
-                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                            
-                            print_move_history_to_file(fpDebug, "SEE hist");
-                            fputc('\n', fpDebug);
-                        #endif
-
-                        // Dont sort up this capture
-                        continue;
-                    }
-
-                }   // END is late in analysis
-
-
-                // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
-                // biggest victim with the smallest attacker.
-                int key = mvv_lva_key(mv);  // (call me on captures only)
-                if (have_last && mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
- 
-                std::vector<ShumiChess::Move>::iterator it;
-                for (it = MovesOut.begin(); it != MovesOut.end(); ++it) {
-                    // Only compare against other captures; promos-without-capture stay after captures
-                    if (it->capture != ShumiChess::Piece::NONE) {
-                        int key0 = mvv_lva_key(*it);
-
-                        if (have_last && it->to == last_to) {
-                            key0 += 800;  // small recapture bump for opponent's last-to square
-                        }
-
-                        if (key > key0) {
-                            break;
-                        }
-                    }
+                        print_move_history_to_file(fpDebug, "SEE hist");
+                        fputc('\n', fpDebug);
+                    #endif
                 }
 
-                MovesOut.insert(it, mv);
-            
-            // Its a Promotion (without capture)
-            } else {
-                assert (mv.promotion != Piece::NONE);
+                if (testValue <= -100) {     // centipawns
+                    #ifdef _DEBUGGING_TO_FILE 
+                    
+                        fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
+    
+                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                        
+                        print_move_history_to_file(fpDebug, "SEE hist");
+                        fputc('\n', fpDebug);
+                    #endif
 
-                if (mv.promotion != Piece::QUEEN)    // DO NOT push non queen promotions up in the list
+                    // Dont sort up this capture
                     continue;
-                else
-                    MovesOut.push_back(mv);
+                }
+
+            }   // END is late in analysis
+
+
+            // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
+            // biggest victim with the smallest attacker.
+            int key = mvv_lva_key(mv);  // (call me on captures only)
+            if (have_last && mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
+
+            std::vector<ShumiChess::Move>::iterator it;
+            for (it = MovesOut.begin(); it != MovesOut.end(); ++it) {
+                // Only compare against other captures; promos-without-capture stay after captures
+                if (it->capture != ShumiChess::Piece::NONE) {
+                    int key0 = mvv_lva_key(*it);
+
+                    if (have_last && it->to == last_to) {
+                        key0 += 800;  // small recapture bump for opponent's last-to square
+                    }
+
+                    if (key > key0) {
+                        break;
+                    }
+                }
             }
 
-        }       // END is unquiet move
-        else {
-            // is quiet move. We should not see these.
-            assert(0);
+            MovesOut.insert(it, mv);
+        
+
+        } else {
+
+            // quiet moves should never be seen here, since they were never generated in qsearch.
+            assert(mv.promotion != Piece::NONE);  
+
+            // Its a Promotion (without capture, if it was a capture it was dealt with above.
+
+            if (mv.promotion != Piece::QUEEN)    // DO NOT push non queen promotions up in the list
+                continue;
+            else
+                MovesOut.push_back(mv);
         }
 
     }       // END loop over moves
@@ -2101,6 +2105,35 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull normal_attacks;
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
 
+ 
+        // promotions
+        ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
+        ull promo_not_blocked = potential_promotion & ~all_pieces;
+        if (promo_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, promo_not_blocked, Piece::PAWN
+                , color, false, true
+                , 0ULL, false, false);
+
+        // attacks
+        ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
+        ull attack_fright = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_right_col, 7);
+
+        normal_attacks = attack_fleft & all_enemy_pieces;
+        normal_attacks |= attack_fright & all_enemy_pieces;
+        if (normal_attacks) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                    , single_pawn, normal_attacks, Piece::PAWN
+                    , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
+                    , 0ULL, false, false);
+
+        // enpassant
+        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
+        if (enpassant_end_loc) {
+            if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                , single_pawn, enpassant_end_loc, Piece::PAWN
+                , color, true, false
+                , 0ULL, true, false);
+        }
+
         // "quiet" pawn moves.
         if (!unquiet_moves_only) {
 
@@ -2129,33 +2162,8 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             }
         }
 
-        // promotions
-        ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
-        ull promo_not_blocked = potential_promotion & ~all_pieces;
-        if (promo_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, promo_not_blocked, Piece::PAWN
-                , color, false, true
-                , 0ULL, false, false);
 
-        // attacks
-        ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
-        ull attack_fright = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_right_col, 7);
 
-        normal_attacks = attack_fleft & all_enemy_pieces;
-        normal_attacks |= attack_fright & all_enemy_pieces;
-        if (normal_attacks) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                    , single_pawn, normal_attacks, Piece::PAWN
-                    , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
-                    , 0ULL, false, false);
-
-        // enpassant
-        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
-        if (enpassant_end_loc) {
-            if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, enpassant_end_loc, Piece::PAWN
-                , color, true, false
-                , 0ULL, true, false);
-        }
     }
 }
 

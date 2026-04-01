@@ -289,6 +289,21 @@ engine_communicator_get_pgn(PyObject* self, PyObject* args) {
 }
 
 
+static PyObject*
+engine_communicator_get_phase(PyObject* self, PyObject* args) {
+    
+    char szTemp[128];
+    const char* pszPhase = &szTemp[0];
+
+    // We want phase_of_game(). But this is a minimax function. We need an engine function. So use phase
+    // writeen to engine by minimax.
+    pszPhase =  ShumiChess::str_from_GamePhase(python_engine->game_phase);
+    return Py_BuildValue("s", pszPhase);
+
+    //return Py_BuildValue("s", "foo");
+
+}
+
 
 
 
@@ -551,6 +566,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"resign",  engine_communicator_resign, METH_VARARGS, ""},
     {"set_random_number_of_moves",  engine_communicator_set_random_number_of_moves, METH_VARARGS, ""},
     {"get_pgn",  engine_communicator_get_pgn, METH_VARARGS, ""},
+    {"get_phase",  engine_communicator_get_phase, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

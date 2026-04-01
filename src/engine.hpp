@@ -68,7 +68,7 @@ class PGN {
     public:
         PGN();
         void clear();
-        int addMe(Move& m, Engine& e);
+        int addMe(Move& m, Engine& e);  // Adds a move to the PGN
         string spitout();
     private:
         std::string text;
@@ -148,6 +148,8 @@ class Engine {
 
         PGN gamePGN;
 
+        int game_phase = OPENING;     //  See GamePhase constants
+
         // Centipawn to pawn conversions
         inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
         inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
@@ -219,17 +221,12 @@ class Engine {
             return 0ULL;
         }
 
-
-
         void move_into_string(ShumiChess::Move m);
         void move_into_string_full(ShumiChess::Move m);
         string moves_into_string(const std::vector<Move>& mvs);
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"
         Move users_last_move = {};
-
- 
-        //int bishops_attacking_square_old(Color c, int sq);         
         
         void bitboards_to_algebraic(ShumiChess::Color color_that_moved, const ShumiChess::Move move
                                     , GameState state 
@@ -257,7 +254,6 @@ class Engine {
       
         void print_bitboard_to_file(ull bb, FILE* fp);
 
-        //bool has_unquiet_move(const vector<ShumiChess::Move>& moves);
         inline bool has_unquiet_move(const vector<ShumiChess::Move>& moves) {
             bool bReturn = false;
             for (const ShumiChess::Move& mv : moves) {
@@ -274,7 +270,7 @@ class Engine {
            return (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE); 
         }
 
-        void reduce_to_unquiet_moves_MVV_LVA(
+        void sort_unquiet_moves_qsearch(
                                         const vector<ShumiChess::Move>& moves,      // Input
                                         //const Move& move_last,                      // input
                                         int qPlys,
@@ -336,21 +332,17 @@ class Engine {
             ull pinnedMask;          // bit i = 1 => my piece on square i is pinned
             ull allowedMask[64];     // for pinned square i: squares it may move to (including capture of pinner)
                                     // for non-pinned squares: can be 0
-
-            void clear()
-            {
+            void clear() {
                 pinnedMask = 0ULL;
                 for (int i = 0; i < 64; i++) allowedMask[i] = 0ULL;
             }
 
-            bool isPinned(int fromSq) const
-            {
+            bool isPinned(int fromSq) const {
                 // fromSq must be 0..63
                 return (pinnedMask & (1ULL << fromSq)) != 0ULL;
             }
 
-            bool moveObeysPinLine(int fromSq, int toSq) const
-            {
+            bool moveObeysPinLine(int fromSq, int toSq) const {
                 // Only valid if isPinned(fromSq) is true
                 return (allowedMask[fromSq] & (1ULL << toSq)) != 0ULL;
             }
@@ -374,8 +366,7 @@ class Engine {
 
 
         template<Color c>
-        inline int get_king_square_t()
-        {
+        inline int get_king_square_t() {
             ull k = game_board.get_pieces_template<Piece::KING, c>();
             assert(k != 0ULL);
             return utility::bit::bitboard_to_lowest_square_fast(k);
