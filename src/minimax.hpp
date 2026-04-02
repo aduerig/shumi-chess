@@ -209,7 +209,7 @@ public:
     // end oLD CHESS engine
 
 
-    std::vector<ShumiChess::Move> excluded_root_moves;
+    std::vector<ShumiChess::Move> excluded_root_moves;      // for "MultiPV"
 
     //bool is_debug = false;
     int nFarts = 0;

@@ -584,10 +584,9 @@ std::string GameBoard::sqToString(int f, int r) const
 template<Color c>
 bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
 {
-    for (int i = 0; i < 8; ++i)
-    {
-        pinfo.file_count[i] = 0;
-        pinfo.file_bb[i] = 0ULL;
+    for (int i = 0; i < 8; ++i) {
+        //pinfo.file_count[i] = 0;
+        //pinfo.file_bb[i] = 0ULL;
         pinfo.advancedSq[i] = -1;
         pinfo.rearSq[i] = -1;
     }
@@ -600,10 +599,11 @@ bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
         const ull bb = (Pawns & col_masksHA[f]);
         pinfo.file_bb[f] = bb;
 
+        pinfo.file_count[f] = bits_in(bb);
+
         if (!bb) continue;
 
         pinfo.files_present |= (1u << f);
-        pinfo.file_count[f] = bits_in(bb);
 
         if constexpr (c == Color::WHITE) {
             pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square_fast(bb);
@@ -617,6 +617,44 @@ bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
     return true;
 }
 
+//
+// NOTE: for speed, advancedSq and rearSq are not filled out.
+template<Color c>
+bool GameBoard::build_pawn_file_summary_fast_enemy_t(PInfo& pinfo)
+{
+    // for (int i = 0; i < 8; ++i)
+    // {
+    //     pinfo.file_count[i] = 0;
+    //     pinfo.file_bb[i] = 0ULL;
+    //     //pinfo.advancedSq[i] = -1;
+    //     //pinfo.rearSq[i] = -1;
+    // }
+    pinfo.files_present = 0;
+
+    const ull Pawns = get_pieces_template<Piece::PAWN, c>();
+    if (!Pawns) return false;
+
+    for (int f = 0; f < 8; ++f) {
+        const ull bb = (Pawns & col_masksHA[f]);
+        pinfo.file_bb[f] = bb;
+
+        pinfo.file_count[f] = bits_in(bb);
+
+        if (!bb) continue;
+
+        pinfo.files_present |= (1u << f);
+
+        // if constexpr (c == Color::WHITE) {
+        //     pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square_fast(bb);
+        //     pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square_fast(bb);
+        // } else {
+        //     pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square_fast(bb);
+        //     pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square_fast(bb);
+        // }
+    }
+
+    return true;
+}
 
 bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
@@ -3353,6 +3391,8 @@ template int GameBoard::rook_7th_rankness_cp_t<Color::BLACK>();
 // build_pawn_file_summary_fast_t
 template bool GameBoard::build_pawn_file_summary_fast_t<Color::WHITE>(PInfo&);
 template bool GameBoard::build_pawn_file_summary_fast_t<Color::BLACK>(PInfo&);
+template bool GameBoard::build_pawn_file_summary_fast_enemy_t<Color::WHITE>(PInfo&);
+template bool GameBoard::build_pawn_file_summary_fast_enemy_t<Color::BLACK>(PInfo&);
 
 template bool GameBoard::any_piece_ahead_on_file_t<Color::WHITE>(int, ull) const;
 template bool GameBoard::any_piece_ahead_on_file_t<Color::BLACK>(int, ull) const;

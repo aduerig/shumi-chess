@@ -1,0 +1,35 @@
+
+
+phase statements
+=================
+
+
+
+enum GamePhase {
+    OPENING = 0,
+    MIDDLE_EARLY,
+    MIDDLE,         // both sides castled by now
+    ENDGAME,
+    ENDGAME_LATE
+};
+
+
+Pawns dont matter unless specified otherwise
+
+If the enemy has only a minor piece, or nothing, then its ENDGAME_LATE
+
+If no major pieces, enemy or friend, then it must be ENDGAME or later. Promote as needed.
+
+If no queens, then it must be MIDDLE or later. Promote as needed.
+
+The sum of all minor pieces (enemy and freind) on the board is now called "mm". 
+AT beggining of the game, mm=8. This is the mm rules . mm rules are OVERRIDDEN by the above rules.
+    mm=8    OPENING
+    mm=7    OPENING
+    mm=6    MIDDLE_EARLY
+    mm=5    MIDDLE_EARLY
+    mm=4    MIDDLE              2 pieces gone per side
+    mm=3    MIDDLE
+    mm=2    ENDGAME
+    mm=1    ENDGAME_LATE
+    mm=0    ENDGAME_LATE

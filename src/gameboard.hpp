@@ -297,7 +297,9 @@ class GameBoard {
 
         bool build_pawn_file_summary(Color c, PInfo& p);
         template<Color c> bool build_pawn_file_summary_fast_t(PInfo& p);
+        template<Color c> bool build_pawn_file_summary_fast_enemy_t(PInfo& p);
         void dump_pinfo_mismatch(const PInfo& a, const PInfo& b);
+
         void validate_row_col_masks_h1_0();
 
         template<Color c> bool any_piece_ahead_on_file_t(int sq, ull pieces) const;

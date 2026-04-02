@@ -9,6 +9,8 @@ In reality a chess player spends more time in "complex" positions. In the firs
 SOLVED: There are far far more sophisticated ways to do this, see bug list.
 
 
+"MultiPV" needs done, the current "-r" is terrible. The use of it is done, see excluded_root_moves.
+
 Castling needs refinements:
    1. "5"s role in guard pawns (f,c, pawns only 1/5, a,b,g,h file 2/5). This may encourage guard pawn (f,c)movement.
    2. Account for guard pawns, in castle priviledge. Be careful, this may suppress guard pawn moves too much.

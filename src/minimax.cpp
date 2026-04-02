@@ -2623,22 +2623,23 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     using namespace ShumiChess;
 
     int cp_score_position_temp = 0;
-    bool bOK;
+    bool b_is_pawns_friend;
     int icp_temp, icp_temp2;
 
     PawnFileInfo pawnFileInfo;
-    bOK = engine.game_board.build_pawn_file_summary_fast_t<c>( pawnFileInfo.p[friendlyP]);
+    b_is_pawns_friend = engine.game_board.build_pawn_file_summary_fast_t<c>( pawnFileInfo.p[friendlyP]);
 
     icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnFileInfo.p[friendlyP] );
     cp_score_position_temp += icp_temp;
 
 
-    if (bOK) {
+    if (b_is_pawns_friend) {
+        bool b_is_pawns_enemy;
         ull holes_bb = 0ULL;
         ull passed_pawns = 0ULL;
 
         constexpr Color enemyColor = utility::representation::opposite_color_v<c>;
-        bOK = engine.game_board.build_pawn_file_summary_fast_t<enemyColor>( pawnFileInfo.p[enemyP]);
+        b_is_pawns_enemy = engine.game_board.build_pawn_file_summary_fast_enemy_t<enemyColor>( pawnFileInfo.p[enemyP]);
 
         icp_temp = engine.game_board.count_isolated_pawns_cp_t<c>(pawnFileInfo);
         cp_score_position_temp += icp_temp;
