@@ -14,11 +14,18 @@ enum GamePhase {
 };
 
 
+   ANd shouldnt middlegames also (not just openeing and early middlegame) take castling into account?
+
+
 Pawns dont matter unless specified otherwise
 
-If the enemy has only a minor piece, or nothing, then its ENDGAME_LATE
+If both sides castled, it must be middlegame or later. Promote as needed. 
+
+If the enemy has only a minor piece, or nothing, (enemy has no major pieces) then its ENDGAME_LATE
 
 If no major pieces, enemy or friend, then it must be ENDGAME or later. Promote as needed.
+
+if no major pieces have left the board, then it cnnot be ENDGAME or ENDGAME_LATE. Demote as needed.
 
 If no queens, then it must be MIDDLE or later. Promote as needed.
 

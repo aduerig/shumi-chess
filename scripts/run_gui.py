@@ -22,9 +22,9 @@ parser.add_argument('--fen', default=None)
 parser.add_argument('--human', default=False, action='store_true')
 
 # common
-parser.add_argument('-d', '--depth', type=int, default=6, help='Max deepening')
-parser.add_argument('-t', '--time',  type=int, default=1000, help='Time per move in ms')
-parser.add_argument('-r', '--rand',  type=int, default=0, help='Randomization')
+parser.add_argument('-d', '--depth', type=int, default=8, help='Max deepening')
+parser.add_argument('-t', '--time',  type=int, default=3500, help='Time per move in ms')
+parser.add_argument('-r', '--rand',  type=int, default=2, help='Randomization')
 
 # per-side
 parser.add_argument('-wd', '--wd', type=int, default=None, help='white max deepening')

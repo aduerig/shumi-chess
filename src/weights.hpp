@@ -92,14 +92,14 @@ public:
     static constexpr int PAWN_ON_ADV_FLK_WGHT = 9;      // "advanced flank" c4,f4 (black); c5,f5 (White)
 
     static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
-    static constexpr int BISHOP_ON_CTR_WGHT = 19;  // Bishop controlling center squares (per square) (here we can look through other pieces)
+    static constexpr int BISHOP_ON_CTR_WGHT = 20;  // Bishop controlling center squares (per square) (here we can look through other pieces)
 
-    static constexpr int TWO_BISHOPS_WGHT = 19;    // 2 or more bishops (only one bonus per side)
+    static constexpr int TWO_BISHOPS_WGHT = 20;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
-    static constexpr int QUEEN_OUT_EARLY_WGHT = -50;    // for center squares only. only in opening.
+    static constexpr int QUEEN_OUT_EARLY_WGHT = -40;    // for center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
-    static constexpr int F_PAWN_MOVED_EARLY_WGHT = -30; // only in opening. Boo hoo, no Bird opening.
+    static constexpr int F_PAWN_MOVED_EARLY_WGHT = -10; // only in opening. Boo hoo, no Bird opening.
 
     static constexpr int DEVELOPMENT_OPENING_WGHT = 12;      // Opening only.  Counts minor pieces, off their starting square.
 

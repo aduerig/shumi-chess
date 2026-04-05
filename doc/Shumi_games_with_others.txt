@@ -59,6 +59,6 @@ WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s 
 
 WHITE: Uncle Shumi version=113a -d8 -t2000      BLACK:  Fidelity Excellence level5
     Result: black wins
-    Summary: Black slips in the opening with c4 ?!. Later in a tactical melee, white plays Nxe2?, not the best
+    Summary: Black slips in the opening with c4?!. Later in a tactical melee, white plays Nxe2?, not the best
       Then after Rg8?! white is back to even. White plays a brilliant endgame and crushes black.
     PGN: 1. d3 e5 2. e4 Nf6 3. Nf3 Nc6 4. Nbd2 d5 5. c4 dxe4 6. Nxe4 Nxe4 7. dxe4 Qxd1 8. Kxd1 Bg4 9. Be2 O-O-O 10. Kc2 Rd4 11. Be3 Rxe4 12. Ng5 Nd4 13. Kd3 Rxe3 14. Kxe3 Nxe2 15. f3 Nd4 16. Nxf7 Rg8 17. fxg4 Nc2 18. Ke4 Nxa1 19. Rxa1 Bd6 20. Rd1 Rf8 21. Rf1 Kb8 22. Rf5 g6 23. Rf3 a6 24. g5 Ka8 25. Nxd6 Rxf3 26. gxf3 cxd6 27. Kd5 Ka7 28. Kxd6 Kb6 29. b4 a5 30. b5 a4 31. a3 Ka7 32. c5 Kb8 33. b6 Kc8 34. Ke7 Kb8 35. Kd7 e4 36. fxe4 Ka8 37. Kc7 h5 38. gxh6 g5 39. h7 g4 40. h8=Q  -/+

@@ -243,9 +243,7 @@ class Engine {
         char rank_to_move(const Move& m) const;
 
         void set_random_on_next_move(int randomMoveCount);
-        
-        int user_request_next_move = 7;    // Note: make me go aways. I am for changing the deepening inbetweem moves
-
+      
         void print_moves_and_scores_to_file(const MoveAndScoreList move_and_scores_list
             , bool b_convert_to_abs_score, bool b_sort_descending, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);

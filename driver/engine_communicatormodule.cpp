@@ -382,6 +382,10 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
         return NULL;
     }
 
+    //cout << " milliseconds " << milliseconds << " " << max_deepening << '\n';
+
+
+
     ShumiChess::Move gotten_move;
     std::string move_in_acn_notation;
 

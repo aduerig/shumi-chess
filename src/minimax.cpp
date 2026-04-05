@@ -123,9 +123,6 @@ bool global_debug_flag = false;
     }
 #endif
 
-// Only randomizes a small amount a list formed on the root node, when at maxiumum deepening, AND 
-// on first move.
-#define RANDOMIZING_EQUAL_MOVES_DELTA 10       // In units of centi-pawns
 
 #ifdef DEBUGGING_KILLER_MOVES
     static long long killer_tried = 0;
@@ -580,22 +577,20 @@ int g_this_depth = 6;
 // This is a "root position". The next human move triggers a new root position
 Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int feat) {  
 
-    long long now_s;    // milliseconds 
-    long long end_s;    // milliseconds
-    long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
-    ull elapsed_time = 0; // in msec
+   
 
     assert (i_time_requested > 0);
 
+    cout << " max_deepening_requested " << max_deepening_requested << "\n";
+
     // Obtain time now (milliseconds)
-    auto start_time = chrono::high_resolution_clock::now();
+    TIME_TYPE start_time = chrono::high_resolution_clock::now();
 
     // Not actually a "endtime". The last deepening will start before or at this "requested" time. 
     //auto requested_end_time = start_time + chrono::duration<double, std::milli>(time_requested);
-    auto requested_end_time = start_time + std::chrono::milliseconds(i_time_requested);
+    TIME_TYPE requested_end_time = start_time + std::chrono::milliseconds(i_time_requested);
 
 
-    bool b_Forced = false;
 
     Features_mask = feat;
 
@@ -650,26 +645,22 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     Move best_move = {};
     double d_best_move_value = 0.0;
 
-    // This nonsense is to allow the "max deepening" to be changed "on the fly" (inbetween moves).
+    // Obey requested deepening
     int this_deepening;
-    this_deepening = engine.user_request_next_move;
+    //this_deepening = engine.user_request_next_move;
     //this_deepening = 5;        // Note: because i said so.
 
     this_deepening = max_deepening_requested;
-    if ( (engine.i_randomize_next_move>0) && (this_deepening>4) ) {
-        this_deepening--;
+    if ( (engine.i_randomize_next_move>0) && (this_deepening>2) ) {
         this_deepening--;
     }
 
     maximum_deepening = this_deepening;
+    cout << " maximum_deeeeeeeeeepening " << maximum_deepening << "\n";
 
     // defaults
     int depth = 1;
-    
     int nPlys = 0;
-    bool bThinkingOver = false;
-    bool bThinkingOverByTime = false;
-    bool bThinkingOverByDepth = false;
 
     // INitialize these, whether we use them or not.
     for (int ii=0;ii<MAX_PLY;ii++) {
@@ -677,116 +668,78 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         killer2[ii] = {};
     }
 
+    ull elapsed_time = 0; // in msec
+    tuple<double, Move> ret_val;
+    //
+    // Get a move (pricial varation) using iterive deepening
+    //
+    // ull elapsed_time = 0; // in msec
+    // tuple<double, Move> ret_val;
+    // ret_val = DoAPrincipalVariation(depth, null_move
+    //                                 , start_time, i_time_requested, requested_end_time
+    //                                 , elapsed_time);        // Output
+    // d_best_move_value = get<0>(ret_val);
+    // best_move = get<1>(ret_val);
 
-    ////////// loop over all "deepenings" /////////////////////////////////////////////////////////////////////////
+    int n_Multis = 1;
+    if (engine.i_randomize_next_move>0) 
+    {
+        assert(RANDOM_MOVE_CANDIDATES>1);           // I must be greater than 1
+        n_Multis = RANDOM_MOVE_CANDIDATES;          // We get five options to choose from.
+        engine.i_randomize_next_move--;             // Decrement number of randome moves to make
+    }
 
+    excluded_root_moves.clear();
 
-    // Start each search with an empty root-move list for move randomization.
-    MovesFromRoot.clear();
-
-    double d_Return_score = 0.0;
-
-    do {
-
-        MovesFromRoot.clear();
-
-        tuple<double, Move> ret_val;
+    for (int ii=0; ii<n_Multis; ii++) {
         
-        #ifdef _DEBUGGING_MOVE_CHAIN    // Start of a deepening
-            bool bSide = (engine.game_board.turn == ShumiChess::BLACK);
-            sprintf(szDebug,"\n\n--------------------------- %ld ------------------------------------------------", depth);
-            fputs(szDebug, fpDebug);
-            engine.print_move_to_file(null_move, nPlys, (GameState::INPROGRESS), false, true, bSide, fpDebug);
-        #endif
-
-        //
-        // This case can happen in 50-move rule, all nodes return DRAW, so in so quickly
-        // zips through these, that it runs out of depth before the time limit.
-        if (depth>=MAXIMUM_DEEPENING) {
-            //cout << "\x1b[31m \nOver Deepening " << depth << "\x1b[0m" << endl;
-            //cout << gameboard_to_string_old(engine.game_board) << endl;
-            //assert(0);      // NOTE: this happens close to draws. Noone knows why.
-            break;   // Stop deepening, no more depths.
-        }
-
-        // the beast    (excluded_root_moves)
-        ret_val = do_a_deepening(depth, elapsed_time, null_move);
-
-        d_Return_score = get<0>(ret_val);
-        if (d_Return_score == ABORT_SCORE) {
-            // User aborted the computation. Here we do nothing, ends up using the last deepeining. 
-            cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
-            break;   // Stop deepening, no more depths.
-        } else if (d_Return_score == ONLY_MOVE_SCORE) {
-            // We stopped analysis because there was only one legal move. We just play that.
-            // Intersting, what should be the score here? 
-            b_Forced = true;
-            d_best_move_value = 0.0;
-            best_move = get<1>(ret_val);        // this was the only legal move.
-            break;   // Stop deepening, no more depths.
-        } else {
-            d_best_move_value = d_Return_score;
-            best_move = get<1>(ret_val);
-
-            // Root sees a forced mate: no point deepening further. 
-            // Update: YES there is a point in continuing. We might find a shorter mate.
-            //if (std::fabs(d_best_move_value) >= HUGE_SCORE/2.0)
-            // if (IS_MATE_SCORE(d_best_move_value))
-            // {
-            //     cout << "\x1b[31m !!!!!!!! mate at exterior node (depth " << depth << ")\x1b[0m" << endl;
-
-            //     #ifdef _DEBUGGING_TO_FILE1
-            //         //engine.print_move_history_to_file(fpDebug);    // debug only
-            //         cout << gameboard_to_string(engine.game_board) << endl;
-            //         assert(0);
-            //     #endif
-
-            //     break;   // Stop iterative deepening immediately.
-            // }
-
-        }
-
-        // Store PV for the *next* iteration. Called incorrectly in literture as: "PV at the root".
-        assert (depth >=0);
-        prev_root_best_[depth] = std::make_pair(best_move, d_best_move_value);   // move + score (pawns)
-        #ifdef _DEBUGGING_PV
-            engine.move_into_string(best_move);
-            sprintf(szDebug, "PV   %s  %ld", engine.move_string.c_str(), depth);
-            fprintf(fpDebug, szDebug);
-        #endif
-
-        engine.move_and_score_to_string(best_move, d_best_move_value , true);
-
-        #ifdef DISPLAY_DEEPING
-            cout << " Best: " << engine.move_string;
-        #endif
+        elapsed_time = 0; // in msec
+        ret_val = DoAPrincipalVariation(depth, null_move
+                                        , start_time, i_time_requested, requested_end_time
+                                        , elapsed_time);        // Output
+        d_best_move_value = get<0>(ret_val);
+        if (d_best_move_value == ABORT_SCORE) break;
 
 
-        auto now_time = chrono::high_resolution_clock::now();
+        best_move = get<1>(ret_val);    
 
-        elapsed_time = (ull)chrono::duration_cast<chrono::milliseconds>(now_time - start_time).count();
-        diff_s = (long long)elapsed_time - (long long)i_time_requested;
+        cout << "\n" << " pvar? " << d_best_move_value << " " << engine.move_string 
+             << " quack " << (int)best_move.piece_type << " \n";
 
-        // (Optional: keep these only for your printout)
-        now_s = (long long)chrono::duration_cast<chrono::milliseconds>(now_time.time_since_epoch()).count();
-        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
+        if (best_move.piece_type == Piece::NONE) break;
 
+        //excluded_root_moves.push_back(best_move);
+        excluded_root_moves.push_back(std::make_pair(best_move, d_best_move_value));
+        if (d_best_move_value == ONLY_MOVE_SCORE) break;
 
-        depth++;
+        engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                , (GameState::INPROGRESS), false, false, NULL
+                , engine.move_string);    // Output
+        cout << "\n" << " pvar! " << d_best_move_value << " " << engine.move_string << " \n";
 
-        // time based ending of thinking
-        //bThinkingOverByTime = (diff_s > 0);
-        bThinkingOverByTime = (elapsed_time >= (ull)i_time_requested);
+    }
+    cout << "\n" << " moves collected: " << engine.ply_so_far;
+    engine.print_moves_and_scores_to_file(excluded_root_moves, false, false, stdout);
+    cout << "\n" << " end moves collected: " << engine.ply_so_far << " ---> " << n_Multis << " \n";
 
+    if (n_Multis > 1) {
 
-        // depth based ending of thinking
-        bThinkingOverByDepth = (depth >= (maximum_deepening+1));
+        tuple<double, Move> ret_val0;
+        int i_random_delta_cp = RANDOMIZING_EQUAL_MOVES_DELTA;
+        int n_moves_within_delta;
+        ret_val0 = pick_random_within_delta_rand(excluded_root_moves, i_random_delta_cp, engine.computer_ply_so_far
+                                                    , n_moves_within_delta);      // output
 
-        // we are done thinking if both time and depth is ended OR simple endgame is on.
-        bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
+        d_best_move_value = std::get<0>(ret_val0);
+        best_move = std::get<1>(ret_val0);
 
-    } while (!bThinkingOver);
+        engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                , (GameState::INPROGRESS), false, false, NULL
+                , engine.move_string);    // Output
 
+        cout << "\n" << " end multisss " << d_best_move_value << "  "  
+                << engine.move_string << "nwithin=" <<  n_moves_within_delta << " \n";
+    }
 
     ////////// done with move production. Now do displays /////////////////////////////////////////////////////////////////////////
 
@@ -795,69 +748,19 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     cout << "\x1b[33m\nWent to depth " << (depth - 1)  
         << " elapsed msec= " << elapsed_time << " requested msec= " << i_time_requested 
         << std::fixed << std::setprecision(1)
-        << "    time overshoot= " << (elapsed_time / i_time_requested) << " " << now_s << " " << end_s << " " << diff_s
-        << " TimOver= " << bThinkingOverByTime << " DepOver= " << bThinkingOverByDepth 
         << "\x1b[0m" << endl;
-
-    // If the first move, MAYBE randomize the response some.
-    if ( (d_Return_score != ABORT_SCORE) && (d_Return_score != ONLY_MOVE_SCORE) ) {
-
-        #ifdef DEBUGGING_RANDOM_DELTA
-            fprintf(fpDebug, "\n===============================================================\n");
-
-            engine.print_moves_and_scores_to_file(MovesFromRoot, false, true, fpDebug);
-    
-            fprintf(fpDebug, "\n===============================================================\n");
-        #endif
-
-        int i_random_delta_cp = 0;
-
-        // Reassign best move, if randomizing. The i_randomize_next_move decrements, after every random 
-        // move chosen. When it hits zero, no more random moves will be chosen.
-        if (engine.i_randomize_next_move>0) {
-            i_random_delta_cp = RANDOMIZING_EQUAL_MOVES_DELTA;
-            engine.i_randomize_next_move--;             // Decrement number of randome moves to make
-        }
-
-        if (i_random_delta_cp != 0) {
-            nRandos++;
-            int n_moves_within_delta=0;
-            // The root is when the player starts thinking about his move.
-            best_move = pick_random_within_delta_rand(MovesFromRoot, i_random_delta_cp, engine.computer_ply_so_far
-                                                    , n_moves_within_delta);
-            // Show random move, and the "pool" (and reduced pool") it was chosen from.
-
-            cout << "\033[1;34mrando move (out of: \033[0m" << MovesFromRoot.size() << " >> " << n_moves_within_delta << endl;
-        
-        }
-
-        // (debug only) engine.move_into_string(best_move);
-        // std::cout << engine.move_string << std::endl;
-   
-        //  (debug only) print moves and scores
-        // for ( auto& ms : MovesFromRoot) {
-        //     Move& m = ms.first;
-        //     double sc = ms.second;
-        //     engine.move_into_string(m);
-        //     std::cout << engine.move_string << " ; " << std::fixed << std::setprecision(2) << sc << "\n";
-        // }
-    }
-    MovesFromRoot.clear();
 
 
     // Convert to absolute score
     double d_best_move_value_abs = d_best_move_value;
     if (engine.game_board.turn == Color::BLACK) d_best_move_value_abs = -d_best_move_value_abs;
     
-    if (std::fabs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;        // avoid negative zero
+    if (std::fabs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;   // avoid negative zero
     string abs_score_string = to_string(d_best_move_value_abs);
 
     // Show board
     engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-                , (GameState::INPROGRESS)
-                , false
-                , false
-                , NULL
+                , (GameState::INPROGRESS), false, false, NULL
                 , engine.move_string);    // Output
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
@@ -902,6 +805,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + 
         "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
 
+    bool b_Forced = (d_best_move_value == ONLY_MOVE_SCORE);
     if (!b_Forced) {   // if we are forcing the move due to it being the only move, then don't update "score".
         engine.d_bestScore_at_root = d_best_move_value_abs;  
     }
@@ -984,6 +888,134 @@ global_debug_flag = false;
     return best_move;
 }
 
+////////// loop over all "deepenings" /////////////////////////////////////////////////////////////////////////
+//
+//  elapsed_time is an output
+//
+std::tuple<double, ShumiChess::Move> MinimaxAI::DoAPrincipalVariation(int depth, ShumiChess::Move null_move
+                                        , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
+                                        , ull& elapsed_time)      // output
+{
+
+    bool b_Forced = false;
+
+    bool bThinkingOver = false;
+    bool bThinkingOverByTime = false;
+    bool bThinkingOverByDepth = false;
+
+    long long now_s;    // milliseconds 
+    long long end_s;    // milliseconds
+    long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
+
+    Move best_move = {};
+    double d_best_move_value = 0.0;
+    
+    elapsed_time = 0; // in msec
+
+
+    double d_Return_score = 0.0;
+
+    tuple<double, Move> ret_val;
+
+    do {
+
+        #ifdef _DEBUGGING_MOVE_CHAIN    // Start of a deepening
+            bool bSide = (engine.game_board.turn == ShumiChess::BLACK);
+            sprintf(szDebug,"\n\n--------------------------- %ld ------------------------------------------------", depth);
+            fputs(szDebug, fpDebug);
+            engine.print_move_to_file(null_move, nPlys, (GameState::INPROGRESS), false, true, bSide, fpDebug);
+        #endif
+
+        //
+        // This case can happen in 50-move rule, all nodes return DRAW, so in so quickly
+        // zips through these, that it runs out of depth before the time limit.
+        if (depth>=MAXIMUM_DEEPENING) {
+            //cout << "\x1b[31m \nOver Deepening " << depth << "\x1b[0m" << endl;
+            //cout << gameboard_to_string_old(engine.game_board) << endl;
+            //assert(0);      // NOTE: this happens close to draws. Noone knows why.
+            break;   // Stop deepening, no more depths.
+        }
+
+        // the beast
+        ret_val = do_a_deepening(depth, elapsed_time, null_move);
+
+        d_Return_score = get<0>(ret_val);
+        if (d_Return_score == ABORT_SCORE) {
+            // User aborted the computation. Here we do nothing, ends up using the last deepeining. 
+            cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
+            break;   // Stop deepening, no more depths.
+        } else if (d_Return_score == ONLY_MOVE_SCORE) {
+            // We stopped analysis because there was only one legal move. We just play that.
+            // Intersting, what should be the score here? 
+            b_Forced = true;
+            d_best_move_value = 0.0;
+            best_move = get<1>(ret_val);        // this was the only legal move.
+            break;   // Stop deepening, no more depths.
+        } else {
+            d_best_move_value = d_Return_score;
+            best_move = get<1>(ret_val);
+
+            // Root sees a forced mate: no point deepening further. 
+            // Update: YES there is a point in continuing. We might find a shorter mate.
+            //if (std::fabs(d_best_move_value) >= HUGE_SCORE/2.0)
+            // if (IS_MATE_SCORE(d_best_move_value))
+            // {
+            //     cout << "\x1b[31m !!!!!!!! mate at exterior node (depth " << depth << ")\x1b[0m" << endl;
+
+            //     #ifdef _DEBUGGING_TO_FILE1
+            //         //engine.print_move_history_to_file(fpDebug);    // debug only
+            //         cout << gameboard_to_string(engine.game_board) << endl;
+            //         assert(0);
+            //     #endif
+
+            //     break;   // Stop iterative deepening immediately.
+            // }
+
+        }
+
+        // Store PV for the *next* deepening iteration. Called incorrectly in literture as: "PV at the root".
+        assert (depth >=0);
+        prev_root_best_[depth] = std::make_pair(best_move, d_best_move_value);   // move + score (pawns)
+        #ifdef _DEBUGGING_PV
+            engine.move_into_string(best_move);
+            sprintf(szDebug, "PV   %s  %ld", engine.move_string.c_str(), depth);
+            fprintf(fpDebug, szDebug);
+        #endif
+
+        #ifdef DISPLAY_DEEPING
+            engine.move_and_score_to_string(best_move, d_best_move_value , true);
+            cout << " Best: " << engine.move_string;
+        #endif
+
+
+        auto now_time = chrono::high_resolution_clock::now();
+
+        elapsed_time = (ull)chrono::duration_cast<chrono::milliseconds>(now_time - start_time).count();
+        diff_s = (long long)elapsed_time - (long long)i_time_requested;
+
+        // (Optional: keep these only for your printout)
+        now_s = (long long)chrono::duration_cast<chrono::milliseconds>(now_time.time_since_epoch()).count();
+        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
+
+        depth++;
+
+        // time based ending of thinking
+        //bThinkingOverByTime = (diff_s > 0);
+        bThinkingOverByTime = (elapsed_time >= (ull)i_time_requested);
+
+
+        // depth based ending of thinking
+        bThinkingOverByDepth = (depth >= (maximum_deepening+1));
+
+        // we are done thinking if both time and depth is ended OR simple endgame is on.
+        bThinkingOver = (bThinkingOverByDepth && bThinkingOverByTime);
+
+    } while (!bThinkingOver);
+
+    return { d_best_move_value, best_move };
+}
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1063,14 +1095,15 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             bool bExclude = false;
 
             for (int j = 0; j < (int)excluded_root_moves.size(); j++) {
-                if (legal_moves[i] == excluded_root_moves[j]) {
+                //if (legal_moves[i] == excluded_root_moves[j]) {
+                if (legal_moves[i] == excluded_root_moves[j].first) {
                     bExclude = true;
                     break;
                 }
             }
 
             if (bExclude) {
-                assert(0);
+                //assert(0);
                 legal_moves.erase(legal_moves.begin() + i);
             }
 
@@ -1633,24 +1666,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             //++engine.repetition_table[engine.game_board.zobrist_key];
             engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
 
-            // Pauls plan (concerning windowing)
-            bool bRootWideWindowForRandom = false;
-            assert ( (is_from_root) == (nPlys==1) );
-
-            if (engine.i_randomize_next_move > 0) {
-                int wideWindowPlies = 2;
-
-                //bRootWideWindowForRandom = is_from_root;
-                bRootWideWindowForRandom = (nPlys <= wideWindowPlies);
-            }
-
             //
             // Three parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
             //                         2. The beta and alpha arguments are staggered, or reversed.
             double childAlpha = -beta;
             double childBeta  = -alpha;
 
-            if (bRootWideWindowForRandom) {
+            if (0) {                // Full wide window
                 childAlpha = -HUGE_SCORE;
                 childBeta  =  HUGE_SCORE;
             }
@@ -1755,49 +1777,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // if (nChars == EOF) assert(0);
             #endif
 
-        
-            //double delta_score = (is_at_end_of_the_line ? 0.1 : 0.0);
-            double delta_score = 0.0;     // personalities
-
             double d_difference_in_score = std::fabs(d_score_value - d_best_score);
 
-
-            #ifdef RANDOM_FLIP_COIN
-                //bool bUseMe = d_difference_in_score <= (delta_score + VERY_SMALL_SCORE);
-                bool bUseMe = d_difference_in_score <= (delta_score);
-            #else
-                bool bUseMe = false;
-            #endif
-
-            if (bUseMe) {
-                assert(0);
-                // tie (within delta): flip a coin.
-                b_use_this_move = engine.flip_a_coin();
-
-                //cout << d_score_value << " = " << d_best_score << " , " << b_use_this_move << endl;     
-  
-            } else {
-                b_use_this_move = (d_score_value > d_best_score);
-            }
+            b_use_this_move = (d_score_value > d_best_score);
 
             if (b_use_this_move) {
                 d_best_score = d_score_value;
                 the_best_move = m;
-            }
-
-
-            // Record moves from the root.
-            if (is_from_root) {
-
-                #ifdef DEBUGGING_RANDOM_DELTA1
-                    fprintf(fpDebug,
-                            "  depth=%d top_deepening=%d maximum_deepening=%d nPlys=%d : ",
-                            depth, top_deepening, maximum_deepening, nPlys);
-                    engine.print_move_and_score_to_file(
-                        {m, d_score_value}, false, fpDebug);
-                #endif
-
-                MovesFromRoot.emplace_back(m, d_score_value);  // record ROOT move & its (negamax) score (units are pawns)
             }
 
             // Think of alpha as “best score found so far at this node.”
@@ -2507,9 +2493,7 @@ Move MinimaxAI::get_move() {
 }
 
 
-
-
-ShumiChess::Move MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
+std::tuple<double, ShumiChess::Move> MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
                                              int delta_cp,
                                              int i_computer_ply_so_far,
                                              int& n_moves_within_delta     // output
@@ -2521,8 +2505,8 @@ try_again:
     nTries++;
     n_moves_within_delta = 0;
     if (MovsFromRoot.empty()) {
-        assert(0);           // Better not happen 
-        return Move{};       // safety
+        assert(0);                    // Better not happen 
+        return {0.0, Move{}};         // safety
     }
 
     // 0) Sort MovsFromRoot by score (leaves the caller’s list sorted)
@@ -2533,7 +2517,7 @@ try_again:
     const double bestScorePawns = MovsFromRoot.front().second;
 
     // 2) If best score is mate-like, don’t randomize. Just pick the first one.
-    if (IS_MATE_SCORE(bestScorePawns)) return MovsFromRoot.front().first;
+    if (IS_MATE_SCORE(bestScorePawns)) return {MovsFromRoot.front().second, MovsFromRoot.front().first};
 
     // Convert best score to centipawns once (rounded).
     // Assumes score is in pawns (e.g., +0.23 == +23 cp).
@@ -2571,7 +2555,8 @@ try_again:
 
     if (!b_use_this_one) {
         // increase delta a bit and try again
-        i_delta_cp = (i_delta_cp * 3) / 2;   // *1.5, integer
+        
+        i_delta_cp = ((i_delta_cp * 3) / 2) + 1;   // *1.5, integer
         goto try_again;
     }
 
@@ -2579,7 +2564,7 @@ try_again:
 
     assert (b_use_this_one);
     if (b_use_this_one) {
-        cout << "\n[RandomWithinDelta] n_top=" << (int)n_top << "  candidates: \n" << i_computer_ply_so_far;
+        cout << "\n[pick_random_within_delta_rand] n_top=" << (int)n_top << " from candidates: \n" << i_computer_ply_so_far;
         for (size_t i = 0; i < n_top; ++i) {
             engine.move_into_string(MovsFromRoot[i].first);   // fills engine.move_string
             cout << "  [" << (int)i << "]  " << engine.move_string << "\n";
@@ -2589,9 +2574,8 @@ try_again:
 
     // 4) Uniform pick from [0, n_top)
     const int pick = engine.rand_int(0, (int)n_top - 1);
-    return MovsFromRoot[(size_t)pick].first;
+    return {MovsFromRoot[(size_t)pick].second, MovsFromRoot[(size_t)pick].first};
 }
-
 
 /////////////////////////////////////////////////////////////////////
 

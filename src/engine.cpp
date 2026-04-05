@@ -1549,6 +1549,7 @@ void Engine::print_moves_and_scores_to_file(MoveAndScoreList move_and_scores_lis
 {
     if (b_sort_descending)
     {
+        assert(0);
         std::sort(move_and_scores_list.begin(), move_and_scores_list.end(),
                   [&](const MoveAndScore& a, const MoveAndScore& b)
                   {
