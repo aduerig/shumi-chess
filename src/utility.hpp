@@ -213,7 +213,7 @@ inline std::string square_to_position_string(ull square) {
     return "error";
 };
 
-inline std::string move_to_string(ShumiChess::Move move) {
+inline std::string move_to_string(const ShumiChess::Move& move) {
     return square_to_position_string(move.from) + square_to_position_string(move.to);
 }
 
@@ -271,8 +271,8 @@ inline void cout_move_info(const ShumiChess::Move& move) {
     std::cout << "Is En Passant Capture: " << move.is_en_passent_capture << std::endl;
     
     // Print en passant target square if it exists
-    if (move.en_passant_rights != 0) {
-        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_rights) << std::endl;
+    if (move.en_passant_landing_square != 0) {
+        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing_square) << std::endl;
     }
 
     // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)

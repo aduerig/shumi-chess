@@ -71,7 +71,7 @@ struct Move {
   
     ull from = 0ULL;   // 1-bitboard (but with only one bit set)
     ull to = 0ULL;     // 1-bitboard (but with only one bit set)
-    ull en_passant_rights = 0ULL;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
+    ull en_passant_landing_square = 0ULL;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
@@ -85,11 +85,41 @@ struct Move {
     bool is_en_passent_capture = false;    // bools are hopefully 1 byte
     bool is_castle_move = false;
 
+    Move() = default;   // ← put it here
+
+   // --- NEW FULL FIELD CONSTRUCTOR (used for speed, in add_psuedo_move_to_vector()) ---
+    Move(ull from_,
+         ull to_,
+         ull en_passant_rights_,
+         Color color_,
+         Piece piece_type_,
+         Piece capture_,
+         Piece promotion_,
+         uint8_t black_castle_rights_,
+         uint8_t white_castle_rights_,
+         bool is_en_passent_capture_,
+         bool is_castle_move_)
+        :
+          from(from_),
+          to(to_),
+          en_passant_landing_square(en_passant_rights_),
+          color(color_),
+          piece_type(piece_type_),
+          capture(capture_),
+          promotion(promotion_),
+          black_castle_rights(black_castle_rights_),
+          white_castle_rights(white_castle_rights_),
+          is_en_passent_capture(is_en_passent_capture_),
+          is_castle_move(is_castle_move_)
+    {
+    }
+
+
     // This means two Moves are considered equal if they go from the same square to the same square.
     // NOTE: Is this right ? It only checks the squares, not the pieces on the square.
     // But wait, the piece on the square, and the rest of the board already encoded in the FEN 
     // which is the "outer map" of the hashTable? I have no idea what im talking about. In any case,
-    // the promotion piece must be added to the equality. Not sure about the "en_passant_rights"?
+    // the promotion piece must be added to the equality. Not sure about the "en_passant_landing_square"?
 
     bool operator==(const Move &other) const {
         return ((from == other.from) && (to == other.to) && (promotion == other.promotion));

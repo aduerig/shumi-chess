@@ -332,7 +332,8 @@ class Engine {
                                     // for non-pinned squares: can be 0
             void clear() {
                 pinnedMask = 0ULL;
-                for (int i = 0; i < 64; i++) allowedMask[i] = 0ULL;
+                // for (int i = 0; i < 64; i++) allowedMask[i] = 0ULL;
+                memset(allowedMask, 0, sizeof(allowedMask));
             }
 
             bool isPinned(int fromSq) const {

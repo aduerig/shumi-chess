@@ -44,7 +44,7 @@ details:
     that is the target square of the en passant move.
     
             Objections:
-    First of all, "en_passant_rights" is a hideous name as it has nothing to do with "rights". 
+
     Second of all, it requires that the "slot" field be ull. That seems wasteful. But it seems to me both the derivation
     and the usage of the "slot value" require use of bitboards. So I might have to add overhead to pack and unpack a 1-bitboard
     into a square (int). Hard to see which is faster.

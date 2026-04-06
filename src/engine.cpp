@@ -632,28 +632,28 @@ void Engine::pushMove_t(const Move& move) {
         if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Queenside Castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = 7;   // a1
-                rook_to_sq = 4;     // d1
-                friendly_rooks &= ~(1ULL <<7);
-                friendly_rooks |= (1ULL <<4);
+                rook_from_sq = square_a1;
+                rook_to_sq = square_d1;
+                friendly_rooks &= ~(1ULL << square_a1);
+                friendly_rooks |= (1ULL << square_d1);
             } else {
-                rook_from_sq = 63;  // a8
-                rook_to_sq = 60;    // d8
-                friendly_rooks &= ~(1ULL <<63);
-                friendly_rooks |= (1ULL <<60);
+                rook_from_sq = square_a8;
+                rook_to_sq = square_d8;
+                friendly_rooks &= ~(1ULL << square_a8);
+                friendly_rooks |= (1ULL << square_d8);
             }
         } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Kingside castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = 0;   // h1
-                rook_to_sq = 2;     // f1
-                friendly_rooks &= ~(1ULL <<0);
-                friendly_rooks |= (1ULL <<2);
+                rook_from_sq = square_h1;
+                rook_to_sq = square_f1;
+                friendly_rooks &= ~(1ULL << square_h1);
+                friendly_rooks |= (1ULL << square_f1);
             } else {
-                rook_from_sq = 56;  // h8
-                rook_to_sq = 58;    // f8
-                friendly_rooks &= ~(1ULL <<56);
-                friendly_rooks |= (1ULL <<58);
+                rook_from_sq = square_h8;
+                rook_to_sq = square_f8;
+                friendly_rooks &= ~(1ULL << square_h8);
+                friendly_rooks |= (1ULL << square_f8);
             }
         } else {
             assert(0);
@@ -665,20 +665,20 @@ void Engine::pushMove_t(const Move& move) {
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_to_sq);
     }
 
-    en_passant_history.push(game_board.en_passant_rights);
+    en_passant_history.push(game_board.en_passant_landing_square);
 
     // Zobrist: remove old en passant (if any)
-    if (game_board.en_passant_rights) {
-        int old_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_rights);
+    if (game_board.en_passant_landing_square) {
+        int old_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_square);
         int old_ep_file = old_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[old_ep_file];
     }
 
-    game_board.en_passant_rights = move.en_passant_rights;
+    game_board.en_passant_landing_square = move.en_passant_landing_square;
 
     // Zobrist: add new en passant (if any)
-    if (game_board.en_passant_rights) {
-        int new_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_rights);
+    if (game_board.en_passant_landing_square) {
+        int new_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_square);
         int new_ep_file = new_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[new_ep_file];
     }
@@ -716,9 +716,9 @@ void Engine::popMove_t() {
     const Move move = move_history.top();
     move_history.pop();
 
-    // --- undo zobrist for en_passant_rights ---
-    if (game_board.en_passant_rights) {
-        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_rights);
+    // --- undo zobrist for en_passant_landing_square ---
+    if (game_board.en_passant_landing_square) {
+        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_square);
         int cur_ep_file = cur_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[cur_ep_file];
     }
@@ -731,7 +731,7 @@ void Engine::popMove_t() {
     }
 
     // pop the enpassent history from the stack
-    game_board.en_passant_rights = en_passant_history.top();
+    game_board.en_passant_landing_square = en_passant_history.top();
     en_passant_history.pop();
 
     // Zobrist undo for castling rights
@@ -814,28 +814,28 @@ void Engine::popMove_t() {
         if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Popping a Queenside Castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = 4;       // d1
-                rook_to_sq = 7;         // a1
-                friendly_rooks &= ~(1ULL <<4);
-                friendly_rooks |= (1ULL <<7);
+                rook_from_sq = square_d1;
+                rook_to_sq = square_a1;
+                friendly_rooks &= ~(1ULL << square_d1);
+                friendly_rooks |= (1ULL << square_a1);
             } else {
-                rook_from_sq = 60;      // d8
-                rook_to_sq = 63;        // a8
-                friendly_rooks &= ~(1ULL <<60);
-                friendly_rooks |= (1ULL <<63);
+                rook_from_sq = square_d8;
+                rook_to_sq = square_a8;
+                friendly_rooks &= ~(1ULL << square_d8);
+                friendly_rooks |= (1ULL << square_a8);
             }
         } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Popping a Kingside Castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = 2;       // f1
-                rook_to_sq = 0;         // h1
-                friendly_rooks &= ~(1ULL <<2);
-                friendly_rooks |= (1ULL <<0);
+                rook_from_sq = square_f1;
+                rook_to_sq = square_h1;
+                friendly_rooks &= ~(1ULL << square_f1);
+                friendly_rooks |= (1ULL << square_h1);
             } else {
-                rook_from_sq = 58;      // f8
-                rook_to_sq = 56;        // h8
-                friendly_rooks &= ~(1ULL <<58);
-                friendly_rooks |= (1ULL <<56);
+                rook_from_sq = square_f8;
+                rook_to_sq = square_h8;
+                friendly_rooks &= ~(1ULL << square_f8);
+                friendly_rooks |= (1ULL << square_h8);
             }
         } else {
             assert(0);
@@ -877,12 +877,13 @@ void Engine::update_pieces_on_square_for_push_t(const Move& move)
 
     // Castling: move the rook in the square table too.
     if (move.is_castle_move) {
+        const ull moveto = move.to;
         if constexpr (c == Color::WHITE) {
-            if (move.to & (1ULL << 1)) {
+            if (moveto & (1ULL << 1)) {
                 // White kingside castle: rook h1 -> f1  (0 -> 2 in your layout)
                 game_board.pieces_on_square[0] = Piece::NONE;
                 game_board.pieces_on_square[2] = Piece::ROOK;
-            } else if (move.to & (1ULL << 5)) {
+            } else if (moveto & (1ULL << 5)) {
                 // White queenside castle: rook a1 -> d1 (7 -> 4 in your layout)
                 game_board.pieces_on_square[7] = Piece::NONE;
                 game_board.pieces_on_square[4] = Piece::ROOK;
@@ -890,11 +891,11 @@ void Engine::update_pieces_on_square_for_push_t(const Move& move)
                 assert(0);
             }
         } else {
-            if (move.to & (1ULL << 57)) {
+            if (moveto & (1ULL << 57)) {
                 // Black kingside castle: rook h8 -> f8 (56 -> 58 in your layout)
                 game_board.pieces_on_square[56] = Piece::NONE;
                 game_board.pieces_on_square[58] = Piece::ROOK;
-            } else if (move.to & (1ULL << 61)) {
+            } else if (moveto & (1ULL << 61)) {
                 // Black queenside castle: rook a8 -> d8 (63 -> 60 in your layout)
                 game_board.pieces_on_square[63] = Piece::NONE;
                 game_board.pieces_on_square[60] = Piece::ROOK;
@@ -934,12 +935,13 @@ void Engine::update_pieces_on_square_for_pop_t(const Move& move)
 
     // Castling: move rook back in the square table too.
     if (move.is_castle_move) {
+        const ull moveto = move.to;
         if constexpr (c == Color::WHITE) {
-            if (move.to & (1ULL << 1)) {
+            if (moveto & (1ULL << 1)) {
                 // Undo white kingside castle: rook f1 -> h1  (2 -> 0)
                 game_board.pieces_on_square[2] = Piece::NONE;
                 game_board.pieces_on_square[0] = Piece::ROOK;
-            } else if (move.to & (1ULL << 5)) {
+            } else if (moveto & (1ULL << 5)) {
                 // Undo white queenside castle: rook d1 -> a1 (4 -> 7)
                 game_board.pieces_on_square[4] = Piece::NONE;
                 game_board.pieces_on_square[7] = Piece::ROOK;
@@ -947,11 +949,11 @@ void Engine::update_pieces_on_square_for_pop_t(const Move& move)
                 assert(0);
             }
         } else {
-            if (move.to & (1ULL << 57)) {
+            if (moveto & (1ULL << 57)) {
                 // Undo black kingside castle: rook f8 -> h8 (58 -> 56)
                 game_board.pieces_on_square[58] = Piece::NONE;
                 game_board.pieces_on_square[56] = Piece::ROOK;
-            } else if (move.to & (1ULL << 61)) {
+            } else if (moveto & (1ULL << 61)) {
                 // Undo black queenside castle: rook d8 -> a8 (60 -> 63)
                 game_board.pieces_on_square[60] = Piece::NONE;
                 game_board.pieces_on_square[63] = Piece::ROOK;
@@ -1178,34 +1180,34 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         // copying it into the vector (emplace_back(new_move)).
         if (!promotion)
         {
-            // Get address of next slot in the vector.
-            moves.emplace_back();
-            Move& new_move = moves.back();
-
-            // Fill it in
-
-            // Hoistable? But why, what would it save?
-            new_move.color = color;
-            new_move.piece_type = piece;
-            new_move.en_passant_rights = en_passant_rghts;
-            new_move.from = single_bitboard_from;
-            new_move.is_en_passent_capture = is_en_passent_capture;
-
-            new_move.to = single_bitboard_to;
-            new_move.capture = piece_captured;
-            new_move.is_castle_move = is_castle;
 
             // remove castling rights, if we just castled
+            uint8_t white_castle_rights = CASTLE_EITHER;
+            uint8_t black_castle_rights = CASTLE_EITHER;
             ull from_or_to = (single_bitboard_from | single_bitboard_to);
             if (from_or_to & castle_touch) {
-                if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= CASTLE_KING;
-                if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= CASTLE_QUEEN;
-                if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= CASTLE_KING;
-                if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= CASTLE_QUEEN;
+                if (from_or_to & W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
+                if (from_or_to & W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
+                if (from_or_to & B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
+                if (from_or_to & B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
             }
 
-            new_move.promotion = Piece::NONE;
-
+            // Get address of next slot in the vector.
+            //moves.emplace_back();
+            moves.emplace_back(
+                                single_bitboard_from,
+                                single_bitboard_to,
+                                en_passant_rghts,
+                                color,
+                                piece,
+                                piece_captured,
+                                Piece::NONE,
+                                black_castle_rights,
+                                white_castle_rights,
+                                is_en_passent_capture,
+                                is_castle
+                            );
+            
         } else {
             // Its a promotion
 
@@ -1222,7 +1224,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                 new_move.from = single_bitboard_from;
                 new_move.to = single_bitboard_to;
                 new_move.capture = piece_captured;
-                new_move.en_passant_rights = en_passant_rghts;
+                new_move.en_passant_landing_square = en_passant_rghts;
                 new_move.is_en_passent_capture = is_en_passent_capture;
                 new_move.is_castle_move = is_castle;
 
@@ -2127,7 +2129,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     , 0ULL, false, false);
 
         // enpassant
-        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_rights;
+        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_square;
         if (enpassant_end_loc) {
             if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, enpassant_end_loc, Piece::PAWN

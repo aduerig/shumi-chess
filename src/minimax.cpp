@@ -181,7 +181,7 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
 
     TTable.clear();
-    TTable.reserve(10000000);    // NOTE: What size here?
+    TTable.reserve(10000000);    // NOTE: What size here? (we dont even normally use this table)
     
     TTable2.clear();
     TTable2.reserve(1000000);    // NOTE: What size here?
@@ -675,7 +675,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     //
     // ull elapsed_time = 0; // in msec
     // tuple<double, Move> ret_val;
-    // ret_val = DoAPrincipalVariation(depth, null_move
+    // ret_val = do_a_principal_variation(depth, null_move
     //                                 , start_time, i_time_requested, requested_end_time
     //                                 , elapsed_time);        // Output
     // d_best_move_value = get<0>(ret_val);
@@ -694,7 +694,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     for (int ii=0; ii<n_Multis; ii++) {
         
         elapsed_time = 0; // in msec
-        ret_val = DoAPrincipalVariation(depth, null_move
+        ret_val = do_a_principal_variation(depth, null_move
                                         , start_time, i_time_requested, requested_end_time
                                         , elapsed_time);        // Output
         d_best_move_value = get<0>(ret_val);
@@ -720,7 +720,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     }
     cout << "\n" << " moves collected: " << engine.ply_so_far;
     engine.print_moves_and_scores_to_file(excluded_root_moves, false, false, stdout);
-    cout << "\n" << " end moves collected: " << engine.ply_so_far << " ---> " << n_Multis << " \n";
+    cout << "\n" << " end moves collected: " << n_Multis << " at ply " << engine.ply_so_far << " \n";
 
     if (n_Multis > 1) {
 
@@ -892,7 +892,7 @@ global_debug_flag = false;
 //
 //  elapsed_time is an output
 //
-std::tuple<double, ShumiChess::Move> MinimaxAI::DoAPrincipalVariation(int depth, ShumiChess::Move null_move
+std::tuple<double, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth, ShumiChess::Move null_move
                                         , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
                                         , ull& elapsed_time)      // output
 {
@@ -1571,7 +1571,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 ull zobrist_save = engine.game_board.zobrist_key;
                 auto ep_history_saveb = engine.game_board.black_castle_rights;
                 auto ep_history_savew = engine.game_board.white_castle_rights;
-                auto enpassant_save = engine.game_board.en_passant_rights;
+                auto enpassant_save = engine.game_board.en_passant_landing_square;
             #endif
 
             #ifdef _DEBUGGING_MOVE_CHAIN    // Print move we are going to analyze
@@ -1742,7 +1742,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     std::cout << "\x1b[0m";
                     assert(0);   
                 }
-                if (enpassant_save != engine.game_board.en_passant_rights) {
+                if (enpassant_save != engine.game_board.en_passant_landing_square) {
                     std::cout << "\x1b[31m";
                     std::cout << "PROBLEM WITH PUSH POP P !!!!!" << std::endl;
                     std::cout << "\x1b[0m";

@@ -40,7 +40,7 @@ constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead p
 //assert(MAXIMUM_DEEPENING < MAX_PLY);
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
-constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 2;      // In units of centi-pawns
+constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 20;      // In units of centi-pawns
 constexpr int RANDOM_MOVE_CANDIDATES = 6;             // I must be greater than 1
 
 class MinimaxAI {
@@ -179,7 +179,7 @@ public:
     typedef std::chrono::high_resolution_clock::time_point TIME_TYPE;
 
 
-    std::tuple<double, ShumiChess::Move> DoAPrincipalVariation(int depth, ShumiChess::Move null_move
+    std::tuple<double, ShumiChess::Move> do_a_principal_variation(int depth, ShumiChess::Move null_move
                                         , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
                                         , ull& elapsed_time);      // Output
 
