@@ -656,7 +656,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     }
 
     maximum_deepening = this_deepening;
-    cout << " maximum_deeeeeeeeeepening " << maximum_deepening << "\n";
+    //cout << " maximum_deeeeeeeeeepening " << maximum_deepening << "\n";
 
     // defaults
     int depth = 1;

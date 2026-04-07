@@ -632,28 +632,28 @@ void Engine::pushMove_t(const Move& move) {
         if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Queenside Castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = square_a1;
-                rook_to_sq = square_d1;
-                friendly_rooks &= ~(1ULL << square_a1);
-                friendly_rooks |= (1ULL << square_d1);
+                rook_from_sq = game_board.square_a1;
+                rook_to_sq = game_board.square_d1;
+                friendly_rooks &= ~(1ULL << game_board.square_a1);
+                friendly_rooks |= (1ULL << game_board.square_d1);
             } else {
-                rook_from_sq = square_a8;
-                rook_to_sq = square_d8;
-                friendly_rooks &= ~(1ULL << square_a8);
-                friendly_rooks |= (1ULL << square_d8);
+                rook_from_sq = game_board.square_a8;
+                rook_to_sq = game_board.square_d8;
+                friendly_rooks &= ~(1ULL << game_board.square_a8);
+                friendly_rooks |= (1ULL << game_board.square_d8);
             }
         } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Kingside castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = square_h1;
-                rook_to_sq = square_f1;
-                friendly_rooks &= ~(1ULL << square_h1);
-                friendly_rooks |= (1ULL << square_f1);
+                rook_from_sq = game_board.square_h1;
+                rook_to_sq = game_board.square_f1;
+                friendly_rooks &= ~(1ULL << game_board.square_h1);
+                friendly_rooks |= (1ULL << game_board.square_f1);
             } else {
-                rook_from_sq = square_h8;
-                rook_to_sq = square_f8;
-                friendly_rooks &= ~(1ULL << square_h8);
-                friendly_rooks |= (1ULL << square_f8);
+                rook_from_sq = game_board.square_h8;
+                rook_to_sq = game_board.square_f8;
+                friendly_rooks &= ~(1ULL << game_board.square_h8);
+                friendly_rooks |= (1ULL << game_board.square_f8);
             }
         } else {
             assert(0);
@@ -814,28 +814,28 @@ void Engine::popMove_t() {
         if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Popping a Queenside Castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = square_d1;
-                rook_to_sq = square_a1;
-                friendly_rooks &= ~(1ULL << square_d1);
-                friendly_rooks |= (1ULL << square_a1);
+                rook_from_sq = game_board.square_d1;
+                rook_to_sq = game_board.square_a1;
+                friendly_rooks &= ~(1ULL << game_board.square_d1);
+                friendly_rooks |= (1ULL << game_board.square_a1);
             } else {
-                rook_from_sq = square_d8;
-                rook_to_sq = square_a8;
-                friendly_rooks &= ~(1ULL << square_d8);
-                friendly_rooks |= (1ULL << square_a8);
+                rook_from_sq = game_board.square_d8;
+                rook_to_sq = game_board.square_a8;
+                friendly_rooks &= ~(1ULL << game_board.square_d8);
+                friendly_rooks |= (1ULL << game_board.square_a8);
             }
         } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Popping a Kingside Castle
             if constexpr (c == Color::WHITE) {
-                rook_from_sq = square_f1;
-                rook_to_sq = square_h1;
-                friendly_rooks &= ~(1ULL << square_f1);
-                friendly_rooks |= (1ULL << square_h1);
+                rook_from_sq = game_board.square_f1;
+                rook_to_sq = game_board.square_h1;
+                friendly_rooks &= ~(1ULL << game_board.square_f1);
+                friendly_rooks |= (1ULL << game_board.square_h1);
             } else {
-                rook_from_sq = square_f8;
-                rook_to_sq = square_h8;
-                friendly_rooks &= ~(1ULL << square_f8);
-                friendly_rooks |= (1ULL << square_h8);
+                rook_from_sq = game_board.square_f8;
+                rook_to_sq = game_board.square_h8;
+                friendly_rooks &= ~(1ULL << game_board.square_f8);
+                friendly_rooks |= (1ULL << game_board.square_h8);
             }
         } else {
             assert(0);
