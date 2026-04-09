@@ -144,7 +144,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
     // "this" here is a GameBoard.
     if (fen_components[3] != "-") { 
-        this->en_passant_landing_square = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
+        this->en_passant_landing_sq = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
     }
 
     // halfmove is used to apply the "fifty-move draw" rule in chess
@@ -288,8 +288,8 @@ const string GameBoard::to_fen(bool bFullFEN) {
 
     // TODO: enpassant
     string enpassant_info = "-";
-    if (en_passant_landing_square != 0) {
-        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant_landing_square);
+    if (en_passant_landing_sq != 0) {
+        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant_landing_sq);
     }
     fen_components.push_back(enpassant_info);
 
@@ -2331,9 +2331,9 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         // Take guard files into account
         int nGuardPawns = count_guard_pawn_files_23_t<c>(PInfoIn, k_file);
 
-        if (global_debug_flag) {
-            printf ("%d count_guard_pawn_files_23_t %d\n", c, nGuardPawns);
-        }
+        // if (global_debug_flag) {
+        //     printf ("%d count_guard_pawn_files_23_t %d\n", c, nGuardPawns);
+        // }
 
 
         if (nGuardPawns==3) cpWght = cpWght;

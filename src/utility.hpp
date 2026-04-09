@@ -129,9 +129,11 @@ inline ull square_to_bitboard(int square) {
 inline int bitboard_to_lowest_square_fast(ull bitboard) {  
     return __builtin_ctzll(bitboard);
 }
+
+#define NO_SQUARE 64
 inline int bitboard_to_lowest_square(ull bitboard) {  
     //assert(bitboard != 0);
-    if (bitboard == 0ULL) { return 64; }        // __builtin_ctzll(0) is undefined
+    if (bitboard == 0ULL) { return NO_SQUARE; }        // __builtin_ctzll(0) is undefined
     return __builtin_ctzll(bitboard);
 }
 // Im used for debugging only
@@ -271,8 +273,8 @@ inline void cout_move_info(const ShumiChess::Move& move) {
     std::cout << "Is En Passant Capture: " << move.is_en_passent_capture << std::endl;
     
     // Print en passant target square if it exists
-    if (move.en_passant_landing_square != 0) {
-        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing_square) << std::endl;
+    if (move.en_passant_landing_bb != 0) {
+        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing_bb) << std::endl;
     }
 
     // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)

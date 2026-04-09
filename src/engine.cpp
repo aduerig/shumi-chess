@@ -665,20 +665,20 @@ void Engine::pushMove_t(const Move& move) {
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_to_sq);
     }
 
-    en_passant_history.push(game_board.en_passant_landing_square);
+    en_passant_history.push(game_board.en_passant_landing_sq);
 
     // Zobrist: remove old en passant (if any)
-    if (game_board.en_passant_landing_square) {
-        int old_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_square);
+    if (game_board.en_passant_landing_sq) {
+        int old_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_sq);
         int old_ep_file = old_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[old_ep_file];
     }
 
-    game_board.en_passant_landing_square = move.en_passant_landing_square;
+    game_board.en_passant_landing_sq = move.en_passant_landing_bb;
 
     // Zobrist: add new en passant (if any)
-    if (game_board.en_passant_landing_square) {
-        int new_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_square);
+    if (game_board.en_passant_landing_sq) {
+        int new_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_sq);
         int new_ep_file = new_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[new_ep_file];
     }
@@ -716,9 +716,9 @@ void Engine::popMove_t() {
     const Move move = move_history.top();
     move_history.pop();
 
-    // --- undo zobrist for en_passant_landing_square ---
-    if (game_board.en_passant_landing_square) {
-        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_square);
+    // --- undo zobrist for en_passant_landing_sq ---
+    if (game_board.en_passant_landing_sq) {
+        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_sq);
         int cur_ep_file = cur_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[cur_ep_file];
     }
@@ -731,7 +731,7 @@ void Engine::popMove_t() {
     }
 
     // pop the enpassent history from the stack
-    game_board.en_passant_landing_square = en_passant_history.top();
+    game_board.en_passant_landing_sq = en_passant_history.top();
     en_passant_history.pop();
 
     // Zobrist undo for castling rights
@@ -1133,7 +1133,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 ull single_bitboard_from, 
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece, Color color, bool capture, bool promotion,
-                                ull en_passant_rghts,
+                                ull en_passant_land_bb,
                                 bool is_en_passent_capture, bool is_castle) {
 
 
@@ -1145,10 +1145,12 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
     constexpr ull castle_touch = (W_KSIDE_MASK | W_QSIDE_MASK | B_KSIDE_MASK | B_QSIDE_MASK);
 
-    assert(game_board.bits_in(en_passant_rghts) <= 1);     // exploratory assert
+    assert(game_board.bits_in(en_passant_land_bb) <= 1);     // exploratory assert
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
+
+    int en_passant_land_sq = utility::bit::bitboard_to_lowest_square(en_passant_land_bb);
 
     // for all "to" squares and add them as moves
     while (bitboard_to) {
@@ -1174,6 +1176,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             piece_captured = Piece::NONE;
         }
 
+
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),
         // then fill its fields in-place. This avoids creating a temporary Move and
@@ -1197,7 +1200,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             moves.emplace_back(
                                 single_bitboard_from,
                                 single_bitboard_to,
-                                en_passant_rghts,
+                                en_passant_land_bb,
                                 color,
                                 piece,
                                 piece_captured,
@@ -1224,7 +1227,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                 new_move.from = single_bitboard_from;
                 new_move.to = single_bitboard_to;
                 new_move.capture = piece_captured;
-                new_move.en_passant_landing_square = en_passant_rghts;
+                new_move.en_passant_landing_bb = en_passant_land_bb;
                 new_move.is_en_passent_capture = is_en_passent_capture;
                 new_move.is_castle_move = is_castle;
 
@@ -2129,7 +2132,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     , 0ULL, false, false);
 
         // enpassant
-        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_square;
+        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_sq;
         if (enpassant_end_loc) {
             if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, enpassant_end_loc, Piece::PAWN
@@ -2158,10 +2161,13 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                 ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
                 ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
 
-                if (move_forward_two_unblocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                if (move_forward_two_unblocked) {
+                    assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
+                    add_psuedo_move_to_vector(all_psuedo_legal_moves
                     , single_pawn, move_forward_two_unblocked, Piece::PAWN
                     , color, false, false
                     , move_forward_one_unblocked, false, false);
+                }
             }
         }
 

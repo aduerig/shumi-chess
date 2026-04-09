@@ -867,6 +867,7 @@ global_debug_flag=false;
 
 global_debug_flag = false;
 
+    itemp1 = sizeof(Move);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -1571,7 +1572,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 ull zobrist_save = engine.game_board.zobrist_key;
                 auto ep_history_saveb = engine.game_board.black_castle_rights;
                 auto ep_history_savew = engine.game_board.white_castle_rights;
-                auto enpassant_save = engine.game_board.en_passant_landing_square;
+                auto enpassant_save = engine.game_board.en_passant_landing_sq;
             #endif
 
             #ifdef _DEBUGGING_MOVE_CHAIN    // Print move we are going to analyze
@@ -1742,7 +1743,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     std::cout << "\x1b[0m";
                     assert(0);   
                 }
-                if (enpassant_save != engine.game_board.en_passant_landing_square) {
+                if (enpassant_save != engine.game_board.en_passant_landing_sq) {
                     std::cout << "\x1b[31m";
                     std::cout << "PROBLEM WITH PUSH POP P !!!!!" << std::endl;
                     std::cout << "\x1b[0m";

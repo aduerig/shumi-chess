@@ -85,7 +85,7 @@ class GameBoard {
         // ? would one consider an extra bit for if we should look at this val
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
         //
-        ull en_passant_landing_square = 0;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
+        ull en_passant_landing_sq = 0;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
         uint64_t zobrist_key = 0;
 

@@ -104,6 +104,6 @@
     turn(WHITE),
     black_castle_rights(CASTLE_EITHER),
     white_castle_rights(CASTLE_EITHER),
-    en_passant_landing_square(1),               // The square where the capturing pawn would land in an en-passant capture
+    en_passant_landing_sq(1),               // The square where the capturing pawn would land in an en-passant capture
     halfmove(0),
     fullmove(1) 
