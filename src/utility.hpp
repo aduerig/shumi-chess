@@ -273,8 +273,8 @@ inline void cout_move_info(const ShumiChess::Move& move) {
     std::cout << "Is En Passant Capture: " << move.is_en_passent_capture << std::endl;
     
     // Print en passant target square if it exists
-    if (move.en_passant_landing_bb != 0) {
-        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing_bb) << std::endl;
+    if (move.en_passant_landing != 0) {
+        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing) << std::endl;
     }
 
     // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)

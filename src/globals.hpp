@@ -71,7 +71,7 @@ struct Move {
   
     ull from = 0ULL;   // 1-bitboard (but with only one bit set)
     ull to = 0ULL;     // 1-bitboard (but with only one bit set)
-    ull en_passant_landing_bb = 0ULL;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
+    ull en_passant_landing = 0ULL;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
@@ -102,7 +102,7 @@ struct Move {
         :
           from(from_),
           to(to_),
-          en_passant_landing_bb(en_passant_landing_),
+          en_passant_landing(en_passant_landing_),
           color(color_),
           piece_type(piece_type_),
           capture(capture_),
@@ -119,7 +119,7 @@ struct Move {
     // NOTE: Is this right ? It only checks the squares, not the pieces on the square.
     // But wait, the piece on the square, and the rest of the board already encoded in the FEN 
     // which is the "outer map" of the hashTable? I have no idea what im talking about. In any case,
-    // the promotion piece must be added to the equality. Not sure about the "en_passant_landing_sq"?
+    // the promotion piece must be added to the equality. Not sure about the "en_passant_landing_bb"?
 
     bool operator==(const Move &other) const {
         return ((from == other.from) && (to == other.to) && (promotion == other.promotion));

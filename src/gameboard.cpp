@@ -64,7 +64,7 @@ namespace ShumiChess {
     turn(WHITE),
     black_castle_rights(CASTLE_EITHER),
     white_castle_rights(CASTLE_EITHER),
-    en_passant_landing_sq(1),               // The square where the capturing pawn would land in an en-passant capture
+    en_passant_landing_bb(1),               // The square where the capturing pawn would land in an en-passant capture
     halfmove(0),
     fullmove(1) 
 
@@ -174,7 +174,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
     // "this" here is a GameBoard.
     if (fen_components[3] != "-") { 
-        this->en_passant_landing_sq = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
+        this->en_passant_landing_bb = utility::representation::acn_to_bitboard_conversion(fen_components[3]);
     }
 
     // halfmove is used to apply the "fifty-move draw" rule in chess
@@ -318,8 +318,8 @@ const string GameBoard::to_fen(bool bFullFEN) {
 
     // TODO: enpassant
     string enpassant_info = "-";
-    if (en_passant_landing_sq != 0) {
-        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant_landing_sq);
+    if (en_passant_landing_bb != 0) {
+        enpassant_info = utility::representation::bitboard_to_acn_conversion(en_passant_landing_bb);
     }
     fen_components.push_back(enpassant_info);
 

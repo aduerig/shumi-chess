@@ -665,20 +665,20 @@ void Engine::pushMove_t(const Move& move) {
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_to_sq);
     }
 
-    en_passant_history.push(game_board.en_passant_landing_sq);
+    en_passant_history.push(game_board.en_passant_landing_bb);
 
     // Zobrist: remove old en passant (if any)
-    if (game_board.en_passant_landing_sq) {
-        int old_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_sq);
+    if (game_board.en_passant_landing_bb) {
+        int old_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_bb);
         int old_ep_file = old_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[old_ep_file];
     }
 
-    game_board.en_passant_landing_sq = move.en_passant_landing_bb;
+    game_board.en_passant_landing_bb = move.en_passant_landing;
 
     // Zobrist: add new en passant (if any)
-    if (game_board.en_passant_landing_sq) {
-        int new_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_sq);
+    if (game_board.en_passant_landing_bb) {
+        int new_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_bb);
         int new_ep_file = new_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[new_ep_file];
     }
@@ -716,9 +716,9 @@ void Engine::popMove_t() {
     const Move move = move_history.top();
     move_history.pop();
 
-    // --- undo zobrist for en_passant_landing_sq ---
-    if (game_board.en_passant_landing_sq) {
-        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_sq);
+    // --- undo zobrist for en_passant_landing_bb ---
+    if (game_board.en_passant_landing_bb) {
+        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_bb);
         int cur_ep_file = cur_ep_sq & 7;
         game_board.zobrist_key ^= zobrist_enpassant[cur_ep_file];
     }
@@ -731,7 +731,7 @@ void Engine::popMove_t() {
     }
 
     // pop the enpassent history from the stack
-    game_board.en_passant_landing_sq = en_passant_history.top();
+    game_board.en_passant_landing_bb = en_passant_history.top();
     en_passant_history.pop();
 
     // Zobrist undo for castling rights
@@ -1226,7 +1226,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                 new_move.from = single_bitboard_from;
                 new_move.to = single_bitboard_to;
                 new_move.capture = piece_captured;
-                new_move.en_passant_landing_bb = en_passant_land_bb;
+                new_move.en_passant_landing = en_passant_land_bb;
                 new_move.is_en_passent_capture = is_en_passent_capture;
                 new_move.is_castle_move = is_castle;
 
@@ -2131,7 +2131,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     , 0ULL, false, false);
 
         // enpassant
-        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_sq;
+        ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_bb;
         if (enpassant_end_loc) {
             if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, enpassant_end_loc, Piece::PAWN
