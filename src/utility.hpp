@@ -130,8 +130,8 @@ inline int bitboard_to_lowest_square_fast(ull bitboard) {
     return __builtin_ctzll(bitboard);
 }
 
-#define NO_SQUARE 64
-inline int bitboard_to_lowest_square(ull bitboard) {  
+constexpr uint8_t NO_SQUARE = 64;
+inline uint8_t bitboard_to_lowest_square(ull bitboard) {  
     //assert(bitboard != 0);
     if (bitboard == 0ULL) { return NO_SQUARE; }        // __builtin_ctzll(0) is undefined
     return __builtin_ctzll(bitboard);

@@ -1146,11 +1146,10 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
     constexpr ull castle_touch = (W_KSIDE_MASK | W_QSIDE_MASK | B_KSIDE_MASK | B_QSIDE_MASK);
 
     assert(game_board.bits_in(en_passant_land_bb) <= 1);     // exploratory assert
+    uint8_t en_passant_land_sq = utility::bit::bitboard_to_lowest_square(en_passant_land_bb);
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
-
-    int en_passant_land_sq = utility::bit::bitboard_to_lowest_square(en_passant_land_bb);
 
     // for all "to" squares and add them as moves
     while (bitboard_to) {
@@ -1287,12 +1286,12 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
         bool isCastles=false;
   
         if (the_move.piece_type == Piece::KING) {
-            int from_sq = utility::bit::bitboard_to_lowest_square(the_move.from); // 0..63
+            int from_sq = utility::bit::bitboard_to_lowest_square_safe(the_move.from); // 0..63
 
             if ( (from_sq == game_board.square_e1) || (from_sq == game_board.square_e8) )
             {
                 ull move_to_bb = the_move.to;
-                int to_sq = utility::bit::bitboard_to_lowest_square(move_to_bb); // 0..63
+                int to_sq = utility::bit::bitboard_to_lowest_square_safe(move_to_bb); // 0..63
 
                 if ( (to_sq == game_board.square_g1) || (to_sq == game_board.square_g8) ) {
                      MoveText += "O-O";
@@ -1450,7 +1449,7 @@ char Engine::get_piece_char(Piece p) const {
 // Returns character, for the rank of the "from" square
 char Engine::rank_from_move(const Move& m) const
 {
-    int from_sq = utility::bit::bitboard_to_lowest_square(m.from);
+    int from_sq = utility::bit::bitboard_to_lowest_square_safe(m.from);
     int rank    = from_sq >> 3;             // 0..7 for ranks 1..8
     return '1' + rank;                      // '1'..'8'
 }
@@ -1458,7 +1457,7 @@ char Engine::rank_from_move(const Move& m) const
 // Returns character, for the file of the "from" square
 char Engine::file_to_move(const Move& m) const
 {
-    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 0..63
+    int to_sq = utility::bit::bitboard_to_lowest_square_safe(m.to); // 0..63
     int file  = to_sq & 7;     // within-rank index 0..7
     file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
@@ -1467,14 +1466,14 @@ char Engine::file_to_move(const Move& m) const
 /// Returns character, for the rank of the "to" square
 char Engine::rank_to_move(const Move& m) const
 {
-    int to_sq = utility::bit::bitboard_to_lowest_square(m.to); // 
+    int to_sq = utility::bit::bitboard_to_lowest_square_safe(m.to); // 
     int rank  = to_sq / 8;   // 0=rank 1, 1=rank 2, ..., 7=rank 8
     return '1' + rank;       // convert to character '1'..'8'
 }
 
 char Engine::file_from_move(const Move& m) const
 {
-    int from_sq = utility::bit::bitboard_to_lowest_square(m.from); // 0..63
+    int from_sq = utility::bit::bitboard_to_lowest_square_safe(m.from); // 0..63
     int file  = from_sq & 7;     // within-rank index 0..7
     file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
@@ -2292,7 +2291,8 @@ template<Color c>
 void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull king = game_board.get_pieces_template<Piece::KING, c>();
 
-    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square(king)];
+    assert (king);      // Has to be kings
+    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square_fast(king)];
 
     // capture moves
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
