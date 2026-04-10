@@ -116,7 +116,8 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
 
 inline ull square_to_bitboard(int square) {
     assert (square >= 0);
-    assert (square < 64);
+    assert (square <= 64);
+    if (square==64) return 0ULL;
     return 1ULL << square;
 }
 
@@ -273,8 +274,11 @@ inline void cout_move_info(const ShumiChess::Move& move) {
     std::cout << "Is En Passant Capture: " << move.is_en_passent_capture << std::endl;
     
     // Print en passant target square if it exists
-    if (move.en_passant_landing != 0) {
-        std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing) << std::endl;
+    constexpr uint8_t NO_SQUARE = 64;
+    if (move.en_passant_landingSQ != NO_SQUARE) {
+        ull landSq_bb = utility::bit::square_to_bitboard(move.en_passant_landingSQ);
+        std::cout << "En Passant Target: " << square_to_position_string(landSq_bb) << std::endl;
+        //std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing) << std::endl;
     }
 
     // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)

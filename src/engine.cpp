@@ -112,24 +112,10 @@ void Engine::reset_engine() {         // New game.
     ///////////////////////////////////////////////////////////////////////
     //
     // Debug only. You can override the gameboard setup with fen positions as in:  FEN setup. Setup the FEN
-    //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");       // bad
-    //game_board = GameBoard("r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17");      // repeat 3 times test
-    
-    //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
-    //game_board = GameBoard("8/4k3/6K1/8/8/1q6/8/8 w - - 0 1");
-
-    //game_board = GameBoard("rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1");
-    //game_board = GameBoard("3qk3/8/8/8/8/8/5P2/3Q1K2 w KQkq - 0 1");
-    //game_board = GameBoard("1r6/4k3/6K1/8/8/8/8/8 w - - 0 1");
-    // 
-    // horrible doubled pawn hater bug.
-    //game_board = GameBoard("r4rk1/p1Nn2pp/p4q2/2p1p3/2P1P1n1/3BQ3/1P3PK1/R2R4 w - - 2 24");
 
     // burp2 bug then c5 for black.
     //game_board = GameBoard("rnbq1rk1/ppp2p1p/3ppp2/8/2PP4/2PQ1N2/P3PPPP/R3KB1R b KQ - 1 8");
    
-    ////////////////////game_board = GameBoard("rnbq1rk1/pp3p1p/3ppp2/2p5/2PP4/2PQ1N2/P3PPPP/R3KB1R w KQ - 1 8");
-    
     // burp2 bug then d5 for black.     (-t500 -d4)
     //game_board = GameBoard("r1bqkb1r/pppppppp/2n2n2/8/6P1/2N2P2/PPPPP2P/R1BQKBNR b KQkq g3 0 3");
 
@@ -169,9 +155,17 @@ void Engine::reset_engine() {         // New game.
     #define E4_E5_OPENING  "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
     #define E4_E5_OPENING2 "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 2"
 
-    #define TEST_FEN "rr6/ppp2ppp/5n2/2np1k2/3P4/8/PPPB1PPP/2K2R1R b - - 7 17"
+    #define ENPASSANT_FEN "r1b1qrk1/pppp2pn/2n1p2p/2P1Pp2/3P4/2BB4/PPQ2PPP/R3K1NR b KQ f6 0 10"   // then play d5
+    #define ENPASSANT_FEN2 "8/8/4k3/8/pp1pp1pp/8/PPPPPPPP/4K3 w KQkq - 0 1"       // only pawns
 
-    //game_board = GameBoard(TEST_FEN);
+    #define THREE_TIME_REP_FEN "r1bq1r2/pppppkbQ/7p/8/3P1p2/1PPB1N2/1P3PPP/2KR3R w - - 2 17"
+
+    #define TRADING_FEN "rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1"
+
+    //#define TEMP_FEN "r4rk1/p1Nn2pp/p4q2/2p1p3/2P1P1n1/3BQ3/1P3PK1/R2R4 w - - 2 24"
+
+
+    //game_board = GameBoard(ENPASSANT_FEN2);
 
 
     game_board = GameBoard();
@@ -468,6 +462,10 @@ GameState Engine::is_game_over() {
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
 GameState Engine::is_game_over(int n_leg_moves_found) {
     if (n_leg_moves_found == 0) {
+
+        assert(game_board.white_king);
+        assert(game_board.black_king);
+
         // if no moves, then gave is over. Either somebody wins or its a stalemate
         if ( (!game_board.white_king) || (is_square_in_check_t<Color::BLACK>(game_board.white_king)) ) {
             return GameState::BLACKWIN;     // Checkmate
@@ -674,7 +672,14 @@ void Engine::pushMove_t(const Move& move) {
         game_board.zobrist_key ^= zobrist_enpassant[old_ep_file];
     }
 
-    game_board.en_passant_landing_bb = move.en_passant_landing;
+    // if (move.en_passant_landingSQ>63) {
+    //     cout << " werty " << (int)move.en_passant_landingSQ;
+    //     assert(0);
+    // }
+    ull landSq_bb = utility::bit::square_to_bitboard(move.en_passant_landingSQ);
+   
+    game_board.en_passant_landing_bb = landSq_bb;
+    //game_board.en_passant_landing_bb = move.en_passant_landing;
 
     // Zobrist: add new en passant (if any)
     if (game_board.en_passant_landing_bb) {
@@ -1199,7 +1204,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             moves.emplace_back(
                                 single_bitboard_from,
                                 single_bitboard_to,
-                                en_passant_land_bb,
+                                en_passant_land_sq,
                                 color,
                                 piece,
                                 piece_captured,
@@ -1226,7 +1231,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                 new_move.from = single_bitboard_from;
                 new_move.to = single_bitboard_to;
                 new_move.capture = piece_captured;
-                new_move.en_passant_landing = en_passant_land_bb;
+                new_move.en_passant_landingSQ = en_passant_land_sq;
                 new_move.is_en_passent_capture = is_en_passent_capture;
                 new_move.is_castle_move = is_castle;
 
@@ -2292,7 +2297,10 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
     ull king = game_board.get_pieces_template<Piece::KING, c>();
 
     assert (king);      // Has to be kings
-    ull avail_attacks = tables::movegen::king_attack_table[utility::bit::bitboard_to_lowest_square_fast(king)];
+    assert (game_board.bits_in(king) == 1);
+
+    int fromSQ = utility::bit::bitboard_to_lowest_square_fast(king);
+    ull avail_attacks = tables::movegen::king_attack_table[fromSQ];
 
     // capture moves
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -2302,6 +2310,8 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
     // quiet moves
     if (!unquiet_moves_only) {
+
+        // Quiet moves
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
         add_psuedo_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
             , c, false, false
@@ -2319,7 +2329,9 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             bool b_no_inbetween_squares_in_check;
 
             if constexpr (c == Color::WHITE) {
+
                 if (game_board.white_castle_rights & CASTLE_KING) {
+                if (fromSQ == game_board.square_e1) {
                     squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
                     if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                         b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
@@ -2327,7 +2339,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                             needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
                             actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                             if (actual_rooks_location & needed_rook_location) {
-                                king_origin_square = 1ULL <<1;
+                                king_origin_square = 1ULL << 1;
                                 add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                     , c, false, false
                                     , 0ULL, false, true);
@@ -2335,7 +2347,10 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                         }
                     }
                 }
+                }
+
                 if (game_board.white_castle_rights & CASTLE_QUEEN) {
+                if (fromSQ == game_board.square_e1) {
                     squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
                     if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                         b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
@@ -2351,8 +2366,12 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                         }
                     }
                 }
+                }
+            
             } else {
+
                 if (game_board.black_castle_rights & CASTLE_KING) {
+                if (fromSQ == game_board.square_e8) {
                     squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                     if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                         b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
@@ -2368,7 +2387,10 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                         }
                     }
                 }
+                }
+
                 if (game_board.black_castle_rights & CASTLE_QUEEN) {
+                if (fromSQ == game_board.square_e8) {
                     squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                     if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
                         b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
@@ -2384,6 +2406,8 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                         }
                     }
                 }
+                }
+
             }
         #endif
     }
@@ -2411,7 +2435,14 @@ int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves, bool 
 
 template<Color enemy_c>
 bool Engine::is_square_in_check_t(const ull square_bb) {
+
+    assert(square_bb != 0);
     assert(game_board.bits_in(square_bb) == 1);
+    // if (game_board.bits_in(square_bb) != 1){
+    //     cout << "bitsin " << square_bb << " == " << game_board.bits_in(square_bb) << "\n";
+    //     assert(0);
+    // }
+
     int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
 
     ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();
@@ -2476,11 +2507,9 @@ template<Color c>
 bool Engine::is_king_in_check_t() {
     constexpr Color enemy = utility::representation::opposite_color_v<c>;
     ull friendly_king = game_board.get_pieces_template<Piece::KING, c>();
+    assert (friendly_king);     // has to be a king
 
-    // remove me!
-    //bool b_king_in_check2 = is_square_in_check0_t<enemy>(friendly_king);
     bool b_king_in_check = is_square_in_check_t<enemy>(friendly_king);
-    //assert (b_king_in_check2 == b_king_in_check);
 
     return b_king_in_check;
 }

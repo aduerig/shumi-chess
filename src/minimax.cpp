@@ -670,22 +670,13 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     ull elapsed_time = 0; // in msec
     tuple<double, Move> ret_val;
-    //
-    // Get a move (pricial varation) using iterive deepening
-    //
-    // ull elapsed_time = 0; // in msec
-    // tuple<double, Move> ret_val;
-    // ret_val = do_a_principal_variation(depth, null_move
-    //                                 , start_time, i_time_requested, requested_end_time
-    //                                 , elapsed_time);        // Output
-    // d_best_move_value = get<0>(ret_val);
-    // best_move = get<1>(ret_val);
 
     int n_Multis = 1;
-    if (engine.i_randomize_next_move>0) 
-    {
+    //
+    // The -r option, runs MultiPV
+    if (engine.i_randomize_next_move>0) {
         assert(RANDOM_MOVE_CANDIDATES>1);           // I must be greater than 1
-        n_Multis = RANDOM_MOVE_CANDIDATES;          // We get five options to choose from.
+        n_Multis = RANDOM_MOVE_CANDIDATES;          // We get this many options to choose from.
         engine.i_randomize_next_move--;             // Decrement number of randome moves to make
     }
 
@@ -699,12 +690,16 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                                         , elapsed_time);        // Output
         d_best_move_value = get<0>(ret_val);
         if (d_best_move_value == ABORT_SCORE) break;
-
+        //if (d_Return_score == ONLY_MOVE_SCORE)
 
         best_move = get<1>(ret_val);    
 
+        engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                , (GameState::INPROGRESS), false, false, NULL
+                , engine.move_string);    // Output
+
         cout << "\n" << " pvar? " << d_best_move_value << " " << engine.move_string 
-             << " quack " << (int)best_move.piece_type << " \n";
+            << " -- " << (best_move.piece_type == Piece::NONE) << " == " << d_best_move_value << " \n";
 
         if (best_move.piece_type == Piece::NONE) break;
 
@@ -712,10 +707,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         excluded_root_moves.push_back(std::make_pair(best_move, d_best_move_value));
         if (d_best_move_value == ONLY_MOVE_SCORE) break;
 
-        engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-                , (GameState::INPROGRESS), false, false, NULL
-                , engine.move_string);    // Output
-        cout << "\n" << " pvar! " << d_best_move_value << " " << engine.move_string << " \n";
+        cout << " pvar! " << d_best_move_value << " " << engine.move_string << " \n";
 
     }
     cout << "\n" << " moves collected: " << engine.ply_so_far;
@@ -763,6 +755,12 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , (GameState::INPROGRESS), false, false, NULL
                 , engine.move_string);    // Output
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
+
+    if (best_move.is_en_passent_capture) {
+        printf("pause (press Enter)\n");
+        fflush(stdout);
+        getchar();
+    }
 
 
     char buf[32];
@@ -949,7 +947,7 @@ std::tuple<double, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dep
             // We stopped analysis because there was only one legal move. We just play that.
             // Intersting, what should be the score here? 
             b_Forced = true;
-            d_best_move_value = 0.0;
+            d_best_move_value = d_Return_score;
             best_move = get<1>(ret_val);        // this was the only legal move.
             break;   // Stop deepening, no more depths.
         } else {

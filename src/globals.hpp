@@ -9,8 +9,6 @@
 #include <array>
 #include <cstdlib>
 
-#include "globals.hpp"
-
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG
 #endif
@@ -58,6 +56,8 @@ enum Piece {     // Pieces must be in this order!
     NONE,
 };
 
+constexpr uint8_t NO_SQUARE = 64;
+
 //                              12345678
 constexpr int CASTLE_NONE   = 0b00000000;
 constexpr int CASTLE_EITHER = 0b00000011;
@@ -71,7 +71,7 @@ struct Move {
   
     ull from = 0ULL;   // 1-bitboard (but with only one bit set)
     ull to = 0ULL;     // 1-bitboard (but with only one bit set)
-    ull en_passant_landing = 0ULL;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
+    uint8_t en_passant_landingSQ = NO_SQUARE;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
@@ -90,7 +90,7 @@ struct Move {
    // --- NEW FULL FIELD CONSTRUCTOR (used for speed, in add_psuedo_move_to_vector()) ---
     Move(ull from_,
          ull to_,
-         ull en_passant_landing_,
+         uint8_t en_passant_landing_,
          Color color_,
          Piece piece_type_,
          Piece capture_,
@@ -102,7 +102,7 @@ struct Move {
         :
           from(from_),
           to(to_),
-          en_passant_landing(en_passant_landing_),
+          en_passant_landingSQ(en_passant_landing_),
           color(color_),
           piece_type(piece_type_),
           capture(capture_),
