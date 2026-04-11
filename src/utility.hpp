@@ -91,7 +91,7 @@ inline ull bitshift_by_color_t(ull bitboard, int amount) {
     else                                  return bitboard >> amount;
 }
 
-// This function does 2 things:
+// This function does 2 things to the input "bitboard":
 //    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
 //    2. The LSB is zeroed on the input "bitboard"
 inline ull lsb_and_pop(ull& bitboard) {
@@ -204,7 +204,7 @@ extern std::array<std::string, 8> row_to_letter;
 // lower left is 2^7
 // upper right is 2^56
 // upper left is 2^63
-inline std::string square_to_position_string(ull square) {
+inline std::string bb_to_position_string(ull square) {
     for (int i = 1; i <= 8; i++) {
         for (int j = 1; j <= 8; j++) {
             if (1ULL & square) {
@@ -217,7 +217,9 @@ inline std::string square_to_position_string(ull square) {
 };
 
 inline std::string move_to_string(const ShumiChess::Move& move) {
-    return square_to_position_string(move.from) + square_to_position_string(move.to);
+    const ull movefrom = move.from;
+    const ull moveto = move.to;
+    return bb_to_position_string(movefrom) + bb_to_position_string(moveto);
 }
 
 
@@ -277,8 +279,8 @@ inline void cout_move_info(const ShumiChess::Move& move) {
     constexpr uint8_t NO_SQUARE = 64;
     if (move.en_passant_landingSQ != NO_SQUARE) {
         ull landSq_bb = utility::bit::square_to_bitboard(move.en_passant_landingSQ);
-        std::cout << "En Passant Target: " << square_to_position_string(landSq_bb) << std::endl;
-        //std::cout << "En Passant Target: " << square_to_position_string(move.en_passant_landing) << std::endl;
+        std::cout << "En Passant Target: " << bb_to_position_string(landSq_bb) << std::endl;
+        //std::cout << "En Passant Target: " << bb_to_position_string(move.en_passant_landing) << std::endl;
     }
 
     // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)
@@ -302,7 +304,7 @@ std::string colorize_board_string(const std::string& plain);
 std::string widen_board(const std::string& plain);
 void print_gameboard(ShumiChess::GameBoard);
 std::string stringify(ShumiChess::Piece);
-std::string square_to_position_string(ull);
+std::string bb_to_position_string(ull);
 
 } // end namespace representation
 

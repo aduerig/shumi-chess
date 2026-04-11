@@ -699,7 +699,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , engine.move_string);    // Output
 
         cout << "\n" << " pvar? " << d_best_move_value << " " << engine.move_string 
-            << " -- " << (best_move.piece_type == Piece::NONE) << " == " << d_best_move_value << " \n";
+            << " -- " << (best_move.piece_type == Piece::NONE) << " \n";
 
         if (best_move.piece_type == Piece::NONE) break;
 
@@ -756,11 +756,11 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , engine.move_string);    // Output
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
-    if (best_move.is_en_passent_capture) {
-        printf("pause (press Enter)\n");
-        fflush(stdout);
-        getchar();
-    }
+    // if (best_move.is_en_passent_capture) {
+    //     printf("pause (press Enter)\n");
+    //     fflush(stdout);
+    //     getchar();
+    // }
 
 
     char buf[32];
@@ -854,7 +854,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     PawnFileInfo pawnFileInfo;
 
 
-global_debug_flag=false;
+//global_debug_flag=false;
 
     
     bool bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::WHITE>( pawnFileInfo.p[0]);
@@ -863,9 +863,9 @@ global_debug_flag=false;
     bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::BLACK>( pawnFileInfo.p[1]);
     itemp2 = engine.game_board.get_castled_bonus_cp_t<Color::BLACK>(GamePhase::OPENING, pawnFileInfo.p[1]);
 
-global_debug_flag = false;
+//global_debug_flag = false;
 
-    itemp1 = sizeof(Move);
+    //itemp1 = sizeof(Move);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -1616,7 +1616,12 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     }
                     assert(ub != 0);    // we should not be looking at moves in Quiescence, unless they are captures or promotions
                        
-                    const bool recapture = (!engine.move_history.empty() && (m.to == engine.move_history.top().to));
+                    bool recapture = false;
+                    if (!engine.move_history.empty()) {
+                        ull mto = m.to;
+                        ull eto =  engine.move_history.top().to;
+                        recapture = (mto == eto);
+                    }
 
                     // we should not be looking at moves in Quiescence, unless we evaluated first
                     assert (d_stand_pat != HUGE_SCORE);  
@@ -2187,7 +2192,10 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     }
 
     const bool have_last = !engine.move_history.empty();
-    const ull  last_to   = have_last ? engine.move_history.top().to : 0ULL;
+    ull last_to = 0ULL;
+    if (have_last) {
+        last_to = engine.move_history.top().to;
+    }
 
     //  The sort, from top to bottom. Items 0 and 1 done always, the rest done if the unquiet sort is on.
     //      0. Move from the hash table hit (if any).
@@ -2244,8 +2252,8 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
                 // If capture to the "from" square of last move, give it higher priority
                 // Fourth tier, so by default these are in centipawns ( as in 800 centipawns).
-                if (have_last && a.to == last_to) keyA += 800;
-                if (have_last && b.to == last_to) keyB += 800;
+                if (a.to == last_to) keyA += 800;
+                if (b.to == last_to) keyB += 800;
 
                 return keyA > keyB;
             });

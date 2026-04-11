@@ -263,13 +263,13 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
     ull* pRooks   = nullptr;
     ull  rooksOld = 0;
 
-    const ull from_mask = move.from;
-    const ull to_mask   = move.to;
+    const ull from_bb = move.from;
+    const ull to_bb   = move.to;
 
     // 1) Moving piece leaves `from`
     pSrc   = &access_pieces_of_color_tp<c>(move.piece_type);
     srcOld = *pSrc;
-    (*pSrc) &= ~from_mask;
+    (*pSrc) &= ~from_bb;
 
     // 2) Remove captured enemy piece (if any)
     if (move.capture != Piece::NONE) {
@@ -277,10 +277,10 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
         capOld = *pCap;
 
         if (move.is_en_passent_capture) {
-            ull behind_mask = (c == Color::WHITE) ? (to_mask >> 8) : (to_mask << 8);
+            ull behind_mask = (c == Color::WHITE) ? (to_bb >> 8) : (to_bb << 8);
             (*pCap) &= ~behind_mask;
         } else {
-            (*pCap) &= ~to_mask;
+            (*pCap) &= ~to_bb;
         }
     }
 
@@ -288,9 +288,9 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
     if (move.promotion != Piece::NONE) {
         pPromo   = &access_pieces_of_color_tp<c>(move.promotion);
         promoOld = *pPromo;
-        (*pPromo) |= to_mask;
+        (*pPromo) |= to_bb;
     } else {
-        (*pSrc) |= to_mask;
+        (*pSrc) |= to_bb;
     }
 
     // 4) Castling also moves a rook
@@ -298,9 +298,7 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
         pRooks   = &access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(c);
         rooksOld = *pRooks;
 
-        ull move_to_bb = move.to;
-
-        if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+        if (to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Queenside castle
             if constexpr (c == Color::WHITE) {
                 (*pRooks) &= ~(1ULL << game_board.square_a1);
@@ -309,7 +307,7 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
                 (*pRooks) &= ~(1ULL << game_board.square_a8);
                 (*pRooks) |=  (1ULL << game_board.square_d8);
             }
-        } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+        } else if (to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
             // Kingside castle
             if constexpr (c == Color::WHITE) {
                 (*pRooks) &= ~(1ULL << game_board.square_h1);
@@ -577,25 +575,28 @@ void Engine::pushMove_t(const Move& move) {
         game_board.halfmove = 0;
     }
 
+    const ull movefrom = move.from;
+    const ull moveto = move.to;
+    const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+
     // Remove the piece from where it was
     ull& moving_piece = access_pieces_of_color_tp<c>(move.piece_type);
-    moving_piece &= ~move.from;
+    moving_piece &= ~movefrom;
 
-    int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
 
     // zobrist_key "push" update (remove piece from from square)
     game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_from);
 
     // Put the piece where it will go.
     if (move.promotion == Piece::NONE) {
-        moving_piece |= move.to;
+        moving_piece |= moveto;
         game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_to);
     }
     else {
         // Promote the piece
         ull& promoted_piece = access_pieces_of_color_tp<c>(move.promotion);
-        promoted_piece |= move.to;
+        promoted_piece |= moveto;
         game_board.zobrist_key ^= zobrist_piece_square_get(move.promotion + c * 6, square_to);
     }
 
@@ -604,7 +605,7 @@ void Engine::pushMove_t(const Move& move) {
         game_board.halfmove = 0;
 
         if (move.is_en_passent_capture) {
-            ull move_to_bb = move.to;
+            ull move_to_bb = moveto;
             ull target_pawn_bitboard = (c == Color::WHITE) ? (move_to_bb >> 8) : (move_to_bb << 8);
 
             int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bitboard);
@@ -615,7 +616,7 @@ void Engine::pushMove_t(const Move& move) {
         } else {
             // Regular capture
             ull& where_I_was = access_pieces_of_color(move.capture, enemy);
-            where_I_was &= ~move.to;
+            where_I_was &= ~moveto;
 
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, square_to);
         }
@@ -626,7 +627,7 @@ void Engine::pushMove_t(const Move& move) {
 
         ull& friendly_rooks = access_pieces_of_color_tp<Piece::ROOK, c>();
 
-        ull move_to_bb = move.to;
+        ull move_to_bb = moveto;
         if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Queenside Castle
             if constexpr (c == Color::WHITE) {
@@ -718,6 +719,8 @@ void Engine::popMove_t() {
     constexpr Color enemy = utility::representation::opposite_color_v<c>;
 
     // Pop move history
+    bool have_last = !move_history.empty();
+    assert(have_last);
     const Move move = move_history.top();
     move_history.pop();
 
@@ -768,13 +771,15 @@ void Engine::popMove_t() {
     game_board.halfmove = halfway_move_state.top();
     halfway_move_state.pop();
 
-    int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    const ull movefrom = move.from;
+    const ull moveto = move.to;
+    const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
 
-    // pop the "actual move"    Note: shouldnt there be a template function for this for "c"?
+    // pop the "actual move"
     ull& moving_piece = access_pieces_of_color_tp<c>(move.piece_type);
-    moving_piece &= ~move.to;
-    moving_piece |= move.from;
+    moving_piece &= ~moveto;
+    moving_piece |= movefrom;
 
     assert((move.piece_type + c * 6) < 12);
     game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_from);
@@ -786,7 +791,7 @@ void Engine::popMove_t() {
     }
     else {
         ull& promoted_piece = access_pieces_of_color_tp<c>(move.promotion);
-        promoted_piece &= ~move.to;
+        promoted_piece &= ~moveto;
 
         assert((move.piece_type + c * 6) < 12);
         game_board.zobrist_key ^= zobrist_piece_square_get(move.promotion + c * 6, square_to);
@@ -794,7 +799,7 @@ void Engine::popMove_t() {
 
     if (move.capture != Piece::NONE) {
 
-        ull move_to_bb = move.to;
+        ull move_to_bb = moveto;
         if (move.is_en_passent_capture) {
             ull target_pawn_bitboard = (c == Color::WHITE) ? (move_to_bb >> 8) : (move_to_bb << 8);
 
@@ -815,7 +820,7 @@ void Engine::popMove_t() {
 
         ull& friendly_rooks = access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(c);
 
-        ull move_to_bb = move.to;
+        ull move_to_bb = moveto;
         if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
             // Popping a Queenside Castle
             if constexpr (c == Color::WHITE) {
@@ -861,8 +866,11 @@ void Engine::popMove_t() {
 template<Color c>
 void Engine::update_pieces_on_square_for_push_t(const Move& move)
 {
-    int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-    int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+
+    const ull movefrom = move.from;
+    const ull moveto = move.to;
+    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
+    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
 
     // Remove moving piece from source square.
     game_board.pieces_on_square[fromSq] = Piece::NONE;
@@ -882,7 +890,7 @@ void Engine::update_pieces_on_square_for_push_t(const Move& move)
 
     // Castling: move the rook in the square table too.
     if (move.is_castle_move) {
-        const ull moveto = move.to;
+        const ull moveto = moveto;
         if constexpr (c == Color::WHITE) {
             if (moveto & (1ULL << 1)) {
                 // White kingside castle: rook h1 -> f1  (0 -> 2 in your layout)
@@ -915,8 +923,11 @@ void Engine::update_pieces_on_square_for_push_t(const Move& move)
 template<Color c>
 void Engine::update_pieces_on_square_for_pop_t(const Move& move)
 {
-    int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-    int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+
+    const ull movefrom = move.from;
+    const ull moveto = move.to;
+    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
+    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
 
     // Restore moving piece to source square.
     if (move.promotion != Piece::NONE) {
@@ -940,7 +951,6 @@ void Engine::update_pieces_on_square_for_pop_t(const Move& move)
 
     // Castling: move rook back in the square table too.
     if (move.is_castle_move) {
-        const ull moveto = move.to;
         if constexpr (c == Color::WHITE) {
             if (moveto & (1ULL << 1)) {
                 // Undo white kingside castle: rook f1 -> h1  (2 -> 0)
@@ -1138,7 +1148,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 ull single_bitboard_from, 
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece, Color color, bool capture, bool promotion,
-                                ull en_passant_land_bb,
+                                uint8_t en_passant_land_sq,
                                 bool is_en_passent_capture, bool is_castle) {
 
 
@@ -1150,8 +1160,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
     constexpr ull castle_touch = (W_KSIDE_MASK | W_QSIDE_MASK | B_KSIDE_MASK | B_QSIDE_MASK);
 
-    assert(game_board.bits_in(en_passant_land_bb) <= 1);     // exploratory assert
-    uint8_t en_passant_land_sq = utility::bit::bitboard_to_lowest_square(en_passant_land_bb);
+   
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
@@ -1279,6 +1288,9 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
    
     MoveText.clear();        // start fresh (does NOT free capacity)
 
+    ull moveto = the_move.to;
+    ull movefrom = the_move.from;
+
 
     // MoveText += '[';
     // MoveText += (isCheck ? '1' : '0'); 
@@ -1291,12 +1303,12 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
         bool isCastles=false;
   
         if (the_move.piece_type == Piece::KING) {
-            int from_sq = utility::bit::bitboard_to_lowest_square_safe(the_move.from); // 0..63
+            int from_sq = utility::bit::bitboard_to_lowest_square_safe(movefrom); // 0..63
 
             if ( (from_sq == game_board.square_e1) || (from_sq == game_board.square_e8) )
             {
-                ull move_to_bb = the_move.to;
-                int to_sq = utility::bit::bitboard_to_lowest_square_safe(move_to_bb); // 0..63
+               
+                int to_sq = utility::bit::bitboard_to_lowest_square_safe(moveto); // 0..63
 
                 if ( (to_sq == game_board.square_g1) || (to_sq == game_board.square_g8) ) {
                      MoveText += "O-O";
@@ -1332,8 +1344,12 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
 
                         if (m == the_move) continue;    // skip this move
 
-                        ull mask = (the_move.to & m.to);
-                        if ( (mask != 0ull) && (the_move.piece_type == m.piece_type) ) {
+                        assert(game_board.bits_in(moveto) == 1);
+                        assert(game_board.bits_in(m.to) == 1);
+
+                        bool is_same_to_square = (moveto == m.to);
+
+                        if ((is_same_to_square) && (the_move.piece_type == m.piece_type)) {
                             // Try file first
                             aChar = file_from_move(the_move);
                             if (aChar == file_from_move(m)) {
@@ -1648,8 +1664,11 @@ void Engine::sort_unquiet_moves_qsearch(
     MovesOut.clear();
     
     // Recapture bias: if a capture lands on opponent's last-to square, try it earlest
-    const bool have_last = !move_history.empty();
-    const ull  last_to   = have_last ? move_history.top().to : 0ULL;
+    bool have_last = !move_history.empty();
+    ull last_to = 0ULL;
+    if (have_last) {
+        last_to = move_history.top().to;
+    }
 
     for (const ShumiChess::Move& mv : moves) {
 
@@ -1708,7 +1727,7 @@ void Engine::sort_unquiet_moves_qsearch(
             // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
             // biggest victim with the smallest attacker.
             int key = mvv_lva_key(mv);  // (call me on captures only)
-            if (have_last && mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
+            if (mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
 
             std::vector<ShumiChess::Move>::iterator it;
             for (it = MovesOut.begin(); it != MovesOut.end(); ++it) {
@@ -2122,7 +2141,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         if (promo_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, promo_not_blocked, Piece::PAWN
                 , color, false, true
-                , 0ULL, false, false);
+                , NO_SQUARE, false, false);
 
         // attacks
         ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
@@ -2133,7 +2152,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         if (normal_attacks) add_psuedo_move_to_vector(all_psuedo_legal_moves
                     , single_pawn, normal_attacks, Piece::PAWN
                     , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
-                    , 0ULL, false, false);
+                    , NO_SQUARE, false, false);
 
         // enpassant
         ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_bb;
@@ -2141,7 +2160,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, enpassant_end_loc, Piece::PAWN
                 , color, true, false
-                , 0ULL, true, false);
+                , NO_SQUARE, true, false);
         }
 
         // "quiet" pawn moves.
@@ -2154,7 +2173,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             if (one_move_forward_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
                 , single_pawn, one_move_forward_not_blocked, Piece::PAWN
                 , color, false, false
-                , 0ULL, false, false);
+                , NO_SQUARE, false, false);
 
             // double square moves
             ull is_doublable = single_pawn & pawn_starting_rank_mask;
@@ -2166,11 +2185,15 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                 ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
 
                 if (move_forward_two_unblocked) {
+
+                    assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
+                    uint8_t en_passant_land_sq = utility::bit::bitboard_to_lowest_square(move_forward_one_unblocked);
+
                     assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
                     add_psuedo_move_to_vector(all_psuedo_legal_moves
-                    , single_pawn, move_forward_two_unblocked, Piece::PAWN
-                    , color, false, false
-                    , move_forward_one_unblocked, false, false);
+                        , single_pawn, move_forward_two_unblocked, Piece::PAWN
+                        , color, false, false
+                        , en_passant_land_sq, false, false);
                 }
             }
         }
@@ -2195,14 +2218,14 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
         // capture moves
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
             , c, true, false
-            , 0ULL, false, false);
+            , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
                 , c, false, false
-                , 0ULL, false, false);
+                , NO_SQUARE, false, false);
         }
     }
 }
@@ -2223,14 +2246,14 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         // capture moves
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
             , c, true, false
-            , 0ULL, false, false);
+            , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
                 , c, false, false
-                , 0ULL, false, false);
+                , NO_SQUARE, false, false);
         }
     }
 }
@@ -2252,14 +2275,14 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
         // capture moves        
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
             , c, true, false
-            , 0ULL, false, false);
+            , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
                 , c, false, false
-                , 0ULL, false, false);
+                , NO_SQUARE, false, false);
         }
     }
 }
@@ -2280,14 +2303,14 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
         // capture moves
         add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
             , c, true, false
-            , 0ULL, false, false);
+            , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
                 , c, false, false
-                , 0ULL, false, false);
+                , NO_SQUARE, false, false);
         }
     }
 }
@@ -2306,7 +2329,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
     add_psuedo_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
         , c, true, false
-        , 0ULL, false, false);
+        , NO_SQUARE, false, false);
 
     // quiet moves
     if (!unquiet_moves_only) {
@@ -2315,7 +2338,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
         add_psuedo_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
             , c, false, false
-            , 0ULL, false, false);
+            , NO_SQUARE, false, false);
 
         // castling, yes castling is quiet.
         #ifndef DEBUG_NO_CASTLING
@@ -2342,7 +2365,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                                 king_origin_square = 1ULL << 1;
                                 add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                     , c, false, false
-                                    , 0ULL, false, true);
+                                    , NO_SQUARE, false, true);
                             }
                         }
                     }
@@ -2358,10 +2381,10 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                             needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
                             actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                             if (actual_rooks_location & needed_rook_location) {
-                                king_origin_square = 1ULL <<5;
+                                king_origin_square = 1ULL << 5;
                                 add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                     , c, false, false
-                                    , 0ULL, false, true);
+                                    , NO_SQUARE, false, true);
                             }
                         }
                     }
@@ -2382,7 +2405,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                                 king_origin_square = 1ULL <<57;
                                 add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                     , c, false, false
-                                    , 0ULL, false, true);
+                                    , NO_SQUARE, false, true);
                             }
                         }
                     }
@@ -2401,7 +2424,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                                 king_origin_square = 1ULL <<61;
                                 add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
                                     , c, false, false
-                                    , 0ULL, false, true);
+                                    , NO_SQUARE, false, true);
                             }
                         }
                     }
@@ -2666,6 +2689,7 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
     constexpr Color enemy = utility::representation::opposite_color_v<c>;
 
     ull occ_BB = game_board.get_pieces();
+    
     const ull fromBB = move.from;
     const ull toBB   = move.to;
     const int toSQ   = utility::bit::bitboard_to_lowest_square_fast(toBB);
@@ -2748,7 +2772,6 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
     }
 
     // The plan part B.
-    // b_unquiet_moves_only
     n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c>(psuedo_legal_moves, b_unquiet_moves_only);
 
     if (!in_check_before_move) {
@@ -2799,6 +2822,8 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 if (move.piece_type == Piece::KING) {
                     legal = !in_check_after_king_move_t<c>(move);
                 } else {
+
+                    ull moveto = move.to;
                     const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
                     const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
 
@@ -2806,7 +2831,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                     if (!move.is_en_passent_capture) {
                         helps = checkInfo.toSquareHelps(toSq);
                     } else {
-                        ull move_to_bb = move.to;
+                        ull move_to_bb = moveto;
                         ull epCapturedBB = 0ULL;
                         if constexpr (c == Color::WHITE) {
                             epCapturedBB = (move_to_bb >> 8);

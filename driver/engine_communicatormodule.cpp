@@ -123,7 +123,7 @@ engine_communicator_get_piece_positions(PyObject* self, PyObject* args) {
         PyObject* python_piece_list = PyList_New(0);
         while (piece_bitboard) {
             ull single_piece /*  */= utility::bit::lsb_and_pop(piece_bitboard);
-            string pos_string = utility::representation::square_to_position_string(single_piece);
+            string pos_string = utility::representation::bb_to_position_string(single_piece);
             PyList_Append(python_piece_list, Py_BuildValue("s", pos_string.c_str()));
         }
         auto python_string_name = Py_BuildValue("s", piece_name.c_str());
@@ -197,8 +197,13 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     ShumiChess::Move found_move = {};
     bool is_found_move = false;
     for (const auto move : last_moves) {
-        string from_str = utility::representation::bitboard_to_acn_conversion(move.from);
-        string to_str = utility::representation::bitboard_to_acn_conversion(move.to);
+
+        const ull movefrom = move.from;
+        const ull moveto = move.to;
+
+        string from_str = utility::representation::bitboard_to_acn_conversion(movefrom);
+        string to_str = utility::representation::bitboard_to_acn_conversion(moveto);
+
         char cpromo = utility::representation::piece_to_charactor(move.promotion);
 
         if ( (from_square_acn == from_str) && (to_square_acn == to_str) && (promo_piece_char == cpromo) ) {

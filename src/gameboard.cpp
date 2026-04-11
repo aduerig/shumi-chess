@@ -1433,8 +1433,9 @@ retry_all:
 int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 {
     // from and to are BITBOARDS (ull) with exactly one bit set.
-    ull from_bb = mv.from;
-    ull to_bb   = mv.to;
+    const ull from_bb = mv.from;
+    const ull to_bb   = mv.to;
+
     assert (bits_in(from_bb) == 1);
     assert (bits_in(to_bb) == 1);
 
@@ -1889,7 +1890,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 // -----------------------------------------------------------------------------
 // Static Exchange Evaluation (SEE) for a *single* capture move.
 //
-// Given a capture move `mv` (where mv.from and mv.to are 1-bitboards),
+// Given a capture move `mv`
 // this routine estimates the net material gain/loss in centipawns assuming
 // optimal recaptures on the destination square.
 // Positive value returned means the capture is materially profitable for the side to move.
