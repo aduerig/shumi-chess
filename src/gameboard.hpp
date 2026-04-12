@@ -349,7 +349,8 @@ class GameBoard {
         
         bool isReversableMove(const Move& m);
         
-        inline ull get_major_pieces(Color c) const {
+        template<Color c>
+        inline ull get_major_pieces() const {
             return (c == Color::WHITE) ? (white_rooks | white_queens) : (black_rooks | black_queens);
         }
 

@@ -865,7 +865,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
 //global_debug_flag = false;
 
-    //itemp1 = sizeof(Move);
+    itemp1 = sizeof(Move);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 

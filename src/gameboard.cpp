@@ -2735,36 +2735,29 @@ int GameBoard::bishop_pawn_pattern_cp_t() {
 }
 
 // ---------- rook_connectiveness_cp_t ----------
+// If more than 2 rooks, it ignores the 3rd and 4th rooks etc.
 template<Color c>
-int GameBoard::rook_connectiveness_cp_t() const {
-    const ull rooks = get_pieces_template<Piece::ROOK, c>();
+int GameBoard::rook_connectiveness_cp_t() const
+{
+    ull rooks = get_pieces_template<Piece::ROOK, c>();
 
-    if ((rooks == 0) || ((rooks & (rooks - 1)) == 0)) {
-        return 0;
+    if ((rooks == 0ULL) || ((rooks & (rooks - 1ULL)) == 0ULL)) {
+        return 0;   // No rooks or just one rook
     }
 
     const ull occupancy = get_pieces();
 
-    int sqs[8];
-    int n = 0;
-    ull tmp = rooks;
-    while (tmp) {
-        assert(n < 8);
-        sqs[n] = utility::bit::lsb_and_pop_to_square(tmp);
-        n++;
+    const int s1 = utility::bit::lsb_and_pop_to_square(rooks);
+    const int s2 = utility::bit::lsb_and_pop_to_square(rooks);
+
+    if (((s1 >> 3) == (s2 >> 3)) && clear_between_rank(occupancy, s1, s2)) {
+        return wghts.GetWeight(ROOK_CONNECTED);   // Horizontal connection
     }
 
-    for (int i = 0; i < n; ++i) {
-        for (int j = i + 1; j < n; ++j) {
-            const int s1 = sqs[i], s2 = sqs[j];
-            if ((s1 >> 3 == s2 >> 3) && clear_between_rank(occupancy, s1, s2)) {
-                return (wghts.GetWeight(ROOK_CONNECTED));
-            }
-            if (((s1 % 8) == (s2 % 8)) && clear_between_file(occupancy, s1, s2)) {
-                return (wghts.GetWeight(ROOK_CONNECTED));
-            }
-        }
+    if (((s1 & 7) == (s2 & 7)) && clear_between_file(occupancy, s1, s2)) {
+        return wghts.GetWeight(ROOK_CONNECTED);   // Vertical connection
     }
+
     return 0;
 }
 
@@ -2867,7 +2860,7 @@ int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
                 this_cp = (k*wghts.GetWeight(ISOLANI));
             }
 
-            if (get_major_pieces(c)) {
+            if (get_major_pieces<c>()) {
                 // only one penalty for open file, even if multuple isolated pawns.
                 bool is_blocked;
                 int sq = pawnInfo.p[friendlyP].advancedSq[file];
@@ -2954,17 +2947,6 @@ int GameBoard::count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes_bb
     return (holes * wghts.GetWeight(PAWN_HOLE));
 }
 
-// ---------- count_knights_on_holes_cp_t ----------
-template<Color c>
-int GameBoard::count_knights_on_holes_cp_t(ull holes_bb) {
-    ull knights = get_pieces_template<Piece::KNIGHT, c>();
-    if (!knights || !holes_bb) return 0;
-
-    ull on_holes = knights & holes_bb;
-    int n = bits_in(on_holes);
-
-    return (n * wghts.GetWeight(KNIGHT_HOLE));
-}
 
 // ---------- count_doubled_pawns_cp_t ----------
 template<Color c>
@@ -3057,6 +3039,20 @@ int GameBoard::count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed
 
     return bonus_cp;
 }
+
+
+// ---------- count_knights_on_holes_cp_t ----------
+template<Color c>
+int GameBoard::count_knights_on_holes_cp_t(ull holes_bb) {
+    ull knights = get_pieces_template<Piece::KNIGHT, c>();
+    if (!knights || !holes_bb) return 0;
+
+    ull on_holes = knights & holes_bb;
+    int n = bits_in(on_holes);
+
+    return (n * wghts.GetWeight(KNIGHT_HOLE));
+}
+
 
 // ---------- king_edgeness_cp_t ----------
 

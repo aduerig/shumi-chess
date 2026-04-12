@@ -149,12 +149,16 @@ void Engine::reset_engine() {         // New game.
 
     // (enter FEN here) FEN enter now. enter fen.
 
+    // Standard openings
     #define OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
     #define DUTCH_OPENING  "rnbqkbnr/ppppp1pp/8/5p2/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2"
     #define E4_E5_OPENING  "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
     #define E4_E5_OPENING2 "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 2"
+    #define HALLOWEEN_GAMBIT "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4" // then play Nxe5
 
+
+    // Tests
     #define ENPASSANT_FEN "r1b1qrk1/pppp2pn/2n1p2p/2P1Pp2/3P4/2BB4/PPQ2PPP/R3K1NR b KQ f6 0 10"   // then play d5
     #define ENPASSANT_FEN2 "8/8/4k3/8/pp1pp1pp/8/PPPPPPPP/4K3 w KQkq - 0 1"       // only pawns
 
@@ -162,10 +166,17 @@ void Engine::reset_engine() {         // New game.
 
     #define TRADING_FEN "rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1"
 
-    //#define TEMP_FEN "r4rk1/p1Nn2pp/p4q2/2p1p3/2P1P1n1/3BQ3/1P3PK1/R2R4 w - - 2 24"
+    // Test of underpromotion (to knight)
+    #define UNDER_PROMOTION_FEN "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1"      // then Ka2. Black should not promote to queen (promotes to knight)
 
+    #define STALEMATE_FEN "k7/2Q5/8/8/8/8/8/K7 w - - 1 5"    // then move white king
 
-    //game_board = GameBoard(ENPASSANT_FEN2);
+    // Black must play e6 or d6 to avoid the mate: Nxc7, Qxc7, Bxf7, Kd8, Ne6 mate
+    #define MATE_IN_3_FEN "1rbqkb1r/pppppppp/8/3NP3/2B1P3/5N2/PPP2PPP/R1BQK2R w KQk - 6 8"   // then Ng5.
+
+    #define TEMP_FEN "8/8/6pk/7p/5P1P/6PK/8/8 w - - 1 100"
+
+    //game_board = GameBoard(MATE_IN_3_FEN);
 
 
     game_board = GameBoard();
@@ -1148,7 +1159,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 ull single_bitboard_from, 
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece, Color color, bool capture, bool promotion,
-                                uint8_t en_passant_land_sq,
+                                uint8_t en_passant_land_sq,     // Passed in as a square for 2-rank pawn moves.
                                 bool is_en_passent_capture, bool is_castle) {
 
 
@@ -1189,7 +1200,6 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             piece_captured = Piece::NONE;
         }
 
-
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),
         // then fill its fields in-place. This avoids creating a temporary Move and
@@ -1197,7 +1207,6 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         if (!promotion)
         {
 
-            // remove castling rights, if we just castled
             uint8_t white_castle_rights = CASTLE_EITHER;
             uint8_t black_castle_rights = CASTLE_EITHER;
             ull from_or_to = (single_bitboard_from | single_bitboard_to);
@@ -1208,7 +1217,6 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                 if (from_or_to & B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
             }
 
-            // Get address of next slot in the vector.
             //moves.emplace_back();
             moves.emplace_back(
                                 single_bitboard_from,
@@ -1226,37 +1234,39 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             
         } else {
             // Its a promotion
+            assert(!is_castle);                             // Cant promote and castle at the same time!
+            assert (en_passant_land_sq == NO_SQUARE);       // Cant promote and move a pawn two squares at the same time!
+            assert (!is_en_passent_capture);                // Cant promote and enpassant at the same time!
 
             // Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
-                // Get address of next slot in the vector.
-                moves.emplace_back();
-                Move& new_move = moves.back();
-
-                // Fill it in
-                new_move.color = color;
-                new_move.piece_type = piece;
-                new_move.from = single_bitboard_from;
-                new_move.to = single_bitboard_to;
-                new_move.capture = piece_captured;
-                new_move.en_passant_landingSQ = en_passant_land_sq;
-                new_move.is_en_passent_capture = is_en_passent_capture;
-                new_move.is_castle_move = is_castle;
-
-                assert(!is_castle);     // // Cant castle and promote at the same time!
-                
                 // However a promotion can affect castling rights by capturing a rook on its home square.
+                uint8_t white_castle_rights = CASTLE_EITHER;
+                uint8_t black_castle_rights = CASTLE_EITHER;
                 ull from_or_to = (single_bitboard_from | single_bitboard_to);
                 if (from_or_to & castle_touch) {
-                    if (from_or_to & W_KSIDE_MASK) new_move.white_castle_rights &= CASTLE_KING;
-                    if (from_or_to & W_QSIDE_MASK) new_move.white_castle_rights &= CASTLE_QUEEN;
-                    if (from_or_to & B_KSIDE_MASK) new_move.black_castle_rights &= CASTLE_KING;
-                    if (from_or_to & B_QSIDE_MASK) new_move.black_castle_rights &= CASTLE_QUEEN;
+                    if (from_or_to & W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
+                    if (from_or_to & W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
+                    if (from_or_to & B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
+                    if (from_or_to & B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
                 }
-             
-                new_move.promotion = promo_piece;
-            }
+
+                //moves.emplace_back();
+                moves.emplace_back(
+                                single_bitboard_from,
+                                single_bitboard_to,
+                                en_passant_land_sq,
+                                color,
+                                piece,
+                                piece_captured,
+                                promo_piece,
+                                black_castle_rights,
+                                white_castle_rights,
+                                is_en_passent_capture,
+                                is_castle
+                            );
+            }       // END loop over all promotion pieces
         }
 
     }       // END loop over all "to" squares of move

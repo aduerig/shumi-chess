@@ -15,8 +15,6 @@
 #include <assert.h>
 
 
-#define SHORT_SIZES     // minimize size of the Move structure.
-
 typedef unsigned long long ull;
 
 
@@ -33,20 +31,12 @@ namespace utility
 
 namespace ShumiChess {
 
-#ifdef SHORT_SIZES
 enum Color : std::uint8_t {
-#else 
-enum Color {
-#endif
     WHITE = 0,
     BLACK,
 };
 
-#ifdef SHORT_SIZES
 enum Piece : std::uint8_t {
-#else
-enum Piece {     // Pieces must be in this order!
-#endif
     PAWN = 0,
     ROOK,
     KNIGHT,
