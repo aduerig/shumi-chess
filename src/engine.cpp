@@ -1178,10 +1178,10 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
     // for all "to" squares and add them as moves
     while (bitboard_to) {
-
+  
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
         assert(game_board.bits_in(single_bitboard_to) == 1);
-        
+
         Piece piece_captured;
         if (capture) {
             if (!is_en_passent_capture) {

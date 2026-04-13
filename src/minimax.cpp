@@ -756,6 +756,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , engine.move_string);    // Output
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
+    //// for testing enpassant
     // if (best_move.is_en_passent_capture) {
     //     printf("pause (press Enter)\n");
     //     fflush(stdout);

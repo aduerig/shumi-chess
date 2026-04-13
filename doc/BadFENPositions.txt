@@ -142,14 +142,6 @@ rnbqkbnr/pp1ppppp/8/2p5/2P5/8/PP1PPPPP/RNBQKBNR w KQkq c6 0 2
 8/8/8/8/5k2/7r/4K3/8 b - - 5 3      // why black advantage so large?
 
 
- 
-
- 1. e3 d5   2. Be2 e5   3. c4 dxc4   4. Bxc4 Nf6   5. Nf3 Bd6   6. d4 exd4   7. exd4 O-O   8. Nc3 Nc6   9. Be3 Bg4  10. O-O Qd7  11. Bb5 a6  12. Bxc6 Qxc6  13. Re1 Bxf3  14. Qxf3 Qxf3  15. gxf3 Rfe8  16. f4 Ne4  17. f3 Nxc3  18. bxc3 Re7  19. Bd2 Re8  20. Rxe7 Rxe7  21. Kf1 f6  22. Re1 Kf7  23. Rxe7 Kxe7  24. h4 Ke6  25. Bc1 Kf5  26. c4 Bxf4  27. Bxf4 Kxf4  28. Kf2 h5  29. a3 g5  30. hxg5 fxg5  31. a4 h4  32. a5 Kf5  33. Kg2 Ke6  34. Kg1 b6  35. axb6 cxb6  36. Kg2 a5  37. d5 Kd6  38. f4 gxf4  39. Kf3  *
-
-
-1. e4 e6   2. d4 Nf6   3. e5 Ng8   4. f4 c5   5. d5 exd5   6. Qxd5 Nc6   7. Bc4 Nh6   8. Nf3 d6   9. O-O Be6  10. Qd3 Bxc4  11. Qxc4 Be7  12. Nc3 O-O  13. Nd5 Nf5  14. g4 Nd4  15. Nxd4 cxd4  16. Nxe7 Qxe7  17. exd6 Qxd6  18. Bd2 Qe6  19. Qxe6 fxe6  20. Re1 Re8  21. c3 d3  22. Re3 Rc8  23. Rxd3 e5  24. Rd7 Rd8  25. Rxd8 Rxd8  26. Be3 a6  27. Rf2 Rd3  28. Re2 h6  29. fxe5 Nxe5  30. h3 Ng6  31. Kf2 Ne5  32. Rd2 Rxd2  33. Bxd2 Nd3  34. Ke3 Nxb2  35. Kd4 b5  36. Bf4 Nd1  37. Bg3 Nb2  38. Kc5 Na4  39. Kb4 a5  40. Kxa5 Nxc3  41. a3 Ne4  42. Be5 Nf2  43. Kxb5 Nd3  44. Bg3 Nc1  45. a4 Nb3  *
-
-
 
 
 
