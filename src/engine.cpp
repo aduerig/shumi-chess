@@ -1064,7 +1064,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
 
 
-    ull castle_touch = (game_board.W_KSIDE_MASK | game_board.W_QSIDE_MASK | game_board.B_KSIDE_MASK | game_board.B_QSIDE_MASK);
+    //ull castle_touch = (game_board.W_KSIDE_MASK | game_board.W_QSIDE_MASK | game_board.B_KSIDE_MASK | game_board.B_QSIDE_MASK);
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
@@ -1098,20 +1098,20 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         // copying it into the vector (emplace_back(new_move)).
         if (!promotion)
         {
-            uint8_t white_castle_rights = CASTLE_EITHER;
-            uint8_t black_castle_rights = CASTLE_EITHER;
-            ull from_or_to = (single_bitboard_from | single_bitboard_to);
-            if (from_or_to & castle_touch) {
-                if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
-                if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
-                if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
-                if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
-            }
+            // uint8_t white_castle_rights = CASTLE_EITHER;
+            // uint8_t black_castle_rights = CASTLE_EITHER;
+            // ull from_or_to = (single_bitboard_from | single_bitboard_to);
+            // if (from_or_to & castle_touch) {
+            //     if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
+            //     if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
+            //     if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
+            //     if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
+            // }
 
-            uint8_t white_castle_r = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
-            uint8_t black_castle_r = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
-            assert(white_castle_rights == white_castle_r);
-            assert(black_castle_rights == black_castle_r);
+            uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
+            uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+            // assert(white_castle_rights == white_castle_r);
+            // assert(black_castle_rights == black_castle_r);
 
             //moves.emplace_back();
             moves.emplace_back(
@@ -1140,19 +1140,19 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             for (const auto promo_piece : promotion_values) {
 
                 // However a promotion can affect castling rights by capturing a rook on its home square.
-                uint8_t white_castle_rights = CASTLE_EITHER;
-                uint8_t black_castle_rights = CASTLE_EITHER;
-                ull from_or_to = (single_bitboard_from | single_bitboard_to);
-                if (from_or_to & castle_touch) {
-                    if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
-                    if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
-                    if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
-                    if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
-                }
-                uint8_t white_castle_r = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
-                uint8_t black_castle_r = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
-                assert(white_castle_rights == white_castle_r);
-                assert(black_castle_rights == black_castle_r);
+                // uint8_t white_castle_rights = CASTLE_EITHER;
+                // uint8_t black_castle_rights = CASTLE_EITHER;
+                // ull from_or_to = (single_bitboard_from | single_bitboard_to);
+                // if (from_or_to & castle_touch) {
+                //     if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
+                //     if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
+                //     if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
+                //     if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
+                // }
+                uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
+                uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+                // assert(white_castle_rights == white_castle_r);
+                // assert(black_castle_rights == black_castle_r);
 
                 //moves.emplace_back();
                 moves.emplace_back(
