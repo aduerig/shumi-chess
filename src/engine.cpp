@@ -274,8 +274,12 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
     ull* pRooks   = nullptr;
     ull  rooksOld = 0;
 
-    const ull from_bb = move.from;
-    const ull to_bb   = move.to;
+    // const ull frm = move.from;
+    // const ull to  = move.to;
+    const ull from_bb = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull to_bb = utility::bit::square_to_bitboard(move.toSQ);
+    // assert(frm == from_bb);
+    // assert(to == to_bb);
 
     // 1) Moving piece leaves `from`
     pSrc   = &access_pieces_of_color_tp<c>(move.piece_type);
@@ -586,10 +590,19 @@ void Engine::pushMove_t(const Move& move) {
         game_board.halfmove = 0;
     }
 
-    const ull movefrom = move.from;
-    const ull moveto = move.to;
-    const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    // const ull frm = move.from;
+    // const ull to = move.to;
+    const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
+    // assert(frm == movefrom);
+    // assert(to == moveto);
+
+    // const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    // const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    // assert(square_from == move.fromSQ);
+    // assert(square_to == move.toSQ);
+    const int square_from = move.fromSQ;
+    const int square_to = move.toSQ;
 
     // Remove the piece from where it was
     ull& moving_piece = access_pieces_of_color_tp<c>(move.piece_type);
@@ -616,8 +629,8 @@ void Engine::pushMove_t(const Move& move) {
         game_board.halfmove = 0;
 
         if (move.is_en_passent_capture) {
-            ull move_to_bb = moveto;
-            ull target_pawn_bitboard = (c == Color::WHITE) ? (move_to_bb >> 8) : (move_to_bb << 8);
+            //ull move_to_bb = moveto;
+            ull target_pawn_bitboard = (c == Color::WHITE) ? (moveto >> 8) : (moveto << 8);
 
             int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bitboard);
             access_pieces_of_color(move.capture, enemy) &= ~target_pawn_bitboard;
@@ -691,7 +704,6 @@ void Engine::pushMove_t(const Move& move) {
     ull landSq_bb = utility::bit::square_to_bitboard(move.en_passant_landingSQ);
    
     game_board.en_passant_landing_bb = landSq_bb;
-    //game_board.en_passant_landing_bb = move.en_passant_landing;
 
     // Zobrist: add new en passant (if any)
     if (game_board.en_passant_landing_bb) {
@@ -782,10 +794,19 @@ void Engine::popMove_t() {
     game_board.halfmove = halfway_move_state.top();
     halfway_move_state.pop();
 
-    const ull movefrom = move.from;
-    const ull moveto = move.to;
-    const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    // const ull frm = move.from;
+    // const ull to = move.to;
+    const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
+    // assert(frm == movefrom);
+    // assert(to == moveto);
+
+    // const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    // const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    // assert(square_from == move.fromSQ);
+    // assert(square_to == move.toSQ);
+    const int square_from = move.fromSQ;
+    const int square_to = move.toSQ;
 
     // pop the "actual move"
     ull& moving_piece = access_pieces_of_color_tp<c>(move.piece_type);
@@ -810,17 +831,17 @@ void Engine::popMove_t() {
 
     if (move.capture != Piece::NONE) {
 
-        ull move_to_bb = moveto;
+        //ull move_to_bb = moveto;
         if (move.is_en_passent_capture) {
-            ull target_pawn_bitboard = (c == Color::WHITE) ? (move_to_bb >> 8) : (move_to_bb << 8);
+            ull target_pawn_bb = (c == Color::WHITE) ? (moveto >> 8) : (moveto << 8);
 
-            int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bitboard);
+            int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bb);
 
-            access_pieces_of_color(move.capture, enemy) |= target_pawn_bitboard;
+            access_pieces_of_color(move.capture, enemy) |= target_pawn_bb;
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, target_pawn_square);
 
         } else {
-            access_pieces_of_color(move.capture, enemy) |= move_to_bb;
+            access_pieces_of_color(move.capture, enemy) |= moveto;
             game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, square_to);
         }
 
@@ -869,127 +890,6 @@ void Engine::popMove_t() {
     //update_pieces_on_square_for_pop_t<c>(move);
 
 }
-
-
-
-
-
-template<Color c>
-void Engine::update_pieces_on_square_for_push_t(const Move& move)
-{
-
-    const ull movefrom = move.from;
-    const ull moveto = move.to;
-    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
-
-    // Remove moving piece from source square.
-    game_board.pieces_on_square[fromSq] = Piece::NONE;
-
-    // Place moving piece (or promoted piece) on destination square.
-    if (move.promotion != Piece::NONE) {
-        game_board.pieces_on_square[toSq] = move.promotion;
-    } else {
-        game_board.pieces_on_square[toSq] = move.piece_type;
-    }
-
-    // En passant: captured pawn is behind the "to" square.
-    if (move.is_en_passent_capture) {
-        int capSq = (c == Color::WHITE) ? (toSq - 8) : (toSq + 8);
-        game_board.pieces_on_square[capSq] = Piece::NONE;
-    }
-
-    // Castling: move the rook in the square table too.
-    if (move.is_castle_move) {
-        const ull moveto = moveto;
-        if constexpr (c == Color::WHITE) {
-            if (moveto & (1ULL << 1)) {
-                // White kingside castle: rook h1 -> f1  (0 -> 2 in your layout)
-                game_board.pieces_on_square[0] = Piece::NONE;
-                game_board.pieces_on_square[2] = Piece::ROOK;
-            } else if (moveto & (1ULL << 5)) {
-                // White queenside castle: rook a1 -> d1 (7 -> 4 in your layout)
-                game_board.pieces_on_square[7] = Piece::NONE;
-                game_board.pieces_on_square[4] = Piece::ROOK;
-            } else {
-                assert(0);
-            }
-        } else {
-            if (moveto & (1ULL << 57)) {
-                // Black kingside castle: rook h8 -> f8 (56 -> 58 in your layout)
-                game_board.pieces_on_square[56] = Piece::NONE;
-                game_board.pieces_on_square[58] = Piece::ROOK;
-            } else if (moveto & (1ULL << 61)) {
-                // Black queenside castle: rook a8 -> d8 (63 -> 60 in your layout)
-                game_board.pieces_on_square[63] = Piece::NONE;
-                game_board.pieces_on_square[60] = Piece::ROOK;
-            } else {
-                assert(0);
-            }
-        }
-    }
-}
-
-
-template<Color c>
-void Engine::update_pieces_on_square_for_pop_t(const Move& move)
-{
-
-    const ull movefrom = move.from;
-    const ull moveto = move.to;
-    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
-
-    // Restore moving piece to source square.
-    if (move.promotion != Piece::NONE) {
-        game_board.pieces_on_square[fromSq] = Piece::PAWN;
-    } else {
-        game_board.pieces_on_square[fromSq] = move.piece_type;
-    }
-
-    // Restore destination square / captured piece.
-    if (move.capture == Piece::NONE) {
-        game_board.pieces_on_square[toSq] = Piece::NONE;
-    } else {
-        if (move.is_en_passent_capture) {
-            int capSq = (c == Color::WHITE) ? (toSq - 8) : (toSq + 8);
-            game_board.pieces_on_square[toSq] = Piece::NONE;
-            game_board.pieces_on_square[capSq] = Piece::PAWN;
-        } else {
-            game_board.pieces_on_square[toSq] = move.capture;
-        }
-    }
-
-    // Castling: move rook back in the square table too.
-    if (move.is_castle_move) {
-        if constexpr (c == Color::WHITE) {
-            if (moveto & (1ULL << 1)) {
-                // Undo white kingside castle: rook f1 -> h1  (2 -> 0)
-                game_board.pieces_on_square[2] = Piece::NONE;
-                game_board.pieces_on_square[0] = Piece::ROOK;
-            } else if (moveto & (1ULL << 5)) {
-                // Undo white queenside castle: rook d1 -> a1 (4 -> 7)
-                game_board.pieces_on_square[4] = Piece::NONE;
-                game_board.pieces_on_square[7] = Piece::ROOK;
-            } else {
-                assert(0);
-            }
-        } else {
-            if (moveto & (1ULL << 57)) {
-                // Undo black kingside castle: rook f8 -> h8 (58 -> 56)
-                game_board.pieces_on_square[58] = Piece::NONE;
-                game_board.pieces_on_square[56] = Piece::ROOK;
-            } else if (moveto & (1ULL << 61)) {
-                // Undo black queenside castle: rook d8 -> a8 (60 -> 63)
-                game_board.pieces_on_square[60] = Piece::NONE;
-                game_board.pieces_on_square[63] = Piece::ROOK;
-            } else {
-                assert(0);
-            }
-        }
-    }
-}
-
 
 
 
@@ -1176,6 +1076,8 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
 
+    const uint8_t fromSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_from);
+
     // for all "to" squares and add them as moves
     while (bitboard_to) {
   
@@ -1200,6 +1102,8 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             piece_captured = Piece::NONE;
         }
 
+        const uint8_t toSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_to);
+
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),
         // then fill its fields in-place. This avoids creating a temporary Move and
@@ -1219,8 +1123,10 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
             //moves.emplace_back();
             moves.emplace_back(
-                                single_bitboard_from,
-                                single_bitboard_to,
+                                //single_bitboard_from,
+                                //single_bitboard_to,
+                                fromSQ,
+                                toSQ,
                                 en_passant_land_sq,
                                 color,
                                 piece,
@@ -1254,8 +1160,10 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
                 //moves.emplace_back();
                 moves.emplace_back(
-                                single_bitboard_from,
-                                single_bitboard_to,
+                                //single_bitboard_from,
+                                //single_bitboard_to,
+                                fromSQ,
+                                toSQ,
                                 en_passant_land_sq,
                                 color,
                                 piece,
@@ -1298,13 +1206,17 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
    
     MoveText.clear();        // start fresh (does NOT free capacity)
 
-    ull moveto = the_move.to;
-    ull movefrom = the_move.from;
+    
+    // ull frm = the_move.from;
+    // ull to = the_move.to;
+    const ull movefrom = utility::bit::square_to_bitboard(the_move.fromSQ);
+    const ull moveto = utility::bit::square_to_bitboard(the_move.toSQ);
+    // assert(frm == movefrom);
+    // assert(to == moveto);
 
 
-    // MoveText += '[';
-    // MoveText += (isCheck ? '1' : '0'); 
-    // MoveText += ']';
+    assert(game_board.bits_in(movefrom) == 1);
+    assert(game_board.bits_in(moveto) == 1);
 
     if (the_move.piece_type == Piece::NONE) {
         MoveText += "none";
@@ -1313,12 +1225,15 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
         bool isCastles=false;
   
         if (the_move.piece_type == Piece::KING) {
-            int from_sq = utility::bit::bitboard_to_lowest_square_safe(movefrom); // 0..63
+            int from_sq;
+            //from_sq = utility::bit::bitboard_to_lowest_square_safe(movefrom); // 0..63
+            from_sq = the_move.fromSQ;
 
             if ( (from_sq == game_board.square_e1) || (from_sq == game_board.square_e8) )
             {
-               
-                int to_sq = utility::bit::bitboard_to_lowest_square_safe(moveto); // 0..63
+                int to_sq;
+                //to_sq = utility::bit::bitboard_to_lowest_square_safe(moveto); // 0..63
+                to_sq = the_move.toSQ;
 
                 if ( (to_sq == game_board.square_g1) || (to_sq == game_board.square_g8) ) {
                      MoveText += "O-O";
@@ -1354,10 +1269,8 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
 
                         if (m == the_move) continue;    // skip this move
 
-                        assert(game_board.bits_in(moveto) == 1);
-                        assert(game_board.bits_in(m.to) == 1);
-
-                        bool is_same_to_square = (moveto == m.to);
+                        bool is_same_to_square = (the_move.toSQ == m.toSQ);
+                        //bool is_same_to_square = (moveto == m.to);
 
                         if ((is_same_to_square) && (the_move.piece_type == m.piece_type)) {
                             // Try file first
@@ -1480,7 +1393,10 @@ char Engine::get_piece_char(Piece p) const {
 // Returns character, for the rank of the "from" square
 char Engine::rank_from_move(const Move& m) const
 {
-    int from_sq = utility::bit::bitboard_to_lowest_square_safe(m.from);
+    int from_sq;
+    //from_sq = utility::bit::bitboard_to_lowest_square_safe(m.from);
+    from_sq = m.fromSQ;
+
     int rank    = from_sq >> 3;             // 0..7 for ranks 1..8
     return '1' + rank;                      // '1'..'8'
 }
@@ -1488,7 +1404,10 @@ char Engine::rank_from_move(const Move& m) const
 // Returns character, for the file of the "from" square
 char Engine::file_to_move(const Move& m) const
 {
-    int to_sq = utility::bit::bitboard_to_lowest_square_safe(m.to); // 0..63
+    int to_sq;
+    //to_sq = utility::bit::bitboard_to_lowest_square_safe(m.to); // 0..63
+    to_sq = m.toSQ;
+    
     int file  = to_sq & 7;     // within-rank index 0..7
     file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
@@ -1497,14 +1416,18 @@ char Engine::file_to_move(const Move& m) const
 /// Returns character, for the rank of the "to" square
 char Engine::rank_to_move(const Move& m) const
 {
-    int to_sq = utility::bit::bitboard_to_lowest_square_safe(m.to); // 
+    int to_sq;
+    //to_sq = utility::bit::bitboard_to_lowest_square_safe(m.to); // 
+    to_sq = m.toSQ;
     int rank  = to_sq / 8;   // 0=rank 1, 1=rank 2, ..., 7=rank 8
     return '1' + rank;       // convert to character '1'..'8'
 }
 
 char Engine::file_from_move(const Move& m) const
 {
-    int from_sq = utility::bit::bitboard_to_lowest_square_safe(m.from); // 0..63
+    int from_sq;
+    //from_sq = utility::bit::bitboard_to_lowest_square_safe(m.from); // 0..63
+    from_sq = m.fromSQ;
     int file  = from_sq & 7;     // within-rank index 0..7
     file      = 7 - file;      // mirror cause bit 0 = h1 in your layout
     return 'a' + file;         // 'a'..'h'
@@ -1675,9 +1598,9 @@ void Engine::sort_unquiet_moves_qsearch(
     
     // Recapture bias: if a capture lands on opponent's last-to square, try it earlest
     bool have_last = !move_history.empty();
-    ull last_to = 0ULL;
+    uint8_t last_toSQ = NO_SQUARE;
     if (have_last) {
-        last_to = move_history.top().to;
+        last_toSQ = move_history.top().toSQ;
     }
 
     for (const ShumiChess::Move& mv : moves) {
@@ -1737,7 +1660,7 @@ void Engine::sort_unquiet_moves_qsearch(
             // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
             // biggest victim with the smallest attacker.
             int key = mvv_lva_key(mv);  // (call me on captures only)
-            if (mv.to == last_to) key += 800;  // small recapture bump for opponent's last-to square,
+            if (mv.toSQ == last_toSQ) key += 800;  // small recapture bump for opponent's last-to square,
 
             std::vector<ShumiChess::Move>::iterator it;
             for (it = MovesOut.begin(); it != MovesOut.end(); ++it) {
@@ -1745,7 +1668,7 @@ void Engine::sort_unquiet_moves_qsearch(
                 if (it->capture != ShumiChess::Piece::NONE) {
                     int key0 = mvv_lva_key(*it);
 
-                    if (have_last && it->to == last_to) {
+                    if ( (have_last) && (it->toSQ == last_toSQ) ) {
                         key0 += 800;  // small recapture bump for opponent's last-to square
                     }
 
@@ -2700,9 +2623,16 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
 
     ull occ_BB = game_board.get_pieces();
     
-    const ull fromBB = move.from;
-    const ull toBB   = move.to;
+    // const ull frm = move.from;
+    // const ull to  = move.to;
+    const ull fromBB = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull toBB = utility::bit::square_to_bitboard(move.toSQ);
+    // assert(frm == fromBB);
+    // assert(to == toBB);
+
+
     const int toSQ   = utility::bit::bitboard_to_lowest_square_fast(toBB);
+    assert(toSQ == move.toSQ);
 
     assert(game_board.bits_in(fromBB) == 1);
     assert(game_board.bits_in(toBB)   == 1);
@@ -2796,8 +2726,13 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 if (move.is_en_passent_capture) {
                     legal = !in_check_after_move_fast_t<c>(move);
                 } else {
-                    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-                    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+                    // const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
+                    // const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+                    // assert(fromSq == move.fromSQ);
+                    // assert(toSq == move.toSQ);
+                    const int fromSq = move.fromSQ;
+                    const int toSq   = move.toSQ;
+
                     if (!pinnedInfo.isPinned(fromSq)) {
                         legal = true;
                     } else {
@@ -2833,9 +2768,14 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                     legal = !in_check_after_king_move_t<c>(move);
                 } else {
 
-                    ull moveto = move.to;
-                    const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-                    const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+                    //ull moveto = move.to;
+                    // const int frmSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
+                    // const int tSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
+                    const int fromSq = move.fromSQ;
+                    const int toSq   = move.toSQ;
+                    // assert(frmSq == fromSq);
+                    // assert(tSq == toSq);
+                    const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
 
                     bool helps = false;
                     if (!move.is_en_passent_capture) {

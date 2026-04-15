@@ -198,8 +198,12 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     bool is_found_move = false;
     for (const auto move : last_moves) {
 
-        const ull movefrom = move.from;
-        const ull moveto = move.to;
+        // const ull frm = move.from;
+        // const ull to = move.to;
+        const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
+        const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
+        // assert(frm == movefrom);
+        // assert(to == moveto);
 
         string from_str = utility::representation::bitboard_to_acn_conversion(movefrom);
         string to_str = utility::representation::bitboard_to_acn_conversion(moveto);

@@ -1433,12 +1433,17 @@ retry_all:
 int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 {
     // from and to are BITBOARDS (ull) with exactly one bit set.
-    const ull from_bb = mv.from;
-    const ull to_bb   = mv.to;
+
+    // const ull frm = mv.from;
+    // const ull to  = mv.to;
+    const ull from_bb = utility::bit::square_to_bitboard(mv.fromSQ);
+    const ull to_bb = utility::bit::square_to_bitboard(mv.toSQ);
+    // assert(frm == from_bb);
+    // assert(to == to_bb);
 
     assert (bits_in(from_bb) == 1);
     assert (bits_in(to_bb) == 1);
-
+    
     if (from_bb == 0ULL || to_bb == 0ULL) {   
         assert(0);      // NULL bitboards in the Move, should never happen.
         return 0;
@@ -1912,8 +1917,13 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
 {
     // from and to are BITBOARDS (ull) with exactly one bit set.
-    ull from_bb = mv.from;
-    ull to_bb   = mv.to;
+    // ull frm = mv.from;
+    // ull to  = mv.to;
+    const ull from_bb = utility::bit::square_to_bitboard(mv.fromSQ);
+    const ull to_bb = utility::bit::square_to_bitboard(mv.toSQ);
+    // assert(frm == from_bb);
+    // assert(to == to_bb);
+
     assert (bits_in(from_bb) == 1);
     assert (bits_in(to_bb) == 1);
 

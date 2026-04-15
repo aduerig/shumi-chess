@@ -59,8 +59,12 @@ constexpr int CASTLE_QUEEN  = 0b00000010;
 // Now its at 32 bytes Whopee.
 struct Move {
   
-    ull from = 0ULL;   // 1-bitboard (but with only one bit set)
-    ull to = 0ULL;     // 1-bitboard (but with only one bit set)
+    // ull from = 0ULL;   // 1-bitboard (but with only one bit set)
+    // ull to = 0ULL;     // 1-bitboard (but with only one bit set)
+
+    uint8_t fromSQ = NO_SQUARE;
+    uint8_t toSQ = NO_SQUARE;
+
     uint8_t en_passant_landingSQ = NO_SQUARE;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
     Color color = ShumiChess::WHITE;
@@ -78,8 +82,11 @@ struct Move {
     Move() = default;   // ← put it here
 
    // --- NEW FULL FIELD CONSTRUCTOR (used for speed, in add_psuedo_move_to_vector()) ---
-    Move(ull from_,
-         ull to_,
+    Move(
+         //ull from_,
+         //ull to_,
+         uint8_t fromSQ_,
+         uint8_t toSQ_,
          uint8_t en_passant_landing_,
          Color color_,
          Piece piece_type_,
@@ -90,8 +97,10 @@ struct Move {
          bool is_en_passent_capture_,
          bool is_castle_move_)
         :
-          from(from_),
-          to(to_),
+          //from(from_),
+          //to(to_),
+          fromSQ(fromSQ_),
+          toSQ(toSQ_),
           en_passant_landingSQ(en_passant_landing_),
           color(color_),
           piece_type(piece_type_),
@@ -109,10 +118,13 @@ struct Move {
     // NOTE: Is this right ? It only checks the squares, not the pieces on the square.
     // But wait, the piece on the square, and the rest of the board already encoded in the FEN 
     // which is the "outer map" of the hashTable? I have no idea what im talking about. In any case,
-    // the promotion piece must be added to the equality.
-
+    // the promotion piece must be added to the equality. But should we (or do we need to) compare 
+    // all the structure elements? I see that these three items is enough for ACN+promo (UCI) notation.
     bool operator==(const Move &other) const {
-        return ((from == other.from) && (to == other.to) && (promotion == other.promotion));
+        // bool bA = ((from == other.from) && (to == other.to) && (promotion == other.promotion));
+        // bool bB = ((fromSQ == other.fromSQ) && (toSQ == other.toSQ) && (promotion == other.promotion));
+        // assert (bA == bB);
+        return ((fromSQ == other.fromSQ) && (toSQ == other.toSQ) && (promotion == other.promotion));
     }
     
 };

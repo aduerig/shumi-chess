@@ -132,6 +132,7 @@ inline int bitboard_to_lowest_square_fast(ull bitboard) {
 }
 
 constexpr uint8_t NO_SQUARE = 64;
+
 inline uint8_t bitboard_to_lowest_square(ull bitboard) {  
     //assert(bitboard != 0);
     if (bitboard == 0ULL) { return NO_SQUARE; }        // __builtin_ctzll(0) is undefined
@@ -217,8 +218,12 @@ inline std::string bb_to_position_string(ull square) {
 };
 
 inline std::string move_to_string(const ShumiChess::Move& move) {
-    const ull movefrom = move.from;
-    const ull moveto = move.to;
+    // const ull frm = move.from;
+    // const ull to = move.to;
+    const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
+    // assert(movefrom == frm);
+    // assert(moveto == to);
     return bb_to_position_string(movefrom) + bb_to_position_string(moveto);
 }
 
@@ -276,8 +281,7 @@ inline void cout_move_info(const ShumiChess::Move& move) {
     std::cout << "Is En Passant Capture: " << move.is_en_passent_capture << std::endl;
     
     // Print en passant target square if it exists
-    constexpr uint8_t NO_SQUARE = 64;
-    if (move.en_passant_landingSQ != NO_SQUARE) {
+    if (move.en_passant_landingSQ != ShumiChess::NO_SQUARE) {
         ull landSq_bb = utility::bit::square_to_bitboard(move.en_passant_landingSQ);
         std::cout << "En Passant Target: " << bb_to_position_string(landSq_bb) << std::endl;
         //std::cout << "En Passant Target: " << bb_to_position_string(move.en_passant_landing) << std::endl;

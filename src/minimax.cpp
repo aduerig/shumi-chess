@@ -1619,8 +1619,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                        
                     bool recapture = false;
                     if (!engine.move_history.empty()) {
-                        ull mto = m.to;
-                        ull eto =  engine.move_history.top().to;
+                        ull mto = m.toSQ;
+                        ull eto =  engine.move_history.top().toSQ;
                         recapture = (mto == eto);
                     }
 
@@ -2193,9 +2193,9 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     }
 
     const bool have_last = !engine.move_history.empty();
-    ull last_to = 0ULL;
+    uint8_t last_toSQ = ShumiChess::NO_SQUARE;
     if (have_last) {
-        last_to = engine.move_history.top().to;
+        last_toSQ = engine.move_history.top().toSQ;
     }
 
     //  The sort, from top to bottom. Items 0 and 1 done always, the rest done if the unquiet sort is on.
@@ -2253,8 +2253,8 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
                 // If capture to the "from" square of last move, give it higher priority
                 // Fourth tier, so by default these are in centipawns ( as in 800 centipawns).
-                if (a.to == last_to) keyA += 800;
-                if (b.to == last_to) keyB += 800;
+                if (a.toSQ == last_toSQ) keyA += 800;
+                if (b.toSQ == last_toSQ) keyB += 800;
 
                 return keyA > keyB;
             });
