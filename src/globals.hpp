@@ -28,6 +28,7 @@ namespace utility
     }
 }
 
+typedef uint8_t Square;
 
 namespace ShumiChess {
 
@@ -46,9 +47,10 @@ enum Piece : std::uint8_t {
     NONE,
 };
 
-constexpr uint8_t NO_SQUARE = 64;
+constexpr Square NO_SQUARE = 64;
 
 //                              12345678
+//  These constants MUST be these values
 constexpr int CASTLE_NONE   = 0b00000000;
 constexpr int CASTLE_EITHER = 0b00000011;
 constexpr int CASTLE_KING   = 0b00000001;
@@ -62,10 +64,10 @@ struct Move {
     // ull from = 0ULL;   // 1-bitboard (but with only one bit set)
     // ull to = 0ULL;     // 1-bitboard (but with only one bit set)
 
-    uint8_t fromSQ = NO_SQUARE;
-    uint8_t toSQ = NO_SQUARE;
+    Square fromSQ = NO_SQUARE;
+    Square toSQ = NO_SQUARE;
 
-    uint8_t en_passant_landingSQ = NO_SQUARE;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
+    Square en_passant_landingSQ = NO_SQUARE;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
@@ -85,9 +87,9 @@ struct Move {
     Move(
          //ull from_,
          //ull to_,
-         uint8_t fromSQ_,
-         uint8_t toSQ_,
-         uint8_t en_passant_landing_,
+         Square fromSQ_,
+         Square toSQ_,
+         Square en_passant_landing_,
          Color color_,
          Piece piece_type_,
          Piece capture_,
@@ -250,7 +252,7 @@ inline ull get_diagonal_attacks(ull all_pieces_but_self, int square)
     ull nw_attacks;
     ull se_attacks;
     ull sw_attacks;
-    int blocked_square;
+    Square blocked_square;
 
     // up right
     ull masked_blockers_ne = all_pieces_but_self & north_east_square_ray[square];
@@ -298,7 +300,7 @@ inline ull get_straight_attacks(ull all_pieces_but_self, int square)
     ull s_attacks;
     ull e_attacks;
     ull w_attacks;
-    int blocked_square;
+    Square blocked_square;
 
     // north
     ull masked_blockers_n = all_pieces_but_self & north_square_ray[square];

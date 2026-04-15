@@ -1059,24 +1059,18 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 ull single_bitboard_from, 
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece, Color color, bool capture, bool promotion,
-                                uint8_t en_passant_land_sq,     // Passed in as a square for 2-rank pawn moves.
+                                Square en_passant_land_sq,     // Passed in as a square for 2-rank pawn moves.
                                 bool is_en_passent_capture, bool is_castle) {
 
 
-    // Castled bitmaps
-    constexpr ull W_KSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000;
-    constexpr ull W_QSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001;
-    constexpr ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-    constexpr ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
-    constexpr ull castle_touch = (W_KSIDE_MASK | W_QSIDE_MASK | B_KSIDE_MASK | B_QSIDE_MASK);
-
-   
+    ull castle_touch = (game_board.W_KSIDE_MASK | game_board.W_QSIDE_MASK | game_board.B_KSIDE_MASK | game_board.B_QSIDE_MASK);
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
     assert(game_board.bits_in(single_bitboard_from) == 1);
 
-    const uint8_t fromSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_from);
+    const Square fromSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_from);
+    assert (fromSQ != NO_SQUARE);
 
     // for all "to" squares and add them as moves
     while (bitboard_to) {
@@ -1088,13 +1082,6 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         if (capture) {
             if (!is_en_passent_capture) {
                 piece_captured = game_board.get_piece_type_on_bitboard(single_bitboard_to);
-
-                // int fromSq = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_to);
-                // assert(fromSq < 64);
-                // assert(fromSq >= 0);
-                // piece_captured = game_board.pieces_on_square[fromSq];
-                // assert (piece_captured2 == piece_captured);
-
             } else {
                 piece_captured = Piece::PAWN;       // En passant always takes a pawn
             }
@@ -1102,7 +1089,8 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             piece_captured = Piece::NONE;
         }
 
-        const uint8_t toSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_to);
+        const Square toSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_to);
+        assert (toSQ != NO_SQUARE);
 
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),
@@ -1110,16 +1098,20 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         // copying it into the vector (emplace_back(new_move)).
         if (!promotion)
         {
-
             uint8_t white_castle_rights = CASTLE_EITHER;
             uint8_t black_castle_rights = CASTLE_EITHER;
             ull from_or_to = (single_bitboard_from | single_bitboard_to);
             if (from_or_to & castle_touch) {
-                if (from_or_to & W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
-                if (from_or_to & W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
-                if (from_or_to & B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
-                if (from_or_to & B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
+                if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
+                if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
+                if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
+                if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
             }
+
+            uint8_t white_castle_r = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
+            uint8_t black_castle_r = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+            assert(white_castle_rights == white_castle_r);
+            assert(black_castle_rights == black_castle_r);
 
             //moves.emplace_back();
             moves.emplace_back(
@@ -1152,11 +1144,15 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                 uint8_t black_castle_rights = CASTLE_EITHER;
                 ull from_or_to = (single_bitboard_from | single_bitboard_to);
                 if (from_or_to & castle_touch) {
-                    if (from_or_to & W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
-                    if (from_or_to & W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
-                    if (from_or_to & B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
-                    if (from_or_to & B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
+                    if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
+                    if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
+                    if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
+                    if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
                 }
+                uint8_t white_castle_r = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
+                uint8_t black_castle_r = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+                assert(white_castle_rights == white_castle_r);
+                assert(black_castle_rights == black_castle_r);
 
                 //moves.emplace_back();
                 moves.emplace_back(
@@ -1598,7 +1594,7 @@ void Engine::sort_unquiet_moves_qsearch(
     
     // Recapture bias: if a capture lands on opponent's last-to square, try it earlest
     bool have_last = !move_history.empty();
-    uint8_t last_toSQ = NO_SQUARE;
+    Square last_toSQ = NO_SQUARE;
     if (have_last) {
         last_toSQ = move_history.top().toSQ;
     }
@@ -2066,7 +2062,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
         ull normal_attacks;
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
-
+        Square square = utility::bit::bitboard_to_lowest_square_fast(single_pawn);
  
         // promotions
         ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
@@ -2120,7 +2116,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                 if (move_forward_two_unblocked) {
 
                     assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
-                    uint8_t en_passant_land_sq = utility::bit::bitboard_to_lowest_square(move_forward_one_unblocked);
+                    Square en_passant_land_sq = utility::bit::bitboard_to_lowest_square(move_forward_one_unblocked);
 
                     assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
                     add_psuedo_move_to_vector(all_psuedo_legal_moves
@@ -2144,7 +2140,7 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
         ull single_knight = utility::bit::lsb_and_pop(knights);
         assert(single_knight);
 
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
+        Square square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
         ull avail_attacks = tables::movegen::knight_attack_table[square];
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
@@ -2171,8 +2167,9 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull single_rook = utility::bit::lsb_and_pop(rooks);
         assert(single_rook);
 
+        Square square = utility::bit::bitboard_to_lowest_square_fast(single_rook);
+
         ull all_pieces_but_self = all_pieces & ~single_rook;
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_rook);
         ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
@@ -2201,7 +2198,7 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
 
         ull all_pieces_but_self = all_pieces & ~single_bishop;
 
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
+        Square square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
@@ -2228,8 +2225,9 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
         ull single_queen = utility::bit::lsb_and_pop(queens);
         assert(single_queen);
 
+        Square square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
+
         ull all_pieces_but_self = all_pieces & ~single_queen;
-        int square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
@@ -2252,11 +2250,12 @@ template<Color c>
 void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
     ull king = game_board.get_pieces_template<Piece::KING, c>();
 
-    assert (king);      // Has to be kings
-    assert (game_board.bits_in(king) == 1);
+    assert (king);                              // Has to be kings
+    assert (game_board.bits_in(king) == 1);     // and only one king per side
 
-    int fromSQ = utility::bit::bitboard_to_lowest_square_fast(king);
-    ull avail_attacks = tables::movegen::king_attack_table[fromSQ];
+    Square square = utility::bit::bitboard_to_lowest_square_fast(king);
+
+    ull avail_attacks = tables::movegen::king_attack_table[square];
 
     // capture moves
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -2281,87 +2280,87 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             ull squares_inbetween;
             ull needed_rook_location;
             ull actual_rooks_location;
-            ull king_origin_square;
+            ull king_landing_square_bb;
             bool b_no_inbetween_squares_in_check;
 
             if constexpr (c == Color::WHITE) {
 
                 if (game_board.white_castle_rights & CASTLE_KING) {
-                if (fromSQ == game_board.square_e1) {
-                    squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
-                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
-                        if (b_no_inbetween_squares_in_check) {
-                            needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
-                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-                            if (actual_rooks_location & needed_rook_location) {
-                                king_origin_square = 1ULL << 1;
-                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                    , c, false, false
-                                    , NO_SQUARE, false, true);
+                    if (square == game_board.square_e1) {
+                        squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
+                        if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
+                            if (b_no_inbetween_squares_in_check) {
+                                needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
+                                actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                                if (actual_rooks_location & needed_rook_location) {
+                                    king_landing_square_bb = 1ULL << 1;
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                        , c, false, false
+                                        , NO_SQUARE, false, true);
+                                }
                             }
                         }
                     }
-                }
                 }
 
                 if (game_board.white_castle_rights & CASTLE_QUEEN) {
-                if (fromSQ == game_board.square_e1) {
-                    squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
-                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
-                        if (b_no_inbetween_squares_in_check) {
-                            needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
-                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
-                            if (actual_rooks_location & needed_rook_location) {
-                                king_origin_square = 1ULL << 5;
-                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                    , c, false, false
-                                    , NO_SQUARE, false, true);
+                    if (square == game_board.square_e1) {
+                        squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
+                        if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
+                            if (b_no_inbetween_squares_in_check) {
+                                needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
+                                actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
+                                if (actual_rooks_location & needed_rook_location) {
+                                    king_landing_square_bb = 1ULL << 5;
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                        , c, false, false
+                                        , NO_SQUARE, false, true);
+                                }
                             }
                         }
                     }
-                }
                 }
             
             } else {
 
                 if (game_board.black_castle_rights & CASTLE_KING) {
-                if (fromSQ == game_board.square_e8) {
-                    squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
-                        if (b_no_inbetween_squares_in_check) {
-                            needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                            if (actual_rooks_location & needed_rook_location) {
-                                king_origin_square = 1ULL <<57;
-                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                    , c, false, false
-                                    , NO_SQUARE, false, true);
+                    if (square == game_board.square_e8) {
+                        squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                        if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
+                            if (b_no_inbetween_squares_in_check) {
+                                needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                                actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                                if (actual_rooks_location & needed_rook_location) {
+                                    king_landing_square_bb = 1ULL <<57;
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                        , c, false, false
+                                        , NO_SQUARE, false, true);
+                                }
                             }
                         }
                     }
-                }
                 }
 
                 if (game_board.black_castle_rights & CASTLE_QUEEN) {
-                if (fromSQ == game_board.square_e8) {
-                    squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                    if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                        b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
-                        if (b_no_inbetween_squares_in_check) {
-                            needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
-                            actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
-                            if (actual_rooks_location & needed_rook_location) {
-                                king_origin_square = 1ULL <<61;
-                                add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_origin_square, Piece::KING
-                                    , c, false, false
-                                    , NO_SQUARE, false, true);
+                    if (square == game_board.square_e8) {
+                        squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                        if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
+                            if (b_no_inbetween_squares_in_check) {
+                                needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+                                actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
+                                if (actual_rooks_location & needed_rook_location) {
+                                    king_landing_square_bb = 1ULL <<61;
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                        , c, false, false
+                                        , NO_SQUARE, false, true);
+                                }
                             }
                         }
                     }
-                }
                 }
 
             }
@@ -2399,7 +2398,7 @@ bool Engine::is_square_in_check_t(const ull square_bb) {
     //     assert(0);
     // }
 
-    int square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
+    Square square = utility::bit::bitboard_to_lowest_square_fast(square_bb);
 
     ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy_c>();
     ull themKing    = game_board.get_pieces_template<Piece::KING, enemy_c>();
@@ -2631,7 +2630,7 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
     // assert(to == toBB);
 
 
-    const int toSQ   = utility::bit::bitboard_to_lowest_square_fast(toBB);
+    const Square toSQ   = utility::bit::bitboard_to_lowest_square_fast(toBB);
     assert(toSQ == move.toSQ);
 
     assert(game_board.bits_in(fromBB) == 1);

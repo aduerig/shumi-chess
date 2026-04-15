@@ -104,7 +104,7 @@ inline ull lsb_and_pop(ull& bitboard) {
 }
 
 // It finds the index (0–63) of the least-significant 1-bit in bitboard, clears that bit in the original variable, and returns the index.
-inline ull lsb_and_pop_to_square(ull& bitboard) {
+inline int lsb_and_pop_to_square(ull& bitboard) {
     assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     int square = __builtin_ctzll(bitboard);
@@ -114,7 +114,7 @@ inline ull lsb_and_pop_to_square(ull& bitboard) {
     return square;
 }
 
-inline ull square_to_bitboard(int square) {
+inline ull square_to_bitboard(Square square) {
     assert (square >= 0);
     assert (square <= 64);
     if (square==64) return 0ULL;
@@ -131,11 +131,10 @@ inline int bitboard_to_lowest_square_fast(ull bitboard) {
     return __builtin_ctzll(bitboard);
 }
 
-constexpr uint8_t NO_SQUARE = 64;
 
-inline uint8_t bitboard_to_lowest_square(ull bitboard) {  
+inline int bitboard_to_lowest_square(ull bitboard) {  
     //assert(bitboard != 0);
-    if (bitboard == 0ULL) { return NO_SQUARE; }        // __builtin_ctzll(0) is undefined
+    if (bitboard == 0ULL) { return ShumiChess::NO_SQUARE; }        // __builtin_ctzll(0) is undefined
     return __builtin_ctzll(bitboard);
 }
 // Im used for debugging only

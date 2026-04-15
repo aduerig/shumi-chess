@@ -866,7 +866,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
 //global_debug_flag = false;
 
-    itemp1 = sizeof(Move);
+    //itemp1 = sizeof(Move);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -2193,7 +2193,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     }
 
     const bool have_last = !engine.move_history.empty();
-    uint8_t last_toSQ = ShumiChess::NO_SQUARE;
+    Square last_toSQ = ShumiChess::NO_SQUARE;
     if (have_last) {
         last_toSQ = engine.move_history.top().toSQ;
     }

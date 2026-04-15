@@ -451,8 +451,18 @@ class GameBoard {
         //     return n;
         // }
 
+        ull W_KSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10001000;
+        ull W_QSIDE_MASK = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001001;
+        ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+        ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
+
+        void GameBoard::init_castle_touch_tables();
+        uint8_t white_castle_touch[64];
+        uint8_t black_castle_touch[64];
+
         // Square identities (in h1=0 bit board lingo)
         // "static constexpr" means, only one set of contants for multiple instances
+
 
         static constexpr int square_h1 = 0;
         static constexpr int square_g1 = 1;

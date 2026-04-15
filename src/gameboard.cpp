@@ -88,6 +88,7 @@ namespace ShumiChess {
         // Fills out the "chessboard" like view of the board
         initialize_pieces_on_square();
 
+        init_castle_touch_tables();
 
         wghts.multiply_weights(VOLUME_CONTROL);
     }
@@ -183,8 +184,11 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     // fullmove is Used only for display purposes.
     this->fullmove = std::stoi(fen_components[5]);
 
+
     // Fills out the "chessboard" like view of the board
     initialize_pieces_on_square();
+
+    init_castle_touch_tables();
     
     wghts.multiply_weights(VOLUME_CONTROL);
 
@@ -349,7 +353,7 @@ Color GameBoard::get_color_on_bitboard(ull bitboard) {
 // Translate the bitboards to a "chessboard" like "pieces_on_square"
 void GameBoard::initialize_pieces_on_square(void)
 {
-    for (int sq = 0; sq < 64; ++sq) {
+    for (Square sq = 0; sq < 64; ++sq) {
         pieces_on_square[sq] = Piece::NONE;
     }
 
@@ -358,88 +362,102 @@ void GameBoard::initialize_pieces_on_square(void)
     bb = white_pawns;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::PAWN;
     }
 
     bb = black_pawns;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::PAWN;
     }
 
     bb = white_rooks;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::ROOK;
     }
 
     bb = black_rooks;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::ROOK;
     }
 
     bb = white_knights;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::KNIGHT;
     }
 
     bb = black_knights;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::KNIGHT;
     }
 
     bb = white_bishops;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::BISHOP;
     }
 
     bb = black_bishops;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::BISHOP;
     }
 
     bb = white_queens;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::QUEEN;
     }
 
     bb = black_queens;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::QUEEN;
     }
 
     bb = white_king;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::KING;
     }
 
     bb = black_king;
     while (bb) {
         ull one = utility::bit::lsb_and_pop(bb);
-        int sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
         pieces_on_square[sq] = Piece::KING;
     }
 }
 
+void GameBoard::init_castle_touch_tables()
+{
+    for (int sq = 0; sq < 64; sq++) {
+        ull bb = (1ULL << sq);
+
+        white_castle_touch[sq] = CASTLE_EITHER;
+        if (bb & W_KSIDE_MASK) white_castle_touch[sq] &= CASTLE_KING;
+        if (bb & W_QSIDE_MASK) white_castle_touch[sq] &= CASTLE_QUEEN;
+
+        black_castle_touch[sq] = CASTLE_EITHER;
+        if (bb & B_KSIDE_MASK) black_castle_touch[sq] &= CASTLE_KING;
+        if (bb & B_QSIDE_MASK) black_castle_touch[sq] &= CASTLE_QUEEN;
+    }
+}
 
 // Is there only zero or one pieces on each square?
 bool GameBoard::are_bit_boards_valid() const {
