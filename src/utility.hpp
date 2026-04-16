@@ -94,17 +94,22 @@ inline ull bitshift_by_color_t(ull bitboard, int amount) {
 // This function does 2 things to the input "bitboard":
 //    1. Returns only the least significant bit (LSB) as a bitboard — all higher bits are zero.
 //    2. The LSB is zeroed on the input "bitboard"
+// inline ull lsb_and_pop(ull& bitboard) {
+//     assert(bitboard != 0ULL);       // Hopefully caller prevents this
+//     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
+//     ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
+//     // "pop" or remove the bit from the returned bitboard
+//     bitboard = bitboard & (~lsb_fast);
+//     return lsb_fast;
+// }
 inline ull lsb_and_pop(ull& bitboard) {
-    assert(bitboard != 0ULL);       // Hopefully caller prevents this
-    //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
-    ull lsb_fast = 1ULL << __builtin_ctzll(bitboard);
-    // "pop" or remove the bit from the returned bitboard
-    bitboard = bitboard & (~lsb_fast);
+    assert(bitboard != 0ULL);
+    ull lsb_fast = bitboard & -bitboard;
+    bitboard &= (bitboard - 1);
     return lsb_fast;
 }
-
 // It finds the index (0–63) of the least-significant 1-bit in bitboard, clears that bit in the original variable, and returns the index.
-inline int lsb_and_pop_to_square(ull& bitboard) {
+inline Square lsb_and_pop_to_square(ull& bitboard) {
     assert(bitboard != 0ULL);       // Hopefully caller prevents this
     //__builtin_ctzll returns the number of trailing zeros in the binary representation of a 64-bit integer
     int square = __builtin_ctzll(bitboard);

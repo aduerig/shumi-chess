@@ -866,7 +866,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
 //global_debug_flag = false;
 
-    //itemp1 = sizeof(Move);
+    itemp1 = sizeof(Move);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -2616,7 +2616,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
 
     int cp_score_position_temp = 0;
     bool b_is_pawns_friend;
-    int icp_temp, icp_temp2;
+    int icp_temp, icp_temp1, icp_temp2;
 
     PawnFileInfo pawnFileInfo;
     b_is_pawns_friend = engine.game_board.build_pawn_file_summary_fast_t<c>( pawnFileInfo.p[friendlyP]);
@@ -2628,30 +2628,50 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     if (b_is_pawns_friend) {
         bool b_is_pawns_enemy;
         ull holes_bb = 0ULL;
-        ull passed_pawns = 0ULL;
+        ull passed_pawns_bb = 0ULL;
 
         constexpr Color enemyColor = utility::representation::opposite_color_v<c>;
         b_is_pawns_enemy = engine.game_board.build_pawn_file_summary_fast_enemy_t<enemyColor>( pawnFileInfo.p[enemyP]);
 
-        icp_temp = engine.game_board.count_isolated_pawns_cp_t<c>(pawnFileInfo);
+        //icp_temp1 = engine.game_board.count_isolated_pawns_cp_t<c>(pawnFileInfo);
+        //cp_score_position_temp += icp_temp1;
+
+        //icp_temp2 = engine.game_board.count_doubled_pawns_cp_t<c>(pawnFileInfo);
+        //cp_score_position_temp += icp_temp2;
+
+        icp_temp = engine.game_board.count_isolated_and_doubled_pawns_cp_t<c>(pawnFileInfo);
+        //assert(icp_temp == (icp_temp1 + icp_temp2));
         cp_score_position_temp += icp_temp;
 
-        icp_temp = engine.game_board.count_pawn_holes_cp_t<c>(pawnFileInfo, holes_bb);
-        cp_score_position_temp += icp_temp;
+
+        //icp_temp1 = engine.game_board.count_pawn_holes_cp_t<c>(pawnFileInfo, holes_bb);
+        //cp_score_position_temp += icp_temp1;
+
+        //icp_temp2 = engine.game_board.count_passed_pawns_cp_t<c>(pawnFileInfo, passed_pawns_bb);
+        //cp_score_position_temp += icp_temp2;
+
+        int holes_cp;
+        int passed_cp;
+        engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(pawnFileInfo,
+                                                            holes_bb,
+                                                            holes_cp,
+                                                            passed_pawns_bb,
+                                                            passed_cp);
+        //assert(holes_cp == icp_temp1);
+        cp_score_position_temp += holes_cp;
+
+        //assert(passed_cp == icp_temp2);
+        cp_score_position_temp += passed_cp;
+
 
         icp_temp = engine.game_board.count_knights_on_holes_cp_t<c>(holes_bb);
         cp_score_position_temp += icp_temp;
 
-        icp_temp = engine.game_board.count_doubled_pawns_cp_t<c>(pawnFileInfo);
-        cp_score_position_temp += icp_temp;
-
-        icp_temp = engine.game_board.count_passed_pawns_cp_t<c>(pawnFileInfo, passed_pawns);
-        cp_score_position_temp += icp_temp;
 
         if constexpr (c == Color::WHITE)
-            passed_pawns_white = passed_pawns;
+            passed_pawns_white = passed_pawns_bb;
         else
-            passed_pawns_black = passed_pawns;
+            passed_pawns_black = passed_pawns_bb;
 
         icp_temp = engine.game_board.rooks_file_status_cp_t<c>(pawnFileInfo);
         cp_score_position_temp += icp_temp;

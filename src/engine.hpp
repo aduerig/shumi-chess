@@ -116,7 +116,7 @@ class Engine {
         template <Color c> ull& access_pieces_of_color_tp(Piece piece);
         template <Piece P, Color c> ull& access_pieces_of_color_tp();
 
-        void add_psuedo_move_to_vector(vector<Move>&, ull, ull, Piece, Color, bool, bool, Square en_passant_land_sq, bool, bool);
+        void add_psuedo_move_to_vector(vector<Move>&, Square fromSQ, ull, Piece, Color, bool, bool, Square en_passant_land_sq, bool, bool);
 
         template<Color c> int get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);
         int get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);       

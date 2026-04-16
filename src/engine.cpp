@@ -1056,7 +1056,8 @@ template <Piece P, Color c> ull& Engine::access_pieces_of_color_tp()
 // Fills in a Move data structure based on a single "from" square, and multiple "to" squares.
 //
 void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
-                                ull single_bitboard_from, 
+                                //ull single_bitboard_from, 
+                                Square fromSQ,
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece, Color color, bool capture, bool promotion,
                                 Square en_passant_land_sq,     // Passed in as a square for 2-rank pawn moves.
@@ -1067,9 +1068,8 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
     //ull castle_touch = (game_board.W_KSIDE_MASK | game_board.W_QSIDE_MASK | game_board.B_KSIDE_MASK | game_board.B_QSIDE_MASK);
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
-    assert(game_board.bits_in(single_bitboard_from) == 1);
+    //assert(game_board.bits_in(single_bitboard_from) == 1);
 
-    const Square fromSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_from);
     assert (fromSQ != NO_SQUARE);
 
     // for all "to" squares and add them as moves
@@ -2061,14 +2061,16 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
     while (pawns) {
 
         ull normal_attacks;
+
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
+        assert(single_pawn);
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_pawn);
  
         // promotions
         ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
-        ull promo_not_blocked = potential_promotion & ~all_pieces;
-        if (promo_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, promo_not_blocked, Piece::PAWN
+        ull promo_unblocked = potential_promotion & ~all_pieces;
+        if (promo_unblocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                , square, promo_unblocked, Piece::PAWN
                 , color, false, true
                 , NO_SQUARE, false, false);
 
@@ -2079,7 +2081,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         normal_attacks = attack_fleft & all_enemy_pieces;
         normal_attacks |= attack_fright & all_enemy_pieces;
         if (normal_attacks) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                    , single_pawn, normal_attacks, Piece::PAWN
+                    , square, normal_attacks, Piece::PAWN
                     , color, true, (bool) (normal_attacks & enemy_starting_rank_mask)
                     , NO_SQUARE, false, false);
 
@@ -2087,7 +2089,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_bb;
         if (enpassant_end_loc) {
             if (enpassant_end_loc) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, enpassant_end_loc, Piece::PAWN
+                , square, enpassant_end_loc, Piece::PAWN
                 , color, true, false
                 , NO_SQUARE, true, false);
         }
@@ -2096,11 +2098,11 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         if (!unquiet_moves_only) {
 
             ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
-            ull one_move_forward_not_blocked = one_move_forward & ~all_pieces;
+            ull one_move_forward_unblocked = one_move_forward & ~all_pieces;
 
             // single square moves
-            if (one_move_forward_not_blocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
-                , single_pawn, one_move_forward_not_blocked, Piece::PAWN
+            if (one_move_forward_unblocked) add_psuedo_move_to_vector(all_psuedo_legal_moves
+                , square, one_move_forward_unblocked, Piece::PAWN
                 , color, false, false
                 , NO_SQUARE, false, false);
 
@@ -2109,6 +2111,9 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             if (is_doublable) {
                 ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
                 ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
+
+                // Note: simoplify this ChatGPT says they are the same?
+                assert(one_move_forward_unblocked == move_forward_one_unblocked);
 
                 ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
                 ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
@@ -2120,7 +2125,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
                     assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
                     add_psuedo_move_to_vector(all_psuedo_legal_moves
-                        , single_pawn, move_forward_two_unblocked, Piece::PAWN
+                        , square, move_forward_two_unblocked, Piece::PAWN
                         , color, false, false
                         , en_passant_land_sq, false, false);
                 }
@@ -2137,22 +2142,23 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
     ull knights = game_board.get_pieces_template<Piece::KNIGHT, c>();
 
     while (knights) {
+
         ull single_knight = utility::bit::lsb_and_pop(knights);
         assert(single_knight);
-
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
+
         ull avail_attacks = tables::movegen::knight_attack_table[square];
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, enemy_piece_attacks, Piece::KNIGHT
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::KNIGHT
             , c, true, false
             , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_knight, non_attack_moves, Piece::KNIGHT
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, square, non_attack_moves, Piece::KNIGHT
                 , c, false, false
                 , NO_SQUARE, false, false);
         }
@@ -2164,9 +2170,9 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
     ull rooks = game_board.get_pieces_template<Piece::ROOK, c>();
 
     while (rooks) {
+
         ull single_rook = utility::bit::lsb_and_pop(rooks);
         assert(single_rook);
-
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_rook);
 
         ull all_pieces_but_self = all_pieces & ~single_rook;
@@ -2174,14 +2180,14 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, enemy_piece_attacks, Piece::ROOK
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::ROOK
             , c, true, false
             , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
-            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_rook, non_attack_moves, Piece::ROOK
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, square, non_attack_moves, Piece::ROOK
                 , c, false, false
                 , NO_SQUARE, false, false);
         }
@@ -2193,24 +2199,25 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
     ull bishops = game_board.get_pieces_template<Piece::BISHOP, c>();
 
     while (bishops) {
+
         ull single_bishop = utility::bit::lsb_and_pop(bishops);
         assert(single_bishop);
+        Square square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
 
         ull all_pieces_but_self = all_pieces & ~single_bishop;
 
-        Square square = utility::bit::bitboard_to_lowest_square_fast(single_bishop);
         ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves        
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, enemy_piece_attacks, Piece::BISHOP
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::BISHOP
             , c, true, false
             , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_bishop, non_attack_moves, Piece::BISHOP
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, square, non_attack_moves, Piece::BISHOP
                 , c, false, false
                 , NO_SQUARE, false, false);
         }
@@ -2222,9 +2229,9 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
     ull queens = game_board.get_pieces_template<Piece::QUEEN, c>();
 
     while (queens) {
+
         ull single_queen = utility::bit::lsb_and_pop(queens);
         assert(single_queen);
-
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
 
         ull all_pieces_but_self = all_pieces & ~single_queen;
@@ -2232,14 +2239,14 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, enemy_piece_attacks, Piece::QUEEN
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::QUEEN
             , c, true, false
             , NO_SQUARE, false, false);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-            add_psuedo_move_to_vector(all_psuedo_legal_moves, single_queen, non_attack_moves, Piece::QUEEN
+            add_psuedo_move_to_vector(all_psuedo_legal_moves, square, non_attack_moves, Piece::QUEEN
                 , c, false, false
                 , NO_SQUARE, false, false);
         }
@@ -2248,18 +2255,18 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
 
 template<Color c>
 void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
-    ull king = game_board.get_pieces_template<Piece::KING, c>();
+   
+    ull single_king = game_board.get_pieces_template<Piece::KING, c>();
+    assert (single_king);                              // Has to be kings
+    Square square = utility::bit::bitboard_to_lowest_square_fast(single_king);
 
-    assert (king);                              // Has to be kings
-    assert (game_board.bits_in(king) == 1);     // and only one king per side
-
-    Square square = utility::bit::bitboard_to_lowest_square_fast(king);
+    assert (game_board.bits_in(single_king) == 1);     // and only one king per side
 
     ull avail_attacks = tables::movegen::king_attack_table[square];
 
     // capture moves
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, enemy_piece_attacks, Piece::KING
+    add_psuedo_move_to_vector(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::KING
         , c, true, false
         , NO_SQUARE, false, false);
 
@@ -2268,7 +2275,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
         // Quiet moves
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_psuedo_move_to_vector(all_psuedo_legal_moves, king, non_attack_moves, Piece::KING
+        add_psuedo_move_to_vector(all_psuedo_legal_moves, square, non_attack_moves, Piece::KING
             , c, false, false
             , NO_SQUARE, false, false);
 
@@ -2289,13 +2296,13 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     if (square == game_board.square_e1) {
                         squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(single_king) && !is_square_in_check_t<enemy_color>(single_king>>1) && !is_square_in_check_t<enemy_color>(single_king>>2);
                             if (b_no_inbetween_squares_in_check) {
                                 needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001;
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL << 1;
-                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
                                         , c, false, false
                                         , NO_SQUARE, false, true);
                                 }
@@ -2308,13 +2315,13 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     if (square == game_board.square_e1) {
                         squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(single_king) && !is_square_in_check_t<enemy_color>(single_king<<1) && !is_square_in_check_t<enemy_color>(single_king);
                             if (b_no_inbetween_squares_in_check) {
                                 needed_rook_location = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'10000000;
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL << 5;
-                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
                                         , c, false, false
                                         , NO_SQUARE, false, true);
                                 }
@@ -2329,13 +2336,13 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     if (square == game_board.square_e8) {
                         squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king>>1) && !is_square_in_check_t<enemy_color>(king>>2);
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(single_king) && !is_square_in_check_t<enemy_color>(single_king>>1) && !is_square_in_check_t<enemy_color>(single_king>>2);
                             if (b_no_inbetween_squares_in_check) {
                                 needed_rook_location = 0b00000001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL <<57;
-                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
                                         , c, false, false
                                         , NO_SQUARE, false, true);
                                 }
@@ -2348,13 +2355,13 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     if (square == game_board.square_e8) {
                         squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
-                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(king) && !is_square_in_check_t<enemy_color>(king<<1) && !is_square_in_check_t<enemy_color>(king<<2);
+                            b_no_inbetween_squares_in_check = !is_square_in_check_t<enemy_color>(single_king) && !is_square_in_check_t<enemy_color>(single_king<<1) && !is_square_in_check_t<enemy_color>(single_king<<2);
                             if (b_no_inbetween_squares_in_check) {
                                 needed_rook_location = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL <<61;
-                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, king, king_landing_square_bb, Piece::KING
+                                    add_psuedo_move_to_vector(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
                                         , c, false, false
                                         , NO_SQUARE, false, true);
                                 }
@@ -2725,10 +2732,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 if (move.is_en_passent_capture) {
                     legal = !in_check_after_move_fast_t<c>(move);
                 } else {
-                    // const int fromSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-                    // const int toSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
-                    // assert(fromSq == move.fromSQ);
-                    // assert(toSq == move.toSQ);
+
                     const int fromSq = move.fromSQ;
                     const int toSq   = move.toSQ;
 
@@ -2767,13 +2771,9 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                     legal = !in_check_after_king_move_t<c>(move);
                 } else {
 
-                    //ull moveto = move.to;
-                    // const int frmSq = utility::bit::bitboard_to_lowest_square_fast(move.from);
-                    // const int tSq   = utility::bit::bitboard_to_lowest_square_fast(move.to);
                     const int fromSq = move.fromSQ;
                     const int toSq   = move.toSQ;
-                    // assert(frmSq == fromSq);
-                    // assert(tSq == toSq);
+     
                     const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
 
                     bool helps = false;

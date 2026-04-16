@@ -307,13 +307,18 @@ class GameBoard {
 
         // "Positional "pawn" routines.
         template<Color c> int count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const;
-       
-        template<Color c> int count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes);
-        template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
-
         template<Color c> int count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo);
+        template<Color c> int count_isolated_and_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) const;
 
+        template<Color c> int count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes);
         template<Color c> int count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed_pawns);
+        template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnInfo,
+                                                            ull& holes_bb,
+                                                            int& holes_cp,
+                                                            ull& passed_pawns,
+                                                            int& passed_cp);
+
+        template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
         template<Color c> int rooks_file_status_cp_t(const PawnFileInfo& pawnInfo);
 
 
