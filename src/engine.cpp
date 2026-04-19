@@ -728,7 +728,46 @@ void Engine::pushMove_t(const Move& move) {
         game_board.zobrist_key ^= zobrist_castling[castle_new];
     }
 
-    //update_pieces_on_square_for_push_t<c>(move);
+    //game_board.push_move_to_pieces_on_square(move);
+    
+    // // Assert that it matches
+    // Piece temp[64];
+    // for (int i = 0; i < 64; i++) {
+    //     temp[i] = game_board.pieces_on_square[i];
+    // }
+    
+    // game_board.bitboards_to_pieces_on_square();
+    // for (int i = 0; i < 64; i++) {
+    //     assert(temp[i] == game_board.pieces_on_square[i]);
+    // }
+
+    //game_board.refresh_pawn_summaries_after_move(move, game_board.white_pawn_info, game_board.black_pawn_info);
+
+    // {
+    //     PInfo tempWhite;
+    //     PInfo tempBlack;
+
+    //     game_board.build_pawn_file_summary_fast_t<Color::WHITE>(tempWhite);
+    //     game_board.build_pawn_file_summary_fast_t<Color::BLACK>(tempBlack);
+
+    //     if (!(tempWhite == game_board.white_pawn_info)) {
+    //         printf("\nWHITE mismatch after PUSH\n");
+    //         move_into_string(move);
+    //         cout << "\nmove= " << move_string << endl;
+    //         game_board.dump_pinfo_mismatch(tempWhite, game_board.white_pawn_info);
+    //         string out = utility::representation::gameboard_to_string(game_board);
+    //         cout << out << endl;
+    //         assert(0);
+    //     }
+
+    //     if (!(tempBlack == game_board.black_pawn_info)) {
+    //         printf("\nBLACK mismatch after PUSH\n");
+    //         move_into_string(move);
+    //         cout << "\nmove= " << move_string << endl;
+    //         game_board.dump_pinfo_mismatch(tempBlack, game_board.black_pawn_info);
+    //         assert(0);
+    //     }
+    // }
 
 }
 
@@ -887,7 +926,45 @@ void Engine::popMove_t() {
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_to_sq);
     }
 
-    //update_pieces_on_square_for_pop_t<c>(move);
+
+    //game_board.pop_move_to_pieces_on_square(move);
+
+    // // Assert that it matches
+    // Piece temp[64];
+    // for (int i = 0; i < 64; i++) {
+    //     temp[i] = game_board.pieces_on_square[i];
+    // }
+    
+    // game_board.bitboards_to_pieces_on_square();
+    // for (int i = 0; i < 64; i++) {
+    //     assert(temp[i] == game_board.pieces_on_square[i]);
+    // }
+
+    // game_board.refresh_pawn_summaries_after_move(move, game_board.white_pawn_info, game_board.black_pawn_info);
+
+    // {
+    //     PInfo tempWhite;
+    //     PInfo tempBlack;
+
+    //     game_board.build_pawn_file_summary_fast_t<Color::WHITE>(tempWhite);
+    //     game_board.build_pawn_file_summary_fast_t<Color::BLACK>(tempBlack);
+
+    //     if (!(tempWhite == game_board.white_pawn_info)) {
+    //         printf("\nWHITE mismatch after POP\n");
+    //         move_into_string(move);
+    //         cout << "\nmove= " << move_string << endl;
+    //         game_board.dump_pinfo_mismatch(tempWhite, game_board.white_pawn_info);
+    //         assert(0);
+    //     }
+
+    //     if (!(tempBlack == game_board.black_pawn_info)) {
+    //         printf("\nBLACK mismatch after POP\n");
+    //         move_into_string(move);
+    //         cout << "\nmove= " << move_string << endl;
+    //         game_board.dump_pinfo_mismatch(tempBlack, game_board.black_pawn_info);
+    //         assert(0);
+    //     }
+    // }
 
 }
 
@@ -1078,10 +1155,15 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         ull single_bitboard_to = utility::bit::lsb_and_pop(bitboard_to);
         assert(game_board.bits_in(single_bitboard_to) == 1);
 
+        const Square toSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_to);
+        assert (toSQ != NO_SQUARE);
+
         Piece piece_captured;
         if (capture) {
             if (!is_en_passent_capture) {
                 piece_captured = game_board.get_piece_type_on_bitboard(single_bitboard_to);
+                //Piece piece_captured2 = game_board.pieces_on_square[toSQ];
+                //assert(piece_captured == piece_captured2);
             } else {
                 piece_captured = Piece::PAWN;       // En passant always takes a pawn
             }
@@ -1089,29 +1171,15 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             piece_captured = Piece::NONE;
         }
 
-        const Square toSQ = utility::bit::bitboard_to_lowest_square_fast(single_bitboard_to);
-        assert (toSQ != NO_SQUARE);
-
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),
         // then fill its fields in-place. This avoids creating a temporary Move and
         // copying it into the vector (emplace_back(new_move)).
         if (!promotion)
         {
-            // uint8_t white_castle_rights = CASTLE_EITHER;
-            // uint8_t black_castle_rights = CASTLE_EITHER;
-            // ull from_or_to = (single_bitboard_from | single_bitboard_to);
-            // if (from_or_to & castle_touch) {
-            //     if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
-            //     if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
-            //     if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
-            //     if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
-            // }
 
             uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
             uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
-            // assert(white_castle_rights == white_castle_r);
-            // assert(black_castle_rights == black_castle_r);
 
             //moves.emplace_back();
             moves.emplace_back(
@@ -1139,16 +1207,6 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             // Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
-                // However a promotion can affect castling rights by capturing a rook on its home square.
-                // uint8_t white_castle_rights = CASTLE_EITHER;
-                // uint8_t black_castle_rights = CASTLE_EITHER;
-                // ull from_or_to = (single_bitboard_from | single_bitboard_to);
-                // if (from_or_to & castle_touch) {
-                //     if (from_or_to & game_board.W_KSIDE_MASK) white_castle_rights &= CASTLE_KING;
-                //     if (from_or_to & game_board.W_QSIDE_MASK) white_castle_rights &= CASTLE_QUEEN;
-                //     if (from_or_to & game_board.B_KSIDE_MASK) black_castle_rights &= CASTLE_KING;
-                //     if (from_or_to & game_board.B_QSIDE_MASK) black_castle_rights &= CASTLE_QUEEN;
-                // }
                 uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
                 uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
                 // assert(white_castle_rights == white_castle_r);

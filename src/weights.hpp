@@ -41,7 +41,7 @@ enum WghtIndxs
     LAST_VALUE              // I must be last
 };
 
-constexpr double VOLUME_CONTROL = 0.60;
+constexpr double VOLUME_CONTROL = 0.63;
 
 // All values in integer centipawns. Positive values are bonus, negative values are penelties
 class Weights
@@ -51,8 +51,8 @@ public:
     // can_castle privilege prevents stupid king wandering.
     // has_castled bonus must be > can_castle privilege or it will never castle.
     // castling is not actual "castling". It means getting the king to the side (on back rank), without trapping a rook.
-    static constexpr int HAS_CASTLED_WGHT = 135;
-    static constexpr int CAN_CASTLE_WGHT = 47;
+    static constexpr int HAS_CASTLED_WGHT = 145;
+    static constexpr int CAN_CASTLE_WGHT = 50;
 
     // Isolated pawns.
     //      One count for each instance.
@@ -67,8 +67,8 @@ public:
     static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
 
     // Doubled pawns
-    static constexpr int DOUBLED_WGHT      = -20;           // One slam for each pawn more than one on a file
-    static constexpr int DOUBLED_ROOK_WGHT = -20;           // Same, but doubled pawn on rook file
+    static constexpr int DOUBLED_WGHT      = -19;           // One slam for each pawn more than one on a file
+    static constexpr int DOUBLED_ROOK_WGHT = -19;           // Same, but doubled pawn on rook file
     static constexpr int DOUBLED_OPEN_FILE_WGHT   = -18;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
@@ -109,14 +109,14 @@ public:
     static constexpr int ROOK_ON_OPEN_FILE_WGHT = 14;     // open=2x, semi-open=1x
     static constexpr int KING_ON_FILE_WGHT    = 10;      // extra per rook if enemy king on same file (even if pieces between he king and rook)
 
-    static constexpr int MAJOR_ON_RANK7_WGHT = 20;      // Rook or queen on 7th rank
+    static constexpr int MAJOR_ON_RANK7_WGHT = 22;      // Rook or queen on 7th rank
     static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank
 
     static constexpr int KNIGHT_ON_EDGE_WGHT = -10;     // knight on edge penatly (doubled if knight in corner)
 
     static constexpr int KING_EDGE_WGHT = 40;              // Only in ending, to force enemy king to edge
 
-    static constexpr int KING_CENTER_LATE_WGHT = 15;       // Only in ending, 
+    static constexpr int KING_CENTER_LATE_WGHT = 18;       // Only in ending, 
 
     static constexpr int KINGS_CLOSE_TOGETHER_WGHT = 30;   // Only in ending, to force enemy king to edge
 

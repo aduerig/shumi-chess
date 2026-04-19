@@ -22,8 +22,10 @@ struct PInfo {
     int file_count[8];          // Count of pawns on this file
     ull file_bb[8];             // Bitboard of pawns on this file
     unsigned files_present;     // Bitmask of which files contain >= 1 pawn
-    int advancedSq[8];          // Square index of the side’s most advanced pawn on that file (or -1)
-    int rearSq[8];              // Square index of the side’s least advanced pawn on that file (or -1)
+
+    //ull file_bb_3wide[8];       // Bitboard of pawns on this file, and the two neighboring files (only one neighbor if rook file)
+    Square advancedSq[8];          // Square index of the side’s most advanced pawn on that file (or NO_SQUARE)
+    Square rearSq[8];              // Square index of the side’s least advanced pawn on that file (or NO_SQUARE)
 };
 
 inline bool operator==(const PInfo& a, const PInfo& b) {
@@ -33,6 +35,7 @@ inline bool operator==(const PInfo& a, const PInfo& b) {
         if (a.file_count[i] != b.file_count[i]) return false;
         if (a.file_bb[i]    != b.file_bb[i])    return false;
         if (a.advancedSq[i] != b.advancedSq[i]) return false;
+        //if (a.rearSq[i] != b.rearSq[i])         return false;
     }
     return true;
 }
@@ -96,6 +99,7 @@ class GameBoard {
         // Constructors
         explicit GameBoard();
         explicit GameBoard(const std::string& fen_notation);
+        void initGameBoard(void);   // Code common to both constructers 
 
         // Member methods
         const std::string to_fen(bool bFullFEN=true);
@@ -258,7 +262,9 @@ class GameBoard {
         Color get_color_on_bitboard(ull);
 
         Piece pieces_on_square[64];
-        void initialize_pieces_on_square(void);
+        void bitboards_to_pieces_on_square(void);
+        void push_move_to_pieces_on_square(const Move& move);
+        void pop_move_to_pieces_on_square(const Move& move);
 
         bool are_bit_boards_valid() const;
         
@@ -298,6 +304,11 @@ class GameBoard {
         bool build_pawn_file_summary(Color c, PInfo& p);
         template<Color c> bool build_pawn_file_summary_fast_t(PInfo& p);
         template<Color c> bool build_pawn_file_summary_fast_enemy_t(PInfo& p);
+        template<Color c> void refresh_pawn_summary_file_t(PInfo& pinfo, int file);
+        template<Color c> void refresh_pawn_summary_files_t(PInfo& pinfo, const bool touched[8]);
+        void refresh_pawn_summaries_after_move(const Move& move,
+                                                  PInfo& whitePInfo,
+                                                  PInfo& blackInfo);
         void dump_pinfo_mismatch(const PInfo& a, const PInfo& b);
 
         void validate_row_col_masks_h1_0();
@@ -391,8 +402,6 @@ class GameBoard {
                             ull occ_local,
                             const SEEBoards& b_local,
                             int balance_local);
-
-        const endgameTablePos to_egt();
 
         //int centipawn_score_of(ShumiChess::Piece p) const;
         // Total of 4000 centipawns for each side.
@@ -533,6 +542,9 @@ class GameBoard {
         static constexpr ull squares_f5_c5 = (1ull<<square_f5) | (1ull<<square_c5);   
 
         Weights wghts;
+
+        PInfo white_pawn_info;
+        PInfo black_pawn_info;
 
         // Used only in crazy Ivan.
         int CENTER_SCORE[64] = {

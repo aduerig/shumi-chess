@@ -103,9 +103,6 @@ class Engine {
         template<Color c> void pushMove_t(const Move&);
         template<Color c> void popMove_t();
 
-        template<Color c> void update_pieces_on_square_for_push_t(const Move& move);
-        template<Color c> void update_pieces_on_square_for_pop_t(const Move& move);
-        
         GameState is_game_over();
         GameState is_game_over(int nLegMovesFound);
         int i_randomize_next_move = 0;

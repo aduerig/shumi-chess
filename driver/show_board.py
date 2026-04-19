@@ -564,11 +564,12 @@ bottom_wins_text = Text(Point(square_size * 6.35, square_size *8.9), f'Bot {curr
 top_wins_text = Text(Point(square_size * 7.05, square_size *8.9), f'Top {curr_game_top}')
 draw_wins_text = Text(Point(square_size * 7.75, square_size *8.9), f'Drw {curr_game_draw}')
 
-wht_time_text  = Text(Point(square_size * 8.65, square_size *8.9), f'Wtim')
-blk_time_text  = Text(Point(square_size * 9.35, square_size *8.9), f'Btim')
+# wht_time_text  = Text(Point(square_size * 8.65, square_size *8.9), f'Wtim')
+# blk_time_text  = Text(Point(square_size * 9.35, square_size *8.9), f'Btim')
 
 # set the win/loss/draw counters
-for t in (bottom_wins_text, top_wins_text, draw_wins_text, wht_time_text, blk_time_text):
+# for t in (bottom_wins_text, top_wins_text, draw_wins_text, wht_time_text, blk_time_text):
+for t in (bottom_wins_text, top_wins_text, draw_wins_text):
     t.setFill(color_rgb(200, 200, 200))
     t.setSize(8)
     t.draw(win)
@@ -1072,14 +1073,14 @@ try:
             game_over_text.setText(winner_text.format(winner))
 
         # update match timers
-        iWhiteTime = engine_communicator.get_game_timew()
-        #print("wht time=",iWhiteTime)
-        iBlackTime = engine_communicator.get_game_timeb()
-        #print("blk time=",iBlackTime)
-        iWhiteTimeMatch += iWhiteTime    
-        iBlackTimeMatch += iBlackTime
-        wht_time_text.setText(f'Wtim {round(iWhiteTimeMatch / 1000)}')
-        blk_time_text.setText(f'Btim {round(iBlackTimeMatch / 1000)}')
+        # iWhiteTime = engine_communicator.get_game_timew()
+        # #print("wht time=",iWhiteTime)
+        # iBlackTime = engine_communicator.get_game_timeb()
+        # #print("blk time=",iBlackTime)
+        # iWhiteTimeMatch += iWhiteTime    
+        # iBlackTimeMatch += iBlackTime
+        # wht_time_text.setText(f'Wtim {round(iWhiteTimeMatch / 1000)}')
+        # blk_time_text.setText(f'Btim {round(iBlackTimeMatch / 1000)}')
 
 
 

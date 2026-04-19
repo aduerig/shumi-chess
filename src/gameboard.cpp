@@ -69,28 +69,9 @@ namespace ShumiChess {
     fullmove(1) 
 
     {
-        // Seed randomization, for gameboard. (using microseconds since ?)
-        using namespace std::chrono;
-        auto now = high_resolution_clock::now().time_since_epoch();
-        auto us  = duration_cast<microseconds>(now).count();
-        rng.seed(static_cast<unsigned>(us));
 
+        initGameBoard();                // Code common to both constructers
 
-        // !TODO doesn't belong here i don't think. I think it does.
-        ShumiChess::initialize_zobrist();
-        set_zobrist();
-
- 
-        // No multiple pieces on the same square.
-        bool no_pieces_on_same_square = are_bit_boards_valid();
-        assert(no_pieces_on_same_square);
-
-        // Fills out the "chessboard" like view of the board
-        initialize_pieces_on_square();
-
-        init_castle_touch_tables();
-
-        wghts.multiply_weights(VOLUME_CONTROL);
     }
 
 
@@ -184,21 +165,18 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     // fullmove is Used only for display purposes.
     this->fullmove = std::stoi(fen_components[5]);
 
+    this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
 
-    // Fills out the "chessboard" like view of the board
-    initialize_pieces_on_square();
+    initGameBoard();                // Code common to both constructers
 
-    init_castle_touch_tables();
-    
-    wghts.multiply_weights(VOLUME_CONTROL);
+}
+
+ void GameBoard::initGameBoard(void)   // Code common to both constructers 
+ {
 
     // No multiple pieces on the same square.
     bool no_pieces_on_same_square = are_bit_boards_valid();
     assert(no_pieces_on_same_square);
-
-
-    this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
-
 
     // Seed randomization, for gameboard. (using microseconds since ?)
     using namespace std::chrono;
@@ -206,12 +184,21 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     auto us  = duration_cast<microseconds>(now).count();
     rng.seed(static_cast<unsigned>(us));
 
+    // !TODO doesn't belong here i don't think. I think it does.
     ShumiChess::initialize_zobrist();
     set_zobrist();
+    
+    // Fills out the "chessboard" like view of the board
+    bitboards_to_pieces_on_square();
 
+    init_castle_touch_tables();
+
+    wghts.multiply_weights(VOLUME_CONTROL);
+
+
+    build_pawn_file_summary(Color::WHITE, white_pawn_info);
+    build_pawn_file_summary(Color::BLACK, black_pawn_info);
 }
-
-
 
 void GameBoard::set_zobrist() {
     zobrist_key = 0;
@@ -242,11 +229,6 @@ void GameBoard::set_zobrist() {
 //
 // fields for fen are:
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
-
-const endgameTablePos GameBoard::to_egt() {
-    endgameTablePos returnVar;
-    return returnVar;
-}
 
 
 const string GameBoard::to_fen(bool bFullFEN) {
@@ -351,7 +333,7 @@ Color GameBoard::get_color_on_bitboard(ull bitboard) {
 
 //
 // Translate the bitboards to a "chessboard" like "pieces_on_square"
-void GameBoard::initialize_pieces_on_square(void)
+void GameBoard::bitboards_to_pieces_on_square(void)
 {
     for (Square sq = 0; sq < 64; ++sq) {
         pieces_on_square[sq] = Piece::NONE;
@@ -361,88 +343,199 @@ void GameBoard::initialize_pieces_on_square(void)
 
     bb = white_pawns;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::PAWN;
     }
 
     bb = black_pawns;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::PAWN;
     }
 
     bb = white_rooks;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::ROOK;
     }
 
     bb = black_rooks;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::ROOK;
     }
 
     bb = white_knights;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::KNIGHT;
     }
 
     bb = black_knights;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::KNIGHT;
     }
 
     bb = white_bishops;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::BISHOP;
     }
 
     bb = black_bishops;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::BISHOP;
     }
 
     bb = white_queens;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::QUEEN;
     }
 
     bb = black_queens;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::QUEEN;
     }
 
     bb = white_king;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::KING;
     }
 
     bb = black_king;
     while (bb) {
-        ull one = utility::bit::lsb_and_pop(bb);
-        Square sq = utility::bit::bitboard_to_lowest_square_fast(one);
+        Square sq = utility::bit::lsb_and_pop_to_square(bb);
         pieces_on_square[sq] = Piece::KING;
     }
 }
+//
+// Update pieces_on_square[] for a move being pushed onto the board.
+// Assumes pieces_on_square[] currently reflects the position BEFORE the move.
+void GameBoard::push_move_to_pieces_on_square(const Move& move)
+{
+    assert(move.fromSQ != NO_SQUARE);
+    assert(move.toSQ   != NO_SQUARE);
+
+    // Sanity: from-square should contain the moving piece before the move.
+    assert(pieces_on_square[move.fromSQ] == move.piece_type);
+
+    // Remove moving piece from source square.
+    pieces_on_square[move.fromSQ] = Piece::NONE;
+
+    // En passant removes the pawn behind the destination square.
+    if (move.is_en_passent_capture) {
+        Square capSQ;
+        if (move.color == Color::WHITE) {
+            capSQ = move.toSQ - 8;
+        } else {
+            capSQ = move.toSQ + 8;
+        }
+
+        assert(move.capture == Piece::PAWN);
+        assert(pieces_on_square[capSQ] == Piece::PAWN);
+        pieces_on_square[capSQ] = Piece::NONE;
+    }
+
+    // Castling also moves a rook.
+    if (move.is_castle_move) {
+        assert(move.piece_type == Piece::KING);
+        assert(move.capture == Piece::NONE);
+
+        if (move.toSQ == move.fromSQ - 2) {
+            // King-side castle in h1=0 system.
+            Square rook_from = move.fromSQ - 3;
+            Square rook_to   = move.fromSQ - 1;
+
+            assert(pieces_on_square[rook_from] == Piece::ROOK);
+            pieces_on_square[rook_from] = Piece::NONE;
+            pieces_on_square[rook_to]   = Piece::ROOK;
+        } else if (move.toSQ == move.fromSQ + 2) {
+            // Queen-side castle in h1=0 system.
+            Square rook_from = move.fromSQ + 4;
+            Square rook_to   = move.fromSQ + 1;
+
+            assert(pieces_on_square[rook_from] == Piece::ROOK);
+            pieces_on_square[rook_from] = Piece::NONE;
+            pieces_on_square[rook_to]   = Piece::ROOK;
+        } else {
+            assert(0);
+        }
+    }
+
+    // Place the moving piece (or promoted piece) on destination.
+    if (move.promotion != Piece::NONE) {
+        assert(move.piece_type == Piece::PAWN);
+        pieces_on_square[move.toSQ] = move.promotion;
+    } else {
+        pieces_on_square[move.toSQ] = move.piece_type;
+    }
+}
+
+// Restore pieces_on_square[] for a move being popped from the board.
+// Assumes pieces_on_square[] currently reflects the position AFTER the move.
+void GameBoard::pop_move_to_pieces_on_square(const Move& move)
+{
+    assert(move.fromSQ != NO_SQUARE);
+    assert(move.toSQ   != NO_SQUARE);
+
+    // Undo castling rook move first.
+    if (move.is_castle_move) {
+        assert(move.piece_type == Piece::KING);
+        assert(move.capture == Piece::NONE);
+
+        if (move.toSQ == move.fromSQ - 2) {
+            // King-side castle in h1=0 system.
+            Square rook_from = move.fromSQ - 3;
+            Square rook_to   = move.fromSQ - 1;
+
+            assert(pieces_on_square[rook_to] == Piece::ROOK);
+            pieces_on_square[rook_to]   = Piece::NONE;
+            pieces_on_square[rook_from] = Piece::ROOK;
+        } else if (move.toSQ == move.fromSQ + 2) {
+            // Queen-side castle in h1=0 system.
+            Square rook_from = move.fromSQ + 4;
+            Square rook_to   = move.fromSQ + 1;
+
+            assert(pieces_on_square[rook_to] == Piece::ROOK);
+            pieces_on_square[rook_to]   = Piece::NONE;
+            pieces_on_square[rook_from] = Piece::ROOK;
+        } else {
+            assert(0);
+        }
+    }
+
+    // Undo destination square.
+    if (move.is_en_passent_capture) {
+        Square capSQ;
+        if (move.color == Color::WHITE) {
+            capSQ = move.toSQ - 8;
+        } else {
+            capSQ = move.toSQ + 8;
+        }
+
+        // Destination square becomes empty again.
+        pieces_on_square[move.toSQ] = Piece::NONE;
+
+        // Restore captured pawn behind destination.
+        assert(move.capture == Piece::PAWN);
+        pieces_on_square[capSQ] = Piece::PAWN;
+    } else if (move.capture != Piece::NONE) {
+        // Restore captured piece on destination square.
+        pieces_on_square[move.toSQ] = move.capture;
+    } else {
+        // Quiet move / castle / non-capturing promotion.
+        pieces_on_square[move.toSQ] = Piece::NONE;
+    }
+
+    // Restore moving piece to source square.
+    pieces_on_square[move.fromSQ] = move.piece_type;
+}
+
 
 void GameBoard::init_castle_touch_tables()
 {
@@ -623,7 +716,7 @@ std::string GameBoard::sqToString(int f, int r) const
 //                   (file_bb[f] contains all pawns whose square has file index f.)
 //   files_present   Bitmask of which files contain >= 1 friendly pawn.
 //                   Bit f is set iff file_count[f] > 0.
-//   advancedSq[8]   the square index of the side’s most advanced pawn on that file (or -1)
+//   advancedSq[8]   the square index of the side’s most advanced pawn on that file (or NO_SQUARE)
 //
 // Return value:
 //   true  if the side has at least one pawn
@@ -633,10 +726,10 @@ template<Color c>
 bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
 {
     for (int i = 0; i < 8; ++i) {
-        //pinfo.file_count[i] = 0;
-        //pinfo.file_bb[i] = 0ULL;
-        pinfo.advancedSq[i] = -1;
-        pinfo.rearSq[i] = -1;
+        pinfo.file_count[i] = 0;
+        pinfo.file_bb[i] = 0ULL;
+        pinfo.advancedSq[i] = NO_SQUARE;
+        pinfo.rearSq[i] = NO_SQUARE;
     }
     pinfo.files_present = 0;
 
@@ -644,7 +737,7 @@ bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
     if (!Pawns) return false;
 
     for (int f = 0; f < 8; ++f) {
-        const ull bb = (Pawns & col_masksHA[f]);
+        ull bb = (Pawns & col_masksHA[f]);
         pinfo.file_bb[f] = bb;
 
         pinfo.file_count[f] = bits_in(bb);
@@ -674,8 +767,8 @@ bool GameBoard::build_pawn_file_summary_fast_enemy_t(PInfo& pinfo)
     // {
     //     pinfo.file_count[i] = 0;
     //     pinfo.file_bb[i] = 0ULL;
-    //     //pinfo.advancedSq[i] = -1;
-    //     //pinfo.rearSq[i] = -1;
+    //     //pinfo.advancedSq[i] = NO_SQUARE;
+    //     //pinfo.rearSq[i] = NO_SQUARE;
     // }
     pinfo.files_present = 0;
 
@@ -708,7 +801,7 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
 
     // Initialize structure elements
     for (int i = 0; i < 8; ++i) 
-    { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = -1; pinfo.rearSq[i] = -1; }
+    { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = NO_SQUARE; pinfo.rearSq[i] = NO_SQUARE; }
     pinfo.files_present = 0;
 
     const ull Pawns = get_pieces_template<Piece::PAWN>(c);
@@ -727,7 +820,7 @@ bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
         pinfo.file_bb[f] |= (1ULL << s);
         pinfo.files_present |= (1u << f);
         
-        if (pinfo.advancedSq[f] == -1) {
+        if (pinfo.advancedSq[f] == NO_SQUARE) {
             pinfo.advancedSq[f] = s;
         } else {
             int prev_r = pinfo.advancedSq[f] >> 3;
@@ -764,13 +857,106 @@ void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
             printf("PInfo mismatch: advancedSq[%d] a=%d b=%d\n", i, a.advancedSq[i], b.advancedSq[i]);
             //return;
         }
-        if (a.advancedSq[i] != b.rearSq[i]) {
-            printf("PInfo mismatch: rearSq[%d] a=%d b=%d\n", i, a.advancedSq[i], b.advancedSq[i]);
+        if (a.rearSq[i] != b.rearSq[i]) {
+            printf("PInfo mismatch: rearSq[%d] a=%d b=%d\n", i, a.rearSq[i], b.rearSq[i]);
             //return;
         }
     }
 
     //printf("PInfo mismatch: (unexpected) no field differed\n");
+}
+
+template<Color c>
+void GameBoard::refresh_pawn_summary_file_t(PInfo& pinfo, int file)
+{
+    assert(file >= 0);
+    assert(file < 8);
+
+    const ull pawns = get_pieces_template<Piece::PAWN, c>();
+    const ull bb = pawns & col_masksHA[file];
+
+    pinfo.file_bb[file] = bb;
+    pinfo.file_count[file] = bits_in(bb);
+
+    if (bb) {
+        pinfo.files_present |= (1u << file);
+
+        if constexpr (c == Color::WHITE) {
+            pinfo.advancedSq[file] = utility::bit::bitboard_to_highest_square_fast(bb);
+            pinfo.rearSq[file]     = utility::bit::bitboard_to_lowest_square_fast(bb);
+        } else {
+            pinfo.advancedSq[file] = utility::bit::bitboard_to_lowest_square_fast(bb);
+            pinfo.rearSq[file]     = utility::bit::bitboard_to_highest_square_fast(bb);
+        }
+    } else {
+        pinfo.files_present &= ~(1u << file);
+        pinfo.advancedSq[file] = NO_SQUARE;
+        pinfo.rearSq[file] = NO_SQUARE;
+    }
+}
+
+template<Color c> 
+void GameBoard::refresh_pawn_summary_files_t(PInfo& pinfo, const bool touched[8])
+{
+    for (int file = 0; file < 8; file++) {
+        if (touched[file]) {
+            refresh_pawn_summary_file_t<c>(pinfo, file);
+        }
+    }
+}
+
+
+void GameBoard::refresh_pawn_summaries_after_move(const Move& move,
+                                                  PInfo& whitePInfo,
+                                                  PInfo& blackPInfo)
+{
+    bool white_touched[8] = { false,false,false,false,false,false,false,false };
+    bool black_touched[8] = { false,false,false,false,false,false,false,false };
+
+    const int from_file = (move.fromSQ & 7);
+    const int to_file   = (move.toSQ & 7);
+
+    // ------------------------------------------------------------
+    // Moving pawn affects its own pawn summary
+    // ------------------------------------------------------------
+    if (move.piece_type == Piece::PAWN) {
+        if (move.color == Color::WHITE) {
+            white_touched[from_file] = true;
+            white_touched[to_file] = true;
+        } else {
+            black_touched[from_file] = true;
+            black_touched[to_file] = true;
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Captured pawn affects enemy pawn summary
+    // ------------------------------------------------------------
+    if (move.capture == Piece::PAWN) {
+        int captured_file;
+
+        if (move.is_en_passent_capture) {
+            if (move.color == Color::WHITE) {
+                captured_file = ((move.toSQ - 8) & 7);
+                black_touched[captured_file] = true;
+            } else {
+                captured_file = ((move.toSQ + 8) & 7);
+                white_touched[captured_file] = true;
+            }
+        } else {
+            captured_file = to_file;
+
+            if (move.color == Color::WHITE) {
+                black_touched[captured_file] = true;
+            } else {
+                white_touched[captured_file] = true;
+            }
+        }
+    }
+
+    // Recompute only touched files from the CURRENT board state.
+    refresh_pawn_summary_files_t<Color::WHITE>(whitePInfo, white_touched);
+    refresh_pawn_summary_files_t<Color::BLACK>(blackPInfo, black_touched);
 }
 
 
@@ -2892,7 +3078,7 @@ int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
                 // only one penalty for open file, even if multuple isolated pawns.
                 bool is_blocked;
                 int sq = pawnInfo.p[friendlyP].advancedSq[file];
-                if (sq != -1) {
+                if (sq != NO_SQUARE) {
                     // if no pawns between isolani and queening square, penalize more
                     is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfo.p[enemyP].file_bb[file]);
                     if (!is_blocked) this_cp += wghts.GetWeight(ISOLANI_OPEN_FILE);
@@ -2959,8 +3145,7 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PawnFileInfo& pawnInf
             {
                 // only one penalty for open file, even if multiple isolated pawns
                 const int sq = pawnInfo.p[friendlyP].advancedSq[file];
-                if (sq != -1)
-                {
+                if (sq != NO_SQUARE) {
                     // if no enemy pawns ahead on file toward queening square, penalize more
                     const bool is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfo.p[enemyP].file_bb[file]);
                     if (!is_blocked) this_cp += wghts.GetWeight(ISOLANI_OPEN_FILE);
@@ -3026,21 +3211,21 @@ int GameBoard::count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes_bb
             if (f > 0 && (files_present & (1u << (f - 1))))
             {
                 int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
+                if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
             }
             if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1))))
             {
                 int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
+                if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
             }
         } else {
             if (f > 0 && (files_present & (1u << (f - 1)))) {
                 int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
+                if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
             }
             if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
                 int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
+                if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
             }
         }
 
@@ -3158,12 +3343,12 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnI
 
                 if (f > 0 && (files_present & (1u << (f - 1)))) {
                     int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                    if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
+                    if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
                 }
 
                 if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
                     int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                    if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
+                    if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
                 }
 
                 if (!can_be_attacked) {
@@ -3179,12 +3364,12 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnI
 
                 if (f > 0 && (files_present & (1u << (f - 1)))) {
                     int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                    if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
+                    if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
                 }
 
                 if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
                     int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                    if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
+                    if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
                 }
 
                 if (!can_be_attacked) {

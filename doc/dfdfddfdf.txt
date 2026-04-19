@@ -1,291 +1,142 @@
 
-
-struct PInfo {
-    int file_count[8];          // Count of pawns on this file
-    ull file_bb[8];             // Bitboard of pawns on this file
-    unsigned files_present;     // Bitmask of which files contain >= 1 pawn
-    int advancedSq[8];          // Square index of the side’s most advanced pawn on that file (or -1)
-    int rearSq[8];              // Square index of the side’s least advanced pawn on that file (or -1)
-};
-
-
---------------------------------------------------------------------------------------
-
-template<Color c>
-bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
-{
-    for (int i = 0; i < 8; ++i) {
-        //pinfo.file_count[i] = 0;
-        //pinfo.file_bb[i] = 0ULL;
-        pinfo.advancedSq[i] = -1;
-        pinfo.rearSq[i] = -1;
-    }
-    pinfo.files_present = 0;
-
-    const ull Pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!Pawns) return false;
-
-    for (int f = 0; f < 8; ++f) {
-        const ull bb = (Pawns & col_masksHA[f]);
-        pinfo.file_bb[f] = bb;
-
-        pinfo.file_count[f] = bits_in(bb);
-
-        if (!bb) continue;
-
-        pinfo.files_present |= (1u << f);
-
-        if constexpr (c == Color::WHITE) {
-            pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square_fast(bb);
-            pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square_fast(bb);
-        } else {
-            pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square_fast(bb);
-            pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square_fast(bb);
+    if (c==ShumiChess::WHITE) {
+        if (!(pawnFileInfo.p[friendlyP] == engine.game_board.white_pawn_info)) {
+            engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[friendlyP], engine.game_board.white_pawn_info);
+            assert(0);
+        }
+    } else {
+        if (!(pawnFileInfo.p[friendlyP] == engine.game_board.black_pawn_info)) {
+            engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[friendlyP], engine.game_board.black_pawn_info);
+            assert(0);
         }
     }
 
-    return true;
-}
+    ---------------------------------------------------------------------------------------
 
-//
-// NOTE: for speed, advancedSq and rearSq are not filled out.
-template<Color c>
-bool GameBoard::build_pawn_file_summary_fast_enemy_t(PInfo& pinfo)
+    void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
 {
-    // for (int i = 0; i < 8; ++i)
-    // {
-    //     pinfo.file_count[i] = 0;
-    //     pinfo.file_bb[i] = 0ULL;
-    //     //pinfo.advancedSq[i] = -1;
-    //     //pinfo.rearSq[i] = -1;
-    // }
-    pinfo.files_present = 0;
+    if (a.files_present != b.files_present) {
+        printf("PInfo mismatch: files_present a=0x%X b=0x%X\n", a.files_present, b.files_present);
+        //return;
+    }
 
-    const ull Pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!Pawns) return false;
-
-    for (int f = 0; f < 8; ++f) {
-        const ull bb = (Pawns & col_masksHA[f]);
-        pinfo.file_bb[f] = bb;
-
-        pinfo.file_count[f] = bits_in(bb);
-
-        if (!bb) continue;
-
-        pinfo.files_present |= (1u << f);
-
-        // if constexpr (c == Color::WHITE) {
-        //     pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square_fast(bb);
-        //     pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square_fast(bb);
-        // } else {
-        //     pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square_fast(bb);
-        //     pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square_fast(bb);
+    for (int i = 0; i < 8; ++i) {
+        if (a.file_count[i] != b.file_count[i]) {
+            printf("PInfo mismatch: file_count[%d] a=%d b=%d\n", i, a.file_count[i], b.file_count[i]);
+            //return;
+        }
+        if (a.file_bb[i] != b.file_bb[i]) {
+            printf("PInfo mismatch: file_bb[%d] a=0x%016llX b=0x%016llX\n", i,
+                   (unsigned long long)a.file_bb[i], (unsigned long long)b.file_bb[i]);
+            //return;
+        }
+        if (a.advancedSq[i] != b.advancedSq[i]) {
+            printf("PInfo mismatch: advancedSq[%d] a=%d b=%d\n", i, a.advancedSq[i], b.advancedSq[i]);
+            //return;
+        }
+        // if (a.rearSq[i] != b.rearSq[i]) {
+        //     printf("PInfo mismatch: rearSq[%d] a=%d b=%d\n", i, a.rearSq[i], b.rearSq[i]);
+        //     //return;
         // }
     }
 
-    return true;
+    //printf("PInfo mismatch: (unexpected) no field differed\n");
 }
 
-----------------------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////////////////
 
-// ---------- count_isolated_pawns_cp_t ----------
-template<Color c>
-int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
-
-    int isolated_cp = 0;
-    for (int file = 0; file < 8; ++file) {
-        int k = pawnInfo.p[friendlyP].file_count[file];
-        if (k == 0) continue;
-
-        bool left  = (file < 7) && (pawnInfo.p[friendlyP].files_present & (1u << (file + 1)));
-        bool right = (file > 0) && (pawnInfo.p[friendlyP].files_present & (1u << (file - 1)));
-
-        if (!left && !right) {
-            int this_cp;
-
-            if ((file==0)||(file==7)) {
-                this_cp = (k*wghts.GetWeight(ISOLANI_ROOK));
-            } else {
-                this_cp = (k*wghts.GetWeight(ISOLANI));
-            }
-
-            if (get_major_pieces<c>()) {
-                // only one penalty for open file, even if multuple isolated pawns.
-                bool is_blocked;
-                int sq = pawnInfo.p[friendlyP].advancedSq[file];
-                if (sq != -1) {
-                    // if no pawns between isolani and queening square, penalize more
-                    is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfo.p[enemyP].file_bb[file]);
-                    if (!is_blocked) this_cp += wghts.GetWeight(ISOLANI_OPEN_FILE);
-                }
-            }
-
-            isolated_cp += this_cp;
-        }
-    }
-
-    return isolated_cp;
-}
-
-// ---------- count_pawn_holes_cp_t ----------
-
-// a hole is: a square directly in front of one of your pawns
-// that cannot be attacked/guarded by a friendly pawn from either adjacent file
 
 template<Color c>
-int GameBoard::count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes_bb) {
-    int holes = 0;
-    holes_bb = 0ULL;
+void GameBoard::refresh_pawn_summary_file_t(PInfo& pinfo, int file)
+{
+    assert(file >= 0);
+    assert(file < 8);
 
-    ull Pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!Pawns) return 0;
+    const ull pawns = get_pieces_template<Piece::PAWN, c>();
+    const ull bb = pawns & col_masksHA[file];
 
-    const unsigned files_present = pawnInfo.p[friendlyP].files_present;
+    pinfo.file_bb[file] = bb;
+    pinfo.file_count[file] = bits_in(bb);
 
-    ull tmp = Pawns;
+    if (bb) {
+        pinfo.files_present |= (1u << file);
 
-    while (tmp) {
-        Square s = utility::bit::lsb_and_pop_to_square(tmp);
-        int f = s & 7;
-        int r = s >> 3;
-
-        int front_sq;
         if constexpr (c == Color::WHITE) {
-            if (r == 7) continue;
-            front_sq = s + 8;
+            pinfo.advancedSq[file] = utility::bit::bitboard_to_highest_square_fast(bb);
+            pinfo.rearSq[file]     = utility::bit::bitboard_to_lowest_square_fast(bb);
         } else {
-            if (r == 0) continue;
-            front_sq = s - 8;
+            pinfo.advancedSq[file] = utility::bit::bitboard_to_lowest_square_fast(bb);
+            pinfo.rearSq[file]     = utility::bit::bitboard_to_highest_square_fast(bb);
         }
+    } else {
+        pinfo.files_present &= ~(1u << file);
+        pinfo.advancedSq[file] = -1;
+        pinfo.rearSq[file] = -1;
+    }
+}
 
-        bool can_be_attacked = false;
-
-        if constexpr (c == Color::WHITE)
-        {
-            if (f > 0 && (files_present & (1u << (f - 1))))
-            {
-                int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
-            }
-            if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1))))
-            {
-                int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                if (rear != -1 && ((rear >> 3) <= r)) can_be_attacked = true;
-            }
-        }
-        else
-        {
-            if (f > 0 && (files_present & (1u << (f - 1))))
-            {
-                int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
-            }
-            if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1))))
-            {
-                int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                if (rear != -1 && ((rear >> 3) >= r)) can_be_attacked = true;
-            }
-        }
-
-        if (!can_be_attacked) {
-            holes_bb |= (1ULL << front_sq);
-            holes++;
+template<Color c> 
+void GameBoard::refresh_pawn_summary_files_t(PInfo& pinfo, const bool touched[8])
+{
+    for (int file = 0; file < 8; file++) {
+        if (touched[file]) {
+            refresh_pawn_summary_file_t<c>(pinfo, file);
         }
     }
-
-    return (holes * wghts.GetWeight(PAWN_HOLE));
 }
 
 
-// ---------- count_doubled_pawns_cp_t ----------
-template<Color c>
-int GameBoard::count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) {
+void GameBoard::refresh_pawn_summaries_after_move(const Move& move,
+                                                  PInfo& whitePInfo,
+                                                  PInfo& blackPInfo)
+{
+    bool white_touched[8] = { false,false,false,false,false,false,false,false };
+    bool black_touched[8] = { false,false,false,false,false,false,false,false };
 
-    int total = 0;
+    const int from_file = (move.fromSQ & 7);
+    const int to_file   = (move.toSQ & 7);
 
-    for (int file = 0; file < 8; ++file) {
-
-        int k = pawnInfo.p[friendlyP].file_count[file];
-        if (k < 2) continue;
-
-        int weight = (file == 0 || file == 7) ? wghts.GetWeight(DOUBLED_ROOK) : wghts.GetWeight(DOUBLED);
-
-        int extras = (k - 1);
-        int this_cp = extras * weight;
-
-        if (pawnInfo.p[enemyP].file_count[file] == 0) {
-            this_cp += (extras * wghts.GetWeight(DOUBLED_OPEN_FILE));
+    // ------------------------------------------------------------
+    // Moving pawn affects its own pawn summary
+    // ------------------------------------------------------------
+    if (move.piece_type == Piece::PAWN) {
+        if (move.color == Color::WHITE) {
+            white_touched[from_file] = true;
+            white_touched[to_file] = true;
+        } else {
+            black_touched[from_file] = true;
+            black_touched[to_file] = true;
         }
-
-        total += this_cp;
     }
 
-    return total;
-}
+    // ------------------------------------------------------------
+    // Captured pawn affects enemy pawn summary
+    // ------------------------------------------------------------
+    if (move.capture == Piece::PAWN) {
+        int captured_file;
 
-// ---------- count_passed_pawns_cp_t ----------
-template<Color c>
-int GameBoard::count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed_pawns) {
-
-    passed_pawns = 0ULL;
-
-    ull my_pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!my_pawns) return 0;
-
-    int bonus_cp = 0;
-    ull tmp = my_pawns;
-
-    while (tmp) {
-        Square s = utility::bit::lsb_and_pop_to_square(tmp);
-        int f = s & 7;
-        int r = s >> 3;
-
-        ull enemy_files = pawnInfo.p[enemyP].file_bb[f];
-        if (f > 0) enemy_files |= pawnInfo.p[enemyP].file_bb[f - 1];
-        if (f < 7) enemy_files |= pawnInfo.p[enemyP].file_bb[f + 1];
-
-        ull ranks_ahead;
-        if constexpr (c == Color::WHITE) {
-            int start_bit = (r + 1) * 8;
-            ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
-        } else {
-            int end_bit = r * 8;
-            ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1ULL);
-        }
-
-        if ((enemy_files & ranks_ahead) == 0ULL) {
-
-            passed_pawns |= (1ULL << s);
-
-            int adv;
-            if constexpr (c == Color::WHITE) adv = r;
-            else                             adv = (7 - r);
-
-            assert ((adv>0) && (adv<7));
-            int base = wghts.GetWeight(PASSED_PAWN_SLOPE)*adv*adv + wghts.GetWeight(PASSED_PAWN_YINRCPT);
-
-            ull protect_mask = 0ULL;
-            if constexpr (c == Color::WHITE) {
-                if (r > 0) {
-                    if (f < 7) protect_mask |= (1ULL << (s - 7));
-                    if (f > 0) protect_mask |= (1ULL << (s - 9));
-                }
+        if (move.is_en_passent_capture) {
+            if (move.color == Color::WHITE) {
+                captured_file = ((move.toSQ - 8) & 7);
+                black_touched[captured_file] = true;
             } else {
-                if (r < 7) {
-                    if (f < 7) protect_mask |= (1ULL << (s + 9));
-                    if (f > 0) protect_mask |= (1ULL << (s + 7));
-                }
+                captured_file = ((move.toSQ + 8) & 7);
+                white_touched[captured_file] = true;
             }
+        } else {
+            captured_file = to_file;
 
-            // protected passed pawns more bonus
-            if ((my_pawns & protect_mask) != 0ULL) {
-                base += wghts.GetWeight(PASSED_PAWN_CONNECTED);
+            if (move.color == Color::WHITE) {
+                black_touched[captured_file] = true;
+            } else {
+                white_touched[captured_file] = true;
             }
-
-            bonus_cp += base;
         }
     }
 
-    return bonus_cp;
+    // Recompute only touched files from the CURRENT board state.
+    refresh_pawn_summary_files_t<Color::WHITE>(whitePInfo, white_touched);
+    refresh_pawn_summary_files_t<Color::BLACK>(blackPInfo, black_touched);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////

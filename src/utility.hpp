@@ -128,15 +128,13 @@ inline ull square_to_bitboard(Square square) {
 
 // Returns the number of trailing zeros in the binary representation of a 64-bit integer.
 // (how many zeros are at the right end of the binary number, before you hit the first 1 bit)
-// Returns 64 if bitboard == 0? Maybe but ChatBot says no.
+// Returns 64 if bitboard == 0? Maybe but ChatBot says no, its indeterminate.
 // BUT for a "h1=0" system like this, this means scanning from h1 to a1, h2 to a2, and so on to a8.
 
 // I require that someone has screened for bitboard == 0 beforehand.
 inline int bitboard_to_lowest_square_fast(ull bitboard) {  
     return __builtin_ctzll(bitboard);
 }
-
-
 inline int bitboard_to_lowest_square(ull bitboard) {  
     //assert(bitboard != 0);
     if (bitboard == 0ULL) { return ShumiChess::NO_SQUARE; }        // __builtin_ctzll(0) is undefined
@@ -157,7 +155,7 @@ inline int bitboard_to_lowest_square_safe(ull bitboard) {
 //     return 63 - (__builtin_clzll(bitboard | 1));
 // };
 inline int bitboard_to_highest_square(ull bitboard) {
-    if (bitboard == 0ULL) { return 64; }        // __builtin_clzll(0) is undefined
+    if (bitboard == 0ULL) { return ShumiChess::NO_SQUARE; }        // __builtin_clzll(0) is undefined
     return 63 - __builtin_clzll(bitboard);
 }
 

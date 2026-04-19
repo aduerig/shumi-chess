@@ -1,15 +1,10 @@
 
 
-I understand that using bitmap boards (in GameSetup.hpp) may interfere with the tests. But from a chess player's point of view, sometimes bitboards, sometimes FENs are preferable. So far, having a "load FEN" button, and allowing safe bitboard overrides (of the initial position) are both useful and fine.
-SOLVED: Bug fixed that allowed illegal bitboards is solved. No reason not to keep both inut methods now. I prefer FENS now anyway. SO this should be fixed. See the constructer for the GameBoard class.
-
 Related: Debug why FEN creation to OPENING_FEN fails tests (see the GameBoard class)
 
 In reality a chess player spends more time in "complex" positions. In the first order, complexity is simply the total number of moves (FOR BOTH SIDES). This would be fine for now. It would play a lot better if it spent more time in positions, in ratio to the total number of moves (for both sides), at the starting position. This is what human chessplayers do.
 SOLVED: There are far far more sophisticated ways to do this, see bug list.
 
-
-"MultiPV" needs done, the current "-r" is terrible. The use of it is done, see excluded_root_moves.
 
 Castling needs refinements:
    1. "5"s role in guard pawns (f,c, pawns only 1/5, a,b,g,h file 2/5). This may encourage guard pawn (f,c)movement.
@@ -38,14 +33,13 @@ Explore "magic bitboards"
 // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, 
 
 
-Explore use SEE in regular search
+Explore use of SEE in regular search
 
-Explore possibility of cloning "recursive_negamax", one for qsearch and one for regular search. Would this save time? You removee an if internally (if depth==0), but add one in the call? Maybe. This can only
+Explore possibility of cloning "recursive_negamax", one for qsearch and one for regular search. Would this save time? You remove an if internally (if depth==0), but add one in the call? Maybe. This can only
 result in a little improvmenet, but is it worth the doubling on common code confusion.
 
 LESSONS:
 ==========
-
 
 From game 45:
 
@@ -54,7 +48,3 @@ From game 45:
 1. e4 e5 2. Nf3 Nc6 3. Bb5 f6 4. Nc3 Bb4 5. a3 Ba5 6. O-O Bxc3 7. dxc3 Nge7 8. Bc4 d6 9. Qd3 f5 10. Ng5 fxe4 11. Bf7 Kf8 12. Qxe4 Bf5 13. Qf3 Qb8 14. Be6 e4 15. Nxe4 Ne5 16. Qf4 N5g6 17. Qf3 Ne5 18. Qf4 N5g6 19. Qf3 Ne5  *
 
 
-
-From game 46:
-
-very exciting game, where eventualy I screw up and lose the game.

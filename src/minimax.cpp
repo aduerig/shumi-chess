@@ -756,7 +756,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , engine.move_string);    // Output
     cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
-    //// for testing enpassant
+    //// for testing enpassant (pauses when it is move on board)
     // if (best_move.is_en_passent_capture) {
     //     printf("pause (press Enter)\n");
     //     fflush(stdout);
@@ -866,7 +866,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
 //global_debug_flag = false;
 
-    itemp1 = sizeof(Move);
+    //itemp1 = sizeof(Move);
 
     cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
@@ -2618,8 +2618,28 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     bool b_is_pawns_friend;
     int icp_temp, icp_temp1, icp_temp2;
 
+
+    const PInfo* pawnP[2];
     PawnFileInfo pawnFileInfo;
+
+    pawnP[friendlyP] = &pawnFileInfo.p[friendlyP];
+    pawnP[enemyP] = &pawnFileInfo.p[enemyP];
+
     b_is_pawns_friend = engine.game_board.build_pawn_file_summary_fast_t<c>( pawnFileInfo.p[friendlyP]);
+
+    // {
+    //     if (c==ShumiChess::WHITE) {
+    //         if (!(pawnFileInfo.p[friendlyP] == engine.game_board.white_pawn_info)) {
+    //             engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[friendlyP], engine.game_board.white_pawn_info);
+    //             assert(0);
+    //         }
+    //     } else {
+    //         if (!(pawnFileInfo.p[friendlyP] == engine.game_board.black_pawn_info)) {
+    //             engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[friendlyP], engine.game_board.black_pawn_info);
+    //             assert(0);
+    //         }
+    //     }
+    // }
 
     icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnFileInfo.p[friendlyP] );
     cp_score_position_temp += icp_temp;
@@ -2631,24 +2651,30 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
         ull passed_pawns_bb = 0ULL;
 
         constexpr Color enemyColor = utility::representation::opposite_color_v<c>;
-        b_is_pawns_enemy = engine.game_board.build_pawn_file_summary_fast_enemy_t<enemyColor>( pawnFileInfo.p[enemyP]);
 
-        //icp_temp1 = engine.game_board.count_isolated_pawns_cp_t<c>(pawnFileInfo);
-        //cp_score_position_temp += icp_temp1;
+        //b_is_pawns_enemy = engine.game_board.build_pawn_file_summary_fast_enemy_t<enemyColor>( pawnFileInfo.p[enemyP]);
+        b_is_pawns_enemy = engine.game_board.build_pawn_file_summary_fast_t<enemyColor>( pawnFileInfo.p[enemyP]);
+        
+        
+        // {
+        //     if (enemyColor==ShumiChess::WHITE) {
+        //         if (!(pawnFileInfo.p[enemyP] == engine.game_board.white_pawn_info)) {
+        //             engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[enemyP], engine.game_board.white_pawn_info);
+        //             assert(0);
+        //         }
+        //     } else {
+        //         if (!(pawnFileInfo.p[enemyP] == engine.game_board.black_pawn_info)) {
+        //             engine.game_board.dump_pinfo_mismatch(pawnFileInfo.p[enemyP], engine.game_board.black_pawn_info);
+        //             assert(0);
+        //         }
+        //     }
+        // }
 
-        //icp_temp2 = engine.game_board.count_doubled_pawns_cp_t<c>(pawnFileInfo);
-        //cp_score_position_temp += icp_temp2;
 
         icp_temp = engine.game_board.count_isolated_and_doubled_pawns_cp_t<c>(pawnFileInfo);
         //assert(icp_temp == (icp_temp1 + icp_temp2));
         cp_score_position_temp += icp_temp;
 
-
-        //icp_temp1 = engine.game_board.count_pawn_holes_cp_t<c>(pawnFileInfo, holes_bb);
-        //cp_score_position_temp += icp_temp1;
-
-        //icp_temp2 = engine.game_board.count_passed_pawns_cp_t<c>(pawnFileInfo, passed_pawns_bb);
-        //cp_score_position_temp += icp_temp2;
 
         int holes_cp;
         int passed_cp;
@@ -2785,6 +2811,9 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     int cp_score_material_all = 0;
     int cp_score_pawns_only = 0;
 
+    // 
+    // First compute up the material
+    //
     for (const auto& color1 : std::array<Color, 2>{Color::WHITE, Color::BLACK}) {
         int cp_pawns_only_temp;
         int cp_score_mat_temp = (color1 == Color::WHITE)
@@ -2823,6 +2852,9 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     bool isOK;
     int test;
 
+    //
+    //  Now do the "positional" stuff. Note CRAZY_IVAN does minimal positional stuff.
+    //
     for (const auto& color : std::array<Color, 2>{Color::WHITE, Color::BLACK}) {
         int cp_score_position_temp = 0;
 
