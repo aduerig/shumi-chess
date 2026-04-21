@@ -319,18 +319,18 @@ class GameBoard {
         // "Positional "pawn" routines.
         template<Color c> int count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const;
         template<Color c> int count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo);
-        template<Color c> int count_isolated_and_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) const;
+        template<Color c> int count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
         template<Color c> int count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes);
         template<Color c> int count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed_pawns);
-        template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnInfo,
+        template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
                                                             int& passed_cp);
 
         template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
-        template<Color c> int rooks_file_status_cp_t(const PawnFileInfo& pawnInfo);
+        template<Color c> int rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE);
 
 
         std::string random_kqk_fen(bool doQueen);
@@ -375,7 +375,7 @@ class GameBoard {
         int rand_new();
 
         template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const;
-        template<Color c> int get_material_for_color_t(int& cp_pawns_only_temp);
+        template<Color c> int get_material_for_color_t();
         template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
 
         template<Color c> int count_guard_pawn_files_23_t(const PInfo& PInfoIn, int k_file) const;
@@ -405,16 +405,39 @@ class GameBoard {
 
         //int centipawn_score_of(ShumiChess::Piece p) const;
         // Total of 4000 centipawns for each side.
-        inline int centipawn_score_of(ShumiChess::Piece p) const {
-            switch (p) {
-                case ShumiChess::Piece::PAWN:   return 100;
-                case ShumiChess::Piece::KNIGHT: return 320;
-                case ShumiChess::Piece::BISHOP: return 330;
-                case ShumiChess::Piece::ROOK:   return 500;
-                case ShumiChess::Piece::QUEEN:  return 900;
-                case ShumiChess::Piece::KING:   return 0;   // king is infinite in theory; keep 0 for material sums
-                default:                        {assert(0);return 0;}
-            }
+        // inline int centipawn_score_of(ShumiChess::Piece p) const {
+        //     switch (p) {
+        //         case ShumiChess::Piece::PAWN:   return 100;
+        //         case ShumiChess::Piece::KNIGHT: return 320;
+        //         case ShumiChess::Piece::BISHOP: return 330;
+        //         case ShumiChess::Piece::ROOK:   return 500;
+        //         case ShumiChess::Piece::QUEEN:  return 900;
+        //         case ShumiChess::Piece::KING:   return 0;   // king is infinite in theory; keep 0 for material sums
+        //         default:                        {assert(0);return 0;}
+        //     }
+        // }
+
+        // enum Piece : std::uint8_t {     // These MUST be in this order
+        //     PAWN = 0,
+        //     ROOK,
+        //     KNIGHT,
+        //     BISHOP,
+        //     QUEEN,
+        //     KING,
+        //     NONE,
+        // };
+        inline int centipawn_score_of(ShumiChess::Piece p) const
+        {
+            static const int vals[] = {
+                100, // PAWN
+                500, // ROOK
+                320, // KNIGHT
+                330, // BISHOP
+                900, // QUEEN
+                0,   // KING
+                0    // NONE
+            };
+            return vals[(int)p];
         }
         // static constexpr int  MAX_CP_PER_SIDE = ( (8*centipawn_score_of(ShumiChess::Piece::PAWN)) 
         //                             + (2*centipawn_score_of(ShumiChess::Piece::KNIGHT)) 

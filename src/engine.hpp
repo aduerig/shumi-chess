@@ -85,6 +85,8 @@ class Engine {
         std::stack<Move> move_history;
         std::stack<int> halfway_move_state;
         std::stack<ull> en_passant_history;
+        // std::stack<int> material_balance_Whistory;
+        // std::stack<int> material_balance_Bhistory;
 
         //TODO This way of tracking is inconsistent with gameboard, think over. Requires splitting and merging of  castle_opportunity_
         std::stack<uint8_t> castle_opportunity_history; // Bits right to left: white kingside, white queenside, black kingside, black queenside
@@ -123,8 +125,9 @@ class Engine {
 
         template<Color c> int get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only);
 
+        // int material_balanceW_cp;        // always positive
+        // int material_balanceB_cp;        // always positive
 
-        
         // Storage buffers (they live here to avoid extra allocation during the game)        
         vector<Move> psuedo_legal_moves; 
         

@@ -82,6 +82,7 @@ int PGN::addMe(Move& m, Engine& e)
 Engine::Engine() {
 
     reset_engine();
+
     ShumiChess::initialize_rays();
 
     // Seed randomization, for engine. (using microseconds since ?)
@@ -95,7 +96,11 @@ Engine::Engine() {
 }
 
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
+    
+    assert(0);      // exploratory assert Is this a dead path?
+
     reset_all_but_FEN();
+
     ShumiChess::initialize_rays();
 }
 
@@ -189,6 +194,8 @@ void Engine::reset_engine() {         // New game.
 
 
     reset_all_but_FEN();
+
+
 }
 //
 // By "reset engine" is meant: "new game". 
@@ -247,6 +254,9 @@ void Engine::reset_all_but_FEN()
     boundary_stack.reserve(MAX_MOVES);
     
     reason_for_draw = DRAW_NULL;
+
+    // material_balanceW_cp = game_board.get_material_for_color_t<WHITE>();
+    // material_balanceB_cp = game_board.get_material_for_color_t<BLACK>();   
 
     // Checks a bunch of things in the bitboards for validity. Only throws asserts if something wrong.
     game_board.validate_row_col_masks_h1_0();
@@ -728,6 +738,37 @@ void Engine::pushMove_t(const Move& move) {
         game_board.zobrist_key ^= zobrist_castling[castle_new];
     }
 
+
+    // Incremental attempts (for push) //////////////////////////////////////////////////////
+
+    // material_balance_cp is in abs coordinates (positive is white good)
+
+    // material_balance_Whistory.push(material_balanceW_cp);
+    // material_balance_Bhistory.push(material_balanceB_cp);
+
+    // if (move.capture != Piece::NONE) {
+    //     int victim_cp = game_board.centipawn_score_of(move.capture);
+
+    //     if (move.color == ShumiChess::WHITE) {
+    //         material_balanceB_cp -= victim_cp;
+    //     } else {
+    //         material_balanceW_cp -= victim_cp;
+    //     }
+    // }
+
+    // if (move.promotion != Piece::NONE) {
+    //     int promo_gain_cp = game_board.centipawn_score_of(move.promotion)
+    //                     - game_board.centipawn_score_of(Piece::PAWN);
+
+    //     if (move.color == ShumiChess::WHITE) {
+    //         material_balanceW_cp += promo_gain_cp;
+    //     } else {
+    //         material_balanceB_cp += promo_gain_cp;
+    //     }
+    // }
+
+
+    //  Keeping a log of the board (in parallel with the bitboards)
     //game_board.push_move_to_pieces_on_square(move);
     
     // // Assert that it matches
@@ -768,6 +809,8 @@ void Engine::pushMove_t(const Move& move) {
     //         assert(0);
     //     }
     // }
+
+
 
 }
 
@@ -926,7 +969,18 @@ void Engine::popMove_t() {
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_to_sq);
     }
 
+    // Incremental attempts (for pop) //////////////////////////////////////////////////////
 
+    // assert(!material_balance_Whistory.empty());
+    // assert(!material_balance_Bhistory.empty());
+
+    // material_balanceW_cp = material_balance_Whistory.top();
+    // material_balance_Whistory.pop();
+
+    // material_balanceB_cp = material_balance_Bhistory.top();
+    // material_balance_Bhistory.pop();
+
+    //  Keeping a log of the board (in parallel with the bitboards)
     //game_board.pop_move_to_pieces_on_square(move);
 
     // // Assert that it matches
@@ -940,7 +994,7 @@ void Engine::popMove_t() {
     //     assert(temp[i] == game_board.pieces_on_square[i]);
     // }
 
-    // game_board.refresh_pawn_summaries_after_move(move, game_board.white_pawn_info, game_board.black_pawn_info);
+    //game_board.refresh_pawn_summaries_after_move(move, game_board.white_pawn_info, game_board.black_pawn_info);
 
     // {
     //     PInfo tempWhite;

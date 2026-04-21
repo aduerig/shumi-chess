@@ -37,7 +37,7 @@ enum Color : std::uint8_t {
     BLACK,
 };
 
-enum Piece : std::uint8_t {
+enum Piece : std::uint8_t {     // These MUST be in this order
     PAWN = 0,
     ROOK,
     KNIGHT,

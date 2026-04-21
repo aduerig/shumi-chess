@@ -2711,9 +2711,9 @@ int GameBoard::count_guard_pawn_files_23_t(const PInfo& PInfoIn, int k_file) con
 
 // ---------- get_material_for_color_t ----------
 template<Color c>
-int GameBoard::get_material_for_color_t(int& cp_pawns_only_temp) {
+int GameBoard::get_material_for_color_t() {
     int cp_score_mat_temp = 0;
-    cp_pawns_only_temp = bits_in(get_pieces_template<Piece::PAWN, c>()) * centipawn_score_of(Piece::PAWN);
+    int cp_pawns_only_temp = bits_in(get_pieces_template<Piece::PAWN, c>()) * centipawn_score_of(Piece::PAWN);
 
     cp_score_mat_temp += cp_pawns_only_temp;
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::KNIGHT, c>()) * centipawn_score_of(Piece::KNIGHT);
@@ -2721,6 +2721,7 @@ int GameBoard::get_material_for_color_t(int& cp_pawns_only_temp) {
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::ROOK, c>())   * centipawn_score_of(Piece::ROOK);
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::QUEEN, c>())  * centipawn_score_of(Piece::QUEEN);
 
+    
     return cp_score_mat_temp;
 }
 
@@ -2977,7 +2978,7 @@ int GameBoard::rook_connectiveness_cp_t() const
 
 // ---------- rooks_file_status_cp_t ----------
 template<Color c>
-int GameBoard::rooks_file_status_cp_t(const PawnFileInfo& pawnInfo)
+int GameBoard::rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE)
 {
     const ull rooks = get_pieces_template<Piece::ROOK, c>();
     if (!rooks) return 0;
@@ -2993,8 +2994,8 @@ int GameBoard::rooks_file_status_cp_t(const PawnFileInfo& pawnInfo)
         const int nRooksOnFile = bits_in(rooks & file_mask);
         if (!nRooksOnFile) continue;
 
-        const bool ownPawnOnFile = (pawnInfo.p[friendlyP].file_count[file] != 0);
-        const bool oppPawnOnFile = (pawnInfo.p[enemyP].file_count[file] != 0);
+        const bool ownPawnOnFile = (pawnInfoF.file_count[file] != 0);
+        const bool oppPawnOnFile = (pawnInfoE.file_count[file] != 0);
 
         int file_mult = 0;
         if (!ownPawnOnFile && !oppPawnOnFile)       file_mult = 2;
@@ -3121,15 +3122,15 @@ int GameBoard::count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) {
 
 // ---------- count_isolated_and_doubled_pawns_cp_t ----------
 template<Color c>
-int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) const
+int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const
 {
     int total_cp = 0;
 
-    const unsigned friendly_files_present = pawnInfo.p[friendlyP].files_present;
+    const unsigned friendly_files_present = pawnInfoF.files_present;
     const bool b_have_majors = get_major_pieces<c>();
 
     for (int file = 0; file < 8; ++file) {
-        const int k = pawnInfo.p[friendlyP].file_count[file];
+        const int k = pawnInfoF.file_count[file];
         if (k == 0) continue;
 
         const bool b_rook_file = (file == 0) || (file == 7);
@@ -3144,10 +3145,10 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PawnFileInfo& pawnInf
             if (b_have_majors)
             {
                 // only one penalty for open file, even if multiple isolated pawns
-                const int sq = pawnInfo.p[friendlyP].advancedSq[file];
+                const int sq = pawnInfoF.advancedSq[file];
                 if (sq != NO_SQUARE) {
                     // if no enemy pawns ahead on file toward queening square, penalize more
-                    const bool is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfo.p[enemyP].file_bb[file]);
+                    const bool is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfoE.file_bb[file]);
                     if (!is_blocked) this_cp += wghts.GetWeight(ISOLANI_OPEN_FILE);
                 }
             }
@@ -3162,7 +3163,7 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PawnFileInfo& pawnInf
             int this_cp = extras * (b_rook_file ? wghts.GetWeight(DOUBLED_ROOK)
                                                 : wghts.GetWeight(DOUBLED));
 
-            if (pawnInfo.p[enemyP].file_count[file] == 0)
+            if (pawnInfoE.file_count[file] == 0)
             {
                 this_cp += extras * wghts.GetWeight(DOUBLED_OPEN_FILE);
             }
@@ -3307,7 +3308,7 @@ int GameBoard::count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed
 
 
 template<Color c>
-void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnInfo,
+void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                        ull& holes_bb,
                                                        int& holes_cp,
                                                        ull& passed_pawns,
@@ -3322,7 +3323,7 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnI
     ull my_pawns = get_pieces_template<Piece::PAWN, c>();
     if (!my_pawns) return;
 
-    const unsigned files_present = pawnInfo.p[friendlyP].files_present;
+    const unsigned files_present = pawnInfoF.files_present;
 
     ull tmp = my_pawns;
 
@@ -3342,12 +3343,12 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnI
                 bool can_be_attacked = false;
 
                 if (f > 0 && (files_present & (1u << (f - 1)))) {
-                    int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
+                    int rear = pawnInfoF.rearSq[f - 1];
                     if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
                 }
 
                 if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
-                    int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
+                    int rear = pawnInfoF.rearSq[f + 1];
                     if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
                 }
 
@@ -3363,12 +3364,12 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnI
                 bool can_be_attacked = false;
 
                 if (f > 0 && (files_present & (1u << (f - 1)))) {
-                    int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
+                    int rear = pawnInfoF.rearSq[f - 1];
                     if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
                 }
 
                 if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
-                    int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
+                    int rear = pawnInfoF.rearSq[f + 1];
                     if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
                 }
 
@@ -3382,9 +3383,9 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PawnFileInfo& pawnI
         // ------------------------------------------------------------
         // passed pawns
         // ------------------------------------------------------------
-        ull enemy_files = pawnInfo.p[enemyP].file_bb[f];
-        if (f > 0) enemy_files |= pawnInfo.p[enemyP].file_bb[f - 1];
-        if (f < 7) enemy_files |= pawnInfo.p[enemyP].file_bb[f + 1];
+        ull enemy_files = pawnInfoE.file_bb[f];
+        if (f > 0) enemy_files |= pawnInfoE.file_bb[f - 1];
+        if (f < 7) enemy_files |= pawnInfoE.file_bb[f + 1];
 
         ull ranks_ahead;
         if constexpr (c == Color::WHITE) {
@@ -3751,8 +3752,8 @@ template int GameBoard::get_castled_bonus_cp_t<Color::WHITE>(int,const PInfo& PI
 template int GameBoard::get_castled_bonus_cp_t<Color::BLACK>(int,const PInfo& PInfoIn) const;
 
 // get_material_for_color_t
-template int GameBoard::get_material_for_color_t<Color::WHITE>(int&);
-template int GameBoard::get_material_for_color_t<Color::BLACK>(int&);
+template int GameBoard::get_material_for_color_t<Color::WHITE>();
+template int GameBoard::get_material_for_color_t<Color::BLACK>();
 
 // pawns_attacking_square_t
 template int GameBoard::pawns_attacking_square_t<Color::WHITE>(int);
@@ -3796,8 +3797,8 @@ template int GameBoard::rook_connectiveness_cp_t<Color::WHITE>() const;
 template int GameBoard::rook_connectiveness_cp_t<Color::BLACK>() const;
 
 // rooks_file_status_cp_t
-template int GameBoard::rooks_file_status_cp_t<Color::WHITE>(const PawnFileInfo&);
-template int GameBoard::rooks_file_status_cp_t<Color::BLACK>(const PawnFileInfo&);
+template int GameBoard::rooks_file_status_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE);
+template int GameBoard::rooks_file_status_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE);
 
 // rook_7th_rankness_cp_t
 template int GameBoard::rook_7th_rankness_cp_t<Color::WHITE>();
@@ -3822,8 +3823,8 @@ template int GameBoard::count_isolated_pawns_cp_t<Color::BLACK>(const PawnFileIn
 template int GameBoard::count_doubled_pawns_cp_t<Color::WHITE>(const PawnFileInfo&);
 template int GameBoard::count_doubled_pawns_cp_t<Color::BLACK>(const PawnFileInfo&);
 
-template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::WHITE>(const PawnFileInfo&) const;
-template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::BLACK>(const PawnFileInfo&) const;
+template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
+template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
 
 // count_passed_pawns_cp_t
@@ -3833,12 +3834,12 @@ template int GameBoard::count_passed_pawns_cp_t<Color::BLACK>(const PawnFileInfo
 template int GameBoard::count_pawn_holes_cp_t<Color::WHITE>(const PawnFileInfo&, ull&);
 template int GameBoard::count_pawn_holes_cp_t<Color::BLACK>(const PawnFileInfo&, ull&);
 
-template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::WHITE>(const PawnFileInfo& pawnInfo,
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
                                                             int& passed_cp);
-template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::BLACK>(const PawnFileInfo& pawnInfo,
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
