@@ -182,3 +182,17 @@ backwards pawn/holes test
 
 
 8/1Q6/8/2Q5/8/8/R3K3/1k2B3 b - - 42 91     Weird bug WHite cant seem to checkmate
+
+KIng towards center???
+6k1/8/8/6p1/6p1/4b1P1/7r/4K3 w - - 14 59
+
+
+
+1. a3 c5 2. e3 d6 3. Nc3 Nc6 4. d4 cxd4 5. exd4 e5 6. d5 Nd4 7. Be3 Nf5 8. Bb5 Bd7 9. Bxd7 Qxd7 10. Nge2 Nf6 11. O-O g6 12. Bg5 Bg7 13. Bxf6 Bxf6 14. Ng3 Nxg3 15. hxg3 Bg7 16. a4 f5 17. a5 Qc7 18. a6 bxa6 19. Rxa6 O-O 20. Qe2 e4 21. Nb5 Qc5 22. Nxd6 Rf6 23. Rc6 Qxd5 24. Qa6 Rff8 25. c4 Qd2 26. Rc7 e3 27. c5 e2 28. Rb7 Kh8 29. Nf7 Kg8 30. Nh6 Kh8 31. Nf7 Kg8 32. Nd6 Bd4 33. Re7 exf1=Q 34. Qxf1 Qb4 35. Qd1 Qxb2 36. Qf1 Qc2 37. Kh2 Qxc5 38. Qa6 Qd5 39. Kg1 Rab8 40. Kh2 Rb6 41. Qxa7 Rxd6 42. Qc7 Qc6 43. Rxh7 Qxc7 44. Rxc7 g5 45. Kg1 Ra8 46. Rc1 Rh6 47. g4 fxg4 48. g3 Rf6 49. Rc2 Rxf2 50. Rxf2 Ra2 51. Kh1 Rxf2 52. Kg1 Rf6 53. Kh1 Rh6 54. Kg2 Bc5 55. Kf1 Re6 56. Kg2 Rh6 57. Kf1 Rh2 58. Ke1 Be3 59. Kf1 Kh7 60. Ke1 Kg6 61. Kf1 Kf5 62. Ke1 Ke4 63. Kf1 Kd3 64. Ke1 Rh1  * *
+
+
+// Stupid queen trade in beginning, white should not play d4.
+rnbqkbnr/pp2pppp/3pp3/4P3/3P4/8/PPP2PPP/RNBQKBNR w KQkq c6 0 4
+
+
+

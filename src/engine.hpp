@@ -32,7 +32,6 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 inline constexpr int MAX_MOVES = 256;
 
-inline constexpr double TINY_SCORE       = 1.0e-15;  // pawns
 inline constexpr double VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)
 inline constexpr double HUGE_SCORE       = 10000.0;  // pawns
 
@@ -44,7 +43,7 @@ inline constexpr double ONLY_MOVE_SCORE = HUGE_SCORE + 2.0;  // short-circuit wh
 inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
 inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 32;
 
-
+//#define _SUPRESSING_MOVE_HISTORY_RESULTS  // Prevents 3 time rep and the fifty move rule  
 
 #ifdef _SUPRESSING_MOVE_HISTORY_RESULTS
     #define FIFTY_MOVE_RULE_PLY 5000      // This should be 100 as the units are ply.
@@ -115,7 +114,7 @@ class Engine {
         template <Color c> ull& access_pieces_of_color_tp(Piece piece);
         template <Piece P, Color c> ull& access_pieces_of_color_tp();
 
-        void add_psuedo_move_to_vector(vector<Move>&, Square fromSQ, ull, Piece, Color, bool, bool, Square en_passant_land_sq, bool, bool);
+        template<Color c, bool capture, bool promotion, bool is_en_passent_capture> void add_psuedo_move_to_vector(vector<Move>&, Square fromSQ, ull, Piece, Square en_passant_land_sq, bool);
 
         template<Color c> int get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);
         int get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);       
@@ -145,6 +144,18 @@ class Engine {
         int ply_so_far = 0;     // ply played in game so far
         ull game_white_time_msec = 0;     // total white thinking time for game
         ull game_black_time_msec = 0;     // total black thinking time for game
+
+        struct stats {      // All in units of ply
+            int so_far=0;
+            int so_far_pawn=0;
+            int so_far_captures=0;
+            int so_far_promotions=0;
+            int so_far_en_passants=0;
+            int so_far_castles=0;
+        };
+        stats sss;
+        void resetStats();
+        void updateStats(const Move& m);
 
         PGN gamePGN;
 
@@ -248,7 +259,7 @@ class Engine {
             , bool b_convert_to_abs_score, bool b_sort_descending, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
 
-        void move_and_score_to_string(const Move best_move, double d_best_move_value, bool b_convert_to_abs_score);
+        void move_and_score_to_string(const Move best_move, double d_best_move_valu, bool b_convert_to_abs_score);
       
         void print_bitboard_to_file(ull bb, FILE* fp);
 
@@ -318,9 +329,6 @@ class Engine {
         int rand_int(int, int);
         bool flip_a_coin(void);
    
-        //std::unordered_map<uint64_t, int> repetition_table;
-        //void debug_print_repetition_table() const;
-
         // These stacks handled in parallel
         std::vector<uint64_t> three_time_rep_stack; // zobrist keys representing positions
         std::vector<int> boundary_stack; // indices into three_time_rep_stack

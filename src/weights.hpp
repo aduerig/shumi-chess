@@ -38,7 +38,11 @@ enum WghtIndxs
     PASSED_PAWN_CONNECTED,
     ISOLANI_OPEN_FILE,
     KING_CENTER_LATE,
-    LAST_VALUE              // I must be last
+    KEEP_ROOKS_WHEN_DOWN_PAWN,
+    NO_MOVE_SAME_TWICE,
+    PAWN_HOLE_OPEN_FILE,
+    OPPOSITE_BISHOPS,
+    LAST_VALUE              // I must be last in this list
 };
 
 constexpr double VOLUME_CONTROL = 0.63;
@@ -46,12 +50,12 @@ constexpr double VOLUME_CONTROL = 0.63;
 // All values in integer centipawns. Positive values are bonus, negative values are penelties
 class Weights
 {
-public:
+private:
 
     // can_castle privilege prevents stupid king wandering.
-    // has_castled bonus must be > can_castle privilege or it will never castle.
+    // has_castled bonus must be > can_castle privilege*2 or it will never castle.
     // castling is not actual "castling". It means getting the king to the side (on back rank), without trapping a rook.
-    static constexpr int HAS_CASTLED_WGHT = 145;
+    static constexpr int HAS_CASTLED_WGHT = 190;
     static constexpr int CAN_CASTLE_WGHT = 50;
 
     // Isolated pawns.
@@ -63,8 +67,9 @@ public:
 
 
     // Backward pawns (holes)
-    static constexpr int PAWN_HOLE_WGHT = -20;        // A hole is the square direclty ahead of a backward pawn.
+    static constexpr int PAWN_HOLE_WGHT = -30;        // A hole is the square direclty ahead of a backward pawn.
     static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
+    static constexpr int PAWN_HOLE_OPEN_FILE_WGHT = -15;    // also applies to the backward pawn behind the hole
 
     // Doubled pawns
     static constexpr int DOUBLED_WGHT      = -19;           // One slam for each pawn more than one on a file
@@ -72,51 +77,53 @@ public:
     static constexpr int DOUBLED_OPEN_FILE_WGHT   = -18;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
-    // base = PASSED_PAWN_SLOPE_WGHT*adv*adv + PASSED_PAWN_YINRCPT_WGHT;
-    //    adv   new: 5*adv*adv + 20     old (hand-tuned)
-    //    ----------------------------------------------
-    //    1        25                  25    // 2nd rank
-    //    2        40                  25    // 3rd rank
-    //    3        65                  45    // 4th rank
-    //    4       100                  82    // 5th rank
-    //    5       145                 151    // 6th rank
-    //    6       200                 200    // 7th rank
-    static constexpr int PASSED_PAWN_SLOPE_WGHT = 5;
-    static constexpr int PASSED_PAWN_YINRCPT_WGHT = 20;
-    static constexpr int PASSED_PAWN_CONNECTED_WGHT = 80;
+    static constexpr int PASSED_PAWN_SLOPE_WGHT   = 11;     // Actually this is a quadratic, not a line
+    static constexpr int PASSED_PAWN_YINRCPT_WGHT = 25;
+    // bonus = PASSED_PAWN_SLOPE_WGHT * (adv-1)*(adv-1)  +  PASSED_PAWN_YINRCPT_WGHT;
+    //    adv   new: 11*(adv-1)^2 + 30
+    //    --------------------------------
+    //    1        30     // 2nd rank
+    //    2        41     // 3rd rank
+    //    3        74     // 4th rank
+    //    4       129     // 5th rank
+    //    5       206     // 6th rank
+    //    6       305     // 7th rank
+    
+
+    static constexpr int PASSED_PAWN_CONNECTED_WGHT = 4;   // Multiplied by passed pawn bonus, divide it all by 3
 
     // Pawn controlling center squares: (one per qualifiing pawn)
     static constexpr int PAWN_ON_CTR_DEF_WGHT = 24;     // center e4,d4 (white); and e5,d5, (black) "defensive" center squares
-    static constexpr int PAWN_ON_CTR_OFF_WGHT = 35;     // center e5,d5 (white); and e4,d4, (white) "offensive" center squares
-    static constexpr int PAWN_ON_ADV_CTR_WGHT = 21;     // "advanced center" e6,d6 (White); or e3,d3 (Black)
-    static constexpr int PAWN_ON_ADV_FLK_WGHT = 9;      // "advanced flank" c4,f4 (black); c5,f5 (White)
+    static constexpr int PAWN_ON_CTR_OFF_WGHT = 38;     // center e5,d5 (white); and e4,d4, (white) "offensive" center squares
+    static constexpr int PAWN_ON_ADV_CTR_WGHT = 24;     // "advanced center" e6,d6,e7,d7 (White); or e3,d3,e2,d2 (Black)
+    static constexpr int PAWN_ON_ADV_FLK_WGHT = 10;      // "advanced flank" c5,f5 (White), c4,f4 (black); 
 
     static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
-    static constexpr int BISHOP_ON_CTR_WGHT = 20;  // Bishop controlling center squares (per square) (here we can look through other pieces)
+    static constexpr int BISHOP_ON_CTR_WGHT = 21;  // Bishop controlling center squares (per square) (here we can look through other pieces)
 
-    static constexpr int TWO_BISHOPS_WGHT = 20;    // 2 or more bishops (only one bonus per side)
+    static constexpr int TWO_BISHOPS_WGHT = 24;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
     static constexpr int QUEEN_OUT_EARLY_WGHT = -40;    // for center squares only. only in opening.
-    static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6)
-    static constexpr int F_PAWN_MOVED_EARLY_WGHT = -10; // only in opening. Boo hoo, no Bird opening.
+    static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). only in opening.
+    static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
 
-    static constexpr int DEVELOPMENT_OPENING_WGHT = 12;      // Opening only.  Counts minor pieces, off their starting square.
+    static constexpr int DEVELOPMENT_OPENING_WGHT = 14;      // Opening only.  Counts minor pieces, off their starting square.
 
-    static constexpr int ROOK_CONNECTED_WGHT = 90;      // if any connected rook pair exists (one bonus only)
+    static constexpr int ROOK_CONNECTED_WGHT = 100;      // if any connected rook pair exists (one bonus only)
 
     // Rooks on open or semi open files
-    static constexpr int ROOK_ON_OPEN_FILE_WGHT = 14;     // open=2x, semi-open=1x
-    static constexpr int KING_ON_FILE_WGHT    = 10;      // extra per rook if enemy king on same file (even if pieces between he king and rook)
+    static constexpr int ROOK_ON_OPEN_FILE_WGHT = 20;     // open=2x, semi-open=1x
+    static constexpr int KING_ON_FILE_WGHT    = 14;      // extra per rook if enemy king on same file (even if pieces between he king and rook)
 
-    static constexpr int MAJOR_ON_RANK7_WGHT = 22;      // Rook or queen on 7th rank
-    static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank
+    static constexpr int MAJOR_ON_RANK7_WGHT = 26;      // Rook or queen on 7th rank (if 2 major then 3 times)
+    static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank (if 2 major then 3 times)
 
     static constexpr int KNIGHT_ON_EDGE_WGHT = -10;     // knight on edge penatly (doubled if knight in corner)
 
     static constexpr int KING_EDGE_WGHT = 40;              // Only in ending, to force enemy king to edge
 
-    static constexpr int KING_CENTER_LATE_WGHT = 18;       // Only in ending, 
+    static constexpr int KING_CENTER_LATE_WGHT = 22;       // Only in ending, 
 
     static constexpr int KINGS_CLOSE_TOGETHER_WGHT = 30;   // Only in ending, to force enemy king to edge
 
@@ -124,6 +131,15 @@ public:
     static constexpr int ATTACKERS_ON_KING_WGHT = 20;      // For each square (per square) at or around the king box. Includes the king square itself.
 
     static constexpr int CENTER_OCCUPY_PIECES_WGHT = 24;  // Used only in CRAZY_IVAN. Doesnt count pawns or kings.
+
+    static constexpr int KEEP_ROOKS_WHEN_DOWN_PAWN_WGHT = 10;
+
+    static constexpr int NO_MOVE_SAME_TWICE_WGHT = -20; // NOT USED
+
+    static constexpr int OPPOSITE_BISHOPS_WGHT = 50; //   subtracted from the ahead side
+    
+
+public:
 
     // Only member functions:
     Weights();                      // Constructer loads up the aW array.

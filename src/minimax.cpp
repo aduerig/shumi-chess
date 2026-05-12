@@ -41,13 +41,12 @@ using namespace utility::bit;
 
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
-#undef NDEBUG
+    #undef NDEBUG
 #endif
 #include <assert.h>
 //
 // NOTE: fix these
 // These are still #defines when they should be features, or discarded:
-//#define RANDOM_FLIP_COIN
 //#define FAST_EVALUATIONS
 
 /////////// Debug ////////////////////////////////////////////////////////////////////////////////////
@@ -72,6 +71,8 @@ using namespace utility::bit;
 // #define BURP2_THRESHOLD_CP 2     // "burps" or fails if the stored (TT) does not match the evaluaton made.
 
 //#define DEBUGGING_KILLER_MOVES 
+
+//#define DEBUGGING_PAWN_HASH     // burp3
 
 bool global_debug_flag = false;
 
@@ -102,11 +103,7 @@ bool global_debug_flag = false;
 
 #endif
 
-// Obviously TT2 debug breaks repeatibility if we flip coins in the anaylisis. So what. 
-// Also these other features (below) breaks repeatability.
-#ifndef DEBUG_NODE_TT2
-    #undef RANDOM_FLIP_COIN
-#endif
+
 
 //#ifndef DEBUG_NODE_TT2
 //    #undef FAST_EVALUATIONS
@@ -181,11 +178,13 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
 
     TTable.clear();
-    TTable.reserve(10000000);    // NOTE: What size here? (we dont even normally use this table)
+    TTable.reserve(1000000);    // NOTE: What size here? (we dont even normally use this table)
     
     TTable2.clear();
     TTable2.reserve(1000000);    // NOTE: What size here?
 
+    pawn_file_info.clear();
+    pawn_file_info.reserve(1000000);    // NOTE: What size here?
 
     // add the current position
     //engine.repetition_table.clear();
@@ -235,8 +234,7 @@ MinimaxAI::~MinimaxAI() {
 
 
 
-template<class T>
-string format_with_commas(T value) {
+template<class T> string MinimaxAI::format_with_commas(T value) {
     stringstream ss;
     ss.imbue(locale(""));
     ss << fixed << value;
@@ -269,64 +267,81 @@ void MinimaxAI::resign() {
 // returns a positive score, if "for_color" is ahead.
 //
 
-// Original evaluate_board replaced by template wrapper at bottom of file
-
-
-
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// personalities
-// 
-// #define MAX_personalities 50
+// ---------- trade_imbalance_cp_t ----------
+// Encourages trading the class of material where side c is ahead,
+// and discourages trading the class of material where side c is behind.
+//
+// Uses two separate balances, both positive when its good for "c" color.
+//   - non-pawn material balance
+//   - pawn material balance
+//
+// The effect grows as fewer pieces/pawns remain.
+// Example:
+//   +1 pawn with 8 vs 7 pawns  -> small effect
+//   +1 pawn with 2 vs 1 pawns  -> larger effect
+//
+// Caller should handle phase restrictions.
+#define TRADE_PAWN_CAP 7
+#define TRADE_PIECE_CAP 4
 
-// struct person {
-//     int constants[MAX_personalities];   
-// };
-
-// NOte: what sort of nonsense is this? A family of evaluator's? Why not?
-//person TheShumiFamily[20];
-
-// person MrShumi = {100, -10, -30, +14, 20, 20, 20};  // All of these are integer and are applied in centipawns
-// int pers_index = 0;
-
-// Original cp_score_positional_get_opening and cp_score_positional_get_middle
-// replaced by template wrappers at bottom of file
-
-
-// Trading. "np" means "no pawns".
-// Note: Trading broken right now (or weakened)
-int MinimaxAI::cp_score_get_trade_adjustment(ShumiChess::Color color,
-                                             int mat_np_white,      // centipawns
-                                             int mat_np_black)      // centipawns
+template<Color c>
+int MinimaxAI::trade_imbalance_cp_t(int cp_score_material_all) const
 {
-    int cp_clamp = 5;   // no more than a pawn of motivation
+    const int cp_score_non_pawn = cp_score_material_all - cp_score_pawns_only;
 
-    // NP advantage (centipawns) from "color"'s point of view (positive, if good for color)
-    int np_adv_for_color =
-        (color == ShumiChess::WHITE) ? (mat_np_white - mat_np_black)
-                                     : (mat_np_black - mat_np_white);
+    constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
-    if (np_adv_for_color == 0) return 0;  // no NP edge, so no bonus
 
-    // Trades more important, the less pieces there are.
-    int denominator =  (mat_np_black + mat_np_white);
-    assert (denominator > 0);                      // no pieces?
+    const int my_pawns    = engine.game_board.Bits_In[c][Piece::PAWN];
+    const int enemy_pawns = engine.game_board.Bits_In[enemy][Piece::PAWN];
 
-    double dRatio = (double)np_adv_for_color / (double)denominator;
+    const int my_non_pawn =
+        engine.game_board.Bits_In[c][Piece::KNIGHT] +
+        engine.game_board.Bits_In[c][Piece::BISHOP] +
+        engine.game_board.Bits_In[c][Piece::ROOK]   +
+        engine.game_board.Bits_In[c][Piece::QUEEN];
 
-    // Full complement of pieces is MAX_CP_PER_SIDE centpawns. Suppose one side a knight up. Then 
-    // ratio = 320 / 4000  or about 1 tenth, so we see about 60 cp motivation to trade.
-    int iReturn = (int)(dRatio*1200.0);
-    if (iReturn >  cp_clamp) iReturn =  cp_clamp;
-    if (iReturn < -cp_clamp) iReturn = -cp_clamp;
+    const int enemy_non_pawn =
+        engine.game_board.Bits_In[enemy][Piece::KNIGHT] +
+        engine.game_board.Bits_In[enemy][Piece::BISHOP] +
+        engine.game_board.Bits_In[enemy][Piece::ROOK]   +
+        engine.game_board.Bits_In[enemy][Piece::QUEEN];
 
-    return iReturn;
 
+    int total_pawns    = my_pawns + enemy_pawns;
+    int total_non_pawn = my_non_pawn + enemy_non_pawn;
+    if (total_pawns > TRADE_PAWN_CAP) total_pawns = TRADE_PAWN_CAP;
+    if (total_non_pawn > TRADE_PIECE_CAP) total_non_pawn = TRADE_PIECE_CAP;
+    
+    int trade_cp = 0;
+
+    if (cp_score_pawns_only > 0) {
+        trade_cp += ((TRADE_PAWN_CAP - total_pawns) * wghts.GetWeight(TRADE_WHEN_AHEAD_PAWNS))
+                  / TRADE_PAWN_CAP;
+    } else if (cp_score_pawns_only < 0) {
+        trade_cp -= ((TRADE_PAWN_CAP - total_pawns) * wghts.GetWeight(TRADE_WHEN_AHEAD_PAWNS))
+                  / TRADE_PAWN_CAP;
+    }
+
+    if (cp_score_non_pawn > 0) {
+        trade_cp += ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
+                  / TRADE_PIECE_CAP;
+    } else if (cp_score_non_pawn < 0) {
+        trade_cp -= ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
+                  / TRADE_PIECE_CAP;
+    }
+
+    const int cap = wghts.GetWeight(TRADE_IMBALANCE_CAP);
+
+    if (trade_cp >  cap) trade_cp =  cap;
+    if (trade_cp < -cap) trade_cp = -cap;
+
+    return trade_cp;
 }
 
-
-// Original cp_score_positional_get_end replaced by template + runtime wrapper at bottom of file
 
 
 bool MinimaxAI::no_queens_on_board() {
@@ -402,8 +417,6 @@ int MinimaxAI::phase_of_game(int material_cp_avg) {
         if (no_queens_on_board()) nPhase = GamePhase::MIDDLE;
     }
 
-    // debug nPhase = GamePhase::OPENING;
-
     return nPhase;
 }
 
@@ -412,14 +425,14 @@ int MinimaxAI::phase_of_game(int material_cp_avg) {
 int MinimaxAI::phase_of_game_full() {
     int cp_score_material_avg_local = 0;
     {
-        //int cp_pawns_only_temp;
+        int cp_pawns_only_temp = 0;
         int cp_score_mat_temp;
 
-        cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::WHITE>();
+        cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::WHITE>(cp_pawns_only_temp);
         assert(cp_score_mat_temp >= 0);
         cp_score_material_avg_local += cp_score_mat_temp;
 
-        cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::BLACK>();
+        cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::BLACK>(cp_pawns_only_temp);
         assert(cp_score_mat_temp >= 0);
         cp_score_material_avg_local += cp_score_mat_temp;
     }
@@ -474,6 +487,7 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_displa
         #endif
 
         #ifdef DISPLAY_DEEPING
+            if (depth==1) cout << "\n";
             cout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
                         << " msec=" << std::setw(6) << elapsed_time_display_only << ' ';
         #endif
@@ -581,7 +595,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     assert (i_time_requested > 0);
 
-    cout << " max_deepening_requested " << max_deepening_requested << "\n";
+    //cout << " max_deepening_requested " << max_deepening_requested << "\n";
 
     // Obtain time now (milliseconds)
     TIME_TYPE start_time = chrono::high_resolution_clock::now();
@@ -610,10 +624,23 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         // Here we do MinimaxAI stuff to be done at the beginning of a game. Clumsy way to have to detect 
         // this, but there it is: engine.reset_engine() starts a new game, and sets computer_ply_so_far = 0.
         //
+        string sss;
         TTable2.clear();    // Clear even if we don't use it.
 
+        //sss = format_with_commas(pawn_file_info.size());
+        //printf("pawn_file_info size before clear = %s\n", sss.c_str());
+        
+        pawn_file_info.clear();
+
+        //sss = format_with_commas(pawn_file_info.size());
+        //printf("pawn_file_info size after clear = %s\n", sss.c_str());
+        //system("pause");
+
+        // Initialize hash table hit counts
         NhitsTT = 0;
         NhitsTT2 = 0;
+        NhitsP = 0;
+
         nRandos = 0;
 
         nGames++;
@@ -635,10 +662,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     nodes_visited = 0;
     nodes_visited_depth_zero = 0;
     evals_visited = 0;
-
-    seen_zobrist.clear();
-    //uint64_t zobrist_key_start = engine.game_board.zobrist_key;
-    //cout << "zobrist_key at the root: " << zobrist_key_start << endl;
 
     TTable.clear();       // Leaf TT cleared on every move (even if never used)
 
@@ -698,21 +721,17 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , (GameState::INPROGRESS), false, false, NULL
                 , engine.move_string);    // Output
 
-        cout << "\n" << " pvar? " << d_best_move_value << " " << engine.move_string 
-            << " -- " << (best_move.piece_type == Piece::NONE) << " \n";
+        if (best_move.piece_type == Piece::NONE) break;     // NOTE: should this ever happen?
 
-        if (best_move.piece_type == Piece::NONE) break;
-
-        //excluded_root_moves.push_back(best_move);
         excluded_root_moves.push_back(std::make_pair(best_move, d_best_move_value));
         if (d_best_move_value == ONLY_MOVE_SCORE) break;
 
-        cout << " pvar! " << d_best_move_value << " " << engine.move_string << " \n";
+        //cout << " pvar! " << d_best_move_value << " " << engine.move_string << " \n";
 
     }
-    cout << "\n" << " moves collected: " << engine.ply_so_far;
-    engine.print_moves_and_scores_to_file(excluded_root_moves, false, false, stdout);
-    cout << "\n" << " end moves collected: " << n_Multis << " at ply " << engine.ply_so_far << " \n";
+
+    if (n_Multis>1) cout << "\n" << " rand moves collected: " << n_Multis;
+    //engine.print_moves_and_scores_to_file(excluded_root_moves, false, false, stdout);
 
     if (n_Multis > 1) {
 
@@ -730,32 +749,18 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , engine.move_string);    // Output
 
         cout << "\n" << " end multisss " << d_best_move_value << "  "  
-                << engine.move_string << "nwithin=" <<  n_moves_within_delta << " \n";
+                << engine.move_string << " out of=" <<  n_moves_within_delta << " \n";
     }
 
-    ////////// done with move production. Now do displays /////////////////////////////////////////////////////////////////////////
-
-    //cout << endl << " Deep end " << depth << "          msec=" << std::setw(6) << elapsed_time << ' ';
-
-    cout << "\x1b[33m\nWent to depth " << (depth - 1)  
-        << " elapsed msec= " << elapsed_time << " requested msec= " << i_time_requested 
-        << std::fixed << std::setprecision(1)
-        << "\x1b[0m" << endl;
-
-
-    // Convert to absolute score
-    double d_best_move_value_abs = d_best_move_value;
+    // Convert the moves "relative score" to "absolute score". Relative means positve is good for mover. 
+    // Absolute means positive is good for white. Most scores are relative. Absolute used only foe display.
+    d_best_move_value_abs = d_best_move_value;
     if (engine.game_board.turn == Color::BLACK) d_best_move_value_abs = -d_best_move_value_abs;
-    
     if (std::fabs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;   // avoid negative zero
-    string abs_score_string = to_string(d_best_move_value_abs);
+    
 
-    // Show board
-    engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-                , (GameState::INPROGRESS), false, false, NULL
-                , engine.move_string);    // Output
-    cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
-
+    ////////// done with move production. Now do debug and displays /////////////////////////////////////////////////////////////////////////
+    
     //// for testing enpassant (pauses when it is move on board)
     // if (best_move.is_en_passent_capture) {
     //     printf("pause (press Enter)\n");
@@ -763,7 +768,30 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     //     getchar();
     // }
 
+    int iPhase = phase_of_game_full();
+    engine.game_phase = iPhase;
 
+    // Playground is for extended debug and status, and for whatever else. However there is a gotcha. Although we 
+    // have found out move, we have not yet made the move. The found move is reported to the python, that
+    // calls engine_communicator_make_move_two_acn().
+    playground(iPhase);
+
+    double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
+    cout << "\x1b[33m\nWent to depth " << (depth - 1)  
+        << " elapsed min= " << elapsed_time_min
+        << " elapsed msec= " << elapsed_time << " request msec= " << i_time_requested 
+        << std::fixed << std::setprecision(1)
+        << "\x1b[0m" << endl;
+
+
+    // Show board
+    engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                , (GameState::INPROGRESS), false, false, NULL
+                , engine.move_string);    // Output
+    cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
+
+    
+    string abs_score_string = to_string(d_best_move_value_abs);
     char buf[32];
     std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
     abs_score_string = buf;
@@ -804,11 +832,11 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + 
         "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
 
+    // if we are forcing the move due to it being the only move, then don't update "score". Note: not sure of this.
     bool b_Forced = (d_best_move_value == ONLY_MOVE_SCORE);
-    if (!b_Forced) {   // if we are forcing the move due to it being the only move, then don't update "score".
+    if (!b_Forced) {
         engine.d_bestScore_at_root = d_best_move_value_abs;  
     }
-
 
     cout << "\n";
 
@@ -819,17 +847,17 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
             << "%)\n\n";
     #endif
 
-    int iPhase = phase_of_game_full();
-    char szTemp[128];
-    const char* pszPhase = &szTemp[0];
-    pszPhase = str_from_GamePhase(iPhase);
-    engine.game_phase = iPhase;
 
     
     ////////// done with "main" move displays /////////////////////////////////////////////////////////////////////////
+  
+    return best_move;
+}
+
+
+void MinimaxAI::playground(int iPhase) {
     //
-    // Now done with making, and measuring and displaying the computer move. Ready for exit BUT
-    // Debug only  playground   sandbox for testing evaluation functions
+    // Debug only  playground. Sandbox for testing evaluation functions
     // int isolanis;
     bool isOK;
     double centerness;
@@ -840,44 +868,42 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     double dTemp, dtemp1, dtemp2;
     int itemp3, itemp4;
     
-    
     isOK = false;
-
-
-    // test harness for testing isolated/doubled/passed pawns
-    ull passed_pawns;
     ull holes;
-
     double dcp_temp;
     int itemp1=0;
     int itemp2=0;
 
     PawnFileInfo pwnFileInfo;
-
+    ull holes_bb;
+    int holes_cp;
+    ull passed_pawns;
+    int passed_cp;      
 
 //global_debug_flag=false;
 
+    isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
+    isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
     
-    bool bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::WHITE>( pwnFileInfo.p[0]);
-    itemp1 = engine.game_board.get_castled_bonus_cp_t<Color::WHITE>(GamePhase::OPENING, pwnFileInfo.p[0]);
-
-    bOK = engine.game_board.build_pawn_file_summary_fast_t<Color::BLACK>( pwnFileInfo.p[1]);
-    itemp2 = engine.game_board.get_castled_bonus_cp_t<Color::BLACK>(GamePhase::OPENING, pwnFileInfo.p[1]);
-
+  
 //global_debug_flag = false;
 
-    //itemp1 = sizeof(Move);
-
-    cout << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
+    itemp1 = sizeof(PInfo);
+    char szTemp[128];
+    const char* pszPhase = &szTemp[0];
+    pszPhase = str_from_GamePhase(iPhase);
+    cout << "\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
 
     global_debug_flag = false;
 
     // cout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
 
-    utemp1 = TTable.size();
-    utemp2 = TTable2.size();
+    utemp1 = pawn_file_info.size();
+    string sss1 = format_with_commas(utemp1);
+    string sss2 = format_with_commas(NhitsP);
+    utemp2 = sizeof(bool); //TTable2.size();
    
-    cout << "TT: " << utemp1 << " mtches= " << NhitsTT << "       TT2: " << utemp2 << " mtches= " << NhitsTT2 << endl;
+    cout << "TP: " << sss1 << " mtches= " << sss2 << "       TT2: " << utemp2 << " mtches= " << NhitsTT2 << endl;
  
     //engine.debug_print_repetition_table();
 
@@ -885,7 +911,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     	stop_callback_thread();
     #endif
 
-    return best_move;
 }
 
 ////////// loop over all "deepenings" /////////////////////////////////////////////////////////////////////////
@@ -1027,7 +1052,6 @@ std::tuple<double, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dep
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 tuple<double, Move> MinimaxAI::recursive_negamax(
                     int depth
                     ,double alpha, double beta
@@ -1148,7 +1172,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
     // Hard node-limit sentinel fuse
     // =====================================================================
-    if (nodes_visited > 3.0e8) {    // 300,000,000
+    if (nodes_visited > 4.0e8) {    // 300,000,000
         std::cout << "\x1b[31m\n! NODES VISITED trap#2 " << nodes_visited << " dep=" << depth << "  "
                         << engine.get_best_score_at_root() << "\x1b[0m\n";
         //assert(0);
@@ -1255,7 +1279,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                         foundBeta  = entry.dBetaDebug;
                         foundDepth = entry.depth;
                         foundIsCheck = entry.bIsInCheckDebug;
-                        foundLegalMoveSize = entry.legalMovesSize;
+                        //foundLegalMoveSize = entry.legalMovesSize;
                         foundRepCount = entry.repCountDebug;
                         foundRawScore = entry.dScoreDebug;
 
@@ -1406,7 +1430,10 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         if (have_tt_eval) {
             TT_ntrys++;
             #ifdef DEBUG_LEAF_TT
-                cp_score_best = evaluate_board(engine.game_board.turn, exp, b_is_Quiet);
+                if (engine.game_board.turn == ShumiChess::Color::WHITE)
+                    cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(exp, b_is_Quiet);
+                else
+                    cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(exp, b_is_Quiet);
                 if (cp_from_tt != cp_score_best) {
                     printf ("burp (MAIN) %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
                     assert(0);
@@ -1427,6 +1454,11 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
         d_best_score = engine.convert_from_CP(cp_score_best);
         d_stand_pat = d_best_score;  // "stand pat" means the evaluate_board() computed score
+
+        //#define NO_QUISSENCE
+        #ifdef NO_QUISSENCE
+            return { d_best_score, Move{} };
+        #endif
 
         // memoization at leaf
         if (Features_mask & _FEATURE_TT) {
@@ -1683,7 +1715,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
 
 
-            auto ret_val = recursive_negamax(
+            tuple<double, Move> ret_val = recursive_negamax(
                 (depth > 0 ? depth - 1 : 0),
                 childAlpha, childBeta,
                 false,                    // I am NOT called from the root
@@ -1797,7 +1829,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             // Alpha/beta "cutoff", (fail-high), break the analysis
             // You just found a move so good that the opponent would never 
             // allow this position, because it already exceeds what they could tolerate.
-            //if (alpha >= beta + TINY_SCORE) {
             if (alpha >= beta) {
 
                 // You found a move so good that the opponent would never allow this position.
@@ -1866,7 +1897,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     // Fail-low
     if (!did_cutoff && (alpha <= alpha_in)) {
-        //if (!did_cutoff  && (alpha <= alpha_in + TINY_SCORE)) {
         did_fail_low = true;
     }
 
@@ -2024,6 +2054,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                                     std::string temp_fen_ = engine.game_board.to_fen();
                                     sprintf (szDebug, "burp22 %llu      %s\n", nGames, temp_fen_.c_str());
                                     cout << szDebug;
+                                    getchar();
                                     assert(0);
                                 }
                             }
@@ -2172,6 +2203,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     return {d_best_score, the_best_move};
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Resort moves in this order (they will later be searched in this order):
 //      TT move              (move from the hash table hit (if any))
@@ -2393,7 +2425,9 @@ double MinimaxAI::get_value(int depth, int color_multiplier, double alpha, doubl
         }
         Move mvdefault = Move{};
         EvalPersons evp = UNCLE_SHUMI;
-        int cp_score =  evaluate_board(color_perspective, evp, false) * color_multiplier;
+        int cp_score = ((color_perspective == Color::WHITE)
+            ? evaluate_board_t<Color::WHITE>(evp, false)
+            : evaluate_board_t<Color::BLACK>(evp, false)) * color_multiplier;
 
         double d_best_score = engine.convert_from_CP(cp_score);
 
@@ -2610,80 +2644,85 @@ try_again:
 // Template implementations (compile-time Color)
 // ============================================================================
 
+
 template<ShumiChess::Color c>
 int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     using namespace ShumiChess;
 
+    constexpr Color enemyColor = utility::representation::opposite_color_t<c>;
+
     int cp_score_position_temp = 0;
     int icp_temp, icp_temp1, icp_temp2;
 
+   
+    PawnFileInfo pawnFileInfoTemp;
+    PawnFileInfo* pawnFileInfoP = nullptr;
 
-    const PInfo* pawnP[2];
-    const PInfo* pawnPB[2];
+    // Probe the pawn/file hash
+    uint64_t key = engine.game_board.pawn_zobrist_key;
+    auto it = pawn_file_info.find(key);
+    if (it != pawn_file_info.end()) {
+        // found an "pawn summary" entry (this is the more common caase)
+        NhitsP++;
+        pawnFileInfoP = &it->second;
 
-    bool b_is_pawns_friend;
-    PawnFileInfo pawnFileInfo;
+        #ifdef DEBUGGING_PAWN_HASH          // burp3
+            engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
+            if (!(pawnFileInfoTemp.p[0] == pawnFileInfoP->p[0])) {
+                assert(0);
+            }
+            if (!(pawnFileInfoTemp.p[1] == pawnFileInfoP->p[1])) {
+                assert(0);
+            }
+        #endif
 
-    pawnPB[friendlyP] = &pawnFileInfo.p[friendlyP];
-    pawnPB[enemyP] = &pawnFileInfo.p[enemyP];
-
-    if (c==ShumiChess::WHITE) {
-        pawnP[friendlyP] = &engine.game_board.white_pawn_info;
-        pawnP[enemyP] = &engine.game_board.black_pawn_info;
     } else {
-        pawnP[friendlyP] = &engine.game_board.black_pawn_info;
-        pawnP[enemyP] = &engine.game_board.white_pawn_info;
+        // rebuild the pawn summary.
+        engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
+
+        // Add to hash
+        auto result = pawn_file_info.emplace(key, pawnFileInfoTemp);
+        pawnFileInfoP = &result.first->second;
     }
 
-    b_is_pawns_friend = engine.game_board.get_pieces_template<Piece::PAWN, c>();
-    bool b_is_pawns_friend2 = engine.game_board.build_pawn_file_summary_fast_t<c>( pawnFileInfo.p[friendlyP]);
-    // assert(b_is_pawns_friend == b_is_pawns_friend2);
-    // {
-    //     if (!(*pawnP[friendlyP] == *pawnPB[friendlyP])) {
-    //         engine.game_board.dump_pinfo_mismatch(*pawnP[friendlyP], *pawnPB[friendlyP]);
-    //         assert(0);
-    //     }
-       
-    // }
+    assert(pawnFileInfoP != NULL);
 
-    icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, *pawnP[friendlyP] );
+
+    // Create pawn info links the rest of the routine will use.
+    const PInfo& pawnF = pawnFileInfoP->p[c];
+    const PInfo& pawnE = pawnFileInfoP->p[enemyColor];
+
+    icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnF);
     cp_score_position_temp += icp_temp;
 
-
-    if (b_is_pawns_friend) {
-        bool b_is_pawns_enemy;
+    if (1) {
         ull holes_bb = 0ULL;
         ull passed_pawns_bb = 0ULL;
 
-        constexpr Color enemyColor = utility::representation::opposite_color_v<c>;
-
-        b_is_pawns_enemy = engine.game_board.get_pieces_template<Piece::PAWN, enemyColor>();
-        bool b_is_pawns_enemy2 = engine.game_board.build_pawn_file_summary_fast_t<enemyColor>( pawnFileInfo.p[enemyP]);
-        // assert(b_is_pawns_enemy == b_is_pawns_enemy2);
-        // {
-        //     if (!(*pawnP[enemyP] == *pawnPB[enemyP])) {
-        //         engine.game_board.dump_pinfo_mismatch(*pawnP[enemyP], *pawnPB[enemyP]);
-        //         assert(0);
-        //     }
-        
-        // }
-
-        icp_temp = engine.game_board.count_isolated_and_doubled_pawns_cp_t<c>(*pawnP[friendlyP], *pawnP[enemyP]);
-        //assert(icp_temp == (icp_temp1 + icp_temp2));
+        icp_temp = engine.game_board.count_isolated_and_doubled_pawns_cp_t<c>(pawnF, pawnE);
         cp_score_position_temp += icp_temp;
 
 
+        // int holes_cp2;
+        // int passed_cp2;
+        // engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(pawnF, pawnE,
+        //                                                     holes_bb,
+        //                                                     holes_cp2,
+        //                                                     passed_pawns_bb,
+        //                                                     passed_cp2);
+                                                            
         int holes_cp;
         int passed_cp;
-        engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(*pawnP[friendlyP], *pawnP[enemyP],
+        engine.game_board.count_pawn_holes_and_passed_pawns_cp_new_t<c>(pawnF, pawnE,
                                                             holes_bb,
                                                             holes_cp,
                                                             passed_pawns_bb,
                                                             passed_cp);
-        //assert(holes_cp == icp_temp1);
+        // assert(holes_cp == holes_cp2);                 
+        // assert(passed_cp == passed_cp2);
+
         cp_score_position_temp += holes_cp;
 
-        //assert(passed_cp == icp_temp2);
         cp_score_position_temp += passed_cp;
 
 
@@ -2696,12 +2735,16 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
         else
             passed_pawns_black = passed_pawns_bb;
 
-        icp_temp = engine.game_board.rooks_file_status_cp_t<c>(*pawnP[friendlyP], *pawnP[enemyP]);
+        icp_temp = engine.game_board.rooks_file_status_cp_t<c>(pawnF, pawnE);
         cp_score_position_temp += icp_temp;
     }
 
     if (nPhase == GamePhase::OPENING) {
         icp_temp = engine.game_board.development_opening_cp_t<c>();
+        cp_score_position_temp += icp_temp;
+
+        Score material_balance_abs = d_best_move_value_abs;
+        icp_temp = engine.game_board.opposite_bishops_cp_t<c>(material_balance_abs);
         cp_score_position_temp += icp_temp;
     }
 
@@ -2710,7 +2753,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
         cp_score_position_temp += icp_temp;
     }
 
-    if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
+    if ((nPhase == GamePhase::OPENING)) {       // Really, Im just here to stop center counter and center openings
         icp_temp = engine.game_board.queenOnCenterSquare_cp_t<c>();
         cp_score_position_temp += icp_temp;
     }
@@ -2739,12 +2782,13 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     return cp_score_position_temp;
 }
 
+
 template<ShumiChess::Color c>
-int MinimaxAI::cp_score_positional_get_middle_cp_t() {
+int MinimaxAI::cp_score_positional_get_middle_cp_t(int nPhase) {
     int cp_score_position_temp = 0;
     int icp_temp;
 
-    icp_temp = engine.game_board.two_bishops_cp_t<c>();
+    icp_temp = engine.game_board.two_bishops_cp_t<c>(nPhase);
     cp_score_position_temp += icp_temp;
 
     icp_temp = engine.game_board.rook_connectiveness_cp_t<c>();
@@ -2770,6 +2814,8 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, bool noMajorPiecesFrien
     }
 
     if (nPhase == GamePhase::ENDGAME_LATE) {
+        icp_temp = engine.game_board.rook_endgame_keep_rooks_when_down_cp_t<c>();
+        cp_score_position_temp += icp_temp;
     }
 
     // King to center in end
@@ -2779,14 +2825,16 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, bool noMajorPiecesFrien
     }
 
 
+
     if (noMajorPiecesEnemy) {
         dcp_temp = engine.game_board.kings_close_toegather_cp_t<c>();
         icp_temp = (int)dcp_temp;
         cp_score_position_temp += (int)dcp_temp;
 
-        constexpr Color enemy_color = utility::representation::opposite_color_v<c>;
+        constexpr Color enemy_color = utility::representation::opposite_color_t<c>;
         icp_temp = engine.game_board.king_edgeness_cp_t<enemy_color>();
         cp_score_position_temp += icp_temp;
+        
     }
 
     return cp_score_position_temp;
@@ -2809,20 +2857,24 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     int cp_score_pawns_only = 0;
 
     // 
-    // First compute up the material
+    // First compute up the material.
+    // Outputs:
+    //    cp_score_material_all
+    //    cp_score_pawns_only 
     //
+    engine.game_board.compute_bits_in();
+
     for (const auto& color1 : std::array<Color, 2>{Color::WHITE, Color::BLACK}) {
-
-        int cp_score_mat_temp = (color1 == Color::WHITE)
-            ? engine.game_board.get_material_for_color_t<Color::WHITE>()
-            : engine.game_board.get_material_for_color_t<Color::BLACK>();
-        assert(cp_score_mat_temp >= 0);
- 
+        int cp_pawns_only_temp;
+        //int cp_pawns_only_temp2;
         // int cp_score_mat_temp2 = (color1 == Color::WHITE)
-        //     ? engine.material_balanceW_cp
-        //     : engine.material_balanceB_cp;
-        // assert(cp_score_mat_temp == cp_score_mat_temp2);
-
+        //     ? engine.game_board.get_material_for_color_t<Color::WHITE>(cp_pawns_only_temp2)
+        //     : engine.game_board.get_material_for_color_t<Color::BLACK>(cp_pawns_only_temp2);
+        int cp_score_mat_temp = (color1 == Color::WHITE)
+            ? engine.game_board.get_material_for_color2_t<Color::WHITE>(cp_pawns_only_temp)
+            : engine.game_board.get_material_for_color2_t<Color::BLACK>(cp_pawns_only_temp);
+        //assert(cp_score_mat_temp == cp_score_mat_temp2);
+        assert(cp_score_mat_temp >= 0);
 
         if (color1 == Color::WHITE) {
             mat_cp_white = cp_score_mat_temp;
@@ -2835,22 +2887,17 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
         if (color1 != for_color) {
             cp_score_mat_temp *= -1;
-            //cp_pawns_only_temp *= -1;
+            cp_pawns_only_temp *= -1;
         }
         cp_score_material_all += cp_score_mat_temp;
-        //cp_score_pawns_only += cp_pawns_only_temp;
+        cp_score_pawns_only += cp_pawns_only_temp;
     }
 
     assert(tempsum >= 0);
     //assert(tempsumNP >= 0);
     cp_score_material_avg = tempsum / 2;
 
-    engine.material_centPawns = cp_score_material_all;
-
-
-
-    //assert(engine.material_centPawns == engine.material_balance_cp);
-
+    //engine.material_centPawns = cp_score_material_all;
 
 
     assert(cp_score_material_avg >= 0);
@@ -2858,7 +2905,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
     int cp_score_position = 0;
     bool isOK;
-    int test;
+    int temp;
 
     //
     //  Now do the "positional" stuff. Note CRAZY_IVAN does minimal positional stuff.
@@ -2891,15 +2938,21 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
             case UNCLE_SHUMI:
             {
                 if (!NoMajorPiecesEnemy) {
-                    test = cp_score_positional_get_opening(color, nPhase);
-                    cp_score_position_temp += test;
+                    temp = (color == Color::WHITE)
+                        ? cp_score_positional_get_opening_cp_t<Color::WHITE>(nPhase)
+                        : cp_score_positional_get_opening_cp_t<Color::BLACK>(nPhase);
+                    cp_score_position_temp += temp;
 
-                    test = cp_score_positional_get_middle(color);
-                    cp_score_position_temp += test;
+                    temp = (color == Color::WHITE)
+                        ? cp_score_positional_get_middle_cp_t<Color::WHITE>(nPhase)
+                        : cp_score_positional_get_middle_cp_t<Color::BLACK>(nPhase);
+                    cp_score_position_temp += temp;
                 }
 
-                test = cp_score_positional_get_end(color, nPhase, NoMajorPiecesFriend, NoMajorPiecesEnemy);
-                cp_score_position_temp += test;
+                temp = (color == Color::WHITE)
+                    ? cp_score_positional_get_end_t<Color::WHITE>(nPhase, NoMajorPiecesFriend, NoMajorPiecesEnemy)
+                    : cp_score_positional_get_end_t<Color::BLACK>(nPhase, NoMajorPiecesFriend, NoMajorPiecesEnemy);
+                cp_score_position_temp += temp;
 
                 break;
             }
@@ -2914,37 +2967,16 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     return cp_score_adjusted;
 }
 
-// Runtime wrappers
-int MinimaxAI::evaluate_board(ShumiChess::Color for_color, ShumiChess::EvalPersons evp, bool isQuietPosition) {
-    if (for_color == ShumiChess::Color::WHITE)
-        return evaluate_board_t<ShumiChess::Color::WHITE>(evp, isQuietPosition);
-    else
-        return evaluate_board_t<ShumiChess::Color::BLACK>(evp, isQuietPosition);
-}
-
-int MinimaxAI::cp_score_positional_get_opening(ShumiChess::Color color, int nPhase) {
-    if (color == ShumiChess::Color::WHITE) return cp_score_positional_get_opening_cp_t<ShumiChess::Color::WHITE>(nPhase);
-    else                                    return cp_score_positional_get_opening_cp_t<ShumiChess::Color::BLACK>(nPhase);
-}
-
-int MinimaxAI::cp_score_positional_get_middle(ShumiChess::Color color) {
-    if (color == ShumiChess::Color::WHITE) return cp_score_positional_get_middle_cp_t<ShumiChess::Color::WHITE>();
-    else                                    return cp_score_positional_get_middle_cp_t<ShumiChess::Color::BLACK>();
-}
-
-int MinimaxAI::cp_score_positional_get_end(ShumiChess::Color color, int nPhase, bool f, bool e) {
-    if (color == ShumiChess::Color::WHITE) return cp_score_positional_get_end_t<ShumiChess::Color::WHITE>(nPhase, f, e);
-    else                                    return cp_score_positional_get_end_t<ShumiChess::Color::BLACK>(nPhase, f, e);
-}
-
 // Explicit template instantiations
 template int MinimaxAI::evaluate_board_t<ShumiChess::Color::WHITE>(ShumiChess::EvalPersons, bool);
 template int MinimaxAI::evaluate_board_t<ShumiChess::Color::BLACK>(ShumiChess::EvalPersons, bool);
 template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::WHITE>(int);
 template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::BLACK>(int);
-template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::WHITE>();
-template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::BLACK>();
+template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::WHITE>(int);
+template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::BLACK>(int);
 template int MinimaxAI::cp_score_positional_get_end_t<ShumiChess::Color::WHITE>(int, bool, bool);
 template int MinimaxAI::cp_score_positional_get_end_t<ShumiChess::Color::BLACK>(int, bool, bool);
+
+
 
 

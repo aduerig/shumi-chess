@@ -49,8 +49,8 @@ int main(int argc, char** argv) {
     cout << out << endl;
 
     // Decide on arguments
-    int time_to_use = 3500;
-    int depth_to_use = 8;
+    int time_to_use = 5000;
+    int depth_to_use = 9;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {

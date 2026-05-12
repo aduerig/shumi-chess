@@ -191,7 +191,7 @@ inline constexpr ShumiChess::Color opposite_color(const ShumiChess::Color color)
 }
 // Compile-time opposite color
 template<ShumiChess::Color c>
-inline constexpr ShumiChess::Color opposite_color_v =
+inline constexpr ShumiChess::Color opposite_color_t =
     (c == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
 
 

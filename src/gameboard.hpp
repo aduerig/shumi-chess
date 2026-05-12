@@ -19,13 +19,14 @@ namespace ShumiChess {
 ////////////////////////////////////////////////////////////////////////////////////////
 
 struct PInfo {
-    int file_count[8];          // Count of pawns on this file
-    ull file_bb[8];             // Bitboard of pawns on this file
+
+    uint8_t  file_count[8];     // Count of pawns on this file
     unsigned files_present;     // Bitmask of which files contain >= 1 pawn
 
-    //ull file_bb_3wide[8];       // Bitboard of pawns on this file, and the two neighboring files (only one neighbor if rook file)
-    Square advancedSq[8];          // Square index of the side’s most advanced pawn on that file (or NO_SQUARE)
-    Square rearSq[8];              // Square index of the side’s least advanced pawn on that file (or NO_SQUARE)
+    Square advancedSq[8];       // Square index of the side’s most advanced pawn on that file (or NO_SQUARE)
+    Square rearSq[8];           // Square index of the side’s least advanced pawn on that file (or NO_SQUARE)
+
+    uint8_t guard_files_23;     // bit f = 1 if file f has a pawn on relative rank 2/3
 };
 
 inline bool operator==(const PInfo& a, const PInfo& b) {
@@ -33,9 +34,8 @@ inline bool operator==(const PInfo& a, const PInfo& b) {
 
     for (int i = 0; i < 8; ++i) {
         if (a.file_count[i] != b.file_count[i]) return false;
-        if (a.file_bb[i]    != b.file_bb[i])    return false;
         if (a.advancedSq[i] != b.advancedSq[i]) return false;
-        //if (a.rearSq[i] != b.rearSq[i])         return false;
+        if (a.rearSq[i] != b.rearSq[i])         return false;
     }
     return true;
 }
@@ -44,8 +44,8 @@ inline bool operator==(const PInfo& a, const PInfo& b) {
 struct PawnFileInfo {
     PInfo p[2];   // [0] friendly, [1] enemy
 };
-#define friendlyP 0 
-#define enemyP    1
+// #define friendlyP 0 
+// #define enemyP    1
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -91,13 +91,14 @@ class GameBoard {
         ull en_passant_landing_bb = 0ULL;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
 
         uint64_t zobrist_key = 0;
+        uint64_t pawn_zobrist_key = 0;
 
         // move clocks
         uint8_t halfmove;  // Used only to apply the "fifty-move draw" rule in chess
         uint8_t fullmove;  // Used only for display purposes.
 
         // Constructors
-        explicit GameBoard();
+        GameBoard();
         explicit GameBoard(const std::string& fen_notation);
         void initGameBoard(void);   // Code common to both constructers 
 
@@ -105,6 +106,26 @@ class GameBoard {
         const std::string to_fen(bool bFullFEN=true);
 
         void set_zobrist();
+
+
+        uint8_t Bits_In[2][NUM_PIECES];
+        inline void compute_bits_in()
+        {
+            Bits_In[Color::WHITE][Piece::PAWN]   = bits_in(white_pawns);
+            Bits_In[Color::WHITE][Piece::KNIGHT] = bits_in(white_knights);
+            Bits_In[Color::WHITE][Piece::BISHOP] = bits_in(white_bishops);
+            Bits_In[Color::WHITE][Piece::ROOK]   = bits_in(white_rooks);
+            Bits_In[Color::WHITE][Piece::QUEEN]  = bits_in(white_queens);
+            Bits_In[Color::WHITE][Piece::KING]   = bits_in(white_king);
+
+            Bits_In[Color::BLACK][Piece::PAWN]   = bits_in(black_pawns);
+            Bits_In[Color::BLACK][Piece::KNIGHT] = bits_in(black_knights);
+            Bits_In[Color::BLACK][Piece::BISHOP] = bits_in(black_bishops);
+            Bits_In[Color::BLACK][Piece::ROOK]   = bits_in(black_rooks);
+            Bits_In[Color::BLACK][Piece::QUEEN]  = bits_in(black_queens);
+            Bits_In[Color::BLACK][Piece::KING]   = bits_in(black_king);
+        }
+
 
         template <Piece p>
         inline ull get_pieces_template() const {
@@ -295,15 +316,15 @@ class GameBoard {
 
         //bool is_king_in_check_new(Color color);
 
-        template<Color c> int two_bishops_cp_t() const;
+        template<Color c> int two_bishops_cp_t(int nPhase) const;
         template<Color c> int rook_connectiveness_cp_t() const;
         template<Color c> int rook_7th_rankness_cp_t();
         template<Color c> int bishop_blocked_on_both_original_squares_cp_t();
 
 
-        bool build_pawn_file_summary(Color c, PInfo& p);
-        template<Color c> bool build_pawn_file_summary_fast_t(PInfo& p);
-        template<Color c> bool build_pawn_file_summary_fast_enemy_t(PInfo& p);
+        template<Color c> bool build_pawn_file_summary_t(PInfo& p);
+        void build_pawn_summaries(PawnFileInfo& pawnFileInfo);
+        
         template<Color c> void refresh_pawn_summary_file_t(PInfo& pinfo, int file);
         template<Color c> void refresh_pawn_summary_files_t(PInfo& pinfo, const bool touched[8]);
         void refresh_pawn_summaries_after_move(const Move& move,
@@ -314,16 +335,19 @@ class GameBoard {
         void validate_row_col_masks_h1_0();
 
         template<Color c> bool any_piece_ahead_on_file_t(int sq, ull pieces) const;
+        template<Color c> inline bool enemy_pawn_ahead_on_file_t(int sq, Square enemyAdvancedSq) const;
         std::string sqToString(int f, int r) const; // H1=0, 
 
         // "Positional "pawn" routines.
-        template<Color c> int count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const;
-        template<Color c> int count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo);
         template<Color c> int count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
-        template<Color c> int count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes);
-        template<Color c> int count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed_pawns);
-        template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+        // template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+        //                                                     ull& holes_bb,
+        //                                                     int& holes_cp,
+        //                                                     ull& passed_pawns,
+        //                                                     int& passed_cp);
+
+        template<Color c> void count_pawn_holes_and_passed_pawns_cp_new_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
@@ -356,7 +380,7 @@ class GameBoard {
         template<Color c> double king_centerness_cp_t();
         
         template<Color c> double kings_far_apart_t();
-        int king_center_manhattan_dist(Color c);
+        template<Color c> int king_center_manhattan_dist_t();
         template<Color c> int is_knight_on_edge_cp_t();
         template<Color c> int development_opening_cp_t();
         template<Color c> bool hasNoMajorPieces_t();
@@ -375,10 +399,14 @@ class GameBoard {
         int rand_new();
 
         template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const;
-        template<Color c> int get_material_for_color_t();
+        template<Color c> int get_material_for_color_t(int& cp_pawns_only);
+        template<Color c> int get_material_for_color2_t(int& cp_pawns_only);
         template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
 
-        template<Color c> int count_guard_pawn_files_23_t(const PInfo& PInfoIn, int k_file) const;
+        template<Color c> int count_guard_pawn_files_23_new_t(const PInfo& PInfoIn, int k_file) const;
+        template<Color c> int rook_endgame_keep_rooks_when_down_cp_t();
+        template<Color c> int opposite_bishops_cp_t(Score material_balance_abs);
+
 
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);
@@ -521,6 +549,7 @@ class GameBoard {
         static constexpr int square_f3 = 18;   // e3 - 1
         static constexpr int square_e3 = 19;   // e4 - 8
         static constexpr int square_d3 = 20;   // d4 - 8
+                static constexpr int square_c3 = 21;   // e4 - 8
 
         static constexpr int square_f4 = 26;   // e4 - 1
         static constexpr int square_e4 = 27;
@@ -535,6 +564,7 @@ class GameBoard {
         static constexpr int square_f6 = 42;   // f4 + 16
         static constexpr int square_e6 = 43;   // e4 + 16
         static constexpr int square_d6 = 44;   // d4 + 16
+                static constexpr int square_c6 = 45;   // c4 + 16
 
         static constexpr int square_g7 = 49;
         static constexpr int square_f7 = 50;
@@ -558,16 +588,23 @@ class GameBoard {
 
         // "advanced" center squares
         static constexpr ull squares_e6_d6 = (1ull<<square_e6) | (1ull<<square_d6); 
+        static constexpr ull squares_e7_d7 = (1ull<<square_e7) | (1ull<<square_d7); 
         static constexpr ull squares_e3_d3 = (1ull<<square_e3) | (1ull<<square_d3); 
+        static constexpr ull squares_e2_d2 = (1ull<<square_e2) | (1ull<<square_d2); 
+        static constexpr ull squares_advanced_centerW = squares_e6_d6 | squares_e7_d7; 
+        static constexpr ull squares_advanced_centerB = squares_e3_d3 | squares_e2_d2; 
 
         // "flanking" center squares
+        static constexpr ull squares_f3_c3 = (1ull<<square_f3) | (1ull<<square_c3); 
         static constexpr ull squares_f4_c4 = (1ull<<square_f4) | (1ull<<square_c4); 
         static constexpr ull squares_f5_c5 = (1ull<<square_f5) | (1ull<<square_c5);   
-
+        static constexpr ull squares_f6_c6 = (1ull<<square_f6) | (1ull<<square_c6);   
+        static constexpr ull squares_flanking_centerW = squares_f5_c5 | squares_f6_c6; 
+        static constexpr ull squares_flanking_centerB = squares_f3_c3 | squares_f4_c4; 
         Weights wghts;
 
-        PInfo white_pawn_info;
-        PInfo black_pawn_info;
+        // PInfo white_pawn_info;
+        // PInfo black_pawn_info;
 
         // Used only in crazy Ivan.
         int CENTER_SCORE[64] = {

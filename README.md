@@ -25,20 +25,21 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 ## current issue log 
     Not prioritized. No particular order to them. All issues classified as either: a. Bug, or b. Failure (to chess requirements), or c. Sloth (slowdown) or d. Feature. ~~Crossed out~~ items are done, but under testing.
 
+  * Bug. Nhits utput for TT2 wrong. WHat is this, is the TT2 running? Is this just debug?
   * Bug: Get FEN button gives scrambled result when computer player is playing. Maybe this is OK, The scrambled FEN is seen both in the FEN box and the terminal of VSC. Probably just needs screening. 
-  * Sloth: Move structure is too big (32 bytes). For example look at en_passant_rights, or .tp and .from.
-  * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG".
+  * Sloth: Move structure is too big (11 bytes). More could be saved condesing flags. But overhead coding/decoding.
+  * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG". This is really no problem to anyone.
   * Bug: Forces promotions for the human to be to a queen. Problem with the interface. Need a new feature here.
   * Feature: Can't seem to get evaluator to want to trade when it is ahead.
-  * Feature: No ability to truely randomize response without ruining play. This is much harder than it sounds. RANDOMIZING_MOVES does not work at all to do that, it just does a small delta.
-  * Bug: "Some time repetition" (when playing in the game). Over leveling, runs off to the 100 level trap. Only seen in autoplay. Not always seen, not frequent. No error, just looks strange. Evidence shows that this comes from a king leaving the board. This condition not handled well.
   * Bug: Random AI seems broken (she stalls). This must be a problem caused by the threading, the threading somehow excludes the randomAI as opposed to minimaxAI move. Maybe easy change See get_ai_move_threaded().
-  * Sloth: Scores still handles as double, outside of evaluation. This is a more serious problem than it appears, as the TT/TT2 has to convert and unconvert (it stores in centipawns like it should, and has to). I know, just double multiplies and divides, but All scores should be int, in centipawns unless its display. Big job, but not hard, some gain in speed and cleaner code for sure. ig obstacle here is that alpha and beta are still double. Can we change these to centipawns?
-  * ~~Bug: Moveing Thread occasionlly hangs after 12-25 moves or so, in long chess game. Only way out is to cut/paste the fen into a restarted app. Then its all fine, for 20 or so moves more. Tedius. Would be nice to have a "load last fen" button, but it would have to be stored in a file. What a pain. This is rare, and does not seem to happen in autoplay.~~
-  * Bug: "Windows Close box" fails, upper left corner of window hangs the thread. Bug In Interface.
-  * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. Its now 20, for testing only.
-  * Sloth: No true Transposition table (TT2) implemented. This is a problem in MinimaxAI. Comment: Wrong, its "slightly" implemented. Its used for repeat position ID, but not for move sorting. The current transposition table stores only positions, and not moves also. 
-  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + ~~History heuristics~~, aspiration, ~~SEE~~). These changes do not rely on TT2 or transposition tables. This is a problem in MinimaxAI. Aspiration is coded, but not tested at all, disabled now.
+  * Sloth: Scores still handles as double, outside of evaluation. This is a more serious problem than it appears, as the TT/TT2 has to convert and unconvert (it stores in centipawns like it should, and has to). I know, just double multiplies and divides, but All scores should be int, in centipawns unless its display. Big job, but not hard, some gain in speed and cleaner code for sure. Big obstacle here is that alpha and beta are still double. Can we change these to centipawns? How do we test the change?
+  * Bug: "Windows Close box" (X) fails, upper right corner of window hangs the thread. Bug In Interface.
+  * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. I dont care. It makes games too slow.
+  * Bug  TT2 still burp2s after dozens of games. 
+  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + ~~History heuristics~~, aspiration, ~~SEE~~). These changes do not rely on TT2 or transposition tables. This is a problem in MinimaxAI. But how will the TT@ be effected? WAIT. JUST RENAME ALL "double" to "Score" its
+  just a refactor and it has to help. There is no way we need double as opposed to float!
+  * Feature: Aspiration is coded, but not tested at all, disabled now. This is only a speedup, no improveent in play. Does it ruin the TT2?
+  * Feature: No pruning done. At least "delta pruning", maybe should be done, but, coding but never tested, but perhaps this destroys the TT2? Perhaps it destoys creativily. 
   * Failure: Fifty move rule, and 3 time rep, technically need a player to call it. Here the computer just calls it when it sees it. This is normal for chess engines and will never be fixed. 
   * Failure: bitboards_to_algebriac() does not postfix checks with a "+". The function is debug for human consumption only.
   * Failure: Trading motivator in eval only looks at pieces, not pawns.
@@ -51,10 +52,18 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 * See [brainStorm](doc/brainStorm.md) for more future directions.
 
 ## recommended usage (for python scripts/run_tests.py -dD and -tT)
-  fast 5 minute play: -t1000 -d7     (also for autoplay of computers)
-  for 20 minute game: -t1500 -d8
-  for long game     : -t2000 -d9    long game
 
+As to app buttons. Flow follows from top to bottom. Always follow this order: flip board (optional), choose players, reset FEN (optional), gets Shumi to start thinking of a move, Wake up to force a move (Shumi plays worse), choose auto play (optional). After game you can optionaly play Export FEN (position), or Export PGN (game), for analysis. Do not use the Windows "X", just hit ESC key.
+
+As to options: There are three: -d, -t, and -r. All must have an integer after them.
+  bullet play use:        -d5 or -d6, and     -t200 to -t500 
+  fast 5 minute play use: -d7,        and     -t3000    (plays even with PRD)
+  for 15 minute game:     -d8,        and     -t5000
+  for 60 minute game:     -d9         and     -t9000
+Default -d is 8, default -t is 3000.
+Use -r only to force it to chose randomly from different moves within a certain delta For "-rn" it applies only to the first n moves. Slows Shumi down, and worsens play. But first move or two who cares, all we want is variety. Must use -r0 for repeatible play. Use cautiosly. Default=2.
+
+Old stuff related to options:
   or you can use "-wd", "-wt", "bd", or "bt", to set the t and d arguments for one side only (black or white)
   You can also use "-rN" where N is some integer like 2, when it will play N "random moves" in a row. This move is randomly
   chosen as one of the best withen a small delta. Watch out, these "random moves" reduce ability. Also of note is the "f0xF" feature for a hexidecimal number F (see Features.hpp for constants).

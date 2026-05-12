@@ -196,41 +196,41 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     wghts.multiply_weights(VOLUME_CONTROL);
 
 
-    build_pawn_file_summary(Color::WHITE, white_pawn_info);
-    build_pawn_file_summary(Color::BLACK, black_pawn_info);
+    compute_bits_in();
+
 }
 
 void GameBoard::set_zobrist() {
     zobrist_key = 0;
-    // cout << "GameBoard::setting zobrist..." << endl;
+    pawn_zobrist_key = 0;
+
     for (int color_int = 0; color_int < 2; color_int++) {
         Color color = static_cast<Color>(color_int);
+
         for (int j = 0; j < 6; j++) {
             Piece piece_type = static_cast<Piece>(j);
             ull bitboard = get_pieces(color, piece_type);
+
             while (bitboard) {
                 Square square = utility::bit::lsb_and_pop_to_square(bitboard);
-                zobrist_key ^= zobrist_piece_square[piece_type + color * 6][square];
+                int zob_index = piece_type + color * 6;
+
+                zobrist_key ^= zobrist_piece_square[zob_index][square];
+
+                if (piece_type == Piece::PAWN) {
+                    pawn_zobrist_key ^= zobrist_piece_square[zob_index][square];
+                }
             }
         }
     }
 
-    // if (st->epSquare != SQ_NONE)
-    //     st->key ^= Zobrist::enpassant[file_of(st->epSquare)];
-
     if (turn == Color::BLACK) {
         zobrist_key ^= zobrist_side;
     }
-
-    // cout << "zobrist key starts at: " << zobrist_key << endl;
-    // st->key ^= Zobrist::castling[st->castlingRights];
 }
-
 //
 // fields for fen are:
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
-
-
 const string GameBoard::to_fen(bool bFullFEN) {
 
     //cout << "\x1b[34mto_fen!\x1b[0m" << endl;
@@ -661,11 +661,11 @@ bool GameBoard::insufficient_material_simple() {
     if (majors) return false;
 
     // 3) Count total minor pieces (knights + bishops), both colors
-    int n_knightsW = bits_in(white_knights);
-    int n_knightsB = bits_in(black_knights); 
+    int n_knightsW = Bits_In[ShumiChess::WHITE][ShumiChess::KNIGHT];
+    int n_knightsB = Bits_In[ShumiChess::BLACK][ShumiChess::KNIGHT]; 
 
-    int n_bishopsW = bits_in(white_bishops);
-    int n_bishopsB = bits_in(black_bishops); 
+    int n_bishopsW = Bits_In[ShumiChess::WHITE][ShumiChess::BISHOP];
+    int n_bishopsB = Bits_In[ShumiChess::BLACK][ShumiChess::BISHOP]; 
 
     int n_piecesW = n_knightsW + n_bishopsW;
     int n_piecesB = n_knightsB + n_bishopsB;
@@ -702,7 +702,7 @@ std::string GameBoard::sqToString(int f, int r) const
 }
 
 
-// ---------- build_pawn_file_summary_fast_t ----------
+// ---------- build_pawn_file_summary_t ----------
 //
 // This summarizes where our pawns are by file, without mutating any bitboards.
 //
@@ -712,8 +712,6 @@ std::string GameBoard::sqToString(int f, int r) const
 // Outputs:
 //   file_count[8]   Number of friendly pawns on each file (0..7 in h1=0 indexing:
 //                   f = s % 8 => 0=H ... 7=A).
-//   file_bb[8]      Bitboard of friendly pawns (restricted to each file).
-//                   (file_bb[f] contains all pawns whose square has file index f.)
 //   files_present   Bitmask of which files contain >= 1 friendly pawn.
 //                   Bit f is set iff file_count[f] > 0.
 //   advancedSq[8]   the square index of the side’s most advanced pawn on that file (or NO_SQUARE)
@@ -722,23 +720,30 @@ std::string GameBoard::sqToString(int f, int r) const
 //   true  if the side has at least one pawn
 //   false if the side has no pawns (caller can skip pawn-structure work).
 //
-template<Color c>
-bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
+template<Color c> bool GameBoard::build_pawn_file_summary_t(PInfo& pinfo)
 {
     for (int i = 0; i < 8; ++i) {
         pinfo.file_count[i] = 0;
-        pinfo.file_bb[i] = 0ULL;
         pinfo.advancedSq[i] = NO_SQUARE;
         pinfo.rearSq[i] = NO_SQUARE;
     }
+
     pinfo.files_present = 0;
+    pinfo.guard_files_23 = 0;
 
     const ull Pawns = get_pieces_template<Piece::PAWN, c>();
     if (!Pawns) return false;
 
+    ull goodRanksMask;
+    if constexpr (c == Color::WHITE) goodRanksMask = row_masks[ROW_2] | row_masks[ROW_3];
+    else goodRanksMask = row_masks[ROW_7] | row_masks[ROW_6];
+
     for (int f = 0; f < 8; ++f) {
         ull bb = (Pawns & col_masksHA[f]);
-        pinfo.file_bb[f] = bb;
+
+        if (bb & goodRanksMask) {
+            pinfo.guard_files_23 |= (uint8_t)(1u << f);
+        }
 
         pinfo.file_count[f] = bits_in(bb);
 
@@ -758,84 +763,8 @@ bool GameBoard::build_pawn_file_summary_fast_t(PInfo& pinfo)
     return true;
 }
 
-//
-// NOTE: for speed, advancedSq and rearSq are not filled out.
-template<Color c>
-bool GameBoard::build_pawn_file_summary_fast_enemy_t(PInfo& pinfo)
-{
-    // for (int i = 0; i < 8; ++i)
-    // {
-    //     pinfo.file_count[i] = 0;
-    //     pinfo.file_bb[i] = 0ULL;
-    //     //pinfo.advancedSq[i] = NO_SQUARE;
-    //     //pinfo.rearSq[i] = NO_SQUARE;
-    // }
-    pinfo.files_present = 0;
 
-    const ull Pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!Pawns) return false;
 
-    for (int f = 0; f < 8; ++f) {
-        const ull bb = (Pawns & col_masksHA[f]);
-        pinfo.file_bb[f] = bb;
-
-        pinfo.file_count[f] = bits_in(bb);
-
-        if (!bb) continue;
-
-        pinfo.files_present |= (1u << f);
-
-        // if constexpr (c == Color::WHITE) {
-        //     pinfo.advancedSq[f] = utility::bit::bitboard_to_highest_square_fast(bb);
-        //     pinfo.rearSq[f]     = utility::bit::bitboard_to_lowest_square_fast(bb);
-        // } else {
-        //     pinfo.advancedSq[f] = utility::bit::bitboard_to_lowest_square_fast(bb);
-        //     pinfo.rearSq[f]     = utility::bit::bitboard_to_highest_square_fast(bb);
-        // }
-    }
-
-    return true;
-}
-
-bool GameBoard::build_pawn_file_summary(Color c, PInfo& pinfo) {
-
-    // Initialize structure elements
-    for (int i = 0; i < 8; ++i) 
-    { pinfo.file_count[i] = 0; pinfo.file_bb[i] = 0ULL; pinfo.advancedSq[i] = NO_SQUARE; pinfo.rearSq[i] = NO_SQUARE; }
-    pinfo.files_present = 0;
-
-    const ull Pawns = get_pieces_template<Piece::PAWN>(c);
-    if (!Pawns) return false;     
-
-    ull tmp = Pawns;
-    while (tmp) {
-        Square s = utility::bit::lsb_and_pop_to_square(tmp);
-        //assert(Pawns & (1ULL << s));
-
-        const int f = s & 7;     // s % 8;
-        const int r = s >> 3;    // s >> 3
-
-        ++pinfo.file_count[f];
-
-        pinfo.file_bb[f] |= (1ULL << s);
-        pinfo.files_present |= (1u << f);
-        
-        if (pinfo.advancedSq[f] == NO_SQUARE) {
-            pinfo.advancedSq[f] = s;
-        } else {
-            int prev_r = pinfo.advancedSq[f] >> 3;
-            bool isMoreAdv = (c == Color::WHITE) ? (r > prev_r) : (r < prev_r);
-
-            if (isMoreAdv) pinfo.advancedSq[f] = s;
-        }
-    }
-
-    //ull union_files = 0ULL;
-    //for (int i = 0; i < 8; ++i) union_files |= pinfo.file_bb[i];
-    //assert(union_files == Pawns);
-
-    return true;
-}
 void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
 {
     if (a.files_present != b.files_present) {
@@ -846,11 +775,6 @@ void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
     for (int i = 0; i < 8; ++i) {
         if (a.file_count[i] != b.file_count[i]) {
             printf("PInfo mismatch: file_count[%d] a=%d b=%d\n", i, a.file_count[i], b.file_count[i]);
-            //return;
-        }
-        if (a.file_bb[i] != b.file_bb[i]) {
-            printf("PInfo mismatch: file_bb[%d] a=0x%016llX b=0x%016llX\n", i,
-                   (unsigned long long)a.file_bb[i], (unsigned long long)b.file_bb[i]);
             //return;
         }
         if (a.advancedSq[i] != b.advancedSq[i]) {
@@ -866,6 +790,15 @@ void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
     //printf("PInfo mismatch: (unexpected) no field differed\n");
 }
 
+
+void GameBoard::build_pawn_summaries(PawnFileInfo& pawnFileInfo)
+{
+    build_pawn_file_summary_t<Color::WHITE>(pawnFileInfo.p[Color::WHITE]);
+    build_pawn_file_summary_t<Color::BLACK>(pawnFileInfo.p[Color::BLACK]);
+}
+
+//
+//  for incremental construction of pawn summaries.
 template<Color c>
 void GameBoard::refresh_pawn_summary_file_t(PInfo& pinfo, int file)
 {
@@ -875,7 +808,6 @@ void GameBoard::refresh_pawn_summary_file_t(PInfo& pinfo, int file)
     const ull pawns = get_pieces_template<Piece::PAWN, c>();
     const ull bb = pawns & col_masksHA[file];
 
-    pinfo.file_bb[file] = bb;
     pinfo.file_count[file] = bits_in(bb);
 
     if (bb) {
@@ -1297,30 +1229,21 @@ bool GameBoard::is_king_highest_piece() {
 //
 // Minimum Manhattan distance from the friendly king to the 2×2 center box
 // center squares: (3,3),(4,3),(3,4),(4,4)  (i.e., d4,e4,d5,e5 in normal coords)
-//
-// Returns 0..6 on an 8×8 board.
-//
-int GameBoard::king_center_manhattan_dist(Color c)
+// Range: 0..6 (max occurs from corner squares like a1/h1/a8/h8).
+template<Color c> int GameBoard::king_center_manhattan_dist_t()
 {
     int iReturn;
     assert(white_king != 0ULL);
     assert(black_king != 0ULL);
 
-    ull kbb = (c == ShumiChess::WHITE) ? white_king : black_king;
-
-    // king square 0..63 (non-mutating if you have a non-pop lsb routine; otherwise copy is fine)
-    Square ks = utility::bit::lsb_and_pop_to_square(kbb);
+    ull kbb = get_pieces_template<Piece::KING,c>();
+    Square ks = utility::bit::bitboard_to_lowest_square_fast(kbb);
 
     int f = ks & 7;
     int r = ks >> 3;
 
-    int dx1 = f - 3; if (dx1 < 0) dx1 = -dx1;
-    int dx2 = f - 4; if (dx2 < 0) dx2 = -dx2;
-    int dy1 = r - 3; if (dy1 < 0) dy1 = -dy1;
-    int dy2 = r - 4; if (dy2 < 0) dy2 = -dy2;
-
-    int dx = (dx1 < dx2) ? dx1 : dx2;
-    int dy = (dy1 < dy2) ? dy1 : dy2;
+    int dx = (f < 3) ? (3 - f) : (f > 4 ? f - 4 : 0);
+    int dy = (r < 3) ? (3 - r) : (r > 4 ? r - 4 : 0);
 
     iReturn = dx + dy;
     assert(iReturn <= 6);
@@ -1665,7 +1588,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
     if (victim == Piece::NONE) {
         //assert(0);
-        return 0;  // ignore en passant etc. for SEE for now
+        return 0;  // ignore en passant etc. for SEE for now. Note: what is this?
     }
 
     // Identify the victim on 'to_sq'
@@ -2558,8 +2481,6 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 
     b_has_castled = bHasCastled_fake_t<c>(k_rank, k_file);
 
-
-
     int cpWght = wghts.GetWeight(HAS_CASTLED);
 
     if (b_has_castled) {
@@ -2574,12 +2495,9 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         }
 
         // Take guard files into account
-        int nGuardPawns = count_guard_pawn_files_23_t<c>(PInfoIn, k_file);
-
-        // if (global_debug_flag) {
-        //     printf ("%d count_guard_pawn_files_23_t %d\n", c, nGuardPawns);
-        // }
-
+        //int nGuardPawns2 = count_guard_pawn_files_23_t<c>(PInfoIn, k_file);
+        int nGuardPawns = count_guard_pawn_files_23_new_t<c>(PInfoIn, k_file);
+        //assert(nGuardPawns==nGuardPawns2);
 
         if (nGuardPawns==3) cpWght = cpWght;
         else if (nGuardPawns==2) cpWght = cpWght * 2 / 3;
@@ -2600,7 +2518,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         i_can_castleNumer += (black_castle_rights & CASTLE_QUEEN) ? 1 : 0;
     }
 
-    // Make "1" "3/2"
+    // Make "1" (can castle one side)"3/2"
     if (i_can_castleNumer==1) {
         i_can_castleNumer=3;
         i_can_castleDenom=2;
@@ -2610,12 +2528,13 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 
 
 
-    int icode = (b_has_castled ? cpWght : 0) + cpWghtB*i_can_castleNumer/i_can_castleDenom;
+    int icode = (b_has_castled ? cpWght : 0) + (cpWghtB*i_can_castleNumer)/i_can_castleDenom;
 
     int final_cp;
 
     if      (phase == GamePhase::OPENING) final_cp = icode;
-    else if (phase == GamePhase::MIDDLE_EARLY) final_cp = icode/2;
+    else if (phase == GamePhase::MIDDLE_EARLY) final_cp = (2*icode)/3;
+    else if (phase == GamePhase::MIDDLE) final_cp = icode/2;
     else final_cp = 0;
 
     return final_cp;
@@ -2658,18 +2577,15 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 // Returns:
 //   0..3   number of guard files that still have at least one pawn
 //          on relative rank 2/3 for this side.
-template<Color c>
-int GameBoard::count_guard_pawn_files_23_t(const PInfo& PInfoIn, int k_file) const
+
+template<Color c> int GameBoard::count_guard_pawn_files_23_new_t(const PInfo& PInfoIn, int k_file) const
 {
     int file0;
     int file1;
     int file2;
-    ull goodRanksMask;
-    int nGuardFiles = 0;
 
-    //assert(5 == col_masksHA[ColHA::COL_C]);
     if (k_file >= COL_C) {
-        // King on a/b side -> guard files a,b,c
+        // King on a/b/c side -> guard files a,b,c
         file0 = COL_A;
         file1 = COL_B;
         file2 = COL_C;
@@ -2681,41 +2597,24 @@ int GameBoard::count_guard_pawn_files_23_t(const PInfo& PInfoIn, int k_file) con
         file2 = COL_H;
     }
     else {
-        // King not clearly on one side or the other.
         return 0;
     }
 
-    if constexpr (c == Color::WHITE) {
-        goodRanksMask = row_masks[ROW_2] | row_masks[ROW_3];
-    }
-    else {
-        goodRanksMask = row_masks[ROW_7] | row_masks[ROW_6];
-    }
+    int nGuardFiles = 0;
 
-    if (PInfoIn.file_bb[file0] & goodRanksMask) {
-        ++nGuardFiles;
-    }
-
-    if (PInfoIn.file_bb[file1] & goodRanksMask) {
-        ++nGuardFiles;
-    }
-
-    if (PInfoIn.file_bb[file2] & goodRanksMask) {
-        ++nGuardFiles;
-    }
+    if (PInfoIn.guard_files_23 & (1u << file0)) ++nGuardFiles;
+    if (PInfoIn.guard_files_23 & (1u << file1)) ++nGuardFiles;
+    if (PInfoIn.guard_files_23 & (1u << file2)) ++nGuardFiles;
 
     return nGuardFiles;
 }
 
-
-
-// ---------- get_material_for_color_t ----------
 template<Color c>
-int GameBoard::get_material_for_color_t() {
+int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     int cp_score_mat_temp = 0;
-    int cp_pawns_only_temp = bits_in(get_pieces_template<Piece::PAWN, c>()) * centipawn_score_of(Piece::PAWN);
+    cp_pawns_only = bits_in(get_pieces_template<Piece::PAWN, c>()) * centipawn_score_of(Piece::PAWN);
 
-    cp_score_mat_temp += cp_pawns_only_temp;
+    cp_score_mat_temp += cp_pawns_only;
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::KNIGHT, c>()) * centipawn_score_of(Piece::KNIGHT);
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::BISHOP, c>()) * centipawn_score_of(Piece::BISHOP);
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::ROOK, c>())   * centipawn_score_of(Piece::ROOK);
@@ -2725,6 +2624,20 @@ int GameBoard::get_material_for_color_t() {
     return cp_score_mat_temp;
 }
 
+template<Color c>
+int GameBoard::get_material_for_color2_t(int& cp_pawns_only) {
+    int cp_score_mat_temp = 0;
+
+    cp_pawns_only = Bits_In[c][Piece::PAWN] * centipawn_score_of(Piece::PAWN);
+
+    cp_score_mat_temp += cp_pawns_only;
+    cp_score_mat_temp += Bits_In[c][Piece::KNIGHT] * centipawn_score_of(Piece::KNIGHT);
+    cp_score_mat_temp += Bits_In[c][Piece::BISHOP] * centipawn_score_of(Piece::BISHOP);
+    cp_score_mat_temp += Bits_In[c][Piece::ROOK]   * centipawn_score_of(Piece::ROOK);
+    cp_score_mat_temp += Bits_In[c][Piece::QUEEN]  * centipawn_score_of(Piece::QUEEN);
+
+    return cp_score_mat_temp;
+}
 // Given a single square, returns a count of the pawns attacking that square.
 // Note: is en passant considered here?
 template<Color c>
@@ -2746,10 +2659,11 @@ int GameBoard::pawns_attacking_square_t(int sq) {
     return bits_in(origins & pawns);
 }
 //
-// Given a multiple squares, returns a count of the pawns attacking those squares.
+// Given a multiple squares bitboard, 
+//  returns a count of : distinct pawns of color c that attack at least one square in bitBoard.
 // Warning: this only works if none of the squares in the bitboard can be attacked by the same pawn.
-// That is, if ypu place a pawn enywhere on the board, it wont attack more than one square in the passed squares.
-// otherwise it will undercount.
+//      That is, if ypu place a pawn anywhere on the board, it wont attack more than one square in the passed squares.
+//      otherwise it will undercount.
 template<Color c>
 int GameBoard::pawns_attacking_squares_t(ull bitBoard) {
 
@@ -2815,9 +2729,9 @@ int GameBoard::pawns_attacking_center_squares_cp_fast_t()
 
         sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_squares_t<c>(squares_e4_d4);
 
-        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_squares_t<c>(squares_e6_d6);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_squares_t<c>(squares_advanced_centerW);
 
-        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_squares_t<c>(squares_f5_c5);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_squares_t<c>(squares_flanking_centerW);
 
     } else {
 
@@ -2825,9 +2739,9 @@ int GameBoard::pawns_attacking_center_squares_cp_fast_t()
 
         sum +=wghts.GetWeight(PAWN_ON_CTR_DEF) * pawns_attacking_squares_t<c>(squares_e5_d5);
 
-        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_squares_t<c>(squares_e3_d3);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_CTR) * pawns_attacking_squares_t<c>(squares_advanced_centerB);
 
-        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_squares_t<c>(squares_f4_c4);
+        sum +=wghts.GetWeight(PAWN_ON_ADV_FLK) * pawns_attacking_squares_t<c>(squares_flanking_centerB);
 
     }
 
@@ -2900,14 +2814,24 @@ int GameBoard::bishops_attacking_center_squares_cp_t()
     return (itemp*wghts.GetWeight(BISHOP_ON_CTR));
 }
 
-// ---------- two_bishops_cp_t ----------
+// ---------- two bishops (2 bishops)
 template<Color c>
-int GameBoard::two_bishops_cp_t() const {
-    ull friendlyBishops = get_pieces_template<Piece::BISHOP, c>();
-    int bishops = bits_in(friendlyBishops);
+int GameBoard::two_bishops_cp_t(int nPhase) const {
+    //ull friendlyBishops = get_pieces_template<Piece::BISHOP, c>();
+    //int bishops2 = bits_in(friendlyBishops);
+    int bishops = Bits_In[c][Piece::BISHOP];
+    //assert(bishops==bishops2);
 
-    if (bishops >= 2) return wghts.GetWeight(TWO_BISHOPS);
-    return 0;
+    if (bishops < 2) return 0;
+
+    int final_cp = 0;
+    if (nPhase < GamePhase::MIDDLE)  return final_cp;
+
+    int weight = wghts.GetWeight(TWO_BISHOPS);
+    if (nPhase == GamePhase::MIDDLE) final_cp = (2*weight)/3;
+    if (nPhase > GamePhase::MIDDLE)  final_cp = weight;
+
+    return final_cp;
 }
 
 // ---------- bishop_pawn_pattern_cp_t ----------
@@ -2977,13 +2901,22 @@ int GameBoard::rook_connectiveness_cp_t() const
 }
 
 // ---------- rooks_file_status_cp_t ----------
+// Evaluates rook placement by file openness and alignment with the enemy king.
+// File classification:
+//   - Open file      (no friendly or enemy pawns):        file_mult = 2
+//   - Semi-open file (no friendly pawns, enemy pawns):    file_mult = 1
+//   - Closed file    (friendly pawn present):             ignored
+//
+//   - Additional bonus if enemy king is on the same file:
+//         KING_ON_FILE * file_mult * (# rooks on file)
+//
 template<Color c>
 int GameBoard::rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE)
 {
     const ull rooks = get_pieces_template<Piece::ROOK, c>();
     if (!rooks) return 0;
 
-    constexpr Color enemy = utility::representation::opposite_color_v<c>;
+    constexpr Color enemy = utility::representation::opposite_color_t<c>;
     const ull enemy_king = get_pieces_template<Piece::KING, enemy>();
 
     int score_cp = 0;
@@ -3025,13 +2958,27 @@ int GameBoard::rook_7th_rankness_cp_t()
     constexpr int seventh_rank = (c == Color::WHITE) ? 6 : 1;
     constexpr int eight_rank   = (c == Color::WHITE) ? 7 : 0;
 
-    int score_cp = 0;
+    int n7 = 0;
+    int n8 = 0;
+
     while (bigPieces) {
         Square s = utility::bit::lsb_and_pop_to_square(bigPieces);
         int rnk = s >> 3;
-        if (rnk == seventh_rank) score_cp += wghts.GetWeight(MAJOR_ON_RANK7);
-        if (rnk == eight_rank) score_cp += wghts.GetWeight(MAJOR_ON_RANK8);
+        if (rnk == seventh_rank) n7++;
+        if (rnk == eight_rank) n8++;
     }
+
+    int score_cp = 0;
+    if (n7 > 0) {
+        score_cp += n7 * wghts.GetWeight(MAJOR_ON_RANK7);
+        if (n7 >= 2) score_cp += wghts.GetWeight(MAJOR_ON_RANK7);
+    }
+
+    if (n8 > 0) {
+        score_cp += n8 * wghts.GetWeight(MAJOR_ON_RANK8);
+        if (n8 >= 2) score_cp += wghts.GetWeight(MAJOR_ON_RANK8);
+    }
+
     return score_cp;
 }
 
@@ -3054,71 +3001,19 @@ bool GameBoard::any_piece_ahead_on_file_t(int sq, ull file_pieces) const
     return (file_pieces & ranks_ahead) != 0ULL;
 }
 
-// ---------- count_isolated_pawns_cp_t ----------
-template<Color c>
-int GameBoard::count_isolated_pawns_cp_t(const PawnFileInfo& pawnInfo) const {
+template<Color c> inline bool GameBoard::enemy_pawn_ahead_on_file_t(int sq, Square enemyAdvancedSq) const
+{
+    if (enemyAdvancedSq == NO_SQUARE) return false;
 
-    int isolated_cp = 0;
-    for (int file = 0; file < 8; ++file) {
-        int k = pawnInfo.p[friendlyP].file_count[file];
-        if (k == 0) continue;
-
-        bool left  = (file < 7) && (pawnInfo.p[friendlyP].files_present & (1u << (file + 1)));
-        bool right = (file > 0) && (pawnInfo.p[friendlyP].files_present & (1u << (file - 1)));
-
-        if (!left && !right) {
-            int this_cp;
-
-            if ((file==0)||(file==7)) {
-                this_cp = (k*wghts.GetWeight(ISOLANI_ROOK));
-            } else {
-                this_cp = (k*wghts.GetWeight(ISOLANI));
-            }
-
-            if (get_major_pieces<c>()) {
-                // only one penalty for open file, even if multuple isolated pawns.
-                bool is_blocked;
-                int sq = pawnInfo.p[friendlyP].advancedSq[file];
-                if (sq != NO_SQUARE) {
-                    // if no pawns between isolani and queening square, penalize more
-                    is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfo.p[enemyP].file_bb[file]);
-                    if (!is_blocked) this_cp += wghts.GetWeight(ISOLANI_OPEN_FILE);
-                }
-            }
-
-            isolated_cp += this_cp;
-        }
+    if constexpr (c == Color::WHITE) {
+        // enemy pawn closer to promotion square than us
+        return enemyAdvancedSq > sq;
     }
-
-    return isolated_cp;
+    else {
+        return enemyAdvancedSq < sq;
+    }
 }
 
-
-// ---------- count_doubled_pawns_cp_t ----------
-template<Color c>
-int GameBoard::count_doubled_pawns_cp_t(const PawnFileInfo& pawnInfo) {
-
-    int total = 0;
-
-    for (int file = 0; file < 8; ++file) {
-
-        int k = pawnInfo.p[friendlyP].file_count[file];
-        if (k < 2) continue;
-
-        int weight = (file == 0 || file == 7) ? wghts.GetWeight(DOUBLED_ROOK) : wghts.GetWeight(DOUBLED);
-
-        int extras = (k - 1);
-        int this_cp = extras * weight;
-
-        if (pawnInfo.p[enemyP].file_count[file] == 0) {
-            this_cp += (extras * wghts.GetWeight(DOUBLED_OPEN_FILE));
-        }
-
-        total += this_cp;
-    }
-
-    return total;
-}
 
 // ---------- count_isolated_and_doubled_pawns_cp_t ----------
 template<Color c>
@@ -3148,7 +3043,11 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, con
                 const int sq = pawnInfoF.advancedSq[file];
                 if (sq != NO_SQUARE) {
                     // if no enemy pawns ahead on file toward queening square, penalize more
-                    const bool is_blocked = any_piece_ahead_on_file_t<c>(sq, pawnInfoE.file_bb[file]);
+                
+                    //const bool is_blocked2 = any_piece_ahead_on_file_t<c>(sq, pawnInfoE.file_bb[file]);
+                    const bool is_blocked = enemy_pawn_ahead_on_file_t<c>(sq, pawnInfoE.rearSq[file]);
+                    //assert(is_blocked==is_blocked2);
+
                     if (!is_blocked) this_cp += wghts.GetWeight(ISOLANI_OPEN_FILE);
                 }
             }
@@ -3162,12 +3061,10 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, con
             const int extras = (k - 1);
             int this_cp = extras * (b_rook_file ? wghts.GetWeight(DOUBLED_ROOK)
                                                 : wghts.GetWeight(DOUBLED));
-
             if (pawnInfoE.file_count[file] == 0)
             {
                 this_cp += extras * wghts.GetWeight(DOUBLED_OPEN_FILE);
             }
-
             total_cp += this_cp;
         }
     }
@@ -3175,144 +3072,17 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, con
     return total_cp;
 }
 
-// ---------- count_pawn_holes_cp_t ----------
 
-// a hole is: a square directly in front of one of your pawns
-// that cannot be attacked/guarded by a friendly pawn from either adjacent file
+// ---------- count_pawn_holes_and_passed_pawns_cp_new_t ----------
 
 template<Color c>
-int GameBoard::count_pawn_holes_cp_t(const PawnFileInfo& pawnInfo, ull& holes_bb) {
-    int holes = 0;
-    holes_bb = 0ULL;
-
-    ull Pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!Pawns) return 0;
-
-    const unsigned files_present = pawnInfo.p[friendlyP].files_present;
-
-    ull tmp = Pawns;
-
-    while (tmp) {
-        Square s = utility::bit::lsb_and_pop_to_square(tmp);
-        int f = s & 7;
-        int r = s >> 3;
-
-        int front_sq;
-        if constexpr (c == Color::WHITE) {
-            if (r == 7) continue;
-            front_sq = s + 8;
-        } else {
-            if (r == 0) continue;
-            front_sq = s - 8;
-        }
-
-        bool can_be_attacked = false;
-
-        if constexpr (c == Color::WHITE) {
-            if (f > 0 && (files_present & (1u << (f - 1))))
-            {
-                int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
-            }
-            if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1))))
-            {
-                int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
-            }
-        } else {
-            if (f > 0 && (files_present & (1u << (f - 1)))) {
-                int rear = pawnInfo.p[friendlyP].rearSq[f - 1];
-                if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
-            }
-            if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
-                int rear = pawnInfo.p[friendlyP].rearSq[f + 1];
-                if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
-            }
-        }
-
-        if (!can_be_attacked) {
-            holes_bb |= (1ULL << front_sq);
-            holes++;
-        }
-    }
-
-    return (holes * wghts.GetWeight(PAWN_HOLE));
-}
-
-
-// ---------- count_passed_pawns_cp_t ----------
-template<Color c>
-int GameBoard::count_passed_pawns_cp_t(const PawnFileInfo& pawnInfo, ull& passed_pawns) {
-
-    passed_pawns = 0ULL;
-
-    ull my_pawns = get_pieces_template<Piece::PAWN, c>();
-    if (!my_pawns) return 0;
-
-    int bonus_cp = 0;
-    ull tmp = my_pawns;
-
-    while (tmp) {
-        Square s = utility::bit::lsb_and_pop_to_square(tmp);
-        int f = s & 7;
-        int r = s >> 3;
-
-        ull enemy_files = pawnInfo.p[enemyP].file_bb[f];
-        if (f > 0) enemy_files |= pawnInfo.p[enemyP].file_bb[f - 1];
-        if (f < 7) enemy_files |= pawnInfo.p[enemyP].file_bb[f + 1];
-
-        ull ranks_ahead;
-        if constexpr (c == Color::WHITE) {
-            int start_bit = (r + 1) * 8;
-            ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
-        } else {
-            int end_bit = r * 8;
-            ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1ULL);
-        }
-
-        if ((enemy_files & ranks_ahead) == 0ULL) {
-
-            passed_pawns |= (1ULL << s);
-
-            int adv;
-            if constexpr (c == Color::WHITE) adv = r;
-            else                             adv = (7 - r);
-
-            assert ((adv>0) && (adv<7));
-            int base = wghts.GetWeight(PASSED_PAWN_SLOPE)*adv*adv + wghts.GetWeight(PASSED_PAWN_YINRCPT);
-
-            ull protect_mask = 0ULL;
-            if constexpr (c == Color::WHITE) {
-                if (r > 0) {
-                    if (f < 7) protect_mask |= (1ULL << (s - 7));
-                    if (f > 0) protect_mask |= (1ULL << (s - 9));
-                }
-            } else {
-                if (r < 7) {
-                    if (f < 7) protect_mask |= (1ULL << (s + 9));
-                    if (f > 0) protect_mask |= (1ULL << (s + 7));
-                }
-            }
-
-            // protected passed pawns more bonus
-            if ((my_pawns & protect_mask) != 0ULL) {
-                base += wghts.GetWeight(PASSED_PAWN_CONNECTED);
-            }
-
-            bonus_cp += base;
-        }
-    }
-
-    return bonus_cp;
-}
-
-
-template<Color c>
-void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
-                                                       ull& holes_bb,
-                                                       int& holes_cp,
-                                                       ull& passed_pawns,
-                                                       int& passed_cp)
+void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t(
+        const PInfo& pawnInfoF,
+        const PInfo& pawnInfoE,
+        ull& holes_bb,
+        int& holes_cp,
+        ull& passed_pawns,
+        int& passed_cp)
 {
     holes_bb = 0ULL;
     holes_cp = 0;
@@ -3323,98 +3093,138 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, c
     ull my_pawns = get_pieces_template<Piece::PAWN, c>();
     if (!my_pawns) return;
 
+    ull all_pawns = get_pieces_template<Piece::PAWN>();
+
     const unsigned files_present = pawnInfoF.files_present;
 
     ull tmp = my_pawns;
 
     while (tmp) {
+
         Square s = utility::bit::lsb_and_pop_to_square(tmp);
+
         int f = s & 7;
         int r = s >> 3;
 
         // ------------------------------------------------------------
-        // holes
+        // pawn holes
         // ------------------------------------------------------------
-        int front_sq;
+
+        int hole_sq;
+
         if constexpr (c == Color::WHITE) {
-            if (r != 7) {
-                front_sq = s + 8;
+            if (r == 7) continue;
+            hole_sq = s + 8;
+        }
+        else {
+            if (r == 0) continue;
+            hole_sq = s - 8;
+        }
 
-                bool can_be_attacked = false;
+        if (all_pawns & (1ULL << hole_sq)) continue;
 
-                if (f > 0 && (files_present & (1u << (f - 1)))) {
-                    int rear = pawnInfoF.rearSq[f - 1];
-                    if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
-                }
+        bool pawn_can_cover = false;
 
-                if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
-                    int rear = pawnInfoF.rearSq[f + 1];
-                    if (rear != NO_SQUARE && ((rear >> 3) <= r)) can_be_attacked = true;
-                }
+        if (f > 0 && (files_present & (1u << (f - 1)))) {
 
-                if (!can_be_attacked) {
-                    holes_bb |= (1ULL << front_sq);
-                    holes_cp += wghts.GetWeight(PAWN_HOLE);
+            int rear = pawnInfoF.rearSq[f - 1];
+
+            if constexpr (c == Color::WHITE) {
+                if (rear != NO_SQUARE && ((rear >> 3) <= r)) {
+                    pawn_can_cover = true;
                 }
             }
-        } else {
-            if (r != 0) {
-                front_sq = s - 8;
-
-                bool can_be_attacked = false;
-
-                if (f > 0 && (files_present & (1u << (f - 1)))) {
-                    int rear = pawnInfoF.rearSq[f - 1];
-                    if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
-                }
-
-                if (!can_be_attacked && f < 7 && (files_present & (1u << (f + 1)))) {
-                    int rear = pawnInfoF.rearSq[f + 1];
-                    if (rear != NO_SQUARE && ((rear >> 3) >= r)) can_be_attacked = true;
-                }
-
-                if (!can_be_attacked) {
-                    holes_bb |= (1ULL << front_sq);
-                    holes_cp += wghts.GetWeight(PAWN_HOLE);
+            else {
+                if (rear != NO_SQUARE && ((rear >> 3) >= r)) {
+                    pawn_can_cover = true;
                 }
             }
         }
 
-        // ------------------------------------------------------------
-        // passed pawns
-        // ------------------------------------------------------------
-        ull enemy_files = pawnInfoE.file_bb[f];
-        if (f > 0) enemy_files |= pawnInfoE.file_bb[f - 1];
-        if (f < 7) enemy_files |= pawnInfoE.file_bb[f + 1];
+        if (!pawn_can_cover && f < 7 && (files_present & (1u << (f + 1)))) {
 
-        ull ranks_ahead;
-        if constexpr (c == Color::WHITE) {
-            int start_bit = (r + 1) * 8;
-            ranks_ahead = (start_bit >= 64) ? 0ULL : (~0ULL << start_bit);
-        } else {
-            int end_bit = r * 8;
-            ranks_ahead = (end_bit <= 0) ? 0ULL : ((1ULL << end_bit) - 1ULL);
+            int rear = pawnInfoF.rearSq[f + 1];
+
+            if constexpr (c == Color::WHITE) {
+                if (rear != NO_SQUARE && ((rear >> 3) <= r)) {
+                    pawn_can_cover = true;
+                }
+            }
+            else {
+                if (rear != NO_SQUARE && ((rear >> 3) >= r)) {
+                    pawn_can_cover = true;
+                }
+            }
         }
 
-        if ((enemy_files & ranks_ahead) == 0ULL) {
+        if (!pawn_can_cover) {
+
+            holes_bb |= (1ULL << hole_sq);
+
+            int this_cp = wghts.GetWeight(PAWN_HOLE);
+
+            const bool b_have_majors = get_major_pieces<c>();
+
+            if (b_have_majors && pawnInfoE.file_count[f] == 0) {
+                this_cp += wghts.GetWeight(PAWN_HOLE_OPEN_FILE);
+            }
+
+            holes_cp += this_cp;
+        }
+
+        // ------------------------------------------------------------
+        // passed pawns (new compact version)
+        // ------------------------------------------------------------
+
+        auto enemy_pawn_ahead_by_rank = [r](Square enemy_rear_sq) {
+            if (enemy_rear_sq == NO_SQUARE) return false;
+
+            const int enemy_r = enemy_rear_sq >> 3;
+
+            if constexpr (c == Color::WHITE) {
+                return enemy_r > r;
+            }
+            else {
+                return enemy_r < r;
+            }
+        };
+
+        bool enemy_ahead = enemy_pawn_ahead_by_rank(pawnInfoE.rearSq[f]);
+
+        if (!enemy_ahead && f > 0) {
+            enemy_ahead = enemy_pawn_ahead_by_rank(pawnInfoE.rearSq[f - 1]);
+        }
+
+        if (!enemy_ahead && f < 7) {
+            enemy_ahead = enemy_pawn_ahead_by_rank(pawnInfoE.rearSq[f + 1]);
+        }
+
+        if (!enemy_ahead) {
+
             passed_pawns |= (1ULL << s);
 
             int adv;
+
             if constexpr (c == Color::WHITE) adv = r;
             else                             adv = (7 - r);
 
             assert((adv > 0) && (adv < 7));
 
-            int base = wghts.GetWeight(PASSED_PAWN_SLOPE) * adv * adv
-                     + wghts.GetWeight(PASSED_PAWN_YINRCPT);
+            int bonus =
+                wghts.GetWeight(PASSED_PAWN_SLOPE) * adv * adv
+              + wghts.GetWeight(PASSED_PAWN_YINRCPT);
 
             ull protect_mask = 0ULL;
+
             if constexpr (c == Color::WHITE) {
+
                 if (r > 0) {
                     if (f < 7) protect_mask |= (1ULL << (s - 7));
                     if (f > 0) protect_mask |= (1ULL << (s - 9));
                 }
-            } else {
+            }
+            else {
+
                 if (r < 7) {
                     if (f < 7) protect_mask |= (1ULL << (s + 9));
                     if (f > 0) protect_mask |= (1ULL << (s + 7));
@@ -3422,13 +3232,17 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, c
             }
 
             if ((my_pawns & protect_mask) != 0ULL) {
-                base += wghts.GetWeight(PASSED_PAWN_CONNECTED);
+
+                int temp = (bonus * wghts.GetWeight(PASSED_PAWN_CONNECTED));
+
+                bonus = (temp / 3);
             }
 
-            passed_cp += base;
+            passed_cp += bonus;
         }
     }
 }
+
 
 // ---------- count_knights_on_holes_cp_t ----------
 template<Color c>
@@ -3593,7 +3407,7 @@ int GameBoard::sliders_and_knights_attacking_square2_t(int sq)
 template<Color c>
 int GameBoard::attackers_on_enemy_king_near_cp_t()
 {
-    constexpr Color defender_color = utility::representation::opposite_color_v<c>;
+    constexpr Color defender_color = utility::representation::opposite_color_t<c>;
 
     int king_near_squares[9];
     int count = get_king_near_squares_t<defender_color>(king_near_squares);
@@ -3662,11 +3476,13 @@ double GameBoard::kings_close_toegather_cp_t() {
 // ---------- king_centerness_cp_t ----------
 template<Color c>
 double GameBoard::king_centerness_cp_t() {
-    double dkk = kings_far_apart_t<c>();
+    //double dkk = kings_far_apart_t<c>();
 
-    double dFarness = MAX_DIST - dkk;
-    assert (dFarness>=0.0);
-    return (int)(dFarness * wghts.GetWeight(KING_CENTER_LATE));
+    int itemp = king_center_manhattan_dist_t<c>();
+
+    int iFarness = 6 - itemp;
+    assert (iFarness>=0.0);
+    return (iFarness * wghts.GetWeight(KING_CENTER_LATE));
 }
 
 
@@ -3683,7 +3499,7 @@ bool GameBoard::hasNoMajorPieces_t() {
         enemySmallPieces = (white_knights | white_bishops);
     }
     if (enemyBigPieces) return false;
-    if (bits_in(enemySmallPieces) > 2) return false;
+    if (bits_in(enemySmallPieces) > 1) return false;
     return true;
 }
 
@@ -3738,6 +3554,63 @@ int GameBoard::development_opening_cp_t() {
     return developed * wghts.GetWeight(DEVELOPMENT_OPENING);
 }
 
+// ---------- rook_endgame_keep_rooks_when_down_cp_t ----------
+// Trading
+// In pure rook endings, the side that is down pawns often wants to keep rooks
+// on the board, because rook endings are drawish.  So if side c is down one
+// pawn or more, give side c a small bonus for the rooks still being present.
+// If the rooks get traded, this bonus disappears, which discourages the trade.
+//
+template<Color c>
+int GameBoard::rook_endgame_keep_rooks_when_down_cp_t()
+{
+    if (white_queens || black_queens) return 0;
+    //if (white_knights || black_knights) return 0;
+    //if (white_bishops || black_bishops) return 0;
+
+    if (Bits_In[ShumiChess::WHITE][ShumiChess::ROOK] != 1) return 0;
+    if (Bits_In[ShumiChess::BLACK][ShumiChess::ROOK] != 1) return 0;
+
+    const int white_pawn_count = Bits_In[ShumiChess::WHITE][ShumiChess::PAWN];
+    const int black_pawn_count = Bits_In[ShumiChess::BLACK][ShumiChess::PAWN];
+
+    int pawn_deficit;
+    if constexpr (c == Color::WHITE) {
+        pawn_deficit = black_pawn_count - white_pawn_count;
+    } else {
+        pawn_deficit = white_pawn_count - black_pawn_count;
+    }
+
+    if (pawn_deficit <= 0) return 0;            // return now if I'm ahead pawns
+    return wghts.GetWeight(KEEP_ROOKS_WHEN_DOWN_PAWN);
+}
+
+// ---------- opposite_bishops_cp_t ----------
+
+// white is ahead and c == WHITE -> return negative penalty
+// white is ahead and c == BLACK -> return 0
+// black is ahead and c == BLACK -> return negative penalty
+// black is ahead and c == WHITE -> return 0
+template<Color c>
+int GameBoard::opposite_bishops_cp_t(Score material_balance_abs)
+{
+    if (white_queens || black_queens) return 0;
+    if (material_balance_abs == 0) return 0;
+
+    const bool white_ahead = (material_balance_abs > 0);
+    if constexpr (c == Color::WHITE) {
+        if (!white_ahead) return 0;
+    } else {
+        if (white_ahead) return 0;
+    }
+
+    const int weight = wghts.GetWeight(OPPOSITE_BISHOPS);
+    const Score abs_material_balance = (material_balance_abs < 0) ? -material_balance_abs : material_balance_abs;
+    const int lead_cp = (int)(abs_material_balance * 100.0 + 0.5);
+    constexpr int knee_cp = 50;
+    const int penalty = (weight * lead_cp + ((lead_cp + knee_cp) / 2)) / (lead_cp + knee_cp);
+    return -penalty;
+}
 
 // ============================================================================
 // Explicit template instantiations
@@ -3751,9 +3624,10 @@ template bool GameBoard::bHasCastled_fake_t<Color::BLACK>(int k_rank, int k_file
 template int GameBoard::get_castled_bonus_cp_t<Color::WHITE>(int,const PInfo& PInfoIn) const;
 template int GameBoard::get_castled_bonus_cp_t<Color::BLACK>(int,const PInfo& PInfoIn) const;
 
-// get_material_for_color_t
-template int GameBoard::get_material_for_color_t<Color::WHITE>();
-template int GameBoard::get_material_for_color_t<Color::BLACK>();
+template int GameBoard::get_material_for_color_t<Color::WHITE>(int& cp_pawns_only);
+template int GameBoard::get_material_for_color_t<Color::BLACK>(int& cp_pawns_only);
+template int GameBoard::get_material_for_color2_t<Color::WHITE>(int& cp_pawns_only);
+template int GameBoard::get_material_for_color2_t<Color::BLACK>(int& cp_pawns_only);
 
 // pawns_attacking_square_t
 template int GameBoard::pawns_attacking_square_t<Color::WHITE>(int);
@@ -3785,8 +3659,8 @@ template int GameBoard::bishops_attacking_center_squares_cp_t<Color::WHITE>();
 template int GameBoard::bishops_attacking_center_squares_cp_t<Color::BLACK>();
 
 // two_bishops_cp_t
-template int GameBoard::two_bishops_cp_t<Color::WHITE>() const;
-template int GameBoard::two_bishops_cp_t<Color::BLACK>() const;
+template int GameBoard::two_bishops_cp_t<Color::WHITE>(int) const;
+template int GameBoard::two_bishops_cp_t<Color::BLACK>(int) const;
 
 // bishop_pawn_pattern_cp_t
 template int GameBoard::bishop_pawn_pattern_cp_t<Color::WHITE>();
@@ -3804,11 +3678,9 @@ template int GameBoard::rooks_file_status_cp_t<Color::BLACK>(const PInfo& pawnIn
 template int GameBoard::rook_7th_rankness_cp_t<Color::WHITE>();
 template int GameBoard::rook_7th_rankness_cp_t<Color::BLACK>();
 
-// build_pawn_file_summary_fast_t
-template bool GameBoard::build_pawn_file_summary_fast_t<Color::WHITE>(PInfo&);
-template bool GameBoard::build_pawn_file_summary_fast_t<Color::BLACK>(PInfo&);
-template bool GameBoard::build_pawn_file_summary_fast_enemy_t<Color::WHITE>(PInfo&);
-template bool GameBoard::build_pawn_file_summary_fast_enemy_t<Color::BLACK>(PInfo&);
+// build_pawn_file_summary_t
+template bool GameBoard::build_pawn_file_summary_t<Color::WHITE>(PInfo&);
+template bool GameBoard::build_pawn_file_summary_t<Color::BLACK>(PInfo&);
 
 template bool GameBoard::any_piece_ahead_on_file_t<Color::WHITE>(int, ull) const;
 template bool GameBoard::any_piece_ahead_on_file_t<Color::BLACK>(int, ull) const;
@@ -3816,34 +3688,30 @@ template bool GameBoard::any_piece_ahead_on_file_t<Color::BLACK>(int, ull) const
 template int GameBoard::count_knights_on_holes_cp_t<Color::WHITE>(ull);
 template int GameBoard::count_knights_on_holes_cp_t<Color::BLACK>(ull);
 
-
-template int GameBoard::count_isolated_pawns_cp_t<Color::WHITE>(const PawnFileInfo&) const;
-template int GameBoard::count_isolated_pawns_cp_t<Color::BLACK>(const PawnFileInfo&) const;
-
-template int GameBoard::count_doubled_pawns_cp_t<Color::WHITE>(const PawnFileInfo&);
-template int GameBoard::count_doubled_pawns_cp_t<Color::BLACK>(const PawnFileInfo&);
-
 template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
-
-// count_passed_pawns_cp_t
-template int GameBoard::count_passed_pawns_cp_t<Color::WHITE>(const PawnFileInfo&, ull&);
-template int GameBoard::count_passed_pawns_cp_t<Color::BLACK>(const PawnFileInfo&, ull&);
-
-template int GameBoard::count_pawn_holes_cp_t<Color::WHITE>(const PawnFileInfo&, ull&);
-template int GameBoard::count_pawn_holes_cp_t<Color::BLACK>(const PawnFileInfo&, ull&);
-
-template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+// template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+//                                                             ull& holes_bb,
+//                                                             int& holes_cp,
+//                                                             ull& passed_pawns,
+//                                                             int& passed_cp);
+// template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+//                                                             ull& holes_bb,
+//                                                             int& holes_cp,
+//                                                             ull& passed_pawns,
+//                                                             int& passed_cp);
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
                                                             int& passed_cp);
-template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
                                                             int& passed_cp);
+
 // king_edgeness_cp_t
 template int GameBoard::king_edgeness_cp_t<Color::WHITE>();
 template int GameBoard::king_edgeness_cp_t<Color::BLACK>();
@@ -3868,9 +3736,17 @@ template int GameBoard::sliders_and_knights_attacking_square2_t<Color::BLACK>(in
 template int GameBoard::attackers_on_enemy_king_near_cp_t<Color::WHITE>();
 template int GameBoard::attackers_on_enemy_king_near_cp_t<Color::BLACK>();
 
-// kings_far_apart_t
+template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::WHITE>();
+template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::BLACK>();
+template int GameBoard::opposite_bishops_cp_t<Color::WHITE>(Score material_balance_abs);
+template int GameBoard::opposite_bishops_cp_t<Color::BLACK>(Score material_balance_abs);
+
+
 template double GameBoard::kings_far_apart_t<Color::WHITE>();
 template double GameBoard::kings_far_apart_t<Color::BLACK>();
+
+template int GameBoard::king_center_manhattan_dist_t<Color::WHITE>();
+template int GameBoard::king_center_manhattan_dist_t<Color::BLACK>();
 
 // kings_close_toegather_cp_t
 template double GameBoard::kings_close_toegather_cp_t<Color::WHITE>();

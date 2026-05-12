@@ -37,6 +37,7 @@ enum Color : std::uint8_t {
     BLACK,
 };
 
+constexpr int NUM_PIECES = 7; 
 enum Piece : std::uint8_t {     // These MUST be in this order
     PAWN = 0,
     ROOK,
@@ -61,9 +62,6 @@ constexpr int CASTLE_QUEEN  = 0b00000010;
 // Now its at 32 bytes Whopee.
 struct Move {
   
-    // ull from = 0ULL;   // 1-bitboard (but with only one bit set)
-    // ull to = 0ULL;     // 1-bitboard (but with only one bit set)
-
     Square fromSQ = NO_SQUARE;
     Square toSQ = NO_SQUARE;
 
@@ -78,15 +76,13 @@ struct Move {
     uint8_t black_castle_rights = CASTLE_EITHER;
     uint8_t white_castle_rights = CASTLE_EITHER;
 
-    bool is_en_passent_capture = false;    // bools are hopefully 1 byte
+    bool is_en_passent_capture = false;    // bools are hopefully 1 byte (8 bits)
     bool is_castle_move = false;
 
     Move() = default;   // ← put it here
 
    // --- NEW FULL FIELD CONSTRUCTOR (used for speed, in add_psuedo_move_to_vector()) ---
     Move(
-         //ull from_,
-         //ull to_,
          Square fromSQ_,
          Square toSQ_,
          Square en_passant_landing_,
@@ -99,8 +95,6 @@ struct Move {
          bool is_en_passent_capture_,
          bool is_castle_move_)
         :
-          //from(from_),
-          //to(to_),
           fromSQ(fromSQ_),
           toSQ(toSQ_),
           en_passant_landingSQ(en_passant_landing_),
@@ -135,6 +129,7 @@ Move MoveSet(Color c, Piece p, ull frm, ull to);
 Move MoveSet2(Color c, Piece p, ull frm, ull to, Piece a);
 Move MoveSet3(Color c, Piece p, ull frm, ull to, Piece a, Piece b);
 
+typedef double Score;
 
 enum GameState {
     INPROGRESS = 0,
@@ -159,7 +154,7 @@ enum GameState {
 //  GamePhase::ENDGAME_LATE
 //
 //
-enum GamePhase {
+enum GamePhase {        // We must stay in this order.
     OPENING = 0,
     MIDDLE_EARLY,
     MIDDLE,         // both sides castled by now

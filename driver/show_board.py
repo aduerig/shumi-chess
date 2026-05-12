@@ -814,8 +814,9 @@ def make_move(from_acn, to_acn, promo_piece_str):
     engine_communicator.make_move_two_acn(from_acn, to_acn, promo_piece_str)
 
     legal_moves = engine_communicator.get_legal_moves()
-    fen = engine_communicator.get_fen()
-    print(f'{fen}')
+    
+    #fen = engine_communicator.get_fen()
+    #print(f'{fen}')
 
     graphics_update_only_moved_pieces()
     player_index = 1 - player_index
@@ -864,7 +865,7 @@ legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
 ai_is_thinking = False
 
-DEBUG_MAX_MOVES = 150  # or whatever cap you want    // # DRAW_ADMIN
+DEBUG_MAX_MOVES = 200  # or whatever cap you want    // # DRAW_ADMIN
 
 try:
     while True:

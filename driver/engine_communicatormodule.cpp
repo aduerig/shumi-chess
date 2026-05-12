@@ -132,6 +132,7 @@ engine_communicator_get_piece_positions(PyObject* self, PyObject* args) {
     return python_all_pieces_dict;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 static PyObject*
 engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
@@ -162,9 +163,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     if (last_mover == ShumiChess::WHITE) queening_rank = 8;
     else                                 queening_rank = 1;
 
-   
     ull bit_board_from_square = utility::representation::acn_to_bitboard_conversion(from_square_c_str);
-    //ull bit_board_to_square = utility::representation::acn_to_bitboard_conversion(to_square_c_str);
 
     ShumiChess::Piece pp = python_engine->game_board.get_piece_type_on_bitboard(bit_board_from_square);
 
@@ -228,26 +227,31 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     }
 
 
-
+    // Tell engine a move happened
     python_engine->users_last_move = found_move;
+    python_engine->ply_so_far++;
+
+    // Update statistics 
+    //python_engine->updateStats(found_move);
+
+    //cout << "222engine_communicator_make_move_two_acn " <<  python_engine->sss.so_far  << "\n"; 
 
     // Add to PGN
-    python_engine->ply_so_far++;
     python_engine->gamePGN.addMe(found_move, *python_engine);
 
 
     python_engine->move_history = stack<ShumiChess::Move>();
     //python_engine->move_history.push(found_move);
 
-    if (found_move.piece_type == 6)       // Piece::NONE is 6
-    {
+    if (found_move.piece_type == ShumiChess::Piece::NONE) {   // Error
         cout << "\x1b[1;31m" << " You are full of it " << "\x1b[0m" << endl;
+
     } else {
+
         // Tell the engine the move
         if (found_move.color == ShumiChess::Color::WHITE) python_engine->pushMove_t<ShumiChess::Color::WHITE>(found_move);
         else                                              python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);
         
-        //++python_engine->repetition_table[python_engine->game_board.zobrist_key];
         python_engine->three_time_rep_stack.push_back(python_engine->game_board.zobrist_key);
      
         // Add only "reversable" moves to the 3-time rep stack.
@@ -256,7 +260,6 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
         if (!bReversable) {
             python_engine->boundary_stack.push_back((int)python_engine->three_time_rep_stack.size() - 1);
         }
-
 
     }
     return Py_BuildValue("");
@@ -305,7 +308,7 @@ engine_communicator_get_phase(PyObject* self, PyObject* args) {
     const char* pszPhase = &szTemp[0];
 
     // We want phase_of_game(). But this is a minimax function. We need an engine function. So use phase
-    // writeen to engine by minimax.
+    // written to engine by minimax.
     pszPhase =  ShumiChess::str_from_GamePhase(python_engine->game_phase);
     return Py_BuildValue("s", pszPhase);
 
@@ -486,7 +489,9 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
     ShumiChess::EvalPersons evp = ShumiChess::UNCLE_SHUMI;
 
 
-    int cp_score_best = minimax_ai->evaluate_board( minimax_ai->engine.game_board.turn, evp, b_is_Quiet);
+    int cp_score_best = (minimax_ai->engine.game_board.turn == ShumiChess::Color::WHITE)
+        ? minimax_ai->evaluate_board_t<ShumiChess::Color::WHITE>(evp, b_is_Quiet)
+        : minimax_ai->evaluate_board_t<ShumiChess::Color::BLACK>(evp, b_is_Quiet);
     //minimax_ai->is_debug = false;
     
     double pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);

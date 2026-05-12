@@ -6,12 +6,13 @@
 #include <algorithm>
 
 #include <vector>
-#include <unordered_map>
 #include <string>
 #include <limits>
 #include <tuple>
 
 #include "features.hpp"
+#include "gameboard.hpp"
+
 
 using MoveAndScore     = std::pair<ShumiChess::Move, double>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
@@ -29,8 +30,6 @@ public:
 
     ShumiChess::Engine engine;
     
-    //unordered_map<ull, int> piece_values;
-
     RandomAI(ShumiChess::Engine&);
     ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
@@ -75,27 +74,29 @@ public:
     // The chess engine
     ShumiChess::Engine& engine;
 
-    // Zobrist
-    unordered_map<uint64_t, std::string> seen_zobrist;
+    // Hash table hit counts
+    ull NhitsTT = 0;            // eval Transposition table (TT) (not normally used)
+    ull NhitsTT2 = 0;           // node Transposition table (TT2)
+    ull NhitsP = 0;             // pawn/file hash table
 
-    ull NhitsTT = 0;
-    ull NhitsTT2 = 0;
     ull nRandos = 0;
     ull nGames = 0;
 
     ShumiChess::Move TT2_match_move = {};
     
+    /////////////////////////////////////////////////////////////////////
     // Transposition table (TT)    Protects the evaluator (evaluate_board(). Cleared on every move 
     struct TTEntry {
         int score_cp;
         ShumiChess::Move movee;
         int depth;
     };
+
     std::unordered_map<uint64_t, TTEntry> TTable;
 
 
-    
-    // Transposition table #2 (normal node-based TT)      Protects the node (recursive_negamax()). Cleared on every ??? 
+    /////////////////////////////////////////////////////////////////////
+    // Transposition table #2 (TT2)     Protects the node (recursive_negamax()). Cleared on every ??? 
     enum class TTFlag : unsigned char {
         EXACT,       // exact alpha–beta result
         LOWER_BOUND, // fail-high node
@@ -133,8 +134,9 @@ public:
 
     };
 
-    // Transposition table 2 (protects nodes)
     std::unordered_map<uint64_t, TTEntry2> TTable2;
+
+    std::unordered_map<uint64_t, ShumiChess::PawnFileInfo> pawn_file_info;
 
 
     ull passed_white_pawns = 0ULL; // im a bitmap
@@ -149,26 +151,13 @@ public:
     int TT_ntrys = 0;
     int TT_ntrys1 = 0;
 
-
-    int cp_score_get_trade_adjustment(ShumiChess::Color color, int mat_np_white, int mat_np_black);
-
-    //int cp_score_positional_get_pawn_things(ShumiChess::Color color, int nPhase); 
-    int cp_score_positional_get_opening(ShumiChess::Color color, int nPhase);
-    int cp_score_positional_get_middle(ShumiChess::Color color);
-    int cp_score_positional_get_end(ShumiChess::Color color, int nPly,
-                                    bool noMajorPiecesFriend, bool noMajorPiecesEnemy
-                                );
+    template<ShumiChess::Color c> int trade_imbalance_cp_t(int cp_score_all) const;
 
     // Template variants (compile-time color)
     template<ShumiChess::Color c> int cp_score_positional_get_opening_cp_t(int nPhase);
-    template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t();
+    template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_end_t(int nPly, bool noMajorPiecesFriend, bool noMajorPiecesEnemy);
     template<ShumiChess::Color for_color> int evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPosition);
-
-    int evaluate_board(ShumiChess::Color for_color, ShumiChess::EvalPersons evp, bool isQuietPosition
-                   //const std::vector<ShumiChess::Move>* pLegal_moves  // may be nullptr
-                    //, bool is_debug
-    );
 
     void wakeup();
     void resign();
@@ -218,6 +207,8 @@ public:
 
     bool no_queens_on_board();
 
+    double d_best_move_value_abs = 0.0;
+
     // oLD CHESS engine
     double get_value(int depth, int color_multiplier, double alpha, double beta);
     ShumiChess::Move get_move(int);
@@ -231,14 +222,9 @@ public:
     //bool is_debug = false;
     int nFarts = 0;
 
-    // std::tuple<double, ShumiChess::Move> best_move_static(ShumiChess::Color for_color,
-    //                             const std::vector<ShumiChess::Move>& moves,
-    //                             //int nPly,
-    //                             bool in_Check,
-    //                             int depth,
-    //                             bool isFast
-    //                         );
-               
+    template<class T> string format_with_commas(T value);
+    void playground(int iPhase);
+
     void print_moves_to_file(const vector<ShumiChess::Move> &mvs, int depth, char* szHeader, char* szTrailer);
 
 

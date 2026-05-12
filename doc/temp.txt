@@ -1,0 +1,164 @@
+template<Color c> void Engine::popMove_t() {
+
+    constexpr Color enemy = utility::representation::opposite_color_v<c>;
+
+    // Pop move history
+    bool have_last = !move_history.empty();
+    assert(have_last);
+    const Move move = move_history.top();
+    move_history.pop();
+
+    // --- undo zobrist for en_passant_landing_bb ---
+    if (game_board.en_passant_landing_bb) {
+        int cur_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(game_board.en_passant_landing_bb);
+        int cur_ep_file = cur_ep_sq & 7;
+        game_board.zobrist_key ^= zobrist_enpassant[cur_ep_file];
+    }
+
+    ull prev_ep_bb = en_passant_history.top();
+    if (prev_ep_bb) {
+        int prev_ep_sq   = utility::bit::bitboard_to_lowest_square_safe(prev_ep_bb);
+        int prev_ep_file = prev_ep_sq & 7;
+        game_board.zobrist_key ^= zobrist_enpassant[prev_ep_file];
+    }
+
+    // pop the enpassent history from the stack
+    game_board.en_passant_landing_bb = en_passant_history.top();
+    en_passant_history.pop();
+
+    // Zobrist undo for castling rights
+    uint8_t castle_current =
+        (game_board.black_castle_rights << 2) |
+        game_board.white_castle_rights;
+    uint8_t castle_prev = castle_opportunity_history.top();
+
+    if (castle_current != castle_prev)
+    {
+        game_board.zobrist_key ^= zobrist_castling[castle_current];
+        game_board.zobrist_key ^= zobrist_castling[castle_prev];
+    }
+
+    game_board.black_castle_rights = castle_opportunity_history.top() >> 2;
+    game_board.white_castle_rights = castle_opportunity_history.top() & 0b0011;
+
+    // Pop the castle opportunity.
+    castle_opportunity_history.pop();
+
+    game_board.zobrist_key ^= zobrist_side;
+
+    game_board.turn = c;
+
+    if constexpr (c == Color::BLACK) {
+        --game_board.fullmove;
+    }
+    // pop move states
+    game_board.halfmove = halfway_move_state.top();
+    halfway_move_state.pop();
+
+    // const ull frm = move.from;
+    // const ull to = move.to;
+    const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
+    const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
+    // assert(frm == movefrom);
+    // assert(to == moveto);
+
+    // const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
+    // const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
+    // assert(square_from == move.fromSQ);
+    // assert(square_to == move.toSQ);
+    const int square_from = move.fromSQ;
+    const int square_to = move.toSQ;
+
+    // pop the "actual move"
+    ull& moving_piece = access_pieces_of_color_tp<c>(move.piece_type);
+    moving_piece &= ~moveto;
+    moving_piece |= movefrom;
+
+    assert((move.piece_type + c * 6) < 12);
+    game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_from);
+
+    if (move.piece_type == Piece::PAWN) {
+        game_board.pawn_zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_from);
+    }
+
+    // pop pawn promotions
+    if (move.promotion == Piece::NONE) {
+        assert((move.piece_type + c * 6) < 12);
+        game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_to);
+
+        if (move.piece_type == Piece::PAWN) {
+            game_board.pawn_zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_to);
+        }
+    }
+    else {
+        ull& promoted_piece = access_pieces_of_color_tp<c>(move.promotion);
+        promoted_piece &= ~moveto;
+
+        assert((move.piece_type + c * 6) < 12);
+        game_board.zobrist_key ^= zobrist_piece_square_get(move.promotion + c * 6, square_to);
+    }
+
+    if (move.capture != Piece::NONE) {
+
+        //ull move_to_bb = moveto;
+        if (move.is_en_passent_capture) {
+            ull target_pawn_bb = (c == Color::WHITE) ? (moveto >> 8) : (moveto << 8);
+
+            int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bb);
+
+            access_pieces_of_color(move.capture, enemy) |= target_pawn_bb;
+            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, target_pawn_square);
+
+            game_board.pawn_zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, target_pawn_square);
+
+        } else {
+            access_pieces_of_color(move.capture, enemy) |= moveto;
+            game_board.zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, square_to);
+
+            if (move.capture == Piece::PAWN) {
+                game_board.pawn_zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, square_to);
+            }
+        }
+
+    } else if (move.is_castle_move) {
+
+        int rook_from_sq;
+        int rook_to_sq;
+
+        ull& friendly_rooks = access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(c);
+
+        ull move_to_bb = moveto;
+        if (move_to_bb & 0b00100000'00000000'00000000'00000000'00000000'00000000'00000000'00100000) {
+            // Popping a Queenside Castle
+            if constexpr (c == Color::WHITE) {
+                rook_from_sq = game_board.square_d1;
+                rook_to_sq = game_board.square_a1;
+                friendly_rooks &= ~(1ULL << game_board.square_d1);
+                friendly_rooks |= (1ULL << game_board.square_a1);
+            } else {
+                rook_from_sq = game_board.square_d8;
+                rook_to_sq = game_board.square_a8;
+                friendly_rooks &= ~(1ULL << game_board.square_d8);
+                friendly_rooks |= (1ULL << game_board.square_a8);
+            }
+        } else if (move_to_bb & 0b00000010'00000000'00000000'00000000'00000000'00000000'00000000'00000010) {
+            // Popping a Kingside Castle
+            if constexpr (c == Color::WHITE) {
+                rook_from_sq = game_board.square_f1;
+                rook_to_sq = game_board.square_h1;
+                friendly_rooks &= ~(1ULL << game_board.square_f1);
+                friendly_rooks |= (1ULL << game_board.square_h1);
+            } else {
+                rook_from_sq = game_board.square_f8;
+                rook_to_sq = game_board.square_h8;
+                friendly_rooks &= ~(1ULL << game_board.square_f8);
+                friendly_rooks |= (1ULL << game_board.square_h8);
+            }
+        } else {
+            assert(0);
+        }
+
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_from_sq);
+        game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_to_sq);
+    }
+}
