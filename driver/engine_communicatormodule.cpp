@@ -248,7 +248,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 
     } else {
 
-        // Tell the engine the move
+        // Make the move in the engine
         if (found_move.color == ShumiChess::Color::WHITE) python_engine->pushMove_t<ShumiChess::Color::WHITE>(found_move);
         else                                              python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);
         

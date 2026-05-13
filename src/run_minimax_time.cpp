@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdio>
 #include <iostream>
+#include <limits>
 #include <ostream>
 #include <sstream>
 #include <thread>
@@ -26,9 +27,62 @@ using namespace std::chrono;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+static const char* game_state_to_string(GameState state)
+{
+    switch (state) {
+        case INPROGRESS: return "in progress";
+        case WHITEWIN:   return "white wins";
+        case BLACKWIN:   return "black wins";
+        case DRAW:       return "draw";
+        default:         return "unknown";
+    }
+}
+
+static string move_to_uci(const Move& move)
+{
+    string move_text = utility::representation::move_to_string(move);
+    char promo = utility::representation::piece_to_charactor(move.promotion);
+    if (promo != ' ') {
+        move_text += promo;
+    }
+    return move_text;
+}
+
+static void make_engine_move(Engine& engine, Move move)
+{
+    engine.users_last_move = move;
+    engine.ply_so_far++;
+
+    engine.gamePGN.addMe(move, engine);
+
+    engine.move_history = stack<Move>();
+
+    if (move.piece_type == Piece::NONE) {
+        cout << "\x1b[1;31mNo move to make\x1b[0m" << endl;
+        return;
+    }
+
+    // Make the move
+    if (move.color == Color::WHITE) {
+        engine.pushMove_t<Color::WHITE>(move);
+    } else {
+        engine.pushMove_t<Color::BLACK>(move);
+    }
+
+    // Manage tree time repetition
+    engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
+
+    bool b_reversable = engine.game_board.isReversableMove(move);
+    if (!b_reversable) {
+        engine.boundary_stack.push_back((int)engine.three_time_rep_stack.size() - 1);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, char** argv) {
 
-    assert(0);       // To insure that asserts are compiled out
+    assert(true);       // Keeps assert compilation visible without aborting this runner.
 
     // Make board
     //string FENString = "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
@@ -49,24 +103,50 @@ int main(int argc, char** argv) {
     cout << out << endl;
 
     // Decide on arguments
-    int time_to_use = 5001;
-    int depth_to_use = 9;
+    int time_to_use = 3000;
+    int depth_to_use = 7;
+    int max_ply_to_play = 10;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {
         time_to_use = atoi(argv[1]);
         //cout << "You entered time_to_use of: " << time_to_use << endl;
     }
+    if (argc >= 3) {
+        depth_to_use = atoi(argv[2]);
+    }
+    if (argc >= 4) {
+        max_ply_to_play = atoi(argv[3]);
+    }
 
-    // Get the next move
-    cout << "usinggg level= " << depth_to_use << "  msec = " << time_to_use << endl;
-    minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, 0);
-    cout << "Got a move at time_to_use: " << time_to_use << endl;
+    cout << "using level= " << depth_to_use
+         << "  msec = " << time_to_use
+         << "  max ply = " << max_ply_to_play << endl;
 
-    // Wait for user response
-    cout << "Press Enter to exit...";
-    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // flush any leftover newline
-    cin.get();                                                     // wait for Enter
+    GameState state = engine.is_game_over();
+    for (int ply = 1; state == INPROGRESS && ply <= max_ply_to_play; ++ply) {
+        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, 0);
+
+        if (move.piece_type == Piece::NONE) {
+            cout << "No legal move returned at ply " << ply << endl;
+            break;
+        }
+
+        cout << "\nPly " << ply << " "
+             << utility::representation::color_to_string(move.color)
+             << " move: " << move_to_uci(move) << endl;
+
+        make_engine_move(engine, move);
+
+        out = utility::representation::gameboard_to_string(engine.game_board);
+        cout << out << endl;
+
+        state = engine.is_game_over();
+    }
+
+    cout << "Game state: " << game_state_to_string(state) << endl;
+    cout << "PGN: " << engine.gamePGN.spitout() << endl;
+
 
     return 0;
 }

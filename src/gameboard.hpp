@@ -20,13 +20,15 @@ namespace ShumiChess {
 
 struct PInfo {
 
-    uint8_t  file_count[8];     // Count of pawns on this file
-    unsigned files_present;     // Bitmask of which files contain >= 1 pawn
+    uint8_t file_count[8];     // Count of pawns on this file
+
+    uint8_t files_present;     // Bitmask of which files contain >= 1 pawn
 
     Square advancedSq[8];       // Square index of the side’s most advanced pawn on that file (or NO_SQUARE)
     Square rearSq[8];           // Square index of the side’s least advanced pawn on that file (or NO_SQUARE)
-
+    
     uint8_t guard_files_23;     // bit f = 1 if file f has a pawn on relative rank 2/3
+
 };
 
 inline bool operator==(const PInfo& a, const PInfo& b) {

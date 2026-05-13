@@ -768,7 +768,7 @@ template<Color c> bool GameBoard::build_pawn_file_summary_t(PInfo& pinfo)
 void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
 {
     if (a.files_present != b.files_present) {
-        printf("PInfo mismatch: files_present a=0x%X b=0x%X\n", a.files_present, b.files_present);
+        printf("PInfo mismatch: files_present a=0x%X b=0x%X\n",  unsigned(a.files_present),  unsigned(b.files_present));
         //return;
     }
 
@@ -3106,6 +3106,7 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t(
     int friendly_rear_rank[8];
     int enemy_rear_rank[8];
 
+    
     for (int file = 0; file < 8; ++file) {
         const Square friendly_rear = pawnInfoF.rearSq[file];
         const Square enemy_rear = pawnInfoE.rearSq[file];
@@ -3136,30 +3137,31 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t(
         int hole_sq;
 
         if constexpr (c == Color::WHITE) {
-            if (r == 7) continue;
+            assert (r != 7);           // should never happen, pawns cant be on this rank
             hole_sq = s + 8;
         }
         else {
-            if (r == 0) continue;
+            assert(r != 0);             // should never happen, pawns cant be on this rank
             hole_sq = s - 8;
         }
 
-        if (all_pawns & (1ULL << hole_sq)) continue;
+        ull hole_only_bb = (1ULL << hole_sq) ;
+        if (all_pawns & hole_only_bb) continue;
 
-        bool pawn_can_cover;
+        bool friend_pawn_can_cover;
 
         if constexpr (c == Color::WHITE) {
-            pawn_can_cover =
+            friend_pawn_can_cover =
                 (f > 0 && friendly_rear_rank[f - 1] <= r) ||
                 (f < 7 && friendly_rear_rank[f + 1] <= r);
         }
         else {
-            pawn_can_cover =
+            friend_pawn_can_cover =
                 (f > 0 && friendly_rear_rank[f - 1] >= r) ||
                 (f < 7 && friendly_rear_rank[f + 1] >= r);
         }
 
-        if (!pawn_can_cover) {
+        if (!friend_pawn_can_cover) {
 
             holes_bb |= (1ULL << hole_sq);
 
