@@ -154,4 +154,5 @@ int main(int argc, char** argv) {
 //      run: cmake --build C:\programming\shumi-chess\build --config RelWithDebInfo
 //      look in: C:\programming\shumi-chess\build\bin\RelWithDebInfo
 
-
+//      get_material_for_color_t()
+//   8/1k1q2pp/p2Bp1b1/Pp1pP3/1P3Q2/5P1P/6PK/8 w - - 7 47

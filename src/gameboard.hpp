@@ -343,17 +343,11 @@ class GameBoard {
         // "Positional "pawn" routines.
         template<Color c> int count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
-        // template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
-        //                                                     ull& holes_bb,
-        //                                                     int& holes_cp,
-        //                                                     ull& passed_pawns,
-        //                                                     int& passed_cp);
-
-        template<Color c> void count_pawn_holes_and_passed_pawns_cp_new_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
-                                                            ull& holes_bb,
-                                                            int& holes_cp,
-                                                            ull& passed_pawns,
-                                                            int& passed_cp);
+        template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+                                                    ull& holes_bb,
+                                                    int& holes_cp,
+                                                    ull& passed_pawns,
+                                                    int& passed_cp);
 
         template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
         template<Color c> int rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE);
@@ -407,7 +401,8 @@ class GameBoard {
 
         template<Color c> int count_guard_pawn_files_23_new_t(const PInfo& PInfoIn, int k_file) const;
         template<Color c> int rook_endgame_keep_rooks_when_down_cp_t();
-        template<Color c> int opposite_bishops_cp_t(Score material_balance_abs);
+        Score compress_drawish_score_cp(Score score_cp, int k_cp) const;
+        template<Color c> int opposite_bishops_cp_t(int material_balance_cp) const;
 
 
         // returns 0 if sq has no attackers. 

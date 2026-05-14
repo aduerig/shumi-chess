@@ -2624,8 +2624,7 @@ int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     return cp_score_mat_temp;
 }
 
-template<Color c>
-int GameBoard::get_material_for_color2_t(int& cp_pawns_only) {
+template<Color c> int GameBoard::get_material_for_color2_t(int& cp_pawns_only) {
     int cp_score_mat_temp = 0;
 
     cp_pawns_only = Bits_In[c][Piece::PAWN] * centipawn_score_of(Piece::PAWN);
@@ -3073,10 +3072,10 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, con
 }
 
 
-// ---------- count_pawn_holes_and_passed_pawns_cp_new_t ----------
+// ---------- count_pawn_holes_and_passed_pawns_cp_t ----------
 
 template<Color c>
-void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t(
+void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(
         const PInfo& pawnInfoF,
         const PInfo& pawnInfoE,
         ull& holes_bb,
@@ -3579,32 +3578,63 @@ int GameBoard::rook_endgame_keep_rooks_when_down_cp_t()
     return wghts.GetWeight(KEEP_ROOKS_WHEN_DOWN_PAWN);
 }
 
-// ---------- opposite_bishops_cp_t ----------
 
-// white is ahead and c == WHITE -> return negative penalty
-// white is ahead and c == BLACK -> return 0
-// black is ahead and c == BLACK -> return negative penalty
-// black is ahead and c == WHITE -> return 0
-template<Color c>
-int GameBoard::opposite_bishops_cp_t(Score material_balance_abs)
+//
+// Compresses a score toward zero using, where x=score_cp, and y is returned.
+//      Formulae: y = x^2 / (x + k)
+//
+// Properties:
+//      * preserves sign of x
+//      * monotonic
+//      * y <= x    (naturally bounded below identity)
+//      * y->x as x->infinity
+//      * y = x/2 when x = k
+//
+Score GameBoard::compress_drawish_score_cp(Score score_cp, int k_cp) const
 {
-    if (white_queens || black_queens) return 0;
-    if (material_balance_abs == 0) return 0;
+    if (score_cp == 0) return 0;
 
-    const bool white_ahead = (material_balance_abs > 0);
-    if constexpr (c == Color::WHITE) {
-        if (!white_ahead) return 0;
-    } else {
-        if (white_ahead) return 0;
-    }
+    assert(k_cp >= 0);
 
-    const int weight = wghts.GetWeight(OPPOSITE_BISHOPS);
-    const Score abs_material_balance = (material_balance_abs < 0) ? -material_balance_abs : material_balance_abs;
-    const int lead_cp = (int)(abs_material_balance * 100.0 + 0.5);
-    constexpr int knee_cp = 50;
-    const int penalty = (weight * lead_cp + ((lead_cp + knee_cp) / 2)) / (lead_cp + knee_cp);
-    return -penalty;
+    const bool b_positive = (score_cp > 0);
+
+    const Score x =
+        b_positive ? score_cp
+                   : -score_cp;
+
+    const Score y = (x * x) / (x + k_cp);
+
+    assert(y >= 0);
+    assert(y <= x);
+
+    return b_positive ? y : -y;
 }
+
+
+
+// ---------- opposite_bishops_cp_t ----------
+// material_balance is relative to color c.
+//      Positive = good for color c
+//      Negative = bad for color c
+//
+// Returns a delta to add to eval.
+// Therefore return value is <= 0.
+template<Color c> int GameBoard::opposite_bishops_cp_t(int material_balance_cp) const
+{
+    if (material_balance_cp <= 0) return 0;
+
+    const int k_cp = wghts.GetWeight(OPPOSITE_BISHOPS);
+
+    const int compressed_score = compress_drawish_score_cp(material_balance_cp, k_cp);
+
+    const int delta = compressed_score - material_balance_cp;
+
+    assert(delta <= 0);             // returned score change is always negative
+    assert(material_balance_cp + delta >= 0);
+
+    return (int)delta;
+}
+
 
 // ============================================================================
 // Explicit template instantiations
@@ -3685,22 +3715,12 @@ template int GameBoard::count_knights_on_holes_cp_t<Color::BLACK>(ull);
 template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
-// template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
-//                                                             ull& holes_bb,
-//                                                             int& holes_cp,
-//                                                             ull& passed_pawns,
-//                                                             int& passed_cp);
-// template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
-//                                                             ull& holes_bb,
-//                                                             int& holes_cp,
-//                                                             ull& passed_pawns,
-//                                                             int& passed_cp);
-template void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
                                                             int& passed_cp);
-template void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
@@ -3732,8 +3752,8 @@ template int GameBoard::attackers_on_enemy_king_near_cp_t<Color::BLACK>();
 
 template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::WHITE>();
 template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::BLACK>();
-template int GameBoard::opposite_bishops_cp_t<Color::WHITE>(Score material_balance_abs);
-template int GameBoard::opposite_bishops_cp_t<Color::BLACK>(Score material_balance_abs);
+template int GameBoard::opposite_bishops_cp_t<Color::WHITE>(int material_balance) const;
+template int GameBoard::opposite_bishops_cp_t<Color::BLACK>(int material_balance) const;
 
 
 template double GameBoard::kings_far_apart_t<Color::WHITE>();

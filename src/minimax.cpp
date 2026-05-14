@@ -287,10 +287,9 @@ void MinimaxAI::resign() {
 #define TRADE_PAWN_CAP 7
 #define TRADE_PIECE_CAP 4
 
-template<Color c>
-int MinimaxAI::trade_imbalance_cp_t(int cp_score_material_all) const
+template<Color c> int MinimaxAI::trade_imbalance_cp_t(int cp_material_all) const
 {
-    const int cp_score_non_pawn = cp_score_material_all - cp_score_pawns_only;
+    const int cp_material_non_pawn = cp_material_all - cp_score_pawns_only;
 
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
@@ -326,10 +325,10 @@ int MinimaxAI::trade_imbalance_cp_t(int cp_score_material_all) const
                   / TRADE_PAWN_CAP;
     }
 
-    if (cp_score_non_pawn > 0) {
+    if (cp_material_non_pawn > 0) {
         trade_cp += ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
                   / TRADE_PIECE_CAP;
-    } else if (cp_score_non_pawn < 0) {
+    } else if (cp_material_non_pawn < 0) {
         trade_cp -= ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
                   / TRADE_PIECE_CAP;
     }
@@ -882,10 +881,14 @@ void MinimaxAI::playground(int iPhase) {
 
 //global_debug_flag=false;
 
-    isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
-    isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
-    
-  
+    // isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
+    // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
+
+
+
+    //int material_balance = ;  // evaluate_board();
+    //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
+
 //global_debug_flag = false;
 
     itemp1 = sizeof(PInfo);
@@ -1172,7 +1175,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
     // Hard node-limit sentinel fuse
     // =====================================================================
-    if (nodes_visited > 4.0e8) {    // 300,000,000
+    if (nodes_visited > 5.0e8) {    // 500,000,000
         std::cout << "\x1b[31m\n! NODES VISITED trap#2 " << nodes_visited << " dep=" << depth << "  "
                         << engine.get_best_score_at_root() << "\x1b[0m\n";
         //assert(0);
@@ -2695,56 +2698,41 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnF);
     cp_score_position_temp += icp_temp;
 
-    if (1) {
-        ull holes_bb = 0ULL;
-        ull passed_pawns_bb = 0ULL;
 
-        icp_temp = engine.game_board.count_isolated_and_doubled_pawns_cp_t<c>(pawnF, pawnE);
-        cp_score_position_temp += icp_temp;
+    ull holes_bb = 0ULL;
+    ull passed_pawns_bb = 0ULL;
 
+    icp_temp = engine.game_board.count_isolated_and_doubled_pawns_cp_t<c>(pawnF, pawnE);
+    cp_score_position_temp += icp_temp;
 
-        // int holes_cp2;
-        // int passed_cp2;
-        // engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(pawnF, pawnE,
-        //                                                     holes_bb,
-        //                                                     holes_cp2,
-        //                                                     passed_pawns_bb,
-        //                                                     passed_cp2);
-                                                            
-        int holes_cp;
-        int passed_cp;
-        engine.game_board.count_pawn_holes_and_passed_pawns_cp_new_t<c>(pawnF, pawnE,
-                                                            holes_bb,
-                                                            holes_cp,
-                                                            passed_pawns_bb,
-                                                            passed_cp);
-        // assert(holes_cp == holes_cp2);                 
-        // assert(passed_cp == passed_cp2);
+    int holes_cp;
+    int passed_cp;
+    engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(pawnF, pawnE,
+                                                        holes_bb,
+                                                        holes_cp,
+                                                        passed_pawns_bb,
+                                                        passed_cp);
 
-        cp_score_position_temp += holes_cp;
+    cp_score_position_temp += holes_cp;
 
-        cp_score_position_temp += passed_cp;
+    cp_score_position_temp += passed_cp;
 
 
-        icp_temp = engine.game_board.count_knights_on_holes_cp_t<c>(holes_bb);
-        cp_score_position_temp += icp_temp;
+    icp_temp = engine.game_board.count_knights_on_holes_cp_t<c>(holes_bb);
+    cp_score_position_temp += icp_temp;
 
 
-        if constexpr (c == Color::WHITE)
-            passed_pawns_white = passed_pawns_bb;
-        else
-            passed_pawns_black = passed_pawns_bb;
+    if constexpr (c == Color::WHITE)
+        passed_pawns_white = passed_pawns_bb;
+    else
+        passed_pawns_black = passed_pawns_bb;
 
-        icp_temp = engine.game_board.rooks_file_status_cp_t<c>(pawnF, pawnE);
-        cp_score_position_temp += icp_temp;
-    }
+    icp_temp = engine.game_board.rooks_file_status_cp_t<c>(pawnF, pawnE);
+    cp_score_position_temp += icp_temp;
+
 
     if (nPhase == GamePhase::OPENING) {
         icp_temp = engine.game_board.development_opening_cp_t<c>();
-        cp_score_position_temp += icp_temp;
-
-        Score material_balance_abs = d_best_move_value_abs;
-        icp_temp = engine.game_board.opposite_bishops_cp_t<c>(material_balance_abs);
         cp_score_position_temp += icp_temp;
     }
 
@@ -2801,7 +2789,7 @@ int MinimaxAI::cp_score_positional_get_middle_cp_t(int nPhase) {
 }
 
 template<ShumiChess::Color c>
-int MinimaxAI::cp_score_positional_get_end_t(int nPhase, bool noMajorPiecesFriend, bool noMajorPiecesEnemy) {
+int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bool noMajorPiecesFriend, bool noMajorPiecesEnemy) {
     using namespace ShumiChess;
 
     int icp_temp;
@@ -2824,7 +2812,10 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, bool noMajorPiecesFrien
         cp_score_position_temp += icp_temp;       
     }
 
-
+    if (nPhase >= GamePhase::MIDDLE) {
+        icp_temp = engine.game_board.opposite_bishops_cp_t<c>(cp_material_all);
+        cp_score_position_temp += icp_temp;
+    }
 
     if (noMajorPiecesEnemy) {
         dcp_temp = engine.game_board.kings_close_toegather_cp_t<c>();
@@ -2866,10 +2857,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
     for (const auto& color1 : std::array<Color, 2>{Color::WHITE, Color::BLACK}) {
         int cp_pawns_only_temp;
-        //int cp_pawns_only_temp2;
-        // int cp_score_mat_temp2 = (color1 == Color::WHITE)
-        //     ? engine.game_board.get_material_for_color_t<Color::WHITE>(cp_pawns_only_temp2)
-        //     : engine.game_board.get_material_for_color_t<Color::BLACK>(cp_pawns_only_temp2);
+
         int cp_score_mat_temp = (color1 == Color::WHITE)
             ? engine.game_board.get_material_for_color2_t<Color::WHITE>(cp_pawns_only_temp)
             : engine.game_board.get_material_for_color2_t<Color::BLACK>(cp_pawns_only_temp);
@@ -2896,9 +2884,6 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     assert(tempsum >= 0);
     //assert(tempsumNP >= 0);
     cp_score_material_avg = tempsum / 2;
-
-    //engine.material_centPawns = cp_score_material_all;
-
 
     assert(cp_score_material_avg >= 0);
     int nPhase = phase_of_game(cp_score_material_avg);
@@ -2950,8 +2935,8 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
                 }
 
                 temp = (color == Color::WHITE)
-                    ? cp_score_positional_get_end_t<Color::WHITE>(nPhase, NoMajorPiecesFriend, NoMajorPiecesEnemy)
-                    : cp_score_positional_get_end_t<Color::BLACK>(nPhase, NoMajorPiecesFriend, NoMajorPiecesEnemy);
+                    ? cp_score_positional_get_end_t<Color::WHITE>(nPhase, cp_score_material_all, NoMajorPiecesFriend, NoMajorPiecesEnemy)
+                    : cp_score_positional_get_end_t<Color::BLACK>(nPhase, cp_score_material_all, NoMajorPiecesFriend, NoMajorPiecesEnemy);
                 cp_score_position_temp += temp;
 
                 break;
@@ -2962,6 +2947,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
         cp_score_position += cp_score_position_temp;
     }
 
+    // Add the material and positional togather to get a final retuern in centipawns.
     cp_score_adjusted = cp_score_material_all + cp_score_position;
 
     return cp_score_adjusted;
@@ -2974,8 +2960,8 @@ template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::
 template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::BLACK>(int);
 template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::WHITE>(int);
 template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::BLACK>(int);
-template int MinimaxAI::cp_score_positional_get_end_t<ShumiChess::Color::WHITE>(int, bool, bool);
-template int MinimaxAI::cp_score_positional_get_end_t<ShumiChess::Color::BLACK>(int, bool, bool);
+template int MinimaxAI::cp_score_positional_get_end_t<ShumiChess::Color::WHITE>(int, int cp_material_all, bool, bool);
+template int MinimaxAI::cp_score_positional_get_end_t<ShumiChess::Color::BLACK>(int, int cp_material_all, bool, bool);
 
 
 
