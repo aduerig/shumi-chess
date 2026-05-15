@@ -1,4 +1,4 @@
-#include <functional>
+﻿#include <functional>
 
 
 #include "engine.hpp"
@@ -758,13 +758,12 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
     }
 
     // Manage castling rights
-    uint8_t castle_rights = (game_board.black_castle_rights << 2) | game_board.white_castle_rights;
+    uint8_t castle_rights = game_board.castle_rights;
     castle_opportunity_history.push(castle_rights);
 
-    game_board.black_castle_rights &= move.black_castle_rights;
-    game_board.white_castle_rights &= move.white_castle_rights;
+    game_board.castle_rights &= move.castle_rights;
 
-    uint8_t castle_new = (game_board.black_castle_rights << 2) | game_board.white_castle_rights;
+    uint8_t castle_new = game_board.castle_rights;
 
     // Zobrist castle rights
     if (castle_new != castle_rights)
@@ -879,9 +878,7 @@ template<Color c> void Engine::popMove_t() {
     en_passant_history.pop();
 
     // Zobrist undo for castling rights
-    uint8_t castle_current =
-        (game_board.black_castle_rights << 2) |
-        game_board.white_castle_rights;
+    uint8_t castle_current = game_board.castle_rights;
     uint8_t castle_prev = castle_opportunity_history.top();
 
     if (castle_current != castle_prev)
@@ -890,8 +887,7 @@ template<Color c> void Engine::popMove_t() {
         game_board.zobrist_key ^= zobrist_castling[castle_prev];
     }
 
-    game_board.black_castle_rights = castle_opportunity_history.top() >> 2;
-    game_board.white_castle_rights = castle_opportunity_history.top() & 0b0011;
+    game_board.castle_rights = castle_opportunity_history.top();
 
     // Pop the castle opportunity.
     castle_opportunity_history.pop();
@@ -1220,8 +1216,8 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         // copying it into the vector (emplace_back(new_move)).
         if constexpr (!promotion) {
 
-            uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
-            uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+            uint8_t castle_rights = ((game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ]) << 2) |
+                                    (game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ]);
 
             moves.emplace_back(
                                 fromSQ,
@@ -1231,8 +1227,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece,
                                 piece_captured,
                                 Piece::NONE,
-                                black_castle_rights,
-                                white_castle_rights,
+                                castle_rights,
                                 is_en_passent_capture,
                                 is_castle
                             );
@@ -1246,8 +1241,8 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             // Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
-                uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
-                uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+                uint8_t castle_rights = ((game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ]) << 2) |
+                                        (game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ]);
                 // assert(white_castle_rights == white_castle_r);
                 // assert(black_castle_rights == black_castle_r);
 
@@ -1259,8 +1254,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece,
                                 piece_captured,
                                 promo_piece,
-                                black_castle_rights,
-                                white_castle_rights,
+                                castle_rights,
                                 is_en_passent_capture,
                                 is_castle
                             );
@@ -2382,7 +2376,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
             if constexpr (c == Color::WHITE) {
 
-                if (game_board.white_castle_rights & CASTLE_KING) {
+                if (game_board.castle_rights & CASTLE_KING) {
                     if (square == game_board.square_e1) {
                         squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2400,7 +2394,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     }
                 }
 
-                if (game_board.white_castle_rights & CASTLE_QUEEN) {
+                if (game_board.castle_rights & CASTLE_QUEEN) {
                     if (square == game_board.square_e1) {
                         squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2420,7 +2414,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             
             } else {
 
-                if (game_board.black_castle_rights & CASTLE_KING) {
+                if (game_board.castle_rights & (CASTLE_KING << 2)) {
                     if (square == game_board.square_e8) {
                         squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2438,7 +2432,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     }
                 }
 
-                if (game_board.black_castle_rights & CASTLE_QUEEN) {
+                if (game_board.castle_rights & (CASTLE_QUEEN << 2)) {
                     if (square == game_board.square_e8) {
                         squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2761,7 +2755,7 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
                                themQueens, themRooks, themBishops);
 }
 
-
+// I am called only from python, when the game is over. I am wasteful.
 int Engine::get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut)
 {
     if (c == Color::WHITE) {
@@ -2771,6 +2765,7 @@ int Engine::get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_chec
     }
 }
 
+// I am the main one called
 template<Color c>
 int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut) {
 
@@ -2778,6 +2773,8 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
     assert(psuedo_legal_moves.capacity() == MAX_MOVES);
 
     MovesOut.clear();
+
+    ///////////////////////////////////////////////////////////
 
     const bool in_check_before_move = is_king_in_check_t<c>();
 
@@ -2794,7 +2791,8 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
         pinnedInfo = compute_pins_t<c>();
     }
 
-    // The plan part B.
+    ///////////////////////////////////////////////////////////
+
     n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c>(psuedo_legal_moves, b_unquiet_moves_only);
 
     if (!in_check_before_move) {

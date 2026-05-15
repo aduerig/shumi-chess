@@ -1,4 +1,4 @@
-
+﻿
 #include <math.h>
 #include <vector>
 
@@ -62,8 +62,7 @@ namespace ShumiChess {
     black_king   (0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
     white_king   (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),   
     turn(WHITE),
-    black_castle_rights(CASTLE_EITHER),
-    white_castle_rights(CASTLE_EITHER),
+    castle_rights((CASTLE_EITHER << 2) | CASTLE_EITHER),
     en_passant_landing_bb(1),               // The square where the capturing pawn would land in an en-passant capture
     halfmove(0),
     fullmove(1) 
@@ -136,16 +135,16 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         switch (token)
         {
         case 'k':
-            this->black_castle_rights |= CASTLE_KING;
+            this->castle_rights |= (CASTLE_KING << 2);
             break;
         case 'q':
-            this->black_castle_rights |= CASTLE_QUEEN;
+            this->castle_rights |= (CASTLE_QUEEN << 2);
             break;
         case 'K':
-            this->white_castle_rights |= CASTLE_KING;
+            this->castle_rights |= CASTLE_KING;
             break;
         case 'Q':
-            this->white_castle_rights |= CASTLE_QUEEN; 
+            this->castle_rights |= CASTLE_QUEEN; 
             break;
         default:
             // std::cout << "Unexpected castling rights token: " << token << std::endl;
@@ -285,16 +284,16 @@ const string GameBoard::to_fen(bool bFullFEN) {
 
     // castling
     string castlestuff;
-    if (CASTLE_KING & white_castle_rights) {
+    if (CASTLE_KING & castle_rights) {
         castlestuff += 'K';
     }
-    if (CASTLE_QUEEN & white_castle_rights) {
+    if (CASTLE_QUEEN & castle_rights) {
         castlestuff += 'Q';
     }
-    if (CASTLE_KING & black_castle_rights) {
+    if ((CASTLE_KING << 2) & castle_rights) {
         castlestuff += 'k';
     }
-    if (CASTLE_QUEEN & black_castle_rights) {
+    if ((CASTLE_QUEEN << 2) & castle_rights) {
         castlestuff += 'q';
     }
     if (castlestuff.empty()) {
@@ -2461,8 +2460,8 @@ bool GameBoard::bHasCastled_fake_t(int k_rank, int k_file) const {
 template<Color c>
 int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 
-    int i_can_castleNumer = 0;
-    int i_can_castleDenom = 0;
+    int i_NumerB = 0;
+    int i_DenomB = 0;
 
     bool b_has_castled = false;
 
@@ -2500,41 +2499,44 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         //assert(nGuardPawns==nGuardPawns2);
 
         if (nGuardPawns==3) cpWght = cpWght;
-        else if (nGuardPawns==2) cpWght = cpWght * 2 / 3;
-        else if (nGuardPawns==1) cpWght = cpWght * 1 / 3;
+        else if (nGuardPawns==2) cpWght = (cpWght * 2) / 3;
+        else if (nGuardPawns==1) cpWght = (cpWght * 1) / 3;
         else if (nGuardPawns==0) cpWght = 0;
         else assert(0);
+
+
+
     }
 
     // Can castle //////////////////////////////////////////////
 
-    i_can_castleNumer = 0;
-    i_can_castleDenom = 1;
+    i_NumerB = 0;
+    i_DenomB = 1;
     if constexpr (c == Color::WHITE) {
-        i_can_castleNumer += (white_castle_rights & CASTLE_KING)  ? 1 : 0;
-        i_can_castleNumer += (white_castle_rights & CASTLE_QUEEN) ? 1 : 0;
+        i_NumerB += (castle_rights & CASTLE_KING)  ? 1 : 0;
+        i_NumerB += (castle_rights & CASTLE_QUEEN) ? 1 : 0;
     } else {
-        i_can_castleNumer += (black_castle_rights & CASTLE_KING)  ? 1 : 0;
-        i_can_castleNumer += (black_castle_rights & CASTLE_QUEEN) ? 1 : 0;
+        i_NumerB += (castle_rights & (CASTLE_KING << 2))  ? 1 : 0;
+        i_NumerB += (castle_rights & (CASTLE_QUEEN << 2)) ? 1 : 0;
     }
 
     // Make "1" (can castle one side)"3/2"
-    if (i_can_castleNumer==1) {
-        i_can_castleNumer=3;
-        i_can_castleDenom=2;
+    if (i_NumerB==1) {
+        i_NumerB=3;
+        i_DenomB=2;
     }
 
     int cpWghtB = wghts.GetWeight(CAN_CASTLE);
 
+    ///////////////////////////////
 
+    int icode = (b_has_castled ? cpWght : 0) + (cpWghtB*i_NumerB)/i_DenomB;
 
-    int icode = (b_has_castled ? cpWght : 0) + (cpWghtB*i_can_castleNumer)/i_can_castleDenom;
-
+    // Take phase into account
     int final_cp;
-
     if      (phase == GamePhase::OPENING) final_cp = icode;
-    else if (phase == GamePhase::MIDDLE_EARLY) final_cp = (2*icode)/3;
-    else if (phase == GamePhase::MIDDLE) final_cp = icode/2;
+    else if (phase == GamePhase::MIDDLE_EARLY) final_cp = (4*icode)/5;
+    else if (phase == GamePhase::MIDDLE) final_cp = (2*icode)/3;
     else final_cp = 0;
 
     return final_cp;

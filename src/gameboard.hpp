@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <iostream>
@@ -80,8 +80,7 @@ class GameBoard {
 
         // Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
         // Note: why intialize with no rights? Does it matter?
-        uint8_t black_castle_rights = CASTLE_NONE;
-        uint8_t white_castle_rights = CASTLE_NONE;
+        uint8_t castle_rights = CASTLE_NONE;
         //
         // EnPassant coding in the Gameboard structure. This is weird, but toegather with the Move element
         // with the same name - it works. The disadvantage is it requires a ull, and storing it in a square

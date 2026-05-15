@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cinttypes>
 #include <optional>
@@ -73,8 +73,7 @@ struct Move {
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
 
-    uint8_t black_castle_rights = CASTLE_EITHER;
-    uint8_t white_castle_rights = CASTLE_EITHER;
+    uint8_t castle_rights = (CASTLE_EITHER << 2) | CASTLE_EITHER;
 
     bool is_en_passent_capture = false;    // bools are hopefully 1 byte (8 bits)
     bool is_castle_move = false;
@@ -90,8 +89,7 @@ struct Move {
          Piece piece_type_,
          Piece capture_,
          Piece promotion_,
-         uint8_t black_castle_rights_,
-         uint8_t white_castle_rights_,
+         uint8_t castle_rights_,
          bool is_en_passent_capture_,
          bool is_castle_move_)
         :
@@ -102,8 +100,7 @@ struct Move {
           piece_type(piece_type_),
           capture(capture_),
           promotion(promotion_),
-          black_castle_rights(black_castle_rights_),
-          white_castle_rights(white_castle_rights_),
+          castle_rights(castle_rights_),
           is_en_passent_capture(is_en_passent_capture_),
           is_castle_move(is_castle_move_)
     {

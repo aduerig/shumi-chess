@@ -1,4 +1,4 @@
-
+﻿
 #include <float.h>
 #include <bitset>
 #include <iomanip>
@@ -904,7 +904,7 @@ void MinimaxAI::playground(int iPhase) {
     utemp1 = pawn_file_info.size();
     string sss1 = format_with_commas(utemp1);
     string sss2 = format_with_commas(NhitsP);
-    utemp2 = sizeof(PawnFileInfo); //TTable2.size();
+    utemp2 = sizeof(Move); //TTable2.size();
    
     cout << "TP: " << sss1 << " mtches= " << sss2 << "       TT2: " << utemp2 << " mtches= " << NhitsTT2 << endl;
  
@@ -1604,8 +1604,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             #ifdef _DEBUGGING_PUSH_POP
                 std::string temp_fen_before = engine.game_board.to_fen();
                 ull zobrist_save = engine.game_board.zobrist_key;
-                auto ep_history_saveb = engine.game_board.black_castle_rights;
-                auto ep_history_savew = engine.game_board.white_castle_rights;
+                auto ep_history_save = engine.game_board.castle_rights;
                 auto enpassant_save = engine.game_board.en_passant_landing_bb;
             #endif
 
@@ -1770,13 +1769,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     std::cout << "\x1b[0m";
                     assert(0);        
                 }
-                if (ep_history_saveb != engine.game_board.black_castle_rights) {
+                if (ep_history_save != engine.game_board.castle_rights) {
                     std::cout << "\x1b[31m";
                     std::cout << "PROBLEM WITH PUSH POP B !!!!!" << std::endl;
                     std::cout << "\x1b[0m";
                     assert(0);   
                 }
-                if (ep_history_savew != engine.game_board.white_castle_rights) {
+                if (ep_history_save != engine.game_board.castle_rights) {
                     std::cout << "\x1b[31m";
                     std::cout << "PROBLEM WITH PUSH POP A !!!!!" << std::endl;
                     std::cout << "\x1b[0m";
@@ -2812,10 +2811,10 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
         cp_score_position_temp += icp_temp;       
     }
 
-    if (nPhase >= GamePhase::MIDDLE) {
-        icp_temp = engine.game_board.opposite_bishops_cp_t<c>(cp_material_all);
-        cp_score_position_temp += icp_temp;
-    }
+    // if (nPhase >= GamePhase::MIDDLE) {
+    //     icp_temp = engine.game_board.opposite_bishops_cp_t<c>(cp_material_all);
+    //     cp_score_position_temp += icp_temp;
+    // }
 
     if (noMajorPiecesEnemy) {
         dcp_temp = engine.game_board.kings_close_toegather_cp_t<c>();

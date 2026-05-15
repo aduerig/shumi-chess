@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+﻿#include <gtest/gtest.h>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -44,8 +44,7 @@ TEST_P(tGameboardFenNotation, FenBoardMatchesExpected) {
     EXPECT_EQ(fen_board.black_king, get<10>(test_pair.first));
     EXPECT_EQ(fen_board.white_king, get<11>(test_pair.first));
     EXPECT_EQ(fen_board.turn, get<12>(test_pair.first));
-    EXPECT_EQ(fen_board.black_castle_rights, get<13>(test_pair.first));
-    EXPECT_EQ(fen_board.white_castle_rights, get<14>(test_pair.first));
+    EXPECT_EQ(fen_board.castle_rights, (get<13>(test_pair.first) << 2) | get<14>(test_pair.first));
     EXPECT_EQ(fen_board.en_passant_landing_bb, get<15>(test_pair.first));
     EXPECT_EQ(fen_board.halfmove, get<16>(test_pair.first));
     EXPECT_EQ(fen_board.fullmove, get<17>(test_pair.first));
@@ -77,26 +76,7 @@ TEST_P(tGameboardToFenNotation, ToFenBoardMatchesExpected) {
 
     // TODO: finish making test
 
-    // ShumiChess::GameBoard fen_board {test_pair.first};
-
-    // EXPECT_EQ(fen_board.black_pawns, get<0>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_pawns, get<1>(test_pair.second));
-    // EXPECT_EQ(fen_board.black_rooks, get<2>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_rooks, get<3>(test_pair.second));
-    // EXPECT_EQ(fen_board.black_knights, get<4>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_knights, get<5>(test_pair.second));
-    // EXPECT_EQ(fen_board.black_bishops, get<6>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_bishops, get<7>(test_pair.second));
-    // EXPECT_EQ(fen_board.black_queens, get<8>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_queens, get<9>(test_pair.second));
-    // EXPECT_EQ(fen_board.black_king, get<10>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_king, get<11>(test_pair.second));
-    // EXPECT_EQ(fen_board.turn, get<12>(test_pair.second));
-    // EXPECT_EQ(fen_board.black_castle_rights, get<13>(test_pair.second));
-    // EXPECT_EQ(fen_board.white_castle_rights, get<14>(test_pair.second));
-    // EXPECT_EQ(fen_board.en_passant_landing_bb, get<15>(test_pair.second));
-    // EXPECT_EQ(fen_board.halfmove, get<16>(test_pair.second));
-    // EXPECT_EQ(fen_board.fullmove, get<17>(test_pair.second));
+   
 }
 
 INSTANTIATE_TEST_SUITE_P(tGameboardToFenNotationParams,  
