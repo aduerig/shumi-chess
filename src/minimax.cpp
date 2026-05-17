@@ -97,7 +97,7 @@ bool global_debug_flag = false;
         #endif
 
         rewind(fp);   // same as fseek(fp, 0, SEEK_SET)
-        clearerr(fp); // optional: clears EOF/error flags
+        clearerr(fp); // optional: clears EOF/error
         return 0;
     }
 
@@ -1235,7 +1235,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         int iLimit = 1;   // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
         if (depth > iLimit) {
 
-            // --- Normal TT2 probe (Note: exact-only version, no flags/age yet)
+            // --- Normal TT2 probe (Note: exact-only version, no age yet)
 
             bool is_perfect_match = false;
 

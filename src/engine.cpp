@@ -761,89 +761,22 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
     uint8_t castle_rights = game_board.castle_rights;
     castle_opportunity_history.push(castle_rights);
 
-    game_board.castle_rights &= move.castle_rights;
+    // This line transfers the castling rights in the move to the board castling rights.
+    // Its not clear this does anything more than transfer the castling rights from the FEN to the gameboard.
+    // The castling rights in the gameboard are used extensivily.
+    // Note: Is there a better way to do this? These bit in the flags are ONLY used here.
+    game_board.castle_rights &= (move.flags & 0b00001111);      // Screen off any upper non castling related bits
 
     uint8_t castle_new = game_board.castle_rights;
 
     // Zobrist castle rights
-    if (castle_new != castle_rights)
-    {
+    if (castle_new != castle_rights) {
         game_board.zobrist_key ^= zobrist_castling[castle_rights];
         game_board.zobrist_key ^= zobrist_castling[castle_new];
     }
 }
 
-    // Incremental attempts (for push) //////////////////////////////////////////////////////
-
-    // material_balance_cp is in abs coordinates (positive is white good)
-
-    // material_balance_Whistory.push(material_balanceW_cp);
-    // material_balance_Bhistory.push(material_balanceB_cp);
-
-    // if (move.capture != Piece::NONE) {
-    //     int victim_cp = game_board.centipawn_score_of(move.capture);
-
-    //     if (move.color == ShumiChess::WHITE) {
-    //         material_balanceB_cp -= victim_cp;
-    //     } else {
-    //         material_balanceW_cp -= victim_cp;
-    //     }
-    // }
-
-    // if (move.promotion != Piece::NONE) {
-    //     int promo_gain_cp = game_board.centipawn_score_of(move.promotion)
-    //                     - game_board.centipawn_score_of(Piece::PAWN);
-
-    //     if (move.color == ShumiChess::WHITE) {
-    //         material_balanceW_cp += promo_gain_cp;
-    //     } else {
-    //         material_balanceB_cp += promo_gain_cp;
-    //     }
-    // }
-
-    //  Keeping a log of the board (in parallel with the bitboards)
-    //game_board.push_move_to_pieces_on_square(move);
-    
-    // // Assert that it matches
-    // Piece temp[64];
-    // for (int i = 0; i < 64; i++) {
-    //     temp[i] = game_board.pieces_on_square[i];
-    // }
-    
-    // game_board.bitboards_to_pieces_on_square();
-    // for (int i = 0; i < 64; i++) {
-    //     assert(temp[i] == game_board.pieces_on_square[i]);
-    // }
-
-
-    // {
-    //     PInfo tempWhite;
-    //     PInfo tempBlack;
-
-    //     game_board.build_pawn_file_summary_t<Color::WHITE>(tempWhite);
-    //     game_board.build_pawn_file_summary_t<Color::BLACK>(tempBlack);
-
-    //     if (!(tempWhite == game_board.white_pawn_info)) {
-    //         printf("\nWHITE mismatch after PUSH\n");
-    //         move_into_string(move);
-    //         cout << "\nmove= " << move_string << endl;
-    //         game_board.dump_pinfo_mismatch(tempWhite, game_board.white_pawn_info);
-    //         string out = utility::representation::gameboard_to_string(game_board);
-    //         cout << out << endl;
-    //         assert(0);
-    //     }
-
-    //     if (!(tempBlack == game_board.black_pawn_info)) {
-    //         printf("\nBLACK mismatch after PUSH\n");
-    //         move_into_string(move);
-    //         cout << "\nmove= " << move_string << endl;
-    //         game_board.dump_pinfo_mismatch(tempBlack, game_board.black_pawn_info);
-    //         assert(0);
-    //     }
-    // }
-
-
-
+ 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 // undos last move   (the opposite of "pushMove()")
@@ -880,8 +813,7 @@ template<Color c> void Engine::popMove_t() {
     uint8_t castle_current = game_board.castle_rights;
     uint8_t castle_prev = castle_opportunity_history.top();
 
-    if (castle_current != castle_prev)
-    {
+    if (castle_current != castle_prev) {
         game_board.zobrist_key ^= zobrist_castling[castle_current];
         game_board.zobrist_key ^= zobrist_castling[castle_prev];
     }
@@ -1168,7 +1100,7 @@ template <Piece P, Color c> ull& Engine::access_pieces_of_color_tp()
 //
 // Fills in a Move data structure based on a single "from" square, and multiple "to" squares.
 //
-template<Color c, bool capture, bool promotion, bool is_en_passent_capture>
+template<Color c, bool capture, bool promotion, bool is_en_passent_cap>
 void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 Square fromSQ,
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
@@ -1198,7 +1130,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
         Piece piece_captured;
         if constexpr (capture) {
-            if constexpr (!is_en_passent_capture) {
+            if constexpr (!is_en_passent_cap) {
                 constexpr Color enemy = utility::representation::opposite_color_t<c>;
                 //Piece piece_captured2 = game_board.pieces_on_square[toSQ];
                 piece_captured = game_board.get_piece_type_on_bitboard_template<enemy>(single_bitboard_to);
@@ -1227,7 +1159,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece_captured,
                                 Piece::NONE,
                                 castle_rights,
-                                is_en_passent_capture,
+                                is_en_passent_cap,
                                 is_castle
                             );
             
@@ -1235,15 +1167,13 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             // Its a promotion
             assert(!is_castle);                             // Cant promote and castle at the same time!
             assert (en_passant_land_sq == NO_SQUARE);       // Cant promote and move a pawn two squares at the same time!
-            assert (!is_en_passent_capture);                // Cant promote and enpassant at the same time!
+            assert (!is_en_passent_cap);                    // Cant promote and enpassant at the same time!
 
             // Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
-                uint8_t castle_rights = ((game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ]) << 2) |
+                uint8_t castle_rightss = ((game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ]) << 2) |
                                         (game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ]);
-                // assert(white_castle_rights == white_castle_r);
-                // assert(black_castle_rights == black_castle_r);
 
                 moves.emplace_back(
                                 fromSQ,
@@ -1253,8 +1183,8 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece,
                                 piece_captured,
                                 promo_piece,
-                                castle_rights,
-                                is_en_passent_capture,
+                                castle_rightss,
+                                is_en_passent_cap,
                                 is_castle
                             );
             }       // END loop over all promotion pieces
@@ -2889,7 +2819,6 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 bool b_add_me = true;       
                 if (b_unquiet_moves_only) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
-                    //if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) && (move.is_en_passent_capture==Piece::NONE) ) {
                         b_add_me = false;
                     }
                 }   

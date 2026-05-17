@@ -146,9 +146,12 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         case 'Q':
             this->castle_rights |= CASTLE_QUEEN; 
             break;
+        case '-':
+            this->castle_rights |= CASTLE_NONE; 
+            break;
         default:
-            // std::cout << "Unexpected castling rights token: " << token << std::endl;
-            // assert(0);  // Note: this fires in some test, is it ok? What is the default case?
+            std::cout << fen_notation << "Unexpected castling rights token: " << token << std::endl;
+            assert(0);
             break;
         }
     }

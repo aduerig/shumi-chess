@@ -585,27 +585,27 @@ curr_game_text.setFill(color_rgb(200, 200, 200))
 curr_game_text.draw(win)
 
 
-# set white flags
+# set white play_flags
 white_flags_text = Text(
-    Point(square_size * 5.85, square_size *9.25),      # set white flags
+    Point(square_size * 5.85, square_size *9.25),
     '---------'
 )
 white_flags_text.setFill(color_rgb(200, 200, 200))
 white_flags_text.setSize(8)
 white_flags_text.draw(win)
 
-# set black flags
+# set black play_flags
 black_flags_text = Text(
-    Point(square_size * 8.2, square_size *9.25),      # set black flags
+    Point(square_size * 8.2, square_size *9.25),
     '----------'
 )
 black_flags_text.setFill(color_rgb(200, 200, 200))
 black_flags_text.setSize(8)
 black_flags_text.draw(win)    # common flgs
 
-# set common flags
+# set common play_flags
 common_flags_text = Text(
-    Point(square_size * 4.5, square_size *9.25),      # set white flags
+    Point(square_size * 4.5, square_size *9.25),
     'flags='
 )
 common_flags_text.setFill(color_rgb(200, 200, 200))
@@ -903,7 +903,7 @@ try:
             else:
                 common_flags_text.setText('r={}'.format(args.rand))
 
-            # White flags
+            # White play_flags
             w_parts = ["wFlags:"]
             if dpth_white is not None:
                 w_parts.append(f" d={dpth_white}")
@@ -914,7 +914,7 @@ try:
 
             white_flags_text.setText(" ".join(w_parts))
 
-            # Black flags
+            # Black play-flags
             b_parts = ["bFlags:"]
             if dpth_black is not None:
                 b_parts.append(f" d={dpth_black}")

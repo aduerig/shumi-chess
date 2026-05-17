@@ -79,13 +79,11 @@ class GameBoard {
         Color turn;
 
         // Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
-        // Note: why intialize with no rights? Does it matter?
+        // In a "normal" opening setup, we would override this after board setup, with the full rights 
         uint8_t castle_rights = CASTLE_NONE;
         //
         // EnPassant coding in the Gameboard structure. This is weird, but toegather with the Move element
-        // with the same name - it works. The disadvantage is it requires a ull, and storing it in a square
-        // is wasteful in time. See doc/EnPassent.txt for details.
-        // ? do we care about non standard gameboards / moves? I dont think so.
+        // with the similar name - it works.  See doc/EnPassent.txt for details.
         // ? would one consider an extra bit for if we should look at this val
         // ? what about an std::optional https://stackoverflow.com/questions/23523184/overhead-of-stdoptionalt
         //

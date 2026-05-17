@@ -50,12 +50,14 @@ enum Piece : std::uint8_t {     // These MUST be in this order
 
 constexpr Square NO_SQUARE = 64;
 
-//                              12345678
+//                                  12345678
 //  These constants MUST be these values
-constexpr int CASTLE_NONE   = 0b00000000;
-constexpr int CASTLE_EITHER = 0b00000011;
-constexpr int CASTLE_KING   = 0b00000001;
-constexpr int CASTLE_QUEEN  = 0b00000010;
+constexpr int CASTLE_NONE       = 0b00000000;
+constexpr int CASTLE_EITHER     = 0b00000011;
+constexpr int CASTLE_KING       = 0b00000001;
+constexpr int CASTLE_QUEEN      = 0b00000010;
+
+constexpr int CASTLE_ALL_BITS   = 0b00001111;
 
 // TODO think about if this is the right way to represent a move
 // NOTE: Can this be a class? How would it help?
@@ -73,7 +75,12 @@ struct Move {
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
 
-    uint8_t castle_rights = (CASTLE_EITHER << 2) | CASTLE_EITHER;
+    // Move flags contain:
+    //      bit 0,1 :   White castling rights   (only used by pushMove, to xfer into the gameboard)
+    //      bit 2,3 :   Black castling rights   (only used by pushMove, to xfer into the gameboard)
+    //      bit 4   :   is a enpassant capture
+    //      bit 5   :   is a castle move
+    uint8_t flags = (CASTLE_EITHER << 2) | CASTLE_EITHER;
 
     bool is_en_passent_capture = false;    // bools are hopefully 1 byte (8 bits)
     bool is_castle_move = false;
@@ -89,7 +96,7 @@ struct Move {
          Piece piece_type_,
          Piece capture_,
          Piece promotion_,
-         uint8_t castle_rights_,
+         uint8_t flags_,
          bool is_en_passent_capture_,
          bool is_castle_move_)
         :
@@ -100,7 +107,7 @@ struct Move {
           piece_type(piece_type_),
           capture(capture_),
           promotion(promotion_),
-          castle_rights(castle_rights_),
+          flags(flags_),
           is_en_passent_capture(is_en_passent_capture_),
           is_castle_move(is_castle_move_)
     {
@@ -205,8 +212,8 @@ extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
 
 extern uint64_t zobrist_piece_square[12][64];
-extern uint64_t zobrist_enpassant[8];           // not used yet
-extern uint64_t zobrist_castling[16];           // not used yet
+extern uint64_t zobrist_enpassant[8];
+extern uint64_t zobrist_castling[16];
 extern uint64_t zobrist_side;
 
 void initialize_zobrist();
