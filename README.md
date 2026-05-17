@@ -24,8 +24,9 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
 
 ## current issue log 
     Not prioritized. No particular order to them. All issues classified as either: a. Bug, or b. Failure (to chess requirements), or c. Sloth (slowdown) or d. Feature. ~~Crossed out~~ items are done, but under testing.
-
-  * Bug. Nhits utput for TT2 wrong. WHat is this, is the TT2 running? Is this just debug?
+  * Feature: Get Shumi to think while its your move. This is fascinating. I suppose you start a search for the enemy, and the enemy does that, somehow transfer into that analysis.
+  * Feature: Takeback button.
+  * Make SHumit transportable.
   * Bug: Get FEN button gives scrambled result when computer player is playing. Maybe this is OK, The scrambled FEN is seen both in the FEN box and the terminal of VSC. Probably just needs screening. 
   * Sloth: Move structure is too big (11 bytes). More could be saved condesing flags. But overhead coding/decoding.
   * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG". This is really no problem to anyone.

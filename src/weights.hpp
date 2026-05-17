@@ -77,7 +77,7 @@ private:
     static constexpr int DOUBLED_OPEN_FILE_WGHT   = -18;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
-    static constexpr int PASSED_PAWN_SLOPE_WGHT   = 11;     // Actually this is a quadratic, not a line
+    static constexpr int PASSED_PAWN_SLOPE_WGHT   = 9;     // Actually this is a quadratic, not a line
     static constexpr int PASSED_PAWN_YINRCPT_WGHT = 25;
     // bonus = PASSED_PAWN_SLOPE_WGHT * (adv-1)*(adv-1)  +  PASSED_PAWN_YINRCPT_WGHT;
     //    adv   new: 11*(adv-1)^2 + 30
@@ -119,7 +119,7 @@ private:
     static constexpr int MAJOR_ON_RANK7_WGHT = 26;      // Rook or queen on 7th rank (if 2 major then 3 times)
     static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank (if 2 major then 3 times)
 
-    static constexpr int KNIGHT_ON_EDGE_WGHT = -10;     // knight on edge penatly (doubled if knight in corner)
+    static constexpr int KNIGHT_ON_EDGE_WGHT = -12;     // knight on edge penatly (doubled if knight in corner)
 
     static constexpr int KING_EDGE_WGHT = 40;              // Only in ending, to force enemy king to edge
 

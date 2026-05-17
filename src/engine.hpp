@@ -333,11 +333,12 @@ class Engine {
         std::vector<uint64_t> three_time_rep_stack; // zobrist keys representing positions
         std::vector<int> boundary_stack; // indices into three_time_rep_stack
 
+        // Holds data on pieces of color c that are pinned to the king of color c.
         struct PinnedInfo
         {
             ull pinnedMask;          // bit i = 1 => my piece on square i is pinned
             ull allowedMask[64];     // for pinned square i: squares it may move to (including capture of pinner)
-                                    // for non-pinned squares: can be 0
+                                     // for non-pinned squares: can be 0
             void clear() {
                 pinnedMask = 0ULL;
                 // for (int i = 0; i < 64; i++) allowedMask[i] = 0ULL;

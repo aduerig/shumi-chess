@@ -325,12 +325,7 @@ class GameBoard {
 
         template<Color c> bool build_pawn_file_summary_t(PInfo& p);
         void build_pawn_summaries(PawnFileInfo& pawnFileInfo);
-        
-        template<Color c> void refresh_pawn_summary_file_t(PInfo& pinfo, int file);
-        template<Color c> void refresh_pawn_summary_files_t(PInfo& pinfo, const bool touched[8]);
-        void refresh_pawn_summaries_after_move(const Move& move,
-                                                  PInfo& whitePInfo,
-                                                  PInfo& blackInfo);
+
         void dump_pinfo_mismatch(const PInfo& a, const PInfo& b);
 
         void validate_row_col_masks_h1_0();

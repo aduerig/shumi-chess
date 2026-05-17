@@ -33,7 +33,7 @@ vector<ull> row_masks = {
 };
 
 
-vector<ull> col_masksHA = {
+vector<ull> col_masks = {
     h_col,         // H-file
     h_col << 1,    // G-file
     h_col << 2,    // F-file

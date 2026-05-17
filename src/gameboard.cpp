@@ -738,7 +738,7 @@ template<Color c> bool GameBoard::build_pawn_file_summary_t(PInfo& pinfo)
     else goodRanksMask = row_masks[ROW_7] | row_masks[ROW_6];
 
     for (int f = 0; f < 8; ++f) {
-        ull bb = (Pawns & col_masksHA[f]);
+        ull bb = (Pawns & col_masks[f]);
 
         if (bb & goodRanksMask) {
             pinfo.guard_files_23 |= (uint8_t)(1u << f);
@@ -796,100 +796,6 @@ void GameBoard::build_pawn_summaries(PawnFileInfo& pawnFileInfo)
     build_pawn_file_summary_t<Color::BLACK>(pawnFileInfo.p[Color::BLACK]);
 }
 
-//
-//  for incremental construction of pawn summaries.
-template<Color c>
-void GameBoard::refresh_pawn_summary_file_t(PInfo& pinfo, int file)
-{
-    assert(file >= 0);
-    assert(file < 8);
-
-    const ull pawns = get_pieces_template<Piece::PAWN, c>();
-    const ull bb = pawns & col_masksHA[file];
-
-    pinfo.file_count[file] = bits_in(bb);
-
-    if (bb) {
-        pinfo.files_present |= (1u << file);
-
-        if constexpr (c == Color::WHITE) {
-            pinfo.advancedSq[file] = utility::bit::bitboard_to_highest_square_fast(bb);
-            pinfo.rearSq[file]     = utility::bit::bitboard_to_lowest_square_fast(bb);
-        } else {
-            pinfo.advancedSq[file] = utility::bit::bitboard_to_lowest_square_fast(bb);
-            pinfo.rearSq[file]     = utility::bit::bitboard_to_highest_square_fast(bb);
-        }
-    } else {
-        pinfo.files_present &= ~(1u << file);
-        pinfo.advancedSq[file] = NO_SQUARE;
-        pinfo.rearSq[file] = NO_SQUARE;
-    }
-}
-
-template<Color c> 
-void GameBoard::refresh_pawn_summary_files_t(PInfo& pinfo, const bool touched[8])
-{
-    for (int file = 0; file < 8; file++) {
-        if (touched[file]) {
-            refresh_pawn_summary_file_t<c>(pinfo, file);
-        }
-    }
-}
-
-
-void GameBoard::refresh_pawn_summaries_after_move(const Move& move,
-                                                  PInfo& whitePInfo,
-                                                  PInfo& blackPInfo)
-{
-    bool white_touched[8] = { false,false,false,false,false,false,false,false };
-    bool black_touched[8] = { false,false,false,false,false,false,false,false };
-
-    const int from_file = (move.fromSQ & 7);
-    const int to_file   = (move.toSQ & 7);
-
-    // ------------------------------------------------------------
-    // Moving pawn affects its own pawn summary
-    // ------------------------------------------------------------
-    if (move.piece_type == Piece::PAWN) {
-        if (move.color == Color::WHITE) {
-            white_touched[from_file] = true;
-            white_touched[to_file] = true;
-        } else {
-            black_touched[from_file] = true;
-            black_touched[to_file] = true;
-        }
-    }
-
-    // ------------------------------------------------------------
-    // Captured pawn affects enemy pawn summary
-    // ------------------------------------------------------------
-    if (move.capture == Piece::PAWN) {
-        int captured_file;
-
-        if (move.is_en_passent_capture) {
-            if (move.color == Color::WHITE) {
-                captured_file = ((move.toSQ - 8) & 7);
-                black_touched[captured_file] = true;
-            } else {
-                captured_file = ((move.toSQ + 8) & 7);
-                white_touched[captured_file] = true;
-            }
-        } else {
-            captured_file = to_file;
-
-            if (move.color == Color::WHITE) {
-                black_touched[captured_file] = true;
-            } else {
-                white_touched[captured_file] = true;
-            }
-        }
-    }
-
-    // Recompute only touched files from the CURRENT board state.
-    refresh_pawn_summary_files_t<Color::WHITE>(whitePInfo, white_touched);
-    refresh_pawn_summary_files_t<Color::BLACK>(blackPInfo, black_touched);
-}
-
 
 static void print_bb64(ull bb)
 {
@@ -904,8 +810,7 @@ static void print_bb64(ull bb)
         std::printf("\n");
     }
 }
-
-// Note: debug only. 
+// Called only after board setup, To help make sure the masks matrch the board properly
 void GameBoard::validate_row_col_masks_h1_0()
 {
     //printf("\nder\n");
@@ -933,10 +838,10 @@ void GameBoard::validate_row_col_masks_h1_0()
             expect |= (1ULL << sq);
         }
 
-        if (col_masksHA[f] != expect) {
+        if (col_masks[f] != expect) {
             std::printf("FILE MASK MISMATCH f=%d (this f is sq%%8)\n", f);
             std::printf("expected:\n"); print_bb64(expect);
-            std::printf("actual:\n");   print_bb64(col_masksHA[f]);
+            std::printf("actual:\n");   print_bb64(col_masks[f]);
             assert(0);          // To force an exit
         }
     }
@@ -949,7 +854,7 @@ void GameBoard::validate_row_col_masks_h1_0()
         int colHits = 0;
 
         for (int r = 0; r < 8; ++r) if (row_masks[r] & bit) ++rowHits;
-        for (int f = 0; f < 8; ++f) if (col_masksHA[f] & bit) ++colHits;
+        for (int f = 0; f < 8; ++f) if (col_masks[f] & bit) ++colHits;
 
         if (rowHits != 1 || colHits != 1) {
             std::printf("SQUARE MEMBERSHIP BAD sq=%d rowHits=%d colHits=%d\n", sq, rowHits, colHits);
@@ -962,7 +867,7 @@ void GameBoard::validate_row_col_masks_h1_0()
         for (int f = 0; f < 8; ++f) {
             int sq = r * 8 + f;
             ull expect = (1ULL << sq);
-            ull got = row_masks[r] & col_masksHA[f];
+            ull got = row_masks[r] & col_masks[f];
 
             if (got != expect) {
                 std::printf("INTERSECTION BAD r=%d f=%d (expect sq=%d)\n", r, f, sq);
@@ -1613,8 +1518,8 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
     ull occ = get_pieces();
 
-    const ull FILE_A = col_masksHA[ColHA::COL_A];
-    const ull FILE_H = col_masksHA[ColHA::COL_H];
+    const ull FILE_A = col_masks[ColHA::COL_A];
+    const ull FILE_H = col_masks[ColHA::COL_H];
 
  
 
@@ -2096,8 +2001,8 @@ int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
 
     ull occ = get_pieces();
 
-    const ull FILE_A = col_masksHA[ColHA::COL_A];
-    const ull FILE_H = col_masksHA[ColHA::COL_H];
+    const ull FILE_A = col_masks[ColHA::COL_A];
+    const ull FILE_H = col_masks[ColHA::COL_H];
 
  
     // === Apply the FORCED first capture mv by 'color' ===
@@ -2225,8 +2130,8 @@ ull GameBoard::SEE_attackers_on_square_local(Color c,
     ull atk = 0ULL;
     const ull bit = (1ULL << sq);
 
-    const ull FILE_A = col_masksHA[ColHA::COL_A];
-    const ull FILE_H = col_masksHA[ColHA::COL_H];
+    const ull FILE_A = col_masks[ColHA::COL_A];
+    const ull FILE_H = col_masks[ColHA::COL_H];
 
     // -----------------------
     // Pawns (origins that attack sq)
@@ -2532,8 +2437,9 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 
     int icode = (b_has_castled ? cpWght : 0) + (cpWghtB*i_NumerB)/i_DenomB;
 
-    // Take phase into account
     int final_cp;
+
+    // Take phase into account
     if      (phase == GamePhase::OPENING) final_cp = icode;
     else if (phase == GamePhase::MIDDLE_EARLY) final_cp = (4*icode)/5;
     else if (phase == GamePhase::MIDDLE) final_cp = (2*icode)/3;
@@ -2645,8 +2551,8 @@ template<Color c>
 int GameBoard::pawns_attacking_square_t(int sq) {
     ull bitBoard = (1ULL << sq);
 
-    const ull FILE_H = col_masksHA[ColHA::COL_H];
-    const ull FILE_A = col_masksHA[ColHA::COL_A];
+    const ull FILE_H = col_masks[ColHA::COL_H];
+    const ull FILE_A = col_masks[ColHA::COL_A];
 
     ull origins;
 
@@ -2668,8 +2574,8 @@ int GameBoard::pawns_attacking_square_t(int sq) {
 template<Color c>
 int GameBoard::pawns_attacking_squares_t(ull bitBoard) {
 
-    const ull FILE_H = col_masksHA[ColHA::COL_H];
-    const ull FILE_A = col_masksHA[ColHA::COL_A];
+    const ull FILE_H = col_masks[ColHA::COL_H];
+    const ull FILE_A = col_masks[ColHA::COL_A];
 
     ull origins;
 
@@ -2923,7 +2829,7 @@ int GameBoard::rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnI
     int score_cp = 0;
 
     for (int file = 0; file < 8; ++file) {
-        const ull file_mask = col_masksHA[file];
+        const ull file_mask = col_masks[file];
 
         const int nRooksOnFile = bits_in(rooks & file_mask);
         if (!nRooksOnFile) continue;

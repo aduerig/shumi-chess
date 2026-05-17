@@ -203,7 +203,6 @@ extern ull a_row;
 extern ull a_col;
 extern std::vector<ull> row_masks;
 extern std::vector<ull> col_masks;
-extern std::vector<ull> col_masksHA;
 
 extern uint64_t zobrist_piece_square[12][64];
 extern uint64_t zobrist_enpassant[8];           // not used yet

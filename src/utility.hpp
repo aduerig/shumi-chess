@@ -77,12 +77,6 @@ inline std::string colorize(AColor color, const std::string& text) {
 
 namespace bit {
 
-inline ull bitshift_by_color(ull bitboard, ShumiChess::Color color, int amount) {
-    if (color == ShumiChess::WHITE) {
-        return bitboard << amount;
-    }
-    return bitboard >> amount;
-}
 
 // Compile-time color bitshift
 template<ShumiChess::Color c>

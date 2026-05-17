@@ -1,3 +1,10 @@
-  git add .
-  git commit -m "foo"
-  git push
+
+
+
+
+Look at get_legal_moves_fast_t carefully. 
+For some time I have been concentrating on a routine called add_psuedo_move_to_vector, a few levels 
+below here, becasue it shows up as top in the profiling. But I need to look higher here for speedups
+Maybe add_psuedo_move_to_vector is simply being called too much. I suspect there are cases like checks
+where i can.
+

@@ -815,7 +815,6 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
     //     assert(temp[i] == game_board.pieces_on_square[i]);
     // }
 
-    //game_board.refresh_pawn_summaries_after_move(move, game_board.white_pawn_info, game_board.black_pawn_info);
 
     // {
     //     PInfo tempWhite;
@@ -2136,15 +2135,15 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
         pawn_starting_rank_mask       = row_masks[Row::ROW_2];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
-        far_right_col                 = col_masksHA[ColHA::COL_H];
-        far_left_col                  = col_masksHA[ColHA::COL_A];
+        far_right_col                 = col_masks[ColHA::COL_H];
+        far_left_col                  = col_masks[ColHA::COL_A];
     } else {
         enemy_starting_rank_mask      = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
         pawn_starting_rank_mask       = row_masks[Row::ROW_7];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
-        far_right_col                 = col_masksHA[ColHA::COL_A];
-        far_left_col                  = col_masksHA[ColHA::COL_H];
+        far_right_col                 = col_masks[ColHA::COL_A];
+        far_left_col                  = col_masks[ColHA::COL_H];
     }
 
     while (pawns) {
@@ -2516,8 +2515,8 @@ bool Engine::is_square_attacked_with_masks_t(
         square_just_behind_target = (square_bb & ~row_masks[ROW_1]) >> 8;
     }
 
-    ull FILE_H = col_masksHA[ColHA::COL_H];
-    ull FILE_A = col_masksHA[ColHA::COL_A];
+    ull FILE_H = col_masks[ColHA::COL_H];
+    ull FILE_A = col_masks[ColHA::COL_A];
     ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
     ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
     ull reachable_pawns = towardA_from_target | towardH_from_target;
@@ -2552,6 +2551,7 @@ bool Engine::is_king_in_check_t() {
     return b_king_in_check;
 }
 
+//  pieces of color c that are pinned to the king of color c.
 template<Color c>
 Engine::PinnedInfo Engine::compute_pins_t() {
     PinnedInfo info;
@@ -2629,8 +2629,8 @@ Engine::CheckInfo Engine::find_checkers_and_blockmask_t() {
     } else {
         square_just_behind_target = (kingBB & ~row_masks[ROW_1]) >> 8;
     }
-    const ull FILE_H = col_masksHA[ColHA::COL_H];
-    const ull FILE_A = col_masksHA[ColHA::COL_A];
+    const ull FILE_H = col_masks[ColHA::COL_H];
+    const ull FILE_A = col_masks[ColHA::COL_A];
     ull towardH_from_target = ((square_just_behind_target & ~FILE_H) >> 1);
     ull towardA_from_target = ((square_just_behind_target & ~FILE_A) << 1);
     ull pawn_sources  = towardA_from_target | towardH_from_target;
@@ -2755,7 +2755,7 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
                                themQueens, themRooks, themBishops);
 }
 
-// I am called only from python, when the game is over. I am wasteful.
+// I am called only from python, through engine_communicator_get_legal_moves, when the game is over. I am wasteful.
 int Engine::get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut)
 {
     if (c == Color::WHITE) {
@@ -2785,9 +2785,12 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
     CheckInfo  checkInfo;
 
     if (!in_check_before_move) {
+        // gather data on pieces of color c that are pinned to the king of color c. This will be later used
+        // to determine legality of these pieces moves.
         pinnedInfo = compute_pins_t<c>();
     } else {
         checkInfo  = find_checkers_and_blockmask_t<c>();
+        // gather data on pieces of color c that are pinned to the king of color c.
         pinnedInfo = compute_pins_t<c>();
     }
 
@@ -2802,12 +2805,11 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
             if (move.piece_type == Piece::KING) {
                 legal = !in_check_after_king_move_t<c>(move);
             } else {
-                //
-                // This is where the time is saved. Here we DONT 
+                // NOT a king move
                 if (move.is_en_passent_capture) {
                     legal = !in_check_after_move_fast_t<c>(move);
                 } else {
-
+                    // Not en en passant. This is where the time is saved. Here we DONT call in_check_after_move_fast_t()
                     const int fromSq = move.fromSQ;
                     const int toSq   = move.toSQ;
 
