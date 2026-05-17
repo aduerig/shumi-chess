@@ -362,7 +362,7 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
     }
 
     // 4) Castling also moves a rook
-    if (move.is_castle_move) {
+    if (move.flags & FLAGS_IS_CASTLE_MOVE) {
         pRooks   = &access_pieces_of_color_tp<ShumiChess::Piece::ROOK>(c);
         rooksOld = *pRooks;
 
@@ -693,7 +693,7 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
                 game_board.pawn_zobrist_key ^= zobrist_piece_square_get(move.capture + enemy * 6, square_to);
             }
         }
-    } else if (move.is_castle_move) {
+    } else if (move.flags & FLAGS_IS_CASTLE_MOVE) {
 
         int rook_from_sq;
         int rook_to_sq;
@@ -899,7 +899,7 @@ template<Color c> void Engine::popMove_t() {
             }
         }
 
-    } else if (move.is_castle_move) {
+    } else if (move.flags & FLAGS_IS_CASTLE_MOVE) {
 
         int rook_from_sq;
         int rook_to_sq;
@@ -1147,12 +1147,19 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         // copying it into the vector (emplace_back(new_move)).
         if constexpr (!promotion) {
 
+            // Shortcut assignments (to reduce line length)
             const uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
             const uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
 
+            // Add castling flags
             uint8_t flags = (black_castle_rights << 2) | white_castle_rights;
+
+            // Add other flags
             if constexpr (is_en_passent_cap) {
                 flags |= FLAGS_EN_PASSENT_CAPTURE;
+            }
+            if (is_castle) {
+                flags |= FLAGS_IS_CASTLE_MOVE;
             }
 
             moves.emplace_back(
@@ -1163,8 +1170,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece,
                                 piece_captured,
                                 Piece::NONE,
-                                flags,
-                                is_castle
+                                flags
                             );
             
         } else {
@@ -1176,8 +1182,11 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             // Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
+                // Shortcut assignments (to reduce line length)
                 const uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
                 const uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+                
+                // Note: enpassant and castling cant be promotions so dont add these flags here.
                 const uint8_t flags = (black_castle_rights << 2) | white_castle_rights;
 
                 moves.emplace_back(
@@ -1188,8 +1197,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece,
                                 piece_captured,
                                 promo_piece,
-                                flags,
-                                is_castle
+                                flags
                             );
             }       // END loop over all promotion pieces
         }
@@ -2652,7 +2660,7 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
     if (move.capture != Piece::NONE) occ_BB &= ~toBB;
     occ_BB |= toBB;
 
-    if (move.is_castle_move) {
+    if (move.flags & FLAGS_IS_CASTLE_MOVE) {
         ull rookFrom_BB = 0ULL;
         ull rookTo_BB   = 0ULL;
         if constexpr (c == Color::WHITE) {

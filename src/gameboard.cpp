@@ -444,7 +444,7 @@ void GameBoard::push_move_to_pieces_on_square(const Move& move)
     }
 
     // Castling also moves a rook.
-    if (move.is_castle_move) {
+    if (move.flags & FLAGS_IS_CASTLE_MOVE) {
         assert(move.piece_type == Piece::KING);
         assert(move.capture == Piece::NONE);
 
@@ -486,7 +486,7 @@ void GameBoard::pop_move_to_pieces_on_square(const Move& move)
     assert(move.toSQ   != NO_SQUARE);
 
     // Undo castling rook move first.
-    if (move.is_castle_move) {
+    if (move.flags & FLAGS_IS_CASTLE_MOVE) {
         assert(move.piece_type == Piece::KING);
         assert(move.capture == Piece::NONE);
 

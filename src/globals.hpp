@@ -57,6 +57,7 @@ constexpr int FLAGS_CASTLE_EITHER       = 0b00000011;
 constexpr int FLAGS_CASTLE_KING         = 0b00000001;
 constexpr int FLAGS_CASTLE_QUEEN        = 0b00000010;
 constexpr int FLAGS_EN_PASSENT_CAPTURE  = 0b00010000;
+constexpr int FLAGS_IS_CASTLE_MOVE      = 0b00100000;
 
 constexpr int FLAGS_CASTLE_ALL_BITS     = 0b00001111;
 
@@ -82,8 +83,6 @@ struct Move {
     //      bit 5   :   is a castle move        (off by default)
     uint8_t flags = (FLAGS_CASTLE_EITHER << 2) | FLAGS_CASTLE_EITHER;
 
-    bool is_castle_move = false;
-
     Move() = default;   // ← put it here
 
    // --- NEW FULL FIELD CONSTRUCTOR (used for speed, in add_psuedo_move_to_vector()) ---
@@ -95,8 +94,7 @@ struct Move {
          Piece piece_type_,
          Piece capture_,
          Piece promotion_,
-         uint8_t flags_,
-         bool is_castle_move_)
+         uint8_t flags_)
         :
           fromSQ(fromSQ_),
           toSQ(toSQ_),
@@ -105,8 +103,7 @@ struct Move {
           piece_type(piece_type_),
           capture(capture_),
           promotion(promotion_),
-          flags(flags_),
-          is_castle_move(is_castle_move_)
+          flags(flags_)
     {
     }
 

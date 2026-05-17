@@ -83,7 +83,7 @@ TEST(EngineMoveStorage, PushingMoves) {
 
     auto temp_move_2 = MoveSet(BLACK, KING, 1ULL <<59, 1ULL <<57);
     temp_move_2.flags &= 0b0011;
-    temp_move_2.is_castle_move = true;
+    temp_move_2.flags |= FLAGS_IS_CASTLE_MOVE;
     test_pushMove(test_engine,temp_move_2);
     EXPECT_EQ(GameBoard("rQbq1rk1/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR w KQ - 1 6"), test_engine.game_board);
 
@@ -242,7 +242,7 @@ TEST(EngineMoveStorage, PoppingMoves) {
 
     auto temp_move_2 = MoveSet(BLACK, KING, 1ULL <<59, 1ULL <<57);
     temp_move_2.flags &= 0b0011;
-    temp_move_2.is_castle_move = true;
+    temp_move_2.flags |= FLAGS_IS_CASTLE_MOVE;
     test_pushMove(test_engine,temp_move_2);
     expected_game_history.emplace("rQbq1rk1/pp2pp1p/5npb/8/8/8/PPPP1PPP/RNBQKBNR w KQ - 1 6");
 

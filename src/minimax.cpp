@@ -2307,7 +2307,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
             {
                 const ShumiChess::Move& mv = *it;
 
-                if (mv.is_castle_move)
+                if (mv.flags & FLAGS_IS_CASTLE_MOVE)
                 {
                     std::rotate(quiet_begin, it, it + 1);
                     ++quiet_begin;   // if a second castle move exists, it goes just after the first
