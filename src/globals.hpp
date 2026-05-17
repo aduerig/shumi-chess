@@ -50,15 +50,15 @@ enum Piece : std::uint8_t {     // These MUST be in this order
 
 constexpr Square NO_SQUARE = 64;
 
-//                                  12345678
+//                                          12345678
 //  These constants MUST be these values
-constexpr int FLAGS_CASTLE_NONE       = 0b00000000;
-constexpr int FLAGS_CASTLE_EITHER     = 0b00000011;
-constexpr int FLAGS_CASTLE_KING       = 0b00000001;
-constexpr int FLAGS_CASTLE_QUEEN      = 0b00000010;
-constexpr int FLAGS_EN_PASSENT_CAPTURE = 0b00010000;
+constexpr int FLAGS_CASTLE_NONE         = 0b00000000;
+constexpr int FLAGS_CASTLE_EITHER       = 0b00000011;
+constexpr int FLAGS_CASTLE_KING         = 0b00000001;
+constexpr int FLAGS_CASTLE_QUEEN        = 0b00000010;
+constexpr int FLAGS_EN_PASSENT_CAPTURE  = 0b00010000;
 
-constexpr int FLAGS_CASTLE_ALL_BITS   = 0b00001111;
+constexpr int FLAGS_CASTLE_ALL_BITS     = 0b00001111;
 
 
 // NOTE: Can this be a class? How would it help?
@@ -75,11 +75,11 @@ struct Move {
     Piece capture = Piece::NONE;
     Piece promotion = Piece::NONE;
 
-    // Move flags contain:
+    // Move flags  (FLAGS_ constants)
     //      bit 0,1 :   White castling rights   (only used by pushMove, to xfer into the gameboard)
     //      bit 2,3 :   Black castling rights   (only used by pushMove, to xfer into the gameboard)
-    //      bit 4   :   is a enpassant capture
-    //      bit 5   :   is a castle move
+    //      bit 4   :   is a enpassant capture  (off by default)
+    //      bit 5   :   is a castle move        (off by default)
     uint8_t flags = (FLAGS_CASTLE_EITHER << 2) | FLAGS_CASTLE_EITHER;
 
     bool is_castle_move = false;

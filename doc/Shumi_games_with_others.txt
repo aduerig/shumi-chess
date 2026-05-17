@@ -153,7 +153,8 @@ WHITE: Chess.com  "Alexander"  2450         BLACK:  Uncle Shumi version= -d8 -t5
 black wins Thrashs Alexander
 1. d4 e6 2. Nf3 d5 3. g3 c5 4. Bg2 Nc6 5. O-O Bd7 6. c3 Qb6 7. dxc5 Bxc5 8. b4 Bd6 9. Be3 Qc7 10. a4 Nf6 11. Na3 Ne5 12. Bd4 Nxf3 13. Bxf3 e5 14. Be3 Qxc3 15. Bxd5 Nxd5 16. Qxd5 Qc6 17. Rfd1 Qxd5 18. Rxd5 Bxb4 19. Nb5 Bc6 20. Rxe5 Kf8 21. Bc5 Bxc5 22. Rxc5 Ke7 23. e3 Rhc8 24. Rac1 Rd8 25. Nd4 Bxa4 26. Ra5 Be8 27. Kg2 a6 28. Rh5 h6 29. Rhc5 b5 30. Rc7 Kf8 31. R1c5 b4 32. Ra5 Rdb8 33. Nb3 Bb5 34. Nd4 Be8 35. Nb3 Bb5 36. Nd4 Bd3 37. Nb3 Rb5 38. f3 Rxa5 39. Nxa5 Bb5 40. g4 Rd8 41. Kg3 Ke8 42. Nc6 Bxc6 43. Rxc6 a5 44. Rb6 Rd2 45. Rb7 g5 46. Ra7 Ra2 47. Rb7 Ra3 48. e4 b3 49. h4 a4 50. hxg5 hxg5 51. e5 Ra2 52. f4 gxf4 53. Kxf4 Rf2 54. Ke3 Rh2 55. Rb8 Ke7 56. Ke4 b2 57. Rb7 Kd8 58. e6 fxe6 59. g5 a3 60. g6 a2 61. Rb8 Ke7 62. Rxb2 Rxb2 63. g7 Rg2 64. Kf3 Rxg7 65. Ke3 a1=Q 66. Kd3 Rg3 67. Ke2 Qh1 68. Kd2 Qh2 69. Ke1 Rg1  *
 
-
+Some Chess.com master crushed by Shumi in the endgame. 
+1. Nc3 d5 2. d4 Bf5 3. Bf4 Nc6 4. e3 e6 5. Bb5 a6 6. Bxc6 bxc6 7. Nf3 Rb8 8. Na4 Bb4 9. c3 Bd6 10. O-O Ne7 11. Nh4 O-O 12. f3 Bxf4 13. exf4 Ng6 14. Nxf5 exf5 15. g3 Re8 16. Qd3 Qc8 17. Rae1 Rxe1 18. Rxe1 Nf8 19. h4 a5 20. h5 g6 21. Kf2 Ne6 22. hxg6 hxg6 23. Qf1 Kg7 24. Qe2 Qh8 25. Qe5 Kg8 26. Rg1 Qh2 27. Rg2 Qh1 28. Qe1 Qh5 29. Qf1 g5 30. Qa6 gxf4 31. Qxc6 Rd8 32. gxf4 Kh7 33. Nc5 Nxf4 34. Qxc7 Qh4 35. Rg3 Rf8 36. Nd7 Re8 37. Nf6 Qxf6 38. Qxf4 Qe6 39. Kg2 Qe2 40. Kh3 Qf1 41. Rg2 Qh1 42. Rh2 Qe1 43. Kg2 Qh4 44. Rxh4 Kg8 45. Qg5 Kf8 46. Rh8  *
 
 -----------------------------------------------------------------------------------------------------------
 
