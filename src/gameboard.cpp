@@ -430,7 +430,7 @@ void GameBoard::push_move_to_pieces_on_square(const Move& move)
     pieces_on_square[move.fromSQ] = Piece::NONE;
 
     // En passant removes the pawn behind the destination square.
-    if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
+    if (move.flags & FLAGS_IS_EP_CAPTURE) {
         Square capSQ;
         if (move.color == Color::WHITE) {
             capSQ = move.toSQ - 8;
@@ -512,7 +512,7 @@ void GameBoard::pop_move_to_pieces_on_square(const Move& move)
     }
 
     // Undo destination square.
-    if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
+    if (move.flags & FLAGS_IS_EP_CAPTURE) {
         Square capSQ;
         if (move.color == Color::WHITE) {
             capSQ = move.toSQ - 8;
@@ -689,7 +689,7 @@ bool GameBoard::isReversableMove(const Move& m)
 
     if (m.capture != Piece::NONE) return false;
 
-    if (m.flags & FLAGS_EN_PASSENT_CAPTURE) return false;  // safety: should imply capture, but keep explicit
+    if (m.flags & FLAGS_IS_EP_CAPTURE) return false;  // safety: should imply capture, but keep explicit
 
     if (m.promotion != Piece::NONE) return false;
 

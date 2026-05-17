@@ -344,7 +344,7 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
         pCap   = &access_pieces_of_color(move.capture, enemy);
         capOld = *pCap;
 
-        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
+        if (move.flags & FLAGS_IS_EP_CAPTURE) {
             ull behind_mask = (c == Color::WHITE) ? (to_bb >> 8) : (to_bb << 8);
             (*pCap) &= ~behind_mask;
         } else {
@@ -671,7 +671,7 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
         // The move is a capture
         game_board.halfmove = 0;
 
-        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
+        if (move.flags & FLAGS_IS_EP_CAPTURE) {
             //ull move_to_bb = moveto;
             ull target_pawn_bitboard = (c == Color::WHITE) ? (moveto >> 8) : (moveto << 8);
 
@@ -880,7 +880,7 @@ template<Color c> void Engine::popMove_t() {
     if (move.capture != Piece::NONE) {
 
         //ull move_to_bb = moveto;
-        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
+        if (move.flags & FLAGS_IS_EP_CAPTURE) {
             ull target_pawn_bb = (c == Color::WHITE) ? (moveto >> 8) : (moveto << 8);
 
             int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bb);
@@ -1156,7 +1156,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
             // Add other flags
             if constexpr (is_en_passent_cap) {
-                flags |= FLAGS_EN_PASSENT_CAPTURE;
+                flags |= FLAGS_IS_EP_CAPTURE;
             }
             if (is_castle) {
                 flags |= FLAGS_IS_CASTLE_MOVE;
@@ -2748,7 +2748,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 legal = !in_check_after_king_move_t<c>(move);
             } else {
                 // NOT a king move
-            if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
+            if (move.flags & FLAGS_IS_EP_CAPTURE) {
                     legal = !in_check_after_move_fast_t<c>(move);
                 } else {
                     // Not en en passant. This is where the time is saved. Here we DONT call in_check_after_move_fast_t()
@@ -2796,7 +2796,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                     const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
 
                     bool helps = false;
-                    if (!(move.flags & FLAGS_EN_PASSENT_CAPTURE)) {
+                    if (!(move.flags & FLAGS_IS_EP_CAPTURE)) {
                         helps = checkInfo.toSquareHelps(toSq);
                     } else {
                         ull move_to_bb = moveto;
@@ -2812,7 +2812,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                     }
 
                     if (helps) {
-                        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
+                        if (move.flags & FLAGS_IS_EP_CAPTURE) {
                             legal = !in_check_after_move_fast_t<c>(move);
                         } else {
                             if (!pinnedInfo.isPinned(fromSq)) {
@@ -2855,6 +2855,7 @@ template void Engine::add_psuedo_move_to_vector<Color::BLACK, false, true, false
 template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, false>(vector<Move>&, Square, ull, Piece, Square, bool);
 template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, true>(vector<Move>&, Square, ull, Piece, Square, bool);
 template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, true, false>(vector<Move>&, Square, ull, Piece, Square, bool);
+
 template void Engine::add_pawn_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
 template void Engine::add_pawn_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
 template void Engine::add_knight_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);

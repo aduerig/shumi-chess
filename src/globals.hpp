@@ -56,7 +56,7 @@ constexpr int FLAGS_CASTLE_NONE         = 0b00000000;
 constexpr int FLAGS_CASTLE_EITHER       = 0b00000011;
 constexpr int FLAGS_CASTLE_KING         = 0b00000001;
 constexpr int FLAGS_CASTLE_QUEEN        = 0b00000010;
-constexpr int FLAGS_EN_PASSENT_CAPTURE  = 0b00010000;
+constexpr int FLAGS_IS_EP_CAPTURE       = 0b00010000;
 constexpr int FLAGS_IS_CASTLE_MOVE      = 0b00100000;
 
 constexpr int FLAGS_CASTLE_ALL_BITS     = 0b00001111;
