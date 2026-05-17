@@ -62,7 +62,7 @@ namespace ShumiChess {
     black_king   (0b00001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000),
     white_king   (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),   
     turn(WHITE),
-    castle_rights((CASTLE_EITHER << 2) | CASTLE_EITHER),
+    castle_rights((FLAGS_CASTLE_EITHER << 2) | FLAGS_CASTLE_EITHER),
     en_passant_landing_bb(1),               // The square where the capturing pawn would land in an en-passant capture
     halfmove(0),
     fullmove(1) 
@@ -135,19 +135,19 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         switch (token)
         {
         case 'k':
-            this->castle_rights |= (CASTLE_KING << 2);
+            this->castle_rights |= (FLAGS_CASTLE_KING << 2);
             break;
         case 'q':
-            this->castle_rights |= (CASTLE_QUEEN << 2);
+            this->castle_rights |= (FLAGS_CASTLE_QUEEN << 2);
             break;
         case 'K':
-            this->castle_rights |= CASTLE_KING;
+            this->castle_rights |= FLAGS_CASTLE_KING;
             break;
         case 'Q':
-            this->castle_rights |= CASTLE_QUEEN; 
+            this->castle_rights |= FLAGS_CASTLE_QUEEN; 
             break;
         case '-':
-            this->castle_rights |= CASTLE_NONE; 
+            this->castle_rights |= FLAGS_CASTLE_NONE; 
             break;
         default:
             std::cout << fen_notation << "Unexpected castling rights token: " << token << std::endl;
@@ -287,16 +287,16 @@ const string GameBoard::to_fen(bool bFullFEN) {
 
     // castling
     string castlestuff;
-    if (CASTLE_KING & castle_rights) {
+    if (FLAGS_CASTLE_KING & castle_rights) {
         castlestuff += 'K';
     }
-    if (CASTLE_QUEEN & castle_rights) {
+    if (FLAGS_CASTLE_QUEEN & castle_rights) {
         castlestuff += 'Q';
     }
-    if ((CASTLE_KING << 2) & castle_rights) {
+    if ((FLAGS_CASTLE_KING << 2) & castle_rights) {
         castlestuff += 'k';
     }
-    if ((CASTLE_QUEEN << 2) & castle_rights) {
+    if ((FLAGS_CASTLE_QUEEN << 2) & castle_rights) {
         castlestuff += 'q';
     }
     if (castlestuff.empty()) {
@@ -430,7 +430,7 @@ void GameBoard::push_move_to_pieces_on_square(const Move& move)
     pieces_on_square[move.fromSQ] = Piece::NONE;
 
     // En passant removes the pawn behind the destination square.
-    if (move.is_en_passent_capture) {
+    if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
         Square capSQ;
         if (move.color == Color::WHITE) {
             capSQ = move.toSQ - 8;
@@ -512,7 +512,7 @@ void GameBoard::pop_move_to_pieces_on_square(const Move& move)
     }
 
     // Undo destination square.
-    if (move.is_en_passent_capture) {
+    if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
         Square capSQ;
         if (move.color == Color::WHITE) {
             capSQ = move.toSQ - 8;
@@ -544,13 +544,13 @@ void GameBoard::init_castle_touch_tables()
     for (int sq = 0; sq < 64; sq++) {
         ull bb = (1ULL << sq);
 
-        white_castle_touch[sq] = CASTLE_EITHER;
-        if (bb & W_KSIDE_MASK) white_castle_touch[sq] &= CASTLE_KING;
-        if (bb & W_QSIDE_MASK) white_castle_touch[sq] &= CASTLE_QUEEN;
+        white_castle_touch[sq] = FLAGS_CASTLE_EITHER;
+        if (bb & W_KSIDE_MASK) white_castle_touch[sq] &= FLAGS_CASTLE_KING;
+        if (bb & W_QSIDE_MASK) white_castle_touch[sq] &= FLAGS_CASTLE_QUEEN;
 
-        black_castle_touch[sq] = CASTLE_EITHER;
-        if (bb & B_KSIDE_MASK) black_castle_touch[sq] &= CASTLE_KING;
-        if (bb & B_QSIDE_MASK) black_castle_touch[sq] &= CASTLE_QUEEN;
+        black_castle_touch[sq] = FLAGS_CASTLE_EITHER;
+        if (bb & B_KSIDE_MASK) black_castle_touch[sq] &= FLAGS_CASTLE_KING;
+        if (bb & B_QSIDE_MASK) black_castle_touch[sq] &= FLAGS_CASTLE_QUEEN;
     }
 }
 
@@ -689,7 +689,7 @@ bool GameBoard::isReversableMove(const Move& m)
 
     if (m.capture != Piece::NONE) return false;
 
-    if (m.is_en_passent_capture) return false;  // safety: should imply capture, but keep explicit
+    if (m.flags & FLAGS_EN_PASSENT_CAPTURE) return false;  // safety: should imply capture, but keep explicit
 
     if (m.promotion != Piece::NONE) return false;
 
@@ -2421,11 +2421,11 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
     i_NumerB = 0;
     i_DenomB = 1;
     if constexpr (c == Color::WHITE) {
-        i_NumerB += (castle_rights & CASTLE_KING)  ? 1 : 0;
-        i_NumerB += (castle_rights & CASTLE_QUEEN) ? 1 : 0;
+        i_NumerB += (castle_rights & FLAGS_CASTLE_KING)  ? 1 : 0;
+        i_NumerB += (castle_rights & FLAGS_CASTLE_QUEEN) ? 1 : 0;
     } else {
-        i_NumerB += (castle_rights & (CASTLE_KING << 2))  ? 1 : 0;
-        i_NumerB += (castle_rights & (CASTLE_QUEEN << 2)) ? 1 : 0;
+        i_NumerB += (castle_rights & (FLAGS_CASTLE_KING << 2))  ? 1 : 0;
+        i_NumerB += (castle_rights & (FLAGS_CASTLE_QUEEN << 2)) ? 1 : 0;
     }
 
     // Make "1" (can castle one side)"3/2"

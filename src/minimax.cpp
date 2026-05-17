@@ -904,7 +904,7 @@ void MinimaxAI::playground(int iPhase) {
     utemp1 = pawn_file_info.size();
     string sss1 = format_with_commas(utemp1);
     string sss2 = format_with_commas(NhitsP);
-    utemp2 = sizeof(PawnFileInfo); //TTable2.size();
+    utemp2 = sizeof(Move); //TTable2.size();
    
     cout << "TP: " << sss1 << " mtches= " << sss2 << "       TT2: " << utemp2 << " mtches= " << NhitsTT2 << endl;
  

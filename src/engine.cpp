@@ -344,7 +344,7 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
         pCap   = &access_pieces_of_color(move.capture, enemy);
         capOld = *pCap;
 
-        if (move.is_en_passent_capture) {
+        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
             ull behind_mask = (c == Color::WHITE) ? (to_bb >> 8) : (to_bb << 8);
             (*pCap) &= ~behind_mask;
         } else {
@@ -671,7 +671,7 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
         // The move is a capture
         game_board.halfmove = 0;
 
-        if (move.is_en_passent_capture) {
+        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
             //ull move_to_bb = moveto;
             ull target_pawn_bitboard = (c == Color::WHITE) ? (moveto >> 8) : (moveto << 8);
 
@@ -880,7 +880,7 @@ template<Color c> void Engine::popMove_t() {
     if (move.capture != Piece::NONE) {
 
         //ull move_to_bb = moveto;
-        if (move.is_en_passent_capture) {
+        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
             ull target_pawn_bb = (c == Color::WHITE) ? (moveto >> 8) : (moveto << 8);
 
             int target_pawn_square = utility::bit::bitboard_to_lowest_square_safe(target_pawn_bb);
@@ -1147,8 +1147,13 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
         // copying it into the vector (emplace_back(new_move)).
         if constexpr (!promotion) {
 
-            uint8_t castle_rights = ((game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ]) << 2) |
-                                    (game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ]);
+            const uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
+            const uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+
+            uint8_t flags = (black_castle_rights << 2) | white_castle_rights;
+            if constexpr (is_en_passent_cap) {
+                flags |= FLAGS_EN_PASSENT_CAPTURE;
+            }
 
             moves.emplace_back(
                                 fromSQ,
@@ -1158,8 +1163,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece,
                                 piece_captured,
                                 Piece::NONE,
-                                castle_rights,
-                                is_en_passent_cap,
+                                flags,
                                 is_castle
                             );
             
@@ -1172,8 +1176,9 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             // Add all possible promotion moves.
             for (const auto promo_piece : promotion_values) {
 
-                uint8_t castle_rightss = ((game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ]) << 2) |
-                                        (game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ]);
+                const uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
+                const uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
+                const uint8_t flags = (black_castle_rights << 2) | white_castle_rights;
 
                 moves.emplace_back(
                                 fromSQ,
@@ -1183,8 +1188,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 piece,
                                 piece_captured,
                                 promo_piece,
-                                castle_rightss,
-                                is_en_passent_cap,
+                                flags,
                                 is_castle
                             );
             }       // END loop over all promotion pieces
@@ -2305,7 +2309,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
             if constexpr (c == Color::WHITE) {
 
-                if (game_board.castle_rights & CASTLE_KING) {
+                if (game_board.castle_rights & FLAGS_CASTLE_KING) {
                     if (square == game_board.square_e1) {
                         squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2323,7 +2327,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     }
                 }
 
-                if (game_board.castle_rights & CASTLE_QUEEN) {
+                if (game_board.castle_rights & FLAGS_CASTLE_QUEEN) {
                     if (square == game_board.square_e1) {
                         squares_inbetween = 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'01110000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2343,7 +2347,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             
             } else {
 
-                if (game_board.castle_rights & (CASTLE_KING << 2)) {
+                if (game_board.castle_rights & (FLAGS_CASTLE_KING << 2)) {
                     if (square == game_board.square_e8) {
                         squares_inbetween = 0b00000110'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2361,7 +2365,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     }
                 }
 
-                if (game_board.castle_rights & (CASTLE_QUEEN << 2)) {
+                if (game_board.castle_rights & (FLAGS_CASTLE_QUEEN << 2)) {
                     if (square == game_board.square_e8) {
                         squares_inbetween = 0b01110000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
                         if ((squares_inbetween & ~all_pieces) == squares_inbetween) {
@@ -2736,7 +2740,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 legal = !in_check_after_king_move_t<c>(move);
             } else {
                 // NOT a king move
-                if (move.is_en_passent_capture) {
+            if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
                     legal = !in_check_after_move_fast_t<c>(move);
                 } else {
                     // Not en en passant. This is where the time is saved. Here we DONT call in_check_after_move_fast_t()
@@ -2784,7 +2788,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                     const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
 
                     bool helps = false;
-                    if (!move.is_en_passent_capture) {
+                    if (!(move.flags & FLAGS_EN_PASSENT_CAPTURE)) {
                         helps = checkInfo.toSquareHelps(toSq);
                     } else {
                         ull move_to_bb = moveto;
@@ -2800,7 +2804,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                     }
 
                     if (helps) {
-                        if (move.is_en_passent_capture) {
+                        if (move.flags & FLAGS_EN_PASSENT_CAPTURE) {
                             legal = !in_check_after_move_fast_t<c>(move);
                         } else {
                             if (!pinnedInfo.isPinned(fromSq)) {

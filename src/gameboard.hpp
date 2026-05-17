@@ -80,7 +80,7 @@ class GameBoard {
 
         // Castling priviledges. 1<<1 for queenside, 1<<0 for kingside (other bits not used)
         // In a "normal" opening setup, we would override this after board setup, with the full rights 
-        uint8_t castle_rights = CASTLE_NONE;
+        uint8_t castle_rights = FLAGS_CASTLE_NONE;
         //
         // EnPassant coding in the Gameboard structure. This is weird, but toegather with the Move element
         // with the similar name - it works.  See doc/EnPassent.txt for details.
@@ -511,7 +511,7 @@ class GameBoard {
         ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
         void GameBoard::init_castle_touch_tables();
-        uint8_t white_castle_touch[64];
+        uint8_t white_castle_touch[64];         // These do not have any higher move flags
         uint8_t black_castle_touch[64];
 
         // Square identities (in h1=0 bit board lingo)

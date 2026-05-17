@@ -52,16 +52,16 @@ constexpr Square NO_SQUARE = 64;
 
 //                                  12345678
 //  These constants MUST be these values
-constexpr int CASTLE_NONE       = 0b00000000;
-constexpr int CASTLE_EITHER     = 0b00000011;
-constexpr int CASTLE_KING       = 0b00000001;
-constexpr int CASTLE_QUEEN      = 0b00000010;
+constexpr int FLAGS_CASTLE_NONE       = 0b00000000;
+constexpr int FLAGS_CASTLE_EITHER     = 0b00000011;
+constexpr int FLAGS_CASTLE_KING       = 0b00000001;
+constexpr int FLAGS_CASTLE_QUEEN      = 0b00000010;
+constexpr int FLAGS_EN_PASSENT_CAPTURE = 0b00010000;
 
-constexpr int CASTLE_ALL_BITS   = 0b00001111;
+constexpr int FLAGS_CASTLE_ALL_BITS   = 0b00001111;
 
-// TODO think about if this is the right way to represent a move
+
 // NOTE: Can this be a class? How would it help?
-// Now its at 32 bytes Whopee.
 struct Move {
   
     Square fromSQ = NO_SQUARE;
@@ -80,9 +80,8 @@ struct Move {
     //      bit 2,3 :   Black castling rights   (only used by pushMove, to xfer into the gameboard)
     //      bit 4   :   is a enpassant capture
     //      bit 5   :   is a castle move
-    uint8_t flags = (CASTLE_EITHER << 2) | CASTLE_EITHER;
+    uint8_t flags = (FLAGS_CASTLE_EITHER << 2) | FLAGS_CASTLE_EITHER;
 
-    bool is_en_passent_capture = false;    // bools are hopefully 1 byte (8 bits)
     bool is_castle_move = false;
 
     Move() = default;   // ← put it here
@@ -97,7 +96,6 @@ struct Move {
          Piece capture_,
          Piece promotion_,
          uint8_t flags_,
-         bool is_en_passent_capture_,
          bool is_castle_move_)
         :
           fromSQ(fromSQ_),
@@ -108,7 +106,6 @@ struct Move {
           capture(capture_),
           promotion(promotion_),
           flags(flags_),
-          is_en_passent_capture(is_en_passent_capture_),
           is_castle_move(is_castle_move_)
     {
     }

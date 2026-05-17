@@ -271,10 +271,6 @@ inline void cout_move_info(const ShumiChess::Move& move) {
     print_if_not_none("Capture: ", move.capture);
     print_if_not_none("Promotion: ", move.promotion);
     
-    // Use std::boolalpha to print booleans as "true" or "false"
-    std::cout << std::boolalpha;
-    std::cout << "Is Castle: " << move.is_castle_move << std::endl;
-    std::cout << "Is En Passant Capture: " << move.is_en_passent_capture << std::endl;
     
     // Print en passant target square if it exists
     if (move.en_passant_landingSQ != ShumiChess::NO_SQUARE) {
