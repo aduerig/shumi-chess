@@ -595,7 +595,7 @@ class GameBoard {
         // PInfo white_pawn_info;
         // PInfo black_pawn_info;
 
-        // Used only in crazy Ivan.
+        // Used only in CRAZY_IVAN.
         int CENTER_SCORE[64] = {
                     /* h1=0 layout assumed */
                     0,1,1,2,2,1,1,0,

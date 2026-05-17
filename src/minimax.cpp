@@ -1186,8 +1186,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    //EvalPersons evp = CRAZY_IVAN;   // UNCLE_SHUMI;
-    EvalPersons evp = UNCLE_SHUMI;
+    EvalPersons evp = CRAZY_IVAN;   // UNCLE_SHUMI;
+    //EvalPersons evp = UNCLE_SHUMI;
 
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
         bool   foundPos = false;

@@ -1100,13 +1100,12 @@ template <Piece P, Color c> ull& Engine::access_pieces_of_color_tp()
 //
 // Fills in a Move data structure based on a single "from" square, and multiple "to" squares.
 //
-template<Color c, bool capture, bool promotion, bool is_en_passent_cap>
+template<Color c, bool capture, bool promotion, bool is_en_passent_cap, bool is_castle>
 void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 Square fromSQ,
                                 ull bitboard_to,            // I can be multiple squares in one bitboard. 
                                 Piece piece,
-                                Square en_passant_land_sq,     // Passed in as a square for 2-rank pawn moves.
-                                bool is_castle) {
+                                Square en_passant_land_sq) {
 
 
     // "from" square better be single bit. (the "to" square may be multiple or single piece)
@@ -1158,7 +1157,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
             if constexpr (is_en_passent_cap) {
                 flags |= FLAGS_IS_EP_CAPTURE;
             }
-            if (is_castle) {
+            if constexpr (is_castle) {
                 flags |= FLAGS_IS_CASTLE_MOVE;
             }
 
@@ -1186,7 +1185,7 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                 const uint8_t white_castle_rights = game_board.white_castle_touch[fromSQ] & game_board.white_castle_touch[toSQ];
                 const uint8_t black_castle_rights = game_board.black_castle_touch[fromSQ] & game_board.black_castle_touch[toSQ];
                 
-                // Note: enpassant and castling cant be promotions so dont add these flags here.
+                // Note: enpassant and castling cant be promotions so dont add any of those those flags here.
                 const uint8_t flags = (black_castle_rights << 2) | white_castle_rights;
 
                 moves.emplace_back(
@@ -2099,9 +2098,9 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         // promotions
         ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
         ull promo_unblocked = potential_promotion & ~all_pieces;
-        if (promo_unblocked) add_psuedo_move_to_vector<c, false, true, false>(all_psuedo_legal_moves
+        if (promo_unblocked) add_psuedo_move_to_vector<c, false, true, false, false>(all_psuedo_legal_moves
                 , square, promo_unblocked, Piece::PAWN
-                , NO_SQUARE, false);
+                , NO_SQUARE);
 
         // attacks
         ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
@@ -2111,13 +2110,13 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         normal_attacks |= attack_fright & all_enemy_pieces;
         if (normal_attacks) {
             if (normal_attacks & enemy_starting_rank_mask) {
-                add_psuedo_move_to_vector<c, true, true, false>(all_psuedo_legal_moves
+                add_psuedo_move_to_vector<c, true, true, false, false>(all_psuedo_legal_moves
                     , square, normal_attacks, Piece::PAWN
-                    , NO_SQUARE, false);
+                    , NO_SQUARE);
             } else {
-                add_psuedo_move_to_vector<c, true, false, false>(all_psuedo_legal_moves
+                add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves
                     , square, normal_attacks, Piece::PAWN
-                    , NO_SQUARE, false);
+                    , NO_SQUARE);
             }
         }
 
@@ -2125,9 +2124,9 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         #ifndef DEBUG_NO_ENPASSANT
             ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_bb;
             if (enpassant_end_loc) {
-                if (enpassant_end_loc) add_psuedo_move_to_vector<c, true, false, true>(all_psuedo_legal_moves
+                if (enpassant_end_loc) add_psuedo_move_to_vector<c, true, false, true, false>(all_psuedo_legal_moves
                     , square, enpassant_end_loc, Piece::PAWN
-                    , NO_SQUARE, false);
+                    , NO_SQUARE);
             }
         #endif
 
@@ -2138,9 +2137,9 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             ull one_move_forward_unblocked = one_move_forward & ~all_pieces;
 
             // single square moves
-            if (one_move_forward_unblocked) add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves
+            if (one_move_forward_unblocked) add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves
                 , square, one_move_forward_unblocked, Piece::PAWN
-                , NO_SQUARE, false);
+                , NO_SQUARE);
 
             // double square moves
             ull is_doublable = single_pawn & pawn_starting_rank_mask;
@@ -2160,9 +2159,9 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                     Square en_passant_land_sq = utility::bit::bitboard_to_lowest_square(move_forward_one_unblocked);
 
                     //assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
-                    add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves
+                    add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves
                         , square, move_forward_two_unblocked, Piece::PAWN
-                        , en_passant_land_sq, false);
+                        , en_passant_land_sq);
                 }
             }
         }
@@ -2186,14 +2185,14 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
-        add_psuedo_move_to_vector<c, true, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::KNIGHT
-            , NO_SQUARE, false);
+        add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::KNIGHT
+            , NO_SQUARE);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-            add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::KNIGHT
-                , NO_SQUARE, false);
+            add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::KNIGHT
+                , NO_SQUARE);
         }
     }
 }
@@ -2213,14 +2212,14 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
-        add_psuedo_move_to_vector<c, true, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::ROOK
-            , NO_SQUARE, false);
+        add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::ROOK
+            , NO_SQUARE);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
-            add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::ROOK
-                , NO_SQUARE, false);
+            add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::ROOK
+                , NO_SQUARE);
         }
     }
 }
@@ -2241,14 +2240,14 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves        
-        add_psuedo_move_to_vector<c, true, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::BISHOP
-            , NO_SQUARE, false);
+        add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::BISHOP
+            , NO_SQUARE);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-            add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::BISHOP
-                , NO_SQUARE, false);
+            add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::BISHOP
+                , NO_SQUARE);
         }
     }
 }
@@ -2268,14 +2267,14 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
-        add_psuedo_move_to_vector<c, true, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::QUEEN
-            , NO_SQUARE, false);
+        add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::QUEEN
+            , NO_SQUARE);
 
         // quiet moves
         if (!unquiet_moves_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-            add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::QUEEN
-                , NO_SQUARE, false);
+            add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::QUEEN
+                , NO_SQUARE);
         }
     }
 }
@@ -2293,16 +2292,16 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
 
     // capture moves
     ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
-    add_psuedo_move_to_vector<c, true, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::KING
-        , NO_SQUARE, false);
+    add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves, square, enemy_piece_attacks, Piece::KING
+        , NO_SQUARE);
 
     // quiet moves
     if (!unquiet_moves_only) {
 
         // Quiet moves
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
-        add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::KING
-            , NO_SQUARE, false);
+        add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::KING
+            , NO_SQUARE);
 
         // castling, yes castling is quiet.
         #ifndef DEBUG_NO_CASTLING
@@ -2327,8 +2326,8 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL << 1;
-                                    add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
-                                        , NO_SQUARE, true);
+                                    add_psuedo_move_to_vector<c, false, false, false, true>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
+                                        , NO_SQUARE);
                                 }
                             }
                         }
@@ -2345,8 +2344,8 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::WHITE>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL << 5;
-                                    add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
-                                        , NO_SQUARE, true);
+                                    add_psuedo_move_to_vector<c, false, false, false, true>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
+                                        , NO_SQUARE);
                                 }
                             }
                         }
@@ -2365,8 +2364,8 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL <<57;
-                                    add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
-                                        , NO_SQUARE, true);
+                                    add_psuedo_move_to_vector<c, false, false, false, true>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
+                                        , NO_SQUARE);
                                 }
                             }
                         }
@@ -2383,8 +2382,8 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
                                 actual_rooks_location = game_board.get_pieces_template<Piece::ROOK, Color::BLACK>();
                                 if (actual_rooks_location & needed_rook_location) {
                                     king_landing_square_bb = 1ULL <<61;
-                                    add_psuedo_move_to_vector<c, false, false, false>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
-                                        , NO_SQUARE, true);
+                                    add_psuedo_move_to_vector<c, false, false, false, true>(all_psuedo_legal_moves, square, king_landing_square_bb, Piece::KING
+                                        , NO_SQUARE);
                                 }
                             }
                         }
@@ -2845,16 +2844,18 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
 }
 
 // Explicit template instantiations
-template void Engine::add_psuedo_move_to_vector<Color::WHITE, false, false, false>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::WHITE, false, true, false>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::WHITE, true, false, false>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::WHITE, true, false, true>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::WHITE, true, true, false>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::BLACK, false, false, false>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::BLACK, false, true, false>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, false>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, true>(vector<Move>&, Square, ull, Piece, Square, bool);
-template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, true, false>(vector<Move>&, Square, ull, Piece, Square, bool);
+template void Engine::add_psuedo_move_to_vector<Color::WHITE, false, false, false, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::WHITE, false, false, false, true>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::WHITE, false, true, false, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::WHITE, true, false, false, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::WHITE, true, false, true, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::WHITE, true, true, false, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::BLACK, false, false, false, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::BLACK, false, false, false, true>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::BLACK, false, true, false, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, false, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, true, false>(vector<Move>&, Square, ull, Piece, Square);
+template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, true, false, false>(vector<Move>&, Square, ull, Piece, Square);
 
 template void Engine::add_pawn_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
 template void Engine::add_pawn_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
