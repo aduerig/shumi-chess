@@ -191,7 +191,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     set_zobrist();
     
     // Fills out the "chessboard" like view of the board
-    bitboards_to_pieces_on_square();
+    //bitboards_to_pieces_on_square();
 
     init_castle_touch_tables();
 

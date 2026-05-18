@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include <chrono>
+#include <conio.h>
 #include <cstdio>
 #include <iostream>
 #include <limits>
@@ -46,6 +47,11 @@ static string move_to_uci(const Move& move)
         move_text += promo;
     }
     return move_text;
+}
+
+static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time)
+{
+    return duration_cast<milliseconds>(end_time - start_time).count();
 }
 
 static void make_engine_move(Engine& engine, Move move)
@@ -105,7 +111,7 @@ int main(int argc, char** argv) {
     // Decide on arguments
     int time_to_use = 3000;
     int depth_to_use = 7;
-    int max_ply_to_play = 10;
+    int max_ply_to_play = 5;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {
@@ -124,6 +130,7 @@ int main(int argc, char** argv) {
          << "  max ply = " << max_ply_to_play << endl;
 
     GameState state = engine.is_game_over();
+    steady_clock::time_point start_time = steady_clock::now();
     for (int ply = 1; state == INPROGRESS && ply <= max_ply_to_play; ++ply) {
         Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, 0);
 
@@ -132,21 +139,27 @@ int main(int argc, char** argv) {
             break;
         }
 
-        cout << "\nPly " << ply << " "
-             << utility::representation::color_to_string(move.color)
-             << " move: " << move_to_uci(move) << endl;
+        // Show move
+        // cout << "\nPly " << ply << " "
+        //      << utility::representation::color_to_string(move.color)
+        //      << " move: " << move_to_uci(move) << endl;
 
         make_engine_move(engine, move);
 
-        out = utility::representation::gameboard_to_string(engine.game_board);
-        cout << out << endl;
+        // Show board
+        // out = utility::representation::gameboard_to_string(engine.game_board);
+        // cout << out << endl;
 
         state = engine.is_game_over();
     }
 
     cout << "Game state: " << game_state_to_string(state) << endl;
     cout << "PGN: " << engine.gamePGN.spitout() << endl;
+    steady_clock::time_point end_time = steady_clock::now();
+    cout << "Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
 
+    cout << "Press any key to exit..." << endl;
+    _getch();
 
     return 0;
 }

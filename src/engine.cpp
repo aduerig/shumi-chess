@@ -774,6 +774,11 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
         game_board.zobrist_key ^= zobrist_castling[castle_rights];
         game_board.zobrist_key ^= zobrist_castling[castle_new];
     }
+
+
+    //game_board.push_move_to_pieces_on_square(move);
+
+
 }
 
  
@@ -940,6 +945,9 @@ template<Color c> void Engine::popMove_t() {
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_from_sq);
         game_board.zobrist_key ^= zobrist_piece_square_get(ShumiChess::Piece::ROOK + c * 6, rook_to_sq);
     }
+
+    //game_board.pop_move_to_pieces_on_square(move);
+
 }
 
 ull& Engine::access_pieces_of_color(Piece piece, Color color) {
@@ -1124,21 +1132,23 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
         // lsb_and_pop_to_square() is more effecient then lsb_and_pop() and bitboard_to_lowest_square_fast(). But we still 
         // need single_bitboard_to, only to pass to get_piece_type_on_bitboard_template().
-        //toSQ = utility::bit::lsb_and_pop_to_square(bitboard_to);
+        //const Square toSQ = utility::bit::lsb_and_pop_to_square(bitboard_to);
    
 
         Piece piece_captured;
         if constexpr (capture) {
             if constexpr (!is_en_passent_cap) {
                 constexpr Color enemy = utility::representation::opposite_color_t<c>;
-                //Piece piece_captured2 = game_board.pieces_on_square[toSQ];
+                //piece_captured2 = game_board.pieces_on_square[toSQ];
                 piece_captured = game_board.get_piece_type_on_bitboard_template<enemy>(single_bitboard_to);
+                //assert(piece_captured == piece_captured2);
             } else {
                 piece_captured = Piece::PAWN;       // En passant always takes a pawn
             }
         } else {
             piece_captured = Piece::NONE;
         }
+
 
         //
         // Faster than old way: construct the Move directly in the vector (emplace_back()),

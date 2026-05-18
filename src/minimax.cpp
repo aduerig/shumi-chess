@@ -128,7 +128,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING
+//#define DISPLAY_DEEPING
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -770,66 +770,66 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     int iPhase = phase_of_game_full();
     engine.game_phase = iPhase;
 
-    // Playground is for extended debug and status, and for whatever else. However there is a gotcha. Although we 
-    // have found out move, we have not yet made the move. The found move is reported to the python, that
-    // calls engine_communicator_make_move_two_acn().
-    playground(iPhase);
+    #ifdef DISPLAY_DEEPING
+        // Playground is for extended debug and status, and for whatever else. However there is a gotcha. Although we 
+        // have found out move, we have not yet made the move. The found move is reported to the python, that
+        // calls engine_communicator_make_move_two_acn().
+        playground(iPhase);
 
-    double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
-    cout << "\x1b[33m\nWent to depth " << (depth - 1)  
-        << " elapsed min= " << elapsed_time_min
-        << " elapsed msec= " << elapsed_time << " request msec= " << i_time_requested 
-        << std::fixed << std::setprecision(1)
-        << "\x1b[0m" << endl;
+        double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
+        cout << "\x1b[33m\nWent to depth " << (depth - 1)  
+            << " elapsed min= " << elapsed_time_min
+            << " elapsed msec= " << elapsed_time << " request msec= " << i_time_requested 
+            << std::fixed << std::setprecision(1)
+            << "\x1b[0m" << endl;
 
+        // Show board
+        engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                    , (GameState::INPROGRESS), false, false, NULL
+                    , engine.move_string);    // Output
+        cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
 
-    // Show board
-    engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-                , (GameState::INPROGRESS), false, false, NULL
-                , engine.move_string);    // Output
-    cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
+        
+        string abs_score_string = to_string(d_best_move_value_abs);
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
+        abs_score_string = buf;
 
-    
-    string abs_score_string = to_string(d_best_move_value_abs);
-    char buf[32];
-    std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
-    abs_score_string = buf;
+        cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
 
-    cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
+        double percent_depth_zero = nodes_visited ? ( (double)nodes_visited_depth_zero / (double)nodes_visited ) : 0.0;
 
-    double percent_depth_zero = nodes_visited ? ( (double)nodes_visited_depth_zero / (double)nodes_visited ) : 0.0;
+        char pct[32];
+        snprintf(pct, sizeof(pct), "%.0f", percent_depth_zero * 100.0);
 
+        cout << colorize(
+            AColor::BRIGHT_YELLOW,
+            "Visited: " + format_with_commas(nodes_visited) +
+            " / " + std::string(pct) + "% nodes total" +
+            " ---- " + format_with_commas(evals_visited) + " Evals"
+        ) << endl;
 
-    char pct[32];
-    snprintf(pct, sizeof(pct), "%.0f", percent_depth_zero * 100.0);
+        chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time; // still prints seconds
+        //cout << total_time << endl;
+        double dElapsedTime = total_time.count();
+        cout << colorize(AColor::BRIGHT_GREEN, (static_cast<std::ostringstream&&>(std::ostringstream()
+            << "Total time: " << std::fixed << std::setprecision(2) << dElapsedTime << " sec")).str());
 
-    cout << colorize(
-        AColor::BRIGHT_YELLOW,
-        "Visited: " + format_with_commas(nodes_visited) +
-        " / " + std::string(pct) + "% nodes total" +
-        " ---- " + format_with_commas(evals_visited) + " Evals"
-    ) << endl;
+        ull running_time_msec = (ull)(dElapsedTime * 1000.0);
+        if (engine.game_board.turn == ShumiChess::WHITE) 
+            engine.game_white_time_msec += running_time_msec;
+        else 
+            engine.game_black_time_msec += running_time_msec;
 
-   
-    chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time; // still prints seconds
-    //cout << total_time << endl;
-    double dElapsedTime = total_time.count();
-    cout << colorize(AColor::BRIGHT_GREEN, (static_cast<std::ostringstream&&>(std::ostringstream()
-         << "Total time: " << std::fixed << std::setprecision(2) << dElapsedTime << " sec")).str());
+        assert (total_time.count() > 0);
+        double nodes_per_sec = nodes_visited / total_time.count();
+        double evals_per_sec = evals_visited / total_time.count();
+        cout << colorize(AColor::BRIGHT_GREEN, 
+            "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + 
+            "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
 
-    ull running_time_msec = (ull)(dElapsedTime * 1000.0);
-    if (engine.game_board.turn == ShumiChess::WHITE) 
-        engine.game_white_time_msec += running_time_msec;
-    else 
-        engine.game_black_time_msec += running_time_msec;
+  #endif
 
-
-    assert (total_time.count() > 0);
-    double nodes_per_sec = nodes_visited / total_time.count();
-    double evals_per_sec = evals_visited / total_time.count();
-    cout << colorize(AColor::BRIGHT_GREEN, 
-        "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + 
-        "   evals/sec= " + format_with_commas(std::llround(evals_per_sec))) << endl;
 
     // if we are forcing the move due to it being the only move, then don't update "score". Note: not sure of this.
     bool b_Forced = (d_best_move_value == ONLY_MOVE_SCORE);
@@ -1186,7 +1186,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    EvalPersons evp = UNCLE_SHUMI;   // UNCLE_SHUMI;
+    EvalPersons evp = CRAZY_IVAN;   // UNCLE_SHUMI;
     //EvalPersons evp = CRAZY_IVAN;
 
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
