@@ -1186,8 +1186,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    EvalPersons evp = CRAZY_IVAN;   // UNCLE_SHUMI;
-    //EvalPersons evp = UNCLE_SHUMI;
+    EvalPersons evp = UNCLE_SHUMI;   // UNCLE_SHUMI;
+    //EvalPersons evp = CRAZY_IVAN;
 
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
         bool   foundPos = false;
@@ -2889,62 +2889,19 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
     int cp_score_position = 0;
     bool isOK;
-    int temp;
+    int cp_score_position_temp;
 
     //
     //  Now do the "positional" stuff. Note CRAZY_IVAN does minimal positional stuff.
     //
-    for (const auto& color : std::array<Color, 2>{Color::WHITE, Color::BLACK}) {
-        int cp_score_position_temp = 0;
+    cp_score_position_temp =  get_positional_for_one_color<Color::WHITE>(nPhase, evp, cp_score_material_all);
+    if (Color::WHITE != for_color) cp_score_position_temp *= -1;
+    cp_score_position += cp_score_position_temp;
 
-        Color enemy_of_color = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    cp_score_position_temp =  get_positional_for_one_color<Color::BLACK>(nPhase, evp, cp_score_material_all);
+    if (Color::BLACK != for_color) cp_score_position_temp *= -1;
+    cp_score_position += cp_score_position_temp;
 
-        bool NoMajorPiecesEnemy  = (enemy_of_color == Color::WHITE)
-            ? engine.game_board.hasNoMajorPieces_t<Color::WHITE>()
-            : engine.game_board.hasNoMajorPieces_t<Color::BLACK>();
-        bool NoMajorPiecesFriend = (color == Color::WHITE)
-            ? engine.game_board.hasNoMajorPieces_t<Color::WHITE>()
-            : engine.game_board.hasNoMajorPieces_t<Color::BLACK>();
-
-        int bonus_cp;
-
-        switch (evp) {
-            case MATERIAL_ONLY:
-                break;
-
-            case CRAZY_IVAN:
-                bonus_cp = engine.game_board.center_closeness_bonus(color);
-                assert(bonus_cp >= 0);
-                cp_score_position_temp = bonus_cp;
-                break;
-
-            default:
-            case UNCLE_SHUMI:
-            {
-                if (!NoMajorPiecesEnemy) {
-                    temp = (color == Color::WHITE)
-                        ? cp_score_positional_get_opening_cp_t<Color::WHITE>(nPhase)
-                        : cp_score_positional_get_opening_cp_t<Color::BLACK>(nPhase);
-                    cp_score_position_temp += temp;
-
-                    temp = (color == Color::WHITE)
-                        ? cp_score_positional_get_middle_cp_t<Color::WHITE>(nPhase)
-                        : cp_score_positional_get_middle_cp_t<Color::BLACK>(nPhase);
-                    cp_score_position_temp += temp;
-                }
-
-                temp = (color == Color::WHITE)
-                    ? cp_score_positional_get_end_t<Color::WHITE>(nPhase, cp_score_material_all, NoMajorPiecesFriend, NoMajorPiecesEnemy)
-                    : cp_score_positional_get_end_t<Color::BLACK>(nPhase, cp_score_material_all, NoMajorPiecesFriend, NoMajorPiecesEnemy);
-                cp_score_position_temp += temp;
-
-                break;
-            }
-        }
-
-        if (color != for_color) cp_score_position_temp *= -1;
-        cp_score_position += cp_score_position_temp;
-    }
 
     // Add the material and positional togather to get a final retuern in centipawns.
     cp_score_adjusted = cp_score_material_all + cp_score_position;
@@ -2952,9 +2909,60 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     return cp_score_adjusted;
 }
 
+
+template<ShumiChess::Color c> 
+int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all)
+{
+
+    int bonus_cp;
+    int temp;
+    int cp_score_position_temp = 0;
+
+    constexpr Color enemy_of_color = utility::representation::opposite_color_t<c>;
+
+    switch (evp) {
+        case MATERIAL_ONLY:
+            break;
+
+        case CRAZY_IVAN:
+            bonus_cp = engine.game_board.center_closeness_bonus<c>();
+            assert(bonus_cp >= 0);
+            cp_score_position_temp = bonus_cp;
+            break;
+
+        default:
+        case UNCLE_SHUMI:
+        {
+            bool NoMajorPiecesEnemy  = engine.game_board.hasNoMajorPieces_t<enemy_of_color>();
+            bool NoMajorPiecesFriend = engine.game_board.hasNoMajorPieces_t<c>();
+
+            if (!NoMajorPiecesEnemy) {
+                temp = cp_score_positional_get_opening_cp_t<c>(nPhase);
+                cp_score_position_temp += temp;
+
+                temp = cp_score_positional_get_middle_cp_t<c>(nPhase);
+                cp_score_position_temp += temp;
+            }
+            temp = cp_score_positional_get_end_t<c>(nPhase, cp_score_material_all, NoMajorPiecesFriend, NoMajorPiecesEnemy);
+            cp_score_position_temp += temp;
+
+            break;
+        }
+    }
+
+    return cp_score_position_temp;
+    
+}
+
 // Explicit template instantiations
 template int MinimaxAI::evaluate_board_t<ShumiChess::Color::WHITE>(ShumiChess::EvalPersons, bool);
 template int MinimaxAI::evaluate_board_t<ShumiChess::Color::BLACK>(ShumiChess::EvalPersons, bool);
+
+template int MinimaxAI::get_positional_for_one_color<ShumiChess::Color::WHITE>(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all);
+template int MinimaxAI::get_positional_for_one_color<ShumiChess::Color::BLACK>(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all);
+
+
+
 template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::WHITE>(int);
 template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::BLACK>(int);
 template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::WHITE>(int);

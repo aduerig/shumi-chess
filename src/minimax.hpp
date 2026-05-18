@@ -158,7 +158,8 @@ public:
     template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_end_t(int nPly, int cp_score_material_all, bool noMajorPiecesFriend, bool noMajorPiecesEnemy);
     template<ShumiChess::Color for_color> int evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPosition);
-
+    template<ShumiChess::Color c> int get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all);
+    
     void wakeup();
     void resign();
 

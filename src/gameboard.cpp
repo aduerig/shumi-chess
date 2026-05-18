@@ -907,7 +907,7 @@ int GameBoard::piece_edgeness(ull kbb) {
 // Used only in CRAZY_IVAN. CRAZY_IVAN is designed for maximum speed, and doesnt care about anything else.
 // Some sort of "texture" must be provided though, or it moves the same piece back and forth. 
 //
-int GameBoard::center_closeness_bonus(Color c)
+template<Color c> int GameBoard::center_closeness_bonus()
 {
     int bonus = 0;
 
@@ -2535,6 +2535,7 @@ int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     return cp_score_mat_temp;
 }
 
+ // faster, but needs compute_bits_in() called first)
 template<Color c> int GameBoard::get_material_for_color2_t(int& cp_pawns_only) {
     int cp_score_mat_temp = 0;
 
@@ -3558,6 +3559,10 @@ template bool GameBoard::bHasCastled_fake_t<Color::BLACK>(int k_rank, int k_file
 // get_castled_bonus_cp_t
 template int GameBoard::get_castled_bonus_cp_t<Color::WHITE>(int,const PInfo& PInfoIn) const;
 template int GameBoard::get_castled_bonus_cp_t<Color::BLACK>(int,const PInfo& PInfoIn) const;
+
+// center_closeness_bonus
+template int GameBoard::center_closeness_bonus<Color::WHITE>();
+template int GameBoard::center_closeness_bonus<Color::BLACK>();
 
 template int GameBoard::get_material_for_color_t<Color::WHITE>(int& cp_pawns_only);
 template int GameBoard::get_material_for_color_t<Color::BLACK>(int& cp_pawns_only);

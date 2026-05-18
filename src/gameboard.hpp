@@ -295,7 +295,7 @@ class GameBoard {
         template<Color c> int queenOnCenterSquare_cp_t();
         template<Color c> int moved_f_pawn_early_cp_t() const;
 
-        int center_closeness_bonus(Color c);
+        template<Color c> int center_closeness_bonus();
 
         template<Color c> int pawns_attacking_square_t(int sq);
         template<Color c> int pawns_attacking_squares_t(ull bitboard);
@@ -388,7 +388,7 @@ class GameBoard {
 
         template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const;
         template<Color c> int get_material_for_color_t(int& cp_pawns_only);
-        template<Color c> int get_material_for_color2_t(int& cp_pawns_only);
+        template<Color c> int get_material_for_color2_t(int& cp_pawns_only);    // faster, but needs compute_bits_in() called first)
         template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
 
         template<Color c> int count_guard_pawn_files_23_new_t(const PInfo& PInfoIn, int k_file) const;
