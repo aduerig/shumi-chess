@@ -488,7 +488,7 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
         : minimax_ai->evaluate_board_t<ShumiChess::Color::BLACK>(evp, b_is_Quiet);
     //minimax_ai->is_debug = false;
     
-    double pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);
+    Score pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);
 
     cout << "\n  eval = " << pawnScore << endl;
     
@@ -514,9 +514,9 @@ static PyObject*
 engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
     int iCPScore = python_engine->get_best_score_at_root();
 
-    double iPawnScore = minimax_ai->engine.convert_from_CP(iCPScore);
+    Score iPawnScore = minimax_ai->engine.convert_from_CP(iCPScore);
 
-    double absip;
+    Score absip;
 
     bool isMateScore = IS_MATE_SCORE(iPawnScore);
     char szScore[16];
@@ -528,7 +528,7 @@ engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
             absip = -iPawnScore;
         }
  
-        double mate_in_number = ((HUGE_SCORE - absip) / 2.0);
+        double mate_in_number = ((double)(HUGE_SCORE - absip) / 2.0);
         assert (mate_in_number > 0.0);
 
         if (iPawnScore >= 0.0) {

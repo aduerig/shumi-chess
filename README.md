@@ -26,7 +26,8 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
     Not prioritized. No particular order to them. All issues classified as either: a. Bug, or b. Failure (to chess requirements), or c. Sloth (slowdown) or d. Feature. ~~Crossed out~~ items are done, but under testing.
   * Feature: Get Shumi to think while its your move. This is fascinating. I suppose you start a search for the enemy, and the enemy does that, somehow transfer into that analysis.
   * Feature: Takeback button.
-  * Make SHumit transportable.
+  * Sloth: Think on opponents move (human opponents only)
+  * Make Shumi transportable.
   * Bug: Get FEN button gives scrambled result when computer player is playing. Maybe this is OK, The scrambled FEN is seen both in the FEN box and the terminal of VSC. Probably just needs screening. 
   * Sloth: Move structure is too big (11 bytes). More could be saved condesing flags. But overhead coding/decoding.
   * Bug: --debug builds fail miserably. I need asserts(0), so I build release (default), but force asserts() on each file with a "#undef NDEBUG". This is really no problem to anyone.
@@ -37,7 +38,7 @@ See players (minimaxAI) in * See [players](doc/players.md) for more better desci
   * Bug: "Windows Close box" (X) fails, upper right corner of window hangs the thread. Bug In Interface.
   * Failure: The 50 ply the unit uses for 50 move rep, should be in moves. Again, so what. I dont care. It makes games too slow.
   * Bug  TT2 still burp2s after dozens of games. 
-  * Sloth: Use other "speedups", that result from iterive deepening. (~~Killer moves~~ + ~~History heuristics~~, aspiration, ~~SEE~~). These changes do not rely on TT2 or transposition tables. This is a problem in MinimaxAI. But how will the TT@ be effected? WAIT. JUST RENAME ALL "double" to "Score" its
+  * JUST RENAME ALL "double" to "Score" its
   just a refactor and it has to help. There is no way we need double as opposed to float!
   * Feature: Aspiration is coded, but not tested at all, disabled now. This is only a speedup, no improveent in play. Does it ruin the TT2?
   * Feature: No pruning done. At least "delta pruning", maybe should be done, but, coding but never tested, but perhaps this destroys the TT2? Perhaps it destoys creativily. 

@@ -111,8 +111,8 @@ def reset_board(fen="", winner="????"):
    
     # If AI is thinking, cancel it
     if ai_is_thinking:
-        # Note: NO This should be a resign.
-        print("\033[1;31mreset_board() during AI turn, cancelling computation.\033[0m")
+        
+        # print("\033[1;31mreset_board() during AI turn, cancelling computation.\033[0m")
 
         ai_is_thinking = False
         # Clear the queue of any potential stale moves
@@ -374,16 +374,16 @@ def clicked_flip_button(button_obj):
     
     # If AI is thinking, cancel it.
     if ai_is_thinking:
-       print("Flip Board called during AI turn, cancelling computation.")
-       ai_is_thinking = False
+       print("\033[1;31merror: Flip Board called during AI turn\033[0m")
+       #ai_is_thinking = False
        # Clear the queue
-       while not ai_move_queue.empty():
-           try:
-               ai_move_queue.get_nowait()
-           except queue.Empty:
-               break
-
-    flip_sides()
+       #while not ai_move_queue.empty():
+           #try:
+            #   ai_move_queue.get_nowait()
+           #except queue.Empty:
+             #  break
+    else:
+        flip_sides()
 
 
 def get_next_player(player_name: str) -> str:

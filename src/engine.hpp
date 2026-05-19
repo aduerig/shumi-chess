@@ -16,7 +16,7 @@
 
 using namespace std;
 
-using MoveAndScore     = std::pair<ShumiChess::Move, double>;
+using MoveAndScore     = std::pair<ShumiChess::Move, Score>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
 
@@ -32,13 +32,13 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 inline constexpr int MAX_MOVES = 256;
 
-inline constexpr double VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)
-inline constexpr double HUGE_SCORE       = 10000.0;  // pawns
+inline constexpr Score VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)
+inline constexpr Score HUGE_SCORE       = 10000.0;  // pawns
 
-inline bool IS_MATE_SCORE(double x) {return std::abs(x) > (HUGE_SCORE - 200.0);}  // pawns. Why 200? This would be a mate in 100.
+inline bool IS_MATE_SCORE(Score x) {return std::abs(x) > (HUGE_SCORE - 200.0);}  // pawns. Why 200? This would be a mate in 100.
 
-inline constexpr double ABORT_SCORE     = HUGE_SCORE + 1.0;  // abort analysis
-inline constexpr double ONLY_MOVE_SCORE = HUGE_SCORE + 2.0;  // short-circuit when only one legal move
+inline constexpr Score ABORT_SCORE     = HUGE_SCORE + 1.0;  // abort analysis
+inline constexpr Score ONLY_MOVE_SCORE = HUGE_SCORE + 2.0;  // short-circuit when only one legal move
 
 inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
 inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 32;
@@ -163,8 +163,8 @@ class Engine {
         int game_phase = OPENING;     //  See GamePhase constants
 
         // Centipawn to pawn conversions
-        inline int convert_to_CP(double dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
-        inline double convert_from_CP(int ii) {return (static_cast<double>(ii) / 100.0);}
+        inline int convert_to_CP(Score dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
+        inline Score convert_from_CP(int ii) {return (static_cast<Score>(ii) / 100.0);}
 
         // Template variants (compile-time color)
         template<Color c> bool is_king_in_check_t();
@@ -260,7 +260,7 @@ class Engine {
             , bool b_convert_to_abs_score, bool b_sort_descending, FILE* fp);
         void print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp);
 
-        void move_and_score_to_string(const Move best_move, double d_best_move_valu, bool b_convert_to_abs_score);
+        void move_and_score_to_string(const Move best_move, Score d_best_move_valu, bool b_convert_to_abs_score);
       
         void print_bitboard_to_file(ull bb, FILE* fp);
 
@@ -287,7 +287,7 @@ class Engine {
                                         vector<ShumiChess::Move>& MovesOut           // output
                                     );
 
-        double d_bestScore_at_root = 0.0;       // in abs coordinates
+        Score d_bestScore_at_root = 0.0;       // in abs coordinates
         //
         // Returns "an ordering key", for a capture, using MVV-LVA. "Top range" of key is the victim piece value,                          
         // "Bottom range" is the negative of the attacker piece value. 

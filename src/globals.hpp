@@ -30,6 +30,8 @@ namespace utility
 
 typedef uint8_t Square;
 
+typedef double Score;
+
 namespace ShumiChess {
 
 enum Color : std::uint8_t {
@@ -127,7 +129,6 @@ Move MoveSet(Color c, Piece p, ull frm, ull to);
 Move MoveSet2(Color c, Piece p, ull frm, ull to, Piece a);
 Move MoveSet3(Color c, Piece p, ull frm, ull to, Piece a, Piece b);
 
-typedef double Score;
 
 enum GameState {
     INPROGRESS = 0,

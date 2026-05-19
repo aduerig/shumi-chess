@@ -1110,8 +1110,6 @@ double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
     //#define MAX_DIST 10
     dfakeDist = get_board_distance(xEnemy, yEnemy, xFrien, yFrien);
     
-    //dfakeDist = (double)xFrien;     // debug only
-
     assert (dfakeDist >=  0.0);
     assert (dfakeDist <= MAX_DIST);
    

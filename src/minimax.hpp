@@ -14,7 +14,7 @@
 #include "gameboard.hpp"
 
 
-using MoveAndScore     = std::pair<ShumiChess::Move, double>;
+using MoveAndScore     = std::pair<ShumiChess::Move, Score>;
 using MoveAndScoreList = std::vector<MoveAndScore>;
 
 
@@ -69,7 +69,7 @@ public:
 
     // For PV from previous iteration
     static constexpr int MAX_PLY_PV = 256;
-    std::pair<ShumiChess::Move, double> prev_root_best_[MAX_PLY_PV + 2];
+    std::pair<ShumiChess::Move, Score> prev_root_best_[MAX_PLY_PV + 2];
 
     // The chess engine
     ShumiChess::Engine& engine;
@@ -110,8 +110,8 @@ public:
         TTFlag           flag;       // optional: EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
 
-        double dAlphaDebug;
-        double dBetaDebug;
+        Score dAlphaDebug;
+        Score dBetaDebug;
 
         #ifdef DEBUG_NODE_TT2
             // All the below to end is debug
@@ -120,7 +120,7 @@ public:
             bool bIsInCheckDebug;
             //int legalMovesSize;
             int repCountDebug;
-            double dScoreDebug;
+            Score dScoreDebug;
 
             ull   bb_wp, bb_wn, bb_wb, bb_wr, bb_wq, bb_wk;
             ull   bb_bp, bb_bn, bb_bb, bb_br, bb_bq, bb_bk;
@@ -169,18 +169,14 @@ public:
     typedef std::chrono::high_resolution_clock::time_point TIME_TYPE;
 
 
-    std::tuple<double, ShumiChess::Move> do_a_principal_variation(int depth, ShumiChess::Move null_move
+    std::tuple<Score, ShumiChess::Move> do_a_principal_variation(int depth, ShumiChess::Move null_move
                                         , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
                                         , ull& elapsed_time);      // Output
 
-    tuple<double, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time, const ShumiChess::Move& null_move);
+    tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time, const ShumiChess::Move& null_move);
 
 
-    // Note: All moves from the "root" position. The root is when the player starts thinking about his move.
-    //std::vector<std::pair<ShumiChess::Move, double>> MovesFromRoot;
-
-
-    std::tuple<double, ShumiChess::Move> pick_random_within_delta_rand(std::vector<std::pair<ShumiChess::Move,double>>& MovsFromRoot,
+    std::tuple<Score, ShumiChess::Move> pick_random_within_delta_rand(std::vector<std::pair<ShumiChess::Move,Score>>& MovsFromRoot,
                                              int delta_cp,
                                              int i_computer_ply_so_far,
                                              int& n_moves_within_delta     // output
@@ -188,8 +184,8 @@ public:
 
      ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int feat);
 
-    std::tuple<double, ShumiChess::Move> recursive_negamax(int depth
-                                            , double alpha, double beta
+    std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
+                                            , Score alpha, Score beta
                                             , bool is_from_root
                                             , const ShumiChess::Move& move_last
                                             , int nPlys
@@ -208,11 +204,11 @@ public:
 
     bool no_queens_on_board();
 
-    double d_best_move_value_abs = 0.0;
+    Score d_best_move_value_abs = 0.0;
 
 
     //std::vector<ShumiChess::Move> excluded_root_moves;      // for "MultiPV"
-    std::vector<std::pair<ShumiChess::Move, double>> excluded_root_moves;
+    std::vector<std::pair<ShumiChess::Move, Score>> excluded_root_moves;
 
     //bool is_debug = false;
     int nFarts = 0;

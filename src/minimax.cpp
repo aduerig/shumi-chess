@@ -128,7 +128,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -448,26 +448,25 @@ int MinimaxAI::phase_of_game_full() {
 //
 // Only returns false is if user aborts.
 //
-tuple<double, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_display_only, const Move& null_move) {
+tuple<Score, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_display_only, const Move& null_move) {
 
-    tuple<double, Move> ret_val;
+    tuple<Score, Move> ret_val;
 
     int nPlys = 0;
     int qPlys = 0;
 
     top_deepening = depth;      // deepening starts at this depth
     int aspiration_tries = 0;   // safety fuse
-    double widen = 0.5;         // example margin (in pawns)
+    Score widen = 0.5;         // example margin (in pawns)
 
 
-    double alpha = -HUGE_SCORE;
-    double beta = HUGE_SCORE;
+    Score alpha = -HUGE_SCORE;
+    Score beta = HUGE_SCORE;
 
     // assume: prevScore holds last iteration's exact root score (in pawns)
      
-    double w = 0.20;                 // ≈20 centipawns
     if (0) {  // (depth > 1) {
-        double prevScore;
+        Score prevScore;
         prevScore = prev_root_best_[depth - 1].second;   // score in pawns
         alpha = prevScore - widen;
         beta  = prevScore + widen;
@@ -500,7 +499,7 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_displa
                                  );
 
         // ret_val is a tuple of the score and the move.
-        double d_Return_score = get<0>(ret_val);
+        Score d_Return_score = get<0>(ret_val);
         if (d_Return_score == ABORT_SCORE) return ret_val;
         
         if (d_Return_score == ONLY_MOVE_SCORE) {
@@ -522,9 +521,9 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_displa
         // if (alpha > d_Return_score) {
         //     // Fail-low: score came in at or below alpha
         //     std::cout << "\x1b[38;2;255;165;0mfail low\x1b[0m" << std::endl;
-        //     double widened = alpha - widen;
+        //     Score widened = alpha - widen;
         //     alpha = (widened < -HUGE_SCORE) ? -HUGE_SCORE : widened;
-        //     //double newBeta  = beta; // keep upper bound
+        //     //Score newBeta  = beta; // keep upper bound
         //     widen *= 2.0;  // widen window on fail-low
 
         //     // log_fail_low(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
@@ -534,8 +533,8 @@ tuple<double, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_displa
         // else if (d_Return_score > beta) {
         //     // Fail-high: score came in at or above beta
         //     std::cout << "\x1b[38;2;255;165;0mfail high\x1b[0m" << std::endl;
-        //     double widened = beta + widen;
-        //     //double newAlpha = alpha; // keep lower bound
+        //     Score widened = beta + widen;
+        //     //Score newAlpha = alpha; // keep lower bound
         //     beta  = (widened >  HUGE_SCORE) ?  HUGE_SCORE : widened;
         //     widen *= 2.0;  // widen window on fail-high
 
@@ -600,7 +599,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     TIME_TYPE start_time = chrono::high_resolution_clock::now();
 
     // Not actually a "endtime". The last deepening will start before or at this "requested" time. 
-    //auto requested_end_time = start_time + chrono::duration<double, std::milli>(time_requested);
     TIME_TYPE requested_end_time = start_time + std::chrono::milliseconds(i_time_requested);
 
 
@@ -665,7 +663,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     TTable.clear();       // Leaf TT cleared on every move (even if never used)
 
     Move best_move = {};
-    double d_best_move_value = 0.0;
+    Score d_best_move_value = 0.0;
 
     // Obey requested deepening
     int this_deepening;
@@ -691,7 +689,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     }
 
     ull elapsed_time = 0; // in msec
-    tuple<double, Move> ret_val;
+    tuple<Score, Move> ret_val;
 
     int n_Multis = 1;
     //
@@ -734,7 +732,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     if (n_Multis > 1) {
 
-        tuple<double, Move> ret_val0;
+        tuple<Score, Move> ret_val0;
         int i_random_delta_cp = RANDOMIZING_EQUAL_MOVES_DELTA;
         int n_moves_within_delta;
         ret_val0 = pick_random_within_delta_rand(excluded_root_moves, i_random_delta_cp, engine.computer_ply_so_far
@@ -859,17 +857,15 @@ void MinimaxAI::playground(int iPhase) {
     // Debug only  playground. Sandbox for testing evaluation functions
     // int isolanis;
     bool isOK;
-    double centerness;
 
     int itemp, iNearSquares;
     int king_near_squares_out[9];
     ull utemp, utemp1, utemp2;
-    double dTemp, dtemp1, dtemp2;
     int itemp3, itemp4;
     
     isOK = false;
     ull holes;
-    double dcp_temp;
+    Score dcp_temp;
     int itemp1=0;
     int itemp2=0;
 
@@ -920,7 +916,7 @@ void MinimaxAI::playground(int iPhase) {
 //
 //  elapsed_time is an output
 //
-std::tuple<double, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth, ShumiChess::Move null_move
+std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth, ShumiChess::Move null_move
                                         , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
                                         , ull& elapsed_time)      // output
 {
@@ -936,14 +932,14 @@ std::tuple<double, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dep
     long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
 
     Move best_move = {};
-    double d_best_move_value = 0.0;
+    Score d_best_move_value = 0.0;
     
     elapsed_time = 0; // in msec
 
 
-    double d_Return_score = 0.0;
+    Score d_Return_score = 0.0;
 
-    tuple<double, Move> ret_val;
+    tuple<Score, Move> ret_val;
 
     do {
 
@@ -1055,9 +1051,9 @@ std::tuple<double, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dep
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-tuple<double, Move> MinimaxAI::recursive_negamax(
+tuple<Score, Move> MinimaxAI::recursive_negamax(
                     int depth
-                    ,double alpha, double beta
+                    ,Score alpha, Score beta
                     , bool is_from_root
                     ,const ShumiChess::Move& move_last      // seems to be used for debug only...
                     ,int nPlys
@@ -1065,23 +1061,37 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                     )
 {
 
-    // Initialize return 
-    double d_best_score = 0.0;
-    Move the_best_move = {};
+    // =====================================================================
+    // Initialize
+    // =====================================================================
 
+    // Initialize return 
+    Score d_best_score = 0.0;
+    Move the_best_move = {};
 
     int cp_score_best;
 
     bool did_cutoff = false;    // TRUE if fail-high
     bool did_fail_low = false;  // TRUE if fail-low
 
-    double alpha_in = alpha;   //  save original alpha window lower bound
-    double beta_in = beta;   //  save original alpha window lower bound
+    Score alpha_in = alpha;   //  save original alpha window lower bound
+    Score beta_in = beta;   //  save original alpha window lower bound
 
-    
+
+    EvalPersons evp = UNCLE_SHUMI;   // UNCLE_SHUMI;
+    //EvalPersons evp = CRAZY_IVAN;
+
     assert(nPlys < MAX_PLY0);
     vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
     vector<Move>* p_moves_to_loop_over = &legal_moves;
+
+ 
+    nodes_visited++;
+    if (depth==0) nodes_visited_depth_zero++;
+
+    // =====================================================================
+    // Get all legal moves
+    // =====================================================================
 
     bool in_check = false;
     if (depth == 0) {
@@ -1090,10 +1100,6 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             : engine.is_king_in_check_t<Color::BLACK>();
     }
 
-
-
-
-    // Get all legal moves
     bool b_unquiet_moves_only = false;
     if ( (depth == 0) && !in_check) {
         b_unquiet_moves_only = true;
@@ -1142,18 +1148,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
 
-    nodes_visited++;
-    if (depth==0) nodes_visited_depth_zero++;
-
-    if (stop_calculation) {
-        cout << "\n! STOP CALCULATION requested \n";
-        stop_calculation = false;
-        return { ABORT_SCORE, the_best_move };
-    }
-
-
     // =====================================================================
-    // asserts
+    // Asserts
     // =====================================================================
 
     // Over analysis sentinal Sorry, I should not be this large
@@ -1168,13 +1164,21 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         assert(0);    
     }
 
-
     //if (alpha > beta) assert(0);
 
     
     // =====================================================================
-    // Hard node-limit sentinel fuse
+    // Aborts
     // =====================================================================
+
+    // User abort
+    if (stop_calculation) {
+        cout << "\n! STOP CALCULATION requested \n";
+        stop_calculation = false;
+        return { ABORT_SCORE, the_best_move };
+    }
+
+    // Hard node-limit sentinel fuse
     if (nodes_visited > 5.0e8) {    // 500,000,000
         std::cout << "\x1b[31m\n! NODES VISITED trap#2 " << nodes_visited << " dep=" << depth << "  "
                         << engine.get_best_score_at_root() << "\x1b[0m\n";
@@ -1186,8 +1190,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    EvalPersons evp = CRAZY_IVAN;   // UNCLE_SHUMI;
-    //EvalPersons evp = CRAZY_IVAN;
+    // =====================================================================
+    // Transposition table (TT2)
+    // =====================================================================
 
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
         bool   foundPos = false;
@@ -1195,13 +1200,13 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         Move   foundMove = {};
         int    foundnPlys = 0;
         bool   foundDraw = 0;
-        double foundAlpha = 0.0;
-        double foundBeta  = 0.0;
+        Score foundAlpha = 0.0;
+        Score foundBeta  = 0.0;
         int    foundDepth = 0;
         bool   foundIsCheck = false;
         int    foundLegalMoveSize = 0;
         int    foundRepCount = 0;
-        double foundRawScore = 0;
+        Score foundRawScore = 0;
 
         // NEW: board snapshot from TT2 entry
         ull    found_wp = 0ULL;
@@ -1306,7 +1311,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                         found_move_history = entry.move_history_debug; 
 
                     #else
-                        double dScore = (double)entry.score_cp / 100.0;
+                        Score dScore = (Score)entry.score_cp / 100.0;
                         return { dScore, entry.best_move };
                     #endif
 
@@ -1325,10 +1330,9 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
         }   // END stupid 0/1 filter sub-feature
 
-
     }   // END TT2 feature
 
-
+    //assert (n_legal_moves_found != 0);
     if (n_legal_moves_found == 0) {
         vector<Move> mvs;       // I am not used
         int n_legal_moves_found2 = engine.get_legal_moves_fast(engine.game_board.turn, false, true, mvs);
@@ -1367,7 +1371,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
         int level = (top_deepening - depth);
         assert(level >= 0);
 
-        double d_level = static_cast<double>(level);
+        Score d_level = static_cast<Score>(level);
 
         if (state == GameState::WHITEWIN) {
             d_best_score = (engine.game_board.turn == ShumiChess::WHITE)
@@ -1399,7 +1403,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // Quiescence entry when depth == 0
     // =====================================================================
     assert (depth >= 0);
-    double d_stand_pat = HUGE_SCORE;   // If we evaluate, it will be the evaluate score.
+    Score d_stand_pat = HUGE_SCORE;   // If we evaluate, it will be the evaluate score.
 
     if (depth == 0) {
 
@@ -1551,6 +1555,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
     
     // Change 7 : Need empty() function that discounts "zero moves"
+    assert(!p_moves_to_loop_over->empty());
     if (!p_moves_to_loop_over->empty()) {
 
         bool b_use_this_move;
@@ -1708,8 +1713,8 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             //
             // Three parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
             //                         2. The beta and alpha arguments are staggered, or reversed.
-            double childAlpha = -beta;
-            double childBeta  = -alpha;
+            Score childAlpha = -beta;
+            Score childBeta  = -alpha;
 
             if (0) {                // Full wide window
                 childAlpha = -HUGE_SCORE;
@@ -1717,7 +1722,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             }
 
 
-            tuple<double, Move> ret_val = recursive_negamax(
+            tuple<Score, Move> ret_val = recursive_negamax(
                 (depth > 0 ? depth - 1 : 0),
                 childAlpha, childBeta,
                 false,                    // I am NOT called from the root
@@ -1728,7 +1733,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
 
 
             // The third part of negamax: negate the score to keep it relative.
-            double d_return_score = get<0>(ret_val);     // units are pawns
+            Score d_return_score = get<0>(ret_val);     // units are pawns
             Move d_return_move = get<1>(ret_val);
 
 
@@ -1790,7 +1795,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
             #endif
 
             // negamax, reverse returned score.  
-            double d_score_value = -d_return_score;
+            Score d_score_value = -d_return_score;
 
             if (d_return_score == ABORT_SCORE) {
                 //cout << "\n! STOP CALCULATION now \n" << endl;
@@ -1816,7 +1821,7 @@ tuple<double, Move> MinimaxAI::recursive_negamax(
                 // if (nChars == EOF) assert(0);
             #endif
 
-            double d_difference_in_score = std::fabs(d_score_value - d_best_score);
+            Score d_difference_in_score = std::fabs(d_score_value - d_best_score);
 
             b_use_this_move = (d_score_value > d_best_score);
 
@@ -2398,7 +2403,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-std::tuple<double, ShumiChess::Move> MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,double>>& MovsFromRoot,
+std::tuple<Score, ShumiChess::Move> MinimaxAI::pick_random_within_delta_rand(std::vector<std::pair<Move,Score>>& MovsFromRoot,
                                              int delta_cp,
                                              int i_computer_ply_so_far,
                                              int& n_moves_within_delta     // output
@@ -2419,7 +2424,7 @@ try_again:
               [](const auto& a, const auto& b){ return a.second > b.second; });
 
     // 1) Best is now front()
-    const double bestScorePawns = MovsFromRoot.front().second;
+    const Score bestScorePawns = MovsFromRoot.front().second;
 
     // 2) If best score is mate-like, don’t randomize. Just pick the first one.
     if (IS_MATE_SCORE(bestScorePawns)) return {MovsFromRoot.front().second, MovsFromRoot.front().first};
@@ -2436,7 +2441,7 @@ try_again:
     size_t n_top = 0;
     while (n_top < MovsFromRoot.size()) {
 
-        const double scP = MovsFromRoot[n_top].second;
+        const Score scP = MovsFromRoot[n_top].second;
         const int scCp = (scP >= 0.0)
                        ? (int)(scP * 100.0 + 0.5)
                        : (int)(scP * 100.0 - 0.5);
@@ -2653,7 +2658,6 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
     using namespace ShumiChess;
 
     int icp_temp;
-    double dcp_temp;
     int cp_score_position_temp = 0;
 
     if (nPhase > GamePhase::OPENING) {
@@ -2678,6 +2682,7 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
     // }
 
     if (noMajorPiecesEnemy) {
+        double dcp_temp;
         dcp_temp = engine.game_board.kings_close_toegather_cp_t<c>();
         icp_temp = (int)dcp_temp;
         cp_score_position_temp += (int)dcp_temp;

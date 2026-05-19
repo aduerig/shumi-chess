@@ -266,11 +266,11 @@ PyrrhicMove* pyrrhic_gen_moves(const PyrrhicPosition *pos, PyrrhicMove *moves) {
         if (pos->ep && pyrrhic_test_bit(PYRRHIC_PAWN_ATTACKS(from, pos->turn), pos->ep))
             moves = pyrrhic_add_move(moves, false, true, from, pos->ep);
 
-        // Generate any single pawn pushes
+        // Generate any one square forward pawn pushes
         if (!pyrrhic_test_bit(us | them, from + Forward))
             moves = pyrrhic_add_move(moves, pyrrhic_promo_square(from + Forward), false, from, from + Forward);
 
-        // Generate any double pawn pushes
+        // Generate any 2 square forward pawn pushes
         if (    pyrrhic_pawn_start_square(pos->turn, from)
             && !pyrrhic_test_bit(us | them, from + Forward)
             && !pyrrhic_test_bit(us | them, from + 2 * Forward))
@@ -392,7 +392,7 @@ bool pyrrhic_do_move(PyrrhicPosition *pos, const PyrrhicPosition *pos0, PyrrhicM
 
         pos->rule50 = 0; // Pawn move
 
-        // Check for a double push by White
+        // Check for a 2 square push by White
         if (   (from ^ to) == 16
             &&  pos0->turn == PYRRHIC_WHITE
             && (PYRRHIC_PAWN_ATTACKS(from + 8, PYRRHIC_WHITE) & pos0->pawns & pos0->black))

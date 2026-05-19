@@ -1545,8 +1545,8 @@ void Engine::print_moves_and_scores_to_file(MoveAndScoreList move_and_scores_lis
         std::sort(move_and_scores_list.begin(), move_and_scores_list.end(),
                   [&](const MoveAndScore& a, const MoveAndScore& b)
                   {
-                      double sa = a.second;
-                      double sb = b.second;
+                      Score sa = a.second;
+                      Score sb = b.second;
 
                       if (b_convert_to_abs_score)
                       {
@@ -1567,7 +1567,7 @@ void Engine::print_moves_and_scores_to_file(MoveAndScoreList move_and_scores_lis
 void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
 {
     const ShumiChess::Move& best_move = move_and_score.first;
-    double d_best_move_valu = move_and_score.second;   
+    Score d_best_move_valu = move_and_score.second;   
 
     move_and_score_to_string(best_move, d_best_move_valu, b_convert_to_abs_score);
 
@@ -1579,7 +1579,7 @@ void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, boo
 }
 
 // Puts best move and absolute score. 
-void Engine::move_and_score_to_string(const Move best_move, double d_best_move_valu, bool b_convert_to_abs_score)
+void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_valu, bool b_convert_to_abs_score)
 {
     // Convert relative score to abs score
     if (b_convert_to_abs_score) {
@@ -2146,12 +2146,12 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
             ull one_move_forward_unblocked = one_move_forward & ~all_pieces;
 
-            // single square moves
+            // one square moves
             if (one_move_forward_unblocked) add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves
                 , square, one_move_forward_unblocked, Piece::PAWN
                 , NO_SQUARE);
 
-            // double square moves
+            // two square moves
             ull is_doublable = single_pawn & pawn_starting_rank_mask;
             if (is_doublable) {
                 ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
