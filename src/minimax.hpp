@@ -31,7 +31,7 @@ public:
     ShumiChess::Engine engine;
     
     RandomAI(ShumiChess::Engine&);
-    ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
+    //ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
 
 constexpr int MAXIMUM_DEEPENING = 40;
@@ -209,12 +209,6 @@ public:
     bool no_queens_on_board();
 
     double d_best_move_value_abs = 0.0;
-
-    // oLD CHESS engine
-    double get_value(int depth, int color_multiplier, double alpha, double beta);
-    ShumiChess::Move get_move(int);
-    ShumiChess::Move get_move();
-    // end oLD CHESS engine
 
 
     //std::vector<ShumiChess::Move> excluded_root_moves;      // for "MultiPV"

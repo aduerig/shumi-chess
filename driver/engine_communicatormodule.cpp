@@ -370,12 +370,6 @@ engine_communicator_get_engine(PyObject* self, PyObject* args) {
 
 
 static MinimaxAI* minimax_ai = nullptr;
-static PyObject*
-minimax_ai_get_move(PyObject* self, PyObject* args) {
-    ShumiChess::Move gotten_move = minimax_ai->get_move();
-    string move_in_acn_notation = utility::representation::move_to_string(gotten_move);
-    return Py_BuildValue("s", move_in_acn_notation.c_str());
-}
 
 
 static PyObject*
@@ -563,7 +557,6 @@ static PyMethodDef engine_communicator_methods[] = {
 
     // These are move generation engines
     {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
-    {"minimax_ai_get_move",  minimax_ai_get_move, METH_VARARGS, ""},
 
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},      // new game
