@@ -25,6 +25,7 @@ iBlackTimeMatch = 0
 
 # ------------------------------------
 winner = '????'
+game_started = False
 
 # Python arguments
 parser = argparse.ArgumentParser()
@@ -107,7 +108,7 @@ for key, val in imported_ais.items():
 def reset_board(fen="", winner="????"):
 
     global curr_game_bottom, curr_game_top, curr_game_draw, curr_game
-    global legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index
+    global legal_moves, game_state_might_change, last_move_indicator, ai_is_thinking, player_index, game_started
    
     # If AI is thinking, cancel it
     if ai_is_thinking:
@@ -140,6 +141,7 @@ def reset_board(fen="", winner="????"):
 
     legal_moves = engine_communicator.get_legal_moves()
     game_state_might_change = True
+    game_started = True
 
     # Update the match counters
     curr_game += 1
@@ -177,79 +179,89 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
 
 
     try:
-        if name_of_ai.lower() == 'random_ai':
-            from_acn, to_acn = get_random_move(legal_moves)
+        # note the human player has been screened out by now.
+        player_id_by_name = {
+            'shumi_ai': 0,
+            'ivan_ai': 1,
+            'slug_ai': 2,
+            'ran_ai': 3,
+        }
+        player_id = player_id_by_name.get(name_of_ai.lower())
+        if player_id is None:
+            raise ValueError(f'Unknown AI player: {name_of_ai}')
+
+        # did the user give global -t / -d  / -f?
+        global_time_set  = ('-t' in sys.argv) or ('--time' in sys.argv)
+        global_depth_set = ('-d' in sys.argv) or ('--depth' in sys.argv)
+        global_argu_set = ('-f' in sys.argv) or ('--feat' in sys.argv)
+
+        side = player_index  # 0 = white, 1 = black
+
+        # TIME: per-side flags override global flags
+        if side == 0 and args.wt is not None:
+            milliseconds = args.wt
+        elif side == 1 and args.bt is not None:
+            milliseconds = args.bt
+        elif global_time_set and args.time is not None:
+            milliseconds = args.time
         else:
-            # did the user give global -t / -d  / -f?
-            global_time_set  = ('-t' in sys.argv) or ('--time' in sys.argv)
-            global_depth_set = ('-d' in sys.argv) or ('--depth' in sys.argv)
-            global_argu_set = ('-f' in sys.argv) or ('--feat' in sys.argv)
+            milliseconds = args.time if args.time is not None else 2000
 
-            side = player_index  # 0 = white, 1 = black
+        # DEPTH: per-side flags override global flags
+        if side == 0 and args.wd is not None:
+            max_deepening = args.wd
+        elif side == 1 and args.bd is not None:
+            max_deepening = args.bd
+        elif global_depth_set and args.depth is not None:
+            max_deepening = args.depth
+        else:
+            max_deepening = args.depth if args.depth is not None else 7
 
-            # TIME: per-side beats global
-            if side == 0 and args.wt is not None:
-                milliseconds = args.wt
-            elif side == 1 and args.bt is not None:
-                milliseconds = args.bt
-            elif global_time_set and args.time is not None:
-                milliseconds = args.time
-            else:
-                milliseconds = args.time if args.time is not None else 2000
+        # FEATURES: per-side flags override global flags
+        if side == 0 and args.wf is not None:
+            features_mask = args.wf
+        elif side == 1 and args.bf is not None:
+            features_mask = args.bf
+        elif global_argu_set and args.feat is not None:
+            features_mask = args.feat
+        else:
+            features_mask = args.feat  # may be None
 
-            # DEPTH: per-side beats global
-            if side == 0 and args.wd is not None:
-                max_deepening = args.wd
-            elif side == 1 and args.bd is not None:
-                max_deepening = args.bd
-            elif global_depth_set and args.depth is not None:
-                max_deepening = args.depth
-            else:
-                max_deepening = args.depth if args.depth is not None else 7
+        if features_mask is None:   # make sure features_mask is an int (no None)
+            features_mask = engine_communicator.get_features_default()
 
-              # ARG: per-side beats global
-            if side == 0 and args.wf is not None:
-                features_mask = args.wf
-            elif side == 1 and args.bf is not None:
-                features_mask = args.bf
-            elif global_argu_set and args.feat is not None:
-                features_mask = args.feat
-            else:
-                features_mask = args.feat  # may be None
+        if not features_mask:
+            features_mask = engine_communicator.get_features_default()
+            
+        # debug print
+        # print("\nmillsecs=    ", milliseconds)
+        # print("max_deepening= ", max_deepening)
+        # print("features_mask=   ", features_mask)
+        # print("random= ", args.rand)      # -r
+        # print("player_id= ", player_id)
 
-            if features_mask is None:   # make sure features_mask is an int (no None)
-                features_mask = engine_communicator.get_features_default()
+        if side == 0:
+            time_white = milliseconds
+            dpth_white = max_deepening
+            feat_white = features_mask
+        else:
+            time_black = milliseconds
+            dpth_black = max_deepening
+            feat_black = features_mask
 
-            if not features_mask:
-                features_mask = engine_communicator.get_features_default()
-                
-            # debug print
-            # print("\nmillsecs=    ", milliseconds)
-            # print("max_deepening= ", max_deepening)
-            # print("features_mask=   ", features_mask)
-            # print("random= ", args.rand)      # -r
+        # To randomize first move(s)
+        if args.rand:
+            engine_communicator.set_random_number_of_moves(args.rand)       
 
-            if side == 0:
-                time_white = milliseconds
-                dpth_white = max_deepening
-                feat_white = features_mask
-            else:
-                time_black = milliseconds
-                dpth_black = max_deepening
-                feat_black = features_mask
-
-            # To randomize first move(s)
-            if args.rand:
-                engine_communicator.set_random_number_of_moves(args.rand)       
-
-            move = engine_communicator.minimax_ai_get_move_iterative_deepening(milliseconds, max_deepening, features_mask)
-       
-            # Recieve the acn, and the move[5] chraracter promotion char.  
-            from_acn = move[0:2]
-            to_acn   = move[2:4]
-            promo_piece = "#"       
-            if len(move) > 4:       # this should always be true (len(move) > 4)
-                promo_piece = move[4]
+        # Get the move
+        move = engine_communicator.ai_get_move_iterative_deepening(milliseconds, max_deepening, player_id, features_mask)
+   
+        # Recieve the acn, and the move[5] chraracter promotion char.  
+        from_acn = move[0:2]
+        to_acn   = move[2:4]
+        promo_piece = "#"       
+        if len(move) > 4:       # this should always be true (len(move) > 4)
+            promo_piece = move[4]
 
 
 
@@ -262,7 +274,7 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
 
 
 
-ai_default = 'minimax_ai'
+ai_default = 'Shumi_ai'
 both_players = ['human', ai_default]
 if args.human:
     both_players = ['human', 'human']
@@ -374,7 +386,7 @@ def clicked_flip_button(button_obj):
     
     # If AI is thinking, cancel it.
     if ai_is_thinking:
-       print("\033[1;31merror: Flip Board called during AI turn\033[0m")
+       print("\033[1;31m\nerror: Flip Board called during AI turn\033[0m")
        #ai_is_thinking = False
        # Clear the queue
        #while not ai_move_queue.empty():
@@ -388,10 +400,14 @@ def clicked_flip_button(button_obj):
 
 def get_next_player(player_name: str) -> str:
     if player_name == 'human':
-        return 'random_ai'
-    elif player_name == 'random_ai':
-        return 'minimax_ai'
-    elif player_name == 'minimax_ai':
+        return 'Shumi_ai'
+    elif player_name == 'Shumi_ai':
+        return 'Ivan_ai'
+    elif player_name == 'Ivan_ai':
+        return 'slug_ai'
+    elif player_name == 'slug_ai':
+        return 'ran_ai'
+    elif player_name == 'ran_ai':
         return 'human'
 
 def clicked_white_button(button_obj):
@@ -930,7 +946,7 @@ try:
 
             curr_player = both_players[player_index]
 
-            if 'ai' in curr_player and not ai_is_thinking:
+            if game_started and 'ai' in curr_player and not ai_is_thinking:
                 # start thread
                 ai_thread = threading.Thread(target=get_ai_move_threaded, args=(legal_moves, curr_player), daemon=True)
                 ai_thread.start()
@@ -962,7 +978,7 @@ try:
                     gui_click_choices()
                     continue
 
-                if curr_player == 'human':
+                if game_started and curr_player == 'human':
                     for i in drawn_potential: i.undraw()
                     drawn_potential = []
 

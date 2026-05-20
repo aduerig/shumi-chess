@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
     GameState state = engine.is_game_over();
     steady_clock::time_point start_time = steady_clock::now();
     for (int ply = 1; state == INPROGRESS && ply <= max_ply_to_play; ++ply) {
-        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, 0);
+        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, 0, 0);
 
         if (move.piece_type == Piece::NONE) {
             cout << "No legal move returned at ply " << ply << endl;

@@ -48,6 +48,8 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
+    ShumiChess::EvalPersons evp = ShumiChess::UNCLE_SHUMI;   // UNCLE_SHUMI;
+    //EvalPersons evp = CRAZY_IVAN;
 
     ull Features_mask = _DEFAULT_FEATURES_MASK;
 
@@ -182,7 +184,7 @@ public:
                                              int& n_moves_within_delta     // output
                                             );
 
-     ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int feat);
+     ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id, int feat);
 
     std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
                                             , Score alpha, Score beta

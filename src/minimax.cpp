@@ -585,11 +585,11 @@ int g_this_depth = 6;
 //     max_deepening_requested  -  requested depth
 //
 //////////////////////////////////////////////////////////////////////////////////
+//    codex resume 019e431e-4e84-7f33-b5f2-4945a701229a
 //
 // This is a "root position". The next human move triggers a new root position
-Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int feat) {  
+Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id, int feat) {  
 
-   
 
     assert (i_time_requested > 0);
 
@@ -1077,9 +1077,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     Score alpha_in = alpha;   //  save original alpha window lower bound
     Score beta_in = beta;   //  save original alpha window lower bound
 
-
-    EvalPersons evp = UNCLE_SHUMI;   // UNCLE_SHUMI;
-    //EvalPersons evp = CRAZY_IVAN;
 
     assert(nPlys < MAX_PLY0);
     vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
@@ -1598,6 +1595,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         //
         // Look (recurse) over all moves chosen
         //
+          /////////////////////////////////////////////////////////////////////////////////////////
         int imovedebug = 0;
         for (const Move& m : *p_moves_to_loop_over) {
             int nChars;

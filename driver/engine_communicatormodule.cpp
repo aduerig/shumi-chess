@@ -373,22 +373,31 @@ static MinimaxAI* minimax_ai = nullptr;
 
 
 static PyObject*
-minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
+ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 {
     int milliseconds;      // required
     int max_deepening;     // required
+    int player_id;         // required
+        // player_id_by_name = {
+        //             'shumi_ai': 0,
+        //             'ivan_ai': 1,
+        //             'slug_ai': 2,
+        //             'ran_ai': 3,
+        //         }
+
     int argument = 0;      // optional, default 0
 
-    // required int, required int, optional int
-    if (!PyArg_ParseTuple(args, "ii|i",
+    // required int, required int, required int, optional int
+    if (!PyArg_ParseTuple(args, "iii|i",
                           &milliseconds,
                           &max_deepening,
+                          &player_id,
                           &argument))
     {
         return NULL;
     }
 
-    //cout << " milliseconds " << milliseconds << " " << max_deepening << '\n';
+    //cout << " milliseconds " << milliseconds << " " << max_deepening << player_id << '\n';
 
 
 
@@ -402,6 +411,7 @@ minimax_ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     gotten_move = minimax_ai->get_move_iterative_deepening(
         milliseconds+1,
         max_deepening,
+        player_id,
         argument
     );
 
@@ -556,7 +566,7 @@ static PyMethodDef engine_communicator_methods[] = {
     {"systemcall",  engine_communicator_systemcall, METH_VARARGS, ""},
 
     // These are move generation engines
-    {"minimax_ai_get_move_iterative_deepening", minimax_ai_get_move_iterative_deepening, METH_VARARGS, ""},
+    {"ai_get_move_iterative_deepening", ai_get_move_iterative_deepening, METH_VARARGS, ""},
 
     {"make_move_two_acn",  engine_communicator_make_move_two_acn, METH_VARARGS, ""},
     {"reset_engine",  engine_communicator_reset_engine, METH_VARARGS, ""},      // new game
