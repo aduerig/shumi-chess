@@ -1,4 +1,4 @@
-
+﻿
 #include <float.h>
 #include <bitset>
 #include <iomanip>
@@ -1103,25 +1103,25 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             : engine.is_king_in_check_t<Color::BLACK>();
     }
 
-    bool b_unquiet_moves_only = false;
+    bool caps_only = false;
     if ( (depth == 0) && !in_check) {
-        b_unquiet_moves_only = true;
+        caps_only = true;
     }
 
     int n_legal_moves_found;
     if (engine.game_board.turn == ShumiChess::Color::WHITE) {
-        if (b_unquiet_moves_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, true>(false, legal_moves);
+        if (caps_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, true>(false, legal_moves);
         else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, false>(false, legal_moves);
     } else {
-        if (b_unquiet_moves_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, true>(false, legal_moves);
+        if (caps_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, true>(false, legal_moves);
         else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, false>(false, legal_moves);
     }
     
-    // Look, if b_unquiet_moves_only is false, then n_legal_moves_found will be equal to legal_moves.size()
-    // if b_unquiet_moves_only is true, then n_legal_moves_found will be the count of moves, but 
+    // Look, if caps_only is false, then n_legal_moves_found will be equal to legal_moves.size()
+    // if caps_only is true, then n_legal_moves_found will be the count of moves, but 
     // only unquiet moves will be in legal_moves.
     #ifndef NDEBUG
-        if (!b_unquiet_moves_only) {
+        if (!caps_only) {
             // Change 0: legal_moves needs a size() that discounts "zero moves".
             assert (n_legal_moves_found == legal_moves.size());
         }

@@ -117,8 +117,8 @@ class Engine {
         template<Color c, bool capture, bool promotion, bool is_en_passent_cap, bool is_castle> 
         	void add_psuedo_move_to_vector(vector<Move>&, Square fromSQ, ull, Piece, Square en_passant_land_sq);
 
-        template<Color c, bool b_unquiet_moves_only> int get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut);
-        int get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);       
+        template<Color c, bool caps_only> int get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut);
+        int get_legal_moves_fast(Color c, bool caps_only, bool b_check_mode, vector<Move>& MovesOut);       
        
         bool assert_same_moves(const std::vector<Move>& a,
                                 const std::vector<Move>& b);

@@ -2497,7 +2497,8 @@ template<Color c>
 bool Engine::is_king_in_check_t() {
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
     ull friendly_king = game_board.get_pieces_template<Piece::KING, c>();
-    assert (friendly_king);     // has to be a king
+    assert (friendly_king);                 // has to be a king
+    //assert (bits_in(friendly_king) == 1);   // only one king
 
     bool b_king_in_check = is_square_in_check_t<enemy>(friendly_king);
 
@@ -2709,25 +2710,25 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
 }
 
 // I am called only from python, through engine_communicator_get_legal_moves, when the game is over. I am wasteful.
-int Engine::get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut)
+int Engine::get_legal_moves_fast(Color c, bool caps_only, bool b_check_mode, vector<Move>& MovesOut)
 {
     if (c == Color::WHITE) {
-        if (b_unquiet_moves_only) return get_legal_moves_fast_t<Color::WHITE, true>(b_check_mode, MovesOut);
+        if (caps_only) return get_legal_moves_fast_t<Color::WHITE, true>(b_check_mode, MovesOut);
         return get_legal_moves_fast_t<Color::WHITE, false>(b_check_mode, MovesOut);
     } else {
-        if (b_unquiet_moves_only) return get_legal_moves_fast_t<Color::BLACK, true>(b_check_mode, MovesOut);
+        if (caps_only) return get_legal_moves_fast_t<Color::BLACK, true>(b_check_mode, MovesOut);
         return get_legal_moves_fast_t<Color::BLACK, false>(b_check_mode, MovesOut);
     }
 }
 
 // I am the main one called
-template<Color c, bool b_unquiet_moves_only>
+template<Color c, bool caps_only>
 int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
 
     psuedo_legal_moves.clear();
     assert(psuedo_legal_moves.capacity() == MAX_MOVES);
 
-    MovesOut.clear();
+    MovesOut.clear();           // Clear the output
 
     ///////////////////////////////////////////////////////////
 
@@ -2751,7 +2752,7 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
 
     ///////////////////////////////////////////////////////////
 
-    n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c, b_unquiet_moves_only>(psuedo_legal_moves);
+    n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c, caps_only>(psuedo_legal_moves);
 
     if (!in_check_before_move) {
         for (const Move& move : psuedo_legal_moves) {
@@ -2780,7 +2781,7 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
                 if (b_check_mode) return n_legal_moves_found;  
 
                 bool b_add_me = true; 
-                if constexpr (b_unquiet_moves_only) {
+                if constexpr (caps_only) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
                         b_add_me = false;
                     }
@@ -2842,7 +2843,7 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
                 if (b_check_mode) return n_legal_moves_found;
                 
                 bool b_add_me = true;       
-                if constexpr (b_unquiet_moves_only) {
+                if constexpr (caps_only) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
                         b_add_me = false;
                     }
