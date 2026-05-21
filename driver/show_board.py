@@ -420,7 +420,6 @@ def clicked_black_button(button_obj):
     both_players[1] = get_next_player(both_players[1])
     button_obj.update_text()
 
-# codex resume 019e48d1-4a3c-7712-9dd3-38b8169a4035
 global autoreset_toggle; autoreset_toggle = False
 def clicked_autoreset(button_obj):
     global autoreset_toggle

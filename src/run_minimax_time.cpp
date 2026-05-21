@@ -109,9 +109,10 @@ int main(int argc, char** argv) {
     cout << out << endl;
 
     // Decide on arguments
-    int time_to_use = 3000;
-    int depth_to_use = 7;
-    int max_ply_to_play = 5;
+    int time_to_use = 30;
+    int depth_to_use = 8;
+    int max_ply_to_play = 7;
+    int player_id = SLUG;       //  UNCLE_SHUMI;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {
@@ -127,12 +128,14 @@ int main(int argc, char** argv) {
 
     cout << "using level= " << depth_to_use
          << "  msec = " << time_to_use
-         << "  max ply = " << max_ply_to_play << endl;
+         << "  max ply = " << max_ply_to_play 
+         << "  play id = " << player_id 
+         << endl;
 
     GameState state = engine.is_game_over();
     steady_clock::time_point start_time = steady_clock::now();
     for (int ply = 1; state == INPROGRESS && ply <= max_ply_to_play; ++ply) {
-        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, 0, 0);
+        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id, 0);
 
         if (move.piece_type == Piece::NONE) {
             cout << "No legal move returned at ply " << ply << endl;

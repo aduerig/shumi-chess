@@ -1,4 +1,4 @@
-﻿
+
 #include <float.h>
 #include <bitset>
 #include <iomanip>
@@ -1109,10 +1109,13 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }
 
     int n_legal_moves_found;
-    if (engine.game_board.turn == ShumiChess::Color::WHITE)
-        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE>(b_unquiet_moves_only, false, legal_moves);
-    else
-        n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK>(b_unquiet_moves_only, false, legal_moves);
+    if (engine.game_board.turn == ShumiChess::Color::WHITE) {
+        if (b_unquiet_moves_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, true>(false, legal_moves);
+        else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, false>(false, legal_moves);
+    } else {
+        if (b_unquiet_moves_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, true>(false, legal_moves);
+        else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, false>(false, legal_moves);
+    }
     
     // Look, if b_unquiet_moves_only is false, then n_legal_moves_found will be equal to legal_moves.size()
     // if b_unquiet_moves_only is true, then n_legal_moves_found will be the count of moves, but 

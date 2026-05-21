@@ -1,32 +1,11 @@
 
 
+b_unquiet_moves_only must be converted from a "real" paramater into a template parameter.
 
+this is the main line:
+get_legal_moves_fast_t()  
+      to   get_psuedo_legal_moves_t() 
+          to   add_knight_moves_to_vector_t() (and its kin)   
+other paths may need to be changed 
 
-programming\shumi-chess\driver\engine_communicatormodule.cpp /Fodriver/build\Release\programming\shumi-chess\driver\engine_communicatormodule.obj /std:c++17
-engine_communicatormodule.cpp
-C:\programming\shumi-chess\src\utility.hpp(101): warning C4146: unary minus operator applied to unsigned type, result still unsigned
-"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX86\x64\link.exe" /nologo /INCREMENTAL:NO /LTCG /DLL /MANIFEST:EMBED,ID=2 /MANIFESTUAC:NO /LIBPATH:C:\programming\shumi-chess\lib /LIBPATH:C:\Users\pduer\AppData\Local\Programs\Python\Python313\libs /LIBPATH:C:\Users\pduer\AppData\Local\Programs\Python\Python313 /LIBPATH:C:\Users\pduer\AppData\Local\Programs\Python\Python313\PCbuild\amd64 "/LIBPATH:C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\ATLMFC\lib\x64" "/LIBPATH:C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\lib\x64" "/LIBPATH:C:\Program Files (x86)\Windows Kits\10\lib\10.0.26100.0\ucrt\x64" "/LIBPATH:C:\Program Files (x86)\Windows Kits\10\\lib\10.0.26100.0\\um\x64" /EXPORT:PyInit_engine_communicator driver/build\Release\programming\shumi-chess\driver\engine_communicatormodule.obj /OUT:driver\engine_communicator.cp313-win_amd64.pyd /IMPLIB:driver/build\Release\programming\shumi-chess\driver\engine_communicator.cp313-win_amd64.lib C:\programming\shumi-chess\build\lib\Release\ShumiChess.lib
-   Creating library driver/build\Release\programming\shumi-chess\driver\engine_communicator.cp313-win_amd64.lib and object driver/build\Release\programming\shumi-chess\driver\engine_communicator.cp313-win_amd64.exp
-Generating code
-Finished generating code
-Finished execution, return code was 0
-SUCCESS executing "python "C:\programming\shumi-chess\driver\build_c_module_for_python.py" "build" "--force" "--build-lib=driver" "--build-temp=driver/build" "--release" "--compiler=msvc""
-New Game 
-New Match
-Traceback (most recent call last):
-  File "C:\programming\shumi-chess\driver\show_board.py", line 107, in <module>
-    eval_persons = load_eval_persons()
-  File "C:\programming\shumi-chess\driver\show_board.py", line 83, in load_eval_persons
-    enum_text = enum_file.read_text()
-  File "C:\Users\pduer\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py", line 546, in read_text
-    return PathBase.read_text(self, encoding, errors, newline)
-           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\pduer\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py", line 633, in read_text
-    return f.read()
-           ~~~~~~^^
-  File "C:\Users\pduer\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 23, in decode
-    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
-           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-UnicodeDecodeError: 'charmap' codec can't decode byte 0x90 in position 2454: character maps to <undefined>
-PS C:\programming\shumi-chess> 
-
+codex resume 019e4939-d7f1-7d51-8d70-f711551097c4

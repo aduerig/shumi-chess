@@ -1787,8 +1787,8 @@ void Engine::move_into_string_full(ShumiChess::Move m) {
     int iLegalMoves;    // I am not used
 
     // Warning: this function is expensive. Should be called only for making formal PGN or move files.
-    if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE>(false, false, moves);
-    else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK>(false, false, moves);
+    if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE, false>(false, moves);
+    else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK, false>(false, moves);
 
 
     bitboards_to_algebraic(game_board.turn, m
@@ -2069,8 +2069,8 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
 
 // --- Phase 2: Move generation templates ---
 
-template<Color c>
-void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
+template<Color c, bool caps_only>
+void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     ull pawns = game_board.get_pieces_template<Piece::PAWN, c>();
     if (!pawns) return;
 
@@ -2141,7 +2141,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         #endif
 
         // "quiet" pawn moves.
-        if (!unquiet_moves_only) {
+        if constexpr (!caps_only) {
 
             ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
             ull one_move_forward_unblocked = one_move_forward & ~all_pieces;
@@ -2181,8 +2181,8 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
     }
 }
 
-template<Color c>
-void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
+template<Color c, bool caps_only>
+void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     ull knights = game_board.get_pieces_template<Piece::KNIGHT, c>();
 
     while (knights) {
@@ -2190,6 +2190,8 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
         ull single_knight = utility::bit::lsb_and_pop(knights);
         assert(single_knight);
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_knight);
+        // Square square2 = utility::bit::lsb_and_pop_to_square(knights);
+        // assert (square == square2);
 
         ull avail_attacks = tables::movegen::knight_attack_table[square];
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
@@ -2199,7 +2201,7 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
             , NO_SQUARE);
 
         // quiet moves
-        if (!unquiet_moves_only) {
+        if constexpr (!caps_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::KNIGHT
                 , NO_SQUARE);
@@ -2207,8 +2209,8 @@ void Engine::add_knight_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
     }
 }
 
-template<Color c>
-void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
+template<Color c, bool caps_only>
+void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     ull rooks = game_board.get_pieces_template<Piece::ROOK, c>();
 
     while (rooks) {
@@ -2226,7 +2228,7 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
             , NO_SQUARE);
 
         // quiet moves
-        if (!unquiet_moves_only) {
+        if constexpr (!caps_only) {
             ull non_attack_moves = avail_attacks & (~all_own_pieces & ~enemy_piece_attacks);
             add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::ROOK
                 , NO_SQUARE);
@@ -2234,8 +2236,8 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
     }
 }
 
-template<Color c>
-void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
+template<Color c, bool caps_only>
+void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     ull bishops = game_board.get_pieces_template<Piece::BISHOP, c>();
 
     while (bishops) {
@@ -2254,7 +2256,7 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
             , NO_SQUARE);
 
         // quiet moves
-        if (!unquiet_moves_only) {
+        if constexpr (!caps_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::BISHOP
                 , NO_SQUARE);
@@ -2262,8 +2264,8 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, 
     }
 }
 
-template<Color c>
-void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
+template<Color c, bool caps_only>
+void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     ull queens = game_board.get_pieces_template<Piece::QUEEN, c>();
 
     while (queens) {
@@ -2281,7 +2283,7 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
             , NO_SQUARE);
 
         // quiet moves
-        if (!unquiet_moves_only) {
+        if constexpr (!caps_only) {
             ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
             add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves, square, non_attack_moves, Piece::QUEEN
                 , NO_SQUARE);
@@ -2289,8 +2291,8 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, b
     }
 }
 
-template<Color c>
-void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
+template<Color c, bool caps_only>
+void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
    
     ull single_king = game_board.get_pieces_template<Piece::KING, c>();
     assert (single_king);                              // Has to be kings
@@ -2306,7 +2308,7 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
         , NO_SQUARE);
 
     // quiet moves
-    if (!unquiet_moves_only) {
+    if constexpr (!caps_only) {
 
         // Quiet moves
         ull non_attack_moves = avail_attacks & ~all_own_pieces & ~enemy_piece_attacks;
@@ -2405,8 +2407,8 @@ void Engine::add_king_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves, bo
     }
 }
 
-template<Color c>
-int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only) {
+template<Color c, bool caps_only>
+int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
     // Intialize some class variables that are used in all the children called by this function
@@ -2415,12 +2417,12 @@ int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves, bool 
     all_pieces = (all_own_pieces | all_enemy_pieces);
 
     // Get all the psuedo legal moves.
-    add_knight_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
-    add_bishop_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
-    add_pawn_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
-    add_queen_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
-    add_king_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
-    add_rook_moves_to_vector_t<c>(all_psuedo_legal_moves,unquiet_moves_only);
+    add_knight_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
+    add_bishop_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
+    add_pawn_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
+    add_queen_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
+    add_king_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
+    add_rook_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
 
     return all_psuedo_legal_moves.size();
 }
@@ -2710,15 +2712,17 @@ bool Engine::in_check_after_king_move_t(const Move& move) {
 int Engine::get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut)
 {
     if (c == Color::WHITE) {
-        return get_legal_moves_fast_t<Color::WHITE>(b_unquiet_moves_only, b_check_mode, MovesOut);
+        if (b_unquiet_moves_only) return get_legal_moves_fast_t<Color::WHITE, true>(b_check_mode, MovesOut);
+        return get_legal_moves_fast_t<Color::WHITE, false>(b_check_mode, MovesOut);
     } else {
-        return get_legal_moves_fast_t<Color::BLACK>(b_unquiet_moves_only, b_check_mode, MovesOut);
+        if (b_unquiet_moves_only) return get_legal_moves_fast_t<Color::BLACK, true>(b_check_mode, MovesOut);
+        return get_legal_moves_fast_t<Color::BLACK, false>(b_check_mode, MovesOut);
     }
 }
 
 // I am the main one called
-template<Color c>
-int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut) {
+template<Color c, bool b_unquiet_moves_only>
+int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
 
     psuedo_legal_moves.clear();
     assert(psuedo_legal_moves.capacity() == MAX_MOVES);
@@ -2747,7 +2751,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
 
     ///////////////////////////////////////////////////////////
 
-    n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c>(psuedo_legal_moves, b_unquiet_moves_only);
+    n_psuedo_legal_moves_found = get_psuedo_legal_moves_t<c, b_unquiet_moves_only>(psuedo_legal_moves);
 
     if (!in_check_before_move) {
         for (const Move& move : psuedo_legal_moves) {
@@ -2776,7 +2780,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 if (b_check_mode) return n_legal_moves_found;  
 
                 bool b_add_me = true; 
-                if (b_unquiet_moves_only) {
+                if constexpr (b_unquiet_moves_only) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
                         b_add_me = false;
                     }
@@ -2838,7 +2842,7 @@ int Engine::get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode,
                 if (b_check_mode) return n_legal_moves_found;
                 
                 bool b_add_me = true;       
-                if (b_unquiet_moves_only) {
+                if constexpr (b_unquiet_moves_only) {
                     if ( (move.capture==Piece::NONE) && (move.promotion==Piece::NONE) ) {
                         b_add_me = false;
                     }
@@ -2867,20 +2871,34 @@ template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, false
 template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, false, true, false>(vector<Move>&, Square, ull, Piece, Square);
 template void Engine::add_psuedo_move_to_vector<Color::BLACK, true, true, false, false>(vector<Move>&, Square, ull, Piece, Square);
 
-template void Engine::add_pawn_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_pawn_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_knight_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_knight_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_bishop_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_bishop_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_rook_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_rook_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_queen_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_queen_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_king_moves_to_vector_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
-template void Engine::add_king_moves_to_vector_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
-template int Engine::get_psuedo_legal_moves_t<Color::WHITE>(vector<Move>&, bool unquiet_moves_only);
-template int Engine::get_psuedo_legal_moves_t<Color::BLACK>(vector<Move>&, bool unquiet_moves_only);
+template void Engine::add_pawn_moves_to_vector_t<Color::WHITE, false>(vector<Move>&);
+template void Engine::add_pawn_moves_to_vector_t<Color::WHITE, true>(vector<Move>&);
+template void Engine::add_pawn_moves_to_vector_t<Color::BLACK, false>(vector<Move>&);
+template void Engine::add_pawn_moves_to_vector_t<Color::BLACK, true>(vector<Move>&);
+template void Engine::add_knight_moves_to_vector_t<Color::WHITE, false>(vector<Move>&);
+template void Engine::add_knight_moves_to_vector_t<Color::WHITE, true>(vector<Move>&);
+template void Engine::add_knight_moves_to_vector_t<Color::BLACK, false>(vector<Move>&);
+template void Engine::add_knight_moves_to_vector_t<Color::BLACK, true>(vector<Move>&);
+template void Engine::add_bishop_moves_to_vector_t<Color::WHITE, false>(vector<Move>&);
+template void Engine::add_bishop_moves_to_vector_t<Color::WHITE, true>(vector<Move>&);
+template void Engine::add_bishop_moves_to_vector_t<Color::BLACK, false>(vector<Move>&);
+template void Engine::add_bishop_moves_to_vector_t<Color::BLACK, true>(vector<Move>&);
+template void Engine::add_rook_moves_to_vector_t<Color::WHITE, false>(vector<Move>&);
+template void Engine::add_rook_moves_to_vector_t<Color::WHITE, true>(vector<Move>&);
+template void Engine::add_rook_moves_to_vector_t<Color::BLACK, false>(vector<Move>&);
+template void Engine::add_rook_moves_to_vector_t<Color::BLACK, true>(vector<Move>&);
+template void Engine::add_queen_moves_to_vector_t<Color::WHITE, false>(vector<Move>&);
+template void Engine::add_queen_moves_to_vector_t<Color::WHITE, true>(vector<Move>&);
+template void Engine::add_queen_moves_to_vector_t<Color::BLACK, false>(vector<Move>&);
+template void Engine::add_queen_moves_to_vector_t<Color::BLACK, true>(vector<Move>&);
+template void Engine::add_king_moves_to_vector_t<Color::WHITE, false>(vector<Move>&);
+template void Engine::add_king_moves_to_vector_t<Color::WHITE, true>(vector<Move>&);
+template void Engine::add_king_moves_to_vector_t<Color::BLACK, false>(vector<Move>&);
+template void Engine::add_king_moves_to_vector_t<Color::BLACK, true>(vector<Move>&);
+template int Engine::get_psuedo_legal_moves_t<Color::WHITE, false>(vector<Move>&);
+template int Engine::get_psuedo_legal_moves_t<Color::WHITE, true>(vector<Move>&);
+template int Engine::get_psuedo_legal_moves_t<Color::BLACK, false>(vector<Move>&);
+template int Engine::get_psuedo_legal_moves_t<Color::BLACK, true>(vector<Move>&);
 
 template bool Engine::is_king_in_check_t<Color::WHITE>();
 template bool Engine::is_king_in_check_t<Color::BLACK>();
@@ -2898,8 +2916,10 @@ template bool Engine::in_check_after_move_fast_t<Color::WHITE>(const Move&);
 template bool Engine::in_check_after_move_fast_t<Color::BLACK>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::WHITE>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::BLACK>(const Move&);
-template int Engine::get_legal_moves_fast_t<Color::WHITE>(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>&);
-template int Engine::get_legal_moves_fast_t<Color::BLACK>(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>&);
+template int Engine::get_legal_moves_fast_t<Color::WHITE, false>(bool b_check_mode, vector<Move>&);
+template int Engine::get_legal_moves_fast_t<Color::WHITE, true>(bool b_check_mode, vector<Move>&);
+template int Engine::get_legal_moves_fast_t<Color::BLACK, false>(bool b_check_mode, vector<Move>&);
+template int Engine::get_legal_moves_fast_t<Color::BLACK, true>(bool b_check_mode, vector<Move>&);
 template void Engine::pushMove_t<Color::WHITE>(const Move&);
 template void Engine::pushMove_t<Color::BLACK>(const Move&);
 template void Engine::popMove_t<Color::WHITE>();

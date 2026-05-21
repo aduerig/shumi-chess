@@ -117,13 +117,13 @@ class Engine {
         template<Color c, bool capture, bool promotion, bool is_en_passent_cap, bool is_castle> 
         	void add_psuedo_move_to_vector(vector<Move>&, Square fromSQ, ull, Piece, Square en_passant_land_sq);
 
-        template<Color c> int get_legal_moves_fast_t(bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);
+        template<Color c, bool b_unquiet_moves_only> int get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut);
         int get_legal_moves_fast(Color c, bool b_unquiet_moves_only, bool b_check_mode, vector<Move>& MovesOut);       
        
         bool assert_same_moves(const std::vector<Move>& a,
                                 const std::vector<Move>& b);
 
-        template<Color c> int get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves, bool unquiet_moves_only);
+        template<Color c, bool caps_only> int get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves);
 
         // int material_balanceW_cp;        // always positive
         // int material_balanceB_cp;        // always positive
@@ -176,12 +176,12 @@ class Engine {
             const ull themQueens, const ull themRooks, const ull themBishops);
 
 
-        template<Color c> void add_pawn_moves_to_vector_t(vector<Move>&, bool unquiet_moves_only);
-        template<Color c> void add_knight_moves_to_vector_t(vector<Move>&, bool unquiet_moves_only);
-        template<Color c> void add_bishop_moves_to_vector_t(vector<Move>&, bool unquiet_moves_only);
-        template<Color c> void add_rook_moves_to_vector_t(vector<Move>&, bool unquiet_moves_only);
-        template<Color c> void add_queen_moves_to_vector_t(vector<Move>&, bool unquiet_moves_only);
-        template<Color c> void add_king_moves_to_vector_t(vector<Move>&, bool unquiet_moves_only);
+        template<Color c, bool caps_only> void add_pawn_moves_to_vector_t(vector<Move>&);
+        template<Color c, bool caps_only> void add_knight_moves_to_vector_t(vector<Move>&);
+        template<Color c, bool caps_only> void add_bishop_moves_to_vector_t(vector<Move>&);
+        template<Color c, bool caps_only> void add_rook_moves_to_vector_t(vector<Move>&);
+        template<Color c, bool caps_only> void add_queen_moves_to_vector_t(vector<Move>&);
+        template<Color c, bool caps_only> void add_king_moves_to_vector_t(vector<Move>&);
 
         ull all_enemy_pieces;
         ull all_own_pieces;
