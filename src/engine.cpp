@@ -24,9 +24,9 @@
 //      deffine CRAZY_IVAN
 //      deffine _DEBUGGING_TO_FILE    (2 places)
 
-//#define _DEBUGGING_TO_FILE
+//#define _DEBUGGING_TO_FILE1
 
-#ifdef _DEBUGGING_TO_FILE
+#ifdef _DEBUGGING_TO_FILE1
     extern FILE *fpDebug;
 #endif
 
@@ -1663,7 +1663,7 @@ void Engine::sort_unquiet_moves_qsearch(
                     // }
 
                     if (testValue > 0) {     // centipawns
-                        #ifdef _DEBUGGING_TO_FILE 
+                        #ifdef _DEBUGGING_TO_FILE1 
                         
                             fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
         
@@ -1675,7 +1675,7 @@ void Engine::sort_unquiet_moves_qsearch(
                     }
 
                     if (testValue <= -100) {     // centipawns
-                        #ifdef _DEBUGGING_TO_FILE 
+                        #ifdef _DEBUGGING_TO_FILE1 
                         
                             fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
         

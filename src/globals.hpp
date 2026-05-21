@@ -162,9 +162,16 @@ enum GamePhase {        // We must stay in this order.
 };
 const char* str_from_GamePhase(int phse);
    
-
-enum EvalPersons {
-    MATERIAL_ONLY = 0,
+// codex resume 019e4750-96e7-7c91-b11c-5882732bb9ab
+// player_id_by_name = {
+//             'shumi_ai': 0,
+//             'ivan_ai': 1,
+//             'slug_ai': 2,
+//             'ran_ai': 3,
+//         }
+enum EvalPersons {      // These are all "ai" no human here.
+    RANDOM = 0,
+    SLUG,
     CRAZY_IVAN,
     UNCLE_SHUMI
 };

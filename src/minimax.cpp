@@ -58,6 +58,7 @@ using namespace utility::bit;
 //#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
+//#define _DEBUGGING_GAME
 
 // extern bool bMoreDebug;
 // extern string debugMove;
@@ -602,18 +603,24 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     TIME_TYPE requested_end_time = start_time + std::chrono::milliseconds(i_time_requested);
 
 
+    eval_person = (ShumiChess::EvalPersons)player_id;
 
     Features_mask = feat;
 
 
     //Move null_move = Move{};
-    Move null_move = engine.users_last_move;    // Just to make the move history work?
+    Move null_move = engine.users_last_move;    // Note: Just to make the move history work?
 
 
     stop_calculation = false;
 
 	#ifdef DISPLAY_PULSE_CALLBACK_THREAD   // Used for debug display only
     	start_callback_thread();
+    #endif
+
+    #ifdef _DEBUGGING_GAME
+        fprintf(fpDebug, "\n %ld   game %lld  move %ld  player=%ld\n"
+            , engine.game_board.turn, nGames, engine.computer_ply_so_far, player_id);
     #endif
 
     if (engine.computer_ply_so_far == 0) {
@@ -646,9 +653,9 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     nFarts = 0;             // Queiseence low level (forced eval) this move
     // Clear debug every move
-    #ifdef _DEBUGGING_TO_FILE 
-        clear_file_keep_fp(fpDebug);
-    #endif
+    // #ifdef _DEBUGGING_TO_FILE 
+    //     clear_file_keep_fp(fpDebug);
+    // #endif
 
     // NOTE: In 2 computers playing this is in plys. If one human, its in moves.
     engine.computer_ply_so_far++;                      // Increment real moves in whole game
@@ -757,7 +764,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     
 
     ////////// done with move production. Now do debug and displays /////////////////////////////////////////////////////////////////////////
-    
+ 
     //// for testing enpassant (pauses when it is move on board)
     // if (best_move.is_en_passent_capture) {
     //     printf("pause (press Enter)\n");
@@ -772,7 +779,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         // Playground is for extended debug and status, and for whatever else. However there is a gotcha. Although we 
         // have found out move, we have not yet made the move. The found move is reported to the python, that
         // calls engine_communicator_make_move_two_acn().
-        playground(iPhase);
+        //playground(iPhase);
 
         double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
         cout << "\x1b[33m\nWent to depth " << (depth - 1)  
@@ -786,7 +793,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                     , (GameState::INPROGRESS), false, false, NULL
                     , engine.move_string);    // Output
         cout << colorize(AColor::BRIGHT_CYAN,engine.move_string) << "   ";
-
+ 
+        #ifdef _DEBUGGING_GAME
+            fprintf(fpDebug, "%s game %lld  move %ld  player=%ld\n", engine.move_string.c_str(), nGames, engine.computer_ply_so_far, player_id);
+        #endif
         
         string abs_score_string = to_string(d_best_move_value_abs);
         char buf[32];
@@ -875,7 +885,7 @@ void MinimaxAI::playground(int iPhase) {
     ull passed_pawns;
     int passed_cp;      
 
-//global_debug_flag=false;
+
 
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
@@ -885,15 +895,12 @@ void MinimaxAI::playground(int iPhase) {
     //int material_balance = ;  // evaluate_board();
     //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
 
-//global_debug_flag = false;
 
     itemp1 = sizeof(PInfo);
     char szTemp[128];
     const char* pszPhase = &szTemp[0];
     pszPhase = str_from_GamePhase(iPhase);
     cout << "\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
-
-    global_debug_flag = false;
 
     // cout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
 
@@ -1450,9 +1457,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         }
         else {
             if (engine.game_board.turn == ShumiChess::Color::WHITE)
-                cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(evp, b_is_Quiet);
+                cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person, b_is_Quiet);
             else
-                cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(evp, b_is_Quiet);
+                cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person, b_is_Quiet);
         }
 
 
@@ -2784,8 +2791,16 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
 
     constexpr Color enemy_of_color = utility::representation::opposite_color_t<c>;
 
+
+    // if (!global_debug_flag)
+    // {
+    //     cout << "DDDDDDD " << (int)evp << "\n";
+    //     global_debug_flag = true;
+    // }
+
     switch (evp) {
-        case MATERIAL_ONLY:
+        case RANDOM:
+        case SLUG:
             break;
 
         case CRAZY_IVAN:

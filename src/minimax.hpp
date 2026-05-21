@@ -48,7 +48,7 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    ShumiChess::EvalPersons evp = ShumiChess::UNCLE_SHUMI;   // UNCLE_SHUMI;
+    ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;   // UNCLE_SHUMI;
     //EvalPersons evp = CRAZY_IVAN;
 
     ull Features_mask = _DEFAULT_FEATURES_MASK;

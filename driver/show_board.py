@@ -76,6 +76,14 @@ feat_black = None
 
 script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
 
+
+player_id_by_name = {
+    'ran_ai': engine_communicator.RANDOM,
+    'slug_ai': engine_communicator.SLUG,
+    'ivan_ai': engine_communicator.CRAZY_IVAN,
+    'shumi_ai': engine_communicator.UNCLE_SHUMI,
+}
+
 temp_folder = script_file_dir.joinpath('temp')
 temp_folder.mkdir(exist_ok=True)
 
@@ -180,12 +188,6 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
 
     try:
         # note the human player has been screened out by now.
-        player_id_by_name = {
-            'shumi_ai': 0,
-            'ivan_ai': 1,
-            'slug_ai': 2,
-            'ran_ai': 3,
-        }
         player_id = player_id_by_name.get(name_of_ai.lower())
         if player_id is None:
             raise ValueError(f'Unknown AI player: {name_of_ai}')
@@ -522,7 +524,7 @@ button_holder = [
     Button(clicked_white_button, lambda: "White\n{}".format(both_players[0]), color_rgb(100, 100, 100), color_rgb(200, 200, 200)),
     Button(clicked_black_button, lambda: "Black\n{}".format(both_players[1]), color_rgb(20, 20, 20), color_rgb(200, 200, 200)),
     Button(clicked_reset_button, lambda: "Reset\n(to FEN above)", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
-    Button(clicked_autoreset, lambda: "Autoreset board\n{}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
+    Button(clicked_autoreset, lambda: "Auto reset\n{}".format(autoreset_toggle), color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(wake_up, lambda: "Wake up", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(get_fen, lambda: "Export FEN", color_rgb(59, 48, 32), color_rgb(200, 200, 200)),
     Button(output_pgn, lambda: "Export PGN", color_rgb(59, 48, 32), color_rgb(200, 200, 200))
@@ -1102,7 +1104,7 @@ try:
 
 
         # if autoreset is ON, reset (this also updates match counters)
-        if autoreset_toggle:
+        if not autoreset_toggle:
             #print('Auto Reset game')
             reset_board("", winner)
             game_state_might_change = True

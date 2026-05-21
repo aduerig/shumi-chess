@@ -19,9 +19,6 @@
 #include <assert.h>
 
 
-extern bool global_debug_flag;     // NOTE: make me go away
-
-
 #include "move_tables.hpp"
 #include "utility.hpp"
 #include "endgameTables.hpp"
@@ -2352,11 +2349,6 @@ bool GameBoard::bHasCastled_fake_t(int k_rank, int k_file) const {
             }
         }
     }
-
-
-    // if (global_debug_flag) {
-    //     printf ("%d %d bHasCastled_fake_t %d %d\n", c, blocked, k_rank, k_file);
-    // }
 
 
     return !blocked;
