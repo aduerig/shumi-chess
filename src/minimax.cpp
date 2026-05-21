@@ -586,7 +586,6 @@ int g_this_depth = 6;
 //     max_deepening_requested  -  requested depth
 //
 //////////////////////////////////////////////////////////////////////////////////
-//    codex resume 019e431e-4e84-7f33-b5f2-4945a701229a
 //
 // This is a "root position". The next human move triggers a new root position
 Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id, int feat) {  

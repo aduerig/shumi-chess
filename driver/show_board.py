@@ -420,6 +420,7 @@ def clicked_black_button(button_obj):
     both_players[1] = get_next_player(both_players[1])
     button_obj.update_text()
 
+# codex resume 019e48d1-4a3c-7712-9dd3-38b8169a4035
 global autoreset_toggle; autoreset_toggle = False
 def clicked_autoreset(button_obj):
     global autoreset_toggle
@@ -980,7 +981,7 @@ try:
                     gui_click_choices()
                     continue
 
-                if game_started and curr_player == 'human':
+                if curr_player == 'human':
                     for i in drawn_potential: i.undraw()
                     drawn_potential = []
 
@@ -993,6 +994,7 @@ try:
 
                             unfocus_and_stop_dragging()
 
+                            game_started = True
                             make_move(temp, acn_clicked, "?")
 
                             game_state_might_change = True
@@ -1025,6 +1027,8 @@ try:
                                     potential_move.setFill(color_rgb(170, 170, 170))
                                     potential_move.draw(win)
                                     drawn_potential.append(potential_move)
+                            if avail_moves:
+                                game_started = True
 
         
             # if curr_player == 'human' and acn_focused:
@@ -1104,8 +1108,8 @@ try:
 
 
         # if autoreset is ON, reset (this also updates match counters)
-        if not autoreset_toggle:
-            #print('Auto Reset game')
+        if autoreset_toggle:
+            #print('Auto Reset toggle')
             reset_board("", winner)
             game_state_might_change = True
             continue
