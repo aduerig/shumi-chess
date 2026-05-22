@@ -2086,15 +2086,15 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
         pawn_starting_rank_mask       = row_masks[Row::ROW_2];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
-        far_right_col                 = col_masks[ColHA::COL_H];
-        far_left_col                  = col_masks[ColHA::COL_A];
+        //far_right_col                 = col_masks[ColHA::COL_H];
+        //far_left_col                  = col_masks[ColHA::COL_A];
     } else {
         enemy_starting_rank_mask      = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
         pawn_starting_rank_mask       = row_masks[Row::ROW_7];
         pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
-        far_right_col                 = col_masks[ColHA::COL_A];
-        far_left_col                  = col_masks[ColHA::COL_H];
+        //far_right_col                 = col_masks[ColHA::COL_A];
+        //far_left_col                  = col_masks[ColHA::COL_H];
     }
 
     while (pawns) {
@@ -2135,16 +2135,14 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         //assert(normal_attacks2 == normal_attacks);
 
         if (normal_attacks) {
-            if (normal_attacks & enemy_starting_rank_mask) {
-                // its a promotion and a capture
-                add_psuedo_move_to_vector<c, true, true, false, false>(all_psuedo_legal_moves
-                    , square, normal_attacks, Piece::PAWN
-                    , NO_SQUARE);
+            const ull promo_mask = enemy_starting_rank_mask;
+            const bool has_promo = (normal_attacks & promo_mask) != 0ULL;
+            if (has_promo) {
+                add_psuedo_move_to_vector<c, true, true, false, false>(all_psuedo_legal_moves,
+                    square, normal_attacks, Piece::PAWN, NO_SQUARE);
             } else {
-                // its a regular capture.
-                add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves
-                    , square, normal_attacks, Piece::PAWN
-                    , NO_SQUARE);
+                add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves,
+                    square, normal_attacks, Piece::PAWN, NO_SQUARE);
             }
         }
 
@@ -2153,8 +2151,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             ull enpassant_end_loc = (attacks) & game_board.en_passant_landing_bb;
             if (enpassant_end_loc) {
                 if (enpassant_end_loc) add_psuedo_move_to_vector<c, true, false, true, false>(all_psuedo_legal_moves
-                    , square, enpassant_end_loc, Piece::PAWN
-                    , NO_SQUARE);
+                    , square, enpassant_end_loc, Piece::PAWN, NO_SQUARE);
             }
         #endif
 
@@ -2175,7 +2172,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                 ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
                 ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
 
-                // Note: simoplify this ChatGPT says they are the same?
+                // Note: simplify this ChatGPT says they are the same?
                 assert(one_move_forward_unblocked == move_forward_one_unblocked);
 
                 ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);

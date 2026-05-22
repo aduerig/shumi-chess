@@ -129,7 +129,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -662,7 +662,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     #ifdef DISPLAY_DEEPING
         cout << "\x1b[94m\n\nMove: " << engine.computer_ply_so_far << "\x1b[0m";
     #endif
-    
+
     //engine.gamePGN.add(engine.users_last_move, engine);
 
     nodes_visited = 0;
