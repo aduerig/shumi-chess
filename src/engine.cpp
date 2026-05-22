@@ -2099,7 +2099,8 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 
     while (pawns) {
 
-        ull normal_attacks;
+        ull attacks;            // diagonal one square moves
+        ull normal_attacks;     // after screening for non-captures
 
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         assert(single_pawn);
@@ -2112,18 +2113,35 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                 , square, promo_unblocked, Piece::PAWN
                 , NO_SQUARE);
 
-        // attacks
-        ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
-        ull attack_fright = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_right_col, 7);
+        // old code codex resume 019e4d13-5b57-7a32-b07d-aabbb1eb4bce
+        // ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
+        // ull attack_fright = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_right_col, 7);
+        // attacks = (attack_fleft | attack_fright);
 
-        normal_attacks = attack_fleft & all_enemy_pieces;
-        normal_attacks |= attack_fright & all_enemy_pieces;
+        // // Screen out non captures
+        // ull normal_attacks2;
+        // normal_attacks = attack_fleft & all_enemy_pieces;
+        // normal_attacks |= attack_fright & all_enemy_pieces;
+
+        // new code
+        if constexpr (c == Color::WHITE) {
+            attacks = tables::movegen::white_pawn_capture_table[square];
+        } else {
+            attacks = tables::movegen::black_pawn_capture_table[square];
+        }
+        normal_attacks = attacks & all_enemy_pieces;     // Screen out non captures
+
+        //assert (attacks == (attack_fleft | attack_fright));
+        //assert(normal_attacks2 == normal_attacks);
+
         if (normal_attacks) {
             if (normal_attacks & enemy_starting_rank_mask) {
+                // its a promotion and a capture
                 add_psuedo_move_to_vector<c, true, true, false, false>(all_psuedo_legal_moves
                     , square, normal_attacks, Piece::PAWN
                     , NO_SQUARE);
             } else {
+                // its a regular capture.
                 add_psuedo_move_to_vector<c, true, false, false, false>(all_psuedo_legal_moves
                     , square, normal_attacks, Piece::PAWN
                     , NO_SQUARE);
@@ -2132,7 +2150,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 
         // enpassant
         #ifndef DEBUG_NO_ENPASSANT
-            ull enpassant_end_loc = (attack_fleft | attack_fright) & game_board.en_passant_landing_bb;
+            ull enpassant_end_loc = (attacks) & game_board.en_passant_landing_bb;
             if (enpassant_end_loc) {
                 if (enpassant_end_loc) add_psuedo_move_to_vector<c, true, false, true, false>(all_psuedo_legal_moves
                     , square, enpassant_end_loc, Piece::PAWN

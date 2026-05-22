@@ -51,7 +51,31 @@ const std::array<ull, 64> init_knight_attack_table() {
     return knight_attacks;
 }
 
-const std::array<ull, 64> king_attack_table = init_king_attack_table();
-const std::array<ull, 64> knight_attack_table = init_knight_attack_table();
+const std::array<ull, 64> init_white_pawn_capture_table() {
+    std::array<ull, 64> pawn_captures = {};
+
+    for(int i=0; i < 64; ++i) {
+        if (i/8 < 7 && i%8 < 7) {pawn_captures[i] |= 1ULL << (i+9);} //1l 1u
+        if (i/8 < 7 && i%8 > 0) {pawn_captures[i] |= 1ULL << (i+7);} //1r 1u
+    }
+
+    return pawn_captures;
+}
+
+const std::array<ull, 64> init_black_pawn_capture_table() {
+    std::array<ull, 64> pawn_captures = {};
+
+    for(int i=0; i < 64; ++i) {
+        if (i/8 > 0 && i%8 > 0) {pawn_captures[i] |= 1ULL << (i-9);} //1r 1d
+        if (i/8 > 0 && i%8 < 7) {pawn_captures[i] |= 1ULL << (i-7);} //1l 1d
+    }
+
+    return pawn_captures;
+}
+
+// const std::array<ull, 64> king_attack_table = init_king_attack_table();
+// const std::array<ull, 64> knight_attack_table = init_knight_attack_table();
+// const std::array<ull, 64> white_pawn_capture_table = init_white_pawn_capture_table();
+// const std::array<ull, 64> black_pawn_capture_table = init_black_pawn_capture_table();
 
 } // tables::movegen

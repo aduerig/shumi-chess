@@ -1,11 +1,7 @@
-
-
-b_unquiet_moves_only must be converted from a "real" paramater into a template parameter.
-
-this is the main line:
-get_legal_moves_fast_t()  
-      to   get_psuedo_legal_moves_t() 
-          to   add_knight_moves_to_vector_t() (and its kin)   
-other paths may need to be changed 
-
-codex resume 019e4939-d7f1-7d51-8d70-f711551097c4
+OK. Here is the problem. Look at add_knight_moves_to_vector_t(). It uses a table, knight_attack_table, to 
+look up the knight moves. I want to do the same thing with pawns, but there are complicatrions. For pawns 
+there are 4 tables, one for black and white, 
+and one for captures and non captures. now look at add_pawn_moves_to_vector_t(). This is the "hottest" routine of the bunch.
+So first I want you TO ONLY add the code to create a pawn capture table. I will add code to read from the tables later. there
+should be two tables, one white and one black. Use the same style as much as possible, as the knights table. So the 
+only routines changed should be move_tables.hpp move_tables.cpp. 
