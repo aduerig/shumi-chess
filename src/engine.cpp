@@ -526,7 +526,9 @@ GameState Engine::is_game_over() {
 }
 
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
+// I require Bits_In to be filled out.
 GameState Engine::is_game_over(int n_leg_moves_found) {
+    
     if (n_leg_moves_found == 0) {
 
         assert(game_board.white_king);
@@ -2077,7 +2079,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
     ull enemy_starting_rank_mask;
     ull pawn_enemy_starting_rank_mask;
     ull pawn_starting_rank_mask;
-    ull pawn_enpassant_rank_mask;
+    //ull pawn_enpassant_rank_mask;
     //ull far_right_col;
     //ull far_left_col;
 
@@ -2085,14 +2087,14 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         enemy_starting_rank_mask      = row_masks[Row::ROW_8];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_7];
         pawn_starting_rank_mask       = row_masks[Row::ROW_2];
-        pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
+        //pawn_enpassant_rank_mask      = row_masks[Row::ROW_3];
         //far_right_col                 = col_masks[ColHA::COL_H];
         //far_left_col                  = col_masks[ColHA::COL_A];
     } else {
         enemy_starting_rank_mask      = row_masks[Row::ROW_1];
         pawn_enemy_starting_rank_mask = row_masks[Row::ROW_2];
         pawn_starting_rank_mask       = row_masks[Row::ROW_7];
-        pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
+        //pawn_enpassant_rank_mask      = row_masks[Row::ROW_6];
         //far_right_col                 = col_masks[ColHA::COL_A];
         //far_left_col                  = col_masks[ColHA::COL_H];
     }
@@ -2104,15 +2106,25 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 
         ull single_pawn = utility::bit::lsb_and_pop(pawns);
         assert(single_pawn);
+        //ull temp = single_pawn;
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_pawn);
- 
+
+        //Square square = utility::bit::lsb_and_pop_to_square(temp);
+        //assert (square == square2);
+
         // pawn promotions
-        ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
-        // const ull one_step = (c == Color::WHITE)
-        //     ? tables::movegen::white_pawn_adv_table[square]
-        //     : tables::movegen::black_pawn_adv_table[square];
-        // ull potential_promotion2 = one_step & pawn_enemy_starting_rank_mask;
-        // assert(potential_promotion == potential_promotion2);
+        // codex resume 019e4f18-5c47-7840-9ee4-17602ad294ad
+        ull one_move_forward;
+        if constexpr (c == Color::WHITE) {
+            one_move_forward = tables::movegen::white_pawn_adv_table[square];
+        } else {
+            one_move_forward = tables::movegen::black_pawn_adv_table[square];
+        }
+        ull potential_promotion = (single_pawn & pawn_enemy_starting_rank_mask)
+            ? one_move_forward & enemy_starting_rank_mask
+            : 0ULL;
+        //ull potential_promotion2 = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
+        //assert(potential_promotion == potential_promotion2);
         
         ull promo_unblocked = potential_promotion & ~all_pieces;
         if (promo_unblocked) {
@@ -2172,12 +2184,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
 
             // one square moves (promotions are dealt with above, so we exclude them here)
             //ull one_move_forward2 = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
-            ull one_move_forward;
-            if constexpr (c == Color::WHITE) {
-                one_move_forward = tables::movegen::white_pawn_adv_table[square];
-            } else {
-                one_move_forward = tables::movegen::black_pawn_adv_table[square];
-            } 
+            one_move_forward &= ~enemy_starting_rank_mask;
             //assert (one_move_forward2 == one_move_forward);
            
             ull one_move_forward_unblocked = one_move_forward & ~all_pieces;

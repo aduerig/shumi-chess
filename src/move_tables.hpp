@@ -80,23 +80,23 @@ namespace tables::movegen
         return pawn_captures;
     }   
 
-    // I exclude advances that are promotions.
+    // I include advances that are promotions.
     constexpr  std::array<ull, 64> init_white_pawn_advance_table() {
         std::array<ull, 64> pawn_advances = {};
 
         for(int i=0; i < 64; ++i) {
-            if (i/8 < 6) {pawn_advances[i] |= 1ULL << (i+8);} //1u
+            if (i/8 < 7) {pawn_advances[i] |= 1ULL << (i+8);} //1u
         }
 
         return pawn_advances;
     }
 
-    // I exclude advances that are promotions.
+    // I include advances that are promotions.
     constexpr  std::array<ull, 64> init_black_pawn_advance_table() {
         std::array<ull, 64> pawn_advances = {};
 
         for(int i=0; i < 64; ++i) {
-            if (i/8 > 1) {pawn_advances[i] |= 1ULL << (i-8);} //1d
+            if (i/8 > 0) {pawn_advances[i] |= 1ULL << (i-8);} //1d
         }
 
         return pawn_advances;

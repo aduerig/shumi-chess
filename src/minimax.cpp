@@ -129,7 +129,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -2728,7 +2728,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     //    cp_score_material_all
     //    cp_score_pawns_only 
     //
-    engine.game_board.compute_bits_in();
+    engine.game_board.compute_bits_in();        // Computes shortcuts for bits_in
 
     for (const auto& color1 : std::array<Color, 2>{Color::WHITE, Color::BLACK}) {
         int cp_pawns_only_temp;
@@ -2768,7 +2768,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     int cp_score_position_temp;
 
     //
-    //  Now do the "positional" stuff. Note CRAZY_IVAN does minimal positional stuff.
+    //  Now do the "positional" stuff.
     //
     cp_score_position_temp =  get_positional_for_one_color<Color::WHITE>(nPhase, evp, cp_score_material_all);
     if (Color::WHITE != for_color) cp_score_position_temp *= -1;
@@ -2796,13 +2796,6 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
 
     constexpr Color enemy_of_color = utility::representation::opposite_color_t<c>;
 
-
-    // if (!global_debug_flag)
-    // {
-    //     cout << "DDDDDDD " << (int)evp << "\n";
-    //     global_debug_flag = true;
-    // }
-
     switch (evp) {
         case RANDOM:
         case SLUG:
@@ -2817,6 +2810,7 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
         default:
         case UNCLE_SHUMI:
         {
+            // no major pieces, and no more than one minor piece
             bool NoMajorPiecesEnemy  = engine.game_board.hasNoMajorPieces_t<enemy_of_color>();
             bool NoMajorPiecesFriend = engine.game_board.hasNoMajorPieces_t<c>();
 
