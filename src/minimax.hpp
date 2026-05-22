@@ -194,6 +194,11 @@ public:
                                             , int qPlys
                                         );
 
+    int loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
+                       bool in_check, Score d_stand_pat, const ShumiChess::Move& move_last,
+                       const vector<ShumiChess::Move>* pMoves, 
+                       ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
+                       bool& did_cutoff);     // outputs
 
     // Total of 4000 centipawns for each side.  Suppose minor pieces are all 300. 
     // Say two minor pieces traded. Then 4*300=1200, and 8000-1200=6800

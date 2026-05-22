@@ -1130,8 +1130,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         }
     #endif
 
-
+    // =====================================================================
     // MultiPV      // remove excluded (already analyzed) moves from the list ONLY AT ROOT
+    // =====================================================================
     if (is_from_root) {
         for (int i = (int)legal_moves.size() - 1; i >= 0; i--) {
             bool bExclude = false;
@@ -1154,8 +1155,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             }
         }
     }
-
-
 
     // =====================================================================
     // Asserts
@@ -1341,8 +1340,14 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }   // END TT2 feature
 
-    //assert (n_legal_moves_found != 0);
+    // Purpose: avoid a false zero (no-move) result when the quick/capture-only generation missed moves
+    // (or when you only needed to know whether any legal move exists). 
     if (n_legal_moves_found == 0) {
+        //assert(depth==0);
+        //assert (caps_only);
+
+        // Call get_legal_moves_fast(), but only in "check mode". In this mode in is only trying to decide
+        // wether its 0 moves or not. So it returns if it finds just one move.
         vector<Move> mvs;       // I am not used
         int n_legal_moves_found2 = engine.get_legal_moves_fast(engine.game_board.turn, false, true, mvs);
         
@@ -1567,8 +1572,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     assert(!p_moves_to_loop_over->empty());
     if (!p_moves_to_loop_over->empty()) {
 
-        bool b_use_this_move;
-
         // Resort moves based on varoius things
         // Fascinating tradeoff. We could also call this if depth==0 and in check.
         // On one hand why not, becasuse there could be a lot of responses, But on 
@@ -1607,307 +1610,19 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         //
         // Look (recurse) over all moves chosen
         //
-          /////////////////////////////////////////////////////////////////////////////////////////
-        int imovedebug = 0;
-        for (const Move& m : *p_moves_to_loop_over) {
-            int nChars;
-
-            // Change 10, "continue" on "zero moves"
-
-            imovedebug++;
-
-            #ifdef _DEBUGGING_PUSH_POP
-                std::string temp_fen_before = engine.game_board.to_fen();
-                ull zobrist_save = engine.game_board.zobrist_key;
-                auto ep_history_save = engine.game_board.castle_rights;
-                auto enpassant_save = engine.game_board.en_passant_landing_bb;
-            #endif
-
-            #ifdef _DEBUGGING_MOVE_CHAIN    // Print move we are going to analyze
-                bSuppressOutput = false;
-                bool bSide = (engine.game_board.turn == ShumiChess::WHITE);
-
-                // This output always starts a new line
-                nChars = fputc('\n', fpDebug);
-                if (nChars == EOF) assert(0);
-
-                // Print move number (out of) (this is printed as the move prefix)
-                // Change 11, need a size() that ignores "zero moves"
-                int isizedebug = p_moves_to_loop_over->size();
-                sprintf(szDebug, "[%2d/%2d]", imovedebug, isizedebug);
-
-                // Print move with prefix (Move always starts a new line)
-                int nCharsInMove = engine.print_move_to_file_with_prefix(m, nPlys, (GameState::INPROGRESS)
-                                    , false, bSide, szDebug
-                                    , (depth==0)
-                                    , fpDebug); 
-                if (nCharsInMove == EOF) assert(0);
-
-                //sprintf(szDebug, " A=%10.3f, B=%10.3f", alpha, beta);
-                //fprintf(fpDebug, szDebug);
-            
-            #endif
-
-            //
-            // Delta pruning (in qsearch (Quiescence) at depth==0) estimates the most this capture/promotion could possibly 
-            // improve the current stand-pat score (including material swing and a safety margin), and if 
-            // even that optimistic bound still can't raise alpha, it just skips searching that move as futile. 
-            if (Features_mask & _FEATURE_DELTA_PRUNE) {
-                // --- Delta pruning (qsearch (Quiescence) only)
-                assert(0);
-                if ( (depth == 0) && !in_check) {
-                    int ub = 0;
-                    if (m.capture != ShumiChess::Piece::NONE) {
-                        ub += engine.game_board.centipawn_score_of(m.capture); // victim value
-                    }
-                    if (m.promotion != ShumiChess::Piece::NONE) {
-                        ub += engine.game_board.centipawn_score_of(m.promotion)
-                            - engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN); // promo gain
-                    }
-                    assert(ub != 0);    // we should not be looking at moves in Quiescence, unless they are captures or promotions
-                       
-                    bool recapture = false;
-                    if (!engine.move_history.empty()) {
-                        ull mto = m.toSQ;
-                        ull eto =  engine.move_history.top().toSQ;
-                        recapture = (mto == eto);
-                    }
-
-                    // we should not be looking at moves in Quiescence, unless we evaluated first
-                    assert (d_stand_pat != HUGE_SCORE);  
-
-                    int cp_stand_pat = engine.convert_to_CP(d_stand_pat);
-                    int cp_alpha = engine.convert_to_CP(alpha);
-
-                    // treat anything bigger than a minor as "heavy"
-                    constexpr int HEAVY_DELTA_THRESHOLD_CP = 330; // just above a knight/bishop
-
-                    if ( (qPlys > 2) && (ub <= HEAVY_DELTA_THRESHOLD_CP) ) {
-                        constexpr int DELTA_MARGIN_CP = 80; // tune 60..100
-                        if (!recapture && (cp_stand_pat + ub + DELTA_MARGIN_CP < cp_alpha)) {
-                            //cout << "\033[31m#\033[0m";
-                            continue;   // skip this move its futile
-                        }
-
-                        // Pawn-victim futility (beyond delta): skip far-below-alpha pawn grabs (non-recapture)
-                        int cp_pawn = engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN);
-                        if (!recapture &&
-                            (m.capture == ShumiChess::Piece::PAWN) && (cp_stand_pat + cp_pawn + 60) < cp_alpha) {
-                            //cout << "\033[31m#\033[0m";
-                            continue;   // skip this move its futile
-                        }
-                    }
-                }
-            }
-    
-            bool is_killer_here = false;
-            #ifdef DEBUGGING_KILLER_MOVES
-                if (Features_mask & _FEATURE_KILLER) {
-                    is_killer_here = (m == killer1[nPlys]) || (m == killer2[nPlys]);
-                    if (is_killer_here) killer_tried++;
-                }
-            #endif
+        /////////////////////////////////////////////////////////////////////////////////////////
+        
+        // returns 0 if success, 1 if abort     n_legal_moves_found
+        int ir = loop_over_all_moves(depth, alpha, beta, nPlys, qPlys,
+                        in_check, d_stand_pat, move_last,
+                        p_moves_to_loop_over,               // input
+                        the_best_move, d_best_score,        // outputs
+                        did_cutoff);
+        if (ir != 0) {
+            return {ABORT_SCORE, the_best_move};
+        }
 
 
-            assert(m.piece_type != Piece::NONE);
-            if (m.color == Color::WHITE) engine.pushMove_t<Color::WHITE>(m);
-            else                         engine.pushMove_t<Color::BLACK>(m);
-
-            #ifdef DISPLAY_PULSE_CALLBACK_THREAD
-            	g_live_ply = nPlys;
-            #endif
-
-            //++engine.repetition_table[engine.game_board.zobrist_key];
-            engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
-
-            //
-            // Three parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
-            //                         2. The beta and alpha arguments are staggered, or reversed.
-            Score childAlpha = -beta;
-            Score childBeta  = -alpha;
-
-            if (0) {                // Full wide window
-                childAlpha = -HUGE_SCORE;
-                childBeta  =  HUGE_SCORE;
-            }
-
-
-            tuple<Score, Move> ret_val = recursive_negamax(
-                (depth > 0 ? depth - 1 : 0),
-                childAlpha, childBeta,
-                false,                    // I am NOT called from the root
-                m,
-                (nPlys+1),
-                (depth == 0 ? qPlys+1 : qPlys)
-            );
-
-
-            // The third part of negamax: negate the score to keep it relative.
-            Score d_return_score = get<0>(ret_val);     // units are pawns
-            Move d_return_move = get<1>(ret_val);
-
-
-            //--engine.repetition_table[engine.game_board.zobrist_key];
-            //if (engine.repetition_table[engine.game_board.zobrist_key] == 0) {
-            //    engine.repetition_table.erase(engine.game_board.zobrist_key);
-            //}
-            // We are done with the recursion. Remove zkey from the 3-time rep collector.
-            assert(!engine.three_time_rep_stack.empty());   // Better not be empty, we just pushed a move up above.
-            //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() <= (int)engine.three_time_rep_stack.size());
-            engine.three_time_rep_stack.pop_back();
-            while (!engine.boundary_stack.empty() &&
-                engine.boundary_stack.back() >= (int)engine.three_time_rep_stack.size()) {
-                engine.boundary_stack.pop_back();
-            }
-            //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() < (int)engine.three_time_rep_stack.size());
-
-
-            if (m.color == Color::WHITE) engine.popMove_t<Color::WHITE>();
-            else                         engine.popMove_t<Color::BLACK>();
-
-
-
-            #ifdef _DEBUGGING_PUSH_POP
-                std::string temp_fen_after = engine.game_board.to_fen();
-                if (temp_fen_before != temp_fen_after) {
-                    std::cout << "\x1b[31m";
-                    std::cout << "PROBLEM WITH PUSH POP!!!!!" << std::endl;
-                    cout_move_info(m);
-                    std::cout << "FEN before  push/pop: " << temp_fen_before  << std::endl;
-                    std::cout << "FEN after   push/pop: " << temp_fen_after   << std::endl;
-                    std::cout << "\x1b[0m";
-                    assert(0);
-                }
-                if (zobrist_save != engine.game_board.zobrist_key) {
-                    std::cout << "\x1b[31m";
-                    std::cout << "PROBLEM WITH PUSH POP zobrist!!!!!" << std::endl;
-                    std::cout << "\x1b[0m";
-                    assert(0);        
-                }
-                if (ep_history_save != engine.game_board.castle_rights) {
-                    std::cout << "\x1b[31m";
-                    std::cout << "PROBLEM WITH PUSH POP B !!!!!" << std::endl;
-                    std::cout << "\x1b[0m";
-                    assert(0);   
-                }
-                if (ep_history_save != engine.game_board.castle_rights) {
-                    std::cout << "\x1b[31m";
-                    std::cout << "PROBLEM WITH PUSH POP A !!!!!" << std::endl;
-                    std::cout << "\x1b[0m";
-                    assert(0);   
-                }
-                if (enpassant_save != engine.game_board.en_passant_landing_bb) {
-                    std::cout << "\x1b[31m";
-                    std::cout << "PROBLEM WITH PUSH POP P !!!!!" << std::endl;
-                    std::cout << "\x1b[0m";
-                    assert(0);   
-                }
-            #endif
-
-            // negamax, reverse returned score.  
-            Score d_score_value = -d_return_score;
-
-            if (d_return_score == ABORT_SCORE) {
-                //cout << "\n! STOP CALCULATION now \n" << endl;
-                return {ABORT_SCORE, the_best_move};
-            }
-
-            // Here we are coming back from a recursive call. 
-            #ifdef _DEBUGGING_MOVE_CHAIN    // Print negamax (relative) score of move
-
-                if (!bSuppressOutput) {
-                    //if (d_score_value<0.0) ichars++;
-                    fprintf(fpDebug, "%*s", (8-nCharsInMove), "");  // to line up for varying algebriac move size
-
-                    fprintf(fpDebug, "%8.3f", d_score_value);
-                    dSupressValue = d_score_value;
-                    //bSuppressOutput = true;
-                }
-                else {
-                    //assert(d_score_value==dSupressValue);
-                }
-
-                // int nChars = fputs(szDebug, fpDebug);
-                // if (nChars == EOF) assert(0);
-            #endif
-
-            Score d_difference_in_score = std::fabs(d_score_value - d_best_score);
-
-            b_use_this_move = (d_score_value > d_best_score);
-
-            if (b_use_this_move) {
-                d_best_score = d_score_value;
-                the_best_move = m;
-            }
-
-            // Think of alpha as “best score found so far at this node.”
-            alpha = std::max(alpha, d_best_score);
-
-            // Alpha/beta "cutoff", (fail-high), break the analysis
-            // You just found a move so good that the opponent would never 
-            // allow this position, because it already exceeds what they could tolerate.
-            if (alpha >= beta) {
-
-                // You found a move so good that the opponent would never allow this position.
-                // Therefore, further searching at this node is pointless.
-                // You stop searching siblings and immediately return beta upward.
-
-                did_cutoff = true;
-
-                #ifdef _DEBUGGING_MOVE_CHAIN    // Beta cutoff (break move loop)
-    
-                    nChars = fputc('\n', fpDebug);
-                    assert(nChars != EOF);
-
-                    assert(nPlys>0);
-                    engine.print_tabOver(nPlys, fpDebug);
-
-                    sprintf(szDebug, "[%ld/%ld]", imovedebug+1, isizedebug);
-                    fputs(szDebug, fpDebug);
-
-                    // move_last
-                    engine.move_into_string(move_last);
-                    sprintf(szDebug, " Beta cutoff %f > %f   %s",  alpha, beta, engine.move_string.c_str());
-                    fputs(szDebug, fpDebug);
-
-                    // if (!engine.is_unquiet_move(m)){
-
-                    //     char szTemp[64];
-                    //     sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
-                    //     fputs(szTemp, fpDebug);
-                    //     engine.print_move_to_file(m, nPlys, state, false, false, false, fpDebug);
-                    // }
-                #endif
-
-                // Record killer moves
-                #ifdef DEBUGGING_KILLER_MOVES
-                    if (Features_mask & _FEATURE_KILLER) {
-                        if (is_killer_here) killer_cutoff++;
-                    }
-                #endif
-
-                if ((depth > 0) && (!engine.is_unquiet_move(m))) {
-                    // Quiet moves that "cut off" are "notable", or "killer moves"
-                    if (killer1[nPlys] == ShumiChess::Move{}) {
-                        killer1[nPlys] = m;
-                        #ifdef DEBUGGING_KILLER_MOVES1
-                            engine.move_into_string(killer1[nPlys]);
-                            fprintf(fpDebug, "\nkiller1-> %s\n", engine.move_string.c_str());
-                            
-                            engine.print_move_history_to_file(fpDebug, "AA");
-                        #endif
-                    }
-                    else if (!(m == killer1[nPlys])) {
-                        killer2[nPlys] = m;
-                    }
-                }
-
-              
-                // Cutoff! (stop anaylizing moves to look at)
-                break;
-            }
-
-        }   // End loop over all moves to look at
 
     }   // END non zero oves to look at
 
@@ -2219,6 +1934,319 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     return {d_best_score, the_best_move};
 }
+
+// codex resume 019e4fc9-465d-7852-b612-5a59c86e14da
+// returns 0 if success, 1 if abort
+int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
+                       bool in_check, Score d_stand_pat, const ShumiChess::Move& move_last,
+                       const vector<ShumiChess::Move>* pMoves, 
+                       ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
+                       bool& did_cutoff)
+{
+    bool b_use_this_move;
+    int imovedebug = 0;
+
+    for (const Move& m : *pMoves) {
+        int nChars;
+
+        // Change 10, "continue" on "zero moves"
+
+        imovedebug++;
+
+        #ifdef _DEBUGGING_PUSH_POP
+            std::string temp_fen_before = engine.game_board.to_fen();
+            ull zobrist_save = engine.game_board.zobrist_key;
+            auto ep_history_save = engine.game_board.castle_rights;
+            auto enpassant_save = engine.game_board.en_passant_landing_bb;
+        #endif
+
+        #ifdef _DEBUGGING_MOVE_CHAIN    // Print move we are going to analyze
+            bSuppressOutput = false;
+            bool bSide = (engine.game_board.turn == ShumiChess::WHITE);
+
+            // This output always starts a new line
+            nChars = fputc('\n', fpDebug);
+            if (nChars == EOF) assert(0);
+
+            // Print move number (out of) (this is printed as the move prefix)
+            // Change 11, need a size() that ignores "zero moves"
+            int isizedebug = pMoves->size();
+            sprintf(szDebug, "[%2d/%2d]", imovedebug, isizedebug);
+
+            // Print move with prefix (Move always starts a new line)
+            int nCharsInMove = engine.print_move_to_file_with_prefix(m, nPlys, (GameState::INPROGRESS)
+                                , false, bSide, szDebug
+                                , (depth==0)
+                                , fpDebug); 
+            if (nCharsInMove == EOF) assert(0);
+
+            //sprintf(szDebug, " A=%10.3f, B=%10.3f", alpha, beta);
+            //fprintf(fpDebug, szDebug);
+        
+        #endif
+
+        //
+        // Delta pruning (in qsearch (Quiescence) at depth==0) estimates the most this capture/promotion could possibly 
+        // improve the current stand-pat score (including material swing and a safety margin), and if 
+        // even that optimistic bound still can't raise alpha, it just skips searching that move as futile. 
+        if (Features_mask & _FEATURE_DELTA_PRUNE) {
+            // --- Delta pruning (qsearch (Quiescence) only)
+            assert(0);
+            if ( (depth == 0) && !in_check) {
+                int ub = 0;
+                if (m.capture != ShumiChess::Piece::NONE) {
+                    ub += engine.game_board.centipawn_score_of(m.capture); // victim value
+                }
+                if (m.promotion != ShumiChess::Piece::NONE) {
+                    ub += engine.game_board.centipawn_score_of(m.promotion)
+                        - engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN); // promo gain
+                }
+                assert(ub != 0);    // we should not be looking at moves in Quiescence, unless they are captures or promotions
+                   
+                bool recapture = false;
+                if (!engine.move_history.empty()) {
+                    ull mto = m.toSQ;
+                    ull eto =  engine.move_history.top().toSQ;
+                    recapture = (mto == eto);
+                }
+
+                // we should not be looking at moves in Quiescence, unless we evaluated first
+                assert (d_stand_pat != HUGE_SCORE);  
+
+                int cp_stand_pat = engine.convert_to_CP(d_stand_pat);
+                int cp_alpha = engine.convert_to_CP(alpha);
+
+                // treat anything bigger than a minor as "heavy"
+                constexpr int HEAVY_DELTA_THRESHOLD_CP = 330; // just above a knight/bishop
+
+                if ( (qPlys > 2) && (ub <= HEAVY_DELTA_THRESHOLD_CP) ) {
+                    constexpr int DELTA_MARGIN_CP = 80; // tune 60..100
+                    if (!recapture && (cp_stand_pat + ub + DELTA_MARGIN_CP < cp_alpha)) {
+                        //cout << "\033[31m#\033[0m";
+                        continue;   // skip this move its futile
+                    }
+
+                    // Pawn-victim futility (beyond delta): skip far-below-alpha pawn grabs (non-recapture)
+                    int cp_pawn = engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN);
+                    if (!recapture &&
+                        (m.capture == ShumiChess::Piece::PAWN) && (cp_stand_pat + cp_pawn + 60) < cp_alpha) {
+                        //cout << "\033[31m#\033[0m";
+                        continue;   // skip this move its futile
+                    }
+                }
+            }
+        }
+
+        bool is_killer_here = false;
+        #ifdef DEBUGGING_KILLER_MOVES
+            if (Features_mask & _FEATURE_KILLER) {
+                is_killer_here = (m == killer1[nPlys]) || (m == killer2[nPlys]);
+                if (is_killer_here) killer_tried++;
+            }
+        #endif
+
+
+        assert(m.piece_type != Piece::NONE);
+        if (m.color == Color::WHITE) engine.pushMove_t<Color::WHITE>(m);
+        else                         engine.pushMove_t<Color::BLACK>(m);
+
+        #ifdef DISPLAY_PULSE_CALLBACK_THREAD
+        	g_live_ply = nPlys;
+        #endif
+
+        //++engine.repetition_table[engine.game_board.zobrist_key];
+        engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
+
+        //
+        // Three parts in negamax: 1. "relative scores", the alpha betas are reversed in sign,
+        //                         2. The beta and alpha arguments are staggered, or reversed.
+        Score childAlpha = -beta;
+        Score childBeta  = -alpha;
+
+        if (0) {                // Full wide window
+            childAlpha = -HUGE_SCORE;
+            childBeta  =  HUGE_SCORE;
+        }
+
+
+        tuple<Score, Move> ret_val = recursive_negamax(
+            (depth > 0 ? depth - 1 : 0),
+            childAlpha, childBeta,
+            false,                    // I am NOT called from the root
+            m,
+            (nPlys+1),
+            (depth == 0 ? qPlys+1 : qPlys)
+        );
+
+
+        // The third part of negamax: negate the score to keep it relative.
+        Score d_return_score = get<0>(ret_val);     // units are pawns
+        Move d_return_move = get<1>(ret_val);
+
+
+        // We are done with the recursion. Remove zkey from the 3-time rep collector.
+        assert(!engine.three_time_rep_stack.empty());   // Better not be empty, we just pushed a move up above.
+        //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() <= (int)engine.three_time_rep_stack.size());
+        engine.three_time_rep_stack.pop_back();
+        while (!engine.boundary_stack.empty() &&
+            engine.boundary_stack.back() >= (int)engine.three_time_rep_stack.size()) {
+            engine.boundary_stack.pop_back();
+        }
+        //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() < (int)engine.three_time_rep_stack.size());
+
+
+        if (m.color == Color::WHITE) engine.popMove_t<Color::WHITE>();
+        else                         engine.popMove_t<Color::BLACK>();
+
+
+
+        #ifdef _DEBUGGING_PUSH_POP
+            std::string temp_fen_after = engine.game_board.to_fen();
+            if (temp_fen_before != temp_fen_after) {
+                std::cout << "\x1b[31m";
+                std::cout << "PROBLEM WITH PUSH POP!!!!!" << std::endl;
+                cout_move_info(m);
+                std::cout << "FEN before  push/pop: " << temp_fen_before  << std::endl;
+                std::cout << "FEN after   push/pop: " << temp_fen_after   << std::endl;
+                std::cout << "\x1b[0m";
+                assert(0);
+            }
+            if (zobrist_save != engine.game_board.zobrist_key) {
+                std::cout << "\x1b[31m";
+                std::cout << "PROBLEM WITH PUSH POP zobrist!!!!!" << std::endl;
+                std::cout << "\x1b[0m";
+                assert(0);        
+            }
+            if (ep_history_save != engine.game_board.castle_rights) {
+                std::cout << "\x1b[31m";
+                std::cout << "PROBLEM WITH PUSH POP B !!!!!" << std::endl;
+                std::cout << "\x1b[0m";
+                assert(0);   
+            }
+            if (ep_history_save != engine.game_board.castle_rights) {
+                std::cout << "\x1b[31m";
+                std::cout << "PROBLEM WITH PUSH POP A !!!!!" << std::endl;
+                std::cout << "\x1b[0m";
+                assert(0);   
+            }
+            if (enpassant_save != engine.game_board.en_passant_landing_bb) {
+                std::cout << "\x1b[31m";
+                std::cout << "PROBLEM WITH PUSH POP P !!!!!" << std::endl;
+                std::cout << "\x1b[0m";
+                assert(0);   
+            }
+        #endif
+
+        // negamax, reverse returned score.  
+        Score d_score_value = -d_return_score;
+
+        if (d_return_score == ABORT_SCORE) {
+            //cout << "\n! STOP CALCULATION now \n" << endl;
+            return 1;
+        }
+
+        // Here we are coming back from a recursive call. 
+        #ifdef _DEBUGGING_MOVE_CHAIN    // Print negamax (relative) score of move
+
+            if (!bSuppressOutput) {
+                //if (d_score_value<0.0) ichars++;
+                fprintf(fpDebug, "%*s", (8-nCharsInMove), "");  // to line up for varying algebriac move size
+
+                fprintf(fpDebug, "%8.3f", d_score_value);
+                dSupressValue = d_score_value;
+                //bSuppressOutput = true;
+            }
+            else {
+                //assert(d_score_value==dSupressValue);
+            }
+
+            // int nChars = fputs(szDebug, fpDebug);
+            // if (nChars == EOF) assert(0);
+        #endif
+
+        Score d_difference_in_score = std::fabs(d_score_value - bestScoreOut);
+
+        b_use_this_move = (d_score_value > bestScoreOut);
+
+        if (b_use_this_move) {
+            bestScoreOut = d_score_value;
+            bestMoveOut = m;
+        }
+
+        // Think of alpha as “best score found so far at this node.”
+        alpha = std::max(alpha, bestScoreOut);
+
+        // Alpha/beta "cutoff", (fail-high), break the analysis
+        // You just found a move so good that the opponent would never 
+        // allow this position, because it already exceeds what they could tolerate.
+        if (alpha >= beta) {
+
+            // You found a move so good that the opponent would never allow this position.
+            // Therefore, further searching at this node is pointless.
+            // You stop searching siblings and immediately return beta upward.
+
+            did_cutoff = true;
+
+            #ifdef _DEBUGGING_MOVE_CHAIN    // Beta cutoff (break move loop)
+
+                nChars = fputc('\n', fpDebug);
+                assert(nChars != EOF);
+
+                assert(nPlys>0);
+                engine.print_tabOver(nPlys, fpDebug);
+
+                sprintf(szDebug, "[%ld/%ld]", imovedebug+1, isizedebug);
+                fputs(szDebug, fpDebug);
+
+                // move_last
+                engine.move_into_string(move_last);
+                sprintf(szDebug, " Beta cutoff %f > %f   %s",  alpha, beta, engine.move_string.c_str());
+                fputs(szDebug, fpDebug);
+
+                // if (!engine.is_unquiet_move(m)){
+
+                //     char szTemp[64];
+                //     sprintf(szTemp, " Beta quiet cutoff %f %f",  alpha, beta);
+                //     fputs(szTemp, fpDebug);
+                //     engine.print_move_to_file(m, nPlys, state, false, false, false, fpDebug);
+                // }
+            #endif
+
+            // Record killer moves
+            #ifdef DEBUGGING_KILLER_MOVES
+                if (Features_mask & _FEATURE_KILLER) {
+                    if (is_killer_here) killer_cutoff++;
+                }
+            #endif
+
+            if ((depth > 0) && (!engine.is_unquiet_move(m))) {
+                // Quiet moves that "cut off" are "notable", or "killer moves"
+                if (killer1[nPlys] == ShumiChess::Move{}) {
+                    killer1[nPlys] = m;
+                    #ifdef DEBUGGING_KILLER_MOVES1
+                        engine.move_into_string(killer1[nPlys]);
+                        fprintf(fpDebug, "\nkiller1-> %s\n", engine.move_string.c_str());
+                        
+                        engine.print_move_history_to_file(fpDebug, "AA");
+                    #endif
+                }
+                else if (!(m == killer1[nPlys])) {
+                    killer2[nPlys] = m;
+                }
+            }
+
+          
+            // Cutoff! (stop anaylizing moves to look at)
+            break;
+        }
+
+    }   // End loop over all moves to look at
+
+    return 0;
+}
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //

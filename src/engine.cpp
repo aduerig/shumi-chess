@@ -528,7 +528,7 @@ GameState Engine::is_game_over() {
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
 // I require Bits_In to be filled out.
 GameState Engine::is_game_over(int n_leg_moves_found) {
-    
+
     if (n_leg_moves_found == 0) {
 
         assert(game_board.white_king);
@@ -2775,7 +2775,9 @@ int Engine::get_legal_moves_fast(Color c, bool caps_only, bool b_check_mode, vec
     }
 }
 
-// I am the main one called
+// I am the main one called.
+// in check mode it is only trying to decide wether its REALLY 0 moves or not. 
+// So it returns if it finds just one move.
 template<Color c, bool caps_only>
 int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
 
@@ -2788,7 +2790,7 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
 
     const bool in_check_before_move = is_king_in_check_t<c>();
 
-    int n_legal_moves_found = 0;
+    int n_leg_moves_found = 0;
     int n_psuedo_legal_moves_found = 0;
 
     PinnedInfo pinnedInfo;
@@ -2831,8 +2833,8 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
                 }
             }
             if (legal) {           
-                n_legal_moves_found++;      
-                if (b_check_mode) return n_legal_moves_found;  
+                n_leg_moves_found++;      
+                if (b_check_mode) return n_leg_moves_found;  
 
                 bool b_add_me = true; 
                 if constexpr (caps_only) {
@@ -2893,8 +2895,8 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
                 }
             }
             if (legal) {                
-                n_legal_moves_found++;
-                if (b_check_mode) return n_legal_moves_found;
+                n_leg_moves_found++;
+                if (b_check_mode) return n_leg_moves_found;
                 
                 bool b_add_me = true;       
                 if constexpr (caps_only) {
@@ -2908,8 +2910,8 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
             }
         }
     }
-    assert(n_psuedo_legal_moves_found>= n_legal_moves_found);
-    return n_legal_moves_found;
+    assert(n_psuedo_legal_moves_found>= n_leg_moves_found);
+    return n_leg_moves_found;
 }
 
 // Explicit template instantiations
