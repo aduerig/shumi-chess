@@ -2108,11 +2108,11 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
  
         // pawn promotions
         ull potential_promotion = utility::bit::bitshift_by_color_t<c>(single_pawn & pawn_enemy_starting_rank_mask, 8);
-        const ull one_step = (c == Color::WHITE)
-            ? tables::movegen::white_pawn_adv_table[square]
-            : tables::movegen::black_pawn_adv_table[square];
-        ull potential_promotion2 = one_step & pawn_enemy_starting_rank_mask;
-        assert(potential_promotion == potential_promotion2);
+        // const ull one_step = (c == Color::WHITE)
+        //     ? tables::movegen::white_pawn_adv_table[square]
+        //     : tables::movegen::black_pawn_adv_table[square];
+        // ull potential_promotion2 = one_step & pawn_enemy_starting_rank_mask;
+        // assert(potential_promotion == potential_promotion2);
         
         ull promo_unblocked = potential_promotion & ~all_pieces;
         if (promo_unblocked) {
