@@ -2113,21 +2113,19 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                 , square, promo_unblocked, Piece::PAWN
                 , NO_SQUARE);
 
-        // old code codex resume 019e4d13-5b57-7a32-b07d-aabbb1eb4bce
+        // pawn attacks
+
         // ull attack_fleft = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_left_col, 9);
         // ull attack_fright = utility::bit::bitshift_by_color_t<c>(single_pawn & ~far_right_col, 7);
         // attacks = (attack_fleft | attack_fright);
-
-        // // Screen out non captures
         // ull normal_attacks2;
         // normal_attacks = attack_fleft & all_enemy_pieces;
         // normal_attacks |= attack_fright & all_enemy_pieces;
 
-        // new code
         if constexpr (c == Color::WHITE) {
-            attacks = tables::movegen::white_pawn_capture_table[square];
+            attacks = tables::movegen::white_pawn_attack_table[square];
         } else {
-            attacks = tables::movegen::black_pawn_capture_table[square];
+            attacks = tables::movegen::black_pawn_attack_table[square];
         }
         normal_attacks = attacks & all_enemy_pieces;     // Screen out non captures
 
@@ -2146,44 +2144,68 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
             }
         }
 
-        // enpassant
+        // enpassant (Part C of the process: read the gameboard element, and make a move)
         #ifndef DEBUG_NO_ENPASSANT
             ull enpassant_end_loc = (attacks) & game_board.en_passant_landing_bb;
             if (enpassant_end_loc) {
-                if (enpassant_end_loc) add_psuedo_move_to_vector<c, true, false, true, false>(all_psuedo_legal_moves
-                    , square, enpassant_end_loc, Piece::PAWN, NO_SQUARE);
+                if (enpassant_end_loc) {
+                    // Add the enpassant move
+                    add_psuedo_move_to_vector<c, true, false, true, false>(all_psuedo_legal_moves
+                        , square, enpassant_end_loc, Piece::PAWN, NO_SQUARE);
+                }
             }
         #endif
 
         // "quiet" pawn moves.
         if constexpr (!caps_only) {
 
-            ull one_move_forward = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
+            // one square moves (promotions are dealt with above, so we exclude them here)
+            ull one_move_forward2 = utility::bit::bitshift_by_color_t<c>(single_pawn & ~pawn_enemy_starting_rank_mask, 8);
+            ull one_move_forward;
+            if constexpr (c == Color::WHITE) {
+                one_move_forward = tables::movegen::white_pawn_adv_table[square];
+            } else {
+                one_move_forward = tables::movegen::black_pawn_adv_table[square];
+            } 
+            assert (one_move_forward2 == one_move_forward);
+           
             ull one_move_forward_unblocked = one_move_forward & ~all_pieces;
-
-            // one square moves
-            if (one_move_forward_unblocked) add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves
-                , square, one_move_forward_unblocked, Piece::PAWN
-                , NO_SQUARE);
+            if (one_move_forward_unblocked) {
+                // Add the one move pawn advance
+                add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves
+                    , square, one_move_forward_unblocked, Piece::PAWN, NO_SQUARE);
+            }
 
             // two square moves
             ull is_doublable = single_pawn & pawn_starting_rank_mask;
             if (is_doublable) {
                 ull move_forward_one = utility::bit::bitshift_by_color_t<c>(single_pawn, 8);
-                ull move_forward_one_unblocked = move_forward_one & ~all_pieces;
+                assert (one_move_forward == move_forward_one);
+                ull move_forward_one_unblocked = one_move_forward & ~all_pieces;
 
                 // Note: simplify this ChatGPT says they are the same?
                 assert(one_move_forward_unblocked == move_forward_one_unblocked);
 
-                ull move_forward_two = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
+                ull move_forward_two;
+                ull move_forward_two2 = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
+                if constexpr (c == Color::WHITE) {
+                    move_forward_two = tables::movegen::white_pawn_double_adv_table[square];
+                } else {
+                    move_forward_two = tables::movegen::black_pawn_double_adv_table[square];
+                } 
+                move_forward_two &= (move_forward_one_unblocked ? ~0ULL : 0ULL);
+                assert (move_forward_two == move_forward_two2);
+
+                // codex resume 019e4e84-5c60-7b81-8647-4e51a61a7912
                 ull move_forward_two_unblocked = move_forward_two & ~all_pieces;
 
                 if (move_forward_two_unblocked) {
-
+                    // Part A. of the enpassant. Determine the "possible enpassant" indicater.
+                    // (in part B it is transferred from here to the gameboard)
                     //assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
                     Square en_passant_land_sq = utility::bit::bitboard_to_lowest_square(move_forward_one_unblocked);
 
-                    //assert(game_board.bits_in(move_forward_one_unblocked) <= 1);     // exploratory assert
+                    // Add the 2 square advance move
                     add_psuedo_move_to_vector<c, false, false, false, false>(all_psuedo_legal_moves
                         , square, move_forward_two_unblocked, Piece::PAWN
                         , en_passant_land_sq);

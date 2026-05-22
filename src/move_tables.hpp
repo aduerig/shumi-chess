@@ -8,11 +8,6 @@
 
 namespace tables::movegen
 {
-    // const std::array<ull, 64> init_king_attack_table();
-    // const std::array<ull, 64> init_knight_attack_table();
-    // const std::array<ull, 64> init_white_pawn_capture_table();
-    // const std::array<ull, 64> init_black_pawn_capture_table();
-
     
     constexpr  std::array<ull, 64> init_king_attack_table() {
         std::array<ull, 64> king_attacks = {};
@@ -85,11 +80,57 @@ namespace tables::movegen
         return pawn_captures;
     }   
 
+    // I exclude advances that are promotions.
+    constexpr  std::array<ull, 64> init_white_pawn_advance_table() {
+        std::array<ull, 64> pawn_advances = {};
+
+        for(int i=0; i < 64; ++i) {
+            if (i/8 < 6) {pawn_advances[i] |= 1ULL << (i+8);} //1u
+        }
+
+        return pawn_advances;
+    }
+
+    // I exclude advances that are promotions.
+    constexpr  std::array<ull, 64> init_black_pawn_advance_table() {
+        std::array<ull, 64> pawn_advances = {};
+
+        for(int i=0; i < 64; ++i) {
+            if (i/8 > 1) {pawn_advances[i] |= 1ULL << (i-8);} //1d
+        }
+
+        return pawn_advances;
+    }
+
+    constexpr  std::array<ull, 64> init_white_pawn_double_advance_table() {
+        std::array<ull, 64> pawn_advances = {};
+
+        for(int i=0; i < 64; ++i) {
+            if (i/8 == 1) {pawn_advances[i] |= 1ULL << (i+16);} //2u
+        }
+
+        return pawn_advances;
+    }
+
+    constexpr  std::array<ull, 64> init_black_pawn_double_advance_table() {
+        std::array<ull, 64> pawn_advances = {};
+
+        for(int i=0; i < 64; ++i) {
+            if (i/8 == 6) {pawn_advances[i] |= 1ULL << (i-16);} //2d
+        }
+
+        return pawn_advances;
+    }
+
 
     inline constexpr std::array<ull,64> king_attack_table   = init_king_attack_table();
     inline constexpr std::array<ull,64> knight_attack_table = init_knight_attack_table();
-    inline constexpr std::array<ull,64> white_pawn_capture_table = init_white_pawn_capture_table();
-    inline constexpr std::array<ull,64> black_pawn_capture_table = init_black_pawn_capture_table();
+    inline constexpr std::array<ull,64> white_pawn_attack_table = init_white_pawn_capture_table();
+    inline constexpr std::array<ull,64> black_pawn_attack_table = init_black_pawn_capture_table();
+    inline constexpr std::array<ull,64> white_pawn_adv_table = init_white_pawn_advance_table();
+    inline constexpr std::array<ull,64> black_pawn_adv_table = init_black_pawn_advance_table();
+    inline constexpr std::array<ull,64> white_pawn_double_adv_table = init_white_pawn_double_advance_table();
+    inline constexpr std::array<ull,64> black_pawn_double_adv_table = init_black_pawn_double_advance_table();
 
 
 
