@@ -32,14 +32,6 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 inline constexpr int MAX_MOVES = 256;
 
-inline constexpr Score VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.001 centipawns)
-inline constexpr Score HUGE_SCORE       = 10000.0;  // pawns
-
-inline bool IS_MATE_SCORE(Score x) {return std::abs(x) > (HUGE_SCORE - 200.0);}  // pawns. Why 200? This would be a mate in 100.
-
-inline constexpr Score ABORT_SCORE     = HUGE_SCORE + 1.0;  // abort analysis
-inline constexpr Score ONLY_MOVE_SCORE = HUGE_SCORE + 2.0;  // short-circuit when only one legal move
-
 inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
 inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 32;
 
@@ -131,7 +123,7 @@ class Engine {
         // Storage buffers (they live here to avoid extra allocation during the game)        
         vector<Move> psuedo_legal_moves; 
         
-        #define MAX_PLY0 100
+        #define MAX_PLY0 100            // Maximum ply the engine will ever see, ahead from this move
         vector<Move> all_legal_moves[MAX_PLY0];
         vector<Move> all_unquiet_moves[MAX_PLY0];   
 
@@ -162,9 +154,7 @@ class Engine {
 
         int game_phase = OPENING;     //  See GamePhase constants
 
-        // Centipawn to pawn conversions
-        inline int convert_to_CP(Score dd) {return (int)( (dd * 100.0) + (dd >= 0.0 ? 0.5 : -0.5) );}
-        inline Score convert_from_CP(int ii) {return (static_cast<Score>(ii) / 100.0);}
+
 
         // Template variants (compile-time color)
         template<Color c> bool is_king_in_check_t();

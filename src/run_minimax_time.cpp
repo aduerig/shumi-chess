@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
     // Decide on arguments
     int time_to_use = 30;
     int depth_to_use = 8;
-    int max_ply_to_play = 10;
+    int max_ply_to_play = 8;
     int player_id = SLUG;       //  UNCLE_SHUMI;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;

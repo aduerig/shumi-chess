@@ -26,6 +26,7 @@
 #include <globals.hpp>
 #include "utility.hpp"
 #include "minimax.hpp"
+#include "score.hpp"
 #include "salt.h"
 #include "features.hpp"
 
@@ -81,7 +82,7 @@ bool global_debug_flag = false;
     FILE *fpDebug = NULL;
     char szDebug[512];
     bool bSuppressOutput = false;
-    double dSupressValue = 0.0;
+    Score dSupressValue = 0.0;
 
     static int clear_file_keep_fp(FILE *fp)
     {
@@ -388,8 +389,7 @@ int MinimaxAI::phase_of_game(int material_cp_avg) {
     //
     // Each side has MAX_CP_PER_SIDE centipawns at start. 
     //
-    int lost_so_far = (MAX_CP_PER_SIDE - material_cp_avg + 50) / 100;  // round to nearest pawn
-
+    int lost_so_far = (MAX_CP_PER_SIDE - material_cp_avg + (CP_PER_PAWN/2)) / CP_PER_PAWN;
  
     if (lost_so_far < 0) {   // Can happen if pawns queen, early in game. So what Its still the opening.
         // cout << "lost_so_far=" << lost_so_far;
@@ -1063,8 +1063,8 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 tuple<Score, Move> MinimaxAI::recursive_negamax(
                     int depth
                     ,Score alpha, Score beta
-                    , bool is_from_root
-                    ,const ShumiChess::Move& move_last      // seems to be used for debug only...
+                    ,bool is_from_root
+                    ,const ShumiChess::Move& move_last      // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                     ,int nPlys
                     ,int qPlys
                     )
@@ -1319,7 +1319,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         found_move_history = entry.move_history_debug; 
 
                     #else
-                        Score dScore = (Score)entry.score_cp / 100.0;
+                        Score dScore = convert_from_CP(entry.score_cp);
                         return { dScore, entry.best_move };
                     #endif
 
@@ -1404,9 +1404,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             assert(0);
         }
 
-
-        // final_result = std::make_tuple(d_best_score, the_best_move);
-        // return final_result;
         return {d_best_score, the_best_move};
 
     }
@@ -1473,7 +1470,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         }
 
 
-        d_best_score = engine.convert_from_CP(cp_score_best);
+        d_best_score = convert_from_CP(cp_score_best);
         d_stand_pat = d_best_score;  // "stand pat" means the evaluate_board() computed score
 
         //#define NO_QUISSENCE
@@ -1501,7 +1498,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         if (in_check) {
             // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
-            // to the set of all check escapes. By definition.
+            // to the set of all check escapes. By definition. So there.
             //moves_to_loop_over = legal_moves;  // not needed as its done ealier above. Sorry.
             //assert(!unquiet_moves.empty());  // oTherwise we are in check mate, and that would be caught earlier. 
     
@@ -1521,7 +1518,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             // if (nChars == EOF) assert(0);
             // nChars = fputs(":end\n", fpDebug);
             // if (nChars == EOF) assert(0);
-
             // cout << "\n" << "mvss " << mvss << "\n";
 
             // If quiet (not in check & no tactics), just return stand-pat
@@ -1614,7 +1610,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         
         // returns 0 if success, 1 if abort     n_legal_moves_found
         int ir = loop_over_all_moves(depth, alpha, beta, nPlys, qPlys,
-                        in_check, d_stand_pat, move_last,
+                        in_check, d_stand_pat, 
+                        move_last,
                         p_moves_to_loop_over,               // input
                         the_best_move, d_best_score,        // outputs
                         did_cutoff);
@@ -1674,7 +1671,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     }
                 }
 
-                int cp_score_temp = engine.convert_to_CP(d_best_score);
+                int cp_score_temp = convert_to_CP(d_best_score);
 
                 // --- DEBUG check
                 #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
@@ -2013,8 +2010,8 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                 // we should not be looking at moves in Quiescence, unless we evaluated first
                 assert (d_stand_pat != HUGE_SCORE);  
 
-                int cp_stand_pat = engine.convert_to_CP(d_stand_pat);
-                int cp_alpha = engine.convert_to_CP(alpha);
+                int cp_stand_pat = convert_to_CP(d_stand_pat);
+                int cp_alpha = convert_to_CP(alpha);
 
                 // treat anything bigger than a minor as "heavy"
                 constexpr int HEAVY_DELTA_THRESHOLD_CP = 330; // just above a knight/bishop
@@ -2315,7 +2312,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
                     int seeA = engine.game_board.SEE_for_capture_new(engine.game_board.turn, a, nullptr);
                     //assert(seeA == seeA2);
 
-                    if (seeA < 0) keyA += seeA * 100;   // negative pulls it way downc in the sort
+                    if (seeA < 0) keyA += seeA * 100;   // negative pulls it way down in the sort
                 }
                 if (b.capture != ShumiChess::Piece::NONE)
                 {
@@ -2469,9 +2466,8 @@ try_again:
 
     // Convert best score to centipawns once (rounded).
     // Assumes score is in pawns (e.g., +0.23 == +23 cp).
-    const int bestScoreCp = (bestScorePawns >= 0.0)
-                          ? (int)(bestScorePawns * 100.0 + 0.5)
-                          : (int)(bestScorePawns * 100.0 - 0.5);
+    const CP bestScoreCp = convert_to_CP(bestScorePawns);
+
 
     // 3) Build the contiguous “within delta” prefix in centipawns
     const int cutoffCp = bestScoreCp - i_delta_cp;
@@ -2480,9 +2476,9 @@ try_again:
     while (n_top < MovsFromRoot.size()) {
 
         const Score scP = MovsFromRoot[n_top].second;
-        const int scCp = (scP >= 0.0)
-                       ? (int)(scP * 100.0 + 0.5)
-                       : (int)(scP * 100.0 - 0.5);
+      
+        // int cp_score_temp = convert_to_CP(d_best_score);
+        const int scCp = convert_to_CP(scP);
 
         if (scCp < cutoffCp) break;
         ++n_top;
@@ -2734,6 +2730,7 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
     return cp_score_position_temp;
 }
 
+//  Final eval is (material+positional).
 template<ShumiChess::Color for_color>
 int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPosition) {
     using namespace ShumiChess;
@@ -2746,17 +2743,19 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     int mat_cp_black = 0;
 
     int tempsum = 0;
+
+    engine.game_board.compute_bits_in();        // Computes shortcuts for "bits_in()", used in the eval.
+
     //int tempsumNP = 0;
-    int cp_score_material_all = 0;
-    int cp_score_pawns_only = 0;
 
     // 
-    // First compute up the material.
+    // First compute up the material.  (final eval is (material+positional)).
     // Outputs:
     //    cp_score_material_all
     //    cp_score_pawns_only 
     //
-    engine.game_board.compute_bits_in();        // Computes shortcuts for bits_in
+    int cp_score_material_all = 0;
+    int cp_score_pawns_only = 0;
 
     for (const auto& color1 : std::array<Color, 2>{Color::WHITE, Color::BLACK}) {
         int cp_pawns_only_temp;
@@ -2789,15 +2788,19 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     cp_score_material_avg = tempsum / 2;
 
     assert(cp_score_material_avg >= 0);
+
+    //
+    //  Now do the "positional" stuff. (final eval is (material+positional)).
+    //
+
+    //
+    // Get phase of game (note phase is not used for material)
     int nPhase = phase_of_game(cp_score_material_avg);
 
     int cp_score_position = 0;
     bool isOK;
     int cp_score_position_temp;
 
-    //
-    //  Now do the "positional" stuff.
-    //
     cp_score_position_temp =  get_positional_for_one_color<Color::WHITE>(nPhase, evp, cp_score_material_all);
     if (Color::WHITE != for_color) cp_score_position_temp *= -1;
     cp_score_position += cp_score_position_temp;
@@ -2806,14 +2809,14 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
     if (Color::BLACK != for_color) cp_score_position_temp *= -1;
     cp_score_position += cp_score_position_temp;
 
-
-    // Add the material and positional togather to get a final retuern in centipawns.
+    //
+    // Add the material and positional togather to get a final return in centipawns.
     cp_score_adjusted = cp_score_material_all + cp_score_position;
 
     return cp_score_adjusted;
 }
 
-
+// Final eval is (material+positional).
 template<ShumiChess::Color c> 
 int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all)
 {
@@ -2825,8 +2828,9 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
     constexpr Color enemy_of_color = utility::representation::opposite_color_t<c>;
 
     switch (evp) {
+
         case RANDOM:
-        case SLUG:
+        case SLUG:          // There is no "positional considerations", for the slug.
             break;
 
         case CRAZY_IVAN:
@@ -2835,8 +2839,8 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
             cp_score_position_temp = bonus_cp;
             break;
 
-        default:
         case UNCLE_SHUMI:
+        default:
         {
             // no major pieces, and no more than one minor piece
             bool NoMajorPiecesEnemy  = engine.game_board.hasNoMajorPieces_t<enemy_of_color>();

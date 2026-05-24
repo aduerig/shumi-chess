@@ -1,84 +1,5 @@
 
 
-Here is my current arctecture/
-1. Get all psuedo-legal moves in a buffer (psuedo_legql_moves).
-2. Check for full legality, copy into another buffer ("legal_moves") the 
-   subset of psuedo-legal moves that are also legal. (dont put me into check)
-3. Check for checkmate or stalemate, exit if so.
-4. Loop (recurse) over all legal_moves.
-
-However, I recently added a speed up for quissence only, that complicates step 2.
-In quissence I do not actually add legal_moves that are quiet. Howver, the checkmate/stalemate
-algorithm needs to know the real number of legal_moves, (quiet or unquiet). So for every
-legal_move I find, I increment a "count of legal moves", even though I do not add it to the array of
-legal moves. This system works well. SO the "count" is greater or equal to the number of actual legal_moves.
-
-But now, I am going to be also (in quissence only), not adding moves in step 1. I can also implement it
-so that I keep a seperate count of psuedo-legal moves, incremented always, even when we dont add the psuedo 
-legal move to legal_moves. 
-
-But now I am puzzled how to do step 3. If I change step 1 as discussed above. How do the two counts and actual sizes 
-of the buffers relate. Right now step 3 uses the "legal_move count". If that is zero, then the game is over. This works,
-but I feel if I use "psuedo_legal_moves count" this wont be correct. How can I do this right?
-
-
-
-
-
-
-
-
-
-
-
-
-Look at these lines:. The line assigning the_best_move, does not compile. What Am i missing?
-
-    vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
-    vector<Move>* p_moves_to_loop_over = &legal_moves;
-   ...
-   d_best_score = -HUGE_SCORE;
-   the_best_move = *p_moves_to_loop_over[0];   // Note: Is this the correct intialization?
-
-   //
-   /////////////////////////////////////////////////////////////////////////////////////////
-   //
-   // Look (recurse) over all moves chosen
-   //
-   int imovedebug = 0;
-   int isizedebug = p_moves_to_loop_over->size();
-   for (const Move& m : *p_moves_to_loop_over) {
-      int nChars;
-   ...
-
-
-
-recursive_negamax() starts. It assigns "legal_moves" to point to engine.all_legal_moves[nPlys].
-
-recursive_negamax() gets all legal moves, (calls get_legal_moves_fast_t()), puts them into "legal_moves". 
-
-get_legal_moves_fast_t() 
-   1. Gets all psuedo-legal_moves, puts them into engine.psuedo_legal_moves
-   2. Loops over engine.psuedo_legal_moves, pushes legal moves into the passed "legal_moves" 
-      (other paths than recursive_negamax() pass in a different local array to fill up.
-
-    here other than the push moves from psuedo-legal_moves to "legal_moves", we 
-    instead generate the psuedo-legal moves in legal_moves , and instead of the push just "zero" the illegal moves"
-    This requires that every use of "legal-moves" from then on, must check for "zero move", and just skip over it.
-
-
-
-
-if (depth == 0)
-   
-
-
-
-
-
-
-
-
 
 
 n and m are the actual sizes of the moves
@@ -113,3 +34,43 @@ If not in quissence, then a=n, b=m. SO lets make the table assumming quissence.
    n     a     m     0               IMPOSSIBLE
    n     a     m     b               not an end of game
 
+
+
+
+Find explicit casts from Score→CP-like expressions:
+grep -RnE "([ \t]int(32_t|32|)[ \t])([^)]**[ \t]100.0" .
+grep -RnE "(int)([^)]*[ \t]*100.0" .
+
+Find divisions by 100.0 (CP→pawns conversions):
+grep -RnE "/[ \t]*100.0" .
+
+Find Score occurrences:
+grep -Rn "\bScore\b" .
+
+Find already-existing helpers:
+grep -Rn "convert_to_CP|convert_from_CP" .
+
+Find plain patterns you used before:
+grep -RnE "([^)]*[ \t]100.0[ \t]+?[ \t](dd >= 0.0 ? 0.5 : -0.5)" .
+
+
+
+
+
+Find Score→CP style casts (pawns * 100.0):
+([^\n]*\s100.0[^\n]*)      //    DONE
+
+Find explicit casts like (int)(... * 100.0):
+(\s*(?:int|long|long long|int32_t|CP)\s*)\s*([^)]*\s100.0[^)]*)         // DONE
+
+Find division by 100.0 (CP→pawns conversions):
+/\s*100.0\b       // DONE
+
+Find plain casts from numeric to int nearby multiplication (another form):
+([^\n])\s/\s100.0|([^\n]*\s*100)       // DONE
+
+Find literals with 100.0 (less noise):
+100.0\b       // DONE
+
+Find common rounding expression you used:
+([^\n])\s*\s100.0\s)\s*+\s*([^)]>=\s0.0\s*?\s0.5\s:\s*-0.5\s*)

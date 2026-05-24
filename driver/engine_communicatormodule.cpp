@@ -13,6 +13,7 @@
 #include "globals.hpp"
 #include <engine.hpp>
 #include <minimax.hpp>
+#include <score.hpp>
 
 #include <gameboard.hpp>
 
@@ -492,7 +493,7 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
         : minimax_ai->evaluate_board_t<ShumiChess::Color::BLACK>(evp, b_is_Quiet);
     //minimax_ai->is_debug = false;
     
-    Score pawnScore =  minimax_ai->engine.convert_from_CP(cp_score_best);
+    Score pawnScore =  convert_from_CP(cp_score_best);
 
     cout << "\n  eval = " << pawnScore << endl;
     
@@ -518,7 +519,7 @@ static PyObject*
 engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
     int iCPScore = python_engine->get_best_score_at_root();
 
-    Score iPawnScore = minimax_ai->engine.convert_from_CP(iCPScore);
+    Score iPawnScore = convert_from_CP(iCPScore);
 
     Score absip;
 

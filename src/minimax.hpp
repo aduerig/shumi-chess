@@ -189,13 +189,14 @@ public:
     std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
                                             , Score alpha, Score beta
                                             , bool is_from_root
-                                            , const ShumiChess::Move& move_last
+                                            , const ShumiChess::Move& move_last //  debug (used only by _DEBUGGING_MOVE_CHAIN)
                                             , int nPlys
                                             , int qPlys
                                         );
 
     int loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
-                       bool in_check, Score d_stand_pat, const ShumiChess::Move& move_last,
+                       bool in_check, Score d_stand_pat, 
+                       const ShumiChess::Move& move_last,       // NOTE: remove me
                        const vector<ShumiChess::Move>* pMoves, 
                        ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
                        bool& did_cutoff);     // outputs

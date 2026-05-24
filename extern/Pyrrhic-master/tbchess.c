@@ -398,7 +398,7 @@ bool pyrrhic_do_move(PyrrhicPosition *pos, const PyrrhicPosition *pos0, PyrrhicM
             && (PYRRHIC_PAWN_ATTACKS(from + 8, PYRRHIC_WHITE) & pos0->pawns & pos0->black))
             pos->ep = from + 8;
 
-        // Check for a double push by Black
+        // Check for a 2 square push by Black
         if (   (from ^ to) == 16
             &&  pos0->turn == PYRRHIC_BLACK
             && (PYRRHIC_PAWN_ATTACKS(from - 8, PYRRHIC_BLACK) & pos0->pawns & pos0->white))

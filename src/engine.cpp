@@ -2,6 +2,7 @@
 
 
 #include "engine.hpp"
+#include "score.hpp"
 #include "utility"
 #include <cmath>
 
@@ -592,10 +593,10 @@ int Engine::get_best_score_at_root() {
 
     //cout << reason_for_draw << endl;
 
-    int material_centPawns = 0;
+    CP material_centPawns = 0;
 
     // d_bestScore_at_root is: 1. in centpawns, and 2. In "abs" scores.
-    material_centPawns = (int)(d_bestScore_at_root*100.0);
+    material_centPawns = convert_to_CP(d_bestScore_at_root);
     return material_centPawns;
 
 }
@@ -1117,10 +1118,6 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
                                 Piece piece,
                                 Square en_passant_land_sq) {
 
-
-    // "from" square better be single bit. (the "to" square may be multiple or single piece)
-    //assert(game_board.bits_in(single_bitboard_from) == 1);
-
     assert (fromSQ != NO_SQUARE);
 
     // for all "to" squares and add them as moves
@@ -1624,7 +1621,7 @@ void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_va
 //
 void Engine::sort_unquiet_moves_qsearch(
                 const vector<ShumiChess::Move>& moves,       // input
-                //const Move& move_last,                       // input
+                //const Move& move_last,                       // input (used only by _DEBUGGING_MOVE_CHAIN)
                 int qPlys,
                 vector<ShumiChess::Move>& MovesOut            // output
             )
@@ -1663,20 +1660,19 @@ void Engine::sort_unquiet_moves_qsearch(
                     //     cout << game_board.to_fen().c_str() << '\n';
                     //     assert(0);
                     // }
-
-                    if (testValue > 0) {     // centipawns
-                        #ifdef _DEBUGGING_TO_FILE1 
-                        
-                            fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
-        
-                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                    #ifdef _DEBUGGING_TO_FILE1 
+                        if (testValue > 0) {     // centipawns
                             
-                            print_move_history_to_file(fpDebug, "SEE hist");
-                            fputc('\n', fpDebug);
-                        #endif
-                    }
+                                fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
+            
+                                print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                                
+                                print_move_history_to_file(fpDebug, "SEE hist");
+                                fputc('\n', fpDebug);
+                        }
+                    #endif
 
-                    if (testValue <= -100) {     // centipawns
+                    if (testValue <= -CP_PER_PAWN) {     // centipawns
                         #ifdef _DEBUGGING_TO_FILE1 
                         
                             fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);

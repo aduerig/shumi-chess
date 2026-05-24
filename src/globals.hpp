@@ -16,7 +16,8 @@
 
 
 typedef unsigned long long ull;
-
+typedef uint8_t Square;
+typedef double Score;
 
 // Forward declare what globals.hpp needs, without including utility.hpp (avoids cycles)
 namespace utility
@@ -28,9 +29,7 @@ namespace utility
     }
 }
 
-typedef uint8_t Square;
 
-typedef double Score;
 
 namespace ShumiChess {
 
