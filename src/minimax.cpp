@@ -1473,6 +1473,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         d_best_score = convert_from_CP(cp_score_best);
         d_stand_pat = d_best_score;  // "stand pat" means the evaluate_board() computed score
 
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
         //#define NO_QUISSENCE
         #ifdef NO_QUISSENCE
             return { d_best_score, Move{} };
@@ -1559,6 +1562,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         // nothing to change here
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////
 
     // =====================================================================
     // Recurse over selected move set "moves_to_loop_over"
@@ -1609,8 +1613,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         /////////////////////////////////////////////////////////////////////////////////////////
         
         // returns 0 if success, 1 if abort     n_legal_moves_found
-        int ir = loop_over_all_moves(depth, alpha, beta, nPlys, qPlys,
-                        in_check, d_stand_pat, 
+        int ir = loop_over_all_moves(depth, alpha, beta, 
+                        nPlys, qPlys, in_check, 
+                        d_stand_pat, 
                         move_last,
                         p_moves_to_loop_over,               // input
                         the_best_move, d_best_score,        // outputs
@@ -1935,7 +1940,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 // codex resume 019e4fc9-465d-7852-b612-5a59c86e14da
 // returns 0 if success, 1 if abort
 int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
-                       bool in_check, Score d_stand_pat, const ShumiChess::Move& move_last,
+                       bool in_check, 
+                       Score d_stand_pat, 
+                       const ShumiChess::Move& move_last,       // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                        const vector<ShumiChess::Move>* pMoves, 
                        ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
                        bool& did_cutoff)
