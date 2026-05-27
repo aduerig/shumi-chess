@@ -130,7 +130,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -355,58 +355,67 @@ bool MinimaxAI::no_queens_on_board() {
 int MinimaxAI::phase_of_game(int material_cp_avg) {
 
     int king_sq;
+    int king_sq2;
     int k_file;
     int k_rank;
-    ull king_bb;
+   //ull king_bb;
 
     int nPhase = GamePhase::OPENING;
     assert(material_cp_avg>=0);
 
 
     // white castling
-    king_bb = engine.game_board.get_pieces(ShumiChess::Color::WHITE, Piece::KING);
-    if (!king_bb) {
-        assert(0);      // has to be a king!
-        return 0;
-    }
-    king_sq = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+    // king_bb = engine.game_board.get_pieces(ShumiChess::Color::WHITE, Piece::KING);
+    // if (!king_bb) {
+    //     assert(0);      // has to be a king!
+    //     return 0;
+    // }
+    //king_sq2 = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+    king_sq = engine.white_king_square;
+    //assert(king_sq == king_sq2);
+
+
     k_file  = king_sq & 7;
     k_rank  = king_sq >> 3;
-    bool bWhiteCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::WHITE>(k_rank, k_file);
+
+    engine.game_board.bWhiteCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::WHITE>(k_rank, k_file);
 
     // black castling
-    king_bb = engine.game_board.get_pieces(ShumiChess::Color::BLACK, Piece::KING);
-    if (!king_bb) {
-        assert(0);      // has to be a king!
-        return 0;
-    }
-    king_sq = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+    // king_bb = engine.game_board.get_pieces(ShumiChess::Color::BLACK, Piece::KING);
+    // if (!king_bb) {
+    //     assert(0);      // has to be a king!
+    //     return 0;
+    // }
+    //king_sq2 = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+    king_sq = engine.black_king_square;
+    //assert(king_sq == king_sq2);
+
     k_file  = king_sq & 7;
     k_rank  = king_sq >> 3;
-    bool bBlackCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::BLACK>(k_rank, k_file);
+    engine.game_board.bBlackCstled = engine.game_board.bHasCastled_fake_t<ShumiChess::Color::BLACK>(k_rank, k_file);
 
 
     //
     // Each side has MAX_CP_PER_SIDE centipawns at start. 
     //
-    int lost_so_far = (MAX_CP_PER_SIDE - material_cp_avg + (CP_PER_PAWN/2)) / CP_PER_PAWN;
- 
-    if (lost_so_far < 0) {   // Can happen if pawns queen, early in game. So what Its still the opening.
+    int lost_so_far_cp = (MAX_CP_PER_SIDE - material_cp_avg);
+
+    if (lost_so_far_cp < 0) {   // Can happen if pawns queen, early in game. So what Its still the opening.
         // cout << "lost_so_far=" << lost_so_far;
-        lost_so_far = 0;      // Can happen if pawns queen. So what Its still the opening.
+        lost_so_far_cp = 0;      // Can happen if pawns queen early. So what Its still the opening.
         //assert(0);
     }
 
     // So 6 down is 2 pieces (per side). Or one piece and 3 pawns.  40 is all pieces.
     // 
-    if      (lost_so_far < 5)  nPhase = GamePhase::OPENING;
-    else if (lost_so_far < 8)  nPhase = GamePhase::MIDDLE_EARLY;
-    else if (lost_so_far < 14) nPhase = GamePhase::MIDDLE;
-    else if (lost_so_far < 30) nPhase = GamePhase::ENDGAME;
-    else                       nPhase = GamePhase::ENDGAME_LATE; // only 10 points left
+    if      (lost_so_far_cp < 500)  nPhase = GamePhase::OPENING;
+    else if (lost_so_far_cp < 800)  nPhase = GamePhase::MIDDLE_EARLY;
+    else if (lost_so_far_cp < 1400) nPhase = GamePhase::MIDDLE;
+    else if (lost_so_far_cp < 3000) nPhase = GamePhase::ENDGAME;
+    else                            nPhase = GamePhase::ENDGAME_LATE; // only 1000 cp left
 
-    bool b_both_castled = (bWhiteCstled && bBlackCstled);
-    bool b_either_castled = (bWhiteCstled || bBlackCstled);
+    bool b_both_castled = (engine.game_board.bWhiteCstled && engine.game_board.bBlackCstled);
+    bool b_either_castled = (engine.game_board.bWhiteCstled || engine.game_board.bBlackCstled);
 
     if (nPhase == GamePhase::OPENING) {
         if (b_both_castled) nPhase = GamePhase::MIDDLE;         // Turns off all castling incentives
@@ -421,7 +430,7 @@ int MinimaxAI::phase_of_game(int material_cp_avg) {
 }
 
 
-// Same as phase_of_game(), but gets the material(s) by itself. For display only.
+// Same as phase_of_game(), but gets the material(s) by itself. For display only. (too slow)
 int MinimaxAI::phase_of_game_full() {
     int cp_score_material_avg_local = 0;
     {
@@ -736,7 +745,9 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     }
 
-    if (n_Multis>1) cout << "\n" << " rand moves collected: " << n_Multis;
+    #ifdef DISPLAY_DEEPING
+        if (n_Multis>1) cout << "\n" << " rand moves collected: " << n_Multis;
+    #endif
     //engine.print_moves_and_scores_to_file(excluded_root_moves, false, false, stdout);
 
     if (n_Multis > 1) {
@@ -754,8 +765,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
                 , (GameState::INPROGRESS), false, false, NULL
                 , engine.move_string);    // Output
 
-        cout << "\n" << " end multisss " << d_best_move_value << "  "  
-                << engine.move_string << " out of=" <<  n_moves_within_delta << " \n";
+        #ifdef DISPLAY_DEEPING
+            cout << "\n" << " end multisss " << d_best_move_value << "  "  
+                    << engine.move_string << " out of=" <<  n_moves_within_delta << " \n";
+        #endif
     }
 
     // Convert the moves "relative score" to "absolute score". Relative means positve is good for mover. 
@@ -847,7 +860,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         engine.d_bestScore_at_root = d_best_move_value_abs;  
     }
 
-    cout << "\n";
+    // Note: this is required or tehe app hangs near the end of the game in autoplay?
+    //#ifdef DISPLAY_DEEPING
+        cout << "\n";
+    //#endif
 
     #ifdef DEBUGGING_KILLER_MOVES
         cout << "Killers: tried=" << killer_tried
@@ -1937,7 +1953,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     return {d_best_score, the_best_move};
 }
 
-// codex resume 019e4fc9-465d-7852-b612-5a59c86e14da
 // returns 0 if success, 1 if abort
 int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
                        bool in_check, 
@@ -2473,7 +2488,7 @@ try_again:
 
     // Convert best score to centipawns once (rounded).
     // Assumes score is in pawns (e.g., +0.23 == +23 cp).
-    const CP bestScoreCp = convert_to_CP(bestScorePawns);
+    const int bestScoreCp = convert_to_CP(bestScorePawns);
 
 
     // 3) Build the contiguous “within delta” prefix in centipawns
@@ -2515,12 +2530,15 @@ try_again:
 
     assert (b_use_this_one);
     if (b_use_this_one) {
-        cout << "\n[pick_random_within_delta_rand] n_top=" << (int)n_top << " from candidates: \n" << i_computer_ply_so_far;
-        for (size_t i = 0; i < n_top; ++i) {
-            engine.move_into_string(MovsFromRoot[i].first);   // fills engine.move_string
-            cout << "  [" << (int)i << "]  " << engine.move_string << "\n";
-        }
-        cout.flush();
+        #ifdef DISPLAY_DEEPING
+            cout << "\n[pick_random_within_delta_rand] n_top=" << (int)n_top << " from candidates: \n" << i_computer_ply_so_far;
+
+            for (size_t i = 0; i < n_top; ++i) {
+                engine.move_into_string(MovsFromRoot[i].first);   // fills engine.move_string
+                cout << "  [" << (int)i << "]  " << engine.move_string << "\n";
+            }
+            cout.flush();
+        #endif
     }
 
     // 4) Uniform pick from [0, n_top)
@@ -2802,10 +2820,11 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
     //
     // Get phase of game (note phase is not used for material)
+    // NOTE this must be called before any positional eval.
     int nPhase = phase_of_game(cp_score_material_avg);
 
     int cp_score_position = 0;
-    bool isOK;
+    //bool isOK;
     int cp_score_position_temp;
 
     cp_score_position_temp =  get_positional_for_one_color<Color::WHITE>(nPhase, evp, cp_score_material_all);

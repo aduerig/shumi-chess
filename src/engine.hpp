@@ -27,9 +27,6 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// #include <cstddef>  // size_t
-// #include <cmath>    // std::abs
-
 inline constexpr int MAX_MOVES = 256;
 
 inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
@@ -76,8 +73,10 @@ class Engine {
         std::stack<Move> move_history;
         std::stack<int> halfway_move_state;
         std::stack<ull> en_passant_history;
-        // std::stack<int> material_balance_Whistory;
-        // std::stack<int> material_balance_Bhistory;
+        Square white_king_square = NO_SQUARE;
+        Square black_king_square = NO_SQUARE;
+        std::stack<Square> white_king_square_history;
+        std::stack<Square> black_king_square_history;
 
         //TODO This way of tracking is inconsistent with gameboard, think over. Requires splitting and merging of  castle_opportunity_
         std::stack<uint8_t> castle_opportunity_history; // Bits right to left: white kingside, white queenside, black kingside, black queenside
@@ -365,10 +364,11 @@ class Engine {
 
 
         template<Color c>
-        inline int get_king_square_t() {
-            ull k = game_board.get_pieces_template<Piece::KING, c>();
-            assert(k != 0ULL);
-            return utility::bit::bitboard_to_lowest_square_fast(k);
+        inline int get_king_square_t(ull& bitmap) {
+            bitmap = game_board.get_pieces_template<Piece::KING, c>();
+            assert(bitmap != 0ULL);
+            assert(game_board.bits_in(bitmap) == 1 && "more than one king found!");
+            return utility::bit::bitboard_to_lowest_square_fast(bitmap);
         }
 
         template<Color c> CheckInfo find_checkers_and_blockmask_t();

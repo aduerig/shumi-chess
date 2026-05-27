@@ -149,7 +149,6 @@ public:
     ShumiChess::Move killer2[MAX_PLY];
 
 
-
     int TT_ntrys = 0;
     int TT_ntrys1 = 0;
 

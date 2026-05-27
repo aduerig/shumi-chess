@@ -2362,7 +2362,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
     int i_DenomB = 0;
 
     bool b_has_castled = false;
-
+    bool b_has_castled2 = false;
 
     ull king_bb = get_pieces_template<Piece::KING, c>();
     if (!king_bb) {
@@ -2376,7 +2376,14 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 
     // Has castled //////////////////////////////////////////////
 
-    b_has_castled = bHasCastled_fake_t<c>(k_rank, k_file);
+    if (c == ShumiChess::WHITE) {
+        b_has_castled = bWhiteCstled;
+    } else {
+        b_has_castled = bBlackCstled;
+    }
+    //b_has_castled2 = bHasCastled_fake_t<c>(k_rank, k_file);
+    //assert (b_has_castled==b_has_castled2);
+
 
     int cpWght = wghts.GetWeight(HAS_CASTLED);
 

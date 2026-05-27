@@ -397,6 +397,9 @@ class GameBoard {
         template<Color c> int opposite_bishops_cp_t(int material_balance_cp) const;
 
 
+        bool bWhiteCstled = false;
+        bool bBlackCstled = false;
+
         // returns 0 if sq has no attackers. 
         int SEE_for_capture(Color side, const Move &mv, FILE* fp);
         int SEE_for_capture_new(Color side, const Move &mv, FILE* fpDebug);

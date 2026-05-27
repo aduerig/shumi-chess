@@ -1,10 +1,10 @@
 ﻿#include <functional>
-
+#include <cmath>
 
 #include "engine.hpp"
 #include "score.hpp"
 #include "utility"
-#include <cmath>
+#include "score.hpp"
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG
@@ -249,6 +249,11 @@ void Engine::reset_all_but_FEN()
 
     en_passant_history = stack<ull>();
     en_passant_history.push(0);
+
+    white_king_square = static_cast<Square>(utility::bit::bitboard_to_lowest_square_fast(game_board.white_king));
+    black_king_square = static_cast<Square>(utility::bit::bitboard_to_lowest_square_fast(game_board.black_king));
+    white_king_square_history = stack<Square>();
+    black_king_square_history = stack<Square>();
 
     castle_opportunity_history = stack<uint8_t>();
     castle_opportunity_history.push(0b1111);
@@ -502,21 +507,6 @@ static inline void process_pin_ray(
 }
 
 
-// Original compute_pins replaced by template wrapper at bottom of file
-
-
-
-// Original get_psuedo_legal_moves replaced by template wrapper at bottom of file
-
-
-// Original is_king_in_check2 and is_square_in_check0 replaced by template wrappers at bottom of file
-
-// Original is_square_in_check2, is_square_attacked_with_masks, and find_checkers_and_blockmask
-// replaced by template wrappers at bottom of file
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // I am called only from python, when the game is over. I am very wasteful. as get_legal_moves() is very 
@@ -593,7 +583,7 @@ int Engine::get_best_score_at_root() {
 
     //cout << reason_for_draw << endl;
 
-    CP material_centPawns = 0;
+    int material_centPawns = 0;
 
     // d_bestScore_at_root is: 1. in centpawns, and 2. In "abs" scores.
     material_centPawns = convert_to_CP(d_bestScore_at_root);
@@ -603,7 +593,7 @@ int Engine::get_best_score_at_root() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+// codex resume 019e6332-a423-74e1-b49d-74bd2092b413
 template<Color c> void Engine::pushMove_t(const Move& move) {
 
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
@@ -618,7 +608,7 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
     // zobrist_key "push" update (side to move)
     game_board.zobrist_key ^= zobrist_side;
 
-    // Update full move "clock" (used for display)
+    // Update full move "clock" (used only for display and making the FEN)
     if constexpr (c == Color::BLACK) {
         ++game_board.fullmove;
     }
@@ -635,19 +625,26 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
     const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
     const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
 
-    // const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    // const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
-    // assert(square_from == move.fromSQ);
-    // assert(square_to == move.toSQ);
     const int square_from = move.fromSQ;
     const int square_to = move.toSQ;
 
-    // Remove the piece from where it was
+    // Store king squares (there is only one king and the eval is faster with this)
+    if (move.piece_type == Piece::KING) {
+        if constexpr (c == Color::WHITE) {
+            white_king_square_history.push(move.fromSQ);
+            white_king_square = move.toSQ;
+        } else {
+            black_king_square_history.push(move.fromSQ);
+            black_king_square = move.toSQ;
+        }
+    }
+
+    // Remove the piece from where it was in the bitboards
     ull& moving_piece = access_pieces_of_color_tp<c>(move.piece_type);
     moving_piece &= ~movefrom;
 
-
-    // zobrist_key "push" update (remove piece from from square)
+    
+    // zobrist_key "push" update (remove piece from "from" square)
     game_board.zobrist_key ^= zobrist_piece_square_get(move.piece_type + c * 6, square_from);
 
     if (move.piece_type == Piece::PAWN) {
@@ -846,15 +843,19 @@ template<Color c> void Engine::popMove_t() {
     // const ull to = move.to;
     const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
     const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
-    // assert(frm == movefrom);
-    // assert(to == moveto);
 
-    // const int square_from = utility::bit::bitboard_to_lowest_square_safe(move.from);
-    // const int square_to   = utility::bit::bitboard_to_lowest_square_safe(move.to);
-    // assert(square_from == move.fromSQ);
-    // assert(square_to == move.toSQ);
     const int square_from = move.fromSQ;
     const int square_to = move.toSQ;
+
+    if (move.piece_type == Piece::KING) {
+        if constexpr (c == Color::WHITE) {
+            white_king_square = white_king_square_history.top();
+            white_king_square_history.pop();
+        } else {
+            black_king_square = black_king_square_history.top();
+            black_king_square_history.pop();
+        }
+    }
 
     // pop the "actual move"
     ull& moving_piece = access_pieces_of_color_tp<c>(move.piece_type);
@@ -1216,7 +1217,6 @@ void Engine::add_psuedo_move_to_vector(vector<Move>& moves,        // output
 
 
 // Obtaining algebriac move test
-
 inline void safe_push_back(std::string &s, char c) {
     s.push_back(c);   // always works
 }
@@ -1484,7 +1484,7 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
     // every random move chosen. When it hits zero, no more random plys will be chosen.
     if (computer_ply_so_far==0) {
         i_randomize_next_move = randomMoveCount;
-        cout << "\033[1;34m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
+        //cout << "\033[1;34m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
 }
@@ -1672,7 +1672,7 @@ void Engine::sort_unquiet_moves_qsearch(
                         }
                     #endif
 
-                    if (testValue <= -CP_PER_PAWN) {     // centipawns
+                    if (testValue <= -100) {     // centipawns
                         #ifdef _DEBUGGING_TO_FILE1 
                         
                             fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
@@ -2109,7 +2109,6 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         //assert (square == square2);
 
         // pawn promotions
-        // codex resume 019e4f18-5c47-7840-9ee4-17602ad294ad
         ull one_move_forward;
         if constexpr (c == Color::WHITE) {
             one_move_forward = tables::movegen::white_pawn_adv_table[square];
@@ -2563,9 +2562,10 @@ Engine::PinnedInfo Engine::compute_pins_t() {
 
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
-    const int kingSq = get_king_square_t<c>();
-    const ull kingBB = (1ULL << kingSq);
-    (void)kingBB;
+    // assumes only one king on the board
+    ull kingBB;
+    const int kingSq = get_king_square_t<c>(kingBB);
+    //const ull kingBB = (1ULL << kingSq);
 
     const ull occ      = game_board.get_pieces();
     const ull myPieces = game_board.get_pieces_template<c>();
@@ -2604,8 +2604,10 @@ Engine::CheckInfo Engine::find_checkers_and_blockmask_t() {
 
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
-    const int kingSq = get_king_square_t<c>();
-    const ull kingBB = (1ULL << kingSq);
+    // assumes only one king on the board
+    ull kingBB;
+    const int kingSq = get_king_square_t<c>(kingBB);        // assummes only one king
+    //const ull kingBB = (1ULL << kingSq);
 
     const ull themKnights = game_board.get_pieces_template<Piece::KNIGHT, enemy>();
     const ull themPawns   = game_board.get_pieces_template<Piece::PAWN, enemy>();
@@ -2792,13 +2794,13 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
     PinnedInfo pinnedInfo;
     CheckInfo  checkInfo;
 
-    if (!in_check_before_move) {
-        // gather data on pieces of color c that are pinned to the king of color c. This will be later used
-        // to determine legality of these pieces moves.
-        pinnedInfo = compute_pins_t<c>();
-    } else {
+    if (in_check_before_move) {
         checkInfo  = find_checkers_and_blockmask_t<c>();
         // gather data on pieces of color c that are pinned to the king of color c.
+        pinnedInfo = compute_pins_t<c>();
+    } else {
+        // gather data on pieces of color c that are pinned to the king of color c. This will be later used
+        // to determine legality of these pieces moves.
         pinnedInfo = compute_pins_t<c>();
     }
 
@@ -2810,6 +2812,7 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
         for (const Move& move : psuedo_legal_moves) {
             bool legal = false;
 
+            // Call in_check_after_king_move_t() (maybe)
             if (move.piece_type == Piece::KING) {
                 legal = !in_check_after_king_move_t<c>(move);
             } else {
@@ -2817,7 +2820,8 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
             if (move.flags & FLAGS_IS_EP_CAPTURE) {
                     legal = !in_check_after_move_fast_t<c>(move);
                 } else {
-                    // Not en en passant. This is where the time is saved. Here we DONT call in_check_after_move_fast_t()
+                    // Not an en passant. This is the most common case.
+                    // Note This is where the time is saved. Here we DONT call in_check_after_move_fast_t()
                     const int fromSq = move.fromSQ;
                     const int toSq   = move.toSQ;
 
@@ -2843,7 +2847,7 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
                 }
             }
         }
-    } else {            // (in_check_before_move)
+    } else {            // (in_check_before_move) (less common)
         for (const Move& move : psuedo_legal_moves) {
             bool legal = false;
 
