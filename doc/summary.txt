@@ -1,6 +1,16 @@
 
+Shumi problems:
+   Trades bishops too quickly to just double pawns. Msybe make bisjhops worth a little more?
+   Not trading whst you are ahead in.
+   Passed pawns are overprized when they are way passed. Shumi loses them.
+   Needs to understand the valueo fadvanced postyed knighst (on 5th rank or more), not expontital.
+   semi open files?
+   finachetto enuf?
+   moving twice same piece in opening
+   open files? half open?
+   finachetto king side
 
-
+level indicator for front end
 
 Find explicit casts from Score→CP-like expressions:
 grep -RnE "([ \t]int(32_t|32|)[ \t])([^)]**[ \t]100.0" .

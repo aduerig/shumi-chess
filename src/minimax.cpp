@@ -408,7 +408,7 @@ int MinimaxAI::phase_of_game(int material_cp_avg) {
 
     // So 6 down is 2 pieces (per side). Or one piece and 3 pawns.  40 is all pieces.
     // 
-    if      (lost_so_far_cp < 500)  nPhase = GamePhase::OPENING;
+    if      (lost_so_far_cp < 400)  nPhase = GamePhase::OPENING;
     else if (lost_so_far_cp < 800)  nPhase = GamePhase::MIDDLE_EARLY;
     else if (lost_so_far_cp < 1400) nPhase = GamePhase::MIDDLE;
     else if (lost_so_far_cp < 3000) nPhase = GamePhase::ENDGAME;
@@ -775,7 +775,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     // Absolute means positive is good for white. Most scores are relative. Absolute used only foe display.
     d_best_move_value_abs = d_best_move_value;
     if (engine.game_board.turn == Color::BLACK) d_best_move_value_abs = -d_best_move_value_abs;
-    if (std::fabs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;   // avoid negative zero
+    if (std::abs(d_best_move_value_abs) < VERY_SMALL_SCORE) d_best_move_value_abs = 0.0;   // avoid negative zero
     
 
     ////////// done with move production. Now do debug and displays /////////////////////////////////////////////////////////////////////////
@@ -815,7 +815,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         
         string abs_score_string = to_string(d_best_move_value_abs);
         char buf[32];
-        std::snprintf(buf, sizeof(buf), "%.3f", d_best_move_value_abs);
+        std::sprintf(buf, fmtMain, d_best_move_value_abs);
         abs_score_string = buf;
 
         cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
@@ -1032,7 +1032,21 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         #endif
 
         #ifdef DISPLAY_DEEPING
-            engine.move_and_score_to_string(best_move, d_best_move_value , true);
+            engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                    , (GameState::INPROGRESS), false, true, NULL
+                    , engine.move_string);    // Output
+            double temp = convert_to_pawns(d_best_move_value);
+            if (engine.game_board.turn == ShumiChess::BLACK) temp = -temp;
+            if (std::abs(temp) < convert_to_pawns(VERY_SMALL_SCORE)) temp = 0.0;
+            char score_buf[32];
+            if (temp < 0) {
+                std::sprintf(score_buf, "%.2f", temp);
+            }
+            else {
+                std::sprintf(score_buf, "%+.2f", temp);
+            }
+            engine.move_string += " ; ";
+            engine.move_string += score_buf;
             cout << " Best: " << engine.move_string;
         #endif
 
@@ -1285,8 +1299,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     // Since stored results is EXACT, the "debug" versions should be the full window now.
                     // So here we restrict ourselves to situations where the current window is full.
                     bool windowMatches =
-                        (std::fabs(entry.dAlphaDebug - alpha) <= VERY_SMALL_SCORE) &&
-                        (std::fabs(entry.dBetaDebug  - beta ) <= VERY_SMALL_SCORE);
+                        (std::abs(entry.dAlphaDebug - alpha) <= VERY_SMALL_SCORE) &&
+                        (std::abs(entry.dBetaDebug  - beta ) <= VERY_SMALL_SCORE);
 
                     // Qualification #3 on probe: This is a hack to cover up a unknown bug
                     // The burp2 nPlys bug ( found nPly always = current + 1)
@@ -2183,7 +2197,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
             // if (nChars == EOF) assert(0);
         #endif
 
-        Score d_difference_in_score = std::fabs(d_score_value - bestScoreOut);
+        Score d_difference_in_score = std::abs(d_score_value - bestScoreOut);
 
         b_use_this_move = (d_score_value > bestScoreOut);
 
@@ -2473,7 +2487,7 @@ try_again:
     n_moves_within_delta = 0;
     if (MovsFromRoot.empty()) {
         assert(0);                    // Better not happen 
-        return {0.0, Move{}};         // safety
+        return {0, Move{}};         // safety
     }
 
     // 0) Sort MovsFromRoot by score (leaves the caller’s list sorted)

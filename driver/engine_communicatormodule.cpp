@@ -542,8 +542,9 @@ engine_communicator_get_best_score_at_root(PyObject* self, PyObject* args) {
             snprintf(szScore, sizeof(szScore), "-#%.1f", mate_in_number);
         }
     } else {
-        double dPawn_score = (double)convert_from_CP(iPawnScore);
-        snprintf(szScore, sizeof(szScore), "%.2f", dPawn_score);
+        //double dPawn_score = (double)convert_from_CP(iPawnScore);
+        double temp = convert_to_pawns(iPawnScore);
+        snprintf(szScore, sizeof(szScore), "%.2f", temp);
     }
 
     return Py_BuildValue("s", szScore);

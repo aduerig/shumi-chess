@@ -230,7 +230,7 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
 
 void Engine::reset_all_but_FEN()
 {
-    d_bestScore_at_root = 0.0;      // In "abs" score, in centpawns..
+    d_bestScore_at_root = 0;      // In "abs" score, in centpawns..
 
     // Initialize storage buffers (they are here to avoid extra allocation later)
     move_string.reserve(_MAX_MOVE_PLUS_SCORE_SIZE);
@@ -593,7 +593,6 @@ int Engine::get_best_score_at_root() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// codex resume 019e6332-a423-74e1-b49d-74bd2092b413
 template<Color c> void Engine::pushMove_t(const Move& move) {
 
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
@@ -1566,7 +1565,7 @@ void Engine::print_moves_and_scores_to_file(MoveAndScoreList move_and_scores_lis
 void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
 {
     const ShumiChess::Move& best_move = move_and_score.first;
-    Score d_best_move_valu = move_and_score.second;   
+    double d_best_move_valu = move_and_score.second;   
 
     move_and_score_to_string(best_move, d_best_move_valu, b_convert_to_abs_score);
 
@@ -1577,15 +1576,18 @@ void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, boo
     if (nChars == EOF) assert(0);
 }
 
+//  codex resume 019e6e6b-0b51-7bc0-9450-df9d6803fbe5
 // Puts best move and absolute score. 
 void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_valu, bool b_convert_to_abs_score)
 {
+    move_string = "";
     // Convert relative score to abs score
     if (b_convert_to_abs_score) {
         if (game_board.turn == ShumiChess::BLACK) d_best_move_valu = -d_best_move_valu;  
     }
     
-    if (std::fabs(d_best_move_valu) < VERY_SMALL_SCORE) d_best_move_valu = 0.0;        // avoid negative zero
+    //if (std::fabs(d_best_move_valu) < VERY_SMALL_SCORE) d_best_move_valu = 0.0;        // avoid negative zero
+    if (std::abs(d_best_move_valu) < VERY_SMALL_SCORE) d_best_move_valu = 0;
 
     bitboards_to_algebraic(game_board.turn, best_move
                     , (GameState::INPROGRESS)
@@ -1595,14 +1597,16 @@ void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_va
                     , move_string); 
 
     char buf[32];
+    char buf2[32];
 
-    if (d_best_move_valu < 0.0) {
-
-        std::snprintf(buf, sizeof(buf), "; %.2f", d_best_move_valu);  // 2 digits after decimal
+    strcpy(buf, " ; ");
+    if (d_best_move_valu < 0) {
+        std::sprintf(buf2, fmtNeg, d_best_move_valu);  // 2 digits after decimal
     }
     else {
-        std::snprintf(buf, sizeof(buf), "; %+.2f", d_best_move_valu);  // 2 digits after decimal
+        std::sprintf(buf2, fmtPos, d_best_move_valu);  // 2 digits after decimal
     }
+    std::strcat(buf, buf2);
 
     move_string += buf;
 

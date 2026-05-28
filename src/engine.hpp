@@ -276,7 +276,7 @@ class Engine {
                                         vector<ShumiChess::Move>& MovesOut           // output
                                     );
 
-        Score d_bestScore_at_root = 0.0;       // in abs coordinates
+        Score d_bestScore_at_root = 0;       // in abs coordinates
         //
         // Returns "an ordering key", for a capture, using MVV-LVA. "Top range" of key is the victim piece value,                          
         // "Bottom range" is the negative of the attacker piece value. 
