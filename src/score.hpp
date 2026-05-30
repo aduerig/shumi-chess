@@ -1,7 +1,7 @@
 
 #pragma once
 
-#define SCORE_AS_INT
+//#define SCORE_AS_INT
 
 #ifndef SCORE_AS_INT
 
@@ -60,8 +60,6 @@
     static const char* fmtNeg = "%d";
 
     static const char* fmtMain = "%d";
-
-
 
 
     inline constexpr Score VERY_SMALL_SCORE = 1;       // Was 0.00001 pawns, now 1 centpawn
