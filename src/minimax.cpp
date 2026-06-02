@@ -794,7 +794,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         // Playground is for extended debug and status, and for whatever else. However there is a gotcha. Although we 
         // have found out move, we have not yet made the move. The found move is reported to the python, that
         // calls engine_communicator_make_move_two_acn().
-        //playground(iPhase);
+        playground(iPhase);
 
         double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
         cout << "\x1b[33m\nWent to depth " << (depth - 1)  
@@ -820,6 +820,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
         cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
 
+        assert (nodes_visited!=0);
         double percent_depth_zero = nodes_visited ? ( (double)nodes_visited_depth_zero / (double)nodes_visited ) : 0.0;
 
         char pct[32];
@@ -1080,7 +1081,6 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Choose the "minimax" AI move.
@@ -1121,6 +1121,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
     vector<Move>* p_moves_to_loop_over = &legal_moves;
 
+    assert(depth>0);    // recursive_negamaxQ()
  
     nodes_visited++;
     if (depth==0) nodes_visited_depth_zero++;
@@ -1404,7 +1405,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         }
     }
 
-    GameState state = engine.is_game_over(n_legal_moves_found);
+    const GameState state = engine.is_game_over(n_legal_moves_found);
     //GameState state = engine.is_game_over(legal_moves.size());
 
     // =====================================================================
@@ -1417,21 +1418,28 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         Score d_level = static_cast<Score>(level);
 
-        if (state == GameState::WHITEWIN) {
-            d_best_score = (engine.game_board.turn == ShumiChess::WHITE)
-                            ? (+HUGE_SCORE - d_level)
-                            : (-HUGE_SCORE + d_level);
-        } else if (state == GameState::BLACKWIN) {
-            d_best_score = (engine.game_board.turn == ShumiChess::BLACK)
-                            ? (+HUGE_SCORE - d_level)
-                            : (-HUGE_SCORE + d_level);
-        } else if (state == GameState::DRAW) {
-            d_best_score = 0.0;          // Stalemate
+        switch (state) {
+            case GameState::WHITEWIN:
+                d_best_score = (engine.game_board.turn == ShumiChess::WHITE)
+                                ? (+HUGE_SCORE - d_level)
+                                : (-HUGE_SCORE + d_level);
+                break;
 
-            if (is_from_root) engine.reason_for_draw = DRAW_STALEMATE;
+            case GameState::BLACKWIN:
+                d_best_score = (engine.game_board.turn == ShumiChess::BLACK)
+                                ? (+HUGE_SCORE - d_level)
+                                : (-HUGE_SCORE + d_level);
+                break;
 
-        } else {
-            assert(0);
+            case GameState::DRAW:
+                d_best_score = 0.0;          // Stalemate
+
+                if (is_from_root) engine.reason_for_draw = DRAW_STALEMATE;
+                break;
+
+            default:
+                assert(0);
+                break;
         }
 
         return {d_best_score, the_best_move};
@@ -1443,154 +1451,11 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
     // Quiescence entry when depth == 0
     // =====================================================================
-    assert (depth >= 0);
+    assert (depth > 0);
     Score d_stand_pat = HUGE_SCORE;   // If we evaluate, it will be the evaluate score.
 
-    if (depth == 0) {
-
-        // Static board evaluation
-        // Change 4: has_unquiet_move needs to discount "zero moves".
-        bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);
-
-        int  cp_from_tt   = 0;
-        bool have_tt_eval = false;
-
-
-        // memoization of leafs
-        if (Features_mask & _FEATURE_TT) {
-            // Salt the entry
-            unsigned mode  = salt_the_TT(b_is_Quiet);
-
-            uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
-
-            // Look for the entry in the TT
-            auto it = TTable.find(evalKey);
-            if (it != TTable.end()) {
-                const TTEntry &entry = it->second;
-                cp_from_tt   = entry.score_cp;
-                have_tt_eval = true;
-            }
-        }
-
-        //
-        // evaluate (main call)
-        //
-        if (have_tt_eval) {
-            TT_ntrys++;
-            #ifdef DEBUG_LEAF_TT
-                if (engine.game_board.turn == ShumiChess::Color::WHITE)
-                    cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(exp, b_is_Quiet);
-                else
-                    cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(exp, b_is_Quiet);
-                if (cp_from_tt != cp_score_best) {
-                    printf ("burp (MAIN) %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
-                    assert(0);
-                } else {
-                    NhitsTT++;
-            }
-            #endif
-            cp_score_best = cp_from_tt;
-
-        }
-        else {
-            if (engine.game_board.turn == ShumiChess::Color::WHITE)
-                cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person, b_is_Quiet);
-            else
-                cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person, b_is_Quiet);
-        }
-
-
-        d_best_score = convert_from_CP(cp_score_best);
-        d_stand_pat = d_best_score;  // "stand pat" means the evaluate_board() computed score
-
-
-        ////////////////////////////////////////////////////////////////////////////////////////////
-
-        //#define NO_QUISSENCE
-        #ifdef NO_QUISSENCE
-            return { d_best_score, Move{} };
-        #endif
-
-        // memoization at leaf
-        if (Features_mask & _FEATURE_TT) {
-
-            // Salt the entry
-            unsigned mode  = salt_the_TT(b_is_Quiet);
-
-            uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
-
-                // Store this position away into the TT
-            TTEntry &slot = TTable[evalKey];
-            slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
-            slot.movee    = the_best_move;   // or bestMove, etc.
-            slot.depth    = top_deepening;
-
-        }
-
-
-
-        if (in_check) {
-            // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
-            // to the set of all check escapes. By definition. So there.
-            //moves_to_loop_over = legal_moves;  // not needed as its done ealier above. Sorry.
-            //assert(!unquiet_moves.empty());  // oTherwise we are in check mate, and that would be caught earlier. 
-    
-        } else {
-
-            // Obtain moves to use in the limited search. (Quiescence)
-            // Change 6: sort_unquiet_moves_qsearch needs to discount "zero moves".
-            engine.sort_unquiet_moves_qsearch(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
-
-            vector<Move>& unquiet_moves = engine.all_unquiet_moves[nPlys];
-
-            // Show moves
-            // string mvss = engine.moves_into_string(unquiet_moves);
-            // int nChars = fputs("\n srt:", fpDebug);
-            // if (nChars == EOF) assert(0);
-            // nChars = fputs(mvss.c_str(), fpDebug);
-            // if (nChars == EOF) assert(0);
-            // nChars = fputs(":end\n", fpDebug);
-            // if (nChars == EOF) assert(0);
-            // cout << "\n" << "mvss " << mvss << "\n";
-
-            // If quiet (not in check & no tactics), just return stand-pat
-            if (unquiet_moves.empty()) {
-                return { d_best_score, Move{} };
-            
-            } else {
-                // So "d_best_score" is my "stand pat value."
-            
-                // Stand-pat cutoff
-                if (d_best_score >= beta) {
-                    return { d_best_score, Move{} };
-                }
-                alpha = std::max(alpha, d_best_score);
-
-                // Extend on captures/promotions only
-                p_moves_to_loop_over = &unquiet_moves; 
-
-            }
-
-        }
-
-
-		// Pick best static evaluation among all legal moves if hit the over ply
-        if (qPlys >= MAX_QPLY) {
-            //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
-            //std::cout << "\x1b[31m!" << "\x1b[0m";
-            
-            nFarts++;
-           
-            // debug
-            //engine.print_move_history_to_file(fpDebug, "MAX_QPLY");
-
-            return { d_best_score, Move{} };
-        }
-
-    } else {
-        // depth > 0: already have moves_to_loop_over = legal_moves
-        // nothing to change here
-    }
+    // depth > 0: already have moves_to_loop_over = legal_moves
+    // nothing to change here
 
     ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1607,7 +1472,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         // On one hand why not, becasuse there could be a lot of responses, But on 
         // the otherhand there wont be that many. ANf we must be super fast here.
         //if ( (depth > 0) || (depth==0 && in_check) ) {
-        if (depth > 0) {  
+        if (1) {  
             assert(p_moves_to_loop_over == &legal_moves);
   
             #ifdef _DEBUGGING_MOVE_SORT
@@ -1967,6 +1832,431 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     return {d_best_score, the_best_move};
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
+                    //int depth
+                    Score alpha, Score beta
+                    //,bool is_from_root
+                    ,const ShumiChess::Move& move_last      // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
+                    ,int nPlys
+                    ,int qPlys
+                    )
+{
+
+    // =====================================================================
+    // Initialize
+    // =====================================================================
+
+    // Initialize return 
+    Score d_best_score = 0.0;
+    Move the_best_move = {};
+
+    int cp_score_best;
+
+    bool did_cutoff = false;    // TRUE if fail-high
+    bool did_fail_low = false;  // TRUE if fail-low
+
+    Score alpha_in = alpha;   //  save original alpha window lower bound
+    Score beta_in = beta;   //  save original alpha window lower bound
+
+    nodes_visited++;
+    nodes_visited_depth_zero++;
+
+
+    // =====================================================================
+    // Get all legal moves
+    // =====================================================================
+
+    // Get pointer to buffer where we will put the legal moves.
+    assert(nPlys < MAX_PLY0);
+    vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
+    vector<Move>* p_moves_to_loop_over = &legal_moves;
+
+    //
+    //  If not in check, generate only captures
+    //
+    bool in_check = false;
+    in_check = (engine.game_board.turn == Color::WHITE)
+        ? engine.is_king_in_check_t<Color::WHITE>()
+        : engine.is_king_in_check_t<Color::BLACK>();
+
+    bool caps_only = false;
+    if (!in_check) caps_only = true;
+
+    int n_legal_moves_found;
+    if (engine.game_board.turn == ShumiChess::Color::WHITE) {
+        if (caps_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, true>(false, legal_moves);
+        else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, false>(false, legal_moves);
+    } else {
+        if (caps_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, true>(false, legal_moves);
+        else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, false>(false, legal_moves);
+    }
+    
+    // Look, if caps_only is false, then n_legal_moves_found will be equal to legal_moves.size()
+    // if caps_only is true, then n_legal_moves_found will be the count of moves, but 
+    // only unquiet moves will be in legal_moves.
+    #ifndef NDEBUG
+        if (!caps_only) {
+            // Change 0: legal_moves needs a size() that discounts "zero moves".
+            assert (n_legal_moves_found == legal_moves.size());
+        }
+    #endif
+
+    // =====================================================================
+    // Asserts
+    // =====================================================================
+
+    // Over analysis sentinal Sorry, I should not be this large
+    // Note: why does this so high? Must be a better way to handle this. Always happens near draws.
+    // OR when 3-time rep is off.   // _SUPRESSING_MOVE_HISTORY_RESULTS is defined.
+    assert(nPlys >= 0);
+    if (nPlys > MAX_PLY) {
+        // If a draw by 50/3/insuffieceint time, then we can get in loop here, where each deepeining is only 
+        // 1 msec so it runs off to many levels. 
+        // 
+        //cout << gameboard_to_string_old(engine.game_board) << endl;
+        assert(0);    
+    }
+
+    //if (alpha > beta) assert(0);
+
+    
+    // =====================================================================
+    // Aborts
+    // =====================================================================
+
+    // User abort
+    if (stop_calculation) {
+        cout << "\n! STOP CALCULATION requested \n";
+        stop_calculation = false;
+        return { ABORT_SCORE, the_best_move };
+    }
+
+    // Hard node-limit sentinel fuse
+    if (nodes_visited > 5.0e8) {    // 500,000,000
+        std::cout << "\x1b[31m\n! NODES VISITED trap#2 Q" << nodes_visited
+                        << engine.get_best_score_at_root() << "\x1b[0m\n";
+        //assert(0);
+
+        // Note: fascinating. This happens when in mate looking. 
+
+        return { ABORT_SCORE, the_best_move };
+
+    }
+
+
+    //TT2_match_move = {};
+
+    // Purpose: avoid a false zero (no-move, thus end-of-game) result when the quick/capture-only generation missed moves
+    // (or when you only needed to know whether any legal move exists). 
+    // In qsearch we only generate captures and check evades, so this happens a lot. If so We have to check again
+    // full "window" (all moves), but only when we find one move.
+    if (n_legal_moves_found == 0) {
+        //assert (caps_only);       // no, could be a check evade.
+
+        // Call get_legal_moves_fast(), but only in "check mode". In this mode in is only trying to decide
+        // wether its 0 moves or not. So it returns if it finds just one move.
+        vector<Move> mvs;       // I am not used
+        int n_legal_moves_found2 = engine.get_legal_moves_fast(engine.game_board.turn, false, true, mvs);
+        
+        //assert(n_legal_moves_found == n_legal_moves_found2);
+        if (n_legal_moves_found2 != 0) n_legal_moves_found = n_legal_moves_found2;
+    }
+    
+
+
+    const GameState state = engine.is_game_over(n_legal_moves_found);
+    //GameState state = engine.is_game_over(legal_moves.size());
+
+    // =====================================================================
+    // Terminal positions (game over)
+    // =====================================================================
+    if (state != GameState::INPROGRESS) {
+
+        int level = (top_deepening);
+        assert(level >= 0);
+
+        Score d_level = static_cast<Score>(level);
+
+        switch (state) {
+            case GameState::WHITEWIN:
+                d_best_score = (engine.game_board.turn == ShumiChess::WHITE)
+                                ? (+HUGE_SCORE - d_level)
+                                : (-HUGE_SCORE + d_level);
+                break;
+
+            case GameState::BLACKWIN:
+                d_best_score = (engine.game_board.turn == ShumiChess::BLACK)
+                                ? (+HUGE_SCORE - d_level)
+                                : (-HUGE_SCORE + d_level);
+                break;
+
+            case GameState::DRAW:
+                d_best_score = 0.0;          // Stalemate
+                break;
+
+            default:
+                assert(0);
+                break;
+        }
+
+        return {d_best_score, the_best_move};
+
+    }
+
+
+    //assert (depth >= 0);
+    Score d_stand_pat = HUGE_SCORE;   // If we evaluate, it will be the evaluate score.
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Static board evaluation
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);   // only way this can happen is if we are in check
+
+    int  cp_from_tt   = 0;
+    bool have_tt_eval = false;
+
+
+    // memoization of leafs
+    if (Features_mask & _FEATURE_TT) {
+        // Salt the entry
+        unsigned mode  = salt_the_TT(b_is_Quiet);
+
+        uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
+
+        // Look for the entry in the TT
+        auto it = TTable.find(evalKey);
+        if (it != TTable.end()) {
+            const TTEntry &entry = it->second;
+            cp_from_tt   = entry.score_cp;
+            have_tt_eval = true;
+        }
+    }
+
+    //
+    // evaluate (main call)
+    //
+    if (have_tt_eval) {
+        TT_ntrys++;
+        #ifdef DEBUG_LEAF_TT
+            if (engine.game_board.turn == ShumiChess::Color::WHITE)
+                cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(exp, b_is_Quiet);
+            else
+                cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(exp, b_is_Quiet);
+            if (cp_from_tt != cp_score_best) {
+                printf ("burp (MAIN) %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
+                assert(0);
+            } else {
+                NhitsTT++;
+        }
+        #endif
+        cp_score_best = cp_from_tt;
+
+    }
+    else {
+        if (engine.game_board.turn == ShumiChess::Color::WHITE)
+            cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person, b_is_Quiet);
+        else
+            cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person, b_is_Quiet);
+    }
+
+
+    d_best_score = convert_from_CP(cp_score_best);
+    d_stand_pat = d_best_score;  // "stand pat" means the evaluate_board() computed score
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    //#define NO_QUISSENCE
+    #ifdef NO_QUISSENCE
+        return { d_best_score, Move{} };
+    #endif
+
+    // memoization at leaf
+    if (Features_mask & _FEATURE_TT) {
+
+        // Salt the entry
+        unsigned mode  = salt_the_TT(b_is_Quiet);
+
+        uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
+
+            // Store this position away into the TT
+        TTEntry &slot = TTable[evalKey];
+        slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
+        slot.movee    = the_best_move;   // or bestMove, etc.
+        slot.depth    = top_deepening;
+
+    }
+
+
+
+    if (in_check) {
+        // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
+        // to the set of all check escapes. By definition. So there.
+        //moves_to_loop_over = legal_moves;  // not needed as its done ealier above. Sorry.
+        //assert(!unquiet_moves.empty());  // oTherwise we are in check mate, and that would be caught earlier. 
+
+    } else {
+
+        // Obtain moves to use in the limited search. (Quiescence)
+        // Change 6: sort_unquiet_moves_qsearch needs to discount "zero moves".
+        engine.sort_unquiet_moves_qsearch(legal_moves, qPlys, engine.all_unquiet_moves[nPlys]);
+
+        vector<Move>& unquiet_moves = engine.all_unquiet_moves[nPlys];
+
+        // Show moves
+        // string mvss = engine.moves_into_string(unquiet_moves);
+        // int nChars = fputs("\n srt:", fpDebug);
+        // if (nChars == EOF) assert(0);
+        // nChars = fputs(mvss.c_str(), fpDebug);
+        // if (nChars == EOF) assert(0);
+        // nChars = fputs(":end\n", fpDebug);
+        // if (nChars == EOF) assert(0);
+        // cout << "\n" << "mvss " << mvss << "\n";
+
+        // If quiet (not in check & no tactics), just return stand-pat
+        if (unquiet_moves.empty()) {
+            return { d_best_score, Move{} };
+        
+        } else {
+            // So "d_best_score" is my "stand pat value."
+        
+            // Stand-pat cutoff
+            if (d_best_score >= beta) {
+                return { d_best_score, Move{} };
+            }
+            alpha = std::max(alpha, d_best_score);
+
+            // Extend on captures/promotions only
+            p_moves_to_loop_over = &unquiet_moves; 
+
+        }
+
+    }
+
+
+    // Pick best static evaluation among all legal moves if hit the over ply
+    if (qPlys >= MAX_QPLY) {
+        //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
+        //std::cout << "\x1b[31m!" << "\x1b[0m";
+        
+        nFarts++;
+        
+        // debug
+        //engine.print_move_history_to_file(fpDebug, "MAX_QPLY");
+
+        return { d_best_score, Move{} };
+    }
+
+    
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    // =====================================================================
+    // Recurse over selected move set "moves_to_loop_over"
+    // =====================================================================
+    
+    // Change 7 : Need empty() function that discounts "zero moves"
+    assert(!p_moves_to_loop_over->empty());
+    if (!p_moves_to_loop_over->empty()) {
+
+        // Resort moves based on varoius things
+        // Fascinating tradeoff. We could also call this if depth==0 and in check.
+        // On one hand why not, becasuse there could be a lot of responses, But on 
+        // the otherhand there wont be that many. ANf we must be super fast here.
+        //if ( (depth > 0) || (depth==0 && in_check) ) {
+ 
+        // In depth==0 (Quiescence) and not in check)
+
+        d_best_score = -HUGE_SCORE;
+        // Change 9: ???
+        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
+
+        //
+        /////////////////////////////////////////////////////////////////////////////////////////
+        //
+        // Look (recurse) over all moves chosen
+        //
+        /////////////////////////////////////////////////////////////////////////////////////////
+        
+        // returns 0 if success, 1 if abort     n_legal_moves_found
+        int ir = loop_over_all_moves(0, alpha, beta, 
+                        nPlys, qPlys, in_check, 
+                        d_stand_pat, 
+                        move_last,
+                        p_moves_to_loop_over,               // input
+                        the_best_move, d_best_score,        // outputs
+                        did_cutoff);
+        if (ir != 0) {
+            return {ABORT_SCORE, the_best_move};
+        }
+
+
+
+    }   // END non zero oves to look at
+
+
+    // Fail-low
+    if (!did_cutoff && (alpha <= alpha_in)) {
+        did_fail_low = true;
+    }
+
+    
+ 
+    assert(beta_in == beta);
+
+    #ifdef _DEBUGGING_MOVE_CHAIN    // Print summary: best move and best score
+        int nChars;
+        bool bSide = (engine.game_board.turn == ShumiChess::BLACK);
+
+        // Summary always starts a new line
+        nChars = fputc ('\n', fpDebug);
+        assert(nChars != EOF);
+
+        assert(nPlys>0);
+        engine.print_tabOver(nPlys-1, fpDebug);
+
+        nChars = fputs("BST=", fpDebug);
+        assert(nChars != EOF);
+
+        engine.print_move_to_file(move_last, -2, (GameState::INPROGRESS)
+                                    , false, false, bSide
+                                    , fpDebug);
+
+        bSide = !bSide;
+        engine.print_move_to_file(the_best_move, -2, (GameState::INPROGRESS)
+                                    , false, false, bSide
+                                    , fpDebug);
+   
+        //sprintf(szDebug, "%8.3fa", -d_best_score);
+    
+        nChars = fputs(szDebug, fpDebug);
+        assert(nChars != EOF);
+
+    #endif
+
+    return {d_best_score, the_best_move};
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Choose the "minimax" AI move.
+// Returns a tuple of:
+//    the best score (however, if this is ABORT_SCORE, its an abort)
+//    the best move
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 // returns 0 if success, 1 if abort
 int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
                        bool in_check, 
@@ -2101,15 +2391,43 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
             childBeta  =  HUGE_SCORE;
         }
 
+        int new_depth = (depth > 0 ? depth - 1 : 0);
+        tuple<Score, Move> ret_val;
 
-        tuple<Score, Move> ret_val = recursive_negamax(
-            (depth > 0 ? depth - 1 : 0),
-            childAlpha, childBeta,
-            false,                    // I am NOT called from the root
-            m,
-            (nPlys+1),
-            (depth == 0 ? qPlys+1 : qPlys)
-        );
+        if (new_depth) {
+            ret_val = recursive_negamax(
+                new_depth,
+                childAlpha, childBeta,
+                false,                    // I am NOT called from the root
+                m,
+                (nPlys+1),
+                (depth == 0 ? qPlys+1 : qPlys)
+            );
+        } else {
+
+        #define NEW_WAY
+        #ifndef NEW_WAY
+            ret_val = recursive_negamax(
+                new_depth,
+                childAlpha, childBeta,
+                false,                    // I am NOT called from the root
+                m,
+                (nPlys+1),
+                (depth == 0 ? qPlys+1 : qPlys)
+            );
+        #else 
+            ret_val = recursive_negamaxQ(
+                childAlpha, childBeta,
+                m,
+                (nPlys+1),
+                (depth == 0 ? qPlys+1 : qPlys)
+            );
+        #endif
+
+
+        }
+
+
 
 
         // The third part of negamax: negate the score to keep it relative.
@@ -2834,7 +3152,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
     //
     // Get phase of game (note phase is not used for material)
-    // NOTE this must be called before any positional eval.
+    // NOTE phase must be computed before any positional eval.
     int nPhase = phase_of_game(cp_score_material_avg);
 
     int cp_score_position = 0;

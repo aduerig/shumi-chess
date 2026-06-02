@@ -1,7 +1,7 @@
 
 Shumi problems:
    Trades bishops too quickly to just double pawns. Msybe make bisjhops worth a little more?
-   Not trading whst you are ahead in.
+   Not trading what you are ahead in.
    Passed pawns are overprized when they are way passed. Shumi loses them.
    Needs to understand the valueo fadvanced postyed knighst (on 5th rank or more), not expontital.
    semi open files?
@@ -9,6 +9,9 @@ Shumi problems:
    moving twice same piece in opening
    open files? half open?
    finachetto king side
+
+   not offering 4 checks or more Allow 1 even 2 free, but 3, 4 above exponetially
+
 
 level indicator for front end
 
@@ -49,3 +52,7 @@ Find literals with 100.0 (less noise):
 
 Find common rounding expression you used:
 ([^\n])\s*\s100.0\s)\s*+\s*([^)]>=\s0.0\s*?\s0.5\s:\s*-0.5\s*)
+
+
+
+

@@ -1576,7 +1576,6 @@ void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, boo
     if (nChars == EOF) assert(0);
 }
 
-//  codex resume 019e6e6b-0b51-7bc0-9450-df9d6803fbe5
 // Puts best move and absolute score. 
 void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_valu, bool b_convert_to_abs_score)
 {

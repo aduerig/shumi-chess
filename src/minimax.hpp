@@ -192,6 +192,14 @@ public:
                                             , int nPlys
                                             , int qPlys
                                         );
+    std::tuple<Score, ShumiChess::Move> recursive_negamaxQ( 
+                                            //int depth,
+                                            Score alpha, Score beta
+                                            //, bool is_from_root
+                                            , const ShumiChess::Move& move_last //  debug (used only by _DEBUGGING_MOVE_CHAIN)
+                                            , int nPlys
+                                            , int qPlys
+                                        );
 
     int loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
                        bool in_check, Score d_stand_pat, 

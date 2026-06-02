@@ -10,8 +10,9 @@
 
 
 // Note neither of these include the "depth". So if depth=6, then the actual levels analyzed is (6+MAX_QPLY).
-#define MAX_QPLY  7        // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
 #define MAX_QPLY2 4        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
+#define MAX_QPLY  7        // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
+
 
 
 namespace ShumiChess {
