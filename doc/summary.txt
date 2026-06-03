@@ -54,5 +54,8 @@ Find common rounding expression you used:
 ([^\n])\s*\s100.0\s)\s*+\s*([^)]>=\s0.0\s*?\s0.5\s:\s*-0.5\s*)
 
 
-
+Implement "magic bitboards" only on diagonal attacks. I want a new "get_diagonal_attacks_mbb()" that 
+uses magic bitboards. This is very similar and should parallel to the conversion to magic bitboards 
+on straight attacks (see get_straight_attacks_mbb() and get_straight_attacks(). The conversion must 
+mirror the asserts I have installed for straight attacks.  
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <iostream>
 
 #include "globals.hpp"
@@ -8,6 +9,10 @@
 
 namespace tables::movegen
 {
+    void initialize_straight_magic_tables();
+    void initialize_diagonal_magic_tables();
+    ull get_straight_magic_attack(ull all_pieces_but_self, int square);
+    ull get_diagonal_magic_attack(ull all_pieces_but_self, int square);
     
     constexpr  std::array<ull, 64> init_king_attack_table() {
         std::array<ull, 64> king_attacks = {};

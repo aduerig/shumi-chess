@@ -1,4 +1,4 @@
-﻿
+
 #include <math.h>
 #include <vector>
 
@@ -2166,14 +2166,20 @@ ull GameBoard::SEE_attackers_on_square_local(Color c,
     const ull bishops = (c == Color::WHITE) ? b.wb : b.bb;
     const ull queens  = (c == Color::WHITE) ? b.wq : b.bq;
 
-    const ull diag_attacks = get_diagonal_attacks(all_pieces_but_self, sq);
+    //const ull diag_attacks2 = get_diagonal_attacks(all_pieces_but_self, sq);
+    const ull diag_attacks = get_diagonal_attacks_mbb(all_pieces_but_self, sq);
+    //assert(diag_attacks == diag_attacks2);
+
     atk |= (diag_attacks & (bishops | queens));
 
     // Straights: rooks/queens
 
     const ull rooks  = (c == Color::WHITE) ? b.wr : b.br;
 
-    const ull straight_attacks = get_straight_attacks(all_pieces_but_self, sq);
+    //const ull straight_attacks2 = get_straight_attacks(all_pieces_but_self, sq);
+    const ull straight_attacks = get_straight_attacks_mbb(all_pieces_but_self, sq);
+    //assert(straight_attacks == straight_attacks2);
+
     atk |= (straight_attacks & (rooks | queens));
 
     return atk;
@@ -3293,12 +3299,20 @@ int GameBoard::sliders_and_knights_attacking_square2_t(int sq)
     const ull deadly_straights = rooks   | queens;
 
     if (deadly_diags) {
-        const ull diag_attacks = get_diagonal_attacks(occ, sq);
+
+        //const ull diag_attacks2 = get_diagonal_attacks(occ, sq);
+        const ull diag_attacks = get_diagonal_attacks_mbb(occ, sq);
+        //assert(diag_attacks == diag_attacks2);
+
         attackers |= (diag_attacks & deadly_diags);
     }
 
     if (deadly_straights) {
-        const ull straight_attacks = get_straight_attacks(occ, sq);
+
+        //const ull straight_attacks2 = get_straight_attacks(occ, sq);
+        const ull straight_attacks = get_straight_attacks_mbb(occ, sq);
+        //assert(straight_attacks == straight_attacks2);
+
         attackers |= (straight_attacks & deadly_straights);
     }
 
@@ -3425,10 +3439,10 @@ int GameBoard::is_knight_on_edge_cp_t() {
 // ---------- development_opening_cp_t ----------
 template<Color c>
 int GameBoard::development_opening_cp_t() {
-    const ull wq = get_pieces_template<Piece::QUEEN, Color::WHITE>();
-    const ull bq = get_pieces_template<Piece::QUEEN, Color::BLACK>();
+    // const ull wq = get_pieces_template<Piece::QUEEN, Color::WHITE>();
+    // const ull bq = get_pieces_template<Piece::QUEEN, Color::BLACK>();
 
-    if (!wq || !bq) return 0;
+    // if (!wq || !bq) return 0;   // Only counts when both queens on?
 
     ull start_knights = 0;
     ull start_bishops = 0;

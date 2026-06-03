@@ -112,19 +112,15 @@ int main(int argc, char** argv) {
     // Decide on arguments
 
     //    Standard arguments used for standarized timing test. Turn off all debug nd printouts, and run
-            //int time_to_use = 30;
-            //int depth_to_use = 8;
-            //int max_ply_to_play = 8;
-            //player=SLUG
-    //    Last best value is about 27,600 msec
+    // using level= 8  msec = 30  max ply = 8  play id = 1. Last best value is about 27,600 msec
 
-    //  using level= 7  msec = 3  max ply = 4  play id = 3. Last best value is about 37,000 msec
+    // using level= 7  msec = 3  max ply = 4  play id = 3. Last best value is about 37,000 msec
 
 
-    int time_to_use = 3;
-    int depth_to_use = 7;
-    int max_ply_to_play = 4;
-    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
+    int time_to_use = 30;
+    int depth_to_use = 8;
+    int max_ply_to_play = 8;
+    int player_id = SLUG;       //  UNCLE_SHUMI;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {

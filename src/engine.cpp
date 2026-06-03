@@ -2272,7 +2272,11 @@ void Engine::add_rook_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_rook);
 
         ull all_pieces_but_self = all_pieces & ~single_rook;
-        ull avail_attacks = get_straight_attacks(all_pieces_but_self, square);
+
+        //ull avail_attacks2 = get_straight_attacks(all_pieces_but_self, square);
+        ull avail_attacks = get_straight_attacks_mbb(all_pieces_but_self, square);
+        //assert(avail_attacks2 == avail_attacks);
+
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
@@ -2300,7 +2304,10 @@ void Engine::add_bishop_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) 
 
         ull all_pieces_but_self = all_pieces & ~single_bishop;
 
-        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square);
+        //ull avail_attacks2 = get_diagonal_attacks(all_pieces_but_self, square);
+        ull avail_attacks = get_diagonal_attacks_mbb(all_pieces_but_self, square);
+        //assert(avail_attacks2 == avail_attacks);
+
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves        
@@ -2327,7 +2334,16 @@ void Engine::add_queen_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
         Square square = utility::bit::bitboard_to_lowest_square_fast(single_queen);
 
         ull all_pieces_but_self = all_pieces & ~single_queen;
-        ull avail_attacks = get_diagonal_attacks(all_pieces_but_self, square) | get_straight_attacks(all_pieces_but_self, square);
+
+        //ull avail_attacksd2 = get_diagonal_attacks(all_pieces_but_self, square);
+        ull avail_attacksd = get_diagonal_attacks_mbb(all_pieces_but_self, square);
+        //assert (avail_attacksd == avail_attacksd2);
+
+        //ull avail_attackss2 = get_straight_attacks(all_pieces_but_self, square);
+        ull avail_attackss = get_straight_attacks_mbb(all_pieces_but_self, square);
+        //assert (avail_attackss == avail_attackss2);
+
+        ull avail_attacks = avail_attacksd | avail_attackss;
         ull enemy_piece_attacks = avail_attacks & all_enemy_pieces;
 
         // capture moves
@@ -2534,11 +2550,19 @@ bool Engine::is_square_attacked_with_masks_t(
     ull all_pieces_but_self = occ_BB & ~square_bb;
 
     if (deadly_straights) {
-        ull straight_attacks_from_sq = get_straight_attacks(all_pieces_but_self, square);
+
+        //ull straight_attacks_from_sq2 = get_straight_attacks(all_pieces_but_self, square);
+        ull straight_attacks_from_sq = get_straight_attacks_mbb(all_pieces_but_self, square);
+        //assert(straight_attacks_from_sq == straight_attacks_from_sq2);
+
         if (deadly_straights & straight_attacks_from_sq) return true;
     }
     if (deadly_diags) {
-        ull diagonal_attacks_from_sq = get_diagonal_attacks(all_pieces_but_self, square);
+
+        //ull diagonal_attacks_from_sq2 = get_diagonal_attacks(all_pieces_but_self, square);
+        ull diagonal_attacks_from_sq = get_diagonal_attacks_mbb(all_pieces_but_self, square);
+        //assert(diagonal_attacks_from_sq == diagonal_attacks_from_sq2);
+
         if (deadly_diags & diagonal_attacks_from_sq) return true;
     }
     return false;
@@ -2663,7 +2687,11 @@ Engine::CheckInfo Engine::find_checkers_and_blockmask_t() {
     const ull deadly_diags     = themQueens | themBishops;
 
     if (deadly_straights) {
-        ull straight_attacks  = get_straight_attacks(occ_without_king, kingSq);
+
+        //ull straight_attacks2  = get_straight_attacks(occ_without_king, kingSq);
+        ull straight_attacks = get_straight_attacks_mbb(occ_without_king, kingSq);
+        //assert(straight_attacks == straight_attacks2);
+
         ull straight_checkers = straight_attacks & deadly_straights;
         while (straight_checkers) {
             ull chk = utility::bit::lsb_and_pop(straight_checkers);
@@ -2678,7 +2706,11 @@ Engine::CheckInfo Engine::find_checkers_and_blockmask_t() {
     }
 
     if (deadly_diags) {
-        ull diag_attacks  = get_diagonal_attacks(occ_without_king, kingSq);
+
+        //ull diag_attacks2  = get_diagonal_attacks(occ_without_king, kingSq);
+        ull diag_attacks  = get_diagonal_attacks_mbb(occ_without_king, kingSq);
+        //assert(diag_attacks == diag_attacks2);
+
         ull diag_checkers = diag_attacks & deadly_diags;
         while (diag_checkers) {
             ull chk = utility::bit::lsb_and_pop(diag_checkers);

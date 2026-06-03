@@ -1121,26 +1121,19 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     vector<Move>& legal_moves = engine.all_legal_moves[nPlys];
     vector<Move>* p_moves_to_loop_over = &legal_moves;
 
-    assert(depth>0);    // recursive_negamaxQ()
+    assert(depth>0);
  
     nodes_visited++;
-    if (depth==0) nodes_visited_depth_zero++;
-
+  
     // =====================================================================
     // Get all legal moves
     // =====================================================================
 
     bool in_check = false;
-    if (depth == 0) {
-        in_check = (engine.game_board.turn == Color::WHITE)
-            ? engine.is_king_in_check_t<Color::WHITE>()
-            : engine.is_king_in_check_t<Color::BLACK>();
-    }
+   
 
     bool caps_only = false;
-    if ( (depth == 0) && !in_check) {
-        caps_only = true;
-    }
+   
 
     int n_legal_moves_found;
     if (engine.game_board.turn == ShumiChess::Color::WHITE) {
@@ -1469,7 +1462,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         // Resort moves based on varoius things
         // Fascinating tradeoff. We could also call this if depth==0 and in check.
-        // On one hand why not, becasuse there could be a lot of responses, But on 
+        // On one hand why not, because there could be a lot of responses, But on 
         // the otherhand there wont be that many. ANf we must be super fast here.
         //if ( (depth > 0) || (depth==0 && in_check) ) {
         if (1) {  
@@ -1837,9 +1830,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
 
 tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
-                    //int depth
                     Score alpha, Score beta
-                    //,bool is_from_root
                     ,const ShumiChess::Move& move_last      // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                     ,int nPlys
                     ,int qPlys
@@ -2259,7 +2250,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
 // returns 0 if success, 1 if abort
 int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
-                       bool in_check, 
+                       bool in_check,       // Used only by delta pruning
                        Score d_stand_pat, 
                        const ShumiChess::Move& move_last,       // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                        const vector<ShumiChess::Move>* pMoves, 
@@ -2395,36 +2386,25 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         tuple<Score, Move> ret_val;
 
         if (new_depth) {
+
             ret_val = recursive_negamax(
                 new_depth,
                 childAlpha, childBeta,
                 false,                    // I am NOT called from the root
                 m,
                 (nPlys+1),
-                (depth == 0 ? qPlys+1 : qPlys)
+                qPlys
             );
+
         } else {
 
-        #define NEW_WAY
-        #ifndef NEW_WAY
-            ret_val = recursive_negamax(
-                new_depth,
-                childAlpha, childBeta,
-                false,                    // I am NOT called from the root
-                m,
-                (nPlys+1),
-                (depth == 0 ? qPlys+1 : qPlys)
-            );
-        #else 
             ret_val = recursive_negamaxQ(
                 childAlpha, childBeta,
                 m,
                 (nPlys+1),
-                (depth == 0 ? qPlys+1 : qPlys)
+                (qPlys+1)
             );
-        #endif
-
-
+      
         }
 
 

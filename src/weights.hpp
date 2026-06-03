@@ -45,7 +45,7 @@ enum WghtIndxs
     LAST_VALUE              // I must be last in this list
 };
 
-constexpr double VOLUME_CONTROL = 0.7;
+constexpr double VOLUME_CONTROL = 0.667;
 
 // All values in integer centipawns. Positive values are bonus, negative values are penelties
 class Weights
@@ -55,7 +55,7 @@ private:
     // can_castle privilege prevents stupid king wandering.
     // has_castled bonus must be > can_castle privilege*2 or it will never castle.
     // castling is not actual "castling". It means getting the king to the side (on back rank), without trapping a rook.
-    static constexpr int HAS_CASTLED_WGHT = 190;
+    static constexpr int HAS_CASTLED_WGHT = 200;
     static constexpr int CAN_CASTLE_WGHT = 50;
 
     // Isolated pawns.
@@ -99,7 +99,7 @@ private:
     static constexpr int PAWN_ON_ADV_FLK_WGHT = 10;      // "advanced flank" c5,f5 (White), c4,f4 (black); 
 
     static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
-    static constexpr int BISHOP_ON_CTR_WGHT = 21;  // Bishop controlling center squares (per square) (here we can look through other pieces)
+    static constexpr int BISHOP_ON_CTR_WGHT = 23;  // Bishop controlling center squares (per square) (here we can look through other pieces)
 
     static constexpr int TWO_BISHOPS_WGHT = 24;    // 2 or more bishops (only one bonus per side)
 

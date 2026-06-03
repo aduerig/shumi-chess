@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <cinttypes>
 #include <optional>
@@ -8,6 +8,7 @@
 #include <iostream>
 #include <array>
 #include <cstdlib>
+#include <cstddef>
 
 #include "score.hpp"
 
@@ -28,6 +29,36 @@ namespace utility
         int bitboard_to_lowest_square_fast(ull bitboard);
         int bitboard_to_highest_square_fast(ull bitboard);
     }
+}
+
+namespace tables::movegen
+{
+    struct StraightMagicEntry {
+        ull mask = 0ULL;
+        ull magic = 0ULL;
+        unsigned int shift = 0;
+        std::size_t offset = 0;
+    };
+
+    constexpr std::size_t straight_magic_attack_table_size = 102400;
+
+    extern std::array<StraightMagicEntry, 64> straight_magic_entries;
+    extern std::array<ull, straight_magic_attack_table_size> straight_magic_attack_table;
+
+    struct DiagonalMagicEntry {
+        ull mask = 0ULL;
+        ull magic = 0ULL;
+        unsigned int shift = 0;
+        std::size_t offset = 0;
+    };
+
+    constexpr std::size_t diagonal_magic_attack_table_size = 5248;
+
+    extern std::array<DiagonalMagicEntry, 64> diagonal_magic_entries;
+    extern std::array<ull, diagonal_magic_attack_table_size> diagonal_magic_attack_table;
+
+    ull get_straight_magic_attack(ull all_pieces_but_self, int square);
+    ull get_diagonal_magic_attack(ull all_pieces_but_self, int square);
 }
 
 
@@ -227,6 +258,7 @@ extern std::vector<Piece> promotion_values;
 
 inline ull get_diagonal_attacks(ull all_pieces_but_self, int square)
 {
+    assert(0);
     ull ne_attacks;
     ull nw_attacks;
     ull se_attacks;
@@ -272,9 +304,38 @@ inline ull get_diagonal_attacks(ull all_pieces_but_self, int square)
     return (ne_attacks | nw_attacks | se_attacks | sw_attacks);
 }
 
-            
+
+inline ull get_diagonal_attacks_mbb(ull all_pieces_but_self, int square)
+{
+    // Get the precomputed magic-bitboard data for this bishop/diagonal square.
+    // This entry contains:
+    //   mask   : the relevant blocker squares for this square, excluding edge squares
+    //   magic  : the magic multiplier chosen for this square
+    //   shift  : how far to shift after multiplication to form a compact index
+    //   offset : where this square's attack table begins in the shared table
+    const tables::movegen::DiagonalMagicEntry& entry =
+        tables::movegen::diagonal_magic_entries[square];
+
+    // Keep only the occupied squares that can actually affect diagonal attacks
+    // from this square. Other pieces on the board are irrelevant.
+    const ull blockers = all_pieces_but_self & entry.mask;
+
+    // Convert this blocker pattern into a small table index.
+    // The magic multiplication scrambles the relevant blocker bits so that,
+    // after shifting, each possible blocker pattern maps to the correct
+    // precomputed attack entry.
+    const std::size_t magic_index = (blockers * entry.magic) >> entry.shift;
+
+    // Look up the bishop/diagonal attacks for this square and blocker pattern.
+    // The offset selects this square's section of the shared attack table.
+    return tables::movegen::diagonal_magic_attack_table[entry.offset + magic_index];
+}
+
+// codex resume 019e8629-54a2-7e93-a367-24a16b94b167
+//__declspec(noinline) 
 inline ull get_straight_attacks(ull all_pieces_but_self, int square)
 {
+    assert(0);
     ull n_attacks;
     ull s_attacks;
     ull e_attacks;
@@ -318,6 +379,15 @@ inline ull get_straight_attacks(ull all_pieces_but_self, int square)
     }
 
     return (n_attacks | s_attacks | w_attacks | e_attacks);
+}
+
+// __declspec(noinline)
+inline ull get_straight_attacks_mbb(ull all_pieces_but_self, int square)
+{
+    const tables::movegen::StraightMagicEntry& entry = tables::movegen::straight_magic_entries[square];
+    const ull blockers = all_pieces_but_self & entry.mask;
+    const std::size_t magic_index = (blockers * entry.magic) >> entry.shift;
+    return tables::movegen::straight_magic_attack_table[entry.offset + magic_index];
 }
 
 
