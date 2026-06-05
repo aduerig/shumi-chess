@@ -23,7 +23,7 @@ enum WghtIndxs
     TWO_BISHOPS,
     QUEEN_OUT_EARLY,
     BISHOP_PATTERN,
-    F_PAWN_MOVED_EARLY,
+    //F_PAWN_MOVED_EARLY,
     ROOK_CONNECTED,
     ROOK_ON_OPEN_FILE,
     KING_ON_FILE,
@@ -42,10 +42,11 @@ enum WghtIndxs
     NO_MOVE_SAME_TWICE,
     PAWN_HOLE_OPEN_FILE,
     OPPOSITE_BISHOPS,
+    BLOCKED_HOME_BISHOP,
     LAST_VALUE              // I must be last in this list
 };
 
-constexpr double VOLUME_CONTROL = 0.667;
+constexpr double VOLUME_CONTROL = 0.63;
 
 // All values in integer centipawns. Positive values are bonus, negative values are penelties
 class Weights
@@ -106,8 +107,8 @@ private:
     // Weird conditions to stop stupid moves in the opening
     static constexpr int QUEEN_OUT_EARLY_WGHT = -40;    // for center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -150;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). only in opening.
-    static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
-
+    //static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
+    static constexpr int BLOCKED_HOME_BISHOP_WGHT = 10; // only in opening. Bishop on home square blocked by 2 pawns
     static constexpr int DEVELOPMENT_OPENING_WGHT = 14;      // Opening only.  Counts minor pieces, off their starting square.
 
     static constexpr int ROOK_CONNECTED_WGHT = 100;      // if any connected rook pair exists (one bonus only)

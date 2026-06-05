@@ -93,11 +93,10 @@ int main(int argc, char** argv) {
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //
     // From opening position:
-    //      using level= 8  msec = 30  max ply = 8  play id = 1. Last best value is about 24,400 msec
-    //      using level= 7  msec = 3   max ply = 4  play id = 3. Last best value is about 37,000 msec
     //
-    // From "random1" position:
-    //       using level= 8  msec = 3   max ply = 6  play id = 3. Last best value is about  msec
+    // From "random1_FEN" position:
+    //       uzing level= 8  msec = 3  max ply = 1  play id = 3  Last best value is about 31,400 msec
+    //       uzing level= 8  msec = 3  max ply = 2  play id = 3  Last best value is about 31,400 msec
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -121,7 +120,7 @@ int main(int argc, char** argv) {
     // Decide on arguments
     int depth_to_use = 8;
     int time_to_use = 3;
-    int max_ply_to_play = 1;
+    int max_ply_to_play = 2;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;

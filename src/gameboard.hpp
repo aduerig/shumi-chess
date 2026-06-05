@@ -294,7 +294,7 @@ class GameBoard {
         template<Color c> int king_edgeness_cp_t();
         int piece_edgeness(ull pieces);
         template<Color c> int queenOnCenterSquare_cp_t();
-        template<Color c> int moved_f_pawn_early_cp_t() const;
+        //template<Color c> int moved_f_pawn_early_cp_t() const;
 
         template<Color c> int center_closeness_bonus();
 
@@ -371,7 +371,7 @@ class GameBoard {
         template<Color c> double kings_far_apart_t();
         template<Color c> int king_center_manhattan_dist_t();
         template<Color c> int is_knight_on_edge_cp_t();
-        template<Color c> int development_opening_cp_t();
+        template<Color c> int development_minor_cp_t();
         template<Color c> bool hasNoMajorPieces_t();
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
@@ -394,6 +394,7 @@ class GameBoard {
 
         template<Color c> int count_guard_pawn_files_23_new_t(const PInfo& PInfoIn, int k_file) const;
         template<Color c> int rook_endgame_keep_rooks_when_down_cp_t();
+        template<Color c> int blocked_home_bishops_cp_t();
         Score compress_drawish_score_cp(Score score_cp, int k_cp) const;
         template<Color c> int opposite_bishops_cp_t(Score material_balance_cp) const;
 

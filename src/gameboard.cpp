@@ -3194,19 +3194,19 @@ int GameBoard::queenOnCenterSquare_cp_t()
 }
 
 // ---------- moved_f_pawn_early_cp_t ----------
-template<Color c>
-int GameBoard::moved_f_pawn_early_cp_t() const
-{
-    ull p = get_pieces_template<Piece::PAWN, c>();
-    if (p == 0ULL) return 0;
+// template<Color c>
+// int GameBoard::moved_f_pawn_early_cp_t() const
+// {
+//     ull p = get_pieces_template<Piece::PAWN, c>();
+//     if (p == 0ULL) return 0;
 
-    constexpr int startSq = (c == Color::WHITE) ? square_f2 : square_f7;
+//     constexpr int startSq = (c == Color::WHITE) ? square_f2 : square_f7;
 
-    int itemp = 0;
-    itemp += ((p & (1ULL << startSq)) == 0ULL);
+//     int itemp = 0;
+//     itemp += ((p & (1ULL << startSq)) == 0ULL);
 
-    return itemp * wghts.GetWeight(F_PAWN_MOVED_EARLY);
-}
+//     return itemp * wghts.GetWeight(F_PAWN_MOVED_EARLY);
+// }
 
 // ---------- counts bishop_blocked_on_both_original_squares_cp_t ----------
 template<Color c>
@@ -3435,13 +3435,45 @@ int GameBoard::is_knight_on_edge_cp_t() {
     return pointsOff;
 }
 
-// ---------- development_opening_cp_t ----------
-template<Color c>
-int GameBoard::development_opening_cp_t() {
-    // const ull wq = get_pieces_template<Piece::QUEEN, Color::WHITE>();
-    // const ull bq = get_pieces_template<Piece::QUEEN, Color::BLACK>();
 
-    // if (!wq || !bq) return 0;   // Only counts when both queens on?
+template<Color c> int GameBoard::blocked_home_bishops_cp_t()
+{
+    int cp = 0;
+
+    const int k_cp = wghts.GetWeight(BLOCKED_HOME_BISHOP);
+
+    if constexpr (c == WHITE) {
+        if ((white_bishops & (1ULL << square_c1)) &&
+            (white_pawns   & (1ULL << square_d2)) &&
+            (white_pawns   & (1ULL << square_e2))) {
+            cp -= k_cp;
+        }
+
+        if ((white_bishops & (1ULL << square_f1)) &&
+            (white_pawns   & (1ULL << square_e2)) &&
+            (white_pawns   & (1ULL << square_g2))) {
+            cp -= k_cp;
+        }
+    } else {
+        if ((black_bishops & (1ULL << square_c8)) &&
+            (black_pawns   & (1ULL << square_d7)) &&
+            (black_pawns   & (1ULL << square_e7))) {
+            cp -= k_cp;
+        }
+
+        if ((black_bishops & (1ULL << square_f8)) &&
+            (black_pawns   & (1ULL << square_e7)) &&
+            (black_pawns   & (1ULL << square_g7))) {
+            cp -= k_cp;
+        }
+    }
+
+    return cp;
+}
+
+// ---------- development_minor_cp_t ----------
+template<Color c>
+int GameBoard::development_minor_cp_t() {
 
     ull start_knights = 0;
     ull start_bishops = 0;
@@ -3476,8 +3508,7 @@ int GameBoard::development_opening_cp_t() {
 // pawn or more, give side c a small bonus for the rooks still being present.
 // If the rooks get traded, this bonus disappears, which discourages the trade.
 //
-template<Color c>
-int GameBoard::rook_endgame_keep_rooks_when_down_cp_t()
+template<Color c> int GameBoard::rook_endgame_keep_rooks_when_down_cp_t()
 {
     if (white_queens || black_queens) return 0;
     //if (white_knights || black_knights) return 0;
@@ -3499,7 +3530,6 @@ int GameBoard::rook_endgame_keep_rooks_when_down_cp_t()
     if (pawn_deficit <= 0) return 0;            // return now if I'm ahead pawns
     return wghts.GetWeight(KEEP_ROOKS_WHEN_DOWN_PAWN);
 }
-
 
 //
 // Compresses a score toward zero using, where x=score_cp, and y is returned.
@@ -3662,8 +3692,8 @@ template int GameBoard::queenOnCenterSquare_cp_t<Color::WHITE>();
 template int GameBoard::queenOnCenterSquare_cp_t<Color::BLACK>();
 
 // moved_f_pawn_early_cp_t
-template int GameBoard::moved_f_pawn_early_cp_t<Color::WHITE>() const;
-template int GameBoard::moved_f_pawn_early_cp_t<Color::BLACK>() const;
+// template int GameBoard::moved_f_pawn_early_cp_t<Color::WHITE>() const;
+// template int GameBoard::moved_f_pawn_early_cp_t<Color::BLACK>() const;
 
 // get_king_near_squares_t
 template int GameBoard::get_king_near_squares_t<Color::WHITE>(int[9]);
@@ -3681,7 +3711,8 @@ template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::WHITE>();
 template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::BLACK>();
 template int GameBoard::opposite_bishops_cp_t<Color::WHITE>(Score material_balance) const;
 template int GameBoard::opposite_bishops_cp_t<Color::BLACK>(Score material_balance) const;
-
+template int GameBoard::blocked_home_bishops_cp_t<Color::WHITE>();
+template int GameBoard::blocked_home_bishops_cp_t<Color::BLACK>();
 
 template double GameBoard::kings_far_apart_t<Color::WHITE>();
 template double GameBoard::kings_far_apart_t<Color::BLACK>();
@@ -3704,9 +3735,9 @@ template bool GameBoard::hasNoMajorPieces_t<Color::BLACK>();
 template int GameBoard::is_knight_on_edge_cp_t<Color::WHITE>();
 template int GameBoard::is_knight_on_edge_cp_t<Color::BLACK>();
 
-// development_opening_cp_t
-template int GameBoard::development_opening_cp_t<Color::WHITE>();
-template int GameBoard::development_opening_cp_t<Color::BLACK>();
+// development_minor_cp_t
+template int GameBoard::development_minor_cp_t<Color::WHITE>();
+template int GameBoard::development_minor_cp_t<Color::BLACK>();
 
 
 } // end namespace ShumiChess

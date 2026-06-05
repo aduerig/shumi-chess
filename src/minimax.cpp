@@ -61,6 +61,7 @@ using namespace utility::bit;
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
+//#define DEBUGGING_TEMP
 
 // extern bool bMoreDebug;
 // extern string debugMove;
@@ -287,63 +288,36 @@ void MinimaxAI::resign() {
 //   +1 pawn with 2 vs 1 pawns  -> larger effect
 //
 // Caller should handle phase restrictions.
-#define TRADE_PAWN_CAP 7
-#define TRADE_PIECE_CAP 4
+#define DIVISOR_CAP 4
+#define TRADE_PIECE_CAP 50
 
-template<Color c> int MinimaxAI::trade_imbalance_cp_t(int cp_material_all) const
-{
-    const int cp_material_non_pawn = cp_material_all - cp_score_pawns_only;
+template<Color c> int MinimaxAI::trade_imbalance_cp_t(int cp_material_all) const {
+    int trade_cp = 0;
 
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
+    const int me1 = engine.game_board.Bits_In[c][Piece::KNIGHT] + engine.game_board.Bits_In[c][Piece::BISHOP];
+    const int me2 = engine.game_board.Bits_In[c][Piece::ROOK];
+    const int me3 = engine.game_board.Bits_In[c][Piece::QUEEN];
 
-    const int my_pawns    = engine.game_board.Bits_In[c][Piece::PAWN];
-    const int enemy_pawns = engine.game_board.Bits_In[enemy][Piece::PAWN];
+    const int enemy1 = engine.game_board.Bits_In[enemy][Piece::KNIGHT] + engine.game_board.Bits_In[enemy][Piece::BISHOP];
+    const int enemy2 = engine.game_board.Bits_In[enemy][Piece::ROOK];
+    const int enemy3 = engine.game_board.Bits_In[enemy][Piece::QUEEN];
 
-    const int my_non_pawn =
-        engine.game_board.Bits_In[c][Piece::KNIGHT] +
-        engine.game_board.Bits_In[c][Piece::BISHOP] +
-        engine.game_board.Bits_In[c][Piece::ROOK]   +
-        engine.game_board.Bits_In[c][Piece::QUEEN];
+    if (cp_material_all > 0) {
+        // I'm ahead
 
-    const int enemy_non_pawn =
-        engine.game_board.Bits_In[enemy][Piece::KNIGHT] +
-        engine.game_board.Bits_In[enemy][Piece::BISHOP] +
-        engine.game_board.Bits_In[enemy][Piece::ROOK]   +
-        engine.game_board.Bits_In[enemy][Piece::QUEEN];
+        // Handle simplest case. We are ahead or even in all pieces, Then give me a boost if im ahead in pawns. Otherwise zero.
+        if ( (me1 >= enemy1) && (me2 >= enemy2) && (me3 >= enemy3) ) {
+            assert (DIVISOR_CAP != 0);
+            trade_cp = max(0, cp_score_pawns_only) / DIVISOR_CAP;
 
-
-    int total_pawns    = my_pawns + enemy_pawns;
-    int total_non_pawn = my_non_pawn + enemy_non_pawn;
-    if (total_pawns > TRADE_PAWN_CAP) total_pawns = TRADE_PAWN_CAP;
-    if (total_non_pawn > TRADE_PIECE_CAP) total_non_pawn = TRADE_PIECE_CAP;
-    
-    int trade_cp = 0;
-
-    if (cp_score_pawns_only > 0) {
-        trade_cp += ((TRADE_PAWN_CAP - total_pawns) * wghts.GetWeight(TRADE_WHEN_AHEAD_PAWNS))
-                  / TRADE_PAWN_CAP;
-    } else if (cp_score_pawns_only < 0) {
-        trade_cp -= ((TRADE_PAWN_CAP - total_pawns) * wghts.GetWeight(TRADE_WHEN_AHEAD_PAWNS))
-                  / TRADE_PAWN_CAP;
+            if (trade_cp > TRADE_PIECE_CAP) trade_cp = TRADE_PIECE_CAP;
+        }
     }
-
-    if (cp_material_non_pawn > 0) {
-        trade_cp += ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
-                  / TRADE_PIECE_CAP;
-    } else if (cp_material_non_pawn < 0) {
-        trade_cp -= ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
-                  / TRADE_PIECE_CAP;
-    }
-
-    const int cap = wghts.GetWeight(TRADE_IMBALANCE_CAP);
-
-    if (trade_cp >  cap) trade_cp =  cap;
-    if (trade_cp < -cap) trade_cp = -cap;
 
     return trade_cp;
 }
-
 
 
 bool MinimaxAI::no_queens_on_board() {
@@ -1120,6 +1094,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     vector<Move>* p_moves_to_loop_over = &legal_moves;
 
     assert(depth>0);
+    assert(qPlys==0);
  
     nodes_visited++;
   
@@ -1854,7 +1829,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     nodes_visited++;
     nodes_visited_depth_zero++;
 
-
+    #ifdef DEBUGGING_TEMP
+            fprintf(fpDebug, "nPlys=%ld, qPlys=%ld\n", nPlys, qPlys);
+    #endif
     // =====================================================================
     // Get all legal moves
     // =====================================================================
@@ -1878,10 +1855,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     int n_legal_moves_found;
     if (engine.game_board.turn == ShumiChess::Color::WHITE) {
         if (caps_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, true>(false, legal_moves);
-        else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, false>(false, legal_moves);
+        else           n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::WHITE, false>(false, legal_moves);
     } else {
         if (caps_only) n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, true>(false, legal_moves);
-        else n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, false>(false, legal_moves);
+        else           n_legal_moves_found = engine.get_legal_moves_fast_t<ShumiChess::Color::BLACK, false>(false, legal_moves);
     }
     
     // Look, if caps_only is false, then n_legal_moves_found will be equal to legal_moves.size()
@@ -1897,11 +1874,13 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     // =====================================================================
     // Asserts
     // =====================================================================
+    assert(qPlys>0);
+    assert(nPlys>0);
 
     // Over analysis sentinal Sorry, I should not be this large
     // Note: why does this so high? Must be a better way to handle this. Always happens near draws.
     // OR when 3-time rep is off.   // _SUPRESSING_MOVE_HISTORY_RESULTS is defined.
-    assert(nPlys >= 0);
+
     if (nPlys > MAX_PLY) {
         // If a draw by 50/3/insuffieceint time, then we can get in loop here, where each deepeining is only 
         // 1 msec so it runs off to many levels. 
@@ -1930,14 +1909,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
                         << engine.get_best_score_at_root() << "\x1b[0m\n";
         //assert(0);
 
-        // Note: fascinating. This happens when in mate looking. 
-
         return { ABORT_SCORE, the_best_move };
 
     }
-
-
-    //TT2_match_move = {};
 
     // Purpose: avoid a false zero (no-move, thus end-of-game) result when the quick/capture-only generation missed moves
     // (or when you only needed to know whether any legal move exists). 
@@ -2382,6 +2356,10 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
 
         int new_depth = (depth > 0 ? depth - 1 : 0);
         tuple<Score, Move> ret_val;
+
+        #ifdef DEBUGGING_TEMP1
+            fprintf(fpDebug, "dep=%ld, nPlys=%ld, qPlys=%ld\n", new_depth, nPlys, qPlys);
+        #endif
 
         if (new_depth) {
 
@@ -2966,7 +2944,7 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
 
 
     if (nPhase == GamePhase::OPENING) {
-        icp_temp = engine.game_board.development_opening_cp_t<c>();
+        icp_temp = engine.game_board.development_minor_cp_t<c>();
         cp_score_position_temp += icp_temp;
     }
 
@@ -2980,10 +2958,10 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
         cp_score_position_temp += icp_temp;
     }
 
-    if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
-        icp_temp = engine.game_board.moved_f_pawn_early_cp_t<c>();
-        cp_score_position_temp += icp_temp;
-    }
+    // if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
+    //     icp_temp = engine.game_board.moved_f_pawn_early_cp_t<c>();
+    //     cp_score_position_temp += icp_temp;
+    // }
 
     // remove me
     //icp_temp2 = engine.game_board.pawns_attacking_center_squares_cp_t<c>();
@@ -3086,9 +3064,10 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
     // 
     // First compute up the material.  (final eval is (material+positional)).
-    // Outputs:
+    // Outputs of this section:
     //    cp_score_material_all
     //    cp_score_pawns_only 
+    // Note that these are signed for me/enemy, so positions good for me are positive, good for the enemy are negative.
     //
     int cp_score_material_all = 0;
     int cp_score_pawns_only = 0;
@@ -3111,7 +3090,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
         tempsum += cp_score_mat_temp;
         //tempsumNP += cp_score_mat_temp - cp_pawns_only_temp;
 
-        if (color1 != for_color) {
+        if (color1 != for_color) {  // Its the "enemy". So show negative values.
             cp_score_mat_temp *= -1;
             cp_pawns_only_temp *= -1;
         }

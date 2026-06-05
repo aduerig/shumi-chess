@@ -1671,13 +1671,13 @@ void Engine::sort_unquiet_moves_qsearch(
                     // }
                     #ifdef _DEBUGGING_TO_FILE1 
                         if (testValue > 0) {     // centipawns
+                        
+                            fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
+        
+                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
                             
-                                fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
-            
-                                print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                                
-                                print_move_history_to_file(fpDebug, "SEE hist");
-                                fputc('\n', fpDebug);
+                            print_move_history_to_file(fpDebug, "SEE hist");
+                            fputc('\n', fpDebug);
                         }
                     #endif
 
