@@ -98,7 +98,8 @@ inline ull bitshift_by_color_t(ull bitboard, int amount) {
 // }
 inline ull lsb_and_pop(ull& bitboard) {
     assert(bitboard != 0ULL);
-    ull lsb_fast = bitboard & -bitboard;
+    //ull lsb_fast = bitboard & -bitboard;
+    ull lsb_fast = bitboard & (0ULL - bitboard);        // to kill warning
     bitboard &= (bitboard - 1);
     return lsb_fast;
 }

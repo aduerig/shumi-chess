@@ -90,15 +90,24 @@ int main(int argc, char** argv) {
 
     assert(true);       // Keeps assert compilation visible without aborting this runner.
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // From opening position:
+    //      using level= 8  msec = 30  max ply = 8  play id = 1. Last best value is about 24,400 msec
+    //      using level= 7  msec = 3   max ply = 4  play id = 3. Last best value is about 37,000 msec
+    //
+    // From "random1" position:
+    //       using level= 8  msec = 3   max ply = 6  play id = 3. Last best value is about  msec
+    //
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+
     // Make board
     //string FENString = "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
 
-    //string FENString = "r2q1rk1/1p2ppbp/N5p1/4N3/2n5/1P6/1B1P1PPP/R1R1Q1K1 b - - 0 16";
-
-
     // Make engine
-    //Engine engine(FENString);
-    Engine engine;
+    #define RANDOM1_FEN "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8"
+    Engine engine(RANDOM1_FEN);
+    //Engine engine;
 
     //std::this_thread::sleep_for(std::chrono::seconds(3));   // debug only
 
@@ -110,17 +119,10 @@ int main(int argc, char** argv) {
 
     //
     // Decide on arguments
-
-    //    Standard arguments used for standarized timing test. Turn off all debug nd printouts, and run
-    // using level= 8  msec = 30  max ply = 8  play id = 1. Last best value is about 27,600 msec
-
-    // using level= 7  msec = 3  max ply = 4  play id = 3. Last best value is about 37,000 msec
-
-
-    int time_to_use = 30;
     int depth_to_use = 8;
-    int max_ply_to_play = 8;
-    int player_id = SLUG;       //  UNCLE_SHUMI;
+    int time_to_use = 3;
+    int max_ply_to_play = 1;
+    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {
@@ -134,16 +136,19 @@ int main(int argc, char** argv) {
         max_ply_to_play = atoi(argv[3]);
     }
 
-    cout << "using level= " << depth_to_use
+    cout << "uzing level= " << depth_to_use
          << "  msec = " << time_to_use
          << "  max ply = " << max_ply_to_play 
          << "  play id = " << player_id 
          << endl;
 
+    int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+
     GameState state = engine.is_game_over();
     steady_clock::time_point start_time = steady_clock::now();
     for (int ply = 1; state == INPROGRESS && ply <= max_ply_to_play; ++ply) {
-        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id, 0);
+        
+        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id, flags);
 
         if (move.piece_type == Piece::NONE) {
             cout << "No legal move returned at ply " << ply << endl;
@@ -175,8 +180,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-//      run: cmake --build C:\programming\shumi-chess\build --config RelWithDebInfo
-//      look in: C:\programming\shumi-chess\build\bin\RelWithDebInfo
 
-//      get_material_for_color_t()
-//   8/1k1q2pp/p2Bp1b1/Pp1pP3/1P3Q2/5P1P/6PK/8 w - - 7 47

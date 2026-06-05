@@ -155,7 +155,7 @@ public:
     template<ShumiChess::Color c> int trade_imbalance_cp_t(int cp_score_all) const;
 
     // Template variants (compile-time color)
-    template<ShumiChess::Color c> int cp_score_positional_get_opening_cp_t(int nPhase);
+    template<ShumiChess::Color c> int cp_score_positional_get_open_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_end_t(int nPly, int cp_score_material_all, bool noMajorPiecesFriend, bool noMajorPiecesEnemy);
     template<ShumiChess::Color for_color> int evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPosition);

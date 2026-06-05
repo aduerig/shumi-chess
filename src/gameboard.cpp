@@ -1085,7 +1085,7 @@ double GameBoard::get_board_distance(int x1, int y1, int x2, int y2)
 //   10 - if full distance of the board
 //
 double GameBoard::distance_between_squares(int enemyKingSq, int frienKingSq) {
-    int iFakeDist;
+    //int iFakeDist;
     double dfakeDist;
 
     // Get coordinates of the square numbers
@@ -2538,7 +2538,6 @@ int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     return cp_score_mat_temp;
 }
 
- // faster, but needs compute_bits_in() called first)
 template<Color c> int GameBoard::get_material_for_color2_t(int& cp_pawns_only) {
     int cp_score_mat_temp = 0;
 
@@ -3391,14 +3390,14 @@ double GameBoard::kings_close_toegather_cp_t() {
 
 // ---------- king_centerness_cp_t ----------
 template<Color c>
-double GameBoard::king_centerness_cp_t() {
+int GameBoard::king_centerness_cp_t() {
     //double dkk = kings_far_apart_t<c>();
 
     int itemp = king_center_manhattan_dist_t<c>();
 
     int iFarness = 6 - itemp;
     assert (iFarness>=0.0);
-    return (iFarness * wghts.GetWeight(KING_CENTER_LATE));
+    return (int)(iFarness * wghts.GetWeight(KING_CENTER_LATE));
 }
 
 
@@ -3542,15 +3541,16 @@ Score GameBoard::compress_drawish_score_cp(Score score_cp, int k_cp) const
 //
 // Returns a delta to add to eval.
 // Therefore return value is <= 0.
-template<Color c> int GameBoard::opposite_bishops_cp_t(int material_balance_cp) const
+template<Color c> int GameBoard::opposite_bishops_cp_t(Score material_balance_cp) const
 {
     if (material_balance_cp <= 0) return 0;
 
     const int k_cp = wghts.GetWeight(OPPOSITE_BISHOPS);
 
-    const int compressed_score = compress_drawish_score_cp(material_balance_cp, k_cp);
+    // Brings score closer to zero.
+    const Score compressed_score = compress_drawish_score_cp(material_balance_cp, k_cp);
 
-    const int delta = compressed_score - material_balance_cp;
+    const Score delta = compressed_score - material_balance_cp;
 
     assert(delta <= 0);             // returned score change is always negative
     assert(material_balance_cp + delta >= 0);
@@ -3679,8 +3679,8 @@ template int GameBoard::attackers_on_enemy_king_near_cp_t<Color::BLACK>();
 
 template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::WHITE>();
 template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::BLACK>();
-template int GameBoard::opposite_bishops_cp_t<Color::WHITE>(int material_balance) const;
-template int GameBoard::opposite_bishops_cp_t<Color::BLACK>(int material_balance) const;
+template int GameBoard::opposite_bishops_cp_t<Color::WHITE>(Score material_balance) const;
+template int GameBoard::opposite_bishops_cp_t<Color::BLACK>(Score material_balance) const;
 
 
 template double GameBoard::kings_far_apart_t<Color::WHITE>();
@@ -3693,8 +3693,8 @@ template int GameBoard::king_center_manhattan_dist_t<Color::BLACK>();
 template double GameBoard::kings_close_toegather_cp_t<Color::WHITE>();
 template double GameBoard::kings_close_toegather_cp_t<Color::BLACK>();
 
-template double GameBoard::king_centerness_cp_t<Color::WHITE>();
-template double GameBoard::king_centerness_cp_t<Color::BLACK>();
+template int GameBoard::king_centerness_cp_t<Color::WHITE>();
+template int GameBoard::king_centerness_cp_t<Color::BLACK>();
 
 // hasNoMajorPieces_t
 template bool GameBoard::hasNoMajorPieces_t<Color::WHITE>();

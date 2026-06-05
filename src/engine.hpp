@@ -379,11 +379,11 @@ class Engine {
         void print_move_history_to_file(FILE* fp, const char* psz);
         void print_move_history_to_file0(FILE* fp, std::stack<ShumiChess::Move> tmp);
 
-        int print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
+        void print_move_to_file(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
                             , bool isInCheck, bool bFormated, bool bFlipColor
                             , FILE* fp);
 
-        int print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
+        void print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, ShumiChess::GameState gs
                             , bool isInCheck, bool bFlipColor
                             , const char* preString
                             , bool bIsQuissence

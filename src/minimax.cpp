@@ -1,4 +1,5 @@
-﻿
+﻿#define _CRT_SECURE_NO_WARNINGS     // To prevent dunb warnings about deprecated "strcpy/sprintf" like functions.
+
 #include <float.h>
 #include <bitset>
 #include <iomanip>
@@ -43,7 +44,7 @@ using namespace utility::bit;
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
     #undef NDEBUG
-#endif
+#endif   
 #include <assert.h>
 //
 // NOTE: fix these
@@ -355,7 +356,7 @@ bool MinimaxAI::no_queens_on_board() {
 int MinimaxAI::phase_of_game(int material_cp_avg) {
 
     int king_sq;
-    int king_sq2;
+    //int king_sq2;
     int k_file;
     int k_rank;
    //ull king_bb;
@@ -606,13 +607,13 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     // Obtain time now (milliseconds)
     TIME_TYPE start_time = chrono::high_resolution_clock::now();
-
+ 
     // Not actually a "endtime". The last deepening will start before or at this "requested" time. 
-    TIME_TYPE requested_end_time = start_time + std::chrono::milliseconds(i_time_requested);
+    TIME_TYPE requested_end_time = start_time + std::chrono::milliseconds(i_time_requested); 
 
+    eval_person = (ShumiChess::EvalPersons)player_id;   
 
-    eval_person = (ShumiChess::EvalPersons)player_id;
-
+    cout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     Features_mask = feat;
 
 
@@ -887,22 +888,20 @@ void MinimaxAI::playground(int iPhase) {
     // int isolanis;
     bool isOK;
 
-    int itemp, iNearSquares;
-    int king_near_squares_out[9];
-    ull utemp, utemp1, utemp2;
-    int itemp3, itemp4;
-    
+    //int iNearSquares;
+    //int king_near_squares_out[9];
+    ull utemp1, utemp2;
+
     isOK = false;
-    ull holes;
-    Score dcp_temp;
+    //ull holes;
     int itemp1=0;
     int itemp2=0;
 
-    PawnFileInfo pwnFileInfo;
-    ull holes_bb;
-    int holes_cp;
-    ull passed_pawns;
-    int passed_cp;      
+    //PawnFileInfo pwnFileInfo;
+    // ull holes_bb;
+    // int holes_cp;
+    // ull passed_pawns;
+    // int passed_cp;      
 
 
 
@@ -1108,7 +1107,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     Score d_best_score = 0.0;
     Move the_best_move = {};
 
-    int cp_score_best;
 
     bool did_cutoff = false;    // TRUE if fail-high
     bool did_fail_low = false;  // TRUE if fail-low
@@ -1205,7 +1203,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     // User abort
     if (stop_calculation) {
-        cout << "\n! STOP CALCULATION requested \n";
+        //cout << "\n! STOP CALCULATION requested \n";
         stop_calculation = false;
         return { ABORT_SCORE, the_best_move };
     }
@@ -1921,7 +1919,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     // User abort
     if (stop_calculation) {
-        cout << "\n! STOP CALCULATION requested \n";
+        //cout << "\n! STOP CALCULATION requested \n";
         stop_calculation = false;
         return { ABORT_SCORE, the_best_move };
     }
@@ -2261,7 +2259,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
     int imovedebug = 0;
 
     for (const Move& m : *pMoves) {
-        int nChars;
+        //int nChars;
 
         // Change 10, "continue" on "zero moves"
 
@@ -2288,11 +2286,11 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
             sprintf(szDebug, "[%2d/%2d]", imovedebug, isizedebug);
 
             // Print move with prefix (Move always starts a new line)
-            int nCharsInMove = engine.print_move_to_file_with_prefix(m, nPlys, (GameState::INPROGRESS)
+            engine.print_move_to_file_with_prefix(m, nPlys, (GameState::INPROGRESS)
                                 , false, bSide, szDebug
                                 , (depth==0)
                                 , fpDebug); 
-            if (nCharsInMove == EOF) assert(0);
+            //if (nCharsInMove == EOF) assert(0);
 
             //sprintf(szDebug, " A=%10.3f, B=%10.3f", alpha, beta);
             //fprintf(fpDebug, szDebug);
@@ -2885,13 +2883,13 @@ try_again:
 
 
 template<ShumiChess::Color c>
-int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
+int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
     using namespace ShumiChess;
 
     constexpr Color enemyColor = utility::representation::opposite_color_t<c>;
 
     int cp_score_position_temp = 0;
-    int icp_temp, icp_temp1, icp_temp2;
+    int icp_temp;
 
    
     PawnFileInfo pawnFileInfoTemp;
@@ -2901,7 +2899,7 @@ int MinimaxAI::cp_score_positional_get_opening_cp_t(int nPhase) {
     uint64_t key = engine.game_board.pawn_zobrist_key;
     auto it = pawn_file_info.find(key);
     if (it != pawn_file_info.end()) {
-        // found an "pawn summary" entry (this is the more common caase)
+        // found an "pawn summary" entry (this is the more common case)
         NhitsP++;
         pawnFileInfoP = &it->second;
 
@@ -3081,6 +3079,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPositio
 
     int tempsum = 0;
 
+    // Computes "Bits_In" (many eval routines use these shortcuts for speed)
     engine.game_board.compute_bits_in();        // Computes shortcuts for "bits_in()", used in the eval.
 
     //int tempsumNP = 0;
@@ -3185,7 +3184,7 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
             bool NoMajorPiecesFriend = engine.game_board.hasNoMajorPieces_t<c>();
 
             if (!NoMajorPiecesEnemy) {
-                temp = cp_score_positional_get_opening_cp_t<c>(nPhase);
+                temp = cp_score_positional_get_open_cp_t<c>(nPhase);
                 cp_score_position_temp += temp;
 
                 temp = cp_score_positional_get_middle_cp_t<c>(nPhase);
@@ -3211,8 +3210,8 @@ template int MinimaxAI::get_positional_for_one_color<ShumiChess::Color::BLACK>(i
 
 
 
-template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::WHITE>(int);
-template int MinimaxAI::cp_score_positional_get_opening_cp_t<ShumiChess::Color::BLACK>(int);
+template int MinimaxAI::cp_score_positional_get_open_cp_t<ShumiChess::Color::WHITE>(int);
+template int MinimaxAI::cp_score_positional_get_open_cp_t<ShumiChess::Color::BLACK>(int);
 template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::WHITE>(int);
 template int MinimaxAI::cp_score_positional_get_middle_cp_t<ShumiChess::Color::BLACK>(int);
 template int MinimaxAI::cp_score_positional_get_end_t<ShumiChess::Color::WHITE>(int, int cp_material_all, bool, bool);

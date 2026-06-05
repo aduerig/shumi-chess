@@ -1,5 +1,7 @@
 
 Shumi problems:
+   Bishops should not be blocked by tewo pawns. Opening only. Make it smaall.
+   number of checks is a bad thing? Maybe 4 or greater is bad. Certainly 5 or greater is. 
    Trades bishops too quickly to just double pawns. Msybe make bisjhops worth a little more?
    Not trading what you are ahead in.
    Passed pawns are overprized when they are way passed. Shumi loses them.
@@ -13,49 +15,78 @@ Shumi problems:
    not offering 4 checks or more Allow 1 even 2 free, but 3, 4 above exponetially
 
 
-level indicator for front end
+=============================================================================================================================
+=============================================================================================================================
 
-Find explicit casts from Score→CP-like expressions:
-grep -RnE "([ \t]int(32_t|32|)[ \t])([^)]**[ \t]100.0" .
-grep -RnE "(int)([^)]*[ \t]*100.0" .
+Look. I am having problems with "trading" in Shumi. I have made several attempts at this anf failed each time. Here is a 
+failed routine (I am not calling this now)
 
-Find divisions by 100.0 (CP→pawns conversions):
-grep -RnE "/[ \t]*100.0" .
+template<Color c> int MinimaxAI::trade_imbalance_cp_t(int cp_material_all) const
+{
+    const int cp_material_non_pawn = cp_material_all - cp_score_pawns_only;
 
-Find Score occurrences:
-grep -Rn "\bScore\b" .
-
-Find already-existing helpers:
-grep -Rn "convert_to_CP|convert_from_CP" .
-
-Find plain patterns you used before:
-grep -RnE "([^)]*[ \t]100.0[ \t]+?[ \t](dd >= 0.0 ? 0.5 : -0.5)" .
+    constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
 
+    const int my_pawns    = engine.game_board.Bits_In[c][Piece::PAWN];
+    const int enemy_pawns = engine.game_board.Bits_In[enemy][Piece::PAWN];
+
+    const int my_non_pawn =
+        engine.game_board.Bits_In[c][Piece::KNIGHT] +
+        engine.game_board.Bits_In[c][Piece::BISHOP] +
+        engine.game_board.Bits_In[c][Piece::ROOK]   +
+        engine.game_board.Bits_In[c][Piece::QUEEN];
+
+    const int enemy_non_pawn =
+        engine.game_board.Bits_In[enemy][Piece::KNIGHT] +
+        engine.game_board.Bits_In[enemy][Piece::BISHOP] +
+        engine.game_board.Bits_In[enemy][Piece::ROOK]   +
+        engine.game_board.Bits_In[enemy][Piece::QUEEN];
 
 
+    int total_pawns    = my_pawns + enemy_pawns;
+    int total_non_pawn = my_non_pawn + enemy_non_pawn;
+    if (total_pawns > TRADE_PAWN_CAP) total_pawns = TRADE_PAWN_CAP;
+    if (total_non_pawn > TRADE_PIECE_CAP) total_non_pawn = TRADE_PIECE_CAP;
+    
+    int trade_cp = 0;
 
-Find Score→CP style casts (pawns * 100.0):
-([^\n]*\s100.0[^\n]*)      //    DONE
+    if (cp_score_pawns_only > 0) {
+        trade_cp += ((TRADE_PAWN_CAP - total_pawns) * wghts.GetWeight(TRADE_WHEN_AHEAD_PAWNS))
+                  / TRADE_PAWN_CAP;
+    } else if (cp_score_pawns_only < 0) {
+        trade_cp -= ((TRADE_PAWN_CAP - total_pawns) * wghts.GetWeight(TRADE_WHEN_AHEAD_PAWNS))
+                  / TRADE_PAWN_CAP;
+    }
 
-Find explicit casts like (int)(... * 100.0):
-(\s*(?:int|long|long long|int32_t|CP)\s*)\s*([^)]*\s100.0[^)]*)         // DONE
+    if (cp_material_non_pawn > 0) {
+        trade_cp += ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
+                  / TRADE_PIECE_CAP;
+    } else if (cp_material_non_pawn < 0) {
+        trade_cp -= ((TRADE_PIECE_CAP - total_non_pawn) * wghts.GetWeight(TRADE_WHEN_AHEAD_PIECES))
+                  / TRADE_PIECE_CAP;
+    }
 
-Find division by 100.0 (CP→pawns conversions):
-/\s*100.0\b       // DONE
+    const int cap = wghts.GetWeight(TRADE_IMBALANCE_CAP);
 
-Find plain casts from numeric to int nearby multiplication (another form):
-([^\n])\s/\s100.0|([^\n]*\s*100)       // DONE
+    if (trade_cp >  cap) trade_cp =  cap;
+    if (trade_cp < -cap) trade_cp = -cap;
 
-Find literals with 100.0 (less noise):
-100.0\b       // DONE
+    return trade_cp;
 
-Find common rounding expression you used:
-([^\n])\s*\s100.0\s)\s*+\s*([^)]>=\s0.0\s*?\s0.5\s:\s*-0.5\s*)
+}
 
 
-Implement "magic bitboards" only on diagonal attacks. I want a new "get_diagonal_attacks_mbb()" that 
-uses magic bitboards. This is very similar and should parallel to the conversion to magic bitboards 
-on straight attacks (see get_straight_attacks_mbb() and get_straight_attacks(). The conversion must 
-mirror the asserts I have installed for straight attacks.  
+But here are my real opinions on this. Suppose I am two pawns up. This means I have two more pawns than the enemy, 
+but the same total in pieces. Here I should trade. If 3 pawns ahead a little more motive, but not much. The advance
+for being ahead, Should round out , like log(x), and not increase much for larger leads. Howver in that, i am just looking
+at the delta in pawns, if the pices are equal. That is vary the delta, and plot y as the eval plus. This should look more like y=log(x)
+than y=x. But there are other factors. Keeping the above in mind. This is all, if the piece situation is the same. This is very tricky. Suppose 
 
+I say this: 
+
+if (pieces are the same)
+   if (Im ahead in pawns, add a "log(x) type" small bonus)
+   else // I dont need to do anything here, as the eval loops over both colors
+else
+   ??

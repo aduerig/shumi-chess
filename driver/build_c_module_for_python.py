@@ -48,15 +48,31 @@ if is_windows():
 else:
     lib_path = lib_dir.joinpath(config_subdir, 'libShumiChess.a')
     extra_link_args = [str(lib_path)]
-
-
+#
+# all this nonsense results in:
+# /c
+# /nologo
+# /O2           optimized for speed
+# /W3
+# /GL           whole-program optimization info
+# /DNDEBUG      defines /NDEBUG
+# /MD           Release runtime library
+# /EHsc         C++ exeption model
+# /TpC:\programming\shumi-chess\driver\engine_communicatormodule.cpp
+# /Fodriver/build\Release\...\engine_communicatormodule.obj
+# /std:c++17   
+#      /nologo /O2 /W3 /GL /DNDEBUG /MD /std:c++17 /Zi
+#      /nologo /INCREMENTAL:NO /LTCG /DLL /MANIFEST:EMBED,ID=2 /MANIFESTUAC:NO /DEBUG:FULL
 if release_mode == 'debug':
     if is_windows():
         extra_compile_args += ['/Zi', '/Od', '/MDd', '/D_DEBUG']
     else:
         extra_compile_args += ['-g', '-O0']
 else:
-    if not is_windows():
+    if is_windows():
+        extra_compile_args += ['/Zi']
+        extra_link_args += ['/DEBUG:FULL']
+    else:
         extra_compile_args += ['-O3', '-ffast-math']
 
 the_module = Extension(

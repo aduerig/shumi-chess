@@ -1,13 +1,17 @@
-﻿#include <functional>
+﻿
+#define _CRT_SECURE_NO_WARNINGS     // To prevent dunb warnings about deprecated "strcpy" like functions.
+
+#include <functional>
 #include <cmath>
 
 #include "engine.hpp"
 #include "score.hpp"
 #include "utility"
-#include "score.hpp"
+#include "score.hpp"   
+
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
-#undef NDEBUG
+#undef NDEBUG  
 #endif
 #include <assert.h>
 
@@ -169,7 +173,7 @@ void Engine::reset_engine() {         // New game.
     // string aFEN = game_board.random_960_FEN_strict();
     // game_board = GameBoard(aFEN);
 
-    // (enter FEN here) FEN enter now. enter fen.
+    // (Enter FEN here) FEN enter now. enter fen. Enter fen.
 
     // Standard openings
     #define OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -196,9 +200,11 @@ void Engine::reset_engine() {         // New game.
     // Black must play e6 or d6 to avoid the 3-move mate: Nxc7, Qxc7, Bxf7, Kd8, Ne6 mate
     #define MATE_IN_3_FEN "1rbqkb1r/pppppppp/8/3NP3/2B1P3/5N2/PPP2PPP/R1BQK2R w KQk - 6 8"   // then Ng5.
 
+    #define RANDOM1_FEN "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8"
+
     //#define TEMP_FEN " 5b2/1r1qpk2/p1p1pnpr/4B2p/1Pp1p2Q/P2P3P/4BPP1/3RK1R1 w - - 0 30"    // then move e5 for white
 
-    //game_board = GameBoard(TEMP_FEN);
+    //game_board = GameBoard(RANDOM1_FEN);
 
 
     game_board = GameBoard();
@@ -1888,7 +1894,7 @@ void Engine::print_move_history_to_file0(FILE* fp, std::stack<ShumiChess::Move> 
 // Tabs over based on ply. Pass in nPly=-2 for no tabs. 
 // The formatted version does one move per line. 
 // The unformatted version puts them all on one line.
-int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
+void Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
                                     , bool isInCheck, bool bFormated, bool bFlipColor
                                     , FILE* fp
                                 ) {
@@ -1914,11 +1920,11 @@ int Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
                                         , fp); 
     }
 
-    return move_string.length();
+    return;
 
 }
 
-int Engine::print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, GameState gs
+void Engine::print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, GameState gs
                                     , bool isInCheck, bool bFlipColor
                                     , const char* preString
                                     , bool bIsQuissence
@@ -1944,7 +1950,7 @@ int Engine::print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, G
         fputc('q', fp);
     }
  
-    return move_string.length();
+    return;   // move_string.length();
 
 }
 
@@ -2492,7 +2498,9 @@ int Engine::get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves) {
     add_king_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
     add_rook_moves_to_vector_t<c, caps_only>(all_psuedo_legal_moves);
 
-    return all_psuedo_legal_moves.size();
+    assert(all_psuedo_legal_moves.size() <= INT_MAX);
+    return static_cast<int>(all_psuedo_legal_moves.size());
+    //return all_psuedo_legal_moves.size();
 }
 
 template<Color enemy_c>
@@ -3015,6 +3023,6 @@ template int Engine::get_legal_moves_fast_t<Color::BLACK, true>(bool b_check_mod
 template void Engine::pushMove_t<Color::WHITE>(const Move&);
 template void Engine::pushMove_t<Color::BLACK>(const Move&);
 template void Engine::popMove_t<Color::WHITE>();
-template void Engine::popMove_t<Color::BLACK>();
+template void Engine::popMove_t<Color::BLACK>();  
 
 } // end namespace ShumiChess

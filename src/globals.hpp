@@ -186,7 +186,7 @@ enum EvalPersons {      // These are all "ai" no human here.
     UNCLE_SHUMI
 };
 
-bool is_move_in_list(const Move& mov, const std::vector<Move>& mvs);
+//bool is_move_in_list(const Move& mov, const std::vector<Move>& mvs);
 
 
 // ? maybe can use inline here for externs? but it complicates the build. defining in globals.cpp
@@ -237,8 +237,8 @@ inline uint64_t zobrist_piece_square_get(int i, int j) {
     return zobrist_piece_square[i][j];
 }
 
-extern std::array<ull, 64> square_to_y;
-extern std::array<ull, 64> square_to_x;
+extern std::array<int, 64> square_to_y;
+extern std::array<int, 64> square_to_x;
 
 extern std::array<ull, 65> north_east_square_ray;
 extern std::array<ull, 65> north_west_square_ray;
@@ -331,7 +331,6 @@ inline ull get_diagonal_attacks_mbb(ull all_pieces_but_self, int square)
     return tables::movegen::diagonal_magic_attack_table[entry.offset + magic_index];
 }
 
-// codex resume 019e8629-54a2-7e93-a367-24a16b94b167
 //__declspec(noinline) 
 inline ull get_straight_attacks(ull all_pieces_but_self, int square)
 {

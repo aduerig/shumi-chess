@@ -166,8 +166,8 @@ Move MoveSet3(Color c, Piece p, ull frm, ull to, Piece a, Piece b)
 //   "no blocker" sentinel (e.g., blockerSquare = 64) without out-of-bounds
 //   access: ~ray[64] & ray[square] becomes (~0) & ray[square] == ray[square].
 
-array<ull, 64> square_to_y = {};
-array<ull, 64> square_to_x = {};
+array<int, 64> square_to_y = {};
+array<int, 64> square_to_x = {};
 
 array<ull, 65> north_east_square_ray = {};
 array<ull, 65> north_west_square_ray = {};
@@ -181,8 +181,8 @@ array<ull, 65> west_square_ray = {};
 
 void initialize_rays() {
     for (int square = 0; square < 64; square++) {
-        square_to_y[square] = (int) square / 8;
-        square_to_x[square] = (int) square % 8;
+        square_to_y[square] = square / 8;
+        square_to_x[square] = square % 8;
     }
 
     for (int square = 0; square < 64; square++) {
@@ -254,16 +254,16 @@ const char* str_from_GamePhase(int phse) {
 };
 
 
-bool is_move_in_list(const Move& mov, const std::vector<Move>& mvs)
-{
-    return std::find(mvs.begin(), mvs.end(), mov) != mvs.end();
-    // for (Move m : mvs) {
-    //     if  (m == mov) {
-    //         return true;
-    //     }
-    // }
-    // return false;
-}
+// bool is_move_in_list(const Move& mov, const std::vector<Move>& mvs)
+// {
+//     return std::find(mvs.begin(), mvs.end(), mov) != mvs.end();
+//     // for (Move m : mvs) {
+//     //     if  (m == mov) {
+//     //         return true;
+//     //     }
+//     // }
+//     // return false;
+// }
 
 
 } // end namespace ShumiChess

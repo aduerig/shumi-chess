@@ -107,7 +107,7 @@ class GameBoard {
 
         void set_zobrist();
 
-
+        // Computes "Bits_In" arrays (used by eval routines as shortcuts for "bits_in())")
         uint8_t Bits_In[2][NUM_PIECES];
         inline void compute_bits_in()
         {
@@ -366,7 +366,7 @@ class GameBoard {
         double get_board_distance(int x1, int y1, int x2, int y2);
         //int get_board_distance_100(int x1, int y1, int x2, int y2) const;
         template<Color c> double kings_close_toegather_cp_t();
-        template<Color c> double king_centerness_cp_t();
+        template<Color c> int king_centerness_cp_t();
         
         template<Color c> double kings_far_apart_t();
         template<Color c> int king_center_manhattan_dist_t();
@@ -395,7 +395,7 @@ class GameBoard {
         template<Color c> int count_guard_pawn_files_23_new_t(const PInfo& PInfoIn, int k_file) const;
         template<Color c> int rook_endgame_keep_rooks_when_down_cp_t();
         Score compress_drawish_score_cp(Score score_cp, int k_cp) const;
-        template<Color c> int opposite_bishops_cp_t(int material_balance_cp) const;
+        template<Color c> int opposite_bishops_cp_t(Score material_balance_cp) const;
 
 
         bool bWhiteCstled = false;

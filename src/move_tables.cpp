@@ -171,7 +171,7 @@ ull occupancy_from_index(int index, ull mask) {
     int bit_index = 0;
 
     while (mask) {
-        const ull bit = mask & -mask;
+        const ull bit = mask & (0ULL - mask);
         mask &= mask - 1;
 
         if (index & (1 << bit_index)) {

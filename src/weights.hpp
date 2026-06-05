@@ -105,7 +105,7 @@ private:
 
     // Weird conditions to stop stupid moves in the opening
     static constexpr int QUEEN_OUT_EARLY_WGHT = -40;    // for center squares only. only in opening.
-    static constexpr int BISHOP_PATTERN_WGHT = -120;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). only in opening.
+    static constexpr int BISHOP_PATTERN_WGHT = -150;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). only in opening.
     static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
 
     static constexpr int DEVELOPMENT_OPENING_WGHT = 14;      // Opening only.  Counts minor pieces, off their starting square.
@@ -113,10 +113,10 @@ private:
     static constexpr int ROOK_CONNECTED_WGHT = 100;      // if any connected rook pair exists (one bonus only)
 
     // Rooks on open or semi open files
-    static constexpr int ROOK_ON_OPEN_FILE_WGHT = 20;     // open=2x, semi-open=1x
+    static constexpr int ROOK_ON_OPEN_FILE_WGHT = 21;     // open=2x, semi-open=1x
     static constexpr int KING_ON_FILE_WGHT    = 14;      // extra per rook if enemy king on same file (even if pieces between he king and rook)
 
-    static constexpr int MAJOR_ON_RANK7_WGHT = 26;      // Rook or queen on 7th rank (if 2 major then 3 times)
+    static constexpr int MAJOR_ON_RANK7_WGHT = 28;      // Rook or queen on 7th rank (if 2 major then 3 times)
     static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank (if 2 major then 3 times)
 
     static constexpr int KNIGHT_ON_EDGE_WGHT = -12;     // knight on edge penatly (doubled if knight in corner)

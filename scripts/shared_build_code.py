@@ -50,7 +50,9 @@ def build_shumi_chess(release, build_tests=False, shumi_asserts=True):
         '--build',
         str(root_of_project_directory.joinpath('build')),
         '--config',
-        build_type_str
+        build_type_str,
+        '--clean-first',
+        '-v'
     ]
     return_code, _stdout, _stderr = run_command_blocking(cmd_build, stdout_pipe=None, stderr_pipe=None, debug=True)
     if return_code:

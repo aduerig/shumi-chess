@@ -61,6 +61,15 @@ endif(BUILD_TESTS)
 
 add_library(${project_name} STATIC ${Sources} ${Headers})
 
+if(MSVC)
+    target_compile_options(${project_name} PRIVATE
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/W3 /O2 /Ob2>
+        $<$<CONFIG:RelWithDebInfo>:/Zi>
+    )
+endif()
+
+
+
 if(SHUMI_ASSERTS)
   message(STATUS "")
   message(STATUS "Asserts ENABLED (forcing NDEBUG off)")
@@ -87,6 +96,13 @@ target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 add_executable(run_minimax_time src/run_minimax_time.cpp)
 target_link_libraries(run_minimax_time PUBLIC ${project_name})
+if(MSVC)
+    target_link_options(run_minimax_time PRIVATE
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/INCREMENTAL:NO /DEBUG:FULL>
+        $<$<CONFIG:RelWithDebInfo>:/LTCG>
+    )
+endif()
 
 add_executable(shumi_driver driver/driver.cpp)
 target_link_libraries(shumi_driver PUBLIC ${project_name})
+
