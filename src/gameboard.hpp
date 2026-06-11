@@ -126,6 +126,9 @@ class GameBoard {
             Bits_In[Color::BLACK][Piece::KING]   = bits_in(black_king);
         }
 
+        void set_development_start_masks();
+        ull start_knights_bb[2];
+        ull start_bishops_bb[2];
 
         template <Piece p>
         inline ull get_pieces_template() const {
@@ -372,6 +375,7 @@ class GameBoard {
         template<Color c> int king_center_manhattan_dist_t();
         template<Color c> int is_knight_on_edge_cp_t();
         template<Color c> int development_minor_cp_t();
+        template<Color c> int bishop_outside_world_cp_t();
         template<Color c> bool hasNoMajorPieces_t();
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
@@ -425,29 +429,6 @@ class GameBoard {
                             const SEEBoards& b_local,
                             int balance_local);
 
-        //int centipawn_score_of(ShumiChess::Piece p) const;
-        // Total of 4000 centipawns for each side.
-        // inline int centipawn_score_of(ShumiChess::Piece p) const {
-        //     switch (p) {
-        //         case ShumiChess::Piece::PAWN:   return 100;
-        //         case ShumiChess::Piece::KNIGHT: return 320;
-        //         case ShumiChess::Piece::BISHOP: return 330;
-        //         case ShumiChess::Piece::ROOK:   return 500;
-        //         case ShumiChess::Piece::QUEEN:  return 900;
-        //         case ShumiChess::Piece::KING:   return 0;   // king is infinite in theory; keep 0 for material sums
-        //         default:                        {assert(0);return 0;}
-        //     }
-        // }
-
-        // enum Piece : std::uint8_t {     // These MUST be in this order
-        //     PAWN = 0,
-        //     ROOK,
-        //     KNIGHT,
-        //     BISHOP,
-        //     QUEEN,
-        //     KING,
-        //     NONE,
-        // };
         inline int centipawn_score_of(ShumiChess::Piece p) const
         {
             static const int vals[] = {

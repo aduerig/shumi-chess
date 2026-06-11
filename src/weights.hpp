@@ -34,7 +34,8 @@ enum WghtIndxs
     KINGS_CLOSE_TOGETHER,
     ATTACKERS_ON_KING,
     CENTER_OCCUPY_PIECES,
-    DEVELOPMENT_OPENING,
+    DEVELOPMENT_OPENINGK,
+    DEVELOPMENT_OPENINGB,
     PASSED_PAWN_CONNECTED,
     ISOLANI_OPEN_FILE,
     KING_CENTER_LATE,
@@ -43,6 +44,8 @@ enum WghtIndxs
     PAWN_HOLE_OPEN_FILE,
     OPPOSITE_BISHOPS,
     BLOCKED_HOME_BISHOP,
+    TRADE_MAX_BONUS,
+    TRADE_ADVANTAGE_CAP,
     LAST_VALUE              // I must be last in this list
 };
 
@@ -105,11 +108,13 @@ private:
     static constexpr int TWO_BISHOPS_WGHT = 24;    // 2 or more bishops (only one bonus per side)
 
     // Weird conditions to stop stupid moves in the opening
-    static constexpr int QUEEN_OUT_EARLY_WGHT = -40;    // for center squares only. only in opening.
-    static constexpr int BISHOP_PATTERN_WGHT = -150;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). only in opening.
+    static constexpr int QUEEN_OUT_EARLY_WGHT = -40;    // for landing on center squares only. only in opening.
+    static constexpr int BISHOP_PATTERN_WGHT = -150;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). Only in opening.
     //static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
     static constexpr int BLOCKED_HOME_BISHOP_WGHT = 10; // only in opening. Bishop on home square blocked by 2 pawns
-    static constexpr int DEVELOPMENT_OPENING_WGHT = 14;      // Opening only.  Counts minor pieces, off their starting square.
+    
+    static constexpr int DEVELOPMENT_OPENINGK_WGHT = 14;  // Opening only.  Counts knights, off their starting square.
+    static constexpr int DEVELOPMENT_OPENINGB_WGHT = 22;  // Opening only.  Counts bishops, off their starting square.
 
     static constexpr int ROOK_CONNECTED_WGHT = 100;      // if any connected rook pair exists (one bonus only)
 
@@ -134,6 +139,10 @@ private:
     static constexpr int CENTER_OCCUPY_PIECES_WGHT = 24;  // Used only in CRAZY_IVAN. Doesnt count pawns or kings.
 
     static constexpr int KEEP_ROOKS_WHEN_DOWN_PAWN_WGHT = 10;
+    static constexpr int TRADE_MAX_BONUS_WGHT = 120;
+    static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;
+
+
 
     static constexpr int NO_MOVE_SAME_TWICE_WGHT = -20; // NOT USED
 

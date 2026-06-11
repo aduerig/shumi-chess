@@ -234,6 +234,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 
     // Update statistics 
     //python_engine->updateStats(found_move);
+    //playground( python_engine->game_phase );
 
     //cout << "222engine_communicator_make_move_two_acn " <<  python_engine->sss.so_far  << "\n"; 
 
@@ -481,7 +482,7 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
 
     std::vector<ShumiChess::Move> legal_moves;
     minimax_ai->engine.get_legal_moves_fast(minimax_ai->engine.game_board.turn, false, false, legal_moves);
-    bool b_is_Quiet = !minimax_ai->engine.has_unquiet_move(legal_moves);
+    //bool b_is_Quiet = !minimax_ai->engine.has_unquiet_move(legal_moves);
     
     //minimax_ai->is_debug = true;
 
@@ -489,8 +490,8 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
 
 
     int cp_score_best = (minimax_ai->engine.game_board.turn == ShumiChess::Color::WHITE)
-        ? minimax_ai->evaluate_board_t<ShumiChess::Color::WHITE>(evp, b_is_Quiet)
-        : minimax_ai->evaluate_board_t<ShumiChess::Color::BLACK>(evp, b_is_Quiet);
+        ? minimax_ai->evaluate_board_t<ShumiChess::Color::WHITE>(evp)
+        : minimax_ai->evaluate_board_t<ShumiChess::Color::BLACK>(evp);
     //minimax_ai->is_debug = false;
     
     Score pawnScore =  convert_from_CP(cp_score_best);

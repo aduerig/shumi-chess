@@ -132,7 +132,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -272,52 +272,142 @@ void MinimaxAI::resign() {
 //
 
 
+
 //////////////////////////////////////////////////////////////////////////////////////
 //
 // ---------- trade_imbalance_cp_t ----------
-// Encourages trading the class of material where side c is ahead,
-// and discourages trading the class of material where side c is behind.
+// Position-only trade incentive. Safe for TT use.
 //
-// Uses two separate balances, both positive when its good for "c" color.
-//   - non-pawn material balance
-//   - pawn material balance
+// Requirement:
+// If side c is ahead, and is not down in pieces, give a small bonus immediately.
+// Then increase that bonus as side c's total material disappears.
 //
-// The effect grows as fewer pieces/pawns remain.
-// Example:
-//   +1 pawn with 8 vs 7 pawns  -> small effect
-//   +1 pawn with 2 vs 1 pawns  -> larger effect
+// material_balance is polarized: positive is good for c.
+// me_pawn_material is only c's pawn material, not a signed balance.
 //
-// Caller should handle phase restrictions.
-#define DIVISOR_CAP 4
-#define TRADE_PIECE_CAP 50
+//////////////////////////////////////////////////////////////////////////////////////
 
-template<Color c> int MinimaxAI::trade_imbalance_cp_t(int cp_material_all) const {
-    int trade_cp = 0;
 
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// ---------- trade_imbalance_cp_t ----------
+// Position-only trade incentive. Safe for TT use.
+//
+// Requirement:
+// If side c is ahead, and is not down in non-pawn material, give a small
+// bonus immediately. Then increase that bonus as side c's total material
+// disappears.
+//
+// material_balance is polarized: positive is good for c.
+// me_pawn_material is only c's pawn material, not a signed balance.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+
+template<ShumiChess::Color c> int MinimaxAI::trade_imbalance_cp_t(int material_balance, int me_pawn_material) const {
+    
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
-    const int me1 = engine.game_board.Bits_In[c][Piece::KNIGHT] + engine.game_board.Bits_In[c][Piece::BISHOP];
-    const int me2 = engine.game_board.Bits_In[c][Piece::ROOK];
-    const int me3 = engine.game_board.Bits_In[c][Piece::QUEEN];
+    // I must be ahead.
+    if (material_balance <= 0) return 0;
 
-    const int enemy1 = engine.game_board.Bits_In[enemy][Piece::KNIGHT] + engine.game_board.Bits_In[enemy][Piece::BISHOP];
-    const int enemy2 = engine.game_board.Bits_In[enemy][Piece::ROOK];
-    const int enemy3 = engine.game_board.Bits_In[enemy][Piece::QUEEN];
+    // Get weights. All score values in this routine are centipawns.
+    const int max_bonus = engine.game_board.wghts.GetWeight(TRADE_MAX_BONUS);
+    const int advantage_denominator = engine.game_board.wghts.GetWeight(TRADE_ADVANTAGE_CAP);
+    assert(max_bonus >= 0);
+    assert(advantage_denominator > 0);
 
-    if (cp_material_all > 0) {
-        // I'm ahead
+    // Get material values once.
+    const int pawn_value   = engine.game_board.centipawn_score_of(Piece::PAWN);
+    const int knight_value = engine.game_board.centipawn_score_of(Piece::KNIGHT);
+    const int bishop_value = engine.game_board.centipawn_score_of(Piece::BISHOP);
+    const int rook_value   = engine.game_board.centipawn_score_of(Piece::ROOK);
+    const int queen_value  = engine.game_board.centipawn_score_of(Piece::QUEEN);
 
-        // Handle simplest case. We are ahead or even in all pieces, Then give me a boost if im ahead in pawns. Otherwise zero.
-        if ( (me1 >= enemy1) && (me2 >= enemy2) && (me3 >= enemy3) ) {
-            assert (DIVISOR_CAP != 0);
-            trade_cp = max(0, cp_score_pawns_only) / DIVISOR_CAP;
+    // Count my pieces.
+    const int me_knights = engine.game_board.Bits_In[c][Piece::KNIGHT];
+    const int me_bishops = engine.game_board.Bits_In[c][Piece::BISHOP];
+    const int me_rooks   = engine.game_board.Bits_In[c][Piece::ROOK];
+    const int me_queens  = engine.game_board.Bits_In[c][Piece::QUEEN];
 
-            if (trade_cp > TRADE_PIECE_CAP) trade_cp = TRADE_PIECE_CAP;
-        }
+    // Count enemy material.
+    const int enemy_pawns   = engine.game_board.Bits_In[enemy][Piece::PAWN];
+    const int enemy_knights = engine.game_board.Bits_In[enemy][Piece::KNIGHT];
+    const int enemy_bishops = engine.game_board.Bits_In[enemy][Piece::BISHOP];
+    const int enemy_rooks   = engine.game_board.Bits_In[enemy][Piece::ROOK];
+    const int enemy_queens  = engine.game_board.Bits_In[enemy][Piece::QUEEN];
+
+    // Compare non-pawn material.
+    // This allows exchange-up cases, even if I have fewer minor pieces.
+    const int me_piece_material =
+        me_knights * knight_value +
+        me_bishops * bishop_value +
+        me_rooks   * rook_value +
+        me_queens  * queen_value;
+
+    const int enemy_piece_material =
+        enemy_knights * knight_value +
+        enemy_bishops * bishop_value +
+        enemy_rooks   * rook_value +
+        enemy_queens  * queen_value;
+
+    // I must not be down in non-pawn material.
+    if (me_piece_material < enemy_piece_material) return 0;
+
+    // My total material includes pawns and pieces.
+    const int me_material =
+        me_pawn_material +
+        me_piece_material;
+
+    // Enemy total material includes pawns and pieces.
+    const int enemy_material =
+        enemy_pawns * pawn_value +
+        enemy_piece_material;
+
+    // No reason to encourage trades if enemy has no material left.
+    if (enemy_material <= 0) return 0;
+
+    // Advantage factor numerator. This is capped.
+    int advantage_numerator = material_balance;
+    if (advantage_numerator > advantage_denominator) {
+        advantage_numerator = advantage_denominator;
     }
 
-    return trade_cp;
+    // Simplification factor numerator.
+    // Give a small floor immediately, then increase the bonus as my total
+    // material disappears. Total material includes pawns and pieces.
+    const int simplification_denominator = MAX_CP_PER_SIDE;
+    const int base_simplification_numerator = 3 * pawn_value;
+
+    int simplification_numerator = simplification_denominator - me_material;
+    if (simplification_numerator < 0) {
+        simplification_numerator = 0;
+    }
+
+    simplification_numerator += base_simplification_numerator;
+
+    if (simplification_numerator > simplification_denominator) {
+        simplification_numerator = simplification_denominator;
+    }
+
+    // max_bonus * (advantage_numerator / advantage_denominator)
+    //           * (simplification_numerator / simplification_denominator)
+    // Use long long because the intermediate product can overflow int.
+    const long long numerator =
+        (long long)max_bonus *
+        (long long)advantage_numerator *
+        (long long)simplification_numerator;
+    assert(numerator >= 0);
+
+    const long long denominator =
+        (long long)advantage_denominator *
+        (long long)simplification_denominator;
+    assert(denominator > 0);
+
+    return (int)((numerator + (denominator / 2)) / denominator);
 }
+
+
 
 
 bool MinimaxAI::no_queens_on_board() {
@@ -908,6 +998,42 @@ void MinimaxAI::playground(int iPhase) {
 	#ifdef DISPLAY_PULSE_CALLBACK_THREAD
     	stop_callback_thread();
     #endif
+
+engine.game_board.compute_bits_in();
+int white_pawns_only = 0;
+int black_pawns_only = 0;
+
+int white_material = engine.game_board.get_material_for_color_t<Color::WHITE>(white_pawns_only);
+int black_material = engine.game_board.get_material_for_color_t<Color::BLACK>(black_pawns_only);
+assert(white_material >= 0);
+assert(black_material >= 0);
+
+itemp1 = trade_imbalance_cp_t<Color::WHITE>((white_material - black_material), white_pawns_only);
+itemp2 = trade_imbalance_cp_t<Color::BLACK>((black_material - white_material), black_pawns_only);
+
+cout << "\n" << pszPhase << "  www " << (white_material - black_material) << "  " << white_pawns_only 
+     << "           bbb " << (black_material - white_material) << "  " << black_pawns_only << endl;
+
+cout << "\n\n" << pszPhase << "  tempW " << itemp1 << "           tempB " << itemp2 << endl;
+
+
+// cout << "COUNTS"
+//      << "  W minors=" << (int)(engine.game_board.Bits_In[Color::WHITE][Piece::KNIGHT] +
+//                                engine.game_board.Bits_In[Color::WHITE][Piece::BISHOP])
+//      << " rooks="     << (int)engine.game_board.Bits_In[Color::WHITE][Piece::ROOK]
+//      << " queens="    << (int)engine.game_board.Bits_In[Color::WHITE][Piece::QUEEN]
+//      << "     B minors=" << (int)(engine.game_board.Bits_In[Color::BLACK][Piece::KNIGHT] +
+//                                   engine.game_board.Bits_In[Color::BLACK][Piece::BISHOP])
+//      << " rooks="        << (int)engine.game_board.Bits_In[Color::BLACK][Piece::ROOK]
+//      << " queens="       << (int)engine.game_board.Bits_In[Color::BLACK][Piece::QUEEN]
+//      << endl;
+
+// cout << "TRADE WEIGHTS"
+//      << " max=" << engine.game_board.wghts.GetWeight(TRADE_MAX_BONUS)
+//      << " cap=" << engine.game_board.wghts.GetWeight(TRADE_ADVANTAGE_CAP)
+//      << " max_side=" << MAX_CP_PER_SIDE
+//      << endl;
+
 
 }
 
@@ -2022,9 +2148,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     }
     else {
         if (engine.game_board.turn == ShumiChess::Color::WHITE)
-            cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person, b_is_Quiet);
+            cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
         else
-            cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person, b_is_Quiet);
+            cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
     }
 
 
@@ -2943,7 +3069,7 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
     cp_score_position_temp += icp_temp;
 
 
-    if (nPhase == GamePhase::OPENING) {
+    if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
         icp_temp = engine.game_board.development_minor_cp_t<c>();
         cp_score_position_temp += icp_temp;
     }
@@ -3045,7 +3171,7 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
 
 //  Final eval is (material+positional).
 template<ShumiChess::Color for_color>
-int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp, bool isQuietPosition) {
+int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
     using namespace ShumiChess;
 
     evals_visited++;
@@ -3181,8 +3307,8 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
 }
 
 // Explicit template instantiations
-template int MinimaxAI::evaluate_board_t<ShumiChess::Color::WHITE>(ShumiChess::EvalPersons, bool);
-template int MinimaxAI::evaluate_board_t<ShumiChess::Color::BLACK>(ShumiChess::EvalPersons, bool);
+template int MinimaxAI::evaluate_board_t<ShumiChess::Color::WHITE>(ShumiChess::EvalPersons);
+template int MinimaxAI::evaluate_board_t<ShumiChess::Color::BLACK>(ShumiChess::EvalPersons);
 
 template int MinimaxAI::get_positional_for_one_color<ShumiChess::Color::WHITE>(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all);
 template int MinimaxAI::get_positional_for_one_color<ShumiChess::Color::BLACK>(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all);

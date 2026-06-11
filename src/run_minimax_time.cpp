@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     //
     // From "random1_FEN" position:
     //       uzing level= 8  msec = 3  max ply = 1  play id = 3  Last best value is about 31,400 msec
-    //       uzing level= 8  msec = 3  max ply = 2  play id = 3  Last best value is about 31,400 msec
+    //       uzing level= 8  msec = 3  max ply = 4  play id = 3  Last best value is about 64,500 msec
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -116,11 +116,12 @@ int main(int argc, char** argv) {
     string out = utility::representation::gameboard_to_string(engine.game_board);
     cout << out << endl;
 
+    /////////////////////////////////////////////////////////////////////////////////////
     //
     // Decide on arguments
     int depth_to_use = 8;
     int time_to_use = 3;
-    int max_ply_to_play = 2;
+    int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     if (argc < 2) {
         //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
@@ -135,13 +136,16 @@ int main(int argc, char** argv) {
         max_ply_to_play = atoi(argv[3]);
     }
 
+    int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+
     cout << "uzing level= " << depth_to_use
          << "  msec = " << time_to_use
          << "  max ply = " << max_ply_to_play 
-         << "  play id = " << player_id 
+         << "  play id = " << player_id
+         << "  FEAT = 0x" << hex << flags << dec
          << endl;
 
-    int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+    ////////////////////////////////////////////////////////////////////////////////////
 
     GameState state = engine.is_game_over();
     steady_clock::time_point start_time = steady_clock::now();

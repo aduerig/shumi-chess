@@ -194,6 +194,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
 
     wghts.multiply_weights(VOLUME_CONTROL);
 
+    set_development_start_masks();      // Starting positions of knights and bishops
 
     compute_bits_in();
 
@@ -1961,7 +1962,7 @@ int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
         return 0;
     }
 
-    // Convert bitboards to 0..63 square indices (h1 = 0) using your helper
+    // Convert bitboards to 0..63 square indices (h1 = 0)
     ull tmp = from_bb;
     Square from_sq = utility::bit::lsb_and_pop_to_square(tmp);
     tmp = to_bb;
@@ -2296,12 +2297,9 @@ int GameBoard::SEE_recursive(Color stm,
                             b2,
                             new_balance);
 
-        if (stm == root_side)
-        {
+        if (stm == root_side) {
             if (child > best) best = child;
-        }
-        else
-        {
+        } else {
             if (child < best) best = child;
         }
     }
@@ -3471,35 +3469,163 @@ template<Color c> int GameBoard::blocked_home_bishops_cp_t()
     return cp;
 }
 
+void GameBoard::set_development_start_masks() {
+    start_knights_bb[Color::WHITE] = white_knights;
+    start_bishops_bb[Color::WHITE] = white_bishops;
+
+    start_knights_bb[Color::BLACK] = black_knights;
+    start_bishops_bb[Color::BLACK] = black_bishops;
+}
+//////////////////////////////////////////////////////////////////////////////////////
+//
 // ---------- development_minor_cp_t ----------
-template<Color c>
-int GameBoard::development_minor_cp_t() {
+// Bonus for developing original knights and bishops from their starting squares.
+// start_knights_bb[] and start_bishops_bb[] are set when the initial position is built,
+// so this works for normal chess and Chess960.
+//
+// Promotions do not increase this bonus. This term is about the original minors.
+//
+//////////////////////////////////////////////////////////////////////////////////////
 
-    ull start_knights = 0;
-    ull start_bishops = 0;
-
-    if constexpr (c == Color::WHITE) {
-        start_knights = (1ULL << square_b1) | (1ULL << square_g1);
-        start_bishops = (1ULL << square_c1) | (1ULL << square_f1);
-    } else {
-        start_knights = (1ULL << square_b8) | (1ULL << square_g8);
-        start_bishops = (1ULL << square_c8) | (1ULL << square_f8);
-    }
-
+template<Color c> int GameBoard::development_minor_cp_t() {
     const ull my_knights = get_pieces_template<Piece::KNIGHT, c>();
     const ull my_bishops = get_pieces_template<Piece::BISHOP, c>();
 
-    const int knights_on_start = bits_in(my_knights & start_knights);
-    const int bishops_on_start = bits_in(my_bishops & start_bishops);
+    const ull knights_on_start_bb = my_knights & start_knights_bb[c];
+    const ull bishops_on_start_bb = my_bishops & start_bishops_bb[c];
 
-    const int knights_total = bits_in(my_knights);
-    const int bishops_total = bits_in(my_bishops);
+    int knights_on_start = 0;
+    if (knights_on_start_bb) {
+        knights_on_start = 1;
+        if (knights_on_start_bb & (knights_on_start_bb - 1)) {
+            knights_on_start = 2;
+        }
+    }
 
-    const int developed = (knights_total - knights_on_start) + (bishops_total - bishops_on_start);
-    if (developed <= 0) return 0;
+    int bishops_on_start = 0;
+    if (bishops_on_start_bb) {
+        bishops_on_start = 1;
+        if (bishops_on_start_bb & (bishops_on_start_bb - 1)) {
+            bishops_on_start = 2;
+        }
+    }
 
-    return developed * wghts.GetWeight(DEVELOPMENT_OPENING);
+    int knights_total = (int)Bits_In[c][Piece::KNIGHT];
+    int bishops_total = (int)Bits_In[c][Piece::BISHOP];
+
+    // This is an opening development term for the original minors.
+    // Promoted knights/bishops should not increase the development count.
+    if (knights_total > 2) knights_total = 2;
+    if (bishops_total > 2) bishops_total = 2;
+
+    const int developed_knights = knights_total - knights_on_start;
+    const int developed_bishops = bishops_total - bishops_on_start;
+
+    assert(developed_knights >= 0);
+    assert(developed_bishops >= 0);
+
+    if ((developed_knights + developed_bishops) == 0) return 0;
+
+    const int knight_weight = wghts.GetWeight(DEVELOPMENT_OPENINGK);
+    const int bishop_weight = wghts.GetWeight(DEVELOPMENT_OPENINGB);
+
+    return developed_knights * knight_weight +
+           developed_bishops * bishop_weight;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// ---------- bishop_outside_world_cp_t ----------
+// Opening bishop-access term.
+//
+// This does not measure current bishop mobility.
+// It measures whether each original bishop's pawn cage has been opened.
+//
+// For normal chess:
+//      c1 bishop: b-pawn or d-pawn moved
+//      f1 bishop: e-pawn or g-pawn moved
+//
+// In Chess960 this uses start_bishops_bb[c], so the same idea applies to
+// whatever squares the bishops actually started on.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+
+template<Color c> int GameBoard::bishop_outside_world_cp_t() {
+    constexpr Color enemy = utility::representation::opposite_color_t<c>;
+
+    const ull my_bishops = get_pieces_template<Piece::BISHOP, c>();
+    const ull my_pawns   = get_pieces_template<Piece::PAWN, c>();
+
+    const int bishops_total = (int)Bits_In[c][Piece::BISHOP];
+    if (bishops_total <= 0) return 0;
+
+    const int open_bonus = wghts.GetWeight(BISHOP_OUTSIDE_WORLD);
+    const int caged_penalty = wghts.GetWeight(BISHOP_CAGED);
+
+    int open_count = 0;
+    int caged_count = 0;
+
+    ull remaining_start_bishops = start_bishops_bb[c];
+
+    while (remaining_start_bishops) {
+        const ull start_bishop_bb = remaining_start_bishops & (0ULL - remaining_start_bishops);
+        remaining_start_bishops &= remaining_start_bishops - 1;
+
+        const Square start_square = utility::bit::bitboard_to_lowest_square_fast(start_bishop_bb);
+
+        const int start_file = (int)start_square % 8;
+        const int start_rank = (int)start_square / 8;
+
+        const int pawn_rank = (c == Color::WHITE) ? (start_rank + 1) : (start_rank - 1);
+
+        bool has_door = false;
+        bool checked_door = false;
+
+        // One diagonal pawn door.
+        if (start_file > 0) {
+            const int pawn_square = pawn_rank * 8 + (start_file - 1);
+            const ull pawn_square_bb = 1ULL << pawn_square;
+
+            checked_door = true;
+            if ((my_pawns & pawn_square_bb) == 0) {
+                has_door = true;
+            }
+        }
+
+        // Other diagonal pawn door.
+        if (start_file < 7) {
+            const int pawn_square = pawn_rank * 8 + (start_file + 1);
+            const ull pawn_square_bb = 1ULL << pawn_square;
+
+            checked_door = true;
+            if ((my_pawns & pawn_square_bb) == 0) {
+                has_door = true;
+            }
+        }
+
+        assert(checked_door);
+
+        if (has_door) {
+            open_count++;
+        } else {
+            // Only penalize a closed cage if the bishop is still sitting there.
+            if (my_bishops & start_bishop_bb) {
+                caged_count++;
+            }
+        }
+    }
+
+    // Avoid giving more outside-world credit than we have bishops.
+    if (open_count > bishops_total) {
+        open_count = bishops_total;
+    }
+
+    const int cp = (open_count * open_bonus) - (caged_count * caged_penalty);
+
+    return cp;
+}
+
+
 
 // ---------- rook_endgame_keep_rooks_when_down_cp_t ----------
 // Trading

@@ -2013,7 +2013,7 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
 {
     // All legal moves for the current side to move
     vector<Move> moves;
-    get_legal_moves_fast(Color::BLACK, game_board.turn, false, moves);
+    get_legal_moves_fast(Color::BLACK, false, false, moves);
 
     fprintf(fp, "ddebug_SEE_for_all_captures: %d\n", (int)moves.size());
 

@@ -26,5 +26,76 @@ Plan:
    recurse, make a 4 stage tail off in Qply, 1. checks plus captures, 2. captures, 3. captures, (no SEE negative captures), 
        4. stop "stand pat"). 
    reexamine qply for speedups. Do we need nPlys in here? Yes, to pass into the looper I suppose.
-   why is there b_is_Quiet in eval? Only used for leaf TT. Should I ditch leaf TT? Suppose I neeed to time test it.
+   weird "one character" print bug.
    
+
+   =============================================================================7
+   trading in chess requirements
+
+      Definitions: There are two sides, here called "me" (or "I"), and "enemy". When I say "material"
+   I am excluding the king. I am using the units of "pawns=1" here - not centipawns unless 
+   specificaly specified.
+
+      1. We restrict ourselves here to the most common cases: a. I are ahead in material, and 
+   b. We have the same number or more of minor pieces, rooks, and queens. Each of the three 
+   catagories is individually evaluated, so we must have the same or more of each of the three catagories. 
+
+      2. The bonus must increase the smaller the total of material "me" has. This is the mechanism that
+   encouraging trading. It cannot be capped, or we fail to encourage trading in the eval.
+
+      3. The bonus should increase with the amount of total material I am ahead. 
+   However, this contribution must be capped relativly low. Like, once I am 3 pawns ahead, any 
+   more than that does not contribute to the bonus. Exactly what I mean by "contrbute" Im not sure.
+
+      4. The enemy must have some materal.
+
+      5. The bonus cannot be too large. an absolute limit of two pawns.
+      
+Lets define the maximum bonus case: There are two candidates:
+   a. I have 2 pawns, enemy has 1 pawn, 
+   b. I have all my pieces, enemy has 1 pawns. 
+Now, I want a. to be the maximum. 
+
+
+
+Encourging trading in chess can be done in two ways I can see. method 1. The same way 
+we encourage everthing else - in the eval, we compute a centipawn bonus method 2. We reward not in 
+eval, but we evaluate candiate moves, if they are things like QxQ,NxN, etc. We give a 
+bonus larger for the size of the piece in ZxZ, for Z some piece or pawn.
+
+Option 2 has the serius disadvantage that it does not detect complex trades, 
+like: 1. QxN,QxR, 2. QxR, QxN. However, maybe its enough to look at just the ZxZ cases. Option 1. has 
+the problem that the problem may be overspecified. IN that how can I make the bonus big enough 
+to have an effect, (greater than 10 centpawns) but not too big (200 centpawns).
+
+Is there another option?
+
+
+======================================================================================
+
+1. Only apply this in safe/common material situations:
+   I am ahead overall, and I am not down in minors, rooks, or queens
+
+2. The bonus increases as my remaining material decreases.
+   This part must not hit an early cap, because this is what rewards further trades.
+
+3. The strength of the bonus increases with my material advantage,
+   but only up to about +3 pawns. After that, more advantage does not increase the slope.
+
+4. The enemy must still have material.
+
+5. The total bonus should be designed so the largest practical case is about +2 pawns,
+   but this should come from scaling, not from clamping the final result.
+
+=================================================================================================
+
+Ok Lets talk about the evaluator encouraging knights and bishops to develop in the opening. Here is what i have. 
+I bonus knights and bishops attacking the four center squares. This is done throughtout the game except the extreme
+endgame. However, I note that for bishops, I only check the diagonals, not blockers, that is pieces of any type may be between
+the bishop and the center squares. I also penalize knights on the egde and corner. All this works well with 
+knights, but play is poorer for bishops. I note that Shumi does not finachetto much, and sometimes loses because
+the bishops end up stuck behind the pawns. Other terrible related problem, is Shumi moves his bishops to e3 and d3, 
+as white, blocking the other bishop and pawns on d2 and e2. I even have a special rotuine to punish that.
+Now Obviusly this "off starting square" logic helps, but I think I need more for bishops. Perhaps a routine to bonus when 
+bishops have access to the outside. Like making sure (as white) a king bishop, has either the g pawn up, or the e pawn up. I wabnt to 
+encourage finacheetos, and for human chessplayers, a lot in the opening relies on making sure both bishops "get out".
