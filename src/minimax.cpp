@@ -132,7 +132,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -677,7 +677,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
 
     eval_person = (ShumiChess::EvalPersons)player_id;   
 
-    cout << "\n FEAT = 0x" << hex << feat << dec << "\n";
+    //cout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     Features_mask = feat;
 
 
@@ -999,22 +999,22 @@ void MinimaxAI::playground(int iPhase) {
     	stop_callback_thread();
     #endif
 
-engine.game_board.compute_bits_in();
-int white_pawns_only = 0;
-int black_pawns_only = 0;
+// engine.game_board.compute_bits_in();
+// int white_pawns_only = 0;
+// int black_pawns_only = 0;
 
-int white_material = engine.game_board.get_material_for_color_t<Color::WHITE>(white_pawns_only);
-int black_material = engine.game_board.get_material_for_color_t<Color::BLACK>(black_pawns_only);
-assert(white_material >= 0);
-assert(black_material >= 0);
+// int white_material = engine.game_board.get_material_for_color_t<Color::WHITE>(white_pawns_only);
+// int black_material = engine.game_board.get_material_for_color_t<Color::BLACK>(black_pawns_only);
+// assert(white_material >= 0);
+// assert(black_material >= 0);
 
-itemp1 = trade_imbalance_cp_t<Color::WHITE>((white_material - black_material), white_pawns_only);
-itemp2 = trade_imbalance_cp_t<Color::BLACK>((black_material - white_material), black_pawns_only);
+// itemp1 = trade_imbalance_cp_t<Color::WHITE>((white_material - black_material), white_pawns_only);
+// itemp2 = trade_imbalance_cp_t<Color::BLACK>((black_material - white_material), black_pawns_only);
 
-cout << "\n" << pszPhase << "  www " << (white_material - black_material) << "  " << white_pawns_only 
-     << "           bbb " << (black_material - white_material) << "  " << black_pawns_only << endl;
+// cout << "\n" << pszPhase << "  www " << (white_material - black_material) << "  " << white_pawns_only 
+//      << "           bbb " << (black_material - white_material) << "  " << black_pawns_only << endl;
 
-cout << "\n\n" << pszPhase << "  tempW " << itemp1 << "           tempB " << itemp2 << endl;
+// cout << "\n\n" << pszPhase << "  tempW " << itemp1 << "           tempB " << itemp2 << endl;
 
 
 // cout << "COUNTS"
