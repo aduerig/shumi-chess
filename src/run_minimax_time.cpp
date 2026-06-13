@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     //
     // From "random1_FEN" position:
     //       uzing level= 8  msec = 3  max ply = 1  play id = 3  Last best value is about  31,400 msec
-    //       uzing level= 8  msec = 3  max ply = 4  play id = 3  Last best value is about 107,300 msec
+    //       uzing level= 8  msec = 3  max ply = 4  play id = 3  Last best value is about 109,300 msec
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 

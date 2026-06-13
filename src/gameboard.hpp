@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <iostream>
@@ -46,6 +46,11 @@ inline bool operator==(const PInfo& a, const PInfo& b) {
 
 struct PawnFileInfo {
     PInfo p[2];   // [0] friendly, [1] enemy
+
+    uint8_t open_file_holes[2];
+    ull holes_bb[2];
+    ull passed_pawns[2];
+    int passed_cp[2];
 };
 // #define friendlyP 0 
 // #define enemyP    1
@@ -326,6 +331,13 @@ class GameBoard {
 
 
         template<Color c> bool build_pawn_file_summary_t(PInfo& p);
+        template<Color c> void build_pawn_holes_and_passed_summary_t(
+                                                    const PInfo& pawnInfoF,
+                                                    const PInfo& pawnInfoE,
+                                                    ull& holes_bb,
+                                                    uint8_t& open_file_holes,
+                                                    ull& passed_pawns,
+                                                    int& passed_cp);
         void build_pawn_summaries(PawnFileInfo& pawnFileInfo);
 
         void dump_pinfo_mismatch(const PInfo& a, const PInfo& b);
@@ -340,6 +352,12 @@ class GameBoard {
         template<Color c> int count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
         template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+                                                    ull& holes_bb,
+                                                    int& holes_cp,
+                                                    ull& passed_pawns,
+                                                    int& passed_cp);
+
+        template<Color c> void count_pawn_holes_and_passed_pawns_cp_new_t(const PawnFileInfo& pawnFileInfo,
                                                     ull& holes_bb,
                                                     int& holes_cp,
                                                     ull& passed_pawns,

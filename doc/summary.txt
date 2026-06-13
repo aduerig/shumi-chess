@@ -99,3 +99,11 @@ as white, blocking the other bishop and pawns on d2 and e2. I even have a specia
 Now Obviusly this "off starting square" logic helps, but I think I need more for bishops. Perhaps a routine to bonus when 
 bishops have access to the outside. Like making sure (as white) a king bishop, has either the g pawn up, or the e pawn up. I wabnt to 
 encourage finacheetos, and for human chessplayers, a lot in the opening relies on making sure both bishops "get out".
+
+===========================================================================================================================
+
+
+Here is a speed problem. count_pawn_holes_and_passed_pawns_cp_t() is too slow. Its on the hot path. Now note it uses as input
+PInfo, a structure filled out by build_pawn_summaries(), which is called earlier. But build_pawn_summaries() is called only 
+when a pawn moves so is called far less frequently. I need to shift work from count_pawn_holes_and_passed_pawns_cp_t() into 
+build_pawn_summaries(), without making the PInfo structure too large.

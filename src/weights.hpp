@@ -51,7 +51,7 @@ enum WghtIndxs
 
 constexpr double VOLUME_CONTROL = 0.63;
 
-// All values in integer centipawns. Positive values are bonus, negative values are penelties
+// All valudes in integer centipawns. Positive values are bonus, negative values are penelties
 class Weights
 {
 private:

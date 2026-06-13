@@ -3045,11 +3045,29 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
 
     int holes_cp;
     int passed_cp;
-    engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(pawnF, pawnE,
+    engine.game_board.count_pawn_holes_and_passed_pawns_cp_new_t<c>(*pawnFileInfoP,
                                                         holes_bb,
                                                         holes_cp,
                                                         passed_pawns_bb,
                                                         passed_cp);
+    //  codex resume 019eb8fa-fb62-74f3-b672-99ed53f8ce4f
+    // #ifndef NDEBUG
+    //     ull holes_bb_old = 0ULL;
+    //     ull passed_pawns_bb_old = 0ULL;
+    //     int holes_cp_old;
+    //     int passed_cp_old;
+
+    //     engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(pawnF, pawnE,
+    //                                                         holes_bb_old,
+    //                                                         holes_cp_old,
+    //                                                         passed_pawns_bb_old,
+    //                                                         passed_cp_old);
+
+    //     assert(holes_bb_old == holes_bb);
+    //     assert(holes_cp_old == holes_cp);
+    //     assert(passed_pawns_bb_old == passed_pawns_bb);
+    //     assert(passed_cp_old == passed_cp);
+    // #endif
 
     cp_score_position_temp += holes_cp;
 

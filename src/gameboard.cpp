@@ -795,6 +795,22 @@ void GameBoard::build_pawn_summaries(PawnFileInfo& pawnFileInfo)
 {
     build_pawn_file_summary_t<Color::WHITE>(pawnFileInfo.p[Color::WHITE]);
     build_pawn_file_summary_t<Color::BLACK>(pawnFileInfo.p[Color::BLACK]);
+
+    build_pawn_holes_and_passed_summary_t<Color::WHITE>(
+        pawnFileInfo.p[Color::WHITE],
+        pawnFileInfo.p[Color::BLACK],
+        pawnFileInfo.holes_bb[Color::WHITE],
+        pawnFileInfo.open_file_holes[Color::WHITE],
+        pawnFileInfo.passed_pawns[Color::WHITE],
+        pawnFileInfo.passed_cp[Color::WHITE]);
+
+    build_pawn_holes_and_passed_summary_t<Color::BLACK>(
+        pawnFileInfo.p[Color::BLACK],
+        pawnFileInfo.p[Color::WHITE],
+        pawnFileInfo.holes_bb[Color::BLACK],
+        pawnFileInfo.open_file_holes[Color::BLACK],
+        pawnFileInfo.passed_pawns[Color::BLACK],
+        pawnFileInfo.passed_cp[Color::BLACK]);
 }
 
 
@@ -2984,7 +3000,181 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, con
 }
 
 
-// ---------- count_pawn_holes_and_passed_pawns_cp_t ----------
+template<Color c>
+void GameBoard::build_pawn_holes_and_passed_summary_t(
+        const PInfo& pawnInfoF,
+        const PInfo& pawnInfoE,
+        ull& holes_bb,
+        uint8_t& open_file_holes,
+        ull& passed_pawns,
+        int& passed_cp)
+{
+    holes_bb = 0ULL;
+    open_file_holes = 0;
+
+    passed_pawns = 0ULL;
+    passed_cp = 0;
+
+    ull my_pawns = get_pieces_template<Piece::PAWN, c>();
+    if (!my_pawns) return;
+
+    const ull all_pawns = get_pieces_template<Piece::PAWN>();
+
+    const int passed_pawn_slope_cp = wghts.GetWeight(PASSED_PAWN_SLOPE);
+    const int passed_pawn_yinrcpt_cp = wghts.GetWeight(PASSED_PAWN_YINRCPT);
+    const int passed_pawn_connected_cp = wghts.GetWeight(PASSED_PAWN_CONNECTED);
+    const unsigned enemy_open_files = (~pawnInfoE.files_present) & 0xFFu;
+
+    int friendly_rear_rank[8];
+    int enemy_rear_rank[8];
+
+    
+    for (int file = 0; file < 8; ++file) {
+        const Square friendly_rear = pawnInfoF.rearSq[file];
+        const Square enemy_rear = pawnInfoE.rearSq[file];
+
+        if constexpr (c == Color::WHITE) {
+            friendly_rear_rank[file] = (friendly_rear == NO_SQUARE) ? 8 : (friendly_rear >> 3);
+            enemy_rear_rank[file] = (enemy_rear == NO_SQUARE) ? -1 : (enemy_rear >> 3);
+        }
+        else {
+            friendly_rear_rank[file] = (friendly_rear == NO_SQUARE) ? -1 : (friendly_rear >> 3);
+            enemy_rear_rank[file] = (enemy_rear == NO_SQUARE) ? 8 : (enemy_rear >> 3);
+        }
+    }
+
+    ull tmp = my_pawns;
+
+    while (tmp) {
+
+        Square s = utility::bit::lsb_and_pop_to_square(tmp);
+
+        int f = s & 7;
+        int r = s >> 3;
+
+        // ------------------------------------------------------------
+        // pawn holes
+        // ------------------------------------------------------------
+
+        int hole_sq;
+
+        if constexpr (c == Color::WHITE) {
+            assert (r != 7);           // should never happen, pawns cant be on this rank
+            hole_sq = s + 8;
+        }
+        else {
+            assert(r != 0);             // should never happen, pawns cant be on this rank
+            hole_sq = s - 8;
+        }
+
+        ull hole_only_bb = (1ULL << hole_sq) ;
+        if (all_pawns & hole_only_bb) continue;
+
+        bool friend_pawn_can_cover;
+
+        if constexpr (c == Color::WHITE) {
+            friend_pawn_can_cover =
+                (f > 0 && friendly_rear_rank[f - 1] <= r) ||
+                (f < 7 && friendly_rear_rank[f + 1] <= r);
+        }
+        else {
+            friend_pawn_can_cover =
+                (f > 0 && friendly_rear_rank[f - 1] >= r) ||
+                (f < 7 && friendly_rear_rank[f + 1] >= r);
+        }
+
+        if (!friend_pawn_can_cover) {
+
+            holes_bb |= (1ULL << hole_sq);
+
+            if (enemy_open_files & (1u << f)) {
+                ++open_file_holes;
+            }
+        }
+
+        // ------------------------------------------------------------
+        // passed pawns (new compact version)
+        // ------------------------------------------------------------
+
+        bool enemy_ahead;
+
+        if constexpr (c == Color::WHITE) {
+            enemy_ahead =
+                (enemy_rear_rank[f] > r) ||
+                (f > 0 && enemy_rear_rank[f - 1] > r) ||
+                (f < 7 && enemy_rear_rank[f + 1] > r);
+        }
+        else {
+            enemy_ahead =
+                (enemy_rear_rank[f] < r) ||
+                (f > 0 && enemy_rear_rank[f - 1] < r) ||
+                (f < 7 && enemy_rear_rank[f + 1] < r);
+        }
+
+        if (!enemy_ahead) {
+
+            passed_pawns |= (1ULL << s);
+
+            int adv;
+
+            if constexpr (c == Color::WHITE) adv = r;
+            else                             adv = (7 - r);
+
+            assert((adv > 0) && (adv < 7));
+
+            int bonus =
+                passed_pawn_slope_cp * adv * adv
+              + passed_pawn_yinrcpt_cp;
+
+            ull protect_mask = 0ULL;
+
+            if constexpr (c == Color::WHITE) {
+
+                if (r > 0) {
+                    if (f < 7) protect_mask |= (1ULL << (s - 7));
+                    if (f > 0) protect_mask |= (1ULL << (s - 9));
+                }
+            }
+            else {
+
+                if (r < 7) {
+                    if (f < 7) protect_mask |= (1ULL << (s + 9));
+                    if (f > 0) protect_mask |= (1ULL << (s + 7));
+                }
+            }
+
+            if ((my_pawns & protect_mask) != 0ULL) {
+
+                int temp = (bonus * passed_pawn_connected_cp);
+
+                bonus = (temp / 3);
+            }
+
+            passed_cp += bonus;
+        }
+    }
+}
+
+
+template<Color c>
+void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t(
+        const PawnFileInfo& pawnFileInfo,
+        ull& holes_bb,
+        int& holes_cp,
+        ull& passed_pawns,
+        int& passed_cp)
+{
+    holes_bb = pawnFileInfo.holes_bb[c];
+    passed_pawns = pawnFileInfo.passed_pawns[c];
+    passed_cp = pawnFileInfo.passed_cp[c];
+
+    holes_cp = bits_in(holes_bb) * wghts.GetWeight(PAWN_HOLE);
+
+    if (get_major_pieces<c>() != 0ULL) {
+        holes_cp += pawnFileInfo.open_file_holes[c] * wghts.GetWeight(PAWN_HOLE_OPEN_FILE);
+    }
+}
+
 
 template<Color c>
 void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(
@@ -3279,7 +3469,6 @@ int GameBoard::get_king_near_squares_t(int king_near_squares_out[9])
     return count;
 }
 
-// ---------- sliders_and_knights_attacking_square2_t ----------
 template<Color c>
 int GameBoard::sliders_and_knights_attacking_square2_t(int sq)
 {
@@ -3789,6 +3978,9 @@ template int GameBoard::rook_7th_rankness_cp_t<Color::BLACK>();
 template bool GameBoard::build_pawn_file_summary_t<Color::WHITE>(PInfo&);
 template bool GameBoard::build_pawn_file_summary_t<Color::BLACK>(PInfo&);
 
+template void GameBoard::build_pawn_holes_and_passed_summary_t<Color::WHITE>(const PInfo&, const PInfo&, ull&, uint8_t&, ull&, int&);
+template void GameBoard::build_pawn_holes_and_passed_summary_t<Color::BLACK>(const PInfo&, const PInfo&, ull&, uint8_t&, ull&, int&);
+
 template bool GameBoard::any_piece_ahead_on_file_t<Color::WHITE>(int, ull) const;
 template bool GameBoard::any_piece_ahead_on_file_t<Color::BLACK>(int, ull) const;
 
@@ -3804,6 +3996,17 @@ template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::WHITE>(co
                                                             ull& passed_pawns,
                                                             int& passed_cp);
 template void GameBoard::count_pawn_holes_and_passed_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+                                                            ull& holes_bb,
+                                                            int& holes_cp,
+                                                            ull& passed_pawns,
+                                                            int& passed_cp);
+
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t<Color::WHITE>(const PawnFileInfo& pawnFileInfo,
+                                                            ull& holes_bb,
+                                                            int& holes_cp,
+                                                            ull& passed_pawns,
+                                                            int& passed_cp);
+template void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t<Color::BLACK>(const PawnFileInfo& pawnFileInfo,
                                                             ull& holes_bb,
                                                             int& holes_cp,
                                                             ull& passed_pawns,
@@ -3825,7 +4028,6 @@ template int GameBoard::queenOnCenterSquare_cp_t<Color::BLACK>();
 template int GameBoard::get_king_near_squares_t<Color::WHITE>(int[9]);
 template int GameBoard::get_king_near_squares_t<Color::BLACK>(int[9]);
 
-// sliders_and_knights_attacking_square2_t
 template int GameBoard::sliders_and_knights_attacking_square2_t<Color::WHITE>(int);
 template int GameBoard::sliders_and_knights_attacking_square2_t<Color::BLACK>(int);
 
