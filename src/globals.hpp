@@ -106,7 +106,7 @@ struct Move {
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
 
-    Piece capture = Piece::NONE;
+    Piece capture = Piece::NONE;            // the piece being captured
     Piece promotion = Piece::NONE;
 
     // Move flags  (FLAGS_ constants)

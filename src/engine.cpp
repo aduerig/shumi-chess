@@ -1629,10 +1629,10 @@ void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_va
 // Notes: O(U^2) sort due to linear insertion; U is usually small. (<5)
 //
 void Engine::sort_unquiet_moves_qsearch(
-                const vector<ShumiChess::Move>& moves,       // input
-                //const Move& move_last,                       // input (used only by _DEBUGGING_MOVE_CHAIN)
+                const vector<ShumiChess::Move>& moves,  // input
+                //const Move& move_last,                // input (used only by _DEBUGGING_MOVE_CHAIN)
                 int qPlys,
-                vector<ShumiChess::Move>& MovesOut            // output
+                vector<ShumiChess::Move>& MovesOut      // output
             )
 {
 
@@ -1647,59 +1647,66 @@ void Engine::sort_unquiet_moves_qsearch(
 
     for (const ShumiChess::Move& mv : moves) {
 
-        // If it's a capture, insert in descending MVV-LVA order
         if (mv.capture != ShumiChess::Piece::NONE) {
+            //
+            // Possible pruning. (check escapes are not pruned)
+            //
 
-            if (qPlys > MAX_QPLY2) {
+            int attacker = game_board.centipawn_score_of(mv.piece_type);
+            int victim = game_board.centipawn_score_of(mv.capture);
+            if (attacker > victim) {  // p x Q like captures need no SEE analysis. Do not prune.
 
-                #ifndef NO_SEE_IN_QUISSENCE
-                    // Very late in analysis! So discard negative SEE captures below one pawn.
-                    int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
-                    
-                    // remove me!
-                    // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
-                    // if (testValue != testValue2) {
-                    //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
-                    //     move_into_string(mv);
-                    //     cout << "mv " << move_string.c_str() << '\n';
-                    //     // Show board
-                    //     string out = utility::representation::gameboard_to_string(game_board);
-                    //     cout << out << endl;
-                    //     // Show FEN
-                    //     cout << game_board.to_fen().c_str() << '\n';
-                    //     assert(0);
-                    // }
-                    #ifdef _DEBUGGING_TO_FILE1 
-                        if (testValue > 0) {     // centipawns
+                if (qPlys > MAX_QPLY2) {
+
+                    // Use SEE to determine if there is to be pruning of this move.
+                    #ifndef NO_SEE_IN_QUISSENCE
+                        // Very late in analysis! So discard negative SEE captures below one pawn.
+                        int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
                         
-                            fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
-        
-                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                            
-                            print_move_history_to_file(fpDebug, "SEE hist");
-                            fputc('\n', fpDebug);
-                        }
-                    #endif
-
-                    if (testValue <= -100) {     // centipawns
+                        // remove me!
+                        // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
+                        // if (testValue != testValue2) {
+                        //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
+                        //     move_into_string(mv);
+                        //     cout << "mv " << move_string.c_str() << '\n';
+                        //     // Show board
+                        //     string out = utility::representation::gameboard_to_string(game_board);
+                        //     cout << out << endl;
+                        //     // Show FEN
+                        //     cout << game_board.to_fen().c_str() << '\n';
+                        //     assert(0);
+                        // }
                         #ifdef _DEBUGGING_TO_FILE1 
-                        
-                            fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
-        
-                            print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                            if (testValue > 0) {     // centipawns
                             
-                            print_move_history_to_file(fpDebug, "SEE hist");
-                            fputc('\n', fpDebug);
+                                fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
+            
+                                print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                                
+                                print_move_history_to_file(fpDebug, "SEE hist");
+                                fputc('\n', fpDebug);
+                            }
                         #endif
 
-                        // Dont sort up this capture
-                        continue;
-                    }
+                        if (testValue <= -100) {     // centipawns
+                            #ifdef _DEBUGGING_TO_FILE1 
+                            
+                                fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
+            
+                                print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                                
+                                print_move_history_to_file(fpDebug, "SEE hist");
+                                fputc('\n', fpDebug);
+                            #endif
 
-                #endif
+                            // Dont sort up this capture, that is prune it.
+                            continue;
+                        }
 
-            }   // END is late in analysis
+                    #endif
 
+                }   // END is late in analysis
+            }
 
             // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
             // biggest victim with the smallest attacker.
@@ -1722,7 +1729,7 @@ void Engine::sort_unquiet_moves_qsearch(
                 }
             }
 
-            MovesOut.insert(it, mv);
+            MovesOut.insert(it, mv);    // Put this move into the output array
         
 
         } else {
