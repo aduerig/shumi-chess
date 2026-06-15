@@ -791,7 +791,7 @@ void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
 }
 
 
-void GameBoard::build_pawn_summaries(PawnFileInfo& pawnFileInfo)
+void GameBoard::build_pawn_summaries(PawnFileInfo& pawnFileInfo)  // outout
 {
     build_pawn_file_summary_t<Color::WHITE>(pawnFileInfo.p[Color::WHITE]);
     build_pawn_file_summary_t<Color::BLACK>(pawnFileInfo.p[Color::BLACK]);

@@ -153,6 +153,7 @@ public:
     int TT_ntrys1 = 0;
 
     // Template variants (compile-time color)
+    const ShumiChess::PawnFileInfo& get_pawn_file_info_for_position();
     template<ShumiChess::Color c> int cp_score_positional_get_open_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_end_t(int nPly, int cp_score_material_all, bool noMajorPiecesFriend, bool noMajorPiecesEnemy);

@@ -132,7 +132,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -2986,6 +2986,39 @@ try_again:
 // ============================================================================
 
 
+const PawnFileInfo& MinimaxAI::get_pawn_file_info_for_position() {
+    PawnFileInfo pawnFileInfoTemp;
+
+    // Probe the pawn/file hash
+    const uint64_t key = engine.game_board.pawn_zobrist_key;
+
+    auto it = pawn_file_info.find(key);
+    if (it != pawn_file_info.end()) {
+        // found an "pawn summary" entry in the hash (this is the more common case)
+        NhitsP++;
+
+        #ifdef DEBUGGING_PAWN_HASH
+            engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
+            if (!(pawnFileInfoTemp.p[0] == it->second.p[0])) {
+                assert(0);
+            }
+            if (!(pawnFileInfoTemp.p[1] == it->second.p[1])) {
+                assert(0);
+            }
+        #endif
+
+        return it->second;
+    }
+
+    // rebuild the pawn summary.
+    engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
+
+    // Add to hash
+    auto result = pawn_file_info.emplace(key, pawnFileInfoTemp);
+    return result.first->second;
+}
+
+
 template<ShumiChess::Color c>
 int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
     using namespace ShumiChess;
@@ -2995,43 +3028,11 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
     int cp_score_position_temp = 0;
     int icp_temp;
 
-   
-    PawnFileInfo pawnFileInfoTemp;
-    PawnFileInfo* pawnFileInfoP = nullptr;
-
-    // Probe the pawn/file hash
-    uint64_t key = engine.game_board.pawn_zobrist_key;
-    auto it = pawn_file_info.find(key);
-    if (it != pawn_file_info.end()) {
-        // found an "pawn summary" entry (this is the more common case)
-        NhitsP++;
-        pawnFileInfoP = &it->second;
-
-        #ifdef DEBUGGING_PAWN_HASH          // burp3
-            engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
-            if (!(pawnFileInfoTemp.p[0] == pawnFileInfoP->p[0])) {
-                assert(0);
-            }
-            if (!(pawnFileInfoTemp.p[1] == pawnFileInfoP->p[1])) {
-                assert(0);
-            }
-        #endif
-
-    } else {
-        // rebuild the pawn summary.
-        engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
-
-        // Add to hash
-        auto result = pawn_file_info.emplace(key, pawnFileInfoTemp);
-        pawnFileInfoP = &result.first->second;
-    }
-
-    assert(pawnFileInfoP != NULL);
-
+    const PawnFileInfo& pawnFileInfo = get_pawn_file_info_for_position();
 
     // Create pawn info links the rest of the routine will use.
-    const PInfo& pawnF = pawnFileInfoP->p[c];
-    const PInfo& pawnE = pawnFileInfoP->p[enemyColor];
+    const PInfo& pawnF = pawnFileInfo.p[c];
+    const PInfo& pawnE = pawnFileInfo.p[enemyColor];
 
     icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnF);
     cp_score_position_temp += icp_temp;
@@ -3045,12 +3046,12 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase) {
 
     int holes_cp;
     int passed_cp;
-    engine.game_board.count_pawn_holes_and_passed_pawns_cp_new_t<c>(*pawnFileInfoP,
+    engine.game_board.count_pawn_holes_and_passed_pawns_cp_new_t<c>(pawnFileInfo,
                                                         holes_bb,
                                                         holes_cp,
                                                         passed_pawns_bb,
                                                         passed_cp);
-    //  codex resume 019eb8fa-fb62-74f3-b672-99ed53f8ce4f
+    //  codex resume 019ec46c-94ff-78b2-9c13-8304eb8f86c6
     // #ifndef NDEBUG
     //     ull holes_bb_old = 0ULL;
     //     ull passed_pawns_bb_old = 0ULL;
