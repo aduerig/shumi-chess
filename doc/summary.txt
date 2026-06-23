@@ -103,46 +103,25 @@ encourage finacheetos, and for human chessplayers, a lot in the opening relies o
 ===========================================================================================================================
 
 
-Here is a speed problem. count_pawn_holes_and_passed_pawns_cp_t() is too slow. Its on the hot path. Now note it uses as input
-PInfo, a structure filled out by build_pawn_summaries(), which is called earlier. But build_pawn_summaries() is called only 
-when a pawn moves so is called far less frequently. I need to shift work from count_pawn_holes_and_passed_pawns_cp_t() into 
-build_pawn_summaries(), without making the PInfo structure too large.
+overall qsearch:
+
+get all legal moves (If not in check, generate only captures. If in check generate all moves)
+
+if game over, return the approriate score
+
+evaluate (get pat score)
+
+fuse at maximum qPly
 
 
+if (!in check) 
+   if lower qsearch 
+      sort_unquiet_moves_qsearch_early() similar to before, but no SEE
+   else (upper qsearch)
+      filter perhaps prune with SEE or delta (no sort)
 
+normal "stand pat" logic
+loop over all moves
 
-   PawnFileInfo pawnFileInfoTemp;
-    PawnFileInfo* pawnFileInfoP = nullptr;
+=========================================================================
 
-    // Probe the pawn/file hash
-    uint64_t key = engine.game_board.pawn_zobrist_key;
-    auto it = pawn_file_info.find(key);
-    if (it != pawn_file_info.end()) {
-        // found an "pawn summary" entry (this is the more common case)
-        NhitsP++;
-        pawnFileInfoP = &it->second;
-
-        #ifdef DEBUGGING_PAWN_HASH          // burp3
-            engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
-            if (!(pawnFileInfoTemp.p[0] == pawnFileInfoP->p[0])) {
-                assert(0);
-            }
-            if (!(pawnFileInfoTemp.p[1] == pawnFileInfoP->p[1])) {
-                assert(0);
-            }
-        #endif
-
-    } else {
-        // rebuild the pawn summary.
-        engine.game_board.build_pawn_summaries(pawnFileInfoTemp);
-
-        // Add to hash
-        auto result = pawn_file_info.emplace(key, pawnFileInfoTemp);
-        pawnFileInfoP = &result.first->second;
-    }
-
-    assert(pawnFileInfoP != NULL);
-
-    // Create pawn info links the rest of the routine will use.
-    const PInfo& pawnF = pawnFileInfoP->p[c];
-    const PInfo& pawnE = pawnFileInfoP->p[enemyColor];

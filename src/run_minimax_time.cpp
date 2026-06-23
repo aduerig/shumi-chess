@@ -96,28 +96,25 @@ int main(int argc, char** argv) {
     //
     // From "random1_FEN" position:
     //       uzing level= 8  msec = 3  max ply = 1  play id = 3  Last best value is about  31,400 msec
-    //       uzing level= 8  msec = 3  max ply = 4  play id = 3  Last best value is about 109,300 msec
+    //       uzing level= 8  msec = 3  max ply = 4  play id = 3  Last best value is about  93,500 msec
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Make board
     //string FENString = "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
 
-    // Make engine
-    #define RANDOM1_FEN "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8"
-    Engine engine(RANDOM1_FEN);
-    //Engine engine;
+    constexpr int MAX_FENS = 10;
+    string FENs[MAX_FENS];
 
-    //std::this_thread::sleep_for(std::chrono::seconds(3));   // debug only
 
-    MinimaxAI minimax_ai(engine);
+    FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Random Petrov
+    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giaco
 
-    // Show board
-    string out = utility::representation::gameboard_to_string(engine.game_board);
-    cout << out << endl;
+    
 
     /////////////////////////////////////////////////////////////////////////////////////
     //
+    int NPositions = 2;
     // Decide on arguments
     int depth_to_use = 8;
     int time_to_use = 3;
@@ -147,35 +144,60 @@ int main(int argc, char** argv) {
 
     ////////////////////////////////////////////////////////////////////////////////////
 
-    GameState state = engine.is_game_over();
     steady_clock::time_point start_time = steady_clock::now();
-    for (int ply = 1; state == INPROGRESS && ply <= max_ply_to_play; ++ply) {
-        
-        Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id, flags);
 
-        if (move.piece_type == Piece::NONE) {
-            cout << "No legal move returned at ply " << ply << endl;
-            break;
-        }
+    GameState state;
 
-        // Show move
-        // cout << "\nPly " << ply << " "
-        //      << utility::representation::color_to_string(move.color)
-        //      << " move: " << move_to_uci(move) << endl;
+    for (int iPositions=0; iPositions<NPositions; iPositions++) {
 
-        make_engine_move(engine, move);
+        // Make engine
+        Engine engine(FENs[iPositions]);
+        //Engine engine;
+
+        //std::this_thread::sleep_for(std::chrono::seconds(3));   // debug only
+
+        MinimaxAI minimax_ai(engine);
 
         // Show board
-        // out = utility::representation::gameboard_to_string(engine.game_board);
-        // cout << out << endl;
+        string out = utility::representation::gameboard_to_string(engine.game_board);
+        cout << out << endl;
+
 
         state = engine.is_game_over();
+        //
+        // Loop over ply
+        //
+        for (int ply = 1; ( (state == INPROGRESS) && (ply <= max_ply_to_play)); ++ply) {
+            
+            Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id, flags);
+
+            if (move.piece_type == Piece::NONE) {
+                cout << "No legal move returned at ply " << ply << endl;
+                break;
+            }
+
+            // Show move
+            // cout << "\nPly " << ply << " "
+            //      << utility::representation::color_to_string(move.color)
+            //      << " move: " << move_to_uci(move) << endl;
+
+            make_engine_move(engine, move);
+
+            // Show board
+            // out = utility::representation::gameboard_to_string(engine.game_board);
+            // cout << out << endl;
+
+            state = engine.is_game_over();
+        }
+
+        cout << "Game state: " << game_state_to_string(state) << endl;
+        cout << "PGN: " << engine.gamePGN.spitout() << endl;
+        steady_clock::time_point end_time = steady_clock::now();
+        cout << "Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
+
     }
 
-    cout << "Game state: " << game_state_to_string(state) << endl;
-    cout << "PGN: " << engine.gamePGN.spitout() << endl;
-    steady_clock::time_point end_time = steady_clock::now();
-    cout << "Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
+ 
 
     cout << "Press any key to exit..." << endl;
     _getch();

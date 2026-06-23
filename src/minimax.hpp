@@ -34,13 +34,17 @@ public:
     //ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
 
-constexpr int MAXIMUM_DEEPENING = 40;
+//
+// fuses. Causes varous actions when limits hit
+constexpr int MAXIMUM_DEEPENING = 40;       // If this wall hit, deepening stops. This can happen  50-move rule, all nodes return DRAW, so in so quickly
+                                            // zips through these, that it runs out of depth before the time limit
+constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (last deepeining discarded)
 constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead past this far.
 //assert(MAXIMUM_DEEPENING < MAX_PLY);
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
-constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 20;      // In units of centi-pawns
-constexpr int RANDOM_MOVE_CANDIDATES = 6;             // I must be greater than 1
+constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 25;      // In units of centi-pawns
+constexpr int RANDOM_MOVE_CANDIDATES = 5;             // I must be greater than 1
 
 class MinimaxAI {
 public:
@@ -56,9 +60,9 @@ public:
 
     bool stop_calculation = false;
 
-    int nodes_visited = 0;
-    int nodes_visited_depth_zero = 0;
-    int evals_visited = 0;
+    ull nodes_visited = 0;
+    ull nodes_visited_depth_zero = 0;
+    ull evals_visited = 0;
     
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;
@@ -80,6 +84,7 @@ public:
     ull NhitsTT = 0;            // eval Transposition table (TT) (not normally used)
     ull NhitsTT2 = 0;           // node Transposition table (TT2)
     ull NhitsP = 0;             // pawn/file hash table
+    ull NTriesP = 0;             // pawn/file hash table
 
     ull nRandos = 0;
     ull nGames = 0;
@@ -154,11 +159,11 @@ public:
 
     // Template variants (compile-time color)
     const ShumiChess::PawnFileInfo& get_pawn_file_info_for_position();
-    template<ShumiChess::Color c> int cp_score_positional_get_open_cp_t(int nPhase);
+    template<ShumiChess::Color c> int cp_score_positional_get_open_cp_t(int nPhase, const ShumiChess::PawnFileInfo*& pawnFileInfoP);
     template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_end_t(int nPly, int cp_score_material_all, bool noMajorPiecesFriend, bool noMajorPiecesEnemy);
     template<ShumiChess::Color for_color> int evaluate_board_t(ShumiChess::EvalPersons evp);
-    template<ShumiChess::Color c> int get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all);
+    template<ShumiChess::Color c> int get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all, const ShumiChess::PawnFileInfo*& pawnFileInfoP);
     
     template<ShumiChess::Color c> int trade_imbalance_cp_t(int material_balance, int me_pawn_material) const;
     

@@ -8,11 +8,23 @@
 #include "weights.hpp"
 #include "endgameTables.hpp"
 
+#define LOWERQ 5
+#define UPPERQ 2
+//  my old 3-3 was about 92
+//  4,3     96
+//  4,4     94
+//  3,4     78
+//  3,5     79
+//  5,3     58
+//  5,4     92
+//  3,3     76
+//  5,5     96
+//  5,2     94
+//  3,2     83
 
-// Note neither of these include the "depth". So if depth=6, then the actual levels analyzed is (6+MAX_QPLY).
-#define MAX_QPLY2 4        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
-#define MAX_QPLY  7        // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
-
+// Note neither of these include the "depth". So if depth=6, then the actual maximum ply analyzed is (6+MAX_QPLY).
+#define MAX_QPLY2 (LOWERQ+1)        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
+#define MAX_QPLY  (UPPERQ+LOWERQ+1) // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
 
 
 namespace ShumiChess {
@@ -364,6 +376,7 @@ class GameBoard {
                                                     int& passed_cp);
 
         template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
+        template<Color c> int advanced_unpushable_knights_cp_t();
         template<Color c> int rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE);
 
 

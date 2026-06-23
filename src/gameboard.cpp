@@ -2445,21 +2445,21 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         i_NumerB += (castle_rights & (FLAGS_CASTLE_QUEEN << 2)) ? 1 : 0;
     }
 
-    // Make "1" (can castle one side)"3/2"
+    // Make "1" (can castle one side) "almost" as good as castling two sides.
     if (i_NumerB==1) {
-        i_NumerB=3;
-        i_DenomB=2;
+        i_NumerB=5;
+        i_DenomB=3;
     }
 
     int cpWghtB = wghts.GetWeight(CAN_CASTLE);
 
     ///////////////////////////////
-
+    // final reckoning
+    //             from "has castled"            from "can castle"
     int icode = (b_has_castled ? cpWght : 0) + (cpWghtB*i_NumerB)/i_DenomB;
 
-    int final_cp;
-
     // Take phase into account
+    int final_cp;
     if      (phase == GamePhase::OPENING) final_cp = icode;
     else if (phase == GamePhase::MIDDLE_EARLY) final_cp = (4*icode)/5;
     else if (phase == GamePhase::MIDDLE) final_cp = (2*icode)/3;
@@ -2751,12 +2751,12 @@ int GameBoard::two_bishops_cp_t(int nPhase) const {
 
     if (bishops < 2) return 0;
 
-    int final_cp = 0;
-    if (nPhase < GamePhase::MIDDLE)  return final_cp;
-
+    int final_cp;
     int weight = wghts.GetWeight(TWO_BISHOPS);
-    if (nPhase == GamePhase::MIDDLE) final_cp = (2*weight)/3;
-    if (nPhase > GamePhase::MIDDLE)  final_cp = weight;
+
+    if (nPhase < GamePhase::MIDDLE)       final_cp = (1*weight)/3;
+    else if (nPhase == GamePhase::MIDDLE) final_cp = (2*weight)/3;
+    else                                  final_cp = weight;
 
     return final_cp;
 }
@@ -2908,6 +2908,10 @@ int GameBoard::rook_7th_rankness_cp_t()
 
     return score_cp;
 }
+
+
+
+
 
 
 // ---------- any_piece_ahead_on_file_t ----------
@@ -3295,19 +3299,16 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(
         }
 
         if (!enemy_ahead) {
+            int adv;
 
             passed_pawns |= (1ULL << s);
 
-            int adv;
-
+            // adv is "rank" (queens at 7)
             if constexpr (c == Color::WHITE) adv = r;
             else                             adv = (7 - r);
-
             assert((adv > 0) && (adv < 7));
 
-            int bonus =
-                passed_pawn_slope_cp * adv * adv
-              + passed_pawn_yinrcpt_cp;
+            int bonus = (passed_pawn_slope_cp * adv * adv) + passed_pawn_yinrcpt_cp;
 
             ull protect_mask = 0ULL;
 
@@ -3351,6 +3352,108 @@ int GameBoard::count_knights_on_holes_cp_t(ull holes_bb) {
     return (n * wghts.GetWeight(KNIGHT_HOLE));
 }
 
+// ---------- advanced_unpushable_knights_cp_t ----------
+// Reward knights on relative 5th/6th/7th ranks that can never be attacked
+// by an enemy pawn. Rook files are ignored.
+template<Color c> int GameBoard::advanced_unpushable_knights_cp_t()
+{
+    constexpr Color enemy = utility::representation::opposite_color_t<c>;
+
+    const int rank5_bonus_cp = wghts.GetWeight(KNIGHT_HOLE)/2;
+    const int rank6_bonus_cp = wghts.GetWeight(KNIGHT_HOLE);
+    const int rank7_bonus_cp = wghts.GetWeight(KNIGHT_HOLE);
+
+    ull knights;
+    ull enemy_pawns;
+
+    if constexpr (c == Color::WHITE) {
+        knights = white_knights;
+        enemy_pawns = black_pawns;
+    } else {
+        knights = black_knights;
+        enemy_pawns = white_pawns;
+    }
+
+    int cp_score = 0;
+
+    while (knights) {
+        Square sq = utility::bit::bitboard_to_lowest_square_fast(knights);
+        knights &= (knights - 1);
+
+        const int isq = (int)sq;
+        const int file = isq % 8;       // Shumi: 0=H file, 7=A file
+        const int rank = isq / 8;       // 0=rank 1, 7=rank 8
+
+        // Do not count knights on rook files.
+        if ((file == 0) || (file == 7)) {
+            continue;
+        }
+
+        const int relative_rank = (c == Color::WHITE) ? (rank + 1) : (8 - rank);
+
+        if ((relative_rank < 5) || (relative_rank > 7)) {
+            continue;
+        }
+
+        // Can an enemy pawn ever advance to attack this square?
+        bool can_be_pushed_by_pawn = false;
+
+        for (int file_delta = -1; file_delta <= 1; file_delta += 2) {
+            const int pawn_file = file + file_delta;
+
+            if ((pawn_file < 0) || (pawn_file > 7)) {
+                continue;
+            }
+
+            if constexpr (c == Color::WHITE) {
+
+                // Black pawns move toward lower ranks.
+                // A black pawn on an adjacent file above this knight can someday
+                // advance to rank+1 and attack the knight square.
+                for (int pawn_rank = rank + 1; pawn_rank < 8; pawn_rank++) {
+                    const int pawn_sq = pawn_rank * 8 + pawn_file;
+
+                    if (enemy_pawns & (1ULL << pawn_sq)) {
+                        can_be_pushed_by_pawn = true;
+                        break;
+                    }
+                }
+
+            } else {
+
+                // White pawns move toward higher ranks.
+                // A white pawn on an adjacent file below this knight can someday
+                // advance to rank-1 and attack the knight square.
+                for (int pawn_rank = rank - 1; pawn_rank >= 0; pawn_rank--) {
+                    const int pawn_sq = pawn_rank * 8 + pawn_file;
+
+                    if (enemy_pawns & (1ULL << pawn_sq)) {
+                        can_be_pushed_by_pawn = true;
+                        break;
+                    }
+                }
+            }
+
+            if (can_be_pushed_by_pawn) {
+                break;
+            }
+        }
+
+        if (can_be_pushed_by_pawn) {
+            continue;
+        }
+
+        if (relative_rank == 5) {
+            cp_score += rank5_bonus_cp;
+        } else if (relative_rank == 6) {
+            cp_score += rank6_bonus_cp;
+        } else {
+            cp_score += rank7_bonus_cp;
+        }
+    }
+
+    return cp_score;
+}
 
 // ---------- king_edgeness_cp_t ----------
 
@@ -3986,6 +4089,9 @@ template bool GameBoard::any_piece_ahead_on_file_t<Color::BLACK>(int, ull) const
 
 template int GameBoard::count_knights_on_holes_cp_t<Color::WHITE>(ull);
 template int GameBoard::count_knights_on_holes_cp_t<Color::BLACK>(ull);
+
+template int GameBoard::advanced_unpushable_knights_cp_t<Color::WHITE>();
+template int GameBoard::advanced_unpushable_knights_cp_t<Color::BLACK>();
 
 template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::WHITE>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 template int GameBoard::count_isolated_and_doubled_pawns_cp_t<Color::BLACK>(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;

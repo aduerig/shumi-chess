@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cassert>
 #include <iostream>
@@ -269,13 +269,15 @@ class Engine {
            return (mv.capture != ShumiChess::Piece::NONE || mv.promotion != ShumiChess::Piece::NONE); 
         }
 
-        void sort_unquiet_moves_qsearch(
-                                        const vector<ShumiChess::Move>& moves,      // Input
-                                        //const Move& move_last,                      // input
-                                        int qPlys,
-                                        vector<ShumiChess::Move>& MovesOut           // output
-                                    );
-
+        void sort_unquiet_moves_qsearch_L(const vector<ShumiChess::Move>& moves,      // Input
+                                        vector<ShumiChess::Move>& MovesOut          // Output
+                                        );
+        void sort_unquiet_moves_qsearch_H(const vector<ShumiChess::Move>& moves,      // Input
+                                        vector<ShumiChess::Move>& MovesOut          // Output
+                                        );
+        void sort_check_evasions_qsearch(const vector<ShumiChess::Move>& moves,      // Input
+                                        vector<ShumiChess::Move>& MovesOut          // Output
+                                        );
         Score d_bestScore_at_root = 0;       // in abs coordinates
         //
         // Returns "an ordering key", for a capture, using MVV-LVA. "Top range" of key is the victim piece value,                          

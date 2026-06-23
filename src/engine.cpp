@@ -22,7 +22,6 @@
 //
 // Debugging for burp2:
 //      remember DEBUG_NODE_TT2     (2 places)
-//#define NO_SEE_IN_QUISSENCE  //  (2 places)       Debug only, to disallow SEE in quissence
 //      deffine _SUPRESSING_MOVE_HISTORY_RESULTS
 //      deffine NO_QUISSENCE
 //      lower DEBUG_MAX_MOVES to 90 or so
@@ -1619,19 +1618,81 @@ void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_va
 
 //////////////////////////////////////////////////////////////////
 //
-// only called in quissence.
+// only called in quissence, and when not in check.
 // Reduce to tactical (“unquiet”) moves and orders them.
 //    Input:   a moves vector
 //    Returns: ordered vector of unquiet moves (captures first, promotions second).
 //      • Captures: sorted by MVV-LVA (bigger victim, smaller attacker = higher).
 //      • Small recapture bonus in sort if mv_to == opponent’s last “to” square.
-//      • Non-capture promotions: keep only QUEEN promotions; appended after captures.
+//      • Promotions: appended after captures.
 // Notes: O(U^2) sort due to linear insertion; U is usually small. (<5)
 //
-void Engine::sort_unquiet_moves_qsearch(
+void Engine::sort_unquiet_moves_qsearch_L(
                 const vector<ShumiChess::Move>& moves,  // input
-                //const Move& move_last,                // input (used only by _DEBUGGING_MOVE_CHAIN)
-                int qPlys,
+                vector<ShumiChess::Move>& MovesOut      // output
+            )
+{
+
+    MovesOut.clear();
+    MovesOut.reserve(moves.size()); 
+    
+    // Recapture bias: if a capture lands on opponent's last-to square, try it earlest
+    bool have_last = !move_history.empty();
+    Square last_toSQ = NO_SQUARE;
+    if (have_last) {
+        last_toSQ = move_history.top().toSQ;
+    }
+
+    for (const ShumiChess::Move& mv : moves) {
+
+        if (mv.capture != ShumiChess::Piece::NONE) {
+            
+            // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
+            // biggest victim with the smallest attacker.
+            int key = mvv_lva_key(mv);  // (call me on captures only)
+            if (mv.toSQ == last_toSQ) key += 800;  // small recapture bump for opponent's last-to square,
+
+            std::vector<ShumiChess::Move>::iterator it;
+            for (it = MovesOut.begin(); it != MovesOut.end(); ++it) {
+                // Only compare against other captures; promos-without-capture stay after captures
+                if (it->capture != ShumiChess::Piece::NONE) {
+                    int key0 = mvv_lva_key(*it);
+
+                    if ( (have_last) && (it->toSQ == last_toSQ) ) {
+                        key0 += 800;  // small recapture bump for opponent's last-to square
+                    }
+
+                    if (key > key0) {
+                        break;
+                    }
+                }
+            }
+
+            MovesOut.insert(it, mv);    // Put this move into the output array
+        
+
+        } else {    // Not a capture
+
+            // Quiet moves should never be seen here, since they were never generated in qsearch.
+            // So this must be a promotion.
+            assert(mv.promotion != Piece::NONE);  
+
+            // Its a Promotion (without capture, if it was a capture it was dealt with above.
+            // if (mv.promotion != Piece::QUEEN)    // DO NOT push non queen promotions up in the list
+            //     // Prune this promotion
+            //     continue;
+            // else
+
+            MovesOut.push_back(mv);
+        }
+
+    }       // END loop over moves
+    return;
+}
+
+
+void Engine::sort_unquiet_moves_qsearch_H(
+                const vector<ShumiChess::Move>& moves,  // input
                 vector<ShumiChess::Move>& MovesOut      // output
             )
 {
@@ -1649,63 +1710,41 @@ void Engine::sort_unquiet_moves_qsearch(
 
         if (mv.capture != ShumiChess::Piece::NONE) {
             //
-            // Possible pruning. (check escapes are not pruned)
+            // Possible pruning. (check escapes are not pruned, unless they are captures?)
             //
-
             int attacker = game_board.centipawn_score_of(mv.piece_type);
             int victim = game_board.centipawn_score_of(mv.capture);
-            if (attacker > victim) {  // p x Q like captures need no SEE analysis. Do not prune.
+            if (attacker > victim) {  // p x Q like captures need no SEE analysis. Do not prune these.
 
-                if (qPlys > MAX_QPLY2) {
-
-                    // Use SEE to determine if there is to be pruning of this move.
-                    #ifndef NO_SEE_IN_QUISSENCE
-                        // Very late in analysis! So discard negative SEE captures below one pawn.
-                        int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
+                // Very late in analysis! So discard negative SEE captures below one pawn.
+                int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
+                
+                #ifdef _DEBUGGING_TO_FILE1 
+                    if (testValue > 0) {     // centipawns
+                    
+                        fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
+    
+                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
                         
-                        // remove me!
-                        // int testValue2 = game_board.SEE_for_capture(game_board.turn, mv, nullptr);
-                        // if (testValue != testValue2) {
-                        //     cout << "cout:" << testValue << "cout2:" << testValue2 << '\n';
-                        //     move_into_string(mv);
-                        //     cout << "mv " << move_string.c_str() << '\n';
-                        //     // Show board
-                        //     string out = utility::representation::gameboard_to_string(game_board);
-                        //     cout << out << endl;
-                        //     // Show FEN
-                        //     cout << game_board.to_fen().c_str() << '\n';
-                        //     assert(0);
-                        // }
-                        #ifdef _DEBUGGING_TO_FILE1 
-                            if (testValue > 0) {     // centipawns
-                            
-                                fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
-            
-                                print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                                
-                                print_move_history_to_file(fpDebug, "SEE hist");
-                                fputc('\n', fpDebug);
-                            }
-                        #endif
+                        print_move_history_to_file(fpDebug, "SEE hist");
+                        fputc('\n', fpDebug);
+                    }
+                #endif
 
-                        if (testValue <= -100) {     // centipawns
-                            #ifdef _DEBUGGING_TO_FILE1 
-                            
-                                fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
-            
-                                print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                                
-                                print_move_history_to_file(fpDebug, "SEE hist");
-                                fputc('\n', fpDebug);
-                            #endif
-
-                            // Dont sort up this capture, that is prune it.
-                            continue;
-                        }
-
+                if (testValue <= -100) {     // centipawns
+                    #ifdef _DEBUGGING_TO_FILE1 
+                    
+                        fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
+    
+                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
+                        
+                        print_move_history_to_file(fpDebug, "SEE hist");
+                        fputc('\n', fpDebug);
                     #endif
 
-                }   // END is late in analysis
+                    // Dont sort up this capture, prune it.
+                    continue;
+                }
             }
 
             // Determine sort key: MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
@@ -1732,14 +1771,16 @@ void Engine::sort_unquiet_moves_qsearch(
             MovesOut.insert(it, mv);    // Put this move into the output array
         
 
-        } else {
+        } else {    // Not a capture
 
-            // quiet moves should never be seen here, since they were never generated in qsearch.
+            // Quiet moves should never be seen here, since they were never generated in qsearch.
+            // So this must be a promotion.
             assert(mv.promotion != Piece::NONE);  
 
             // Its a Promotion (without capture, if it was a capture it was dealt with above.
 
             if (mv.promotion != Piece::QUEEN)    // DO NOT push non queen promotions up in the list
+                // Prune this promotion
                 continue;
             else
                 MovesOut.push_back(mv);
@@ -1749,6 +1790,73 @@ void Engine::sort_unquiet_moves_qsearch(
     return;
 }
 
+void Engine::sort_check_evasions_qsearch(
+                const vector<ShumiChess::Move>& moves,  // input: all legal check evasions
+                vector<ShumiChess::Move>& MovesOut      // output
+            )
+{
+    MovesOut.clear();
+    MovesOut.reserve(moves.size());
+
+    // Recapture bias: often, a capture on the opponent's last-to square captures the checker.
+    bool have_last = !move_history.empty();
+    Square last_toSQ = NO_SQUARE;
+    if (have_last) {
+        last_toSQ = move_history.top().toSQ;
+    }
+
+    for (const ShumiChess::Move& mv : moves) {
+
+        // Build a simple ordering key for this check evasion.
+        // Bigger key means try earlier. Nothing is pruned.
+        int key = 0;
+
+        if (mv.capture != ShumiChess::Piece::NONE) {
+            key = 10000 + mvv_lva_key(mv);
+
+            if ((have_last) && (mv.toSQ == last_toSQ)) {
+                key += 800;
+            }
+
+        } else if (mv.promotion != ShumiChess::Piece::NONE) {
+            key = 5000;
+
+            if (mv.promotion == ShumiChess::Piece::QUEEN) {
+                key += 800;
+            }
+        }
+
+        // Insert this evasion before the first already-output evasion with a lower key.
+        std::vector<ShumiChess::Move>::iterator it;
+        for (it = MovesOut.begin(); it != MovesOut.end(); ++it) {
+
+            int key0 = 0;
+
+            if (it->capture != ShumiChess::Piece::NONE) {
+                key0 = 10000 + mvv_lva_key(*it);
+
+                if ((have_last) && (it->toSQ == last_toSQ)) {
+                    key0 += 800;
+                }
+
+            } else if (it->promotion != ShumiChess::Piece::NONE) {
+                key0 = 5000;
+
+                if (it->promotion == ShumiChess::Piece::QUEEN) {
+                    key0 += 800;
+                }
+            }
+
+            if (key > key0) {
+                break;
+            }
+        }
+
+        MovesOut.insert(it, mv);
+    }
+
+    return;
+}
 
 bool Engine::flip_a_coin(void) {
        assert(0);

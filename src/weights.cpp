@@ -49,6 +49,8 @@ Weights::Weights()
     
     aW[TRADE_MAX_BONUS] = TRADE_MAX_BONUS_WGHT;
     aW[TRADE_ADVANTAGE_CAP] = TRADE_ADVANTAGE_CAP_WGHT;
+
+    aW[UNPUSHABLE_KNIGHT] = UNPUSHABLE_KNIGHT_WGHT;
 }
 
     void Weights::multiply_weights(double dMult)
