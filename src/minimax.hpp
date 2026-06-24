@@ -63,7 +63,8 @@ public:
     ull nodes_visited = 0;
     ull nodes_visited_depth_zero = 0;
     ull evals_visited = 0;
-    
+    int iNodes_per_Second = 0;
+
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;
 
@@ -191,7 +192,8 @@ public:
                                              int& n_moves_within_delta     // output
                                             );
 
-     ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id, int feat);
+     ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
+                                                , int iRandomMoves, int feat);
 
     std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
                                             , Score alpha, Score beta
@@ -235,6 +237,7 @@ public:
 
     //bool is_debug = false;
     int nFarts = 0;
+    int nSemiFarts = 0;
 
     template<class T> string format_with_commas(T value);
     void playground(int iPhase);

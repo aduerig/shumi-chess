@@ -148,9 +148,6 @@ struct Move {
     // the promotion piece must be added to the equality. But should we (or do we need to) compare 
     // all the structure elements? I see that these three items is enough for ACN+promo (UCI) notation.
     bool operator==(const Move &other) const {
-        // bool bA = ((from == other.from) && (to == other.to) && (promotion == other.promotion));
-        // bool bB = ((fromSQ == other.fromSQ) && (toSQ == other.toSQ) && (promotion == other.promotion));
-        // assert (bA == bB);
         return ((fromSQ == other.fromSQ) && (toSQ == other.toSQ) && (promotion == other.promotion));
     }
     

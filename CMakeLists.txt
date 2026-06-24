@@ -106,3 +106,5 @@ endif()
 add_executable(shumi_driver driver/driver.cpp)
 target_link_libraries(shumi_driver PUBLIC ${project_name})
 
+add_executable(shumi_uci driver/shumi_uci.cpp)
+target_link_libraries(shumi_uci PUBLIC ${project_name})

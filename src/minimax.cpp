@@ -132,7 +132,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -177,7 +177,7 @@ bool global_debug_flag = false;
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
 
-    cout << "\033[1;34mNew Match\033[0m" << endl;
+    //cout << "\033[1;34mNew Match\033[0m" << endl;
 
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
 
@@ -662,8 +662,13 @@ int g_this_depth = 6;
 //////////////////////////////////////////////////////////////////////////////////
 //
 // This is a "root position". The next human move triggers a new root position
-Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id, int feat) {  
+Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id, int iRandomMoves
+                , int feat) {  
 
+
+
+    //engine.i_randomize_next_move = iRandomMoves;
+    engine.set_random_on_next_move(iRandomMoves);
 
     assert (i_time_requested > 0);
 
@@ -755,6 +760,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     //this_deepening = engine.user_request_next_move;
     //this_deepening = 5;        // Note: because i said so.
 
+    // Ha. Here is where we "decrement" the time/depth instryctions if running randomizw move.
     this_deepening = max_deepening_requested;
     if ( (engine.i_randomize_next_move>0) && (this_deepening>2) ) {
         this_deepening--;
@@ -862,6 +868,13 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     int iPhase = phase_of_game_full();
     engine.game_phase = iPhase;
 
+    chrono::duration<double> total_time = chrono::high_resolution_clock::now() - start_time;
+    //cout << total_time << endl;
+    assert (total_time.count() > 0);
+    double nodes_per_sec = nodes_visited / total_time.count();      // NPS
+    iNodes_per_Second = (int)nodes_per_sec;
+
+
     #ifdef DISPLAY_DEEPING
         // Playground is for extended debug and status, and for whatever else. However there is a gotcha. Although we 
         // have found out move, we have not yet made the move. The found move is reported to the python, that
@@ -917,8 +930,8 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
         else 
             engine.game_black_time_msec += running_time_msec;
 
-        assert (total_time.count() > 0);
-        double nodes_per_sec = nodes_visited / total_time.count();
+
+
         double evals_per_sec = evals_visited / total_time.count();
         cout << colorize(AColor::BRIGHT_GREEN, 
             "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + 
@@ -934,9 +947,9 @@ Move MinimaxAI::get_move_iterative_deepening(int i_time_requested, int max_deepe
     }
 
     // Note: this is required or tehe app hangs near the end of the game in autoplay?
-    //#ifdef DISPLAY_DEEPING
+    #ifdef DISPLAY_DEEPING
         cout << "\n";
-    //#endif
+    #endif
 
     #ifdef DEBUGGING_KILLER_MOVES
         cout << "Killers: tried=" << killer_tried
@@ -1002,6 +1015,9 @@ void MinimaxAI::playground(int iPhase) {
    
     cout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
+
+    cout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
+
     //engine.debug_print_repetition_table();
 
 	#ifdef DISPLAY_PULSE_CALLBACK_THREAD

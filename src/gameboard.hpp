@@ -9,7 +9,7 @@
 #include "endgameTables.hpp"
 
 #define LOWERQ 5
-#define UPPERQ 2
+#define UPPERQ 6
 //  my old 3-3 was about 92
 //  4,3     96
 //  4,4     94

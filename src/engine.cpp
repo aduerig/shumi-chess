@@ -191,9 +191,6 @@ void Engine::reset_engine() {         // New game.
 
     #define TRADING_FEN "rnb1kbnr/pppppppp/5q2/8/8/5Q2/PPPPPPPP/RNB1KBNR w KQkq - 0 1"
 
-    // Test of underpromotion (to knight)
-    #define UNDER_PROMOTION_FEN "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1"      // then Ka2. Black should not promote to queen (promotes to knight)
-
     #define STALEMATE_FEN "k7/2Q5/8/8/8/8/8/K7 w - - 1 5"    // then move white king
 
     // Black must play e6 or d6 to avoid the 3-move mate: Nxc7, Qxc7, Bxf7, Kd8, Ne6 mate
@@ -203,8 +200,14 @@ void Engine::reset_engine() {         // New game.
 
     //#define TEMP_FEN " 5b2/1r1qpk2/p1p1pnpr/4B2p/1Pp1p2Q/P2P3P/4BPP1/3RK1R1 w - - 0 30"    // then move e5 for white
 
-    //game_board = GameBoard(RANDOM1_FEN);
+    // Test of underpromotion (to knight)
+    #define UNDER_PROMOTION_FEN "7b/7b/8/8/1pk5/1n6/2p5/K7 w - - 0 1"      // then Ka2. Black should not promote to queen (promotes to knight)
+    
+    #define PROMOTION_TEST_FEN "4k3/8/8/8/8/8/4PPPP/4K3 w KQkq - 0 1"
 
+    ///////////////////////////////////////////////////////////////////////////////////
+
+    //game_board = GameBoard(UNDER_PROMOTION_FEN);
 
     game_board = GameBoard();
 

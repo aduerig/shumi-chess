@@ -156,7 +156,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     //
     // We only get a '?' for the promotion character only when the human makes a move.
     // In this case all we have is the ACN, (derived from the mouse) which doesn't encapsulate 
-    // promotions. So we dont know if the promotion character should be ' ' or 'Q'.
+    // promotions. So we dont know if the promotion character should be ' ' or 'q'.
 
     char this_rank_char = to_square_c_str[1];
     int this_rank = this_rank_char - '0';
@@ -172,7 +172,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 
     if (promo_piece_char == '?') {  // This is a human move.
         if (b_pawn_moving && (queening_rank == this_rank)) {
-            promo_piece_char = 'Q';     // Humans always promote to queen
+            promo_piece_char = 'q';     // Humans always promote to queen
         }
         else {
             promo_piece_char = ' ';     // No promotion
@@ -192,23 +192,21 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     string to_square_acn(to_square_c_str);
 
     //
-    //  Python has passed us an acn move (2 squares, 4 characters), and a fifth character, which
-    //  is either ' ' or the promotion piece. 
+    //  Python has passed us an ACN move (2 squares, 4 characters), and a fifth character, which
+    //  is either ' ' or the promotion piece. This is called UCI notation
     ShumiChess::Move found_move = {};
     bool is_found_move = false;
     for (const auto move : last_moves) {
 
-        // const ull frm = move.from;
-        // const ull to = move.to;
+        //
+        // Make this Move into a ACN representation
         const ull movefrom = utility::bit::square_to_bitboard(move.fromSQ);
         const ull moveto = utility::bit::square_to_bitboard(move.toSQ);
-        // assert(frm == movefrom);
-        // assert(to == moveto);
 
         string from_str = utility::representation::bitboard_to_acn_conversion(movefrom);
         string to_str = utility::representation::bitboard_to_acn_conversion(moveto);
-
         char cpromo = utility::representation::piece_to_charactor(move.promotion);
+
 
         if ( (from_square_acn == from_str) && (to_square_acn == to_str) && (promo_piece_char == cpromo) ) {
             
@@ -404,24 +402,25 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 
     // Pass arguments through to the engine, get the opponents move.
     //cout << "wiggle " << milliseconds << "\n";
+    int iRandomMoves = 0;
     gotten_move = minimax_ai->get_move_iterative_deepening(
         milliseconds+1,
         max_deepening,
         player_id,
-        argument
+        argument,
+        iRandomMoves
     );
 
     // "Convert" the SAN form of the move (algebriac) into ACN. ACN is simply 2 squares so is 
     // always 4 characters. But ACN cannot represent promotions. So we add the promotion character
     // as the fifth character. (the piece we are promoting to). The 5 character string is called UCI.
-    // However unlike ACN , the extra character is captailized
 
     move_in_acn_notation = utility::representation::move_to_string(gotten_move);
     char cpromo = utility::representation::piece_to_charactor(gotten_move.promotion);
 
-    // cout << "\033[31m"
-    //         << " move in acn:" << move_in_acn_notation
-    //         << " promoch:" << cpromo << "\033[0m\n";
+    cout << "\033[31m"
+            << " Engine move in acn:" << move_in_acn_notation
+            << " promoch:" << cpromo << "\033[0m\n";
     move_in_acn_notation += cpromo;
 
     Py_END_ALLOW_THREADS;

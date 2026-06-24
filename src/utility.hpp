@@ -237,15 +237,17 @@ inline std::string piece_to_string(ShumiChess::Piece piece) {
         default:                        return "Unknown Piece";
     }
 }
+
+// I am used only in the context of "2-ACN", or UCI notation
 inline char piece_to_charactor(ShumiChess::Piece piece) {
     switch (piece) {
         case ShumiChess::Piece::NONE:   return ' ';
-        case ShumiChess::Piece::PAWN:   return 'P';
-        case ShumiChess::Piece::KNIGHT: return 'N';
-        case ShumiChess::Piece::BISHOP: return 'B';
-        case ShumiChess::Piece::ROOK:   return 'R';
-        case ShumiChess::Piece::QUEEN:  return 'Q';
-        case ShumiChess::Piece::KING:   return 'K';
+        case ShumiChess::Piece::PAWN:   return 'p';
+        case ShumiChess::Piece::KNIGHT: return 'n';
+        case ShumiChess::Piece::BISHOP: return 'b';
+        case ShumiChess::Piece::ROOK:   return 'r';
+        case ShumiChess::Piece::QUEEN:  return 'q';
+        case ShumiChess::Piece::KING:   return 'k';
         default:                        return ' ';
     }
 }
