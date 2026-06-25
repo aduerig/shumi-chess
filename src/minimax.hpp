@@ -43,8 +43,8 @@ constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead p
 //assert(MAXIMUM_DEEPENING < MAX_PLY);
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
-constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 25;      // In units of centi-pawns
-constexpr int RANDOM_MOVE_CANDIDATES = 5;             // I must be greater than 1
+constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
+constexpr int RANDOM_MOVE_CANDIDATES = 10;             // I must be greater than 1
 
 class MinimaxAI {
 public:
@@ -67,6 +67,7 @@ public:
 
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;
+    int maximum_duration = 0;
 
     int cp_score_material_avg = 0;
     //int cp_score_material_NP_avg = 0;
@@ -229,8 +230,9 @@ public:
 
     bool no_queens_on_board();
 
-    Score d_best_move_value_abs = 0.0;
-
+    // These are reported to other "GUI" tournement directors
+    Score d_best_move_score_rel = 0.0;
+    int max_attained_depth = 0;
 
     //std::vector<ShumiChess::Move> excluded_root_moves;      // for "MultiPV"
     std::vector<std::pair<ShumiChess::Move, Score>> excluded_root_moves;

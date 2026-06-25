@@ -418,9 +418,9 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     move_in_acn_notation = utility::representation::move_to_string(gotten_move);
     char cpromo = utility::representation::piece_to_charactor(gotten_move.promotion);
 
-    cout << "\033[31m"
-            << " Engine move in acn:" << move_in_acn_notation
-            << " promoch:" << cpromo << "\033[0m\n";
+    // cout << "\033[31m"
+    //         << " Engine move in acn:" << move_in_acn_notation
+    //         << " promoch:" << cpromo << "\033[0m\n";
     move_in_acn_notation += cpromo;
 
     Py_END_ALLOW_THREADS;

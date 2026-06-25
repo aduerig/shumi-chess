@@ -127,7 +127,7 @@ private:
     static constexpr int MAJOR_ON_RANK7_WGHT = 33;      // Rook or queen on 7th rank (if 2 major then 3 times)
     static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank (if 2 major then 3 times)
 
-    static constexpr int KNIGHT_ON_EDGE_WGHT = -12;     // knight on edge penatly (doubled if knight in corner)
+    static constexpr int KNIGHT_ON_EDGE_WGHT = -14;     // knight on edge penatly (doubled if knight in corner)
 
     static constexpr int KING_EDGE_WGHT = 40;              // Only in late ending, to force enemy king to edge
 

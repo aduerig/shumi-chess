@@ -196,8 +196,28 @@ static bool create_position(const string& base,
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
 int main()
 {
+    int iMovesInGame = 0;
+
+    // 
+    // Decide on Shumi engine chess arguments
+    //     8, 400 is about 40 moves in 15 min.
+    //
+    int depth_to_use = 8;
+    int time_to_use = 800;
+    //int max_ply_to_play = 4;
+    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
+    int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+
+
+    int iRandomMoves = 0;
+    if (iMovesInGame < 2) iRandomMoves = 1;
+
+
+
 
     constexpr int MAX_FENS = 10;
     string FENs[MAX_FENS];
@@ -215,7 +235,7 @@ int main()
 
     std::string line;
 
-    int iMovesInGame = 0;
+
 
     while (std::getline(std::cin, line)) {
 
@@ -320,16 +340,7 @@ int main()
                 have_position = true;
             }
 
-            // 
-            // Decide on Shumi engine chess arguments
-            int depth_to_use = 7;
-            int time_to_use = 100;
-            //int max_ply_to_play = 4;
-            int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
-            int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
-
-            int iRandomMoves = 0;
-            if (iMovesInGame < 2) iRandomMoves = 1;
+         
 
             //
             // Get "best move" from Shumi
@@ -357,7 +368,7 @@ int main()
 
             //
             // Show move info
-            //
+            // options to the "info" command sent to the "GUI"
             //
             // depth 8                  // search depth reached
             // seldepth 14              // deepest selective/qsearch depth reached
@@ -381,8 +392,11 @@ int main()
 
             //int nps = 1234567;
             int nps = minimax_ai->iNodes_per_Second;
+            int centiPawnsRel = (int)(minimax_ai->d_best_move_score_rel * 100.0);
             //std::cout << "info nps " << nps << "\n";
             std::cout << "info" 
+                    << " depth " << minimax_ai->max_attained_depth
+                    << " score cp " << centiPawnsRel
                     << " nodes " << nodesSeen
                     << " nps " << nps
                     << "\n";

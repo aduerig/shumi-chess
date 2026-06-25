@@ -1496,17 +1496,7 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
 
 }
 
-// void Engine::debug_print_repetition_table() const {
-//     std::cout << "=== repetition_table dump ===\n";
-//     for (const auto& entry : repetition_table) {
-//         uint64_t key   = entry.first;
-//         int      count = entry.second;
-//         std::cout << "key 0x" << std::hex << key
-//                   << "  count " << std::dec << count
-//                   << "\n";
-//     }
-//     std::cout << "=== end dump (" << repetition_table.size() << " entries) ===\n";
-// }
+
 
 void Engine::print_bitboard_to_file(ull bb, FILE* fp)
 {
