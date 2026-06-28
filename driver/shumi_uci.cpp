@@ -204,17 +204,19 @@ int main()
 
     // 
     // Decide on Shumi engine chess arguments
-    //     8, 400 is about 40 moves in 15 min.
+    //     7, 17000 is about 40 moves in 5 minumtes
     //
-    int depth_to_use = 8;
-    int time_to_use = 800;
+    int depth_to_use = 7;
+    int time_to_use = 10000;
+    ull nominal_time_per_move[2] = {0, 0};
+    int previous_moves_to_go[2] = {0, 0};
     //int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
 
 
     int iRandomMoves = 0;
-    if (iMovesInGame < 2) iRandomMoves = 1;
+    if (iMovesInGame < 2) iRandomMoves = 1;     //Just one random move.
 
 
 
@@ -256,12 +258,13 @@ int main()
             current_base.clear();
             moves_so_far.clear();
             have_position = false;
+            nominal_time_per_move[0] = nominal_time_per_move[1] = 0;
+            previous_moves_to_go[0] = previous_moves_to_go[1] = 0;
 
         } else if (line.rfind("position ", 0) == 0) {
             // set board from "startpos" or "fen"
             // then play the listed moves
 
-            //  codex resume 019ef7c7-19ae-7220-a0b9-e6318c748810
             // position startpos
             // position startpos moves e2e4 e7e5 g1f3
             // position fen <FEN>
@@ -342,11 +345,69 @@ int main()
 
          
 
+            long long white_time = -1;
+            long long black_time = -1;
+            long long move_time = -1;
+            int moves_to_go = 0;
+
+            istringstream go_command(line);
+            string go_token;
+            go_command >> go_token; // "go"
+            while (go_command >> go_token) {
+                if (go_token == "wtime") go_command >> white_time;
+                else if (go_token == "btime") go_command >> black_time;
+                else if (go_token == "movetime") go_command >> move_time;
+                else if (go_token == "movestogo") go_command >> moves_to_go;
+            }
+
+            int search_time_to_use = time_to_use;
+            MinimaxAI::SearchTimeControl time_control;
+
+            if (move_time > 0) {
+                // An explicit UCI movetime is a per-move limit, not a multi-move
+                // clock, so borrowing is deliberately disabled.
+                search_time_to_use = static_cast<int>(std::min<long long>(
+                    move_time,
+                    std::numeric_limits<int>::max()));
+            } else if (moves_to_go > 0) {
+                const int side = engine->game_board.turn == Color::WHITE ? 0 : 1;
+                const long long side_clock = side == 0 ? white_time : black_time;
+
+                if (side_clock > 0) {
+                    const ull clock_at_move_start = static_cast<ull>(side_clock);
+                    const ull reserve = std::min<ull>(500, clock_at_move_start / 100);
+
+                    // Establish k once per time-control period. Recomputing k as
+                    // clock/movestogo on every move would erase accumulated debt.
+                    if (nominal_time_per_move[side] == 0
+                        || moves_to_go > previous_moves_to_go[side]) {
+                        const ull usable_clock = clock_at_move_start - reserve;
+                        nominal_time_per_move[side] = std::max<ull>(
+                            1,
+                            usable_clock / static_cast<ull>(moves_to_go));
+                    }
+                    previous_moves_to_go[side] = moves_to_go;
+
+                    const ull k = nominal_time_per_move[side];
+                    search_time_to_use = static_cast<int>(std::min<ull>(
+                        k,
+                        static_cast<ull>(std::numeric_limits<int>::max())));
+
+                    time_control.clock_at_move_start = clock_at_move_start;
+                    time_control.moves_left = moves_to_go;
+                    time_control.nominal_time_per_move = k;
+                    time_control.maximum_loan = k;
+                    time_control.minimum_future_time = std::max<ull>(1, k / 4);
+                    time_control.clock_reserve = reserve;
+                }
+            }
+
             //
             // Get "best move" from Shumi
   
 
-            Move move = minimax_ai->get_move_iterative_deepening(time_to_use, depth_to_use, player_id, iRandomMoves, flags);
+            Move move = minimax_ai->get_move_iterative_deepening(search_time_to_use, depth_to_use, player_id
+                                                                , iRandomMoves, flags, time_control);
 
             if (move.piece_type == Piece::NONE) {
                 cerr << "No legal move returned at ply " << endl;

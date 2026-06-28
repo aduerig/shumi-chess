@@ -43,8 +43,23 @@ LESSONS:
 
 From game 45:
 
-   draw. Shumi fails to see that he cant castle, because squares between king and rook are in check.
+   draw. Shumi fails to see that he can't castle, because squares between king and rook are in check.
    ANd shouldnt middlegames also (not just openeing and early middlegame) take castling into account?
 1. e4 e5 2. Nf3 Nc6 3. Bb5 f6 4. Nc3 Bb4 5. a3 Ba5 6. O-O Bxc3 7. dxc3 Nge7 8. Bc4 d6 9. Qd3 f5 10. Ng5 fxe4 11. Bf7 Kf8 12. Qxe4 Bf5 13. Qf3 Qb8 14. Be6 e4 15. Nxe4 Ne5 16. Qf4 N5g6 17. Qf3 Ne5 18. Qf4 N5g6 19. Qf3 Ne5  *
+
+
+These is a bug around the routine set_random_on_next_move() and i_randomize_next_move. Notice the calls to get_move_iterative_deepening() and the parameter iRandomMoves. The idea is that a "randommove" is executed and the count decremented, so if IrandoMoves is 2, the first two moves only are random moves.  Withe code here,  if (iRandomMoves > 0) {
+        engine.set_random_on_next_move(iRandomMoves);
+    } 
+Then it works as expected when get_move_iterative_deepening is called from shumi_uci.cpp. Butthe "main line", via engine_communicatormodule. It keeps doing a random move every move. If I comment out the above lines, then it works from the main line but not from shumi_driver.cpp.
+
+
+
+
+Games with me and chess.com:  (1 means i won)
+==================================
+
+
+My problem is this. At the beginning of every deepeining I must decide wether to contune or not, despite a time control of n moves per t minutes. The algorithm should make use of "estimated_elapsed_time". Let k be the number of seconds per move, that the time control decrees is the average per move. Now the algorithm cannot just try to make sure that each move uses less than k seconds. That is to crude. But it must not run out of time either (gievn the limitations of the estimating) Some algorithm must be used to allow "borrowing" of time. Any suggestions?
 
 

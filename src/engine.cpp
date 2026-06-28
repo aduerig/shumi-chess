@@ -269,6 +269,7 @@ void Engine::reset_all_but_FEN()
 
     computer_ply_so_far = 0;       // real moves in whole game
     ply_so_far = 0;     // ply played in game so far
+    i_randomize_next_move = 0;     // random-move requests do not carry into a new game
     game_white_time_msec = 0;     // total white thinking time for game
     game_black_time_msec = 0;     // total black thinking time for game
 
@@ -1474,7 +1475,7 @@ char Engine::file_from_move(const Move& m) const
 }
 
 
-// pop!
+// 
 void Engine::set_random_on_next_move(int randomMoveCount) {
     //
     // user_request_next_move++;

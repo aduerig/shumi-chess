@@ -272,8 +272,8 @@ engine_communicator_set_random_number_of_moves(PyObject* self, PyObject* args) {
     if(!PyArg_ParseTuple(args, "i", &randomMoveCount)) {
         return NULL;
     }
-    //cout << "random!" << randomMoveCount << endl;
 
+    //cout << "random!" << randomMoveCount << endl;
     python_engine->set_random_on_next_move(randomMoveCount);
 
     return Py_BuildValue("");
@@ -379,14 +379,14 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     int player_id;         // required
 
 
-    int argument = 0;      // optional, default 0
+    int features_mask = 0;      // optional, default 0
 
     // required int, required int, required int, optional int
     if (!PyArg_ParseTuple(args, "iii|i",
                           &milliseconds,
                           &max_deepening,
                           &player_id,
-                          &argument))
+                          &features_mask))
     {
         return NULL;
     }
@@ -402,13 +402,16 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 
     // Pass arguments through to the engine, get the opponents move.
     //cout << "wiggle " << milliseconds << "\n";
+    // Random-move state is configured separately by
+    // set_random_number_of_moves(). This argument must stay zero here;
+    // `features_mask` is the feature mask supplied by Python.
     int iRandomMoves = 0;
     gotten_move = minimax_ai->get_move_iterative_deepening(
         milliseconds+1,
         max_deepening,
         player_id,
-        argument,
-        iRandomMoves
+        iRandomMoves,
+        features_mask
     );
 
     // "Convert" the SAN form of the move (algebriac) into ACN. ACN is simply 2 squares so is 

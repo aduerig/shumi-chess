@@ -1,0 +1,10 @@
+
+
+Now, look at bThinkingOverByTime. how it is used in the iterave deepening.  The difficulty, is that 
+(elapsed_time >= (ull)i_duration_requested); is not what s wanted . The duration shoud apply to the whole
+move, not just all the deepenings except the last one. This is especially bad, as the last deepening is far 
+the largest. 
+
+Supoose the curve or function of the total elapsed time is T{N} for N a counter for each increasing deepening. 
+By total it means since the start of all deepening. Then I observe that where: ratio_last = T{N+1] / T[N}
+and I observe by watching that ratio_last is about N.

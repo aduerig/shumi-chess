@@ -22,9 +22,9 @@
 //  5,2     94
 //  3,2     83
 
-// Note neither of these include the "depth". So if depth=6, then the actual maximum ply analyzed is (6+MAX_QPLY).
-#define MAX_QPLY2 (LOWERQ+1)        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
-#define MAX_QPLY  (UPPERQ+LOWERQ+1) // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
+// Note neither of these include the "depth". So if depth=6, then the actual maximum ply analyzed is (6+MAX_QPLY_H).
+#define MAX_QPLY_L (LOWERQ+1)        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
+#define MAX_QPLY_H  (UPPERQ+LOWERQ+1) // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
 
 
 namespace ShumiChess {

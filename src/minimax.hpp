@@ -44,10 +44,25 @@ constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead p
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
 constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
-constexpr int RANDOM_MOVE_CANDIDATES = 10;             // I must be greater than 1
+constexpr int RANDOM_MOVE_CANDIDATES = 6;             // I must be greater than 1
 
 class MinimaxAI {
 public:
+
+    struct SearchTimeControl {
+        ull clock_at_move_start = 0;       // Milliseconds remaining before this search.
+        int moves_left = 0;                // Includes the move currently being searched.
+        ull nominal_time_per_move = 0;     // k: time-control period / moves in period.
+        ull maximum_loan = 0;              // Maximum permitted debt against future moves.
+        ull minimum_future_time = 0;       // Time protected for each future move.
+        ull clock_reserve = 0;              // Time never deliberately allocated to search.
+
+        bool enabled() const {
+            return clock_at_move_start > clock_reserve
+                && moves_left > 0
+                && nominal_time_per_move > 0;
+        }
+    };
 
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
@@ -182,9 +197,16 @@ public:
 
     std::tuple<Score, ShumiChess::Move> do_a_principal_variation(int depth, ShumiChess::Move null_move
                                         , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
+                                        , const SearchTimeControl& time_control
                                         , ull& elapsed_time);      // Output
 
-    tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time, const ShumiChess::Move& null_move);
+    static bool should_stop_by_time(ull elapsed_time, double growth_factor
+                                        , ull fallback_move_budget
+                                        , const SearchTimeControl& time_control);
+
+    tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time_display_only
+                                                , ull& last_elapsed_time_display_only
+                                                , const ShumiChess::Move& null_move);
 
 
     std::tuple<Score, ShumiChess::Move> pick_random_within_delta_rand(std::vector<std::pair<ShumiChess::Move,Score>>& MovsFromRoot,
@@ -194,7 +216,8 @@ public:
                                             );
 
      ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
-                                                , int iRandomMoves, int feat);
+                                                , int iRandomMoves, int feat
+                                                , SearchTimeControl time_control = {});
 
     std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
                                             , Score alpha, Score beta

@@ -12,6 +12,20 @@ TEST(Setup, WhiteGoesFirst) {
     ASSERT_EQ(test_engine.game_board.turn, ShumiChess::Color::WHITE);
 }
 
+TEST(RandomMoves, RequestAppliesOnlyAtGameStartAndResetClearsIt) {
+    ShumiChess::Engine test_engine;
+
+    test_engine.set_random_on_next_move(2);
+    EXPECT_EQ(test_engine.i_randomize_next_move, 2);
+
+    test_engine.computer_ply_so_far = 1;
+    test_engine.set_random_on_next_move(99);
+    EXPECT_EQ(test_engine.i_randomize_next_move, 2);
+
+    test_engine.reset_engine();
+    EXPECT_EQ(test_engine.i_randomize_next_move, 0);
+}
+
 vector<string> white_in_check_black_is_safe_fens = {"7k/8/8/3p4/4K3/8/8/8 w - - 0 1",
                                                     "8/5k2/5P2/3p4/4K3/8/8/8 w - - 0 1",
                                                     "8/8/3kr3/8/4K3/8/8/8 w - - 0 1",

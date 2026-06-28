@@ -57,11 +57,11 @@ using namespace utility::bit;
 
 //#define _DEBUGGING_PUSH_POP
 
-//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
-//#define DEBUGGING_TEMP
+#define DEBUGGING_TEMP
 
 // extern bool bMoreDebug;
 // extern string debugMove;
@@ -519,11 +519,13 @@ int MinimaxAI::phase_of_game_full() {
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-
 //
 // Only returns false is if user aborts.
 //
-tuple<Score, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_display_only, const Move& null_move) {
+tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
+                                            , ull elapsed_time_display_only
+                                            , ull& last_elapsed_time_display_only
+                                            , const Move& null_move) {
 
     tuple<Score, Move> ret_val;
 
@@ -552,7 +554,6 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_display
 
     // the beast (root node of root nodes)
     bool bStillAspiring  = false;
-    ull last_elapsed = 1;
     do {
 
         #ifdef DEBUGGING_RANDOM_DELTA1
@@ -561,13 +562,32 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_display
         // elapsed_time_display_only is from beginning of calculation
         // Ha.
         #ifdef DISPLAY_DEEPING      // i_duration_requested
-            if (!last_elapsed) ratioLast = 0;
-            else               ratioLast = elapsed_time_display_only / last_elapsed;
-            last_elapsed = elapsed_time_display_only;
+            ull ratio_last = 0;
+            if (last_elapsed_time_display_only != 0) {
+                ratio_last = elapsed_time_display_only / last_elapsed_time_display_only;
+            }
+            last_elapsed_time_display_only = elapsed_time_display_only;
             if (depth==1) cout << "\n";
             cout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
-                        << " msec=" << std::setw(6) << elapsed_time_display_only << '/' << ratioLast << ' ';
+                        << " msec=" << std::setw(6) << elapsed_time_display_only << '/' << ratio_last << ' ';
         #endif
+
+
+        #ifdef DEBUGGING_TEMP
+            cout << endl << " Deeping " << depth << " ply of " << maximum_deepening
+                        << " msec=" << std::setw(6) << elapsed_time_display_only << endl;
+            if (fpDebug != nullptr) {
+                std::fprintf(fpDebug,
+                    "\n Deeping %d ply of %d msec=%6llu\n",
+                    depth,
+                    maximum_deepening,
+                    static_cast<unsigned long long>(elapsed_time_display_only));
+                std::fflush(fpDebug);
+            }
+        #endif
+
+
+
 
         ret_val = recursive_negamax(depth
                                     , alpha, beta
@@ -650,7 +670,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth, ull elapsed_time_display
 }
 
 
-
+// codex resume 019f0c43-30d9-7241-a3ab-85b74918f6a6
 
 
 int g_this_depth = 6;
@@ -662,16 +682,25 @@ int g_this_depth = 6;
 //
 //     i_time_requested         -  requested time to spend (milliseconds)
 //     max_deepening_requested  -  requested depth
+//     iRandomMoves             -  number of engine moves at the start of a game
+//                                 that should be selected randomly from the best
+//                                 candidates. A positive value initializes the
+//                                 engine's persistent countdown on its first move;
+//                                 each randomized move decrements that countdown.
+//                                 Pass 0 when the countdown was configured separately
+//                                 with Engine::set_random_on_next_move().
 //
 //////////////////////////////////////////////////////////////////////////////////
 //
 // This is a "root position". The next human move triggers a new root position
-Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_deepening_requested, int player_id, int iRandomMoves
-                , int feat) {  
+Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_deepening_requested, int player_id
+                , int iRandomMoves
+                , int feat
+                , SearchTimeControl time_control) {  
 
-
+    // Initialize the per-game countdown only when requested. The engine owns and
+    // decrements the countdown across subsequent calls.
     if (iRandomMoves > 0) {
-        //engine.i_randomize_next_move = iRandomMoves;
         engine.set_random_on_next_move(iRandomMoves);
     }
 
@@ -735,6 +764,8 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     }   
 
     nFarts = 0;             // Queiseence low level (forced eval) this move
+    nSemiFarts = 0;         // Queiseence low level (forced eval) this move
+    //
     // Clear debug every move
     // #ifdef _DEBUGGING_TO_FILE 
     //     clear_file_keep_fp(fpDebug);
@@ -800,6 +831,8 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
     excluded_root_moves.clear();
 
+
+    cout << endl << " nMultis " << n_Multis << endl;
     //
     // This loop always runs at least once. If only once, then there are no "random"/MultiPV moves
     for (int ii=0; ii<n_Multis; ii++) {
@@ -811,6 +844,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
         ret_val = do_a_principal_variation(depth, null_move
                                         , start_of_calculation, i_duration_requested, requested_end_time
+                                        , time_control
                                         , elapsed_time);        // Output
         d_best_move_score = get<0>(ret_val);
         if (d_best_move_score == ABORT_SCORE) break;
@@ -1088,6 +1122,7 @@ void MinimaxAI::playground(int iPhase) {
 //
 std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth, ShumiChess::Move null_move
                                         , TIME_TYPE start_time, int i_duration_requested, TIME_TYPE requested_end_time
+                                        , const SearchTimeControl& time_control
                                         , ull& elapsed_time)      // output
 {
 // Ha.
@@ -1105,6 +1140,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     Score d_best_move_score = 0.0;
     
     elapsed_time = 0ULL; // in msec
+    ull last_elapsed_time_display_only = 0ULL;
 
 
     Score d_Return_score = 0.0;
@@ -1133,7 +1169,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         // the beast
 
         // Ha. Here we pass in the elapsed time, just for display, before the deeping.
-        ret_val = do_a_deepening(depth, elapsed_time, null_move);
+        ret_val = do_a_deepening(depth, elapsed_time, last_elapsed_time_display_only, null_move);
 
         d_Return_score = get<0>(ret_val);
         if (d_Return_score == ABORT_SCORE) {
@@ -1209,11 +1245,22 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
         depth++;
 
+        // Let D be user duration. Let T be elapsed time so far. Because of exponential growth in 
+        // branching, each deepeining takes a lot longer than the previous ones.
         // time based ending of thinking
         //bThinkingOverByTime = (diff_s > 0);
         // cout << "         weee " << elapsed_time << " >= " << i_duration_requested;
-        bThinkingOverByTime = (elapsed_time >= (ull)i_duration_requested);
+        //                      T           >=      D
+        //bThinkingOverByTime = (elapsed_time >= (ull)i_duration_requested);
+        double growth_factor = 6.0;
+        //        
+        bThinkingOverByTime = should_stop_by_time(
+            elapsed_time,
+            growth_factor,
+            static_cast<ull>(i_duration_requested),
+            time_control);
 
+        //cout << endl << "    bThinkingOverByDepth " << estimated_elapsed_time << endl;
 
         // depth based ending of thinking
         bThinkingOverByDepth = (depth >= (maximum_deepening+1));
@@ -1227,6 +1274,74 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     max_attained_depth = depth-1;
 
     return { d_best_move_score, best_move };
+}
+
+
+bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
+                                    , ull fallback_move_budget
+                                    , const SearchTimeControl& time_control)
+{
+    const long double estimated_elapsed_time =
+        static_cast<long double>(elapsed_time) * growth_factor;
+
+
+
+
+    // Existing callers specify only a per-move duration. Preserve that behavior
+    // until they provide a complete time-control description.
+    if (!time_control.enabled()) {
+        
+        #ifdef DEBUGGING_TEMP
+            fprintf(fpDebug, "%ld     elapsed_time0=%llu   %llu\n", time_control.enabled()
+                , static_cast<unsigned long long>(elapsed_time)
+                , static_cast<unsigned long long>(fallback_move_budget));
+        #endif
+        return (estimated_elapsed_time >= fallback_move_budget);
+
+    } else {
+
+        const ull usable_clock =
+            time_control.clock_at_move_start - time_control.clock_reserve;
+
+        // Credit is positive after quick moves and negative after borrowed time was
+        // used. It is measured against the original k-per-move schedule.
+        const long double scheduled_remaining =
+            static_cast<long double>(time_control.moves_left)
+            * time_control.nominal_time_per_move;
+        const long double credit =
+            static_cast<long double>(usable_clock) - scheduled_remaining;
+
+        // Debt is allowed only when the remaining moves can repay it while retaining
+        // minimum_future_time for each of those moves. This allowance reaches zero
+        // on the final move before the next time control.
+        const int future_moves = time_control.moves_left - 1;
+        const ull repayment_per_future_move =
+            time_control.nominal_time_per_move > time_control.minimum_future_time
+                ? time_control.nominal_time_per_move - time_control.minimum_future_time
+                : 0;
+        const long double repayment_capacity =
+            static_cast<long double>(future_moves)
+            * static_cast<long double>(repayment_per_future_move);
+        const long double permitted_loan = std::min<long double>(
+            static_cast<long double>(time_control.maximum_loan),
+            repayment_capacity);
+
+        long double move_budget =
+            static_cast<long double>(time_control.nominal_time_per_move)
+            + credit
+            + permitted_loan;
+
+        const long double minimum_budget = std::min<long double>(
+            static_cast<long double>(time_control.minimum_future_time),
+            static_cast<long double>(usable_clock));
+        move_budget = std::clamp(
+            move_budget,
+            minimum_budget,
+            static_cast<long double>(usable_clock));
+
+
+        return estimated_elapsed_time >= move_budget;
+    }
 }
 
 
@@ -2015,8 +2130,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     //if (alpha > beta) assert(0);
 
     // Pick best static evaluation among all legal moves if hit the over ply
-    if (qPlys >= MAX_QPLY) {
-        //std::cout << "\x1b[31m! MAX_QPLY trap " << nPlys << "\x1b[0m\n";
+    if (qPlys >= MAX_QPLY_H) {
+        //std::cout << "\x1b[31m! MAX_QPLY_H trap " << nPlys << "\x1b[0m\n";
         //std::cout << "\x1b[31m!" << "\x1b[0m";
         
         if (engine.game_board.turn == ShumiChess::Color::WHITE)
@@ -2029,16 +2144,15 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
         nFarts++;
         
         // debug
-        //engine.print_move_history_to_file(fpDebug, "MAX_QPLY");
+        //engine.print_move_history_to_file(fpDebug, "MAX_QPLY_H");
 
         return { d_best_score, Move{} };
+    } else if (qPlys >= MAX_QPLY_L) {
+        nSemiFarts++;
     }
 
 
 
-    #ifdef DEBUGGING_TEMP
-            fprintf(fpDebug, "nPlys=%ld, qPlys=%ld\n", nPlys, qPlys);
-    #endif
     // =====================================================================
     // 2. Get all legal moves
     // =====================================================================
@@ -2258,8 +2372,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     } else {
 
-        assert (qPlys <= MAX_QPLY);  // already dealt with this
-        if (qPlys > MAX_QPLY2) {
+        assert (qPlys <= MAX_QPLY_H);  // already dealt with this
+        if (qPlys > MAX_QPLY_L) {
             engine.sort_unquiet_moves_qsearch_H(legal_moves, engine.all_unquiet_moves[nPlys]);
         } else {
             engine.sort_unquiet_moves_qsearch_L(legal_moves, engine.all_unquiet_moves[nPlys]);
@@ -3115,7 +3229,6 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase, const PawnFileInfo*
                                                         holes_cp,
                                                         passed_pawns_bb,
                                                         passed_cp);
-    //  codex resume 019ecee5-85b1-7003-933c-04d9569ab113
     // #ifndef NDEBUG
     //     ull holes_bb_old = 0ULL;
     //     ull passed_pawns_bb_old = 0ULL;

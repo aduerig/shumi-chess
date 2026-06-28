@@ -256,7 +256,8 @@ def get_ai_move_threaded(legal_moves: list[str], name_of_ai: str):
             engine_communicator.set_random_number_of_moves(args.rand)       
 
         # Get the move
-        move = engine_communicator.ai_get_move_iterative_deepening(milliseconds, max_deepening, player_id, features_mask)
+        move = engine_communicator.ai_get_move_iterative_deepening(milliseconds, max_deepening, player_id
+                                    , features_mask)
    
         # Recieve the ACN, and the move[5] chraracter promotion char.  
         from_acn = move[0:2]
