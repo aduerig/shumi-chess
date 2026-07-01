@@ -59,7 +59,10 @@ Then it works as expected when get_move_iterative_deepening is called from shumi
 Games with me and chess.com:  (1 means i won)
 ==================================
 
+queen .vs. rook and minor piece and pawn (especially with king exposure). 
+rook .vs. 4-5 pawns (especially with king exposure).
+queen and rook .vs. rook and 4-5 pawns (especially with king exposure)
+minor piece .vs. 2-3 pawns
 
-My problem is this. At the beginning of every deepeining I must decide wether to contune or not, despite a time control of n moves per t minutes. The algorithm should make use of "estimated_elapsed_time". Let k be the number of seconds per move, that the time control decrees is the average per move. Now the algorithm cannot just try to make sure that each move uses less than k seconds. That is to crude. But it must not run out of time either (gievn the limitations of the estimating) Some algorithm must be used to allow "borrowing" of time. Any suggestions?
-
-
+king exposure
+outside passed pawns

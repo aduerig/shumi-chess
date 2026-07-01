@@ -257,14 +257,14 @@ public:
     Score d_best_move_score_rel = 0.0;
     int max_attained_depth = 0;
 
-    //std::vector<ShumiChess::Move> excluded_root_moves;      // for "MultiPV"
-    std::vector<std::pair<ShumiChess::Move, Score>> excluded_root_moves;
+    std::vector<std::pair<ShumiChess::Move, Score>> excluded_root_moves;          // for "MultiPV"
 
     //bool is_debug = false;
     int nFarts = 0;
     int nSemiFarts = 0;
 
     template<class T> string format_with_commas(T value);
+    void playgroundOld(int iPhase);
     void playground(int iPhase);
 
     void print_moves_to_file(const vector<ShumiChess::Move> &mvs, int depth, char* szHeader, char* szTrailer);

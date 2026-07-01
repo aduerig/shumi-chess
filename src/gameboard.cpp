@@ -3126,9 +3126,7 @@ void GameBoard::build_pawn_holes_and_passed_summary_t(
 
             assert((adv > 0) && (adv < 7));
 
-            int bonus =
-                passed_pawn_slope_cp * adv * adv
-              + passed_pawn_yinrcpt_cp;
+            int bonus = ((passed_pawn_slope_cp * adv * adv) / 2) + passed_pawn_yinrcpt_cp;
 
             ull protect_mask = 0ULL;
 
@@ -3308,7 +3306,7 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(
             else                             adv = (7 - r);
             assert((adv > 0) && (adv < 7));
 
-            int bonus = (passed_pawn_slope_cp * adv * adv) + passed_pawn_yinrcpt_cp;
+            int bonus = ((passed_pawn_slope_cp * adv * adv) / 2) + passed_pawn_yinrcpt_cp;
 
             ull protect_mask = 0ULL;
 
@@ -3545,6 +3543,119 @@ int GameBoard::bishop_blocked_on_both_original_squares_cp_t()
 
 
 // ---------- get_king_near_squares_t ----------
+template<Color c>
+PotentialCheckInfo GameBoard::potential_checks_against_king_t()
+{
+    constexpr Color e = (c == WHITE) ? BLACK : WHITE;
+
+    PotentialCheckInfo info{};
+
+    const ull king_bb = get_pieces_template<Piece::KING, c>();
+    assert(king_bb != 0ULL);
+    const Square king_sq = utility::bit::bitboard_to_lowest_square_fast(king_bb);
+
+    const ull all_pieces = get_pieces();
+    const ull our_occupied = get_pieces(c);
+    const ull enemy_occupied = get_pieces(e);
+    (void)our_occupied;
+
+    ull straight_check_destinations =
+        get_straight_attacks_mbb(all_pieces & ~king_bb, king_sq);
+    ull diagonal_check_destinations =
+        get_diagonal_attacks_mbb(all_pieces & ~king_bb, king_sq);
+
+    straight_check_destinations &= ~enemy_occupied;
+    diagonal_check_destinations &= ~enemy_occupied;
+
+    ull queens = get_pieces_template<Piece::QUEEN, e>();
+    while (queens) {
+        const Square queen_sq = utility::bit::lsb_and_pop_to_square(queens);
+        const ull queen_bb = 1ULL << queen_sq;
+        const ull queen_attacks =
+            get_straight_attacks_mbb(all_pieces & ~queen_bb, queen_sq) |
+            get_diagonal_attacks_mbb(all_pieces & ~queen_bb, queen_sq);
+        const ull queen_check_moves = queen_attacks &
+            (straight_check_destinations | diagonal_check_destinations);
+        info.queen_checks += bits_in(queen_check_moves);
+    }
+
+    ull rooks = get_pieces_template<Piece::ROOK, e>();
+    while (rooks) {
+        const Square rook_sq = utility::bit::lsb_and_pop_to_square(rooks);
+        const ull rook_bb = 1ULL << rook_sq;
+        const ull rook_attacks =
+            get_straight_attacks_mbb(all_pieces & ~rook_bb, rook_sq);
+        const ull rook_check_moves = rook_attacks & straight_check_destinations;
+        info.rook_checks += bits_in(rook_check_moves);
+    }
+
+    ull bishops = get_pieces_template<Piece::BISHOP, e>();
+    while (bishops) {
+        const Square bishop_sq = utility::bit::lsb_and_pop_to_square(bishops);
+        const ull bishop_bb = 1ULL << bishop_sq;
+        const ull bishop_attacks =
+            get_diagonal_attacks_mbb(all_pieces & ~bishop_bb, bishop_sq);
+        const ull bishop_check_moves = bishop_attacks & diagonal_check_destinations;
+        info.bishop_checks += bits_in(bishop_check_moves);
+    }
+
+    ull knight_check_destinations =
+        tables::movegen::knight_attack_table[king_sq];
+    knight_check_destinations &= ~enemy_occupied;
+
+    ull knights = get_pieces_template<Piece::KNIGHT, e>();
+    while (knights) {
+        const Square knight_sq = utility::bit::lsb_and_pop_to_square(knights);
+        const ull knight_moves = tables::movegen::knight_attack_table[knight_sq];
+        const ull knight_check_moves = knight_moves & knight_check_destinations;
+        info.knight_checks += bits_in(knight_check_moves);
+    }
+
+    info.total_checks =
+        info.queen_checks +
+        info.rook_checks +
+        info.bishop_checks +
+        info.knight_checks;
+
+    return info;
+}
+
+
+
+template<Color c>
+int GameBoard::count_potential_checks_against_king_t()
+{
+    const PotentialCheckInfo info = potential_checks_against_king_t<c>();
+    return info.queen_checks +
+           info.rook_checks +
+           info.bishop_checks +
+           info.knight_checks;
+}
+
+
+// ---------- potential_checks_against_king_cp_t ----------
+template<Color c> int GameBoard::potential_checks_against_king_cp_t()
+{
+    static const int penalty_table[] = {
+        0,    // 0 checks
+        0,    // 1 check
+        0,    // 2 checks
+        10,   // 3 checks
+        30,   // 4 checks
+        100,   // 5 checks
+        220,  // 6 checks
+        300,  // 7 checks
+        400   // 8+ checks
+    };
+
+    int n = count_potential_checks_against_king_t<c>();
+    if (n > 8) n = 8;
+
+    return -penalty_table[n];
+}
+
+
+
 template<Color c>
 int GameBoard::get_king_near_squares_t(int king_near_squares_out[9])
 {
@@ -4131,6 +4242,11 @@ template int GameBoard::queenOnCenterSquare_cp_t<Color::BLACK>();
 // template int GameBoard::moved_f_pawn_early_cp_t<Color::BLACK>() const;
 
 // get_king_near_squares_t
+template PotentialCheckInfo GameBoard::potential_checks_against_king_t<Color::WHITE>();
+template PotentialCheckInfo GameBoard::potential_checks_against_king_t<Color::BLACK>();
+template int GameBoard::count_potential_checks_against_king_t<Color::WHITE>();
+template int GameBoard::count_potential_checks_against_king_t<Color::BLACK>();
+
 template int GameBoard::get_king_near_squares_t<Color::WHITE>(int[9]);
 template int GameBoard::get_king_near_squares_t<Color::BLACK>(int[9]);
 

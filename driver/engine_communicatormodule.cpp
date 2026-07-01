@@ -62,6 +62,7 @@ engine_communicator_systemcall(PyObject* self, PyObject* args) {
 // Initialized lazily in PyInit_engine_communicator() to avoid static
 // initialization order fiasco (globals.cpp lookup tables may not be ready yet).
 static ShumiChess::Engine* python_engine = nullptr;
+static MinimaxAI* minimax_ai = nullptr;
 vector<ShumiChess::Move> last_moves;
 ShumiChess::Color last_mover;
 
@@ -230,9 +231,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     python_engine->users_last_move = found_move;
     python_engine->ply_so_far++;
 
-    // Update statistics 
-    //python_engine->updateStats(found_move);
-    //playground( python_engine->game_phase );
+   
 
     //cout << "222engine_communicator_make_move_two_acn " <<  python_engine->sss.so_far  << "\n"; 
 
@@ -248,9 +247,13 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 
     } else {
 
+
+        //   codex resume 019f177d-adf5-7d52-989c-a42d6c6569a9
         // Make the move in the engine
         if (found_move.color == ShumiChess::Color::WHITE) python_engine->pushMove_t<ShumiChess::Color::WHITE>(found_move);
         else                                              python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);
+
+        minimax_ai->playground(python_engine->game_phase);
         
         python_engine->three_time_rep_stack.push_back(python_engine->game_board.zobrist_key);
      
@@ -367,9 +370,6 @@ engine_communicator_get_engine(PyObject* self, PyObject* args) {
     PyObject* engine_capsule = PyCapsule_New((void * ) python_engine, "engineptr", NULL);
     return engine_capsule;
 }
-
-
-static MinimaxAI* minimax_ai = nullptr;
 
 
 static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)

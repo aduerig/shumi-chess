@@ -57,11 +57,11 @@ using namespace utility::bit;
 
 //#define _DEBUGGING_PUSH_POP
 
-#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
-#define DEBUGGING_TEMP
+//#define DEBUGGING_TEMP
 
 // extern bool bMoreDebug;
 // extern string debugMove;
@@ -132,7 +132,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -670,8 +670,6 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 }
 
 
-// codex resume 019f0c43-30d9-7241-a3ab-85b74918f6a6
-
 
 int g_this_depth = 6;
 
@@ -774,7 +772,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     // NOTE: In 2 computers playing this is in plys. If one human, its in moves.
     engine.computer_ply_so_far++;                      // Increment real moves in whole game
 
-    #ifdef DISPLAY_DEEPING
+    #ifdef DISPLAY_DEEPING1
         cout << "\x1b[94m\n\nMove: " << engine.computer_ply_so_far << "\x1b[0m";
     #endif
 
@@ -865,7 +863,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
     }
 
-    #ifdef DISPLAY_DEEPING
+    #ifdef DISPLAY_DEEPING1
         if (n_Multis>1) cout << "\n" << " rand moves collected: " << n_Multis;
     #endif
     //engine.print_moves_and_scores_to_file(excluded_root_moves, false, false, stdout);
@@ -933,7 +931,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         // Playground is for extended debug and status, and for whatever else. However there is a gotcha. Although we 
         // have found out move, we have not yet made the move. The found move is reported to the python, that then
         // calls engine_communicator_make_move_two_acn() to make the move.
-        playground(iPhase);
+        //playgroundOld(iPhase);
 
         double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
         cout << "\x1b[33m\nWent to depth " << (depth - 1)  
@@ -1020,9 +1018,24 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 }
 
 
+void MinimaxAI::playgroundOld(int iPhase) {
+}
+
+// Debug only  playground. Sandbox for testing evaluation functions
 void MinimaxAI::playground(int iPhase) {
-    //
-    // Debug only  playground. Sandbox for testing evaluation functions
+  
+  
+    const char* pszPhase = str_from_GamePhase(iPhase);
+    const int itemp1 = engine.game_board.count_potential_checks_against_king_t<Color::WHITE>();
+    const int itemp2 = engine.game_board.count_potential_checks_against_king_t<Color::BLACK>();
+
+
+    cout << "\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
+
+
+    // Update statistics 
+    //python_engine->updateStats(found_move);
+
     // int isolanis;
     bool isOK;
 
@@ -1032,8 +1045,6 @@ void MinimaxAI::playground(int iPhase) {
 
     isOK = false;
     //ull holes;
-    int itemp1=0;
-    int itemp2=0;
 
     //PawnFileInfo pwnFileInfo;
     // ull holes_bb;
@@ -1052,12 +1063,6 @@ void MinimaxAI::playground(int iPhase) {
     //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
 
 
-    itemp1 = sizeof(PInfo);
-    char szTemp[128];
-    const char* pszPhase = &szTemp[0];
-    pszPhase = str_from_GamePhase(iPhase);
-    cout << "\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
-
     // cout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
 
     //utemp1 = pawn_file_info.size();
@@ -1070,7 +1075,7 @@ void MinimaxAI::playground(int iPhase) {
     cout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
 
-    cout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
+    //cout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
 
     //engine.debug_print_repetition_table();
 
@@ -1078,40 +1083,40 @@ void MinimaxAI::playground(int iPhase) {
     	stop_callback_thread();
     #endif
 
-// engine.game_board.compute_bits_in();
-// int white_pawns_only = 0;
-// int black_pawns_only = 0;
+    // engine.game_board.compute_bits_in();
+    // int white_pawns_only = 0;
+    // int black_pawns_only = 0;
 
-// int white_material = engine.game_board.get_material_for_color_t<Color::WHITE>(white_pawns_only);
-// int black_material = engine.game_board.get_material_for_color_t<Color::BLACK>(black_pawns_only);
-// assert(white_material >= 0);
-// assert(black_material >= 0);
+    // int white_material = engine.game_board.get_material_for_color_t<Color::WHITE>(white_pawns_only);
+    // int black_material = engine.game_board.get_material_for_color_t<Color::BLACK>(black_pawns_only);
+    // assert(white_material >= 0);
+    // assert(black_material >= 0);
 
-// itemp1 = trade_imbalance_cp_t<Color::WHITE>((white_material - black_material), white_pawns_only);
-// itemp2 = trade_imbalance_cp_t<Color::BLACK>((black_material - white_material), black_pawns_only);
+    // itemp1 = trade_imbalance_cp_t<Color::WHITE>((white_material - black_material), white_pawns_only);
+    // itemp2 = trade_imbalance_cp_t<Color::BLACK>((black_material - white_material), black_pawns_only);
 
-// cout << "\n" << pszPhase << "  www " << (white_material - black_material) << "  " << white_pawns_only 
-//      << "           bbb " << (black_material - white_material) << "  " << black_pawns_only << endl;
+    // cout << "\n" << pszPhase << "  www " << (white_material - black_material) << "  " << white_pawns_only 
+    //      << "           bbb " << (black_material - white_material) << "  " << black_pawns_only << endl;
 
-// cout << "\n\n" << pszPhase << "  tempW " << itemp1 << "           tempB " << itemp2 << endl;
+    // cout << "\n\n" << pszPhase << "  tempW " << itemp1 << "           tempB " << itemp2 << endl;
 
 
-// cout << "COUNTS"
-//      << "  W minors=" << (int)(engine.game_board.Bits_In[Color::WHITE][Piece::KNIGHT] +
-//                                engine.game_board.Bits_In[Color::WHITE][Piece::BISHOP])
-//      << " rooks="     << (int)engine.game_board.Bits_In[Color::WHITE][Piece::ROOK]
-//      << " queens="    << (int)engine.game_board.Bits_In[Color::WHITE][Piece::QUEEN]
-//      << "     B minors=" << (int)(engine.game_board.Bits_In[Color::BLACK][Piece::KNIGHT] +
-//                                   engine.game_board.Bits_In[Color::BLACK][Piece::BISHOP])
-//      << " rooks="        << (int)engine.game_board.Bits_In[Color::BLACK][Piece::ROOK]
-//      << " queens="       << (int)engine.game_board.Bits_In[Color::BLACK][Piece::QUEEN]
-//      << endl;
+    // cout << "COUNTS"
+    //      << "  W minors=" << (int)(engine.game_board.Bits_In[Color::WHITE][Piece::KNIGHT] +
+    //                                engine.game_board.Bits_In[Color::WHITE][Piece::BISHOP])
+    //      << " rooks="     << (int)engine.game_board.Bits_In[Color::WHITE][Piece::ROOK]
+    //      << " queens="    << (int)engine.game_board.Bits_In[Color::WHITE][Piece::QUEEN]
+    //      << "     B minors=" << (int)(engine.game_board.Bits_In[Color::BLACK][Piece::KNIGHT] +
+    //                                   engine.game_board.Bits_In[Color::BLACK][Piece::BISHOP])
+    //      << " rooks="        << (int)engine.game_board.Bits_In[Color::BLACK][Piece::ROOK]
+    //      << " queens="       << (int)engine.game_board.Bits_In[Color::BLACK][Piece::QUEEN]
+    //      << endl;
 
-// cout << "TRADE WEIGHTS"
-//      << " max=" << engine.game_board.wghts.GetWeight(TRADE_MAX_BONUS)
-//      << " cap=" << engine.game_board.wghts.GetWeight(TRADE_ADVANTAGE_CAP)
-//      << " max_side=" << MAX_CP_PER_SIDE
-//      << endl;
+    // cout << "TRADE WEIGHTS"
+    //      << " max=" << engine.game_board.wghts.GetWeight(TRADE_MAX_BONUS)
+    //      << " cap=" << engine.game_board.wghts.GetWeight(TRADE_ADVANTAGE_CAP)
+    //      << " max_side=" << MAX_CP_PER_SIDE
+    //      << endl;
 
 
 }
@@ -1293,7 +1298,7 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
         
         #ifdef DEBUGGING_TEMP
             fprintf(fpDebug, "%ld     elapsed_time0=%llu   %llu\n", time_control.enabled()
-                , static_cast<unsigned long long>(elapsed_time)
+                , static_cast<unsigned long long>(estimated_elapsed_time)
                 , static_cast<unsigned long long>(fallback_move_budget));
         #endif
         return (estimated_elapsed_time >= fallback_move_budget);
@@ -1339,7 +1344,11 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
             minimum_budget,
             static_cast<long double>(usable_clock));
 
-
+        #ifdef DEBUGGING_TEMP
+            fprintf(fpDebug, "%ld     elapsed_time1=%llu   %llu\n", time_control.enabled()
+                , static_cast<unsigned long long>(estimated_elapsed_time)
+                , static_cast<unsigned long long>(move_budget));
+        #endif
         return estimated_elapsed_time >= move_budget;
     }
 }
@@ -3330,6 +3339,10 @@ int MinimaxAI::cp_score_positional_get_middle_cp_t(int nPhase) {
 
     icp_temp = engine.game_board.rook_7th_rankness_cp_t<c>();
     cp_score_position_temp += icp_temp;
+
+    // icp_temp = engine.game_board.potential_checks_against_king_cp_t();
+    // cp_score_position_temp += icp_temp;
+
 
     return cp_score_position_temp;
 }

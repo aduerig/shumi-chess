@@ -176,11 +176,6 @@ class Engine {
         ull all_own_pieces;
         ull all_pieces; 
 
-        // This is the "classical" approach
-        // !TODO: https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html, currently implemented with slow method at top
-        
-        
-
         inline ull squares_between_exclusive(int kingSq, int checkerSq) const
         {
             // Returns squares strictly between kingSq and checkerSq if aligned (rank/file/diag),

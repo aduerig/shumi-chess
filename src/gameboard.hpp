@@ -64,6 +64,14 @@ struct PawnFileInfo {
     ull passed_pawns[2];
     int passed_cp[2];
 };
+
+struct PotentialCheckInfo {
+    int queen_checks;
+    int rook_checks;
+    int bishop_checks;
+    int knight_checks;
+    int total_checks;
+};
 // #define friendlyP 0 
 // #define enemyP    1
 
@@ -388,6 +396,11 @@ class GameBoard {
         int kings_in_opposition(Color defender_color);
         template<Color c> int sliders_and_knights_attacking_square2_t(int sq);
         template<Color c> int attackers_on_enemy_king_near_cp_t();
+        
+        template<Color c> PotentialCheckInfo potential_checks_against_king_t();
+        template<Color c> int count_potential_checks_against_king_t();
+        template<Color c> int potential_checks_against_king_cp_t();
+
         int attackers_on_enemy_passed_pawns(Color attacker_color,
                                                ull passed_white_pwns,
                                                ull passed_black_pswns);
@@ -489,6 +502,17 @@ class GameBoard {
             (1 * 900)    \
         )
 
+        // const int potential_check_penalty[9] = {
+        //     0,    // 0 checks
+        //     0,    // 1 check
+        //     0,    // 2 checks
+        //     10,   // 3 checks
+        //     40,   // 4 checks
+        //     90,   // 5 checks
+        //     160,  // 6 checks
+        //     250,  // 7 checks
+        //     350   // 8+ checks
+        // };
 
         // Three possibilities here: Which is best? Must use fastest one.
         // inline int GameBoard::bits_in(ull bitboard) const {
