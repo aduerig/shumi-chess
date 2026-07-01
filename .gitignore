@@ -15,6 +15,8 @@ x64/
 *.o
 *.def
 driver/__pycache__/
+driver/cutechess_errors.txt
+driver/cutechess_log.txt
 build/
 CMakeFiles/
 .env

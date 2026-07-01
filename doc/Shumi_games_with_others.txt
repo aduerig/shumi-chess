@@ -196,3 +196,4 @@ Games with stockfish (using cutechess as tournement director)
 Score of Shumi vs stockfish_ELO 2300: 23 - 26 - 1 [0.470]
 Score of Shumi vs stockfish_ELO 2300: 3 - 2 - 0 [0.600]
 Score of Shumi vs stockfish_ELO 2300: 26 - 20 - 1 [0.564]      6/30/2026
+
