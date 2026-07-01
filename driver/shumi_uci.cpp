@@ -343,8 +343,6 @@ int main()
                 have_position = true;
             }
 
-         
-
             long long white_time = -1;
             long long black_time = -1;
             long long move_time = -1;
@@ -363,13 +361,18 @@ int main()
             int search_time_to_use = time_to_use;
             MinimaxAI::SearchTimeControl time_control;
 
-            if (move_time > 0) {
+            if (move_time > 0) {    
+                // A "movetime" parameter was passed by cutechess. So Cutechess wants a constant time per move.
+
                 // An explicit UCI movetime is a per-move limit, not a multi-move
                 // clock, so borrowing is deliberately disabled.
                 search_time_to_use = static_cast<int>(std::min<long long>(
                     move_time,
                     std::numeric_limits<int>::max()));
+
             } else if (moves_to_go > 0) {
+                // A "wtimew"/"btime" parameter was passed by cutechess. So Cutechess wants a constant time per set of moves.
+
                 const int side = engine->game_board.turn == Color::WHITE ? 0 : 1;
                 const long long side_clock = side == 0 ? white_time : black_time;
 
@@ -396,8 +399,20 @@ int main()
                     time_control.clock_at_move_start = clock_at_move_start;
                     time_control.moves_left = moves_to_go;
                     time_control.nominal_time_per_move = k;
+
+                    // Allow this move to borrow up to one full nominal move's time.
+                    // If k is 10000 ms, Shumi may add up to 10000 ms beyond the normal k budget.
+                    // This is the main direct knob for how aggressive borrowing can be.
                     time_control.maximum_loan = k;
+
+                    // Protect future moves from being starved after borrowing on this move.
+                    // Here each future move must be left at least k / 4 time, but never less than 1 ms.
+                    // Lowering this makes borrowing more aggressive; raising it makes borrowing safer.
                     time_control.minimum_future_time = std::max<ull>(1, k / 4);
+
+                    // Keep this much clock completely outside Shumi's usable budget.
+                    // The search budgets from clock_at_move_start - reserve, not the full clock.
+                    // This protects against overshoot, GUI delay, and stop-check granularity.
                     time_control.clock_reserve = reserve;
                 }
             }

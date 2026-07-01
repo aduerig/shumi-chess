@@ -202,10 +202,13 @@ public:
 
     static bool should_stop_by_time(ull elapsed_time, double growth_factor
                                         , ull fallback_move_budget
-                                        , const SearchTimeControl& time_control);
+                                        , const SearchTimeControl& time_control
+                                        , long double& estimated_elapsed_time);
 
     tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time_display_only
                                                 , ull& last_elapsed_time_display_only
+                                                , long double estimated_elapsed_time
+                                                , bool estimated_elapsed_time_available
                                                 , const ShumiChess::Move& null_move);
 
 

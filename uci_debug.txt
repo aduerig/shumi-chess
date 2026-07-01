@@ -1,0 +1,273 @@
+uci
+isready
+debug on
+ucinewgame
+position startpos
+isready
+go wtime 300000 btime 300000 movestogo 40
+uci
+isready
+debug on
+ucinewgame
+position startpos
+isready
+go wtime 300000 btime 300000 movestogo 40
+position startpos moves g1f3 g8f6
+isready
+go wtime 277348 btime 281466 movestogo 39
+position startpos moves g1f3 g8f6 d2d4 g7g6
+isready
+go wtime 276511 btime 260862 movestogo 38
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7
+isready
+go wtime 274695 btime 253614 movestogo 37
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6
+isready
+go wtime 267144 btime 242839 movestogo 36
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5
+isready
+go wtime 264702 btime 232153 movestogo 35
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5
+isready
+go wtime 256412 btime 222106 movestogo 34
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7
+isready
+go wtime 252625 btime 214350 movestogo 33
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6
+isready
+go wtime 247306 btime 206791 movestogo 32
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8
+isready
+go wtime 240792 btime 195736 movestogo 31
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6
+isready
+go wtime 233713 btime 182806 movestogo 30
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8
+isready
+go wtime 224790 btime 172187 movestogo 29
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6
+isready
+go wtime 216691 btime 168801 movestogo 28
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7
+isready
+go wtime 211436 btime 162135 movestogo 27
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8
+isready
+go wtime 186983 btime 150427 movestogo 26
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7
+isready
+go wtime 183886 btime 139837 movestogo 25
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6
+isready
+go wtime 170385 btime 136471 movestogo 24
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6
+isready
+go wtime 166836 btime 126596 movestogo 23
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5
+isready
+go wtime 157165 btime 104492 movestogo 22
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7
+isready
+go wtime 139291 btime 99616 movestogo 21
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8
+isready
+go wtime 132422 btime 90934 movestogo 20
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6
+isready
+go wtime 121762 btime 84398 movestogo 19
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7
+isready
+go wtime 117837 btime 65640 movestogo 18
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7
+isready
+go wtime 106096 btime 55763 movestogo 17
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6
+isready
+go wtime 96510 btime 50388 movestogo 16
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8
+isready
+go wtime 83959 btime 37906 movestogo 15
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3
+isready
+go wtime 79495 btime 34507 movestogo 14
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8
+isready
+go wtime 77632 btime 30410 movestogo 13
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6
+isready
+go wtime 72933 btime 26828 movestogo 12
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6
+isready
+go wtime 70886 btime 22194 movestogo 11
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5
+isready
+go wtime 67697 btime 17702 movestogo 10
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7
+isready
+go wtime 66448 btime 13616 movestogo 9
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6
+isready
+go wtime 61580 btime 8742 movestogo 8
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7
+isready
+go wtime 49869 btime 6293 movestogo 7
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5
+isready
+go wtime 44943 btime 4645 movestogo 6
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8
+isready
+go wtime 39193 btime 2458 movestogo 5
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7
+isready
+go wtime 33107 btime 1151 movestogo 4
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4
+isready
+go wtime 28977 btime 691 movestogo 3
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8
+isready
+go wtime 11716 btime 638 movestogo 2
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8
+isready
+go wtime 8734 btime 580 movestogo 1
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3
+isready
+go wtime 307279 btime 300555 movestogo 40
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2
+isready
+go wtime 301538 btime 291268 movestogo 39
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8
+isready
+go wtime 294952 btime 275226 movestogo 38
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7
+isready
+go wtime 291853 btime 265756 movestogo 37
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8
+isready
+go wtime 287762 btime 203091 movestogo 36
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1
+isready
+go wtime 282382 btime 194510 movestogo 35
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6
+isready
+go wtime 271916 btime 181724 movestogo 34
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2
+isready
+go wtime 260456 btime 167160 movestogo 33
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1
+isready
+go wtime 255834 btime 154119 movestogo 32
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4
+isready
+go wtime 247933 btime 140619 movestogo 31
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1
+isready
+go wtime 238933 btime 128767 movestogo 30
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5
+isready
+go wtime 225433 btime 124253 movestogo 29
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8
+isready
+go wtime 222243 btime 112666 movestogo 28
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8
+isready
+go wtime 205953 btime 100835 movestogo 27
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1
+isready
+go wtime 201463 btime 89460 movestogo 26
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5
+isready
+go wtime 195623 btime 84838 movestogo 25
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2
+isready
+go wtime 189232 btime 65108 movestogo 24
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3
+isready
+go wtime 184709 btime 59209 movestogo 23
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3
+isready
+go wtime 180704 btime 49781 movestogo 22
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3
+isready
+go wtime 170977 btime 42652 movestogo 21
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4
+isready
+go wtime 153924 btime 28792 movestogo 20
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8
+isready
+go wtime 146339 btime 23799 movestogo 19
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7
+isready
+go wtime 135203 btime 19048 movestogo 18
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7
+isready
+go wtime 131759 btime 16872 movestogo 17
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2
+isready
+go wtime 128013 btime 12281 movestogo 16
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3
+isready
+go wtime 121346 btime 10327 movestogo 15
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1
+isready
+go wtime 117546 btime 8072 movestogo 14
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3
+isready
+go wtime 107296 btime 4835 movestogo 13
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2
+isready
+go wtime 97451 btime 2839 movestogo 12
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7
+isready
+go wtime 90210 btime 1638 movestogo 11
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2
+isready
+go wtime 86337 btime 1069 movestogo 10
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2
+isready
+go wtime 79757 btime 645 movestogo 9
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q
+isready
+go wtime 73891 btime 562 movestogo 8
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1
+isready
+go wtime 68882 btime 517 movestogo 7
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2
+isready
+go wtime 53099 btime 448 movestogo 6
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7
+isready
+go wtime 47711 btime 408 movestogo 5
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5
+isready
+go wtime 42187 btime 380 movestogo 4
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3
+isready
+go wtime 26218 btime 358 movestogo 3
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8
+isready
+go wtime 18385 btime 328 movestogo 2
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3
+isready
+go wtime 13366 btime 303 movestogo 1
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3 b3a4 f3c3
+isready
+go wtime 309859 btime 300275 movestogo 40
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3 b3a4 f3c3 a4a5 e8b8
+isready
+go wtime 304429 btime 294311 movestogo 39
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3 b3a4 f3c3 a4a5 e8b8 b5b6 c3c4
+isready
+go wtime 298628 btime 285790 movestogo 38
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3 b3a4 f3c3 a4a5 e8b8 b5b6 c3c4 b4c6 c4d5
+isready
+go wtime 294981 btime 277263 movestogo 37
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3 b3a4 f3c3 a4a5 e8b8 b5b6 c3c4 b4c6 c4d5 a5a6 d5c6
+isready
+go wtime 279918 btime 272074 movestogo 36
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3 b3a4 f3c3 a4a5 e8b8 b5b6 c3c4 b4c6 c4d5 a5a6 d5c6 a6a5 c6b6
+isready
+go wtime 276771 btime 271978 movestogo 35
+position startpos moves g1f3 g8f6 d2d4 g7g6 b1c3 f8g7 e2e4 c7c6 e4e5 f6d5 c3d5 c6d5 f1d3 d8c7 c2c3 c7b6 e1g1 e8g8 d1e2 a7a6 c1e3 b6d8 e2d2 b8c6 e3h6 d8c7 d2e3 a8b8 h6g7 g8g7 f1d1 d7d6 e5d6 e7d6 h2h3 b7b5 e3g5 c6e7 d1e1 f8e8 d3c2 h7h6 g5f4 c8d7 f4d2 c7b7 d2f4 b7b6 e1e3 e7g8 c2b3 e8e3 f2e3 b8e8 b3d5 d7e6 d5e6 e8e6 e3e4 g6g5 f4f5 g8e7 f5g4 e7g6 f3d2 b6b7 a1f1 a6a5 g2g3 g7g8 g4f5 b7d7 a2a4 b5a4 f5a5 g6f8 f1a1 e6e8 a5a4 d7h3 g1f2 h3h2 f2e1 e8d8 g3g4 g8g7 a4d1 d8b8 a1a2 h2g1 d2f1 f8g6 e1d2 g1g2 d1e2 g2h1 b2b4 g6f4 f1g3 h1b1 e2c4 d6d5 e4d5 b8e8 g3f5 g7g8 f5e3 b1g1 e3c2 h6h5 g4h5 g1g2 d2c1 g2h3 d5d6 f4d3 c4d3 h3d3 c1b2 g5g4 d6d7 e8d8 a2a7 g8g7 h5h6 g7h7 c2e1 d3d2 e1c2 d2d3 c2e1 d3f1 a7a1 g4g3 a1c1 f1e2 e1c2 d8d7 c1e1 e2h2 c3c4 g3g2 d4d5 g2g1q e1g1 h2g1 b2c3 g1f2 b4b5 d7e7 c3b3 f7f5 c2b4 e7e3 b3a4 e3e8 a4b3 f2f3 b3a4 f3c3 a4a5 e8b8 b5b6 c3c4 b4c6 c4d5 a5a6 d5c6 a6a5 c6b6 a5a4 b6b4
+isready
+quit
+quit received

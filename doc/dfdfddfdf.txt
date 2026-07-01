@@ -1,0 +1,15 @@
+
+
+This is incorrect (off by one) See the below outot. For example look at Deeping 5 ply. Clearly the predicted value (18)
+goes with the next linethat shows an actual of 17. Also note Deeping 7, for simplar effect, 780 .vs. 772. Move the estimated
+vlues down a line so they are shown on the same line (same slash pair). DO NOT change anything as to how the first number of the slash pair
+is printed, or any other value printed in the line. Only other change I have, is to on first deeping, there is no estimated time available so just print "?".
+
+0 Deeping 1 ply of 8 msec=     0/0  Best: Nf3   ; +0.36
+0 Deeping 2 ply of 8 msec=     0/0  Best: Nf3   ; +0.00
+0 Deeping 3 ply of 8 msec=     0/0  Best: Nf3   ; +0.36
+0 Deeping 4 ply of 8 msec=     1/6  Best: Nf3   ; +0.00
+0 Deeping 5 ply of 8 msec=     3/18  Best: Nf3   ; +0.31
+0 Deeping 6 ply of 8 msec=    17/102  Best: Nc3   ; -0.04
+0 Deeping 7 ply of 8 msec=   130/780  Best: Nc3   ; +0.30
+0 Deeping 8 ply of 8 msec=   772/4632  Best: e4    ; +0.04

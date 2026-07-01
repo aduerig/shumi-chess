@@ -247,8 +247,6 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
 
     } else {
 
-
-        //   codex resume 019f177d-adf5-7d52-989c-a42d6c6569a9
         // Make the move in the engine
         if (found_move.color == ShumiChess::Color::WHITE) python_engine->pushMove_t<ShumiChess::Color::WHITE>(found_move);
         else                                              python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);

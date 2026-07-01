@@ -525,6 +525,8 @@ int MinimaxAI::phase_of_game_full() {
 tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                                             , ull elapsed_time_display_only
                                             , ull& last_elapsed_time_display_only
+                                            , long double estimated_elapsed_time
+                                            , bool estimated_elapsed_time_available
                                             , const Move& null_move) {
 
     tuple<Score, Move> ret_val;
@@ -560,7 +562,8 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             fprintf(fpDebug, "\n");
         #endif
         // elapsed_time_display_only is from beginning of calculation
-        // Ha.
+        
+        // codex resume 019f1cb6-e89a-7a33-b8af-ef494f70d2cb
         #ifdef DISPLAY_DEEPING      // i_duration_requested
             ull ratio_last = 0;
             if (last_elapsed_time_display_only != 0) {
@@ -569,7 +572,13 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             last_elapsed_time_display_only = elapsed_time_display_only;
             if (depth==1) cout << "\n";
             cout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
-                        << " msec=" << std::setw(6) << elapsed_time_display_only << '/' << ratio_last << ' ';
+                        << " msec=" << std::setw(6) << elapsed_time_display_only << '/';
+            if (estimated_elapsed_time_available) {
+                cout << static_cast<ull>(estimated_elapsed_time);
+            } else {
+                cout << '?';
+            }
+            cout << ' ';
         #endif
 
 
@@ -1146,6 +1155,10 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     
     elapsed_time = 0ULL; // in msec
     ull last_elapsed_time_display_only = 0ULL;
+    long double estimated_elapsed_time = 0.0L;
+    long double previous_estimated_elapsed_time = 0.0L;
+    long double estimated_elapsed_time_display_only = 0.0L;
+    bool estimated_elapsed_time_available = false;
 
 
     Score d_Return_score = 0.0;
@@ -1174,7 +1187,9 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         // the beast
 
         // Ha. Here we pass in the elapsed time, just for display, before the deeping.
-        ret_val = do_a_deepening(depth, elapsed_time, last_elapsed_time_display_only, null_move);
+        ret_val = do_a_deepening(depth, elapsed_time, last_elapsed_time_display_only
+                                , estimated_elapsed_time_display_only
+                                , estimated_elapsed_time_available, null_move);
 
         d_Return_score = get<0>(ret_val);
         if (d_Return_score == ABORT_SCORE) {
@@ -1263,7 +1278,16 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             elapsed_time,
             growth_factor,
             static_cast<ull>(i_duration_requested),
-            time_control);
+            time_control,
+            estimated_elapsed_time);
+
+        if (estimated_elapsed_time_available) {
+            estimated_elapsed_time_display_only = previous_estimated_elapsed_time;
+        } else {
+            estimated_elapsed_time_display_only = estimated_elapsed_time;
+            estimated_elapsed_time_available = true;
+        }
+        previous_estimated_elapsed_time = estimated_elapsed_time;
 
         //cout << endl << "    bThinkingOverByDepth " << estimated_elapsed_time << endl;
 
@@ -1281,12 +1305,12 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     return { d_best_move_score, best_move };
 }
 
-
 bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
                                     , ull fallback_move_budget
-                                    , const SearchTimeControl& time_control)
+                                    , const SearchTimeControl& time_control
+                                    , long double& estimated_elapsed_time)
 {
-    const long double estimated_elapsed_time =
+    estimated_elapsed_time =
         static_cast<long double>(elapsed_time) * growth_factor;
 
 
