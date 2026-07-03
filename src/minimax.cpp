@@ -132,7 +132,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -576,7 +576,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             if (estimated_elapsed_time_available) {
                 cout << static_cast<ull>(estimated_elapsed_time);
             } else {
-                cout << '?';
+                cout << '_';
             }
             cout << ' ';
         #endif
@@ -839,7 +839,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     excluded_root_moves.clear();
 
 
-    cout << endl << " nMultis " << n_Multis << endl;
+    //cout << endl << " nMultis " << n_Multis << endl;
     //
     // This loop always runs at least once. If only once, then there are no "random"/MultiPV moves
     for (int ii=0; ii<n_Multis; ii++) {
@@ -1008,7 +1008,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     }
 
     // Note: this is required or tehe app hangs near the end of the game in autoplay?
-    #ifdef DISPLAY_DEEPING
+    #ifdef DISPLAY_DEEPING1
         cout << "\n";
     #endif
 
@@ -1039,20 +1039,13 @@ void MinimaxAI::playground(int iPhase) {
     const int itemp2 = engine.game_board.count_potential_checks_against_king_t<Color::BLACK>();
 
 
-    cout << "\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
-
-
+    //cout << "\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
+    //cout << "\033[32m\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << "\033[0m" << endl;
+    cout << "\033[93m" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << "\033[0m" << endl;
     // Update statistics 
     //python_engine->updateStats(found_move);
 
-    // int isolanis;
-    bool isOK;
 
-    //int iNearSquares;
-    //int king_near_squares_out[9];
-    //ull utemp1;
-
-    isOK = false;
     //ull holes;
 
     //PawnFileInfo pwnFileInfo;
@@ -1075,22 +1068,18 @@ void MinimaxAI::playground(int iPhase) {
     // cout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
 
     //utemp1 = pawn_file_info.size();
-    string sss1 = format_with_commas(NTriesP); 
-    //string sss1 = format_with_commas(utemp1);
-    string sss2 = format_with_commas(NhitsP);
+    // string sss1 = format_with_commas(NTriesP); 
+    // //string sss1 = format_with_commas(utemp1);
+    // string sss2 = format_with_commas(NhitsP);
     
-    string sss3 = format_with_commas(evals_visited);
+    // string sss3 = format_with_commas(evals_visited);
    
-    cout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
+    // cout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
 
     //cout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
 
     //engine.debug_print_repetition_table();
-
-	#ifdef DISPLAY_PULSE_CALLBACK_THREAD
-    	stop_callback_thread();
-    #endif
 
     // engine.game_board.compute_bits_in();
     // int white_pawns_only = 0;
@@ -1806,6 +1795,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // Fail-low
     if (!did_cutoff && (alpha <= alpha_in)) {
         did_fail_low = true;
+        assert (alpha == alpha_in);
     }
 
     if (Features_mask & _FEATURE_TT2) {  // store in TT2
@@ -2494,6 +2484,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     // Fail-low
     if (!did_cutoff && (alpha <= alpha_in)) {
         did_fail_low = true;
+        assert (alpha == alpha_in);
     }
 
     
@@ -2814,6 +2805,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         // Alpha/beta "cutoff", (fail-high), break the analysis
         // You just found a move so good that the opponent would never 
         // allow this position, because it already exceeds what they could tolerate.
+        // (stop anaylizing moves to look at)
         if (alpha >= beta) {
 
             // You found a move so good that the opponent would never allow this position.
@@ -3364,8 +3356,10 @@ int MinimaxAI::cp_score_positional_get_middle_cp_t(int nPhase) {
     icp_temp = engine.game_board.rook_7th_rankness_cp_t<c>();
     cp_score_position_temp += icp_temp;
 
-    // icp_temp = engine.game_board.potential_checks_against_king_cp_t();
-    // cp_score_position_temp += icp_temp;
+    if (nPhase != GamePhase::ENDGAME_LATE) {
+        icp_temp = engine.game_board.potential_checks_against_king_cp_t<c>();
+        cp_score_position_temp += icp_temp;
+    }
 
 
     return cp_score_position_temp;

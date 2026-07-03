@@ -1,15 +1,33 @@
 
+I am playing arasan and stockfish againts SHumi using cutechess now. My observations so far. 
+  1. Stockfish crippled to 2300 plays about even with Shumi. Arsan crippled to 2200 plays even with Shumi.
+  2. When SHumi loses to better engines, the signature of the loss is always the same: "lowered pices". By 
+    "lowered pieces I mean this, the material is about even, but also asymetric, ALWAYS in the fashion that
+     Shumi has the second part of the below asymetries:
+       a. minor piece .vs. 2-3 pawns
+       b. 2 minor pieces .vs. 5-6 pawns
+       c. rook .vs. 4-5 pawns. 
+       d. queen .vs. rook and 3-4 pawns
+       e. queen .vs. rook and minor piece and maybe a pawn.
+    Shumi when losing, is always on the second side of the .vs. above. Shumi is never behind a pawn, even when losing.
 
-This is incorrect (off by one) See the below outot. For example look at Deeping 5 ply. Clearly the predicted value (18)
-goes with the next linethat shows an actual of 17. Also note Deeping 7, for simplar effect, 780 .vs. 772. Move the estimated
-vlues down a line so they are shown on the same line (same slash pair). DO NOT change anything as to how the first number of the slash pair
-is printed, or any other value printed in the line. Only other change I have, is to on first deeping, there is no estimated time available so just print "?".
 
-0 Deeping 1 ply of 8 msec=     0/0  Best: Nf3   ; +0.36
-0 Deeping 2 ply of 8 msec=     0/0  Best: Nf3   ; +0.00
-0 Deeping 3 ply of 8 msec=     0/0  Best: Nf3   ; +0.36
-0 Deeping 4 ply of 8 msec=     1/6  Best: Nf3   ; +0.00
-0 Deeping 5 ply of 8 msec=     3/18  Best: Nf3   ; +0.31
-0 Deeping 6 ply of 8 msec=    17/102  Best: Nc3   ; -0.04
-0 Deeping 7 ply of 8 msec=   130/780  Best: Nc3   ; +0.30
-0 Deeping 8 ply of 8 msec=   772/4632  Best: e4    ; +0.04
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

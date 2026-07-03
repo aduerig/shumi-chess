@@ -1,10 +1,196 @@
 
+tuple<Score, Move> MinimaxAI::recursive_negamax(
+                    int depth
+                    ,Score alpha, Score beta
+                    ,bool is_from_root
+                    ,const ShumiChess::Move& move_last      // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
+                    ,int nPlys
+                    ,int qPlys
+                    )
+{
 
-Now, look at bThinkingOverByTime. how it is used in the iterave deepening.  The difficulty, is that 
-(elapsed_time >= (ull)i_duration_requested); is not what s wanted . The duration shoud apply to the whole
-move, not just all the deepenings except the last one. This is especially bad, as the last deepening is far 
-the largest. 
 
-Supoose the curve or function of the total elapsed time is T{N} for N a counter for each increasing deepening. 
-By total it means since the start of all deepening. Then I observe that where: ratio_last = T{N+1] / T[N}
-and I observe by watching that ratio_last is about N.
+
+    Score alpha_in = alpha;   //  save original alpha window lower bound
+    Score beta_in = beta;   //  save original alpha window lower bound
+
+
+  
+    // =====================================================================
+    // Get all legal moves
+    // =====================================================================
+
+    
+
+    // =====================================================================
+    // Transposition table (TT2)
+    // =====================================================================
+
+ 
+
+
+    
+    // Only one of me, per deepening.
+    bool first_node_in_deepening = (top_deepening == depth);
+
+    if (first_node_in_deepening) {
+        // Change 3: legal_moves needs a size() that discounts "zero moves".
+        if (legal_moves.size() == 1) {
+            //cout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
+
+            #ifdef _DEBUGGING_TO_FILE1
+                // Show board
+                cout << gameboard_to_string(engine.game_board) << endl;
+                assert(0);
+            #endif
+
+            return {ONLY_MOVE_SCORE, legal_moves[0]};
+        }
+    }
+
+    const GameState state = engine.is_game_over(n_legal_moves_found);
+    //GameState state = engine.is_game_over(legal_moves.size());
+
+    // =====================================================================
+    // Terminal positions (game over)
+    // =====================================================================
+    if (state != GameState::INPROGRESS) {
+
+        int level = (top_deepening - depth);
+        assert(level >= 0);
+
+        Score d_level = static_cast<Score>(level);
+
+        switch (state) {
+            case GameState::WHITEWIN:
+                d_best_score = (engine.game_board.turn == ShumiChess::WHITE)
+                                ? (+HUGE_SCORE - d_level)
+                                : (-HUGE_SCORE + d_level);
+                break;
+
+            case GameState::BLACKWIN:
+                d_best_score = (engine.game_board.turn == ShumiChess::BLACK)
+                                ? (+HUGE_SCORE - d_level)
+                                : (-HUGE_SCORE + d_level);
+                break;
+
+            case GameState::DRAW:
+                d_best_score = 0.0;          // Stalemate
+
+                if (is_from_root) engine.reason_for_draw = DRAW_STALEMATE;
+                break;
+
+            default:
+                assert(0);
+                break;
+        }
+
+        return {d_best_score, the_best_move};
+
+    }
+
+    assert (depth > 0);
+    Score d_stand_pat = HUGE_SCORE;   // If we evaluate, it will be the evaluate score.
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    // =====================================================================
+    // Recurse over selected move set "moves_to_loop_over"
+    // =====================================================================
+    
+    assert(!p_moves_to_loop_over->empty());
+    if (!p_moves_to_loop_over->empty()) {
+
+        // Resort moves based on varoius things
+        // Fascinating tradeoff. We could also call this if depth==0 and in check.
+        // On one hand why not, because there could be a lot of responses, But on 
+        // the otherhand there wont be that many. ANf we must be super fast here.
+        //if ( (depth > 0) || (depth==0 && in_check) ) {
+
+        assert(p_moves_to_loop_over == &legal_moves);
+
+        #ifdef _DEBUGGING_MOVE_SORT
+            vector<Move> tempMovs = *p_moves_to_loop_over;
+        #endif
+
+        bool is_top_of_deepening = (depth == top_deepening);
+
+        // Change 8 : sort_moves_for_search function that discounts "zero moves"
+        sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
+
+        #ifdef _DEBUGGING_MOVE_SORT
+            if (tempMovs != *p_moves_to_loop_over) {
+                print_moves_to_file(tempMovs, depth, "pre", "\n");
+                print_moves_to_file(*p_moves_to_loop_over, depth, "pst", "\n");
+            }
+        #endif
+
+
+        d_best_score = -HUGE_SCORE;
+        // Change 9: ???
+        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
+
+        //
+        /////////////////////////////////////////////////////////////////////////////////////////
+        //
+        // Look (recurse) over all moves chosen
+        //
+        /////////////////////////////////////////////////////////////////////////////////////////
+        
+        // returns 0 if success, 1 if abort     n_legal_moves_found
+        int ir = loop_over_all_moves(depth, alpha, beta, 
+                        nPlys, qPlys, in_check, 
+                        d_stand_pat, 
+                        move_last,
+                        p_moves_to_loop_over,               // input
+                        the_best_move, d_best_score,        // outputs
+                        did_cutoff);
+        if (ir != 0) {
+            return {ABORT_SCORE, the_best_move};
+        }
+
+
+
+    }   // END non zero oves to look at
+
+
+    // Fail-low
+    if (!did_cutoff && (alpha <= alpha_in)) {
+        did_fail_low = true;
+    }
+
+   
+    assert(beta_in == beta);
+
+    #ifdef _DEBUGGING_MOVE_CHAIN    // Print summary: best move and best score
+        int nChars;
+        bool bSide = (engine.game_board.turn == ShumiChess::BLACK);
+
+        // Summary always starts a new line
+        nChars = fputc ('\n', fpDebug);
+        assert(nChars != EOF);
+
+        assert(nPlys>0);
+        engine.print_tabOver(nPlys-1, fpDebug);
+
+        nChars = fputs("BST=", fpDebug);
+        assert(nChars != EOF);
+
+        engine.print_move_to_file(move_last, -2, (GameState::INPROGRESS)
+                                    , false, false, bSide
+                                    , fpDebug);
+
+        bSide = !bSide;
+        engine.print_move_to_file(the_best_move, -2, (GameState::INPROGRESS)
+                                    , false, false, bSide
+                                    , fpDebug);
+   
+        //sprintf(szDebug, "%8.3fa", -d_best_score);
+    
+        nChars = fputs(szDebug, fpDebug);
+        assert(nChars != EOF);
+
+    #endif
+
+    return {d_best_score, the_best_move};
+}

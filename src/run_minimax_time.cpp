@@ -27,62 +27,14 @@ using namespace ShumiChess;
 using namespace std::chrono;
 
 ////////////////////////////////////////////////////////////////////////////////////
+// make with: cmake --build C:\programming\shumi-chess\build --config RelWithDebInfo --target run_minimax_time --clean-first -v
+// run from : C:\programming\shumi-chess\build\bin\RelWithDebInfo
 
-static const char* game_state_to_string(GameState state)
-{
-    switch (state) {
-        case INPROGRESS: return "in progress";
-        case WHITEWIN:   return "white wins";
-        case BLACKWIN:   return "black wins";
-        case DRAW:       return "draw";
-        default:         return "unknown";
-    }
-}
+static const char* game_state_to_string(GameState state);
+static string move_to_uci(const Move& move);
+static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time);
+static void make_engine_move(Engine& engine, Move move);
 
-static string move_to_uci(const Move& move)
-{
-    string move_text = utility::representation::move_to_string(move);
-    char promo = utility::representation::piece_to_charactor(move.promotion);
-    if (promo != ' ') {
-        move_text += promo;
-    }
-    return move_text;
-}
-
-static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time)
-{
-    return duration_cast<milliseconds>(end_time - start_time).count();
-}
-
-static void make_engine_move(Engine& engine, Move move)
-{
-    engine.users_last_move = move;
-    engine.ply_so_far++;
-
-    engine.gamePGN.addMe(move, engine);
-
-    engine.move_history = stack<Move>();
-
-    if (move.piece_type == Piece::NONE) {
-        cout << "\x1b[1;31mNo move to make\x1b[0m" << endl;
-        return;
-    }
-
-    // Make the move
-    if (move.color == Color::WHITE) {
-        engine.pushMove_t<Color::WHITE>(move);
-    } else {
-        engine.pushMove_t<Color::BLACK>(move);
-    }
-
-    // Manage tree time repetition
-    engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
-
-    bool b_reversable = engine.game_board.isReversableMove(move);
-    if (!b_reversable) {
-        engine.boundary_stack.push_back((int)engine.three_time_rep_stack.size() - 1);
-    }
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -116,7 +68,7 @@ int main(int argc, char** argv) {
     //
     int NPositions = 2;
     // Decide on arguments
-    int depth_to_use = 8;
+    int depth_to_use = 10;
     int time_to_use = 3;
     int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
@@ -208,3 +160,58 @@ int main(int argc, char** argv) {
 }
 
 
+static const char* game_state_to_string(GameState state)
+{
+    switch (state) {
+        case INPROGRESS: return "in progress";
+        case WHITEWIN:   return "white wins";
+        case BLACKWIN:   return "black wins";
+        case DRAW:       return "draw";
+        default:         return "unknown";
+    }
+}
+
+static string move_to_uci(const Move& move)
+{
+    string move_text = utility::representation::move_to_string(move);
+    char promo = utility::representation::piece_to_charactor(move.promotion);
+    if (promo != ' ') {
+        move_text += promo;
+    }
+    return move_text;
+}
+
+static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time)
+{
+    return duration_cast<milliseconds>(end_time - start_time).count();
+}
+
+static void make_engine_move(Engine& engine, Move move)
+{
+    engine.users_last_move = move;
+    engine.ply_so_far++;
+
+    engine.gamePGN.addMe(move, engine);
+
+    engine.move_history = stack<Move>();
+
+    if (move.piece_type == Piece::NONE) {
+        cout << "\x1b[1;31mNo move to make\x1b[0m" << endl;
+        return;
+    }
+
+    // Make the move
+    if (move.color == Color::WHITE) {
+        engine.pushMove_t<Color::WHITE>(move);
+    } else {
+        engine.pushMove_t<Color::BLACK>(move);
+    }
+
+    // Manage tree time repetition
+    engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
+
+    bool b_reversable = engine.game_board.isReversableMove(move);
+    if (!b_reversable) {
+        engine.boundary_stack.push_back((int)engine.three_time_rep_stack.size() - 1);
+    }
+}

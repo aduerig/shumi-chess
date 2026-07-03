@@ -193,7 +193,10 @@ in opening only, dont move same piece twice
 Games with stockfish (using cutechess as tournement director)
 ==========================================================================================================
 
-Score of Shumi vs stockfish_ELO 2300: 23 - 26 - 1 [0.470]
-Score of Shumi vs stockfish_ELO 2300: 3 - 2 - 0 [0.600]
-Score of Shumi vs stockfish_ELO 2300: 26 - 20 - 1 [0.564]      6/30/2026
-
+            40/5 Score of Shumi vs stockfish_ELO 2300: 23 - 26 - 1 [0.470]
+            40/5 Score of Shumi vs stockfish_ELO 2300: 3 - 2 - 0 [0.600]
+6/30/2026   40/5 Score of Shumi vs stockfish_ELO 2300: 26 - 20 - 1 [0.564]
+7/1/2026    40/5 Score of Shumi vs stockfish_ELO 2600: 9 - 16 - 0 [0.360]
+                 Score of arasanx-64 ELO 2100 vs Shumi: 5 - 20 - 0 [0.200]
+                 Score of arasanx-64 ELO 2200 vs Shumi: 8 - 14 - 0 [0.364]
+7/2/2026    40/5 Score of arasanx-64 ELO 2300 vs Shumi: 12 - 0 - 0 [1.000]

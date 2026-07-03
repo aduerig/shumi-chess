@@ -1095,17 +1095,7 @@ try:
         else:
             game_over_text.setText(winner_text.format(winner))
 
-        # update match timers
-        # iWhiteTime = engine_communicator.get_game_timew()
-        # #print("wht time=",iWhiteTime)
-        # iBlackTime = engine_communicator.get_game_timeb()
-        # #print("blk time=",iBlackTime)
-        # iWhiteTimeMatch += iWhiteTime    
-        # iBlackTimeMatch += iBlackTime
-        # wht_time_text.setText(f'Wtim {round(iWhiteTimeMatch / 1000)}')
-        # blk_time_text.setText(f'Btim {round(iBlackTimeMatch / 1000)}')
-
-
+   
 
         # if autoreset is ON, reset (this also updates match counters)
         if autoreset_toggle:

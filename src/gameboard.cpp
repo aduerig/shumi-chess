@@ -3543,8 +3543,7 @@ int GameBoard::bishop_blocked_on_both_original_squares_cp_t()
 
 
 // ---------- get_king_near_squares_t ----------
-template<Color c>
-PotentialCheckInfo GameBoard::potential_checks_against_king_t()
+template<Color c> PotentialCheckInfo GameBoard::potential_checks_against_king_t()
 {
     constexpr Color e = (c == WHITE) ? BLACK : WHITE;
 
@@ -3555,9 +3554,9 @@ PotentialCheckInfo GameBoard::potential_checks_against_king_t()
     const Square king_sq = utility::bit::bitboard_to_lowest_square_fast(king_bb);
 
     const ull all_pieces = get_pieces();
-    const ull our_occupied = get_pieces(c);
+    //const ull our_occupied = get_pieces(c);
     const ull enemy_occupied = get_pieces(e);
-    (void)our_occupied;
+    // (void)our_occupied;
 
     ull straight_check_destinations =
         get_straight_attacks_mbb(all_pieces & ~king_bb, king_sq);
@@ -4246,6 +4245,10 @@ template PotentialCheckInfo GameBoard::potential_checks_against_king_t<Color::WH
 template PotentialCheckInfo GameBoard::potential_checks_against_king_t<Color::BLACK>();
 template int GameBoard::count_potential_checks_against_king_t<Color::WHITE>();
 template int GameBoard::count_potential_checks_against_king_t<Color::BLACK>();
+template int GameBoard::potential_checks_against_king_cp_t<Color::WHITE>();
+template int GameBoard::potential_checks_against_king_cp_t<Color::BLACK>();
+
+
 
 template int GameBoard::get_king_near_squares_t<Color::WHITE>(int[9]);
 template int GameBoard::get_king_near_squares_t<Color::BLACK>(int[9]);
