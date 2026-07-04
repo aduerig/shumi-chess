@@ -46,30 +46,36 @@ int main(int argc, char** argv) {
     //
     // From opening position:
     //
-    // From "random1_FEN" position:
+    // From "random1_FENs[0]" position:
     //       uzing level= 8  msec = 3  max ply = 1  play id = 3  Last best value is about  31,400 msec
     //       uzing level= 8  msec = 3  max ply = 4  play id = 3  Last best value is about  93,500 msec
+    //
+    //
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Make board
     //string FENString = "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
 
+
+ 
     constexpr int MAX_FENS = 10;
     string FENs[MAX_FENS];
 
-
     FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Random Petrov
-    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giaco
-
-    
+    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giaco Piano
+    FENs[2] = "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2RR1 w - - 0 20";                // random middlegame
+    FENs[3] = "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30";             // random middlegame
+    FENs[4] = "3k4/8/3P1p2/p4P2/8/2P2N2/4KB2/8 w - - 0 51";                             // random endgame
+    // Using the above collection of FENs   
+    //      uzing level= 7  msec = 200      34776    34807      34729
 
     /////////////////////////////////////////////////////////////////////////////////////
     //
-    int NPositions = 2;
+    int NPositions = 5;
     // Decide on arguments
-    int depth_to_use = 10;
-    int time_to_use = 3;
+    int depth_to_use = 7;
+    int time_to_use = 200;
     int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     if (argc < 2) {
@@ -147,7 +153,7 @@ int main(int argc, char** argv) {
         cout << "Game state: " << game_state_to_string(state) << endl;
         cout << "PGN: " << engine.gamePGN.spitout() << endl;
         steady_clock::time_point end_time = steady_clock::now();
-        cout << "Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
+        cout << iPositions << "  Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
 
     }
 

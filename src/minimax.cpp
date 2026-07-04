@@ -62,6 +62,7 @@ using namespace utility::bit;
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
 //#define DEBUGGING_TEMP
+//#define _DEBUGGING_BEST_STUFF
 
 // extern bool bMoreDebug;
 // extern string debugMove;
@@ -132,7 +133,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -520,7 +521,7 @@ int MinimaxAI::phase_of_game_full() {
 ///////////////////////////////////////////////////////////////////////////////////
 
 //
-// Only returns false is if user aborts.
+// Only returns false  if user aborts.
 //
 tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                                             , ull elapsed_time_display_only
@@ -535,8 +536,9 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
     int qPlys = 0;
 
     top_deepening = depth;      // deepening starts at this depth
+
     int aspiration_tries = 0;   // safety fuse
-    Score widen = 0.5;         // example margin (in pawns)
+    const bool use_aspiration = ASPIRATION_ENABLED && (depth >= ASPIRATION_MIN_DEPTH);
 
 
     Score alpha = -HUGE_SCORE;
@@ -544,26 +546,31 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 
     // assume: prevScore holds last iteration's exact root score (in pawns)
      
-    if (0) {  // (depth > 1) {
+    if (use_aspiration) {
         Score prevScore;
         prevScore = prev_root_best_[depth - 1].second;   // score in pawns
-        alpha = prevScore - widen;
-        beta  = prevScore + widen;
+        alpha = prevScore - aspiration_window_delta;
+        beta  = prevScore + aspiration_window_delta;
+        aspiration_attempts++;
     } else {
         alpha = -HUGE_SCORE;         // d == 1 → full window
         beta  =  HUGE_SCORE;
     }
 
     // the beast (root node of root nodes)
-    bool bStillAspiring  = false;
+    //  codex resume 019f2a79-b67f-7921-9eb0-5cf26ea1afa7
+    bool bStillAspiring = false;
     do {
+
+        const Score alpha_orig = alpha;
+        const Score beta_orig = beta;
+        const ull try_nodes_start = nodes_visited;
 
         #ifdef DEBUGGING_RANDOM_DELTA1
             fprintf(fpDebug, "\n");
         #endif
         // elapsed_time_display_only is from beginning of calculation
         
-        // codex resume 019f1cb6-e89a-7a33-b8af-ef494f70d2cb
         #ifdef DISPLAY_DEEPING      // i_duration_requested
             ull ratio_last = 0;
             if (last_elapsed_time_display_only != 0) {
@@ -578,7 +585,9 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             } else {
                 cout << '_';
             }
-            cout << ' ';
+            // cout << ' ';
+            // cout << "[aspiration] used=" << (use_aspiration ? "yes" : "no")
+            //      << " alpha=" << alpha_orig << " beta=" << beta_orig;
         #endif
 
 
@@ -615,55 +624,92 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             //continue;
         }
         
-        // Aspiration (just a guard right now)
+        if (use_aspiration && aspiration_tries == 0) {
+            aspiration_first_try_nodes += nodes_visited - try_nodes_start;
+        }
+        else if (use_aspiration && aspiration_tries == 1) {
+            aspiration_retry_nodes += nodes_visited - try_nodes_start;
+        }
+
+        // Aspiration results outside the original narrow window are expected.
         //printf("alpha, this, beta %f  %f  %f", alpha, d_Return_score, beta);
         #define ALPHA_BETA_FUZZ 1.0e10
         //assert((alpha <= d_Return_score) && (d_Return_score <= beta));
-        assert( d_Return_score >= alpha - ALPHA_BETA_FUZZ &&
-                d_Return_score <= beta  + ALPHA_BETA_FUZZ);     
+        if (!use_aspiration) {
+            assert( d_Return_score >= alpha_orig - ALPHA_BETA_FUZZ &&
+                    d_Return_score <= beta_orig  + ALPHA_BETA_FUZZ);
+        }
 
         // // --- What WOULD happen if the score were outside [alpha, beta] ---
         // // With an infinite window these branches are unreachable right now,
         // // but this is the template you’ll use once you narrow the window.
 
-        // if (alpha > d_Return_score) {
-        //     // Fail-low: score came in at or below alpha
-        //     std::cout << "\x1b[38;2;255;165;0mfail low\x1b[0m" << std::endl;
-        //     Score widened = alpha - widen;
-        //     alpha = (widened < -HUGE_SCORE) ? -HUGE_SCORE : widened;
-        //     //Score newBeta  = beta; // keep upper bound
-        //     widen *= 2.0;  // widen window on fail-low
+        if (use_aspiration && aspiration_tries == 0 && d_Return_score <= alpha_orig) {
+            // Fail-low: score came in at or below alpha
+            // Widen the window
+            aspiration_fail_lows++;
+            aspiration_full_retries++;
+            #ifdef DISPLAY_DEEPING
+                cout << " score=" << d_Return_score << " result=fail-low retry=yes";
+            #endif
+            // Score widened = alpha - widen;
+            // alpha = (widened < -HUGE_SCORE) ? -HUGE_SCORE : widened;
+            // //Score newBeta  = beta; // keep upper bound
+            // widen *= 2.0;  // widen window on fail-low
 
-        //     // log_fail_low(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
-        //     // d_Return_score = search(position, depth, newAlpha, newBeta);
-        //     bStillAspiring  = true;
-        // }
-        // else if (d_Return_score > beta) {
-        //     // Fail-high: score came in at or above beta
-        //     std::cout << "\x1b[38;2;255;165;0mfail high\x1b[0m" << std::endl;
-        //     Score widened = beta + widen;
-        //     //Score newAlpha = alpha; // keep lower bound
-        //     beta  = (widened >  HUGE_SCORE) ?  HUGE_SCORE : widened;
-        //     widen *= 2.0;  // widen window on fail-high
+            // log_fail_low(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
+            // d_Return_score = search(position, depth, newAlpha, newBeta);
+            bStillAspiring  = true;
+        }
+        else if (use_aspiration && aspiration_tries == 0 && d_Return_score >= beta_orig) {
+            // Fail-high: score came in at or above beta
+            // Widen the window.
+            aspiration_fail_highs++;
+            aspiration_full_retries++;
+            #ifdef DISPLAY_DEEPING
+                cout << " score=" << d_Return_score << " result=fail-high retry=yes";
+            #endif
+            // Score widened = beta + widen;
+            // //Score newAlpha = alpha; // keep lower bound
+            // beta  = (widened >  HUGE_SCORE) ?  HUGE_SCORE : widened;
+            // widen *= 2.0;  // widen window on fail-high
 
-        //     // log_fail_high(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
-        //     // d_Return_score = search(position, depth, newAlpha, newBeta);
-        //     bStillAspiring  = true;
+            // log_fail_high(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
+            // d_Return_score = search(position, depth, newAlpha, newBeta);
+            bStillAspiring  = true;
 
-        // }
-        // else {
+        }
+        else {
 
-        //     // Continue with d_Return_score (exact if it fit; bound if you decide to flag it)
-        //     bStillAspiring  = false;
-        // }
+            // Continue with d_Return_score (exact if it fit; bound if you decide to flag it)
+            bStillAspiring = false;
+            if (use_aspiration && aspiration_tries == 0) {
+                aspiration_successes++;
+                // #ifdef DISPLAY_DEEPING
+                //     cout << " score=" << d_Return_score << " result=success retry=no";
+                // #endif
+            }
+            else {
+                // #ifdef DISPLAY_DEEPING
+                //     cout << " score=" << d_Return_score << " result=full-window retry="
+                //          << ((use_aspiration && aspiration_tries == 1) ? "yes" : "no");
+                // #endif
+            }
+        }
 
-        // aspiration_tries++;
-        // if (bStillAspiring && aspiration_tries >= 5) {
-        //      std::cout << "\x1b[38;2;255;165;0m\n[aspiration] giving up after 5 tries\x1b[0m\n";
-        //      bStillAspiring  = false;
-        //      break;
-        // }
+        aspiration_tries++;
+        if (bStillAspiring && aspiration_tries > 1) {
+             //std::cout << "\x1b[38;2;255;165;0m\n[aspiration] giving up after 5 tries\x1b[0m\n";
+             bStillAspiring  = false;
+             break;
+        }
 
+        if (bStillAspiring) 
+        {
+            // Widen the window
+            alpha = -HUGE_SCORE;         // full window
+            beta  =  HUGE_SCORE;
+        }
 
         // std::cout << "\x1b[38;2;255;165;0m[aspiration] fail "
         //         << (alpha >= d_Return_score ? "low " : "high ")
@@ -790,6 +836,13 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     nodes_visited = 0;
     nodes_visited_depth_zero = 0;
     evals_visited = 0;
+    aspiration_attempts = 0;
+    aspiration_successes = 0;
+    aspiration_fail_lows = 0;
+    aspiration_fail_highs = 0;
+    aspiration_full_retries = 0;
+    aspiration_first_try_nodes = 0;
+    aspiration_retry_nodes = 0;
     NhitsP = 0;
     NTriesP = 0;
 
@@ -949,7 +1002,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
             << std::fixed << std::setprecision(1)
             << "\x1b[0m" << endl;
 
-        // Show board
+        // Show move
         engine.bitboards_to_algebraic(engine.game_board.turn, best_move
                     , (GameState::INPROGRESS), false, false, NULL
                     , engine.move_string);    // Output
@@ -959,12 +1012,17 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
             fprintf(fpDebug, "%s game %lld  move %ld  player=%ld\n", engine.move_string.c_str(), nGames, engine.computer_ply_so_far, player_id);
         #endif
         
+        // Show score
         string abs_score_string = to_string(d_best_move_score_abs);
         char buf[32];
         std::sprintf(buf, fmtMain, d_best_move_score_abs);
         abs_score_string = buf;
 
         cout << colorize(AColor::BRIGHT_CYAN, abs_score_string + " =score,  ");
+
+        #ifdef _DEBUGGING_BEST_STUFF
+            fprintf(fpDebug, " stuff= %s %s\n", engine.move_string.c_str(), abs_score_string.c_str());
+        #endif
 
         assert (nodes_visited!=0);
         double percent_depth_zero = nodes_visited ? ( (double)nodes_visited_depth_zero / (double)nodes_visited ) : 0.0;
@@ -1017,6 +1075,22 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
             << " cutoffs=" << killer_cutoff
             << " (" << (killer_tried ? (100.0 * killer_cutoff / killer_tried) : 0.0)
             << "%)\n\n";
+    #endif
+
+    #ifdef DISPLAY_DEEPING
+        const double aspiration_success_pct = aspiration_attempts
+            ? (100.0 * static_cast<double>(aspiration_successes)
+                / static_cast<double>(aspiration_attempts))
+            : 0.0;
+        cout << "[aspiration summary] attempts=" << aspiration_attempts
+             << " successes=" << aspiration_successes
+             << " fail-lows=" << aspiration_fail_lows
+             << " fail-highs=" << aspiration_fail_highs
+             << " full-retries=" << aspiration_full_retries
+             << " success=" << std::fixed << std::setprecision(1)
+             << aspiration_success_pct << "%"
+             << " first-try-nodes=" << aspiration_first_try_nodes
+             << " retry-nodes=" << aspiration_retry_nodes << endl;
     #endif
 
 
@@ -1396,8 +1470,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     Move the_best_move = {};
 
 
-    bool did_cutoff = false;    // TRUE if fail-high
-    bool did_fail_low = false;  // TRUE if fail-low
+    //bool did_cutoff = false;    // TRUE if fail-high. Otherwise it saw all the moves.
+    //bool did_fail_low = false;  // TRUE if fail-low
 
     Score alpha_in = alpha;   //  save original alpha window lower bound
     Score beta_in = beta;   //  save original alpha window lower bound
@@ -1555,7 +1629,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     TT2_match_move = {};
 
-    if (Features_mask & _FEATURE_TT2) {  // probe in TT2
+    if (Features_mask & _FEATURE_TT2) {  // probe in TT2 (from regular search)
 
         int iLimit = 1;   // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
         if (depth > iLimit) {
@@ -1771,11 +1845,12 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         //
         /////////////////////////////////////////////////////////////////////////////////////////
         //
-        // Look (recurse) over all moves chosen
+        // Look (recurse) over all moves chosen (this is regular search)
         //
         /////////////////////////////////////////////////////////////////////////////////////////
         
         // returns 0 if success, 1 if abort     n_legal_moves_found
+        bool did_cutoff;
         int ir = loop_over_all_moves(depth, alpha, beta, 
                         nPlys, qPlys, in_check, 
                         d_stand_pat, 
@@ -1793,12 +1868,12 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
 
     // Fail-low
-    if (!did_cutoff && (alpha <= alpha_in)) {
-        did_fail_low = true;
-        assert (alpha == alpha_in);
-    }
+    // if (!did_cutoff && (alpha <= alpha_in)) {
+    //     //did_fail_low = true;
+    //     assert (alpha == alpha_in);
+    // }
 
-    if (Features_mask & _FEATURE_TT2) {  // store in TT2
+    if (Features_mask & _FEATURE_TT2) {  // store in TT2  (from regular search)
 
         int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
 
@@ -1823,7 +1898,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
             assert(qPlys==0);
 
-            //if (!did_cutoff && !did_fail_low) {
+            // alpha_in < d_best_score < beta
             if ((alpha_in < d_best_score) && (d_best_score < beta)) {
                 //
                 //  This is an EXACT score (not an alpha/beta boundary).
@@ -1968,7 +2043,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 //assert (!did_cutoff && !did_fail_low);
                     
                 // this is an EXACT score (not an alpha/beta boundary).
-                bool bdebug = false;
+                //bool bdebug = false;
 
                 // --- New entry: actually insert and fill TT2 slot ---
                 TTEntry2 &slot = TTable2[key];   // this inserts, since we know !existed_before
@@ -2038,12 +2113,12 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                             );
                             std::fputs(buf, fpDebug);
                             std::fflush(fpDebug);
-                            bdebug = true;
+                            //bdebug = true;
                         }
                     }
 
                     // Position specific debug 2
-                    if (bdebug && fpDebug)
+                    if (fpDebug)
                     {
                         char buf[128];
                         ull size_after = TTable2.size();
@@ -2123,8 +2198,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     int cp_score_best;
 
-    bool did_cutoff = false;    // TRUE if fail-high
-    bool did_fail_low = false;  // TRUE if fail-low
+    //bool did_cutoff = false;    // TRUE if fail-high
+    //bool did_fail_low = false;  // TRUE if fail-low
 
     Score alpha_in = alpha;   //  save original alpha window lower bound
     Score beta_in = beta;   //  save original alpha window lower bound
@@ -2460,32 +2535,34 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
         //
         /////////////////////////////////////////////////////////////////////////////////////////
         //
-        // Look (recurse) over all moves chosen
+        // Look (recurse) over all moves chosen (this is qsearch)
         //
         /////////////////////////////////////////////////////////////////////////////////////////
         
         // returns 0 if success, 1 if abort     n_legal_moves_found
-        int ir = loop_over_all_moves(0, alpha, beta, 
-                        nPlys, qPlys, in_check, 
-                        d_stand_pat, 
-                        move_last,
-                        p_moves_to_loop_over,               // input
-                        the_best_move, d_best_score,        // outputs
-                        did_cutoff);
-        if (ir != 0) {
-            return {ABORT_SCORE, the_best_move};
+        {
+            bool did_cutoff;
+            int ir = loop_over_all_moves(0, alpha, beta, 
+                            nPlys, qPlys, in_check, 
+                            d_stand_pat, 
+                            move_last,
+                            p_moves_to_loop_over,               // input
+                            the_best_move, d_best_score,        // outputs
+                            did_cutoff);
+            if (ir != 0) {
+                return {ABORT_SCORE, the_best_move};
+            }
         }
-
 
 
     }   // END non zero oves to look at
 
 
     // Fail-low
-    if (!did_cutoff && (alpha <= alpha_in)) {
-        did_fail_low = true;
-        assert (alpha == alpha_in);
-    }
+    // if (!did_cutoff && (alpha <= alpha_in)) {
+    //     //did_fail_low = true;
+    //     assert (alpha == alpha_in);
+    // }
 
     
  
@@ -2539,7 +2616,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// returns 0 if success, 1 if abort
+// returns 0 if success, 1 if abort (ABORT_SCORE) happened
 int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
                        bool in_check,       // Used only by delta pruning
                        Score d_stand_pat, 
@@ -2549,6 +2626,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                        bool& did_cutoff)
 {
     bool b_use_this_move;
+    did_cutoff = false;
     int imovedebug = 0;
 
     for (const Move& m : *pMoves) {

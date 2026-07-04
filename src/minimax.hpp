@@ -80,6 +80,27 @@ public:
     ull evals_visited = 0;
     int iNodes_per_Second = 0;
 
+    // Root aspiration-window controls and statistics. Scores are in pawns.
+    static constexpr bool ASPIRATION_ENABLED = true;
+    static constexpr int ASPIRATION_MIN_DEPTH = 2;
+
+    static constexpr Score aspiration_window_delta = 1.25;
+    // ---case---msec------approx sucess rates
+    // Baseline 34776       na
+    // 0.5      40000       %20 
+    // 1.0      30115       %50
+    // 1.25     27800       %66
+    // 1.5      33200
+    // 3.0      36000       %100
+
+    ull aspiration_attempts = 0;
+    ull aspiration_successes = 0;
+    ull aspiration_fail_lows = 0;
+    ull aspiration_fail_highs = 0;
+    ull aspiration_full_retries = 0;
+    ull aspiration_first_try_nodes = 0;
+    ull aspiration_retry_nodes = 0;
+
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;
     int maximum_duration = 0;
