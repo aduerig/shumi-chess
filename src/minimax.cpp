@@ -63,7 +63,7 @@ using namespace utility::bit;
 //#define _DEBUGGING_GAME
 //#define DEBUGGING_TEMP
 //#define _DEBUGGING_BEST_STUFF
-
+//#define DEBUG_ASPIRATION
 // extern bool bMoreDebug;
 // extern string debugMove;
 
@@ -221,9 +221,7 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     #endif
 
-    #ifndef DEBUG_NODE_TT2
-        Features_mask &= ~_FEATURE_DELTA_PRUNE;
-    #endif
+
 
     excluded_root_moves.clear();
 
@@ -521,7 +519,7 @@ int MinimaxAI::phase_of_game_full() {
 ///////////////////////////////////////////////////////////////////////////////////
 
 //
-// Only returns false  if user aborts.
+// Only returns false  if user aborts.This routine performs asperation
 //
 tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                                             , ull elapsed_time_display_only
@@ -558,7 +556,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
     }
 
     // the beast (root node of root nodes)
-    //  codex resume 019f2a79-b67f-7921-9eb0-5cf26ea1afa7
+    //  codex resume 019f2f17-43d2-7a00-a9c7-8171c52ea01f
     bool bStillAspiring = false;
     do {
 
@@ -585,9 +583,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             } else {
                 cout << '_';
             }
-            // cout << ' ';
-            // cout << "[aspiration] used=" << (use_aspiration ? "yes" : "no")
-            //      << " alpha=" << alpha_orig << " beta=" << beta_orig;
+
         #endif
 
 
@@ -652,13 +648,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             #ifdef DISPLAY_DEEPING
                 cout << " score=" << d_Return_score << " result=fail-low retry=yes";
             #endif
-            // Score widened = alpha - widen;
-            // alpha = (widened < -HUGE_SCORE) ? -HUGE_SCORE : widened;
-            // //Score newBeta  = beta; // keep upper bound
-            // widen *= 2.0;  // widen window on fail-low
-
-            // log_fail_low(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
-            // d_Return_score = search(position, depth, newAlpha, newBeta);
+         
             bStillAspiring  = true;
         }
         else if (use_aspiration && aspiration_tries == 0 && d_Return_score >= beta_orig) {
@@ -669,13 +659,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             #ifdef DISPLAY_DEEPING
                 cout << " score=" << d_Return_score << " result=fail-high retry=yes";
             #endif
-            // Score widened = beta + widen;
-            // //Score newAlpha = alpha; // keep lower bound
-            // beta  = (widened >  HUGE_SCORE) ?  HUGE_SCORE : widened;
-            // widen *= 2.0;  // widen window on fail-high
-
-            // log_fail_high(depth, alpha, beta, d_Return_score, newAlpha, newBeta);
-            // d_Return_score = search(position, depth, newAlpha, newBeta);
+           
             bStillAspiring  = true;
 
         }
@@ -685,14 +669,24 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             bStillAspiring = false;
             if (use_aspiration && aspiration_tries == 0) {
                 aspiration_successes++;
+
+                #ifdef DEBUG_ASPIRATION
+                    const tuple<Score, Move> narrow_ret_val = ret_val;
+                    const tuple<Score, Move> full_ret_val = recursive_negamax(depth
+                                                , -HUGE_SCORE, HUGE_SCORE
+                                                , true
+                                                , null_move
+                                                , (nPlys+1)
+                                                , qPlys
+                                             );
+
+                    if (get<0>(full_ret_val) == ABORT_SCORE) return full_ret_val;
+
+                    assert(get<0>(full_ret_val) == get<0>(narrow_ret_val));
+                    assert(get<1>(full_ret_val) == get<1>(narrow_ret_val));
+                #endif
                 // #ifdef DISPLAY_DEEPING
                 //     cout << " score=" << d_Return_score << " result=success retry=no";
-                // #endif
-            }
-            else {
-                // #ifdef DISPLAY_DEEPING
-                //     cout << " score=" << d_Return_score << " result=full-window retry="
-                //          << ((use_aspiration && aspiration_tries == 1) ? "yes" : "no");
                 // #endif
             }
         }
@@ -704,8 +698,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
              break;
         }
 
-        if (bStillAspiring) 
-        {
+        if (bStillAspiring) {
             // Widen the window
             alpha = -HUGE_SCORE;         // full window
             beta  =  HUGE_SCORE;
@@ -758,8 +751,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     }
 
     assert (i_duration_requested > 0);
-
-    //cout << " max_deepening_requested " << max_deepening_requested << "\n";
 
     // Obtain time now (milliseconds)
     TIME_TYPE start_of_calculation = chrono::high_resolution_clock::now();
@@ -849,7 +840,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     TTable.clear();       // Leaf TT cleared on every move (even if never used)
 
     Move best_move = {};
-    Score d_best_move_score = 0.0;
+    Score d_best_move_score = ZERO_SCORE;
 
   
     int this_deepening;
@@ -865,7 +856,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     TIME_TYPE requested_end_time = start_of_calculation + std::chrono::milliseconds(i_duration_requested); 
     maximum_deepening = this_deepening;
     maximum_duration = i_duration_requested;
-    //cout << " maximum_deeeeeeeeeepening " << maximum_deepening << "\n";
 
     // defaults
     int depth = 1;
@@ -957,7 +947,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     // Absolute means positive is good for white. Most scores are relative. Absolute used only for display.
     Score d_best_move_score_abs = d_best_move_score;
     if (engine.game_board.turn == Color::BLACK) d_best_move_score_abs = -d_best_move_score_abs;
-    if (std::abs(d_best_move_score_abs) < VERY_SMALL_SCORE) d_best_move_score_abs = 0.0;   // avoid negative zero
+    if (std::abs(d_best_move_score_abs) < VERY_SMALL_SCORE) d_best_move_score_abs = ZERO_SCORE;   // avoid negative zero
     
 
     ////////// done with move production. Now do debug and displays /////////////////////////////////////////////////////////////////////////
@@ -1214,7 +1204,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
 
     Move best_move = {};
-    Score d_best_move_score = 0.0;
+    Score d_best_move_score = ZERO_SCORE;
     
     elapsed_time = 0ULL; // in msec
     ull last_elapsed_time_display_only = 0ULL;
@@ -1223,8 +1213,10 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     long double estimated_elapsed_time_display_only = 0.0L;
     bool estimated_elapsed_time_available = false;
 
+    max_attained_depth = 0; 
+    max_attained_qdepth = 0; 
 
-    Score d_Return_score = 0.0;
+    Score d_Return_score = ZERO_SCORE;
 
     tuple<Score, Move> ret_val;
 
@@ -1362,8 +1354,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
     } while (!bThinkingOver);
 
-
-    max_attained_depth = depth-1;
+    max_attained_depth = depth-1;       // minus one becuase it was incremented at the end of the loop
 
     return { d_best_move_score, best_move };
 }
@@ -1381,6 +1372,7 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
 
     // Existing callers specify only a per-move duration. Preserve that behavior
     // until they provide a complete time-control description.
+    // Howvever, cutchess and othe "GUI"s do pass in times that end up enabling time control.
     if (!time_control.enabled()) {
         
         #ifdef DEBUGGING_TEMP
@@ -1466,7 +1458,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
 
     // Initialize return 
-    Score d_best_score = 0.0;
+    Score d_best_score = ZERO_SCORE;
     Move the_best_move = {};
 
 
@@ -1732,7 +1724,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         //assert(depth==0);
         //assert (caps_only);
 
-        // Call get_legal_moves_fast(), but only in "check mode". In this mode in is only trying to decide
+        // Call get_legal_moves_fast(), but only in "checking mode". In this mode in is only trying to decide
         // wether its 0 moves or not. So it returns if it finds just one move.
         vector<Move> mvs;       // I am not used
         int n_legal_moves_found2 = engine.get_legal_moves_fast(engine.game_board.turn, false, true, mvs);
@@ -1787,7 +1779,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 break;
 
             case GameState::DRAW:
-                d_best_score = 0.0;          // Stalemate
+                d_best_score = ZERO_SCORE;          // Stalemate
 
                 if (is_from_root) engine.reason_for_draw = DRAW_STALEMATE;
                 break;
@@ -1827,7 +1819,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         bool is_top_of_deepening = (depth == top_deepening);
 
-        // Change 8 : sort_moves_for_search function that discounts "zero moves"
         sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
 
         #ifdef _DEBUGGING_MOVE_SORT
@@ -1837,11 +1828,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             }
         #endif
 
-
-        d_best_score = -HUGE_SCORE;
-        // Change 9: ???
-        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
-
         //
         /////////////////////////////////////////////////////////////////////////////////////////
         //
@@ -1849,6 +1835,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         //
         /////////////////////////////////////////////////////////////////////////////////////////
         
+        d_best_score = -HUGE_SCORE;
+        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
+
+
         // returns 0 if success, 1 if abort     n_legal_moves_found
         bool did_cutoff;
         int ir = loop_over_all_moves(depth, alpha, beta, 
@@ -1917,7 +1907,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                 int cp_score_temp = convert_to_CP(d_best_score);
 
-                // --- DEBUG check
+                // --- DEBUG
                 #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
                 {
                     if (foundPos && (foundDepth == depth) ) {            
@@ -2193,7 +2183,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     // =====================================================================
 
     // Initialize return 
-    Score d_best_score = 0.0;
+    Score d_best_score = ZERO_SCORE;
     Move the_best_move = {};
 
     int cp_score_best;
@@ -2212,6 +2202,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     // =====================================================================
     assert(qPlys>0);
     assert(nPlys>0);
+
+    if (max_attained_qdepth < nPlys) max_attained_qdepth = nPlys;
 
     // Over analysis sentinal Sorry, I should not be this large
     // Note: why does this so high? Must be a better way to handle this. Always happens near draws.
@@ -2357,7 +2349,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
                 break;
 
             case GameState::DRAW:
-                d_best_score = 0.0;          // Stalemate
+                d_best_score = ZERO_SCORE;          // Stalemate
                 break;
 
             default:
@@ -2377,54 +2369,11 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Static board evaluation
     //////////////////////////////////////////////////////////////////////////////////////////////
-    //bool b_is_Quiet = !engine.has_unquiet_move(legal_moves);   // only way this can happen is if we are in check
 
-    // int  cp_from_tt   = 0;
-    // bool have_tt_eval = false;
-
-
-    // // memoization of leafs
-    // if (Features_mask & _FEATURE_TT) {      // qsearch
-    //     // Salt the entry
-    //     unsigned mode  = salt_the_TT(b_is_Quiet);
-
-    //     uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
-
-    //     // Look for the entry in the TT
-    //     auto it = TTable.find(evalKey);
-    //     if (it != TTable.end()) {
-    //         const TTEntry &entry = it->second;
-    //         cp_from_tt   = entry.score_cp;
-    //         have_tt_eval = true;
-    //     }
-    // }
-
-    //
-    // evaluate (main call)
-    //
-    // if (0) {
-    //     TT_ntrys++;
-    //     #ifdef DEBUG_LEAF_TT
-    //         if (engine.game_board.turn == ShumiChess::Color::WHITE)
-    //             cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(exp, b_is_Quiet);
-    //         else
-    //             cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(exp, b_is_Quiet);
-    //         if (cp_from_tt != cp_score_best) {
-    //             printf ("burp (MAIN) %ld %ld      %ld\n", cp_from_tt, cp_score_best, TT_ntrys);
-    //             assert(0);
-    //         } else {
-    //             NhitsTT++;
-    //     }
-    //     #endif
-    //     cp_score_best = cp_from_tt;
-
-    // }
-    // else {
-        if (engine.game_board.turn == ShumiChess::Color::WHITE)
-            cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
-        else
-            cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
-//    }
+    if (engine.game_board.turn == ShumiChess::Color::WHITE)
+        cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+    else
+        cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
 
 
     d_best_score = convert_from_CP(cp_score_best);
@@ -2437,24 +2386,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     #ifdef NO_QUISSENCE
         return { d_best_score, Move{} };
     #endif
-
-    // memoization at leaf
-    // if (Features_mask & _FEATURE_TT) {
-
-    //     // Salt the entry
-    //     unsigned mode  = salt_the_TT(b_is_Quiet);
-
-    //     uint64_t evalKey = engine.game_board.zobrist_key ^ g_eval_salt[mode];
-
-    //         // Store this position away into the TT
-    //     TTEntry &slot = TTable[evalKey];
-    //     slot.score_cp = cp_score_best;   // or cp_score, whatever you just got
-    //     slot.movee    = the_best_move;   // or bestMove, etc.
-    //     slot.depth    = top_deepening;
-
-    // }
-
-
 
     if (in_check) {
         // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
@@ -2514,7 +2445,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     ////////////////////////////////////////////////////////////////////////////////////////////
 
     // =====================================================================
-    // Recurse over selected move set "moves_to_loop_over"
+    // Recurse  (qsearch) over selected move set "moves_to_loop_over"
     // =====================================================================
     
     assert(!p_moves_to_loop_over->empty());
@@ -2528,9 +2459,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
  
         // In depth==0 (Quiescence) and not in check)
 
-        d_best_score = -HUGE_SCORE;
-        // Change 9: ???
-        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
 
         //
         /////////////////////////////////////////////////////////////////////////////////////////
@@ -2538,7 +2466,17 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
         // Look (recurse) over all moves chosen (this is qsearch)
         //
         /////////////////////////////////////////////////////////////////////////////////////////
-        
+        //  bug   -HUGE_SCORE was assummed for every starting point.
+        //  This violated the central qsearch rule that a player may decline every available capture.
+        if (in_check) {
+            d_best_score = -HUGE_SCORE;
+            the_best_move = (*p_moves_to_loop_over)[0];
+        } else {
+            // Stand-pat is currently best; no tactical move selected yet.
+            the_best_move = {};
+        }
+        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
+
         // returns 0 if success, 1 if abort     n_legal_moves_found
         {
             bool did_cutoff;
@@ -2622,19 +2560,26 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                        Score d_stand_pat, 
                        const ShumiChess::Move& move_last,       // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                        const vector<ShumiChess::Move>* pMoves, 
-                       ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
+                       ShumiChess::Move &bestMoveOut,   // output only 
+                       Score &bestScoreOut,             // output and inout
                        bool& did_cutoff)
 {
     bool b_use_this_move;
     did_cutoff = false;
-    int imovedebug = 0;
+    int nSearched = 0;
+
+    
+    const int FUTILITY_MARGIN = 400;     // centipawns
+
+    bool futility_eval_have = false;
+
+    bool futility_incheck_have = false;
+    bool futility_bInCheck = false;
+
+    bool bFutilityPrunedAny = false;
 
     for (const Move& m : *pMoves) {
         //int nChars;
-
-        // Change 10, "continue" on "zero moves"
-
-        imovedebug++;
 
         #ifdef _DEBUGGING_PUSH_POP
             std::string temp_fen_before = engine.game_board.to_fen();
@@ -2668,58 +2613,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         
         #endif
 
-        //
-        // Delta pruning (in qsearch (Quiescence) at depth==0) estimates the most this capture/promotion could possibly 
-        // improve the current stand-pat score (including material swing and a safety margin), and if 
-        // even that optimistic bound still can't raise alpha, it just skips searching that move as futile. 
-        if (Features_mask & _FEATURE_DELTA_PRUNE) {
-            // --- Delta pruning (qsearch (Quiescence) only)
-            assert(0);
-            if ( (depth == 0) && !in_check) {
-                int ub = 0;
-                if (m.capture != ShumiChess::Piece::NONE) {
-                    ub += engine.game_board.centipawn_score_of(m.capture); // victim value
-                }
-                if (m.promotion != ShumiChess::Piece::NONE) {
-                    ub += engine.game_board.centipawn_score_of(m.promotion)
-                        - engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN); // promo gain
-                }
-                assert(ub != 0);    // we should not be looking at moves in Quiescence, unless they are captures or promotions
-                   
-                bool recapture = false;
-                if (!engine.move_history.empty()) {
-                    ull mto = m.toSQ;
-                    ull eto =  engine.move_history.top().toSQ;
-                    recapture = (mto == eto);
-                }
-
-                // we should not be looking at moves in Quiescence, unless we evaluated first
-                assert (d_stand_pat != HUGE_SCORE);  
-
-                int cp_stand_pat = convert_to_CP(d_stand_pat);
-                int cp_alpha = convert_to_CP(alpha);
-
-                // treat anything bigger than a minor as "heavy"
-                constexpr int HEAVY_DELTA_THRESHOLD_CP = 330; // just above a knight/bishop
-
-                if ( (qPlys > 2) && (ub <= HEAVY_DELTA_THRESHOLD_CP) ) {
-                    constexpr int DELTA_MARGIN_CP = 80; // tune 60..100
-                    if (!recapture && (cp_stand_pat + ub + DELTA_MARGIN_CP < cp_alpha)) {
-                        //cout << "\033[31m#\033[0m";
-                        continue;   // skip this move its futile
-                    }
-
-                    // Pawn-victim futility (beyond delta): skip far-below-alpha pawn grabs (non-recapture)
-                    int cp_pawn = engine.game_board.centipawn_score_of(ShumiChess::Piece::PAWN);
-                    if (!recapture &&
-                        (m.capture == ShumiChess::Piece::PAWN) && (cp_stand_pat + cp_pawn + 60) < cp_alpha) {
-                        //cout << "\033[31m#\033[0m";
-                        continue;   // skip this move its futile
-                    }
-                }
-            }
-        }
-
+       
         bool is_killer_here = false;
         #ifdef DEBUGGING_KILLER_MOVES
             if (Features_mask & _FEATURE_KILLER) {
@@ -2728,7 +2622,48 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
             }
         #endif
 
+        //
+        // Futility pruning 
+        //
+        if ((Features_mask & _FEATURE_FUTILITY_PRUNE) &&
+            (depth == 1) &&          // last regular-search ply
+            (nSearched > 0)) {       // always search first move
 
+            const bool bBoringQuiet =
+                !m.capture &&
+                !m.promotion;                       // NOTE: quiet checks are not detected yet
+
+            if (bBoringQuiet) {
+                Score futility_eval_cp = 0;
+                if (!futility_eval_have) {
+                    futility_eval_have = true;
+                    if (engine.game_board.turn == ShumiChess::Color::WHITE)
+                        futility_eval_cp = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+                    else
+                        futility_eval_cp = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
+                }
+
+                if (futility_eval_cp + FUTILITY_MARGIN <= alpha) {
+                    if (!futility_incheck_have) {
+                        futility_incheck_have = true;
+                        if (engine.game_board.turn == ShumiChess::Color::WHITE)
+                            futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::WHITE>();
+                        else
+                            futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::BLACK>();
+                    }
+
+                    if (!futility_bInCheck) {
+                      
+                        engine.move_into_string(m);
+                        cout << "futility toss " << engine.move_string << " " << endl;
+                        continue;           // prune this move
+                    }
+                }
+            }
+        }
+
+        // push move
+        nSearched++;
         assert(m.piece_type != Piece::NONE);
         if (m.color == Color::WHITE) engine.pushMove_t<Color::WHITE>(m);
         else                         engine.pushMove_t<Color::BLACK>(m);
@@ -2737,7 +2672,6 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         	g_live_ply = nPlys;
         #endif
 
-        //++engine.repetition_table[engine.game_board.zobrist_key];
         engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
 
         //
@@ -2746,17 +2680,18 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         Score childAlpha = -beta;
         Score childBeta  = -alpha;
 
-        if (0) {                // Full wide window
-            childAlpha = -HUGE_SCORE;
-            childBeta  =  HUGE_SCORE;
-        }
+        // if (0) {                // DEBUG ONLY Full wide window
+        //     childAlpha = -HUGE_SCORE;
+        //     childBeta  =  HUGE_SCORE;
+        // }
 
+
+ 
+
+        //
+        // recurse a new level
         int new_depth = (depth > 0 ? depth - 1 : 0);
         tuple<Score, Move> ret_val;
-
-        #ifdef DEBUGGING_TEMP1
-            fprintf(fpDebug, "dep=%ld, nPlys=%ld, qPlys=%ld\n", new_depth, nPlys, qPlys);
-        #endif
 
         if (new_depth) {
 
@@ -2780,9 +2715,6 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
       
         }
 
-
-
-
         // The third part of negamax: negate the score to keep it relative.
         Score d_return_score = get<0>(ret_val);     // units are pawns
         Move d_return_move = get<1>(ret_val);
@@ -2798,11 +2730,9 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         }
         //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() < (int)engine.three_time_rep_stack.size());
 
-
+        // pop move
         if (m.color == Color::WHITE) engine.popMove_t<Color::WHITE>();
         else                         engine.popMove_t<Color::BLACK>();
-
-
 
         #ifdef _DEBUGGING_PUSH_POP
             std::string temp_fen_after = engine.game_board.to_fen();
@@ -2844,12 +2774,12 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         // negamax, reverse returned score.  
         Score d_score_value = -d_return_score;
 
+        // abort logic
         if (d_return_score == ABORT_SCORE) {
             //cout << "\n! STOP CALCULATION now \n" << endl;
             return 1;
         }
 
-        // Here we are coming back from a recursive call. 
         #ifdef _DEBUGGING_MOVE_CHAIN    // Print negamax (relative) score of move
 
             if (!bSuppressOutput) {
@@ -2878,6 +2808,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         }
 
         // Think of alpha as “best score found so far at this node.”
+        // Here, we "raise" the floor (alpha) to the score
         alpha = std::max(alpha, bestScoreOut);
 
         // Alpha/beta "cutoff", (fail-high), break the analysis

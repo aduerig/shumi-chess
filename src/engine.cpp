@@ -1564,7 +1564,7 @@ void Engine::print_moves_and_scores_to_file(MoveAndScoreList move_and_scores_lis
 void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
 {
     const ShumiChess::Move& best_move = move_and_score.first;
-    double d_best_move_valu = move_and_score.second;   
+    Score d_best_move_valu = move_and_score.second;   
 
     move_and_score_to_string(best_move, d_best_move_valu, b_convert_to_abs_score);
 
@@ -1704,7 +1704,7 @@ void Engine::sort_unquiet_moves_qsearch_H(
 
         if (mv.capture != ShumiChess::Piece::NONE) {
             //
-            // Possible pruning. (check escapes are not pruned, unless they are captures?)
+            // Its a capture. Possible pruning. 
             //
             int attacker = game_board.centipawn_score_of(mv.piece_type);
             int victim = game_board.centipawn_score_of(mv.capture);

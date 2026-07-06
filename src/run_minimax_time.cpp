@@ -67,6 +67,9 @@ int main(int argc, char** argv) {
     FENs[2] = "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2RR1 w - - 0 20";                // random middlegame
     FENs[3] = "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30";             // random middlegame
     FENs[4] = "3k4/8/3P1p2/p4P2/8/2P2N2/4KB2/8 w - - 0 51";                             // random endgame
+    //FENs[4] = 
+
+
     // Using the above collection of FENs   
     //      uzing level= 7  msec = 200      34776    34807      34729
 
@@ -125,6 +128,7 @@ int main(int argc, char** argv) {
         //
         // Loop over ply
         //
+        assert (max_ply_to_play > 0);
         for (int ply = 1; ( (state == INPROGRESS) && (ply <= max_ply_to_play)); ++ply) {
            
             int iRandomMoves = 0;

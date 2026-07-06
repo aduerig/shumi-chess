@@ -83,8 +83,8 @@ private:
     static constexpr int DOUBLED_OPEN_FILE_WGHT   = -18;    // Extra penalty per "extra pawn" if the file is open of enemy pawns
 
     // Passed pawns
-    static constexpr int PASSED_PAWN_SLOPE_WGHT   = 18;     // Actually this is a quadratic, not a line
-    static constexpr int PASSED_PAWN_YINRCPT_WGHT = 24;
+    static constexpr int PASSED_PAWN_SLOPE_WGHT   = 17;     // Actually this is a quadratic, not a line
+    static constexpr int PASSED_PAWN_YINRCPT_WGHT = 22;
     // bonus = PASSED_PAWN_SLOPE_WGHT * (adv-1)*(adv-1)/2   +   PASSED_PAWN_YINRCPT_WGHT;
     //    adv   new: 11*(adv-1)^2/2 + 30
     //    --------------------------------

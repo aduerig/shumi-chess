@@ -1,10 +1,5 @@
-ok. I wish to implement aspiration, but feel i already have done this in the code. I need codex to check it. 
-So please write insctructions to codex. It is about implementing what we said, including the TT condition I use (exact only).
- also
-I also want it to aspirate once, then open up to the full window. I emphasize, that the code is already there and compiles,
-but is merely "disabled" for now, I think. It can seacrh for the word "aspiration'. The only thing I am missing is a counter 
-or 
-something for number of failures. Or failures per truely. Also as an input, I need the delta of the window (around the lastr 
-dpeeingings score) identified. Tell codex to use onlt CRLF endings, and never delete code, just comment it out (for this
- project). Also there must vbe masintained an easy way to turn it off (like there is now)
-
+Add a debug mode, unde a #ifdef "DEBUG_ASPIRATION", That if a aspiration suceeds with a narrow window, runs the full
+window anyway, to check that the move and the score are the same from the full window as the reduced window. 
+(only if the reduced window suceeds) 
+Always use CRLF line endings. Note that the aspiration is done in do_a_deepening(). This testing will be run with the 
+Transition table (TT) off. All changes should be under the debug #ifdef.  

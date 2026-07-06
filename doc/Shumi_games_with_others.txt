@@ -206,3 +206,13 @@ Games with stockfish (using cutechess as tournement director)
 
 
                 Score of Shumi vs stockfish_ELO 2300: 5 - 11 - 0 [0.313]
+
+            AFTER BUG FIX
+                Score of Shumi vs stockfish_ELO 2300: 5 - 3 - 1 []
+                Score of Shumi vs stockfish_ELO 2300: 9 - 8 - 2 [0.526]
+                Score of Shumi vs stockfish_ELO 2300: 11 - 6 - 1 [0.639]
+                Score of arasanx-64 ELO 2200 vs Shumi: 7 - 6 - 0 [0.538]
+                Score of Shumi vs stockfish_ELO 2400: 5 - 7 - 0 [0.417]
+                Score of Shumi vs stockfish_ELO 2400: 9 - 15 - 1 [0.380]
+
+                Score of arasanx-64 vs stockfish-windows-x86-64-avx2: 0 - 10 - 15 [0.300]

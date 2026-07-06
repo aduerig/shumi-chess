@@ -44,7 +44,7 @@ constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead p
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
 constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
-constexpr int RANDOM_MOVE_CANDIDATES = 6;             // I must be greater than 1
+constexpr int RANDOM_MOVE_CANDIDATES = 7;             // I must be greater than 1
 
 class MinimaxAI {
 public:
@@ -84,15 +84,14 @@ public:
     static constexpr bool ASPIRATION_ENABLED = true;
     static constexpr int ASPIRATION_MIN_DEPTH = 2;
 
-    static constexpr Score aspiration_window_delta = 1.25;
+    static constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );
     // ---case---msec------approx sucess rates
-    // Baseline 34776       na
-    // 0.5      40000       %20 
-    // 1.0      30115       %50
-    // 1.25     27800       %66
-    // 1.5      33200
-    // 3.0      36000       %100
-
+    // Baseline 44592       na
+    // 0.5      32300       %75 
+    // 1.0      36100       %100
+    // 1.25     37700       %100
+    // 1.5      38600       %100
+    // 2.0      42000       %100
     ull aspiration_attempts = 0;
     ull aspiration_successes = 0;
     ull aspiration_fail_lows = 0;
@@ -278,8 +277,9 @@ public:
     bool no_queens_on_board();
 
     // These are reported to other "GUI" tournement directors
-    Score d_best_move_score_rel = 0.0;
+    Score d_best_move_score_rel = ZERO_SCORE;
     int max_attained_depth = 0;
+    int max_attained_qdepth = 0;
 
     std::vector<std::pair<ShumiChess::Move, Score>> excluded_root_moves;          // for "MultiPV"
 

@@ -7,6 +7,10 @@
 
     typedef double Score;
 
+    #define ZERO_SCORE 0.0
+    #define ONE_PAWN 1.0
+
+
     // Explicit centipawn integer type (32-bit).
     //typedef int32_t CP;
 
@@ -26,6 +30,8 @@
         return s;
     }
 
+    inline double convert_to_pawns(double ii) {return (static_cast<double>(ii));}
+
     inline constexpr Score VERY_SMALL_SCORE = 1.0e-5;   // pawns (0.01 centipawns)
     inline constexpr Score HUGE_SCORE       = 10000.0;  // pawns
 
@@ -40,12 +46,14 @@
 
     static const char* fmtMain = "%.3f";
 
-    inline double convert_to_pawns(double ii) {return (static_cast<double>(ii));}
-
 
 #else
 
     typedef int Score;
+
+    #define ZERO_SCORE 0
+    #define ONE_PAWN 100
+
 
     // Note: clean me up, remove me after testing
     inline int convert_to_CP(Score dd) {return (int)dd;}

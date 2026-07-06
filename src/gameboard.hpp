@@ -8,21 +8,11 @@
 #include "weights.hpp"
 #include "endgameTables.hpp"
 
-#define LOWERQ 5
-#define UPPERQ 6
-//  my old 3-3 was about 92
-//  4,3     96
-//  4,4     94
-//  3,4     78
-//  3,5     79
-//  5,3     58
-//  5,4     92
-//  3,3     76
-//  5,5     96
-//  5,2     94
-//  3,2     83
+#define LOWERQ 6
+#define UPPERQ 4
 
-// Note neither of these include the "depth". So if depth=6, then the actual maximum ply analyzed is (6+MAX_QPLY_H).
+
+// Note neither of these include the "depth". So if depth=6, then add 6
 #define MAX_QPLY_L (LOWERQ+1)        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
 #define MAX_QPLY_H  (UPPERQ+LOWERQ+1) // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
 
@@ -342,8 +332,6 @@ class GameBoard {
         template<Color c> int bishop_pawn_pattern_cp_t();
         int queen_still_home(Color color);          // Stupid queen move too early
 
-        //bool is_king_in_check_new(Color color);
-
         template<Color c> int two_bishops_cp_t(int nPhase) const;
         template<Color c> int rook_connectiveness_cp_t() const;
         template<Color c> int rook_7th_rankness_cp_t();
@@ -371,11 +359,11 @@ class GameBoard {
         // "Positional "pawn" routines.
         template<Color c> int count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE) const;
 
-        template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
-                                                    ull& holes_bb,
-                                                    int& holes_cp,
-                                                    ull& passed_pawns,
-                                                    int& passed_cp);
+        // template<Color c> void count_pawn_holes_and_passed_pawns_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE,
+        //                                             ull& holes_bb,
+        //                                             int& holes_cp,
+        //                                             ull& passed_pawns,
+        //                                             int& passed_cp);
 
         template<Color c> void count_pawn_holes_and_passed_pawns_cp_new_t(const PawnFileInfo& pawnFileInfo,
                                                     ull& holes_bb,

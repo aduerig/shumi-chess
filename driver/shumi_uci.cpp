@@ -206,14 +206,16 @@ int main()
     // Decide on Shumi engine chess arguments
     //     7, 17000 is about 40 moves in 5 minumtes
     //
-    int depth_to_use = 7;
-    int time_to_use = 10000;
+    int depth_to_use = 5;           // A minimum. Not  too large or SHumi loses in tuime control
+    int time_to_use = 10000;        // Not reallu used, the time control structure has all the data 
+
     ull nominal_time_per_move[2] = {0, 0};
     int previous_moves_to_go[2] = {0, 0};
     //int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
-    int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
-
+    int flags = 0;
+    flags = flags | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+    flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
 
     int iRandomMoves = 0;
     if (iMovesInGame < 2) iRandomMoves = 1;     //Just one random move.
@@ -472,6 +474,7 @@ int main()
             //std::cout << "info nps " << nps << "\n";
             std::cout << "info" 
                     << " depth " << minimax_ai->max_attained_depth
+                    << " seldepth " << minimax_ai->max_attained_qdepth
                     << " score cp " << centiPawnsRel
                     << " nodes " << nodesSeen
                     << " nps " << nps
