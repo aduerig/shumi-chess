@@ -218,7 +218,7 @@ int main()
     flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
 
     int iRandomMoves = 0;
-    if (iMovesInGame < 2) iRandomMoves = 1;     //Just one random move.
+    //if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
 
 
 
@@ -470,7 +470,10 @@ int main()
 
             //int nps = 1234567;
             int nps = minimax_ai->iNodes_per_Second;
-            int centiPawnsRel = (int)(minimax_ai->d_best_move_score_rel * 100.0);
+
+            //int centiPawnsRel = (int)(minimax_ai->d_best_move_score_rel * 100.0);
+            int centiPawnsRel = (int)convert_to_CP(minimax_ai->d_best_move_score_rel);
+
             //std::cout << "info nps " << nps << "\n";
             std::cout << "info" 
                     << " depth " << minimax_ai->max_attained_depth

@@ -204,7 +204,6 @@ Games with stockfish (using cutechess as tournement director)
                 Score of arasanx-64 ELO 2300 vs stockfish_ELO 2300: 23 - 1 - 1 [0.940]
                 Score of arasanx-64 ELO 2200 vs stockfish_ELO 2300: 11 - 13 - 1 [0.460]
 
-
                 Score of Shumi vs stockfish_ELO 2300: 5 - 11 - 0 [0.313]
 
             AFTER BUG FIX
@@ -214,5 +213,35 @@ Games with stockfish (using cutechess as tournement director)
                 Score of arasanx-64 ELO 2200 vs Shumi: 7 - 6 - 0 [0.538]
                 Score of Shumi vs stockfish_ELO 2400: 5 - 7 - 0 [0.417]
                 Score of Shumi vs stockfish_ELO 2400: 9 - 15 - 1 [0.380]
+                Score of Shumi vs stockfish_ELO 2300: 12 - 12 - 1 [0.500]
+                Score of arasanx-64 ELO 2200 vs Shumi: 6 - 8 - 1 [0.433]
 
+                Score of texel64-avx2-pop ELO 2200 vs Shumi: 9 - 1 - 0 [0.900]
+                Score of arasanx-64 ELO 2200 vs Shumi: 12 - 13 - 0 [0.480]
+                Score of Shumi vs stockfish_ELO 2400: 6 - 9 - 0 [0.400]
+                Score of Shumi vs texel64-avx2-pop ELO 2200: 0 - 2 - 0 [0.000]
+                Score of Shumi vs texel64-avx2-pop ELO 2200: 7 - 16 - 2 [0.320]
+
+
+            AFTER integerazation of Score
+                Score of Shumi vs stockfish_ELO 2300: 12 - 11 - 2 [0.520]
+                Score of arasanx-64 ELO 2200 vs Shumi: 5 - 8 - 3 [0.406]
+                Score of Shumi vs stockfish_ELO 2400: 5 - 11 - 1 [0.324]
+                Score of Shumi vs texel64-avx2-pop ELO 2200: 3 - 6 - 0 [0.333]
+                Score of Shumi vs texel64-avx2-pop ELO 2200: 8 - 14 - 3 [0.380]
+                Score of arasanx-64 ELO 2200 vs Shumi: 7 - 2 - 1 [0.750]
+
+            final testing (after intgerization)
+                Score of Shumi vs texel64-avx2-pop ELO 2200: 5 - 2 - 0 [0.714]
+                Score of Shumi vs stockfish_ELO 2300: 1 - 2 - 0 [0.333]
+                Score of Shumi vs stockfish_ELO 2300: 11 - 11 - 3 [0.500]
+                Score of Shumi vs arasanx-64 ELO 2200: 3 - 4 - 1 [0.438]
+
+
+
+
+
+
+
+            Machine to machine matches (non-crippled) full strength
                 Score of arasanx-64 vs stockfish-windows-x86-64-avx2: 0 - 10 - 15 [0.300]

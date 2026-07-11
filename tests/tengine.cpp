@@ -5,6 +5,7 @@
 #include "engine.hpp"
 #include "gameboard.hpp"
 #include "globals.hpp"
+#include "minimax.hpp"
 #include "test_helper_fcns.hpp"
 
 TEST(Setup, WhiteGoesFirst) {
@@ -23,6 +24,18 @@ TEST(RandomMoves, RequestAppliesOnlyAtGameStartAndResetClearsIt) {
     EXPECT_EQ(test_engine.i_randomize_next_move, 2);
 
     test_engine.reset_engine();
+    EXPECT_EQ(test_engine.i_randomize_next_move, 0);
+}
+
+TEST(RandomMoves, MultiPvSearchDoesNotReuseExcludedRootPv) {
+    ShumiChess::Engine test_engine;
+    MinimaxAI minimax_ai(test_engine);
+
+    int random_moves = 1;
+    ShumiChess::Move move = minimax_ai.get_move_iterative_deepening(
+        7, 8, ShumiChess::UNCLE_SHUMI, random_moves, 0);
+
+    EXPECT_NE(move.piece_type, ShumiChess::Piece::NONE);
     EXPECT_EQ(test_engine.i_randomize_next_move, 0);
 }
 

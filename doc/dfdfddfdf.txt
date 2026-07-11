@@ -1,21 +1,31 @@
 
 
+There is a bug recently introduced, but not sure how. The error only to happens in multi PV. (the -r option). The line the 
+assert is onis labelled "this assert here".
+Also Notice near the end of the second sequence (PV), from the times are unusually low (fast). This may or may not be related.
+All times are msec. 
 
-Look at count_guard_pawn_files_23_new_t(). It is fine as it goes, but I also need
-more refinemnet (resolution) here, then 1 to 3. Notice right now you get the full bonus only if theere
-are 3 guard pawns. 2 guard pawns give you 2/3 etc. BUT Some guard pawns are worse than others. So
-the rather than award either 1/3, 2/3, or 1 times the cp bonus (it is now HAS_CASTLED_WGHT=200, in centipawns), rather maybe
-the weight constant is 2, (no longer in centipawns), and I award (at first) 10, 20, or 30 based on the guard pawns. 
-Then, I can look and say 
-that if there are enemy major pieces, then do not count a guard pawn on a open file (no enemy pawns) as much. Say 
-subract 3 to get 7,14,21 if no enemy pawns on the same file, and enemy majors exist. Make 3 an adustable weight. 
-When implementing "enemy majors exist", not the already existing get_major_pieces(). 
+New Game 
 
-Come to think of it, the decrease whould be worse if 3 majors enemy. Lets say 2 points subtracted per major 
-enemy piece. So make the adjustable weight 2. It goes without saying that the contrinution from each guard 
-pawn is always positive. Clamped at zero. Also, for the three guard pawns, each potentially has 10 cp. But you 
-subtract as discussed above for each guard pawn on open files, Each guard pawn is
-handles independently. 
+ Player = 3
+
+
+0 Deeping 1 ply of 7 msec=     0/_ Best: Nf3   ; +0.36
+0 Deeping 2 ply of 7 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 3 ply of 7 msec=     0/0 Best: Nf3   ; +0.36
+0 Deeping 4 ply of 7 msec=     1/0 Best: Nf3   ; +0.00
+0 Deeping 5 ply of 7 msec=     3/6 Best: Nf3   ; +0.31
+0 Deeping 6 ply of 7 msec=    13/18 Best: Nf3   ; +0.00
+0 Deeping 7 ply of 7 msec=   117/78 Best: e4    ; +0.31
+
+0 Deeping 1 ply of 7 msec=     0/_ Best: Nf3   ; +0.36
+0 Deeping 2 ply of 7 msec=     0/0 Best: e4    ; +0.31
+0 Deeping 3 ply of 7 msec=     0/0 Best: e4    ; +0.31
+0 Deeping 4 ply of 7 msec=     1/0 Best: e4    ; +0.31
+0 Deeping 5 ply of 7 msec=     1/6 Best: e4    ; +0.31
+0 Deeping 6 ply of 7 msec=     1/6 Best: e4    ; +0.31
+0 Deeping 7 ply of 7 msec=     1/6 Best: e4    ; +0.31
+0 Deeping 8 ply of 7 msec=     2/6Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 3036
 
 
 

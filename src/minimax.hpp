@@ -67,8 +67,8 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;   // UNCLE_SHUMI;
-    //EvalPersons evp = CRAZY_IVAN;
+    //ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;   // CRAZY_IVAN;
+    ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;
 
     ull Features_mask = _DEFAULT_FEATURES_MASK;
 
@@ -154,10 +154,12 @@ public:
         TTFlag           flag;       // optional: EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
 
-        Score dAlphaDebug;
-        Score dBetaDebug;
-
+  
         #ifdef DEBUG_NODE_TT2
+
+            Score dAlphaDebug;
+            Score dBetaDebug;
+
             // All the below to end is debug
             int nPlysDebug;
             bool drawDebug;  // 0 = not draw, 1 = draw

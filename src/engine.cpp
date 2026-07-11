@@ -22,12 +22,9 @@
 //
 // Debugging for burp2:
 //      remember DEBUG_NODE_TT2     (2 places)
-//      deffine _SUPRESSING_MOVE_HISTORY_RESULTS
-//      deffine NO_QUISSENCE
+//      define _SUPRESSING_MOVE_HISTORY_RESULTS
 //      lower DEBUG_MAX_MOVES to 90 or so
-//      deffine CRAZY_IVAN
-//      deffine _DEBUGGING_TO_FILE    (2 places)
-
+//
 //#define _DEBUGGING_TO_FILE1
 
 #ifdef _DEBUGGING_TO_FILE1
@@ -1584,8 +1581,7 @@ void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_va
         if (game_board.turn == ShumiChess::BLACK) d_best_move_valu = -d_best_move_valu;  
     }
     
-    //if (std::fabs(d_best_move_valu) < VERY_SMALL_SCORE) d_best_move_valu = 0.0;        // avoid negative zero
-    if (std::abs(d_best_move_valu) < VERY_SMALL_SCORE) d_best_move_valu = 0;
+    if (std::abs(d_best_move_valu) < VERY_SMALL_SCORE) d_best_move_valu = 0;         // avoid negative zero
 
     bitboards_to_algebraic(game_board.turn, best_move
                     , (GameState::INPROGRESS)

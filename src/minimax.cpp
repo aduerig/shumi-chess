@@ -61,7 +61,7 @@ using namespace utility::bit;
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
-//#define DEBUGGING_TEMP
+//#define _DEBUGGING_TEMP
 //#define _DEBUGGING_BEST_STUFF
 //#define DEBUG_ASPIRATION
 // extern bool bMoreDebug;
@@ -72,8 +72,8 @@ using namespace utility::bit;
 //#define DOING_TT_EVAL2       // used only in best_move_static (should be extinct)
 //#define DEBUG_LEAF_TT
 
-// #define DEBUG_NODE_TT2          // I must also be defined in the .hpp file to work
-// #define BURP2_THRESHOLD_CP 2     // "burps" or fails if the stored (TT) does not match the evaluaton made.
+// #define DEBUG_NODE_TT2           // I must also be defined in the .hpp file to work
+// #define BURP2_THRESHOLD_CP 0    // "burps" or fails if the stored (TT) does not match the evaluaton made.
 
 //#define DEBUGGING_KILLER_MOVES 
 
@@ -115,10 +115,12 @@ bool global_debug_flag = false;
 //#endif
 
 #ifdef DEBUG_NODE_TT2
-    static void print_mismatch(std::ostream& os,
-                            const char* label,
-                            int found,
-                            int actual) {
+    static void print_mismatch(std::ostream& os, const char* label, int found, int actual) {
+        if (found != actual) {
+            os << " " << label << " " << found << " = " << actual << "\n";
+        }
+    }
+    static void print_mismatch(std::ostream& os, const char* label, ull found, ull actual) {
         if (found != actual) {
             os << " " << label << " " << found << " = " << actual << "\n";
         }
@@ -224,6 +226,8 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
 
     excluded_root_moves.clear();
+    std::fill(std::begin(prev_root_best_), std::end(prev_root_best_),
+              std::pair<Move, Score>{});
 
 }
 
@@ -556,7 +560,6 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
     }
 
     // the beast (root node of root nodes)
-    //  codex resume 019f2f17-43d2-7a00-a9c7-8171c52ea01f
     bool bStillAspiring = false;
     do {
 
@@ -587,7 +590,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
         #endif
 
 
-        #ifdef DEBUGGING_TEMP
+        #ifdef _DEBUGGING_TEMP
             cout << endl << " Deeping " << depth << " ply of " << maximum_deepening
                         << " msec=" << std::setw(6) << elapsed_time_display_only << endl;
             if (fpDebug != nullptr) {
@@ -757,10 +760,11 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     TIME_TYPE last_depth_time = start_of_calculation;
  
  
-
     eval_person = (ShumiChess::EvalPersons)player_id;   
+    //eval_person = ShumiChess::CRAZY_IVAN;           // Debug only
 
     //cout << "\n FEAT = 0x" << hex << feat << dec << "\n";
+    cout << "\n Player = " << eval_person << endl;
     Features_mask = feat;
 
 
@@ -889,6 +893,8 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         
         // These are normally initialized at move start, but when doing MultiPV, qw init at start of every PV.
         nodes_visited = 0;
+        std::fill(std::begin(prev_root_best_), std::end(prev_root_best_),
+                  std::pair<Move, Score>{});
         start_of_calculation = chrono::high_resolution_clock::now();
         elapsed_time = 0ULL; // in msec
 
@@ -1295,7 +1301,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
                     , engine.move_string);    // Output
             double temp = convert_to_pawns(d_best_move_score);
             if (engine.game_board.turn == ShumiChess::BLACK) temp = -temp;
-            if (std::abs(temp) < convert_to_pawns(VERY_SMALL_SCORE)) temp = 0.0;
+            if (std::abs(temp) < convert_to_pawns(VERY_SMALL_SCORE)) temp = 0.0;      // avoid negative zero
             char score_buf[32];
             if (temp < 0) {
                 std::sprintf(score_buf, "%.2f", temp);
@@ -1375,7 +1381,7 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     // Howvever, cutchess and othe "GUI"s do pass in times that end up enabling time control.
     if (!time_control.enabled()) {
         
-        #ifdef DEBUGGING_TEMP
+        #ifdef _DEBUGGING_TEMP
             fprintf(fpDebug, "%ld     elapsed_time0=%llu   %llu\n", time_control.enabled()
                 , static_cast<unsigned long long>(estimated_elapsed_time)
                 , static_cast<unsigned long long>(fallback_move_budget));
@@ -1582,12 +1588,12 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
         bool   foundPos = false;
-        int    foundScore = 0;
+        Score    foundScore = ZERO_SCORE;
         Move   foundMove = {};
         int    foundnPlys = 0;
         bool   foundDraw = 0;
-        Score foundAlpha = 0.0;
-        Score foundBeta  = 0.0;
+        Score foundAlpha = ZERO_SCORE;
+        Score foundBeta  = ZERO_SCORE;
         int    foundDepth = 0;
         bool   foundIsCheck = false;
         int    foundLegalMoveSize = 0;
@@ -1641,22 +1647,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                 // Qualification #1 on probe: We can reuse an entry if it was searched at least as deep
                 // We already searched this node to at least this depth so we can trust the stored result.
-                if (entry.depth >= depth) {
-
-                    // Qualification #2 on probe: Only accept hit if window matches stored one
-                    // Since stored results is EXACT, the "debug" versions should be the full window now.
-                    // So here we restrict ourselves to situations where the current window is full.
-                    bool windowMatches =
-                        (std::abs(entry.dAlphaDebug - alpha) <= VERY_SMALL_SCORE) &&
-                        (std::abs(entry.dBetaDebug  - beta ) <= VERY_SMALL_SCORE);
-
-                    // Qualification #3 on probe: This is a hack to cover up a unknown bug
-                    // The burp2 nPlys bug ( found nPly always = current + 1)
-                    bool horridHackMatch = true;  //(foundnPlys == nPlys);
-                    
-                    if (windowMatches && horridHackMatch) {
-                        is_perfect_match = true;
-                    }
+                if (entry.depth >= depth) {      
+                    is_perfect_match = true;
                 }
 
 
@@ -1857,12 +1849,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }   // END non zero oves to look at
 
 
-    // Fail-low
-    // if (!did_cutoff && (alpha <= alpha_in)) {
-    //     //did_fail_low = true;
-    //     assert (alpha == alpha_in);
-    // }
-
     if (Features_mask & _FEATURE_TT2) {  // store in TT2  (from regular search)
 
         int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
@@ -1888,8 +1874,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
             assert(qPlys==0);
 
-            // alpha_in < d_best_score < beta
-            if ((alpha_in < d_best_score) && (d_best_score < beta)) {
+            if ((alpha_in < d_best_score) && (d_best_score < beta_in)) {
                 //
                 //  This is an EXACT score (not an alpha/beta boundary).
                 //
@@ -1905,7 +1890,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     }
                 }
 
-                int cp_score_temp = convert_to_CP(d_best_score);
+                Score cp_score_temp = convert_to_CP(d_best_score);
 
                 // --- DEBUG
                 #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
@@ -1916,11 +1901,11 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                         if (!bBothScoresMates) {
 
-                            int iThreshold = BURP2_THRESHOLD_CP;
+                            Score score_Threshold = BURP2_THRESHOLD_CP;
 
                             //assert(0);  // to maske sure we get here.
 
-                            if ( abs(foundScore - cp_score_temp) > iThreshold) {
+                            if ( abs(foundScore - cp_score_temp) > score_Threshold) {
                                 //
                                 //  We found a burp.
                                 bool isFailure = true;
@@ -1938,7 +1923,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                                     qPlys, foundRepCount, iRepCountNow
                                 );
                                 std::cout << buf;
-                                if (fpDebug) {
+                                #ifdef _DEBUGGING_TO_FILE
                                     std::fputs(buf, fpDebug);
 
                                     // What we found in the table
@@ -1948,10 +1933,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                                     engine.print_move_history_to_file(fpDebug, "burp2 (actual)");
 
                                     std::fflush(fpDebug);   // force write to disk
-                                }
+                                #endif
 
-                                print_mismatch(cout, "al", foundAlpha,         alpha_in);
-                                print_mismatch(cout, "bt", foundBeta,          beta);
+                                print_mismatch(cout, "al", (int)foundAlpha,         (int)alpha_in);
+                                print_mismatch(cout, "bt", (int)foundBeta,          (int)beta);
                                 print_mismatch(cout, "dr", foundDraw,          (state == GameState::DRAW));
                                 print_mismatch(cout, "ck", foundIsCheck,       in_check);
                                 //print_mismatch(cout, "lm", foundLegalMoveSize, legalMovesSize);
@@ -2014,9 +1999,13 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                                             fpDebug = NULL;
                                         }
                                     #endif
+
                                     std::string temp_fen_ = engine.game_board.to_fen();
-                                    sprintf (szDebug, "burp22 %llu      %s\n", nGames, temp_fen_.c_str());
-                                    cout << szDebug;
+                                    char szTemp[64];
+                                    sprintf (szTemp, "burp22 %llu      %s\n", nGames, temp_fen_.c_str());
+                                    cout << szTemp;
+    
+                                    // Halt the program
                                     getchar();
                                     assert(0);
                                 }
@@ -2078,7 +2067,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                     // Position specific debug 1
                     // --- Special debug for cxd4 / 338 ---
-                    if (fpDebug)
+                    #ifdef _DEBUGGING_TO_FILE
                     {
                         char buf[128];
                         std::string mv_string11;
@@ -2106,9 +2095,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                             //bdebug = true;
                         }
                     }
+                    #endif
 
                     // Position specific debug 2
-                    if (fpDebug)
+                    #ifdef _DEBUGGING_TO_FILE
                     {
                         char buf[128];
                         ull size_after = TTable2.size();
@@ -2122,6 +2112,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         engine.print_move_history_to_file(fpDebug, "insertNew");
                         std::fflush(fpDebug);
                     }   // END Position specific debug 2
+                    #endif
 
                 #endif  // END debug
 
@@ -2494,14 +2485,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
 
     }   // END non zero oves to look at
-
-
-    // Fail-low
-    // if (!did_cutoff && (alpha <= alpha_in)) {
-    //     //did_fail_low = true;
-    //     assert (alpha == alpha_in);
-    // }
-
     
  
     assert(beta_in == beta);
@@ -3037,11 +3020,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
         if (!(pv_move == Move{})) {       
             auto it = std::find(pMovesInOut->begin(), pMovesInOut->end(), pv_move);
-            if (it == pMovesInOut->end()) {
-                // item not in the list
-                assert(0);
-            }
-            else if (it != pMovesInOut->begin()) {
+            if (it != pMovesInOut->end() && it != pMovesInOut->begin()) {
                 // item not first in list
                 // moves existing pv_move to front, preserving their relative order.
                 std::rotate(pMovesInOut->begin(), it, it + 1);        
@@ -3053,14 +3032,11 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
     }
 
+    // codex resume 019f4d25-c3ac-7d31-8c30-393c958b31b4
     //       0. move from the hash table hit (if any) 
     if (!(TT2_match_move == Move{})) {       
         auto it = std::find(pMovesInOut->begin(), pMovesInOut->end(), TT2_match_move);
-        if (it == pMovesInOut->end()) {
-            // item not in the list
-            assert(0);
-        }
-        else if (it != pMovesInOut->begin()) {
+        if (it != pMovesInOut->end() && it != pMovesInOut->begin()) {
             // item in list, but not first in list already
             // moves existing pv_move to front, preserving their relative order.
             std::rotate(pMovesInOut->begin(), it, it + 1);        
