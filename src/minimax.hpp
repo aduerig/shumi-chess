@@ -62,6 +62,8 @@ public:
                 && moves_left > 0
                 && nominal_time_per_move > 0;
         }
+        ull hard_abort_threshold_ms = 0;
+
     };
 
     MinimaxAI(ShumiChess::Engine&);
@@ -121,10 +123,13 @@ public:
     ull NhitsTT = 0;            // eval Transposition table (TT) (not normally used)
     ull NhitsTT2 = 0;           // node Transposition table (TT2)
     ull NhitsP = 0;             // pawn/file hash table
-    ull NTriesP = 0;             // pawn/file hash table
+    ull NTriesP = 0;            // pawn/file hash table
 
     ull nRandos = 0;
     ull nGames = 0;
+
+  
+
 
     ShumiChess::Move TT2_match_move = {};
     
@@ -136,7 +141,7 @@ public:
         int depth;
     };
 
-    std::unordered_map<uint64_t, TTEntry> TTable;
+    //std::unordered_map<uint64_t, TTEntry> TTable;
 
 
     /////////////////////////////////////////////////////////////////////
@@ -210,6 +215,7 @@ public:
 
     void wakeup();
     void resign();
+    bool should_abort_search_by_time();
 
     void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
    
@@ -240,7 +246,7 @@ public:
                                              int& n_moves_within_delta     // output
                                             );
 
-     ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
+    ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
                                                 , int iRandomMoves, int feat
                                                 , SearchTimeControl time_control = {});
 
@@ -305,5 +311,19 @@ public:
 
         return mode;
     }
+
+
+
+private:
+
+    bool hard_abort_enabled = false;
+    ull hard_abort_budget_ms = 0;           // a relative time or duration
+    ull hard_abort_start_time_ms = 0;       // holds start time
+    void hard_abort_start(ull hard_duration);
+    void hard_abort_end();
+
+    int n_Multis = 1;           // MultiPV if greater than 1
+
+
 
 };

@@ -1,43 +1,5 @@
-
-
-There is a bug recently introduced, but not sure how. The error only to happens in multi PV. (the -r option). The line the 
-assert is onis labelled "this assert here".
-Also Notice near the end of the second sequence (PV), from the times are unusually low (fast). This may or may not be related.
-All times are msec. 
-
-New Game 
-
- Player = 3
-
-
-0 Deeping 1 ply of 7 msec=     0/_ Best: Nf3   ; +0.36
-0 Deeping 2 ply of 7 msec=     0/0 Best: Nf3   ; +0.00
-0 Deeping 3 ply of 7 msec=     0/0 Best: Nf3   ; +0.36
-0 Deeping 4 ply of 7 msec=     1/0 Best: Nf3   ; +0.00
-0 Deeping 5 ply of 7 msec=     3/6 Best: Nf3   ; +0.31
-0 Deeping 6 ply of 7 msec=    13/18 Best: Nf3   ; +0.00
-0 Deeping 7 ply of 7 msec=   117/78 Best: e4    ; +0.31
-
-0 Deeping 1 ply of 7 msec=     0/_ Best: Nf3   ; +0.36
-0 Deeping 2 ply of 7 msec=     0/0 Best: e4    ; +0.31
-0 Deeping 3 ply of 7 msec=     0/0 Best: e4    ; +0.31
-0 Deeping 4 ply of 7 msec=     1/0 Best: e4    ; +0.31
-0 Deeping 5 ply of 7 msec=     1/6 Best: e4    ; +0.31
-0 Deeping 6 ply of 7 msec=     1/6 Best: e4    ; +0.31
-0 Deeping 7 ply of 7 msec=     1/6 Best: e4    ; +0.31
-0 Deeping 8 ply of 7 msec=     2/6Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 3036
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
+Shumi. Lookat the following table carefully. Note the oppnents and the ratings. 
+The question I want answered is this: has shumi changed its performance before and 
+after integerzazation of score. Note that the position of the player that appears 
+first or second in the "vs", 
+only means who gets white in first game.

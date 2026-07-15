@@ -218,8 +218,7 @@ int main()
     flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
 
     int iRandomMoves = 0;
-    //if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
-
+    if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
 
 
 
@@ -360,8 +359,13 @@ int main()
                 else if (go_token == "movestogo") go_command >> moves_to_go;
             }
 
+            cout << endl << " times: " << white_time << "  " << black_time << endl;
+
             int search_time_to_use = time_to_use;
             MinimaxAI::SearchTimeControl time_control;
+
+            time_control.hard_abort_threshold_ms = 0;
+   
 
             if (move_time > 0) {    
                 // A "movetime" parameter was passed by cutechess. So Cutechess wants a constant time per move.
@@ -494,6 +498,12 @@ int main()
             // //      << " move: " << move_to_uci(move) << endl;
             // std::cout << "bestmove " << from_str << to_str << cpromo << "\n";
             std::cout.flush();
+
+
+        } else if (line == "stop") {
+            std::cout << "stop ok\n";
+            std::cout.flush();
+
 
         } else if (line == "quit") {
             uci_debug_log << "quit received\n";

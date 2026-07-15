@@ -252,7 +252,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
         else                                              python_engine->pushMove_t<ShumiChess::Color::BLACK>(found_move);
 
         // DO NOT remove the below line
-        //minimax_ai->playground(python_engine->game_phase);
+        minimax_ai->playground(python_engine->game_phase);
         
         python_engine->three_time_rep_stack.push_back(python_engine->game_board.zobrist_key);
      

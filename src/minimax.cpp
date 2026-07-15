@@ -135,7 +135,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -184,8 +184,8 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
 
-    TTable.clear();
-    TTable.reserve(1000000);    // NOTE: What size here? (we dont even normally use this table)
+    //TTable.clear();
+    //TTable.reserve(1000000);    // NOTE: What size here? (we dont even normally use this table)
     
     TTable2.clear();
     TTable2.reserve(1000000);    // NOTE: What size here?
@@ -261,6 +261,44 @@ void MinimaxAI::resign() {
 
     cout << "resign " << endl;
     //stop_calculation = true;
+}
+
+
+static inline ull get_time_ms()
+{
+    return (ull)std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()
+    ).count();
+}
+
+void MinimaxAI::hard_abort_start(ull hard_duration)
+{
+    hard_abort_budget_ms = hard_duration;
+    hard_abort_start_time_ms = get_time_ms();  // milliseconds
+    hard_abort_enabled = true;
+    cout << "hard_abort_start " << hard_duration << endl;
+}
+void MinimaxAI::hard_abort_end()
+{
+    hard_abort_enabled = false;
+    hard_abort_budget_ms = 0ULL;
+}
+
+// hard abort
+bool MinimaxAI::should_abort_search_by_time()
+{
+    if (!hard_abort_enabled) return false;
+    if (hard_abort_budget_ms == 0ULL) return false;
+
+    const ull elapsed_ms = get_time_ms();  // milliseconds
+
+    if ( (elapsed_ms - hard_abort_start_time_ms)/2 >= hard_abort_budget_ms) {
+        cout << endl << "hard abort" << endl;
+        stop_calculation = true;
+        return true;
+    }
+
+    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -618,10 +656,8 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
         Score d_Return_score = get<0>(ret_val);
         if (d_Return_score == ABORT_SCORE) return ret_val;
         
-        if (d_Return_score == ONLY_MOVE_SCORE) {
-            return ret_val;
-            //continue;
-        }
+        if (d_Return_score == ONLY_MOVE_SCORE) return ret_val;
+
         
         if (use_aspiration && aspiration_tries == 0) {
             aspiration_first_try_nodes += nodes_visited - try_nodes_start;
@@ -753,6 +789,13 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         engine.set_random_on_next_move(iRandomMoves);
     }
 
+    if (time_control.hard_abort_threshold_ms > 0) {
+        hard_abort_start(time_control.hard_abort_threshold_ms);
+    } else {
+        hard_abort_end();
+    }
+
+    
     assert (i_duration_requested > 0);
 
     // Obtain time now (milliseconds)
@@ -764,7 +807,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     //eval_person = ShumiChess::CRAZY_IVAN;           // Debug only
 
     //cout << "\n FEAT = 0x" << hex << feat << dec << "\n";
-    cout << "\n Player = " << eval_person << endl;
+    //cout << "\n Player = " << eval_person << endl;
     Features_mask = feat;
 
 
@@ -841,7 +884,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     NhitsP = 0;
     NTriesP = 0;
 
-    TTable.clear();       // Leaf TT cleared on every move (even if never used)
+    //TTable.clear();       // Leaf TT cleared on every move (even if never used)
 
     Move best_move = {};
     Score d_best_move_score = ZERO_SCORE;
@@ -874,7 +917,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     ull elapsed_time = 0ULL; // in msec
     tuple<Score, Move> ret_val;
 
-    int n_Multis = 1;
+    n_Multis = 1;           // MultiPV if greater than 1
     //
     // The -r option, runs MultiPV
     if (engine.i_randomize_next_move>0) {
@@ -1104,14 +1147,14 @@ void MinimaxAI::playgroundOld(int iPhase) {
 void MinimaxAI::playground(int iPhase) {
   
   
-    const char* pszPhase = str_from_GamePhase(iPhase);
-    const int itemp1 = engine.game_board.count_potential_checks_against_king_t<Color::WHITE>();
-    const int itemp2 = engine.game_board.count_potential_checks_against_king_t<Color::BLACK>();
+    // const char* pszPhase = str_from_GamePhase(iPhase);
+    // const int itemp1 = engine.game_board.count_potential_checks_against_king_t<Color::WHITE>();
+    // const int itemp2 = engine.game_board.count_potential_checks_against_king_t<Color::BLACK>();
 
 
     //cout << "\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << endl;
     //cout << "\033[32m\n\n" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << "\033[0m" << endl;
-    cout << "\033[93m" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << "\033[0m" << endl;
+    //cout << "\033[93m" << pszPhase << "  wht " << itemp1 << "           blk " << itemp2 << "\033[0m" << endl;
     // Update statistics 
     //python_engine->updateStats(found_move);
 
@@ -1129,7 +1172,8 @@ void MinimaxAI::playground(int iPhase) {
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
 
-
+// TTable2
+    cout << "TT " << TTable2.size() << "  " << NhitsTT2 << endl;
 
     //int material_balance = ;  // evaluate_board();
     //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
@@ -1390,8 +1434,10 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
 
     } else {
 
-        const ull usable_clock =
+        ull usable_clock =
             time_control.clock_at_move_start - time_control.clock_reserve;
+
+        usable_clock *= 20;     // debug only
 
         // Credit is positive after quick moves and negative after borrowed time was
         // used. It is measured against the original k-per-move schedule.
@@ -1577,9 +1623,14 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         //assert(0);
 
         // Note: fascinating. This happens when in mate looking. 
-
         return { ABORT_SCORE, the_best_move };
 
+    }
+
+    if ((nodes_visited & 10000ULL) == 0ULL) {
+        if (should_abort_search_by_time()) {
+            return { ABORT_SCORE, the_best_move };
+        }
     }
 
     // =====================================================================
@@ -1627,7 +1678,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     TT2_match_move = {};
 
-    if (Features_mask & _FEATURE_TT2) {  // probe in TT2 (from regular search)
+    bool probeTT = ( (Features_mask & _FEATURE_TT2) && (n_Multis == 1) );
+    if (probeTT) {     // probe in TT2
 
         int iLimit = 1;   // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
         if (depth > iLimit) {
@@ -1649,6 +1701,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 // We already searched this node to at least this depth so we can trust the stored result.
                 if (entry.depth >= depth) {      
                     is_perfect_match = true;
+                    NhitsTT2++;
                 }
 
 
@@ -1848,8 +1901,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }   // END non zero oves to look at
 
-
-    if (Features_mask & _FEATURE_TT2) {  // store in TT2  (from regular search)
+    bool storeTT = ( (Features_mask & _FEATURE_TT2) &&  (n_Multis == 1) );
+    //storeTT = false;
+    if (storeTT) {  // store in TT2  (from regular search)
 
         int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
 
@@ -1884,13 +1938,14 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 // Rolling size cap for TT2  (NOTE: 2 million?), This is a non-determinism that can break "burp2" TT2?
                 static const std::size_t MAX_TT2_SIZE = 20000000;
                 if (TTable2.size() >= MAX_TT2_SIZE) {
+                    // one arbitrary existing entry is erased;
                     auto it = TTable2.begin();
                     if (it != TTable2.end()) {
                         TTable2.erase(it);
                     }
                 }
 
-                Score cp_score_temp = convert_to_CP(d_best_score);
+                int cp_score_temp = convert_to_CP(d_best_score);
 
                 // --- DEBUG
                 #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
@@ -2293,6 +2348,12 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
         return { ABORT_SCORE, the_best_move };
 
+    }
+
+    if ((nodes_visited & 10000ULL) == 0ULL) {
+        if (should_abort_search_by_time()) {
+            return { ABORT_SCORE, the_best_move };
+        }
     }
 
     // Purpose: avoid a false zero (no-move, thus end-of-game) result when the quick/capture-only generation missed moves

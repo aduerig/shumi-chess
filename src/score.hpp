@@ -2,7 +2,7 @@
 #pragma once
 
 
-#define SCORE_AS_INT
+//#define SCORE_AS_INT
 
 #ifndef SCORE_AS_INT
 

@@ -77,8 +77,8 @@ int main(int argc, char** argv) {
     //
     int NPositions = 5;
     // Decide on arguments
-    int depth_to_use = 7;
-    int time_to_use = 200;
+    int depth_to_use = 8;
+    int time_to_use = 2;
     int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     if (argc < 2) {
