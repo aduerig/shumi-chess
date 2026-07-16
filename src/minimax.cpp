@@ -264,7 +264,7 @@ void MinimaxAI::resign() {
 }
 
 
-static inline ull get_time_ms()
+static inline ull get_time_ms()     // gets times since ?
 {
     return (ull)std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()
@@ -276,7 +276,7 @@ void MinimaxAI::hard_abort_start(ull hard_duration)
     hard_abort_budget_ms = hard_duration;
     hard_abort_start_time_ms = get_time_ms();  // milliseconds
     hard_abort_enabled = true;
-    cout << "hard_abort_start " << hard_duration << endl;
+    //cout << "hard_abort_start " << hard_duration << endl;
 }
 void MinimaxAI::hard_abort_end()
 {
@@ -284,16 +284,16 @@ void MinimaxAI::hard_abort_end()
     hard_abort_budget_ms = 0ULL;
 }
 
-// hard abort
+// hard abort    codex resume 019f685d-3b53-7c11-accb-71426f6218fc
 bool MinimaxAI::should_abort_search_by_time()
 {
     if (!hard_abort_enabled) return false;
     if (hard_abort_budget_ms == 0ULL) return false;
 
-    const ull elapsed_ms = get_time_ms();  // milliseconds
-
-    if ( (elapsed_ms - hard_abort_start_time_ms)/2 >= hard_abort_budget_ms) {
-        cout << endl << "hard abort" << endl;
+    const ull abs_time_ms = get_time_ms();  // milliseconds
+    const ull duration_now = (abs_time_ms - hard_abort_start_time_ms);
+    if ( duration_now/2 >= hard_abort_budget_ms) {
+        //cout << endl << "hard abort" << endl;
         stop_calculation = true;
         return true;
     }
@@ -1133,9 +1133,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     #endif
 
 
-    
     ////////// done with "main" move displays /////////////////////////////////////////////////////////////////////////
-  
+    
+    hard_abort_end();
+
     return best_move;
 }
 
@@ -1173,7 +1174,7 @@ void MinimaxAI::playground(int iPhase) {
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
 
 // TTable2
-    cout << "TT " << TTable2.size() << "  " << NhitsTT2 << endl;
+    //cout << "TT " << TTable2.size() << "  " << NhitsTT2 << endl;
 
     //int material_balance = ;  // evaluate_board();
     //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
@@ -1269,6 +1270,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     Score d_Return_score = ZERO_SCORE;
 
     tuple<Score, Move> ret_val;
+    hard_abort_allowed = false;
 
     do {
 
@@ -1299,7 +1301,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         d_Return_score = get<0>(ret_val);
         if (d_Return_score == ABORT_SCORE) {
             // User aborted the computation. Here we do nothing, ends up using the last deepeining. 
-            cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
+            //cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
             break;   // Stop deepening, no more depths.
         } else if (d_Return_score == ONLY_MOVE_SCORE) {
             // We stopped analysis because there was only one legal move. We just play that.
@@ -1307,10 +1309,12 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             b_Forced = true;
             d_best_move_score = d_Return_score;
             best_move = get<1>(ret_val);        // this was the only legal move.
+            hard_abort_allowed = true;
             break;   // Stop deepening, no more depths.
         } else {
             d_best_move_score = d_Return_score;
             best_move = get<1>(ret_val);
+            hard_abort_allowed = true;
 
             // Root sees a forced mate: no point deepening further. 
             // Update: YES there is a point in continuing. We might find a shorter mate.
@@ -1394,6 +1398,9 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         }
         previous_estimated_elapsed_time = estimated_elapsed_time;
 
+        // hard abort debug only
+        //bThinkingOverByTime = false;        // debug only
+
         //cout << endl << "    bThinkingOverByDepth " << estimated_elapsed_time << endl;
 
         // depth based ending of thinking
@@ -1406,6 +1413,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
     max_attained_depth = depth-1;       // minus one becuase it was incremented at the end of the loop
 
+    hard_abort_allowed = false;
     return { d_best_move_score, best_move };
 }
 
@@ -1437,7 +1445,6 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
         ull usable_clock =
             time_control.clock_at_move_start - time_control.clock_reserve;
 
-        usable_clock *= 20;     // debug only
 
         // Credit is positive after quick moves and negative after borrowed time was
         // used. It is measured against the original k-per-move schedule.
@@ -1627,7 +1634,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    if ((nodes_visited & 10000ULL) == 0ULL) {
+    if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
         if (should_abort_search_by_time()) {
             return { ABORT_SCORE, the_best_move };
         }
@@ -2350,7 +2357,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     }
 
-    if ((nodes_visited & 10000ULL) == 0ULL) {
+    if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
         if (should_abort_search_by_time()) {
             return { ABORT_SCORE, the_best_move };
         }
@@ -3093,7 +3100,6 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
     }
 
-    // codex resume 019f4d25-c3ac-7d31-8c30-393c958b31b4
     //       0. move from the hash table hit (if any) 
     if (!(TT2_match_move == Move{})) {       
         auto it = std::find(pMovesInOut->begin(), pMovesInOut->end(), TT2_match_move);

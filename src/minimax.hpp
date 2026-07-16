@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <globals.hpp>
 #include <engine.hpp>
@@ -319,6 +319,7 @@ private:
     bool hard_abort_enabled = false;
     ull hard_abort_budget_ms = 0;           // a relative time or duration
     ull hard_abort_start_time_ms = 0;       // holds start time
+    bool hard_abort_allowed = false;
     void hard_abort_start(ull hard_duration);
     void hard_abort_end();
 

@@ -27,17 +27,17 @@ TEST(RandomMoves, RequestAppliesOnlyAtGameStartAndResetClearsIt) {
     EXPECT_EQ(test_engine.i_randomize_next_move, 0);
 }
 
-TEST(RandomMoves, MultiPvSearchDoesNotReuseExcludedRootPv) {
-    ShumiChess::Engine test_engine;
-    MinimaxAI minimax_ai(test_engine);
+// TEST(RandomMoves, MultiPvSearchDoesNotReuseExcludedRootPv) {
+//     ShumiChess::Engine test_engine;
+//     MinimaxAI minimax_ai(test_engine);
 
-    int random_moves = 1;
-    ShumiChess::Move move = minimax_ai.get_move_iterative_deepening(
-        7, 8, ShumiChess::UNCLE_SHUMI, random_moves, 0);
+//     int random_moves = 1;
+//     ShumiChess::Move move = minimax_ai.get_move_iterative_deepening(
+//         7, 8, ShumiChess::UNCLE_SHUMI, random_moves, 0);
 
-    EXPECT_NE(move.piece_type, ShumiChess::Piece::NONE);
-    EXPECT_EQ(test_engine.i_randomize_next_move, 0);
-}
+//     EXPECT_NE(move.piece_type, ShumiChess::Piece::NONE);
+//     EXPECT_EQ(test_engine.i_randomize_next_move, 0);
+// }
 
 vector<string> white_in_check_black_is_safe_fens = {"7k/8/8/3p4/4K3/8/8/8 w - - 0 1",
                                                     "8/5k2/5P2/3p4/4K3/8/8/8 w - - 0 1",

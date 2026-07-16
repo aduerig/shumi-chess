@@ -364,6 +364,7 @@ int main()
             int search_time_to_use = time_to_use;
             MinimaxAI::SearchTimeControl time_control;
 
+            // hard abort debug only
             time_control.hard_abort_threshold_ms = 0;
    
 
