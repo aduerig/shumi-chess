@@ -294,6 +294,7 @@ public:
     //bool is_debug = false;
     int nFarts = 0;
     int nSemiFarts = 0;
+    int n_futility_tosses = 0;
 
     template<class T> string format_with_commas(T value);
     void playgroundOld(int iPhase);

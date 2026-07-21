@@ -224,7 +224,11 @@ Games with stockfish (using cutechess as tournement director)
  
                 Score of Shumi vs arasanx-64 ELO 2200: 3 - 7 - 3 [0.346]
                 Score of Shumi vs arasanx-64 ELO 2200: 13 - 7 - 5 [0.620]
-
+                Score of Shumi vs texel64-avx2-pop ELO 2200: 1 - 9 - 1 [0.136]
+                Score of Shumi vs stockfish_ELO 2200: 8 - 4 - 0 [0.667]
+                Score of Shumi vs stockfish_ELO 2300: 15 - 7 - 3 [0.660]
+                Score of Shumi vs texel64-avx2-pop ELO 2200: 2 - 11 - 0 [0.154]
+                Score of Shumi vs stockfish_ELO 2300: 6 - 8 - 2 [0.438]
 
             AFTER integerazation of Score
                 Score of Shumi vs stockfish_ELO 2300: 12 - 11 - 2 [0.520]

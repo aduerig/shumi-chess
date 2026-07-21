@@ -3,3 +3,75 @@ The question I want answered is this: has shumi changed its performance before a
 after integerzazation of score. Note that the position of the player that appears 
 first or second in the "vs", 
 only means who gets white in first game.
+
+
+
+
+
+
+SHumi again. My subject today is quissance. Please look at the minimax.cpp file, specifically at the LOWERQ 
+and HIGHERQ, and sort_unquiet_moves_qsearch_H and sort_unquiet_moves_qsearch_L. Note the numbers, and note that I 
+run at depth = 7,8,9. Now in the "higher" Q, I want to 
+change it to follwoing: the last move "to" square, and not use SEE/ Instead of using SEE, it should sinply disacrd 
+caputres that have bad "if (attacker > victim)". SEE is high in the profile hit list. I also would like to make 
+sort_unquiet_moves_qsearch_L and sort_unquiet_moves_qsearch_H to be more effecient. Do you know how stockficj 
+handles this?
+
+
+
+
+There is a bug related to 
+Here is debug from the bug running
+
+    hard_abort_start 297531880
+
+    Deeping 1 ply of 7 msec=     0
+    Deeping 2 ply of 7 msec=     0
+    Deeping 3 ply of 7 msec=     0
+    Deeping 4 ply of 7 msec=     0
+    Deeping 5 ply of 7 msec=     2
+    Deeping 6 ply of 7 msec=    13
+    Deeping 7 ply of 7 msec=   110
+    Deeping 8 ply of 7 msec=   716
+    Deeping 9 ply of 7 msec=  4224
+    stop_calculation 20003  10000
+
+    Deeping 1 ply of 7 msec=     0
+
+
+then we get this error:
+
+    Assertion failed: game_board.bits_in(movefrom) == 1, file C:\programming\shumi-chess\src\engine.cpp, line 1257
+
+Now this happens when the ABORT_SCORE is triggered by one of these sentinatls: 
+"if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {"  AND n_Multis is greater than 1. 
+Now, when n_Multis > 1, we can ABORT_SCORE from other locations (you can see other uses of this) without the error.
+Only when n_Multis>1 and we abort from the "if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL)" 
+locations do we see the error. Now one ABORT_SCORE comes from a button on my python app, and when I use theis button
+(when n_Multis==1), no error, but it drops into the next MULTIPV principal varition. This behavior was fine before
+but I have no problem wit making new behaiovor that just abbandons trhe PV, and returns the last PV. I suspect this 
+will fix the assert().
+
+
+<stockfish_ELO 2300(1): bestmove d4d5 ponder c6e5
+>Shumi(0): position startpos moves e2e4 b8c6 f1c4 g8f6 d2d4 f6e4 d4d5
+>Shumi(0): isready
+<Shumi(0): readyok
+>Shumi(0): go wtime 45653 btime 29994 movestogo 37
+<Shumi(0): 0 Deeping 1 ply of 5 msec=     0/_ Best: Nd6   ; -1.12
+<Shumi(0): 0 Deeping 2 ply of 5 msec=     0/0 Best: Nd6   ; -1.10
+<Shumi(0): 0 Deeping 3 ply of 5 msec=     0/0 Best: Ne5   ; -1.10
+<Shumi(0): 0 Deeping 4 ply of 5 msec=     1/0 Best: Ne5   ; -0.82
+<Shumi(0): 0 Deeping 5 ply of 5 msec=     6/6 Best: Ne5   ; -0.94
+<Shumi(0): 0 Deeping 6 ply of 5 msec=    33/36 Best: Ne5   ; -0.86
+<Shumi(0): 0 Deeping 7 ply of 5 msec=   139/198 Best: Ne5   ; -0.90
+<Shumi(0): 0 Deeping 8 ply of 5 msec=   863/834 Best: Ne5   ; -0.66
+<Shumi(0): 0 Deeping 9 ply of 5 msec=  3666/5178
+<Shumi(0): hard abort q
+<Shumi(0): [33m
+<Shumi(0): Went to depth 0 elapsed min= 0.1 elapsed msec= 3666 request msec= 1487[0m
+<Shumi(0): [1;96mNe5[0m   [1;96m-0.660 =score,  [0m[1;93mVisited: 15,840,000 / 86% nodes total ---- 13,962,010 Evals[0m
+<Shumi(0): [1;92mTotal time: 10.00 sec[0m[1;92m   nodes/sec= 1,583,904   evals/sec= 10[0m
+<Shumi(0): [aspiration summary] attempts=8 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=87.5% first-try-nodes=5559295 retry-nodes=0
+<Shumi(0): info depth 8 seldepth 22 score cp 66 nodes 15840000 nps 1583903
+<Shumi(0): bestmove c6e5

@@ -218,7 +218,7 @@ int main()
     flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
 
     int iRandomMoves = 0;
-    if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
+    //if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
 
 
 
@@ -315,16 +315,7 @@ int main()
             moves_so_far = new_moves;
             have_position = true;
 
-            //Engine engine(FENs[iPositions]);
-            //Engine engine;
 
-            //std::this_thread::sleep_for(std::chrono::seconds(3));   // debug only
-
-            //MinimaxAI minimax_ai(*engine);
-
-            // Show board
-            // string out = utility::representation::gameboard_to_string(engine->game_board);
-            // uci_debug_log << out << endl;
 
 
 
@@ -359,13 +350,13 @@ int main()
                 else if (go_token == "movestogo") go_command >> moves_to_go;
             }
 
-            cout << endl << " times: " << white_time << "  " << black_time << endl;
+            //cout << endl << " times: " << white_time << "  " << black_time << endl;
 
             int search_time_to_use = time_to_use;
             MinimaxAI::SearchTimeControl time_control;
 
             // hard abort debug only
-            time_control.hard_abort_threshold_ms = 0;
+            time_control.hard_abort_threshold_ms = 5000;
    
 
             if (move_time > 0) {    

@@ -8,8 +8,8 @@
 #include "weights.hpp"
 #include "endgameTables.hpp"
 
-#define LOWERQ 6
-#define UPPERQ 4
+#define LOWERQ 7
+#define UPPERQ 5
 
 
 // Note neither of these include the "depth". So if depth=6, then add 6

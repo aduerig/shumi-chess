@@ -126,7 +126,7 @@ class Engine {
         vector<Move> all_legal_moves[MAX_PLY0];
         vector<Move> all_unquiet_moves[MAX_PLY0];   
 
-        template<Color c> bool in_check_after_move_fast_t(const Move& move);
+        template<Color c, bool isMyKing> bool in_check_after_move_fast_t(const Move& move);
         template<Color c> bool in_check_after_king_move_t(const Move& move);
 
 

@@ -180,7 +180,7 @@ void Engine::reset_engine() {         // New game.
     #define HALLOWEEN_GAMBIT "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 2 4" // then play Nxe5
 
 
-    // Tests
+    // Test positions
     #define ENPASSANT_FEN "r1b1qrk1/pppp2pn/2n1p2p/2P1Pp2/3P4/2BB4/PPQ2PPP/R3K1NR b KQ f6 0 10"   // then play d5
     #define ENPASSANT_FEN2 "8/8/4k3/8/pp1pp1pp/8/PPPPPPPP/4K3 w KQkq - 0 1"       // only pawns
 
@@ -320,7 +320,7 @@ void Engine::updateStats(const Move& m)     // all of these are in units of ply
 }
 // Templated "tiny make/unmake" check test.
 // Mutates only the bitboards affected by the move, tests king safety, then restores.
-template<Color c>
+template<Color c, bool isMyKing>
 bool Engine::in_check_after_move_fast_t(const Move& move)
 {
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
@@ -339,13 +339,9 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
     ull* pRooks   = nullptr;
     ull  rooksOld = 0;
 
-    // const ull frm = move.from;
-    // const ull to  = move.to;
     const ull from_bb = utility::bit::square_to_bitboard(move.fromSQ);
     const ull to_bb = utility::bit::square_to_bitboard(move.toSQ);
-    // assert(frm == from_bb);
-    // assert(to == to_bb);
-
+  
     // 1) Moving piece leaves `from`
     pSrc   = &access_pieces_of_color_tp<c>(move.piece_type);
     srcOld = *pSrc;
@@ -401,7 +397,12 @@ bool Engine::in_check_after_move_fast_t(const Move& move)
         }
     }
 
-    const bool bReturn = is_king_in_check_t<c>();
+    bool bReturn;
+    if (isMyKing) {
+        bReturn = is_king_in_check_t<c>();
+    } else {
+        bReturn = is_king_in_check_t<enemy>();
+    }
 
     // Restore all mutated bitboards
     if (pRooks) *pRooks = rooksOld;
@@ -1244,15 +1245,15 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
    
     MoveText.clear();        // start fresh (does NOT free capacity)
 
-    
     // ull frm = the_move.from;
     // ull to = the_move.to;
     const ull movefrom = utility::bit::square_to_bitboard(the_move.fromSQ);
     const ull moveto = utility::bit::square_to_bitboard(the_move.toSQ);
-    // assert(frm == movefrom);
-    // assert(to == moveto);
-
-
+   
+    // if (game_board.bits_in(movefrom) != 1) {
+    //     cerr << game_board.bits_in(movefrom) << game_board.bits_in(moveto) << the_move.piece_type << endl;
+    //     assert(0);
+    // }
     assert(game_board.bits_in(movefrom) == 1);
     assert(game_board.bits_in(moveto) == 1);
 
@@ -1626,7 +1627,7 @@ void Engine::sort_unquiet_moves_qsearch_L(
     MovesOut.clear();
     MovesOut.reserve(moves.size()); 
     
-    // Recapture bias: if a capture lands on opponent's last-to square, try it earlest
+    // Recapture bias: if a capture lands on opponent's last-to square, try it earliest
     bool have_last = !move_history.empty();
     Square last_toSQ = NO_SQUARE;
     if (have_last) {
@@ -1667,7 +1668,7 @@ void Engine::sort_unquiet_moves_qsearch_L(
             // So this must be a promotion.
             assert(mv.promotion != Piece::NONE);  
 
-            // Its a Promotion (without capture, if it was a capture it was dealt with above.
+            // Its a Promotion (without capture, if it was a capture it was dealt with above).
             // if (mv.promotion != Piece::QUEEN)    // DO NOT push non queen promotions up in the list
             //     // Prune this promotion
             //     continue;
@@ -1721,7 +1722,7 @@ void Engine::sort_unquiet_moves_qsearch_H(
                     }
                 #endif
 
-                if (testValue <= -100) {     // centipawns
+                if (testValue <= -74) {     // centipawns
                     #ifdef _DEBUGGING_TO_FILE1 
                     
                         fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
@@ -2965,8 +2966,8 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
                 legal = !in_check_after_king_move_t<c>(move);
             } else {
                 // NOT a king move
-            if (move.flags & FLAGS_IS_EP_CAPTURE) {
-                    legal = !in_check_after_move_fast_t<c>(move);
+                if (move.flags & FLAGS_IS_EP_CAPTURE) {
+                    legal = !in_check_after_move_fast_t<c,true>(move);
                 } else {
                     // Not an en passant. This is the most common case.
                     // Note This is where the time is saved. Here we DONT call in_check_after_move_fast_t()
@@ -3031,7 +3032,7 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
 
                     if (helps) {
                         if (move.flags & FLAGS_IS_EP_CAPTURE) {
-                            legal = !in_check_after_move_fast_t<c>(move);
+                            legal = !in_check_after_move_fast_t<c, true>(move);
                         } else {
                             if (!pinnedInfo.isPinned(fromSq)) {
                                 legal = true;
@@ -3117,8 +3118,10 @@ template Engine::PinnedInfo Engine::compute_pins_t<Color::WHITE>();
 template Engine::PinnedInfo Engine::compute_pins_t<Color::BLACK>();
 template Engine::CheckInfo Engine::find_checkers_and_blockmask_t<Color::WHITE>();
 template Engine::CheckInfo Engine::find_checkers_and_blockmask_t<Color::BLACK>();
-template bool Engine::in_check_after_move_fast_t<Color::WHITE>(const Move&);
-template bool Engine::in_check_after_move_fast_t<Color::BLACK>(const Move&);
+template bool Engine::in_check_after_move_fast_t<Color::WHITE, true>(const Move&);
+template bool Engine::in_check_after_move_fast_t<Color::BLACK, true>(const Move&);
+template bool Engine::in_check_after_move_fast_t<Color::WHITE, false>(const Move&);
+template bool Engine::in_check_after_move_fast_t<Color::BLACK, false>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::WHITE>(const Move&);
 template bool Engine::in_check_after_king_move_t<Color::BLACK>(const Move&);
 template int Engine::get_legal_moves_fast_t<Color::WHITE, false>(bool b_check_mode, vector<Move>&);

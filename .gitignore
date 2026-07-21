@@ -65,3 +65,5 @@ Statistics.txt
 debug.dat
 Untitled-1.cpp
 crash.log
+driver/cutechess-test.pgn
+driver/cutechess_cli.bat

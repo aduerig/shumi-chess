@@ -57,11 +57,11 @@ using namespace utility::bit;
 
 //#define _DEBUGGING_PUSH_POP
 
-//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
-//#define _DEBUGGING_TEMP
+#define _DEBUGGING_TEMP
 //#define _DEBUGGING_BEST_STUFF
 //#define DEBUG_ASPIRATION
 // extern bool bMoreDebug;
@@ -135,7 +135,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -276,15 +276,23 @@ void MinimaxAI::hard_abort_start(ull hard_duration)
     hard_abort_budget_ms = hard_duration;
     hard_abort_start_time_ms = get_time_ms();  // milliseconds
     hard_abort_enabled = true;
-    //cout << "hard_abort_start " << hard_duration << endl;
+    //cerr << endl << "hard_abort_start " << hard_duration << endl;
+
+    #ifdef _DEBUGGING_TEMP
+        fprintf(fpDebug, " hard_abort_start %lld\n", hard_abort_start_time_ms);
+    #endif
+
 }
 void MinimaxAI::hard_abort_end()
 {
     hard_abort_enabled = false;
     hard_abort_budget_ms = 0ULL;
+
+    #ifdef _DEBUGGING_TEMP
+        fprintf(fpDebug, " hard_abort_end\n");
+    #endif
 }
 
-// hard abort    codex resume 019f685d-3b53-7c11-accb-71426f6218fc
 bool MinimaxAI::should_abort_search_by_time()
 {
     if (!hard_abort_enabled) return false;
@@ -292,8 +300,12 @@ bool MinimaxAI::should_abort_search_by_time()
 
     const ull abs_time_ms = get_time_ms();  // milliseconds
     const ull duration_now = (abs_time_ms - hard_abort_start_time_ms);
+
+  
     if ( duration_now/2 >= hard_abort_budget_ms) {
-        //cout << endl << "hard abort" << endl;
+        #ifdef _DEBUGGING_TEMP
+            fprintf(fpDebug, "\nstop_calculation %lld  %lld\n", duration_now, hard_abort_budget_ms);
+        #endif
         stop_calculation = true;
         return true;
     }
@@ -629,11 +641,11 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 
 
         #ifdef _DEBUGGING_TEMP
-            cout << endl << " Deeping " << depth << " ply of " << maximum_deepening
-                        << " msec=" << std::setw(6) << elapsed_time_display_only << endl;
+            //cout << endl << " Deeping " << depth << " ply of " << maximum_deepening
+            //            << " msec=" << std::setw(6) << elapsed_time_display_only << endl;
             if (fpDebug != nullptr) {
                 std::fprintf(fpDebug,
-                    "\n Deeping %d ply of %d msec=%6llu\n",
+                    "\n Deeping %d ply of %d msec=%6llu",
                     depth,
                     maximum_deepening,
                     static_cast<unsigned long long>(elapsed_time_display_only));
@@ -854,8 +866,11 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
     }   
 
+    //
+    // These are statistics indicators,that are output in the playground
     nFarts = 0;             // Queiseence low level (forced eval) this move
     nSemiFarts = 0;         // Queiseence low level (forced eval) this move
+    n_futility_tosses = 0;
     //
     // Clear debug every move
     // #ifdef _DEBUGGING_TO_FILE 
@@ -927,6 +942,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     }
 
     excluded_root_moves.clear();
+    bool multipv_aborted = false;
 
 
     //cout << endl << " nMultis " << n_Multis << endl;
@@ -946,16 +962,19 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
                                         , time_control
                                         , elapsed_time);        // Output
         d_best_move_score = get<0>(ret_val);
-        if (d_best_move_score == ABORT_SCORE) break;
+        if (d_best_move_score == ABORT_SCORE) {
+            multipv_aborted = true;
+            break;
+        }
         //if (d_Return_score == ONLY_MOVE_SCORE)
 
         best_move = get<1>(ret_val);    
 
+        if (best_move.piece_type == Piece::NONE) break;     // NOTE: should this ever happen?
+
         engine.bitboards_to_algebraic(engine.game_board.turn, best_move
                 , (GameState::INPROGRESS), false, false, NULL
                 , engine.move_string);    // Output
-
-        if (best_move.piece_type == Piece::NONE) break;     // NOTE: should this ever happen?
 
         excluded_root_moves.push_back(std::make_pair(best_move, d_best_move_score));
         if (d_best_move_score == ONLY_MOVE_SCORE) break;
@@ -969,13 +988,20 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     #endif
     //engine.print_moves_and_scores_to_file(excluded_root_moves, false, false, stdout);
 
-    if (n_Multis > 1) {
+    if (n_Multis > 1 && !excluded_root_moves.empty()) {
 
         tuple<Score, Move> ret_val0;
         int i_random_delta_cp = RANDOMIZING_EQUAL_MOVES_DELTA;
         int n_moves_within_delta;
-        ret_val0 = pick_random_within_delta_rand(excluded_root_moves, i_random_delta_cp, engine.computer_ply_so_far
-                                                    , n_moves_within_delta);      // output
+        if (multipv_aborted || (excluded_root_moves.size() == 1)) {
+            auto best_collected = std::max_element(excluded_root_moves.begin(), excluded_root_moves.end(),
+                [](const auto& a, const auto& b){ return a.second < b.second; });
+            ret_val0 = {best_collected->second, best_collected->first};
+            n_moves_within_delta = 1;
+        } else {
+            ret_val0 = pick_random_within_delta_rand(excluded_root_moves, i_random_delta_cp, engine.computer_ply_so_far
+                                                        , n_moves_within_delta);      // output
+        }
 
         d_best_move_score = std::get<0>(ret_val0);
         best_move = std::get<1>(ret_val0);
@@ -1136,7 +1162,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     ////////// done with "main" move displays /////////////////////////////////////////////////////////////////////////
     
     hard_abort_end();
-
+    #ifdef _DEBUGGING_TEMP
+        engine.move_into_string(best_move);
+        fprintf(fpDebug, "final move: %s\n", engine.move_string.c_str());
+    #endif
     return best_move;
 }
 
@@ -1191,8 +1220,8 @@ void MinimaxAI::playground(int iPhase) {
    
     // cout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
-
-    //cout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
+    // cout << " n_futility_tosses " << n_futility_tosses << endl;
+    // cout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
 
     //engine.debug_print_repetition_table();
 
@@ -1271,6 +1300,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
     tuple<Score, Move> ret_val;
     hard_abort_allowed = false;
+    bool has_completed_deepening = false;
 
     do {
 
@@ -1300,8 +1330,10 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
         d_Return_score = get<0>(ret_val);
         if (d_Return_score == ABORT_SCORE) {
-            // User aborted the computation. Here we do nothing, ends up using the last deepeining. 
+            // User aborted the computation. If at least one deepening completed,
+            // use that last completed result; otherwise propagate the abort.
             //cout << "\x1b[31m Aborting depth of " << depth << "\x1b[0m" << endl;
+            if (!has_completed_deepening) return ret_val;
             break;   // Stop deepening, no more depths.
         } else if (d_Return_score == ONLY_MOVE_SCORE) {
             // We stopped analysis because there was only one legal move. We just play that.
@@ -1337,6 +1369,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         // Store PV for the *next* deepening iteration. Called incorrectly in literture as: "PV at the root".
         assert (depth >=0);
         prev_root_best_[depth] = std::make_pair(best_move, d_best_move_score);   // move + score (pawns)
+        has_completed_deepening = true;
         #ifdef _DEBUGGING_PV
             engine.move_into_string(best_move);
             sprintf(szDebug, "PV   %s  %ld", engine.move_string.c_str(), depth);
@@ -1433,11 +1466,6 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     // Howvever, cutchess and othe "GUI"s do pass in times that end up enabling time control.
     if (!time_control.enabled()) {
         
-        #ifdef _DEBUGGING_TEMP
-            fprintf(fpDebug, "%ld     elapsed_time0=%llu   %llu\n", time_control.enabled()
-                , static_cast<unsigned long long>(estimated_elapsed_time)
-                , static_cast<unsigned long long>(fallback_move_budget));
-        #endif
         return (estimated_elapsed_time >= fallback_move_budget);
 
     } else {
@@ -1542,7 +1570,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
 
     bool in_check = false;
-   
+    in_check = (engine.game_board.turn == Color::WHITE)
+        ? engine.is_king_in_check_t<Color::WHITE>()
+        : engine.is_king_in_check_t<Color::BLACK>();
 
     bool caps_only = false;
    
@@ -1619,6 +1649,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     if (stop_calculation) {
         //cout << "\n! STOP CALCULATION requested \n";
         stop_calculation = false;
+         #ifdef _DEBUGGING_TEMP
+            fprintf(fpDebug, "\nABORT_SCORE s\n");
+        #endif
         return { ABORT_SCORE, the_best_move };
     }
 
@@ -1634,8 +1667,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }
 
+    // codex resume 019f82fa-8c78-75a0-97eb-db8157becb60
     if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
         if (should_abort_search_by_time()) {
+            cout << endl << "hard abort s" << endl;
             return { ABORT_SCORE, the_best_move };
         }
     }
@@ -2343,6 +2378,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     if (stop_calculation) {
         //cout << "\n! STOP CALCULATION requested \n";
         stop_calculation = false;
+        #ifdef _DEBUGGING_TEMP
+            fprintf(fpDebug, "\nABORT_SCORE q\n");
+        #endif
         return { ABORT_SCORE, the_best_move };
     }
 
@@ -2359,6 +2397,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
         if (should_abort_search_by_time()) {
+            cout << endl << "hard abort q" << endl;
             return { ABORT_SCORE, the_best_move };
         }
     }
@@ -2623,11 +2662,13 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
     const int FUTILITY_MARGIN = 400;     // centipawns
 
     bool futility_eval_have = false;
+    Score futility_eval_cp = 0;
 
-    bool futility_incheck_have = false;
-    bool futility_bInCheck = false;
+    //bool futility_incheck_have = false;
+    //bool futility_bInCheck = false;
 
     bool bFutilityPrunedAny = false;
+
 
     for (const Move& m : *pMoves) {
         //int nChars;
@@ -2672,42 +2713,61 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                 if (is_killer_here) killer_tried++;
             }
         #endif
-
         //
         // Futility pruning 
         //
-        if ((Features_mask & _FEATURE_FUTILITY_PRUNE) &&
-            (depth == 1) &&          // last regular-search ply
-            (nSearched > 0)) {       // always search first move
+        // Note: fix me
+        if (1) {
+        //if (Features_mask & _FEATURE_FUTILITY_PRUNE) {
 
-            const bool bBoringQuiet =
-                !m.capture &&
-                !m.promotion;                       // NOTE: quiet checks are not detected yet
+            if ( (depth == 1) &&            // last regular-search ply
+                (nSearched > 0) &&           // always search first move
+                (!IS_MATE_SCORE(alpha)) ) {
 
-            if (bBoringQuiet) {
-                Score futility_eval_cp = 0;
-                if (!futility_eval_have) {
-                    futility_eval_have = true;
-                    if (engine.game_board.turn == ShumiChess::Color::WHITE)
-                        futility_eval_cp = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
-                    else
-                        futility_eval_cp = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
-                }
+                const bool bBoringQuietMove =
+                    (m.capture == Piece::NONE) &&
+                    (m.promotion == Piece::NONE);   
+            
+                if (!in_check) {
 
-                if (futility_eval_cp + FUTILITY_MARGIN <= alpha) {
-                    if (!futility_incheck_have) {
-                        futility_incheck_have = true;
-                        if (engine.game_board.turn == ShumiChess::Color::WHITE)
-                            futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::WHITE>();
-                        else
-                            futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::BLACK>();
-                    }
+  
 
-                    if (!futility_bInCheck) {
-                      
-                        engine.move_into_string(m);
-                        cout << "futility toss " << engine.move_string << " " << endl;
-                        continue;           // prune this move
+                    if (bBoringQuietMove) { 
+
+                        if (!futility_eval_have) {
+                            futility_eval_have = true;
+                            if (engine.game_board.turn == ShumiChess::Color::WHITE)
+                                futility_eval_cp = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+                            else
+                                futility_eval_cp = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
+                        }
+
+
+                        if ( (futility_eval_cp + FUTILITY_MARGIN) <= alpha) {
+                            // if (!futility_incheck_have) {
+                            //     futility_incheck_have = true;
+                            //     if (engine.game_board.turn == ShumiChess::Color::WHITE)
+                            //         futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::WHITE>();
+                            //     else
+                            //         futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::BLACK>();
+                            // }
+
+                            // does this move check the enemy king?
+                            bool is_a_check = (m.color == ShumiChess::Color::WHITE) ? 
+                                    engine.in_check_after_move_fast_t<ShumiChess::Color::WHITE, false>(m) : 
+                                    engine.in_check_after_move_fast_t<ShumiChess::Color::BLACK, false>(m);
+
+                            if (!is_a_check) { 
+                
+                                //if (!futility_bInCheck) {
+                                //engine.move_into_string(m);
+                                //cout << "futility toss " << engine.move_string << " " << endl;
+
+                                n_futility_tosses++;
+
+                                continue;           // prune this move
+                            }
+                        }
                     }
                 }
             }
@@ -2974,54 +3034,87 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
     if (Features_mask &_FEATURE_UNQUIET_SORT) {
 
+
+
+        // it_split still points to the first quiet move, exactly as the later code expects.
+
+
+
         // --- 1. Partition unquiet moves (captures/promotions) to the front ---
-        auto it_split = std::partition(
-            pMovesInOut->begin(), pMovesInOut->end(),
-            [&](const ShumiChess::Move& mv)
-            {
-                return engine.is_unquiet_move(mv);
-            });
+        //
+        // Scan the move list once. Each unquiet move is swapped into the next
+        // available position at the front of the vector.
+        //
+        std::vector<ShumiChess::Move>::iterator it_split = pMovesInOut->begin();
 
-        // --- 2. Sort the unquiet prefix using MVV-LVA ---
-        std::sort(pMovesInOut->begin(), it_split,
-            [&](const ShumiChess::Move& a, const ShumiChess::Move& b)
-            {
-                // MVV-LVA  Most Valuable Victim, Least Valuable Attacker: prefer taking the 
-                // biggest victim with the smallest attackers.
-                // This establishs two top "tiers", Victim and -attacker.
-                int keyA = (a.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(a) << 10 : 0;
-                int keyB = (b.capture != ShumiChess::Piece::NONE) ? engine.mvv_lva_key(b) << 10 : 0;
+        for (std::vector<ShumiChess::Move>::iterator it = pMovesInOut->begin();
+            it != pMovesInOut->end();
+            ++it) {
 
-                // SEE: strongly penalize obviously losing captures
-                // This is the third tier", as in SEE is the third tier (centipawns)
-                if (a.capture != ShumiChess::Piece::NONE)
-                {
-                    
-                    // remove me!
-                    //int seeA2 = engine.game_board.SEE_for_capture(engine.game_board.turn, a, nullptr);
-                    int seeA = engine.game_board.SEE_for_capture_new(engine.game_board.turn, a, nullptr);
-                    //assert(seeA == seeA2);
+            if (engine.is_unquiet_move(*it)) {
+                if (it != it_split) std::iter_swap(it, it_split);
+                ++it_split;
+            }
+        }
 
-                    if (seeA < 0) keyA += seeA * 100;   // negative pulls it way down in the sort
-                }
-                if (b.capture != ShumiChess::Piece::NONE)
-                {
-                    
-                    // remove me!
-                    //int seeB2 = engine.game_board.SEE_for_capture(engine.game_board.turn, b, nullptr);
-                    int seeB = engine.game_board.SEE_for_capture_new(engine.game_board.turn, b, nullptr);
-                    //assert(seeB == seeB2);
 
-                    if (seeB < 0) keyB += seeB * 100;
-                }
+        // --- 2. Sort the unquiet prefix using MVV-LVA and SEE ---
+        //
+        // Calculate each move's ordering key once. This avoids repeatedly
+        // calculating SEE while the moves are being sorted.
+        //
+        const int nUnquietMoves =
+            static_cast<int>(std::distance(pMovesInOut->begin(), it_split));
 
-                // If capture to the "from" square of last move, give it higher priority
-                // Fourth tier, so by default these are in centipawns ( as in 800 centipawns).
-                if (a.toSQ == last_toSQ) keyA += 800;
-                if (b.toSQ == last_toSQ) keyB += 800;
+        std::vector<int> moveKeys(nUnquietMoves);
 
-                return keyA > keyB;
-            });
+        for (int i = 0; i < nUnquietMoves; i++) {
+            const ShumiChess::Move& mv = (*pMovesInOut)[i];
+
+            int key = 0;
+
+            // Captures are ordered by MVV-LVA.
+            if (mv.capture != ShumiChess::Piece::NONE) {
+                key = engine.mvv_lva_key(mv) << 10;
+
+                // Strongly penalize captures that lose material.
+                const int see =
+                    engine.game_board.SEE_for_capture_new(
+                        engine.game_board.turn, mv, nullptr);
+
+                if (see < 0) key += see * 100;
+            }
+
+            // Prefer a move to the destination square of the preceding move.
+            if (mv.toSQ == last_toSQ) key += 800;
+
+            moveKeys[i] = key;
+        }
+
+        // Sort the unquiet moves from highest key to lowest key.
+        //
+        // Capture lists are normally small, so insertion sort is appropriate here.
+        // The already-calculated keys move with their corresponding moves.
+        //
+        for (int i = 1; i < nUnquietMoves; i++) {
+            const ShumiChess::Move moveToInsert = (*pMovesInOut)[i];
+            const int keyToInsert = moveKeys[i];
+
+            int j = i - 1;
+
+            while (j >= 0 && moveKeys[j] < keyToInsert) {
+                (*pMovesInOut)[j + 1] = (*pMovesInOut)[j];
+                moveKeys[j + 1] = moveKeys[j];
+                j--;
+            }
+
+            (*pMovesInOut)[j + 1] = moveToInsert;
+            moveKeys[j + 1] = keyToInsert;
+        }
+
+
+
+
 
         // It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
         // later analysis is profited by these killer moves.
@@ -3031,14 +3124,11 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
             auto quiet_begin = it_split;
             auto quiet_end   = pMovesInOut->end();
 
-
             // 2.5  Bubble castling moves to the front of the quiet region ---
-            for (auto it = quiet_begin; it != quiet_end; ++it)
-            {
+            for (auto it = quiet_begin; it != quiet_end; ++it) {
                 const ShumiChess::Move& mv = *it;
 
-                if (mv.flags & FLAGS_IS_CASTLE_MOVE)
-                {
+                if (mv.flags & FLAGS_IS_CASTLE_MOVE) {
                     std::rotate(quiet_begin, it, it + 1);
                     ++quiet_begin;   // if a second castle move exists, it goes just after the first
                 }
@@ -3047,10 +3137,8 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
             auto bring_front = [&](const ShumiChess::Move& km)
             {
                 if (km == ShumiChess::Move{}) return;
-                for (auto it = quiet_begin; it != quiet_end; ++it)
-                {
-                    if (*it == km)
-                    {
+                for (auto it = quiet_begin; it != quiet_end; ++it) {
+                    if (*it == km) {
                         std::rotate(quiet_begin, it, it + 1);
                         ++quiet_begin; // next killer goes just after previous
                         break;
