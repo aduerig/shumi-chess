@@ -218,7 +218,7 @@ int main()
     flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
 
     int iRandomMoves = 0;
-    //if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
+    if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
 
 
 
@@ -356,7 +356,7 @@ int main()
             MinimaxAI::SearchTimeControl time_control;
 
             // hard abort debug only
-            time_control.hard_abort_threshold_ms = 5000;
+            time_control.hard_abort_threshold_ms = 10000;
    
 
             if (move_time > 0) {    
@@ -376,6 +376,7 @@ int main()
 
                 if (side_clock > 0) {
                     const ull clock_at_move_start = static_cast<ull>(side_clock);
+                    
                     const ull reserve = std::min<ull>(500, clock_at_move_start / 100);
 
                     // Establish k once per time-control period. Recomputing k as

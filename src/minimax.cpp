@@ -302,7 +302,7 @@ bool MinimaxAI::should_abort_search_by_time()
     const ull duration_now = (abs_time_ms - hard_abort_start_time_ms);
 
   
-    if ( duration_now/2 >= hard_abort_budget_ms) {
+    if (duration_now >= hard_abort_budget_ms) {
         #ifdef _DEBUGGING_TEMP
             fprintf(fpDebug, "\nstop_calculation %lld  %lld\n", duration_now, hard_abort_budget_ms);
         #endif
@@ -801,13 +801,72 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         engine.set_random_on_next_move(iRandomMoves);
     }
 
-    if (time_control.hard_abort_threshold_ms > 0) {
-        hard_abort_start(time_control.hard_abort_threshold_ms);
+
+    // // Schedule the emergency abort. Once the remaining clock reaches the
+    // // threshold, permit another half-threshold of thinking time.
+    // // All values are milliseconds.
+    // if (time_control.hard_abort_threshold_ms > 0ULL &&
+    //     time_control.clock_at_move_start > 0ULL) {
+
+    //     const ull half_threshold_ms =
+    //         1ULL*time_control.hard_abort_threshold_ms / 4ULL;
+
+    //     ull hard_abort_duration_ms = half_threshold_ms;
+
+    //     if (time_control.clock_at_move_start >
+    //         time_control.hard_abort_threshold_ms) {
+
+    //         const ull time_until_danger_ms =
+    //             time_control.clock_at_move_start -
+    //             time_control.hard_abort_threshold_ms;
+
+    //         hard_abort_duration_ms =
+    //             time_until_danger_ms + half_threshold_ms;
+    //     }
+
+    //     hard_abort_start(hard_abort_duration_ms);
+    // } else {
+    //     hard_abort_end();
+    // }
+
+    // Schedule the emergency (hard) abort. Once the remaining clock reaches the
+    // emergency threshold, divide that remaining time equally among the
+    // moves left until the time control. All values are milliseconds.
+    if (time_control.hard_abort_threshold_ms > 0ULL &&
+        time_control.clock_at_move_start > 0ULL &&
+        time_control.moves_left > 0) {
+
+        const ull moves_left = (ull)time_control.moves_left;
+
+        const ull emergency_clock_ms =
+            std::min(
+                time_control.clock_at_move_start,
+                time_control.hard_abort_threshold_ms);
+
+        assert (moves_left>0);
+        const ull emergency_move_budget_ms = emergency_clock_ms / (moves_left+1);
+
+        ull hard_abort_duration_ms =
+            emergency_move_budget_ms;
+
+        // If we are not yet inside the emergency period, first wait until
+        // the threshold is reached, then allow this move its equal share.
+        if (time_control.clock_at_move_start > time_control.hard_abort_threshold_ms) {
+
+            const ull time_until_emergency_ms =
+                time_control.clock_at_move_start - time_control.hard_abort_threshold_ms;
+
+            hard_abort_duration_ms =
+                time_until_emergency_ms +
+                emergency_move_budget_ms;
+        }
+
+        hard_abort_start(hard_abort_duration_ms);
     } else {
         hard_abort_end();
     }
 
-    
+
     assert (i_duration_requested > 0);
 
     // Obtain time now (milliseconds)
@@ -910,7 +969,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     this_deepening = max_deepening_requested;
     if ( (engine.i_randomize_next_move>0) && (this_deepening>2) ) {
         this_deepening--;
-        i_duration_requested /= 6;
+        i_duration_requested /= (RANDOM_MOVE_CANDIDATES+1);
     }
 
     // Obey requested deepening and duration
@@ -1423,6 +1482,9 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             time_control,
             estimated_elapsed_time);
 
+        // hard abort testing debug only only
+        //bThinkingOverByTime = false;        // debug only
+
         if (estimated_elapsed_time_available) {
             estimated_elapsed_time_display_only = previous_estimated_elapsed_time;
         } else {
@@ -1430,9 +1492,6 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             estimated_elapsed_time_available = true;
         }
         previous_estimated_elapsed_time = estimated_elapsed_time;
-
-        // hard abort debug only
-        //bThinkingOverByTime = false;        // debug only
 
         //cout << endl << "    bThinkingOverByDepth " << estimated_elapsed_time << endl;
 
@@ -1457,9 +1516,6 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
 {
     estimated_elapsed_time =
         static_cast<long double>(elapsed_time) * growth_factor;
-
-
-
 
     // Existing callers specify only a per-move duration. Preserve that behavior
     // until they provide a complete time-control description.
@@ -1667,7 +1723,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    // codex resume 019f82fa-8c78-75a0-97eb-db8157becb60
+    // codex resume 019f87e5-652b-75b1-9311-4d2faf114a4
     if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
         if (should_abort_search_by_time()) {
             cout << endl << "hard abort s" << endl;

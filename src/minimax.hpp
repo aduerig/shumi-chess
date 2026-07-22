@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <globals.hpp>
 #include <engine.hpp>
@@ -54,8 +54,8 @@ public:
         int moves_left = 0;                // Includes the move currently being searched.
         ull nominal_time_per_move = 0;     // k: time-control period / moves in period.
         ull maximum_loan = 0;              // Maximum permitted debt against future moves.
-        ull minimum_future_time = 0;       // Time protected for each future move.
-        ull clock_reserve = 0;              // Time never deliberately allocated to search.
+        ull minimum_future_time = 0;       // Time (milliseconds) protected for each future move.
+        ull clock_reserve = 0;             // Time (milliseconds) never deliberately allocated to search.
 
         bool enabled() const {
             return clock_at_move_start > clock_reserve
