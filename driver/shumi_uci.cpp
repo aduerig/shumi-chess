@@ -218,7 +218,7 @@ int main()
     flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
 
     int iRandomMoves = 0;
-    if (iMovesInGame < 2) iRandomMoves = 1;     // Just one random move.
+    if (iMovesInGame < 3) iRandomMoves = 1;     // Just one random move.
 
 
 
@@ -245,16 +245,19 @@ int main()
         uci_debug_log << line << endl;
 
         if (line == "uci") {
+        //************************************************************************************** */
             std::cout << "id name ShumiChess\n";
             std::cout << "id author Paul Duerig\n";
             std::cout << "uciok\n";
             std::cout.flush();
 
         } else if (line == "isready") {
+        //************************************************************************************** */
             std::cout << "readyok\n";
             std::cout.flush();
 
         } else if (line == "ucinewgame") {
+        //************************************************************************************** */
             // clear TT, repetition table, history, etc.
             current_base.clear();
             moves_so_far.clear();
@@ -263,6 +266,7 @@ int main()
             previous_moves_to_go[0] = previous_moves_to_go[1] = 0;
 
         } else if (line.rfind("position ", 0) == 0) {
+        //************************************************************************************** */
             // set board from "startpos" or "fen"
             // then play the listed moves
 
@@ -376,7 +380,7 @@ int main()
 
                 if (side_clock > 0) {
                     const ull clock_at_move_start = static_cast<ull>(side_clock);
-                    
+
                     const ull reserve = std::min<ull>(500, clock_at_move_start / 100);
 
                     // Establish k once per time-control period. Recomputing k as
@@ -402,7 +406,7 @@ int main()
                     // Allow this move to borrow up to one full nominal move's time.
                     // If k is 10000 ms, Shumi may add up to 10000 ms beyond the normal k budget.
                     // This is the main direct knob for how aggressive borrowing can be.
-                    time_control.maximum_loan = k;
+                    time_control.maximum_loan = 3*k/2;
 
                     // Protect future moves from being starved after borrowing on this move.
                     // Here each future move must be left at least k / 4 time, but never less than 1 ms.

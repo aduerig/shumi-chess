@@ -1,5 +1,0 @@
-Add a debug mode, unde a #ifdef "DEBUG_ASPIRATION", That if a aspiration suceeds with a narrow window, runs the full
-window anyway, to check that the move and the score are the same from the full window as the reduced window. 
-(only if the reduced window suceeds) 
-Always use CRLF line endings. Note that the aspiration is done in do_a_deepening(). This testing will be run with the 
-Transition table (TT) off. All changes should be under the debug #ifdef.  

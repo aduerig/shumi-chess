@@ -1,2 +1,0 @@
-
-Assertion failed: nTries<8, file C:\programming\shumi-chess\src\minimax.cpp, line 3187

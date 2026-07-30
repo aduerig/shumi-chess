@@ -1,8 +1,8 @@
 Shumi. Lookat the following table carefully. Note the oppnents and the ratings. 
 The question I want answered is this: has shumi changed its performance before and 
-after integerzazation of score. Note that the position of the player that appears 
-first or second in the "vs", 
-only means who gets white in first game.
+after (test set A and test set B). Note that the position of the player that appears 
+first or second in the "vs", only means who gets white in first game.
+
 
 
 
@@ -22,3 +22,13 @@ build is that shumi tries to take forever for each move (correct for this build)
 (cant remember which). This is not the intended behavior The intended behavior is that once the time 
 until time control is less than "t" (this should be ten seconds), then the hard abort should happen after 
 "t/2" seconds. 
+
+
+
+
+uci
+isready
+ucinewgame
+position startpos moves e2e4 c7c6 d2d4 d7d5 e4e5 c8f5 c2c3 b8d7 g1f3 f5b1 a1b1 d8a5 e5e6 f7e6 f1d3 g8f6 e1g1 a5a2 d1c2 c6c5 c3c4 d7b6 d4c5 b6c4 c1f4 a8c8 f3d4 e6e5 b1a1 a2b2 c2b2 c4b2 d3b5 f6d7 a1a7 b2d3 a7b7 d3c5 f1c1 c5b7 c1c8 e8f7 b5d7 e5d4 d7c6 b7d6 c8d8 d4d3 c6d5 f7f6 d5b3 h7h6 f4d2 f6f5 f2f3 f5e5 d2c3 e5f5 g1f2 e7e5 c3b4 d6e8 b4a5 e8f6 f2f1 f8b4 d8h8 b4a5 h8c8 h6h5 b3c4 d3d2 f1e2 h5h4 c4d3 f5e6 c8c5 a5b4 c5b5 b4c3 b5b3 c3a5 b3a3 a5b4 a3a4 b4c3 a4h4 e6e7 d3c4 g7g5 h4h6 g5g4 f3g4 f6g4 h6h7 e7d6 c4b3 g4f6 h7a7 f6d5 b3d5 d6d5 a7d7 d5c5 h2h4 e5e4 h4h5 c5c6 d7d2 c3g7 d2d8 g7h6 d8a8 c6d5 a8a6 h6g7 h5h6 g7c3 h6h7 c3g7 a6a7 g7f6 a7a5 d5d4 a5f5 f6g7 f5f7 g7h8 f7f8 h8e5 f8d8 d4c4 e2e3 e5f6 d8d1 c4c5 e3e4 f6g7 e4f5 g7b2 d1d8 c5c6 f5e6 b2g7 d8c8 c6b6 e6f7 g7d4 f7e6 d4a1 e6f5 b6b5 f5e4 b5b4 c8a8 a1f6 a8b8 b4c4 b8c8 c4b3 g2g4
+isready
+go wtime 281899 btime 304998 movestogo 40

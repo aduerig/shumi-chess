@@ -1682,6 +1682,7 @@ void Engine::sort_unquiet_moves_qsearch_L(
 }
 
 
+
 void Engine::sort_unquiet_moves_qsearch_H(
                 const vector<ShumiChess::Move>& moves,  // input
                 vector<ShumiChess::Move>& MovesOut      // output

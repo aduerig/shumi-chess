@@ -2401,8 +2401,6 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
     } else {
         b_has_castled = bBlackCstled;
     }
-    //b_has_castled2 = bHasCastled_fake_t<c>(k_rank, k_file);
-    //assert (b_has_castled==b_has_castled2);
 
 
     int cpWght = wghts.GetWeight(HAS_CASTLED);
@@ -2419,9 +2417,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         }
 
         // Take guard files into account
-        //int nGuardPawns2 = count_guard_pawn_files_23_t<c>(PInfoIn, k_file);
-        int nGuardPawns = count_guard_pawn_files_23_new_t<c>(PInfoIn, k_file);
-        //assert(nGuardPawns==nGuardPawns2);
+        int nGuardPawns = count_guard_pawn_files_t<c>(PInfoIn, k_file);
 
         if (nGuardPawns==3) cpWght = cpWght;
         else if (nGuardPawns==2) cpWght = (cpWght * 2) / 3;
@@ -2470,7 +2466,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 
 
 
-
+//
 // Returns how many of the 3 guard files for the king's side
 // contain at least one friendly pawn on relative rank 2, 3.
 //
@@ -2480,33 +2476,15 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 // Black:
 //   same file logic, but relative ranks are mirrored.
 //
+// Returns:
+//   0..3   number of guard files that still have at least one pawn
+//          on relative rank 2/3 for this side.
 // This does NOT check whether castling actually occurred.
 // It only checks whether a plausible 3-file pawn shelter exists
 // near the king's current side.
 //
-// Returns:
-//   0..3   number of guard files that still have at least one pawn
-//          on relative rank 2/3 for this side.
-
-// Returns how many of the 3 guard files for the king's side
-// contain at least one friendly pawn on relative rank 2 or 3.
-//
-// White:
-//   queenside king -> files a,b,c
-//   kingside king  -> files f,g,h
-//
-// Black:
-//   same file logic, but relative ranks are mirrored.
-//
-// This does NOT check whether castling actually occurred.
-// It only checks whether a plausible 3-file pawn shelter exists
-// near the king's current side.
-//
-// Returns:
-//   0..3   number of guard files that still have at least one pawn
-//          on relative rank 2/3 for this side.
-
-template<Color c> int GameBoard::count_guard_pawn_files_23_new_t(const PInfo& PInfoIn, int k_file) const
+#define GUARD_ADDER 1
+template<Color c> int GameBoard::count_guard_pawn_files_t(const PInfo& PInfoIn, int k_file) const
 {
     int file0;
     int file1;
@@ -2530,9 +2508,9 @@ template<Color c> int GameBoard::count_guard_pawn_files_23_new_t(const PInfo& PI
 
     int nGuardFiles = 0;
 
-    if (PInfoIn.guard_files_23 & (1u << file0)) ++nGuardFiles;
-    if (PInfoIn.guard_files_23 & (1u << file1)) ++nGuardFiles;
-    if (PInfoIn.guard_files_23 & (1u << file2)) ++nGuardFiles;
+    if (PInfoIn.guard_files_23 & (1u << file0)) nGuardFiles+=GUARD_ADDER;
+    if (PInfoIn.guard_files_23 & (1u << file1)) nGuardFiles+=GUARD_ADDER;
+    if (PInfoIn.guard_files_23 & (1u << file2)) nGuardFiles+=GUARD_ADDER;
 
     return nGuardFiles;
 }
@@ -4128,7 +4106,6 @@ template<Color c> int GameBoard::opposite_bishops_cp_t(Score material_balance_cp
 // Explicit template instantiations
 // ============================================================================
 
-// bHasCastled_fake_t
 template bool GameBoard::bHasCastled_fake_t<Color::WHITE>(int k_rank, int k_file) const;
 template bool GameBoard::bHasCastled_fake_t<Color::BLACK>(int k_rank, int k_file) const;
 

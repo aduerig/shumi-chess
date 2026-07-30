@@ -57,11 +57,11 @@ using namespace utility::bit;
 
 //#define _DEBUGGING_PUSH_POP
 
-#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
-#define _DEBUGGING_TEMP
+//#define _DEBUGGING_TEMP
 //#define _DEBUGGING_BEST_STUFF
 //#define DEBUG_ASPIRATION
 // extern bool bMoreDebug;
@@ -85,7 +85,7 @@ bool global_debug_flag = false;
     FILE *fpDebug = NULL;
     char szDebug[512];
     bool bSuppressOutput = false;
-    Score dSupressValue = 0.0;
+    Score dSupressValue = (Score)0;
 
     static int clear_file_keep_fp(FILE *fp)
     {
@@ -930,6 +930,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     nFarts = 0;             // Queiseence low level (forced eval) this move
     nSemiFarts = 0;         // Queiseence low level (forced eval) this move
     n_futility_tosses = 0;
+    n_delta_tosses = 0;
     //
     // Clear debug every move
     // #ifdef _DEBUGGING_TO_FILE 
@@ -1279,7 +1280,8 @@ void MinimaxAI::playground(int iPhase) {
    
     // cout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
-    // cout << " n_futility_tosses " << n_futility_tosses << endl;
+    cout << " n_futility_tosses " << n_futility_tosses << endl;
+    cout << " n_delta_tosses " << n_delta_tosses << endl;
     // cout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
 
     //engine.debug_print_repetition_table();
@@ -2555,6 +2557,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     } else {
 
+      
         assert (qPlys <= MAX_QPLY_H);  // already dealt with this
         if (qPlys > MAX_QPLY_L) {
             engine.sort_unquiet_moves_qsearch_H(legal_moves, engine.all_unquiet_moves[nPlys]);
@@ -2702,7 +2705,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
 // returns 0 if success, 1 if abort (ABORT_SCORE) happened
 int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
-                       bool in_check,       // Used only by delta pruning
+                       bool in_check,
                        Score d_stand_pat, 
                        const ShumiChess::Move& move_last,       // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                        const vector<ShumiChess::Move>* pMoves, 
@@ -2769,14 +2772,59 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                 if (is_killer_here) killer_tried++;
             }
         #endif
+
+
+
+        // Delta pruning normally applies only when:
+        //      DONE You are in quiescence search.
+        //      DONE The side to move (engine.game_board.turn) is not in check.
+        //      DONE The candidate is a capture.
+        //      Subtract the promotion value
+        //      The position is not near a mate score.
+        //      DONE A safety margin (DELTA_MARGIN) is included.
+        //      DONE You must have a stand_pat score (cp_score_best / d_stand_pat) 
+        //
+        #define DELTA_MARGIN_CP 300
+        if (0) {
+            if ((depth == 0) &&
+                (!in_check) &&
+                (nSearched > 0) &&                 // always search first move
+                (!IS_MATE_SCORE(alpha)) &&
+                (m.capture != Piece::NONE) &&
+                (m.promotion == Piece::NONE)) {
+
+                const Score capture_value_cp = engine.game_board.centipawn_score_of(m.capture);
+
+                const Score optimistic_score =
+                    d_stand_pat +
+                    capture_value_cp +
+                    DELTA_MARGIN_CP;
+
+                if (optimistic_score <= alpha) {
+                    // We cant hardly get back to this score
+                    const bool is_a_check =
+                        (m.color == ShumiChess::Color::WHITE)
+                            ? engine.in_check_after_move_fast_t<
+                                ShumiChess::Color::WHITE, false>(m)
+                            : engine.in_check_after_move_fast_t<
+                                ShumiChess::Color::BLACK, false>(m);
+
+                    if (!is_a_check) {
+                        // prune this capture
+                        n_delta_tosses++;
+                        continue;
+                    }
+                }
+            }
+        }
+
         //
         // Futility pruning 
         //
-        // Note: fix me
-        if (1) {
+        if (0) {        // Note: fix me
         //if (Features_mask & _FEATURE_FUTILITY_PRUNE) {
 
-            if ( (depth == 1) &&            // last regular-search ply
+            if ( (depth == 1) &&             // last regular-search ply
                 (nSearched > 0) &&           // always search first move
                 (!IS_MATE_SCORE(alpha)) ) {
 
@@ -2785,8 +2833,6 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                     (m.promotion == Piece::NONE);   
             
                 if (!in_check) {
-
-  
 
                     if (bBoringQuietMove) { 
 
@@ -2827,6 +2873,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                     }
                 }
             }
+
         }
 
         // push move
@@ -2885,7 +2932,12 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         // The third part of negamax: negate the score to keep it relative.
         Score d_return_score = get<0>(ret_val);     // units are pawns
         Move d_return_move = get<1>(ret_val);
-
+  
+        // abort logic
+        if (d_return_score == ABORT_SCORE) {
+            //cout << "\n! STOP CALCULATION now \n" << endl;
+            return 1;
+        }
 
         // We are done with the recursion. Remove zkey from the 3-time rep collector.
         assert(!engine.three_time_rep_stack.empty());   // Better not be empty, we just pushed a move up above.
@@ -2941,12 +2993,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         // negamax, reverse returned score.  
         Score d_score_value = -d_return_score;
 
-        // abort logic
-        if (d_return_score == ABORT_SCORE) {
-            //cout << "\n! STOP CALCULATION now \n" << endl;
-            return 1;
-        }
-
+      
         #ifdef _DEBUGGING_MOVE_CHAIN    // Print negamax (relative) score of move
 
             if (!bSuppressOutput) {
