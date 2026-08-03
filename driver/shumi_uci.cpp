@@ -359,7 +359,7 @@ int main()
             int search_time_to_use = time_to_use;
             MinimaxAI::SearchTimeControl time_control;
 
-            // hard abort debug only
+            // hard abort 
             time_control.hard_abort_threshold_ms = 10000;
    
 
@@ -476,6 +476,7 @@ int main()
             int centiPawnsRel = (int)convert_to_CP(minimax_ai->d_best_move_score_rel);
 
             //std::cout << "info nps " << nps << "\n";
+            std::cout << "info string testing";
             std::cout << "info" 
                     << " depth " << minimax_ai->max_attained_depth
                     << " seldepth " << minimax_ai->max_attained_qdepth

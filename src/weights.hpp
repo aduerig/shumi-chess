@@ -113,7 +113,7 @@ private:
     static constexpr int QUEEN_OUT_EARLY_WGHT = -30;    // for landing on center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -170;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). Only in opening.
     //static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
-    static constexpr int BLOCKED_HOME_BISHOP_WGHT = 10; // only in opening. Bishop on home square blocked by 2 pawns
+    static constexpr int BLOCKED_HOME_BISHOP_WGHT = 20; // only in opening. Bishop on home square blocked by 2 pawns
     
     static constexpr int DEVELOPMENT_OPENINGK_WGHT = 14;  // Opening only.  Counts knights, off their starting square.
     static constexpr int DEVELOPMENT_OPENINGB_WGHT = 22;  // Opening only.  Counts bishops, off their starting square.

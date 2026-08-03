@@ -25,9 +25,9 @@
 //      define _SUPRESSING_MOVE_HISTORY_RESULTS
 //      lower DEBUG_MAX_MOVES to 90 or so
 //
-//#define _DEBUGGING_TO_FILE1
+#define _DEBUGGING_TO_FILE
 
-#ifdef _DEBUGGING_TO_FILE1
+#ifdef _DEBUGGING_TO_FILE
     extern FILE *fpDebug;
 #endif
 
@@ -102,6 +102,7 @@ Engine::Engine() {
 
     //cout << "Created new engine" << us << endl;
 
+
 }
 
 // This routine is called only in tests
@@ -118,6 +119,11 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
     auto now = high_resolution_clock::now().time_since_epoch();
     auto us  = duration_cast<microseconds>(now).count();
     rng.seed(static_cast<unsigned>(us));
+
+
+    #ifdef _DEBUGGING_TO_FILE
+        fprintf(fpDebug, "\nnew game (from fen)\n");
+    #endif
 }
 
 
@@ -126,7 +132,9 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 // By "reset engine" is meant: "new game". 
 //
 void Engine::reset_engine() {         // New game.
-    std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
+    
+ 
+    //std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
 
     // Setup the board
     //
@@ -143,8 +151,8 @@ void Engine::reset_engine() {         // New game.
     //   then g5 with CRAZY_IVAN
     //game_board = GameBoard("r1bqkbnr/ppppp1pp/2n2p2/8/8/1PN2N2/P1PPPPPP/R1BQKB1R b KQkq - 3 3");
 
-    // Or you can pick a random simple endgame FEN. (maybe)
-    //// Test: Black should ALWAYS win (hundreds of games) at: -d6 -t1000 -r0.
+    // // Or you can pick a random simple endgame FEN. (maybe)
+    // // Test: Black should ALWAYS win (hundreds of games) at: -d6 -t1000 -r0.
     // {
     //     vector<Move> v;
     //     v.reserve(MAX_MOVES);
@@ -1710,30 +1718,9 @@ void Engine::sort_unquiet_moves_qsearch_H(
 
                 // Very late in analysis! So discard negative SEE captures below one pawn.
                 int testValue = game_board.SEE_for_capture_new(game_board.turn, mv, nullptr);
-                
-                #ifdef _DEBUGGING_TO_FILE1 
-                    if (testValue > 0) {     // centipawns
-                    
-                        fprintf(fpDebug,"\nSEE OK: %ld ", testValue);
-    
-                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                        
-                        print_move_history_to_file(fpDebug, "SEE hist");
-                        fputc('\n', fpDebug);
-                    }
-                #endif
 
                 if (testValue <= -74) {     // centipawns
-                    #ifdef _DEBUGGING_TO_FILE1 
-                    
-                        fprintf(fpDebug,"\nSEE ELIM: %ld ", testValue);
-    
-                        print_move_to_file(mv, -2, (GameState::INPROGRESS), false, false, false, fpDebug); 
-                        
-                        print_move_history_to_file(fpDebug, "SEE hist");
-                        fputc('\n', fpDebug);
-                    #endif
-
+                  
                     // Dont sort up this capture, prune it.
                     continue;
                 }
@@ -2924,7 +2911,7 @@ int Engine::get_legal_moves_fast(Color c, bool caps_only, bool b_check_mode, vec
 }
 
 // I am the main one called.
-// in check mode it is only trying to decide wether its REALLY 0 moves or not. 
+// in "check mode" it is only trying to decide wether its REALLY 0 moves or not. 
 // So it returns if it finds just one move.
 template<Color c, bool caps_only>
 int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
@@ -3063,6 +3050,28 @@ int Engine::get_legal_moves_fast_t(bool b_check_mode, vector<Move>& MovesOut) {
     assert(n_psuedo_legal_moves_found>= n_leg_moves_found);
     return n_leg_moves_found;
 }
+
+
+
+
+bool Engine::is_legal_move(const Move& mv) {
+
+    vector<Move> moves;
+    int iLegalMoves;
+    if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE, false>(false, moves);
+    else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK, false>(false, moves);
+
+    for (const Move& m : moves) {
+        if (mv == m) return true;
+    }
+
+    return false;
+}
+
+
+
+
+
 
 // Explicit template instantiations
 template void Engine::add_psuedo_move_to_vector<Color::WHITE, false, false, false, false>(vector<Move>&, Square, ull, Piece, Square);

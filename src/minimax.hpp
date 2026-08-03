@@ -22,6 +22,8 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 //#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
 
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -48,6 +50,8 @@ constexpr int RANDOM_MOVE_CANDIDATES = 7;             // I must be greater than 
 
 class MinimaxAI {
 public:
+
+    ull next_TT_pulse_nodes = 0;            // debug only
 
     struct SearchTimeControl {
         ull clock_at_move_start = 0;       // Milliseconds remaining before this search.
@@ -83,7 +87,7 @@ public:
     int iNodes_per_Second = 0;
 
     // Root aspiration-window controls and statistics. Scores are in pawns.
-    static constexpr bool ASPIRATION_ENABLED = true;
+    static constexpr bool ASPIRATION_ENABLED = true;        // debug only set to false to stop aspiration
     static constexpr int ASPIRATION_MIN_DEPTH = 2;
 
     static constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );

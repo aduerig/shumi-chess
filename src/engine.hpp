@@ -116,6 +116,9 @@ class Engine {
 
         template<Color c, bool caps_only> int get_psuedo_legal_moves_t(vector<Move>& all_psuedo_legal_moves);
 
+
+        bool is_legal_move(const Move& m);
+
         // int material_balanceW_cp;        // always positive
         // int material_balanceB_cp;        // always positive
 
