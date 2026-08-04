@@ -2,7 +2,13 @@
 #include <math.h>
 
 #include <chrono>
+#ifdef _WIN32
 #include <conio.h>
+#else
+// conio.h is Microsoft-only. On other platforms wait on a line instead of a keystroke.
+#include <iostream>
+static inline int _getch() { return std::cin.get(); }
+#endif
 #include <cstdio>
 #include <iostream>
 #include <limits>

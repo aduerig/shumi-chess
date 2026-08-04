@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <cassert>
+#include <climits>
+#include <cstring>
 #include <iostream>
 #include <stack>
 #include <vector>

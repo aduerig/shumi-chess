@@ -252,7 +252,18 @@ public:
 
     ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
                                                 , int iRandomMoves, int feat
-                                                , SearchTimeControl time_control = {});
+                                                , SearchTimeControl time_control);
+
+    // Overload rather than a defaulted argument: a nested class's default member
+    // initializers are not available inside the enclosing class definition, so
+    // "= {}" on the declaration above is ill-formed. A function body is parsed
+    // after the enclosing class is complete, so building the default here is fine.
+    ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
+                                                , int iRandomMoves, int feat)
+    {
+        return get_move_iterative_deepening(i_time_requested, max_deepening_requested, player_id
+                                          , iRandomMoves, feat, SearchTimeControl{});
+    }
 
     std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
                                             , Score alpha, Score beta

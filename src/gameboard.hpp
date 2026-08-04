@@ -539,7 +539,7 @@ class GameBoard {
         ull B_KSIDE_MASK = 0b10001000'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
         ull B_QSIDE_MASK = 0b00001001'00000000'00000000'00000000'00000000'00000000'00000000'00000000;
 
-        void GameBoard::init_castle_touch_tables();
+        void init_castle_touch_tables();
         uint8_t white_castle_touch[64];         // These do not have any higher move flags
         uint8_t black_castle_touch[64];
 

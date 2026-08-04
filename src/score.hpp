@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <cmath>
+
 
 //#define SCORE_AS_INT
 
