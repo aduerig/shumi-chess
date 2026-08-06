@@ -33,13 +33,396 @@ using namespace std::chrono;
 
 #include <fstream>
 
-static std::ofstream uci_debug_log(
-    "C:\\programming\\shumi-chess\\uci_debug.txt",
-    std::ios::app
-);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static std::ofstream uci_debug_log;
+
+
+static void make_engine_move(Engine& engine, Move move);
+static string move_to_uci(const Move& move);
+static bool make_uci_move(Engine& engine, const string& move_uci);
+static bool is_prefix(const vector<string>& old_moves, const vector<string>& new_moves);
+static bool parse_position_command(const string& line, string& new_base, vector<string>& new_moves);
+static bool create_position(const string& base,
+                            const vector<string>& moves,
+                            Engine*& engine,
+                            MinimaxAI*& minimax_ai);
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+
+    // open debug file
+    uci_debug_log.open(
+        "C:\\programming\\shumi-chess\\uci_debug.txt",
+        std::ios::out | std::ios::trunc
+    );
+
+    if (!uci_debug_log.is_open()) {
+        std::cerr << "Could not open uci_debug.txt\n";
+        return 1;
+    }
+    uci_debug_log << "STARTING main()" << endl;
+
+
+    int iMovesInGame = 0;
+
+    // 
+    // Decide on Shumi engine chess arguments
+    //     7, 17000 is about 40 moves in 5 minumtes
+    //
+    int depth_to_use = 5;           // A minimum. Not  too large or SHumi loses in tuime control
+    int time_to_use = 10000;        // Not reallu used, the time control structure has all the data 
+
+    ull nominal_time_per_move[2] = {0, 0};
+    int previous_moves_to_go[2] = {0, 0};
+    //int max_ply_to_play = 4;
+    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
+    int flags = 0;
+    flags = flags | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+    flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
+
+    int iRandomMoves = 0;
+    if (iMovesInGame < 3) iRandomMoves = 1;     // Just one random move.
+
+
+
+    constexpr int MAX_FENS = 10;
+    string FENs[MAX_FENS];
+
+
+    FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Random Petrov
+    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giaco
+    int iPositions = 0;
+
+    Engine* engine = nullptr;
+    MinimaxAI* minimax_ai = nullptr;
+    bool have_position = false;
+    std::string current_base;
+    std::vector<std::string> moves_so_far;
+
+    std::string line;
+
+    ull current_go_id = 0;
+    ull this_go_id = 0;
+
+
+    while (std::getline(std::cin, line)) {
+
+        // Echo line to debug log
+        uci_debug_log << line << endl;
+
+        if (line == "uci") {
+        //************************************************************************************** */
+            std::cout << "id name ShumiChess\n";
+            std::cout << "id author Paul Duerig\n";
+            std::cout << "uciok\n";
+            std::cout.flush();
+
+        } else if (line == "isready") {
+        //************************************************************************************** */
+            std::cout << "readyok\n";
+            std::cout.flush();
+
+        } else if (line == "ucinewgame") {
+        //************************************************************************************** */
+            // clear TT, repetition table, history, etc.
+            current_base.clear();
+            moves_so_far.clear();
+            have_position = false;
+            nominal_time_per_move[0] = nominal_time_per_move[1] = 0;
+            previous_moves_to_go[0] = previous_moves_to_go[1] = 0;
+
+        } else if (line.rfind("position ", 0) == 0) {
+        //************************************************************************************** */
+            // set board from "startpos" or "fen"
+            // then play the listed moves
+
+            // position startpos
+            // position startpos moves e2e4 e7e5 g1f3
+            // position fen <FEN>
+            // position fen <FEN> moves e2e4 e7e5
+
+            string new_base;
+            vector<string> new_moves;
+
+            if (!parse_position_command(line, new_base, new_moves)) {
+                uci_debug_log << "Invalid position command: " << line << endl;
+                continue;
+            }
+
+            bool position_updated = false;
+
+            if (!have_position || engine == nullptr || minimax_ai == nullptr) {
+
+                iMovesInGame = 0;
+                position_updated = create_position(new_base, new_moves, engine, minimax_ai);
+
+            } else if (new_base == current_base && is_prefix(moves_so_far, new_moves)) {
+
+                position_updated = true;
+
+                for (size_t i = moves_so_far.size(); i < new_moves.size(); i++) {
+                    if (!make_uci_move(*engine, new_moves[i])) {
+                        position_updated = false;
+                        break;
+                    }
+                }
+
+                if (!position_updated) {
+                    iMovesInGame = 0;
+                    position_updated = create_position(new_base, new_moves, engine, minimax_ai);
+                }
+            } else {
+                iMovesInGame = 0;
+                position_updated = create_position(new_base, new_moves, engine, minimax_ai);
+            }
+
+            if (!position_updated) {
+                uci_debug_log << "Could not apply position command: " << line << endl;
+                continue;
+            }
+
+            current_base = new_base;
+            moves_so_far = new_moves;
+            have_position = true;
+
+
+
+
+
+        } else if (line == "go" || line.rfind("go ", 0) == 0) {
+
+            this_go_id = current_go_id;
+            current_go_id++;
+
+            if (!have_position || engine == nullptr || minimax_ai == nullptr) {
+                vector<string> no_moves;
+
+                if (!create_position("startpos", no_moves, engine, minimax_ai)) {
+                    std::cout << "bestmove 0000\n";
+                    std::cout.flush();
+                    continue;
+                }
+
+                current_base = "startpos";
+                moves_so_far.clear();
+                have_position = true;
+            }
+
+            long long white_time = -1;
+            long long black_time = -1;
+            long long move_time = -1;
+            int moves_to_go = 0;
+
+            istringstream go_command(line);
+            string go_token;
+            go_command >> go_token; // "go"
+            while (go_command >> go_token) {
+                if (go_token == "wtime") go_command >> white_time;
+                else if (go_token == "btime") go_command >> black_time;
+                else if (go_token == "movetime") go_command >> move_time;
+                else if (go_token == "movestogo") go_command >> moves_to_go;
+            }
+
+            //cout << endl << " times: " << white_time << "  " << black_time << endl;
+
+            int search_time_to_use = time_to_use;
+            MinimaxAI::SearchTimeControl time_control;
+
+            // hard abort 
+            time_control.hard_abort_threshold_ms = 10000;
+   
+
+            if (move_time > 0) {    
+                // A "movetime" parameter was passed by cutechess. So Cutechess wants a constant time per move.
+
+                // An explicit UCI movetime is a per-move limit, not a multi-move
+                // clock, so borrowing is deliberately disabled.
+                search_time_to_use = static_cast<int>(std::min<long long>(
+                    move_time,
+                    std::numeric_limits<int>::max()));
+
+            } else if (moves_to_go > 0) {
+                // A "wtimew"/"btime" parameter was passed by cutechess. So Cutechess wants a constant time per set of moves.
+
+                const int side = engine->game_board.turn == Color::WHITE ? 0 : 1;
+                const long long side_clock = side == 0 ? white_time : black_time;
+
+                if (side_clock > 0) {
+                    const ull clock_at_move_start = static_cast<ull>(side_clock);
+
+                    const ull reserve = std::min<ull>(500, clock_at_move_start / 100);
+
+                    // Establish k once per time-control period. Recomputing k as
+                    // clock/movestogo on every move would erase accumulated debt.
+                    if (nominal_time_per_move[side] == 0
+                        || moves_to_go > previous_moves_to_go[side]) {
+                        const ull usable_clock = clock_at_move_start - reserve;
+                        nominal_time_per_move[side] = std::max<ull>(
+                            1,
+                            usable_clock / static_cast<ull>(moves_to_go));
+                    }
+                    previous_moves_to_go[side] = moves_to_go;
+
+                    const ull k = nominal_time_per_move[side];
+                    search_time_to_use = static_cast<int>(std::min<ull>(
+                        k,
+                        static_cast<ull>(std::numeric_limits<int>::max())));
+
+                    time_control.clock_at_move_start = clock_at_move_start;
+                    time_control.moves_left = moves_to_go;
+                    time_control.nominal_time_per_move = k;
+
+                    // Allow this move to borrow up to one full nominal move's time.
+                    // If k is 10000 ms, Shumi may add up to 10000 ms beyond the normal k budget.
+                    // This is the main direct knob for how aggressive borrowing can be.
+                    time_control.maximum_loan = 3*k/2;
+
+                    // Protect future moves from being starved after borrowing on this move.
+                    // Here each future move must be left at least k / 4 time, but never less than 1 ms.
+                    // Lowering this makes borrowing more aggressive; raising it makes borrowing safer.
+                    time_control.minimum_future_time = std::max<ull>(1, k / 4);
+
+                    // Keep this much clock completely outside Shumi's usable budget.
+                    // The search budgets from clock_at_move_start - reserve, not the full clock.
+                    // This protects against overshoot, GUI delay, and stop-check granularity.
+                    time_control.clock_reserve = reserve;
+                }
+            }
+
+            //
+            // Get "best move" from Shumi
+  
+            uci_debug_log << "SEARCH START go_id=" << this_go_id << endl;
+
+            Move move = minimax_ai->get_move_iterative_deepening(search_time_to_use, depth_to_use, player_id
+                                                                , iRandomMoves, flags, time_control);
+
+            uci_debug_log << "SEARCH RETURNED go_id=" << this_go_id << endl;
+                                                                
+            if (move.piece_type == Piece::NONE) {
+                cerr << "No legal move returned at ply " << endl;
+                std::cout << "bestmove 0000\n";
+                std::cout.flush();
+                continue;
+            }
+
+            // Translate this Move into UCI coordinate notation
+            string move_str = move_to_uci(move);
+            engine->move_into_string(move);
+            string move_str_alebriac = engine->move_string;
+
+            // bitboards_to_algebraic
+
+            //
+            // Make Shumi move in the Shumi engine
+            make_engine_move(*engine, move);
+            moves_so_far.push_back(move_str);
+
+
+            int nodesSeen = minimax_ai->nodes_visited;
+
+            //
+            // Show move info
+            // options to the "info" command sent to the "GUI"
+            //
+            // depth 8                  // search depth reached
+            // seldepth 14              // deepest selective/qsearch depth reached
+            // time 1234                // elapsed search time in milliseconds
+            // nodes 456789             // total nodes searched
+            // nps 1234567              // nodes per second
+            // score cp 34              // score in centipawns
+            // score mate 3             // mate in 3
+            // score cp 34 lowerbound   // score is at least this good
+            // score cp 34 upperbound   // score is at most this good
+            // pv e2e4 e7e5 g1f3        // principal variation
+            // multipv 2                // this is the second-best PV line
+            // currmove e2e4            // move currently being searched
+            // currmovenumber 5         // current move number in the move list
+            // hashfull 123             // hash fullness, 0 to 1000
+            // tbhits 0                 // tablebase hits
+            // cpuload 850              // CPU load, 0 to 1000
+            // string text here         // debug/status text
+            // refutation e2e4 e7e5     // refutation line for a move
+            // currline 1 e2e4 e7e5     // current line for CPU/thread 1
+
+            //int nps = 1234567;
+            int nps = minimax_ai->iNodes_per_Second;
+
+            //int centiPawnsRel = (int)(minimax_ai->d_best_move_score_rel * 100.0);
+            int centiPawnsRel = (int)convert_to_CP(minimax_ai->d_best_move_score_rel);
+
+            //std::cout << "info nps " << nps << "\n";
+            std::cout << "info string testing\n";
+            std::cout << "info" 
+                    << " depth " << minimax_ai->max_attained_depth
+                    << " seldepth " << minimax_ai->max_attained_qdepth
+                    << " score cp " << centiPawnsRel
+                    << " nodes " << nodesSeen
+                    << " nps " << nps
+                    << "\n";
+
+
+            // Show move
+            iMovesInGame++;
+
+            // if (this_go_id != current_go_id) {
+            //     assert(0);
+            // }
+
+
+            uci_debug_log << move_str_alebriac << " SENDING bestmove " << move_str << " go_id=" << this_go_id << endl;
+
+            std::cout << "bestmove " << move_str << "\n";
+            std::cout.flush();
+
+            // // cerr << "\nPly " << ply << " "
+            // //      << utility::representation::color_to_string(move.color)
+            // //      << " move: " << move_to_uci(move) << endl;
+            // std::cout << "bestmove " << from_str << to_str << cpromo << "\n";
+            std::cout.flush();
+
+
+        } else if (line == "stop") {
+            std::cout << "stop ok" << endl;
+            std::cout.flush();
+
+
+        } else if (line == "quit") {
+            uci_debug_log << "quit received" << endl;
+            uci_debug_log.flush();
+            break;
+        }
+    }
+
+    uci_debug_log << "UCI INPUT LOOP ENDED"
+              << " eof=" << std::cin.eof()
+              << " fail=" << std::cin.fail()
+              << " bad=" << std::cin.bad()
+              << endl;
+
+
+    delete minimax_ai;
+    delete engine;
+
+
+    uci_debug_log << "Shumi UCI exiting normally\n";
+    uci_debug_log.flush();
+    uci_debug_log.close();
+
+    return 0;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 static void make_engine_move(Engine& engine, Move move)
 {
@@ -190,329 +573,4 @@ static bool create_position(const string& base,
     engine = new_engine;
     minimax_ai = new_minimax_ai;
     return true;
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-int main()
-{
-    int iMovesInGame = 0;
-
-    // 
-    // Decide on Shumi engine chess arguments
-    //     7, 17000 is about 40 moves in 5 minumtes
-    //
-    int depth_to_use = 5;           // A minimum. Not  too large or SHumi loses in tuime control
-    int time_to_use = 10000;        // Not reallu used, the time control structure has all the data 
-
-    ull nominal_time_per_move[2] = {0, 0};
-    int previous_moves_to_go[2] = {0, 0};
-    //int max_ply_to_play = 4;
-    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
-    int flags = 0;
-    flags = flags | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
-    flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
-
-    int iRandomMoves = 0;
-    if (iMovesInGame < 3) iRandomMoves = 1;     // Just one random move.
-
-
-
-    constexpr int MAX_FENS = 10;
-    string FENs[MAX_FENS];
-
-
-    FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Random Petrov
-    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giaco
-    int iPositions = 0;
-
-    Engine* engine = nullptr;
-    MinimaxAI* minimax_ai = nullptr;
-    bool have_position = false;
-    std::string current_base;
-    std::vector<std::string> moves_so_far;
-
-    std::string line;
-
-
-
-    while (std::getline(std::cin, line)) {
-
-        uci_debug_log << line << endl;
-
-        if (line == "uci") {
-        //************************************************************************************** */
-            std::cout << "id name ShumiChess\n";
-            std::cout << "id author Paul Duerig\n";
-            std::cout << "uciok\n";
-            std::cout.flush();
-
-        } else if (line == "isready") {
-        //************************************************************************************** */
-            std::cout << "readyok\n";
-            std::cout.flush();
-
-        } else if (line == "ucinewgame") {
-        //************************************************************************************** */
-            // clear TT, repetition table, history, etc.
-            current_base.clear();
-            moves_so_far.clear();
-            have_position = false;
-            nominal_time_per_move[0] = nominal_time_per_move[1] = 0;
-            previous_moves_to_go[0] = previous_moves_to_go[1] = 0;
-
-        } else if (line.rfind("position ", 0) == 0) {
-        //************************************************************************************** */
-            // set board from "startpos" or "fen"
-            // then play the listed moves
-
-            // position startpos
-            // position startpos moves e2e4 e7e5 g1f3
-            // position fen <FEN>
-            // position fen <FEN> moves e2e4 e7e5
-
-            string new_base;
-            vector<string> new_moves;
-
-            if (!parse_position_command(line, new_base, new_moves)) {
-                uci_debug_log << "Invalid position command: " << line << endl;
-                continue;
-            }
-
-            bool position_updated = false;
-
-            if (!have_position || engine == nullptr || minimax_ai == nullptr) {
-
-                iMovesInGame = 0;
-                position_updated = create_position(new_base, new_moves, engine, minimax_ai);
-
-            } else if (new_base == current_base && is_prefix(moves_so_far, new_moves)) {
-
-                position_updated = true;
-
-                for (size_t i = moves_so_far.size(); i < new_moves.size(); i++) {
-                    if (!make_uci_move(*engine, new_moves[i])) {
-                        position_updated = false;
-                        break;
-                    }
-                }
-
-                if (!position_updated) {
-                    iMovesInGame = 0;
-                    position_updated = create_position(new_base, new_moves, engine, minimax_ai);
-                }
-            } else {
-                iMovesInGame = 0;
-                position_updated = create_position(new_base, new_moves, engine, minimax_ai);
-            }
-
-            if (!position_updated) {
-                uci_debug_log << "Could not apply position command: " << line << endl;
-                continue;
-            }
-
-            current_base = new_base;
-            moves_so_far = new_moves;
-            have_position = true;
-
-
-
-
-
-        } else if (line == "go" || line.rfind("go ", 0) == 0) {
-
-            if (!have_position || engine == nullptr || minimax_ai == nullptr) {
-                vector<string> no_moves;
-
-                if (!create_position("startpos", no_moves, engine, minimax_ai)) {
-                    std::cout << "bestmove 0000\n";
-                    std::cout.flush();
-                    continue;
-                }
-
-                current_base = "startpos";
-                moves_so_far.clear();
-                have_position = true;
-            }
-
-            long long white_time = -1;
-            long long black_time = -1;
-            long long move_time = -1;
-            int moves_to_go = 0;
-
-            istringstream go_command(line);
-            string go_token;
-            go_command >> go_token; // "go"
-            while (go_command >> go_token) {
-                if (go_token == "wtime") go_command >> white_time;
-                else if (go_token == "btime") go_command >> black_time;
-                else if (go_token == "movetime") go_command >> move_time;
-                else if (go_token == "movestogo") go_command >> moves_to_go;
-            }
-
-            //cout << endl << " times: " << white_time << "  " << black_time << endl;
-
-            int search_time_to_use = time_to_use;
-            MinimaxAI::SearchTimeControl time_control;
-
-            // hard abort 
-            time_control.hard_abort_threshold_ms = 10000;
-   
-
-            if (move_time > 0) {    
-                // A "movetime" parameter was passed by cutechess. So Cutechess wants a constant time per move.
-
-                // An explicit UCI movetime is a per-move limit, not a multi-move
-                // clock, so borrowing is deliberately disabled.
-                search_time_to_use = static_cast<int>(std::min<long long>(
-                    move_time,
-                    std::numeric_limits<int>::max()));
-
-            } else if (moves_to_go > 0) {
-                // A "wtimew"/"btime" parameter was passed by cutechess. So Cutechess wants a constant time per set of moves.
-
-                const int side = engine->game_board.turn == Color::WHITE ? 0 : 1;
-                const long long side_clock = side == 0 ? white_time : black_time;
-
-                if (side_clock > 0) {
-                    const ull clock_at_move_start = static_cast<ull>(side_clock);
-
-                    const ull reserve = std::min<ull>(500, clock_at_move_start / 100);
-
-                    // Establish k once per time-control period. Recomputing k as
-                    // clock/movestogo on every move would erase accumulated debt.
-                    if (nominal_time_per_move[side] == 0
-                        || moves_to_go > previous_moves_to_go[side]) {
-                        const ull usable_clock = clock_at_move_start - reserve;
-                        nominal_time_per_move[side] = std::max<ull>(
-                            1,
-                            usable_clock / static_cast<ull>(moves_to_go));
-                    }
-                    previous_moves_to_go[side] = moves_to_go;
-
-                    const ull k = nominal_time_per_move[side];
-                    search_time_to_use = static_cast<int>(std::min<ull>(
-                        k,
-                        static_cast<ull>(std::numeric_limits<int>::max())));
-
-                    time_control.clock_at_move_start = clock_at_move_start;
-                    time_control.moves_left = moves_to_go;
-                    time_control.nominal_time_per_move = k;
-
-                    // Allow this move to borrow up to one full nominal move's time.
-                    // If k is 10000 ms, Shumi may add up to 10000 ms beyond the normal k budget.
-                    // This is the main direct knob for how aggressive borrowing can be.
-                    time_control.maximum_loan = 3*k/2;
-
-                    // Protect future moves from being starved after borrowing on this move.
-                    // Here each future move must be left at least k / 4 time, but never less than 1 ms.
-                    // Lowering this makes borrowing more aggressive; raising it makes borrowing safer.
-                    time_control.minimum_future_time = std::max<ull>(1, k / 4);
-
-                    // Keep this much clock completely outside Shumi's usable budget.
-                    // The search budgets from clock_at_move_start - reserve, not the full clock.
-                    // This protects against overshoot, GUI delay, and stop-check granularity.
-                    time_control.clock_reserve = reserve;
-                }
-            }
-
-            //
-            // Get "best move" from Shumi
-  
-
-            Move move = minimax_ai->get_move_iterative_deepening(search_time_to_use, depth_to_use, player_id
-                                                                , iRandomMoves, flags, time_control);
-
-            if (move.piece_type == Piece::NONE) {
-                cerr << "No legal move returned at ply " << endl;
-                std::cout << "bestmove 0000\n";
-                std::cout.flush();
-                continue;
-            }
-
-            // Translate this Move into UCI coordinate notation
-            string move_str = move_to_uci(move);
-
-            //
-            // Make Shumi move in the Shumi engine
-            make_engine_move(*engine, move);
-            moves_so_far.push_back(move_str);
-
-
-            int nodesSeen = minimax_ai->nodes_visited;
-
-            //
-            // Show move info
-            // options to the "info" command sent to the "GUI"
-            //
-            // depth 8                  // search depth reached
-            // seldepth 14              // deepest selective/qsearch depth reached
-            // time 1234                // elapsed search time in milliseconds
-            // nodes 456789             // total nodes searched
-            // nps 1234567              // nodes per second
-            // score cp 34              // score in centipawns
-            // score mate 3             // mate in 3
-            // score cp 34 lowerbound   // score is at least this good
-            // score cp 34 upperbound   // score is at most this good
-            // pv e2e4 e7e5 g1f3        // principal variation
-            // multipv 2                // this is the second-best PV line
-            // currmove e2e4            // move currently being searched
-            // currmovenumber 5         // current move number in the move list
-            // hashfull 123             // hash fullness, 0 to 1000
-            // tbhits 0                 // tablebase hits
-            // cpuload 850              // CPU load, 0 to 1000
-            // string text here         // debug/status text
-            // refutation e2e4 e7e5     // refutation line for a move
-            // currline 1 e2e4 e7e5     // current line for CPU/thread 1
-
-            //int nps = 1234567;
-            int nps = minimax_ai->iNodes_per_Second;
-
-            //int centiPawnsRel = (int)(minimax_ai->d_best_move_score_rel * 100.0);
-            int centiPawnsRel = (int)convert_to_CP(minimax_ai->d_best_move_score_rel);
-
-            //std::cout << "info nps " << nps << "\n";
-            std::cout << "info string testing";
-            std::cout << "info" 
-                    << " depth " << minimax_ai->max_attained_depth
-                    << " seldepth " << minimax_ai->max_attained_qdepth
-                    << " score cp " << centiPawnsRel
-                    << " nodes " << nodesSeen
-                    << " nps " << nps
-                    << "\n";
-
-
-            // Show move
-            iMovesInGame++;
-            std::cout << "bestmove " << move_str << "\n";
-            std::cout.flush();
-
-            // // cerr << "\nPly " << ply << " "
-            // //      << utility::representation::color_to_string(move.color)
-            // //      << " move: " << move_to_uci(move) << endl;
-            // std::cout << "bestmove " << from_str << to_str << cpromo << "\n";
-            std::cout.flush();
-
-
-        } else if (line == "stop") {
-            std::cout << "stop ok\n";
-            std::cout.flush();
-
-
-        } else if (line == "quit") {
-            uci_debug_log << "quit received\n";
-            uci_debug_log.flush();
-            uci_debug_log.close();
-            break;
-        }
-    }
-
-    delete minimax_ai;
-    delete engine;
-
-    return 0;
 }

@@ -57,11 +57,11 @@ using namespace utility::bit;
 
 //#define _DEBUGGING_PUSH_POP
 
-#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
-#define _DEBUGGING_TEMP
+//#define _DEBUGGING_TEMP
 //#define _DEBUGGING_BEST_STUFF
 //#define DEBUG_ASPIRATION
 // extern bool bMoreDebug;
@@ -628,13 +628,13 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                 ratio_last = elapsed_time_display_only / last_elapsed_time_display_only;
             }
             last_elapsed_time_display_only = elapsed_time_display_only;
-            if (depth==1) cout << "\n";
-            cout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
+            if (depth==1) cerr << "\n";
+            cerr << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
                         << " msec=" << std::setw(6) << elapsed_time_display_only << '/';
             if (estimated_elapsed_time_available) {
-                cout << static_cast<ull>(estimated_elapsed_time);
+                cerr << static_cast<ull>(estimated_elapsed_time);
             } else {
-                cout << '_';
+                cerr << '_';
             }
 
         #endif
@@ -849,7 +849,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
  
  
     eval_person = (ShumiChess::EvalPersons)player_id;   
-    //eval_person = ShumiChess::CRAZY_IVAN;           // Debug only
+    //eval_person = ShumiChess::CRAZY_IVAN;           // debug only
 
     //cout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     //cout << "\n Player = " << eval_person << endl;
@@ -1207,8 +1207,9 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     
     hard_abort_end();
 
-    //assert(0);
-    bool bISOK = engine.is_legal_move(best_move);
+    //assert(0);            
+
+    bool bISOK = engine.is_legal_move(best_move);       // // debug only
     if (!bISOK) {
         cout << " bad move!!" << endl; 
         cout << " bad move!!" << endl; 
@@ -1528,7 +1529,31 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     // 12 or more. Make the exponential try to follow growth_factor. The "minimum elapsed time", function should return very low values 
     // at depths of 1 - 7. 
 
-    estimated_elapsed_time = static_cast<long double>(elapsed_time) * growth_factor;
+    // elapsed_time is cumulative for the current move search. Keep a cumulative
+    // exponential floor too, so ultra-fast TT2 deepenings do not make the next
+    // deepening estimate unrealistically small.
+    static ull previous_elapsed_time = 0ULL;
+    static long double minimum_elapsed_time = 0.01L;
+
+    // A new move search resets elapsed_time, so reset the minimum curve too.
+    if (elapsed_time < previous_elapsed_time) {
+        minimum_elapsed_time = 0.01L;
+    }
+    previous_elapsed_time = elapsed_time;
+
+    // codex resume 019fc607-1d81-7bf0-8f51-80b50f7c53cb
+    // K was chosen so, with growth_factor 6.0, the minimum cumulative elapsed
+    // curve stays tiny early and reaches about 10ms at deepening 10.
+    const long double K = 0.333L;
+    minimum_elapsed_time *= static_cast<long double>(growth_factor) * K;
+
+    // Take max of the "minimum elapsed time" and the passed in elapsed time". This is what you 
+    // assume the elapsed time of the next level to be. 
+    const long double adjusted_elapsed_time = std::max<long double>(
+        static_cast<long double>(elapsed_time),
+        minimum_elapsed_time);
+
+    estimated_elapsed_time = adjusted_elapsed_time * growth_factor;
 
     // Existing callers specify only a per-move duration. Preserve that behavior
     // until they provide a complete time-control description.
@@ -1636,24 +1661,24 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
   
 
     //  Debug
-    if (nodes_visited >= next_TT_pulse_nodes) {
-        next_TT_pulse_nodes += 5'000'000ULL;
+    // if (nodes_visited >= next_TT_pulse_nodes) {
+    //     next_TT_pulse_nodes += 5'000'000ULL;
 
-        const std::streamsize old_precision = cout.precision();
-        const std::ios::fmtflags old_flags = cout.flags();
+    //     const std::streamsize old_precision = cout.precision();
+    //     const std::ios::fmtflags old_flags = cout.flags();
 
-        cout << "\x1b[31m\nTT pulse"
-            << " depth=" << depth
-            << " nodes=" << nodes_visited
-            << " size=" << TTable2.size()
-            << " buckets=" << TTable2.bucket_count()
-            << " load=" << std::fixed << std::setprecision(4)
-            << TTable2.load_factor()
-            << "\x1b[0m" << endl;
+    //     cout << "\x1b[31m\nTT pulse"
+    //         << " depth=" << depth
+    //         << " nodes=" << nodes_visited
+    //         << " size=" << TTable2.size()
+    //         << " buckets=" << TTable2.bucket_count()
+    //         << " load=" << std::fixed << std::setprecision(4)
+    //         << TTable2.load_factor()
+    //         << "\x1b[0m" << endl;
 
-        cout.precision(old_precision);
-        cout.flags(old_flags);
-    }
+    //     cout.precision(old_precision);
+    //     cout.flags(old_flags);
+    // }
 
 
 
@@ -1762,7 +1787,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    // codex resume 019f87e5-652b-75b1-9311-4d2faf114a4
     if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
         if (should_abort_search_by_time()) {
             cout << endl << "hard abort s" << endl;
@@ -1837,7 +1861,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 // Qualification #1 on probe: 
                 // We are at position X. Use the stored result only if the previous search continued at least as 
                 // many plies beyond X as the current search intends to continue beyond X.
-                // Greater depths mean there was more search after X.
+                // Greater depths mean there was more search after position X.
                 if (entry.depth >= depth) {      
                     is_perfect_match = true;
                     NhitsTT2++;
@@ -1891,7 +1915,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     // bool is_in = is_move_in_list(entry.best_move, legal_moves);
                     // assert(is_in);
 
-                    //TT2_match_move = entry.best_move;
+                    TT2_match_move = entry.best_move;
 
                 }
                 
@@ -2002,7 +2026,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         bool is_top_of_deepening = (depth == top_deepening);
 
-        sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
+        bool bOK = sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
+        assert (bOK);
 
         #ifdef _DEBUGGING_MOVE_SORT
             if (tempMovs != *p_moves_to_loop_over) {
@@ -2039,8 +2064,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }   // END non zero moves to look at
 
-    bool storeTT = ( (Features_mask & _FEATURE_TT2) &&  (n_Multis == 1) );
-    //storeTT = false;        // debug only TT2 off
+    bool storeTT = ( (Features_mask & _FEATURE_TT2) && (n_Multis == 1) );
+    storeTT = false;        // debug only TT2 off
     if (storeTT) {  // store in TT2  (from regular search)
 
         int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
@@ -2513,7 +2538,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     }
 
-    if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
+    if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {         // illegal move from here?
         if (should_abort_search_by_time()) {
             cout << endl << "hard abort q" << endl;
             return { ABORT_SCORE, the_best_move };
@@ -3168,15 +3193,20 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
 //      killer moves         (quiet, bubbled to the front of the "cutoff" quiet slice).
 //      remaining quiet moves
 //  Sorts moves in place.
+//      Explanation: So why sort, if we look at all legal moves? Regular search considers all legal moves except those removed by pruning.
+//      But move ordering still matters: searching strong moves first raises alpha sooner
+//      and causes earlier beta cutoffs, substantially reducing the search tree.
 //
-void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut   // input/output
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut   // input/output
                             , int depth, int nPlys, bool is_top_of_deepening)
 {
     assert(pMovesInOut);
     assert(depth>0);            // This routine should never be called in qsearch
 
     if (pMovesInOut->empty()) {
-        return;
+        return false;
     }
 
     const bool have_last = !engine.move_history.empty();
@@ -3276,9 +3306,6 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
         }
 
 
-
-
-
         // It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
         // later analysis is profited by these killer moves.
         #ifndef DEBUG_NODE_TT2
@@ -3325,6 +3352,7 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     }
 
     //       1. PV from the previous iteration (previous deepening’s best). 
+    //          So this is a reasonable guess to start with. (cpmapered to an arbitrarily ordered move).
     if (is_top_of_deepening) {
         assert(top_deepening > 0);
         assert(top_deepening == depth);
@@ -3339,32 +3367,35 @@ void MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
         if (!(pv_move == Move{})) {       
             auto it = std::find(pMovesInOut->begin(), pMovesInOut->end(), pv_move);
-            if (it != pMovesInOut->end() && it != pMovesInOut->begin()) {
-                // item not first in list
+            bool is_move_in_list = (it != pMovesInOut->end());
+            assert (is_move_in_list);
+            if (it != pMovesInOut->begin()) {
+                // Move in list, but not first in list
                 // moves existing pv_move to front, preserving their relative order.
                 std::rotate(pMovesInOut->begin(), it, it + 1);        
-                // #ifdef _DEBUGGING_MOVE_CHAIN
-                //     fprintf(fpDebug, "PV bubble");
-                // #endif
             }
         }
 
     }
 
     //       0. move from the hash table hit (if any) 
-    if (!(TT2_match_move == Move{})) {       
+    //          The move recorded is meaningful as it was the best move found from that particular position.
+    //          Therefore, when Shumi encounters the same position again, searching its stored best_move first is 
+    //          sensible. It is not necessarily the best move at a greater search depth, but it is a stronger 
+    //          candidate than an arbitrarily ordered move.
+    if (!(TT2_match_move == Move{})) {  
+        //assert(0);   // debug only     
         auto it = std::find(pMovesInOut->begin(), pMovesInOut->end(), TT2_match_move);
-        if (it != pMovesInOut->end() && it != pMovesInOut->begin()) {
-            // item in list, but not first in list already
+        bool is_move_in_list = (it != pMovesInOut->end());
+        assert (is_move_in_list);
+        if (it != pMovesInOut->begin()) {
+            // Move in list, but not first in list.
             // moves existing pv_move to front, preserving their relative order.
             std::rotate(pMovesInOut->begin(), it, it + 1);        
-            #ifdef _DEBUGGING_MOVE_CHAIN
-                fprintf(fpDebug, "TT2_match_move bubble");
-            #endif
         }
     }
 
-  
+    return true;
 }
 
 

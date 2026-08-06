@@ -221,7 +221,7 @@ public:
     void resign();
     bool should_abort_search_by_time();
 
-    void sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
+    bool sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
    
     
     typedef std::chrono::high_resolution_clock::time_point TIME_TYPE;

@@ -17,6 +17,13 @@
 #endif
 #include <assert.h>
 
+//
+// I used to just output status and stuff to "cout". But cutechess needs "cout" for its own
+// communication to the chess engines, so cout must be clean. VSC shows both cout and cerr
+// in the Terminal tab. So why not use cerr?
+//
+//inline std::ostream& shumi_out() {return std::cerr;}
+inline std::ostream& shumi_out() {return std::cout;}
 
 typedef unsigned long long ull;
 typedef uint8_t Square;
@@ -252,7 +259,7 @@ void initialize_rays();
 extern std::vector<Piece> promotion_values;
 
 
-
+// Note: I should not be here
 inline ull get_diagonal_attacks(ull all_pieces_but_self, int square)
 {
     assert(0);
@@ -301,7 +308,7 @@ inline ull get_diagonal_attacks(ull all_pieces_but_self, int square)
     return (ne_attacks | nw_attacks | se_attacks | sw_attacks);
 }
 
-
+// mbb means magic bitboards
 inline ull get_diagonal_attacks_mbb(ull all_pieces_but_self, int square)
 {
     // Get the precomputed magic-bitboard data for this bishop/diagonal square.
@@ -377,7 +384,7 @@ inline ull get_straight_attacks(ull all_pieces_but_self, int square)
     return (n_attacks | s_attacks | w_attacks | e_attacks);
 }
 
-// __declspec(noinline)
+// mbb means magic bitboards
 inline ull get_straight_attacks_mbb(ull all_pieces_but_self, int square)
 {
     const tables::movegen::StraightMagicEntry& entry = tables::movegen::straight_magic_entries[square];

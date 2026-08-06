@@ -25,7 +25,7 @@
 //      define _SUPRESSING_MOVE_HISTORY_RESULTS
 //      lower DEBUG_MAX_MOVES to 90 or so
 //
-#define _DEBUGGING_TO_FILE
+//#define _DEBUGGING_TO_FILE
 
 #ifdef _DEBUGGING_TO_FILE
     extern FILE *fpDebug;
