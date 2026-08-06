@@ -2,7 +2,9 @@
 #include <math.h>
 
 #include <chrono>
+#ifdef _WIN32
 #include <conio.h>
+#endif
 #include <cstdio>
 #include <iostream>
 #include <limits>

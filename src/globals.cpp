@@ -1,4 +1,5 @@
 #include <globals.hpp>
+#include <utility.hpp>      // for the definitions of the utility::bit helpers globals.hpp only forward declares
 #include <limits>
 #include <algorithm>
 
