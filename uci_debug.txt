@@ -7,419 +7,236 @@ isready
 go wtime 300000 btime 300000 movestogo 40
 SEARCH START go_id=0
 SEARCH RETURNED go_id=0
-e4 SENDING bestmove e2e4 go_id=0
-position startpos moves e2e4 c7c6
+c4 SENDING bestmove c2c4 go_id=0
+position startpos moves c2c4 c7c5
 isready
-go wtime 296770 btime 270106 movestogo 39
+go wtime 296951 btime 282433 movestogo 39
 SEARCH START go_id=1
 SEARCH RETURNED go_id=1
-d4 SENDING bestmove d2d4 go_id=1
-position startpos moves e2e4 c7c6 d2d4 d7d5
+Nf3 SENDING bestmove g1f3 go_id=1
+position startpos moves c2c4 c7c5 g1f3 g8f6
 isready
-go wtime 289123 btime 263535 movestogo 38
+go wtime 293072 btime 261733 movestogo 38
 SEARCH START go_id=2
 SEARCH RETURNED go_id=2
-exd5 SENDING bestmove e4d5 go_id=2
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5
+Nc3 SENDING bestmove b1c3 go_id=2
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5
 isready
-go wtime 279873 btime 253332 movestogo 37
+go wtime 269517 btime 237279 movestogo 37
 SEARCH START go_id=3
 SEARCH RETURNED go_id=3
-Nf3 SENDING bestmove g1f3 go_id=3
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6
+cxd5 SENDING bestmove c4d5 go_id=3
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5
 isready
-go wtime 269212 btime 233496 movestogo 36
+go wtime 264285 btime 230305 movestogo 36
 SEARCH START go_id=4
 SEARCH RETURNED go_id=4
-Nc3 SENDING bestmove b1c3 go_id=4
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6
+Nxd5 SENDING bestmove c3d5 go_id=4
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5
 isready
-go wtime 255536 btime 224541 movestogo 35
+go wtime 255459 btime 220971 movestogo 35
 SEARCH START go_id=5
 SEARCH RETURNED go_id=5
-Bb5 SENDING bestmove f1b5 go_id=5
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6
+d3 SENDING bestmove d2d3 go_id=5
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6
 isready
-go wtime 252320 btime 216890 movestogo 34
+go wtime 248325 btime 205860 movestogo 34
 SEARCH START go_id=6
 SEARCH RETURNED go_id=6
-O-O SENDING bestmove e1g1 go_id=6
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7
+e4 SENDING bestmove e2e4 go_id=6
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6
 isready
-go wtime 231146 btime 188819 movestogo 33
+go wtime 238596 btime 189757 movestogo 33
 SEARCH START go_id=7
 SEARCH RETURNED go_id=7
-Ne5 SENDING bestmove f3e5 go_id=7
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7
+Be2 SENDING bestmove f1e2 go_id=7
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6
 isready
-go wtime 230157 btime 178775 movestogo 32
+go wtime 234369 btime 185123 movestogo 32
 SEARCH START go_id=8
 SEARCH RETURNED go_id=8
-Bf4 SENDING bestmove c1f4 go_id=8
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6
+O-O SENDING bestmove e1g1 go_id=8
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6
 isready
-go wtime 227376 btime 170213 movestogo 31
+go wtime 230515 btime 177829 movestogo 31
 SEARCH START go_id=9
 SEARCH RETURNED go_id=9
-Ba4 SENDING bestmove b5a4 go_id=9
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6
+Bg5 SENDING bestmove c1g5 go_id=9
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7
 isready
-go wtime 224548 btime 161192 movestogo 30
+go wtime 224979 btime 168811 movestogo 30
 SEARCH START go_id=10
 SEARCH RETURNED go_id=10
-Qf3 SENDING bestmove d1f3 go_id=10
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7
+e5 SENDING bestmove e4e5 go_id=10
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7
 isready
-go wtime 213125 btime 157366 movestogo 29
+go wtime 221200 btime 141427 movestogo 29
 SEARCH START go_id=11
 SEARCH RETURNED go_id=11
-Nxd7 SENDING bestmove e5d7 go_id=11
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7
+Rc1 SENDING bestmove a1c1 go_id=11
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7
 isready
-go wtime 210550 btime 147898 movestogo 28
+go wtime 205246 btime 120970 movestogo 28
 SEARCH START go_id=12
 SEARCH RETURNED go_id=12
-Bxd6 SENDING bestmove f4d6 go_id=12
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6
+Bxe7 SENDING bestmove g5e7 go_id=12
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7
 isready
-go wtime 200460 btime 138673 movestogo 27
+go wtime 199689 btime 115681 movestogo 27
 SEARCH START go_id=13
 SEARCH RETURNED go_id=13
-Nb5 SENDING bestmove c3b5 go_id=13
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7
+d4 SENDING bestmove d3d4 go_id=13
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6
 isready
-go wtime 196795 btime 128784 movestogo 26
+go wtime 194415 btime 107642 movestogo 26
 SEARCH START go_id=14
 SEARCH RETURNED go_id=14
-Qg3 SENDING bestmove f3g3 go_id=14
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6
+dxc5 SENDING bestmove d4c5 go_id=14
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8
 isready
-go wtime 191792 btime 120343 movestogo 25
+go wtime 185406 btime 98263 movestogo 25
 SEARCH START go_id=15
 SEARCH RETURNED go_id=15
-Nd6 SENDING bestmove b5d6 go_id=15
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8
+Qd6 SENDING bestmove d1d6 go_id=15
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8
 isready
-go wtime 182757 btime 112003 movestogo 24
+go wtime 176431 btime 91064 movestogo 24
 SEARCH START go_id=16
 SEARCH RETURNED go_id=16
-c4 SENDING bestmove c2c4 go_id=16
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4
+Qxe7 SENDING bestmove d6e7 go_id=16
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7
 isready
-go wtime 178787 btime 90669 movestogo 23
+go wtime 173689 btime 83211 movestogo 23
 SEARCH START go_id=17
 SEARCH RETURNED go_id=17
-cxd5 SENDING bestmove c4d5 go_id=17
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6
+cxb6 SENDING bestmove c5b6 go_id=17
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6
 isready
-go wtime 169676 btime 77442 movestogo 22
+go wtime 162113 btime 74314 movestogo 22
 SEARCH START go_id=18
 SEARCH RETURNED go_id=18
-dxc6 SENDING bestmove d5c6 go_id=18
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6
+Rc7 SENDING bestmove c1c7 go_id=18
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3
 isready
-go wtime 165204 btime 72158 movestogo 21
+go wtime 152815 btime 68384 movestogo 21
 SEARCH START go_id=19
 SEARCH RETURNED go_id=19
-Qxg7 SENDING bestmove g3g7 go_id=19
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4
+Bxf3 SENDING bestmove e2f3 go_id=19
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8
 isready
-go wtime 157350 btime 64845 movestogo 20
+go wtime 146558 btime 61065 movestogo 20
 SEARCH START go_id=20
 SEARCH RETURNED go_id=20
-g3 SENDING bestmove g2g3 go_id=20
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5
+Rc2 SENDING bestmove c7c2 go_id=20
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5
 isready
-go wtime 130886 btime 55988 movestogo 19
+go wtime 134799 btime 47956 movestogo 19
 SEARCH START go_id=21
 SEARCH RETURNED go_id=21
-Rc1 SENDING bestmove f1c1 go_id=21
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4
+Re1 SENDING bestmove f1e1 go_id=21
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8
 isready
-go wtime 129361 btime 43565 movestogo 18
+go wtime 128474 btime 45002 movestogo 18
 SEARCH START go_id=22
 SEARCH RETURNED go_id=22
-f3 SENDING bestmove f2f3 go_id=22
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4 f2f3 f8c8
+Kf1 SENDING bestmove g1f1 go_id=22
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6
 isready
-go wtime 122070 btime 33567 movestogo 17
+go wtime 121755 btime 43378 movestogo 17
 SEARCH START go_id=23
 SEARCH RETURNED go_id=23
-fxg4 SENDING bestmove f3g4 go_id=23
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4 f2f3 f8c8 f3g4 f5f3
+Rc6 SENDING bestmove c2c6 go_id=23
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8
 isready
-go wtime 117554 btime 25719 movestogo 16
+go wtime 109988 btime 33050 movestogo 16
 SEARCH START go_id=24
 SEARCH RETURNED go_id=24
-Rc3 SENDING bestmove c1c3 go_id=24
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4 f2f3 f8c8 f3g4 f5f3 c1c3 f3e2
+Re3 SENDING bestmove e1e3 go_id=24
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8
 isready
-go wtime 111099 btime 19376 movestogo 15
+go wtime 107524 btime 26608 movestogo 15
 SEARCH START go_id=25
 SEARCH RETURNED go_id=25
-Rf1 SENDING bestmove a1f1 go_id=25
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4 f2f3 f8c8 f3g4 f5f3 c1c3 f3e2 a1f1 d7c7
+Rd6 SENDING bestmove c6d6 go_id=25
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7
 isready
-go wtime 104718 btime 16704 movestogo 14
+go wtime 92946 btime 23389 movestogo 14
 SEARCH START go_id=26
 SEARCH RETURNED go_id=26
-Bxc6 SENDING bestmove a4c6 go_id=26
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4 f2f3 f8c8 f3g4 f5f3 c1c3 f3e2 a1f1 d7c7 a4c6 a8a7
+Rc6 SENDING bestmove d6c6 go_id=26
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2
 isready
-go wtime 98410 btime 14174 movestogo 13
+go wtime 87695 btime 21474 movestogo 13
 SEARCH START go_id=27
 SEARCH RETURNED go_id=27
-Rxf7 SENDING bestmove f1f7 go_id=27
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4 f2f3 f8c8 f3g4 f5f3 c1c3 f3e2 a1f1 d7c7 a4c6 a8a7 f1f7 c7d6
+Rc7 SENDING bestmove c6c7 go_id=27
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8
 isready
-go wtime 97647 btime 14026 movestogo 12
+go wtime 83122 btime 18614 movestogo 12
 SEARCH START go_id=28
 SEARCH RETURNED go_id=28
-Rd7 SENDING bestmove f7d7 go_id=28
-position startpos moves e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 g1f3 b8c6 b1c3 g8f6 f1b5 e7e6 e1g1 f8e7 f3e5 d8c7 c1f4 e7d6 b5a4 c7b6 d1f3 c8d7 e5d7 e8d7 f4d6 d7d6 c3b5 d6d7 f3g3 a7a6 b5d6 h8f8 c2c4 b6b4 c4d5 b4d6 d5c6 b7c6 g3g7 d6f4 g2g3 f4f5 f1c1 f6g4 f2f3 f8c8 f3g4 f5f3 c1c3 f3e2 a1f1 d7c7 a4c6 a8a7 f1f7 c7d6 f7d7 a7d7
+Re2 SENDING bestmove e3e2 go_id=28
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4
 isready
-go wtime 97647 btime 14014 movestogo 11
+go wtime 77256 btime 16279 movestogo 11
 SEARCH START go_id=29
 SEARCH RETURNED go_id=29
-Qxd7 SENDING bestmove g7d7 go_id=29
+Re1 SENDING bestmove e2e1 go_id=29
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4
 isready
-ucinewgame
-position startpos
-position startpos moves e2e4
-isready
-go wtime 276832 btime 300000 movestogo 40
+go wtime 72562 btime 11537 movestogo 10
 SEARCH START go_id=30
 SEARCH RETURNED go_id=30
-d6 SENDING bestmove d7d6 go_id=30
-position startpos moves e2e4 d7d6 g1f3
+Bc6 SENDING bestmove f3c6 go_id=30
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2
 isready
-go wtime 272628 btime 296760 movestogo 39
+go wtime 69459 btime 9512 movestogo 9
 SEARCH START go_id=31
 SEARCH RETURNED go_id=31
-Nf6 SENDING bestmove g8f6 go_id=31
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2
+Re2 SENDING bestmove e1e2 go_id=31
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2
 isready
-go wtime 263520 btime 275116 movestogo 38
+go wtime 58017 btime 6123 movestogo 8
 SEARCH START go_id=32
 SEARCH RETURNED go_id=32
-e5 SENDING bestmove e7e5 go_id=32
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4
+Kxe2 SENDING bestmove f1e2 go_id=32
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2 f1e2 h6h5
 isready
-go wtime 253608 btime 266331 movestogo 37
+go wtime 49920 btime 4841 movestogo 7
 SEARCH START go_id=33
 SEARCH RETURNED go_id=33
-exd4 SENDING bestmove e5d4 go_id=33
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4
+f3 SENDING bestmove f2f3 go_id=33
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2 f1e2 h6h5 f2f3 g6e5
 isready
-go wtime 243180 btime 260853 movestogo 36
+go wtime 43424 btime 4207 movestogo 6
 SEARCH START go_id=34
 SEARCH RETURNED go_id=34
-c5 SENDING bestmove c7c5 go_id=34
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3
+f4 SENDING bestmove f3f4 go_id=34
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2 f1e2 h6h5 f2f3 g6e5 f3f4 e5g6
 isready
-go wtime 231726 btime 259214 movestogo 35
+go wtime 34956 btime 2589 movestogo 5
 SEARCH START go_id=35
 SEARCH RETURNED go_id=35
-Nc6 SENDING bestmove b8c6 go_id=35
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3
+g3 SENDING bestmove g2g3 go_id=35
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2 f1e2 h6h5 f2f3 g6e5 f3f4 e5g6 g2g3 g6e7
 isready
-go wtime 221036 btime 236228 movestogo 34
+go wtime 28962 btime 1288 movestogo 4
 SEARCH START go_id=36
 SEARCH RETURNED go_id=36
-a5 SENDING bestmove a7a5 go_id=36
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4
+Ba4 SENDING bestmove c6a4 go_id=36
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2 f1e2 h6h5 f2f3 g6e5 f3f4 e5g6 g2g3 g6e7 c6a4 e7f5
 isready
-go wtime 210228 btime 234993 movestogo 33
+go wtime 17632 btime 755 movestogo 3
 SEARCH START go_id=37
 SEARCH RETURNED go_id=37
-Be7 SENDING bestmove f8e7 go_id=37
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3
+Bc2 SENDING bestmove a4c2 go_id=37
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2 f1e2 h6h5 f2f3 g6e5 f3f4 e5g6 g2g3 g6e7 c6a4 e7f5 a4c2 f5d4
 isready
-go wtime 198936 btime 233810 movestogo 32
+go wtime 12000 btime 689 movestogo 2
 SEARCH START go_id=38
 SEARCH RETURNED go_id=38
-Be6 SENDING bestmove c8e6 go_id=38
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1
+Ke3 SENDING bestmove e2e3 go_id=38
+position startpos moves c2c4 c7c5 g1f3 g8f6 b1c3 d7d5 c4d5 f6d5 c3d5 d8d5 d2d3 b7b6 e2e4 d5d6 f1e2 b8c6 e1g1 e7e6 c1g5 d6d7 e4e5 c8b7 a1c1 f8e7 g5e7 d7e7 d3d4 h7h6 d4c5 e8g8 d1d6 a8d8 d6e7 c6e7 c5b6 a7b6 c1c7 b7f3 e2f3 f8e8 c7c2 g7g5 f1e1 g8f8 g1f1 e7g6 c2c6 d8b8 e1e3 e8d8 c6d6 f8e7 d6c6 d8d2 c6c7 e7f8 e3e2 d2d4 e2e1 g5g4 f3c6 d4d2 e1e2 d2e2 f1e2 h6h5 f2f3 g6e5 f3f4 e5g6 g2g3 g6e7 c6a4 e7f5 a4c2 f5d4 e2e3 d4f3
 isready
-go wtime 188911 btime 230592 movestogo 31
+go wtime 6835 btime 627 movestogo 1
 SEARCH START go_id=39
-SEARCH RETURNED go_id=39
-Bxb3 SENDING bestmove e6b3 go_id=39
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3
-isready
-go wtime 178707 btime 227300 movestogo 30
-SEARCH START go_id=40
-SEARCH RETURNED go_id=40
-Qb6 SENDING bestmove d8b6 go_id=40
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4
-isready
-go wtime 163598 btime 212833 movestogo 29
-SEARCH START go_id=41
-SEARCH RETURNED go_id=41
-O-O SENDING bestmove e8g8 go_id=41
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2
-isready
-go wtime 155684 btime 208436 movestogo 28
-SEARCH START go_id=42
-SEARCH RETURNED go_id=42
-Ne5 SENDING bestmove c6e5 go_id=42
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5
-isready
-go wtime 146206 btime 202020 movestogo 27
-SEARCH START go_id=43
-SEARCH RETURNED go_id=43
-Qa7 SENDING bestmove b6a7 go_id=43
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4
-isready
-go wtime 134354 btime 192364 movestogo 26
-SEARCH START go_id=44
-SEARCH RETURNED go_id=44
-Ng4 SENDING bestmove e5g4 go_id=44
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1
-isready
-go wtime 127353 btime 184147 movestogo 25
-SEARCH START go_id=45
-SEARCH RETURNED go_id=45
-Rd8 SENDING bestmove a8d8 go_id=45
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3
-isready
-go wtime 110216 btime 180904 movestogo 24
-SEARCH START go_id=46
-SEARCH RETURNED go_id=46
-Nh6 SENDING bestmove g4h6 go_id=46
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3
-isready
-go wtime 101151 btime 172455 movestogo 23
-SEARCH START go_id=47
-SEARCH RETURNED go_id=47
-Ne8 SENDING bestmove f6e8 go_id=47
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4
-isready
-go wtime 95343 btime 157813 movestogo 22
-SEARCH START go_id=48
-SEARCH RETURNED go_id=48
-Nc7 SENDING bestmove e8c7 go_id=48
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4
-isready
-go wtime 86704 btime 151146 movestogo 21
-SEARCH START go_id=49
-SEARCH RETURNED go_id=49
-Kh8 SENDING bestmove g8h8 go_id=49
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5
-isready
-go wtime 78544 btime 142679 movestogo 20
-SEARCH START go_id=50
-SEARCH RETURNED go_id=50
-Ng8 SENDING bestmove h6g8 go_id=50
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3
-isready
-go wtime 62525 btime 138732 movestogo 19
-SEARCH START go_id=51
-SEARCH RETURNED go_id=51
-b6 SENDING bestmove b7b6 go_id=51
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1
-isready
-go wtime 55279 btime 134968 movestogo 18
-SEARCH START go_id=52
-SEARCH RETURNED go_id=52
-f6 SENDING bestmove f7f6 go_id=52
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1
-isready
-go wtime 51104 btime 123211 movestogo 17
-SEARCH START go_id=53
-SEARCH RETURNED go_id=53
-fxg5 SENDING bestmove f6g5 go_id=53
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5
-isready
-go wtime 44441 btime 117419 movestogo 16
-SEARCH START go_id=54
-SEARCH RETURNED go_id=54
-Qb7 SENDING bestmove a7b7 go_id=54
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4
-isready
-go wtime 38791 btime 114199 movestogo 15
-SEARCH START go_id=55
-SEARCH RETURNED go_id=55
-Qc8 SENDING bestmove b7c8 go_id=55
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3
-isready
-go wtime 33886 btime 103054 movestogo 14
-SEARCH START go_id=56
-SEARCH RETURNED go_id=56
-Qe6 SENDING bestmove c8e6 go_id=56
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2
-isready
-go wtime 28322 btime 93356 movestogo 13
-SEARCH START go_id=57
-SEARCH RETURNED go_id=57
-Qh3 SENDING bestmove e6h3 go_id=57
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1
-isready
-go wtime 24497 btime 84081 movestogo 12
-SEARCH START go_id=58
-SEARCH RETURNED go_id=58
-Qxh4 SENDING bestmove h3h4 go_id=58
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1
-isready
-go wtime 21964 btime 79395 movestogo 11
-SEARCH START go_id=59
-SEARCH RETURNED go_id=59
-Qg3 SENDING bestmove h4g3 go_id=59
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5
-isready
-go wtime 16644 btime 73313 movestogo 10
-SEARCH START go_id=60
-SEARCH RETURNED go_id=60
-h6 SENDING bestmove h7h6 go_id=60
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6
-isready
-go wtime 12412 btime 57959 movestogo 9
-SEARCH START go_id=61
-SEARCH RETURNED go_id=61
-Rxf3 SENDING bestmove f8f3 go_id=61
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7
-isready
-go wtime 8767 btime 54078 movestogo 8
-SEARCH START go_id=62
-SEARCH RETURNED go_id=62
-Kxg7 SENDING bestmove h8g7 go_id=62
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7 h8g7 d3h7
-isready
-go wtime 5065 btime 54078 movestogo 7
-SEARCH START go_id=63
-SEARCH RETURNED go_id=63
-Kf8 SENDING bestmove g7f8 go_id=63
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7 h8g7 d3h7 g7f8 h1g1
-isready
-go wtime 3626 btime 54078 movestogo 6
-SEARCH START go_id=64
-SEARCH RETURNED go_id=64
-Rf7 SENDING bestmove f3f7 go_id=64
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7 h8g7 d3h7 g7f8 h1g1 f3f7 h7h8
-isready
-go wtime 1687 btime 45933 movestogo 5
-SEARCH START go_id=65
-SEARCH RETURNED go_id=65
-Qxg1 SENDING bestmove g3g1 go_id=65
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7 h8g7 d3h7 g7f8 h1g1 f3f7 h7h8 g3g1 d1g1
-isready
-go wtime 810 btime 40061 movestogo 4
-SEARCH START go_id=66
-SEARCH RETURNED go_id=66
-Ke8 SENDING bestmove f8e8 go_id=66
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7 h8g7 d3h7 g7f8 h1g1 f3f7 h7h8 g3g1 d1g1 f8e8 g1g6
-isready
-go wtime 755 btime 32362 movestogo 3
-SEARCH START go_id=67
-SEARCH RETURNED go_id=67
-Kd7 SENDING bestmove e8d7 go_id=67
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7 h8g7 d3h7 g7f8 h1g1 f3f7 h7h8 g3g1 d1g1 f8e8 g1g6 e8d7 h8h3
-isready
-go wtime 722 btime 10716 movestogo 2
-SEARCH START go_id=68
-SEARCH RETURNED go_id=68
-Kc6 SENDING bestmove d7c6 go_id=68
-position startpos moves e2e4 d7d6 g1f3 g8f6 d1e2 e7e5 d2d4 e5d4 f3d4 c7c5 d4b3 b8c6 b1c3 a7a5 a2a4 f8e7 c1e3 c8e6 e1c1 e6b3 c2b3 d8b6 e2c4 e8g8 f1e2 c6e5 c4b5 b6a7 f2f4 e5g4 e3g1 a8d8 e2f3 g4h6 h2h3 f6e8 b5c4 e8c7 g2g4 g8h8 g4g5 h6g8 g1e3 b7b6 c1b1 f7f6 h1f1 f6g5 f4g5 a7b7 h3h4 b7c8 c4d3 c8e6 b1a2 e6h3 e3c1 h3h4 f1h1 h4g3 e4e5 h7h6 g5h6 f8f3 h6g7 h8g7 d3h7 g7f8 h1g1 f3f7 h7h8 g3g1 d1g1 f8e8 g1g6 e8d7 h8h3 d7c6 h3g2
-isready
-go wtime 300689 btime 6726 movestogo 1
-SEARCH START go_id=69
