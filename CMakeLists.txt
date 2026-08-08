@@ -35,6 +35,7 @@ set(Headers
     src/minimax.hpp
     src/endgameTables.hpp
     src/weights.hpp
+    src/status_output.hpp
 )
 
 set(Sources
@@ -46,7 +47,7 @@ set(Sources
     src/minimax.cpp
     src/endgameTables.cpp
     src/weights.cpp
-
+    src/status_output.cpp
 )
 
 

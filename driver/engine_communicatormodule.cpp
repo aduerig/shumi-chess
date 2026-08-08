@@ -11,6 +11,8 @@
 #include <chrono>
 
 #include "globals.hpp"
+#include "status_output.hpp"
+
 #include <engine.hpp>
 #include <minimax.hpp>
 #include <score.hpp>
@@ -50,8 +52,6 @@ engine_communicator_systemcall(PyObject* self, PyObject* args) {
 
     // return of 0 is success, else error.
     sts = system(&command[1]);      // First character is a singling character (used by python)
-
-    //cout << " sts " << sts;
     
     return PyLong_FromLong(sts);
 }
@@ -150,9 +150,6 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     char promo_piece_char = promo_piece_c_str[0];   // first character (e.g. ' ' or 'N')
 
 
-    //cout << "engine_communicator_make_move_two_acn " << from_square_c_str << to_square_c_str << "\n"; 
-
-
     //ShumiChess::Color next_mover = utility::representation::opposite_color(last_mover);
     //
     // We only get a '?' for the promotion character only when the human makes a move.
@@ -179,14 +176,6 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
             promo_piece_char = ' ';     // No promotion
         }
     }
-
-    // cout << "\033[31m"
-    //     << " to:" << to_square_c_str
-    //     << " promoChar:" << promo_piece_char << ":end\n"
-    //     << " queenRank:" << queening_rank << " thisrow: " << this_rank
-    //     << " wee " << bPawnMoving
-    //     << " end\n"
-    //     << "\033[0m";
 
 
     string from_square_acn(from_square_c_str);
@@ -231,9 +220,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     python_engine->users_last_move = found_move;
     python_engine->ply_so_far++;
 
-   
 
-    //cout << "222engine_communicator_make_move_two_acn " <<  python_engine->sss.so_far  << "\n"; 
 
     // Add to PGN
     python_engine->gamePGN.addMe(found_move, *python_engine);
@@ -243,7 +230,7 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
     //python_engine->move_history.push(found_move);
 
     if (found_move.piece_type == ShumiChess::Piece::NONE) {   // Error
-        cout << "\x1b[1;31m" << " You are full of it " << "\x1b[0m" << endl;
+        sout << "\x1b[1;31m" << " You are full of it " << "\x1b[0m" << endl;
 
     } else {
 
@@ -275,7 +262,6 @@ engine_communicator_set_random_number_of_moves(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    //cout << "random!" << randomMoveCount << endl;
     python_engine->set_random_on_next_move(randomMoveCount);
 
     return Py_BuildValue("");
@@ -288,11 +274,7 @@ engine_communicator_get_pgn(PyObject* self, PyObject* args) {
     // if(!PyArg_ParseTuple(args, "i", &randomMoveCount)) {
     //     return NULL;
     // }
-    //cout << "get_pgn!" << endl;
 
-    // char out[1028];
-    // python_engine->print_move_history_to_buffer(out, 1028);
-    // cout << out << endl;
 
     string sPGN;
 
@@ -330,7 +312,7 @@ engine_communicator_game_over(PyObject* self, PyObject* args) {
 // By "reset engine" is meant: "new game". 
 static PyObject*
 engine_communicator_reset_engine(PyObject* self, PyObject* args) {
-    //cout << "reset_engine" << endl;
+
     const char* fen_string = nullptr;
     if (!PyArg_ParseTuple(args, "|s", &fen_string)) {
         return nullptr; 
@@ -390,9 +372,6 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    //cout << " milliseconds " << milliseconds << " " << max_deepening << player_id << '\n';
-
-
 
     ShumiChess::Move gotten_move;
     std::string move_in_acn_notation;
@@ -400,7 +379,7 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     Py_BEGIN_ALLOW_THREADS;
 
     // Pass arguments through to the engine, get the opponents move.
-    //cout << "wiggle " << milliseconds << "\n";
+
     // Random-move state is configured separately by
     // set_random_number_of_moves(). This argument must stay zero here;
     // `features_mask` is the feature mask supplied by Python.
@@ -420,9 +399,6 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     move_in_acn_notation = utility::representation::move_to_string(gotten_move);
     char cpromo = utility::representation::piece_to_charactor(gotten_move.promotion);
 
-    // cout << "\033[31m"
-    //         << " Engine move in acn:" << move_in_acn_notation
-    //         << " promoch:" << cpromo << "\033[0m\n";
     move_in_acn_notation += cpromo;
 
     Py_END_ALLOW_THREADS;
@@ -497,7 +473,7 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
     
     Score pawnScore =  convert_from_CP(cp_score_best);
 
-    cout << "\n  eval = " << pawnScore << endl;
+    sout << "\n  eval = " << pawnScore << endl;
     
     return Py_BuildValue(""); // this is None in Python
 }
@@ -505,12 +481,10 @@ engine_communicator_evaluate(PyObject* self, PyObject* args) {
 
 static PyObject*
 engine_communicator_get_game_timew(PyObject* self, PyObject* args) {
-    //cout << "wsec=" << minimax_ai->engine.game_white_time_msec << endl;
     return Py_BuildValue("i", minimax_ai->engine.game_white_time_msec);
 }
 static PyObject*
 engine_communicator_get_game_timeb(PyObject* self, PyObject* args) {
-    //cout << "wsec=" << minimax_ai->engine.game_black_time_msec << endl;
     return Py_BuildValue("i", minimax_ai->engine.game_black_time_msec);
 }
 

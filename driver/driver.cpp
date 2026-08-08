@@ -3,10 +3,11 @@
 #include <iostream>
 #include <cstring>
 
-#include <globals.hpp>
-#include <engine.hpp>
-#include <minimax.hpp>
-#include <utility.hpp>
+#include "globals.hpp"
+#include "engine.hpp"
+#include "minimax.hpp"
+#include "utility.hpp"
+#include "status_output.hpp"
 
 using namespace std;
 using namespace ShumiChess;
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
         else
         {
             // optional: print bad arg
-            std::cout << "Unrecognized arg: " << argv[i] << "\n";
+            sout << "Unrecognized arg: " << argv[i] << "\n";
         }
     }
 
@@ -54,11 +55,11 @@ int main(int argc, char** argv)
     MinimaxAI minimax_ai(engine);
 
     // show what we parsed
-    cout << endl;
-    cout << "time = " << time_to_use_msec << " msec\n";
-    cout << "depth = " << depth_limit << "\n";
-    cout << "fen = " << fen << "\n";
-    cout << endl;
+    sout << endl;
+    sout << "time = " << time_to_use_msec << " msec\n";
+    sout << "depth = " << depth_limit << "\n";
+    sout << "fen = " << fen << "\n";
+    sout << endl;
 
     Move move_best;
 
@@ -68,7 +69,7 @@ int main(int argc, char** argv)
 
 
     engine.move_into_string(move_best);
-    cout << "best= " << engine.move_string << endl;
+    sout << "best= " << engine.move_string << endl;
 
 
 

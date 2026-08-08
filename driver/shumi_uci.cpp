@@ -22,9 +22,11 @@
 #include <engine.hpp>
 #include <globals.hpp>
 #include <utility.hpp>
-
+#include <fstream>
 
 #include "minimax.hpp"
+#include "status_output.hpp"
+
 
 using namespace std;
 using namespace ShumiChess;
@@ -33,14 +35,10 @@ using namespace std::chrono;
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <fstream>
 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-static std::ofstream uci_debug_log;
 
 
 static void make_engine_move(Engine& engine, Move move);
@@ -57,20 +55,30 @@ static bool create_position(const string& base,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+static std::ofstream sout_file;
+
 int main()
 {
 
     // open debug file
-    uci_debug_log.open(
+    sout_file.open(
         "C:\\programming\\shumi-chess\\uci_debug.txt",
         std::ios::out | std::ios::trunc
     );
 
-    if (!uci_debug_log.is_open()) {
+    if (!sout_file.is_open()) {
         std::cerr << "Could not open uci_debug.txt\n";
         return 1;
     }
-    uci_debug_log << "STARTING main()" << endl;
+
+    // For this UCI executable, redirect all Shumi status output to the file.
+    sout.rdbuf(sout_file.rdbuf());
+
+    // Send cerr output to the same debug file.
+    std::cerr.rdbuf(sout_file.rdbuf());
+
+
+    sout << "STARTING main()" << endl;
 
 
     int iMovesInGame = 0;
@@ -118,7 +126,7 @@ int main()
     while (std::getline(std::cin, line)) {
 
         // Echo line to debug log
-        uci_debug_log << line << endl;
+        sout << line << endl;
 
         if (line == "uci") {
         //************************************************************************************** */
@@ -155,7 +163,7 @@ int main()
             vector<string> new_moves;
 
             if (!parse_position_command(line, new_base, new_moves)) {
-                uci_debug_log << "Invalid position command: " << line << endl;
+                sout << "Invalid position command: " << line << endl;
                 continue;
             }
 
@@ -187,7 +195,7 @@ int main()
             }
 
             if (!position_updated) {
-                uci_debug_log << "Could not apply position command: " << line << endl;
+                sout << "Could not apply position command: " << line << endl;
                 continue;
             }
 
@@ -233,7 +241,6 @@ int main()
                 else if (go_token == "movestogo") go_command >> moves_to_go;
             }
 
-            //cout << endl << " times: " << white_time << "  " << black_time << endl;
 
             int search_time_to_use = time_to_use;
             MinimaxAI::SearchTimeControl time_control;
@@ -302,12 +309,12 @@ int main()
             //
             // Get "best move" from Shumi
   
-            uci_debug_log << "SEARCH START go_id=" << this_go_id << endl;
+            sout << "SEARCH START go_id=" << this_go_id << endl;
 
             Move move = minimax_ai->get_move_iterative_deepening(search_time_to_use, depth_to_use, player_id
                                                                 , iRandomMoves, flags, time_control);
 
-            uci_debug_log << "SEARCH RETURNED go_id=" << this_go_id << endl;
+            sout << "SEARCH RETURNED go_id=" << this_go_id << endl;
                                                                 
             if (move.piece_type == Piece::NONE) {
                 cerr << "No legal move returned at ply " << endl;
@@ -361,7 +368,6 @@ int main()
             //int centiPawnsRel = (int)(minimax_ai->d_best_move_score_rel * 100.0);
             int centiPawnsRel = (int)convert_to_CP(minimax_ai->d_best_move_score_rel);
 
-            //std::cout << "info nps " << nps << "\n";
             std::cout << "info string testing\n";
             std::cout << "info" 
                     << " depth " << minimax_ai->max_attained_depth
@@ -380,7 +386,7 @@ int main()
             // }
 
 
-            uci_debug_log << move_str_alebriac << " SENDING bestmove " << move_str << " go_id=" << this_go_id << endl;
+            sout << move_str_alebriac << " SENDING bestmove " << move_str << " go_id=" << this_go_id << endl;
 
             std::cout << "bestmove " << move_str << "\n";
             std::cout.flush();
@@ -388,7 +394,6 @@ int main()
             // // cerr << "\nPly " << ply << " "
             // //      << utility::representation::color_to_string(move.color)
             // //      << " move: " << move_to_uci(move) << endl;
-            // std::cout << "bestmove " << from_str << to_str << cpromo << "\n";
             std::cout.flush();
 
 
@@ -398,13 +403,13 @@ int main()
 
 
         } else if (line == "quit") {
-            uci_debug_log << "quit received" << endl;
-            uci_debug_log.flush();
+            sout << "quit received" << endl;
+            sout.flush();
             break;
         }
     }
 
-    uci_debug_log << "UCI INPUT LOOP ENDED"
+    sout << "UCI INPUT LOOP ENDED"
               << " eof=" << std::cin.eof()
               << " fail=" << std::cin.fail()
               << " bad=" << std::cin.bad()
@@ -415,9 +420,9 @@ int main()
     delete engine;
 
 
-    uci_debug_log << "Shumi UCI exiting normally\n";
-    uci_debug_log.flush();
-    uci_debug_log.close();
+    sout << "Shumi UCI exiting normally\n";
+    sout.flush();
+    sout_file.close();
 
     return 0;
 }
@@ -436,7 +441,7 @@ static void make_engine_move(Engine& engine, Move move)
     engine.move_history = stack<Move>();
 
     if (move.piece_type == Piece::NONE) {
-        uci_debug_log << "\x1b[1;31mNo move to make\x1b[0m" << endl;
+        sout << "\x1b[1;31mNo move to make\x1b[0m" << endl;
         return;
     }
 
@@ -483,7 +488,7 @@ static bool make_uci_move(Engine& engine, const string& move_uci)
         }
     }
 
-    uci_debug_log << "Invalid UCI move for current position: " << move_uci << endl;
+    sout << "Invalid UCI move for current position: " << move_uci << endl;
     return false;
 }
 

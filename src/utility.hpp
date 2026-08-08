@@ -259,36 +259,7 @@ inline std::string color_to_string(ShumiChess::Color color) {
     }
 }
 
-inline void cout_move_info(const ShumiChess::Move& move) {
-    auto print_if_not_none = [](const std::string& label, ShumiChess::Piece piece) {
-        if (piece != ShumiChess::Piece::NONE) {
-            std::cout << label << piece_to_string(piece) << std::endl;
-        }
-    };
-
-    std::cout << "--- Move Details for " << move_to_string(move) << " ---" << std::endl;
-    std::cout << "Player: " << color_to_string(move.color) << std::endl;
-    std::cout << "Piece: " << piece_to_string(move.piece_type) << std::endl;
-    
-    // Print optional information only if it's relevant
-    print_if_not_none("Capture: ", move.capture);
-    print_if_not_none("Promotion: ", move.promotion);
-    
-    
-    // Print en passant target square if it exists
-    if (move.en_passant_landingSQ != ShumiChess::NO_SQUARE) {
-        ull landSq_bb = utility::bit::square_to_bitboard(move.en_passant_landingSQ);
-        std::cout << "En Passant Target: " << bb_to_position_string(landSq_bb) << std::endl;
-        //std::cout << "En Passant Target: " << bb_to_position_string(move.en_passant_landing) << std::endl;
-    }
-
-    // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)
-    // Assumes bit 1 is Kingside and bit 0 is Queenside
-    std::cout << "White Castle Rights (KQ): " << std::bitset<2>(move.flags & 0b0011) << std::endl;
-    std::cout << "Black Castle Rights (kq): " << std::bitset<2>(move.flags >> 2) << std::endl;
-    std::cout << "----------------------------------" << std::endl;
-}
-
+void cerr_move_info(const ShumiChess::Move& move);
 
 struct MoveHash {
     std::size_t operator()(const ShumiChess::Move &m) const {

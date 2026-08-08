@@ -5,9 +5,10 @@
 #include <chrono> 
 #include <math.h>
 
-#include <globals.hpp>
-#include <engine.hpp>
-#include <utility.hpp>
+#include "globals.hpp"
+#include "engine.hpp"
+#include "utility.hpp"
+#include "status_output.hpp"
 
 using namespace std;
 using namespace ShumiChess;
@@ -94,9 +95,9 @@ int main() {
     double speed_comparison = ((our_nps / stockfish_nps) * 100);
     double speed_comparison_rounded_2_dec = round(speed_comparison * 100) / 100.0f;
 
-    cout << "played: " << total << " random games in " << duration_microsec.count() << " microseconds." << endl;
-    cout << "results in " << our_nps << " moves per second (nps)" << endl;
-    cout << speed_comparison_rounded_2_dec << "% of stockfish's speed" << endl;
+    sout << "played: " << total << " random games in " << duration_microsec.count() << " microseconds." << endl;
+    sout << "results in " << our_nps << " moves per second (nps)" << endl;
+    sout << speed_comparison_rounded_2_dec << "% of stockfish's speed" << endl;
 
     return 0;
 }

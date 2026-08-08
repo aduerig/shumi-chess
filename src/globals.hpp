@@ -17,13 +17,6 @@
 #endif
 #include <assert.h>
 
-//
-// I used to just output status and stuff to "cout". But cutechess needs "cout" for its own
-// communication to the chess engines, so cout must be clean. VSC shows both cout and cerr
-// in the Terminal tab. So why not use cerr?
-//
-//inline std::ostream& shumi_out() {return std::cerr;}
-inline std::ostream& shumi_out() {return std::cout;}
 
 typedef unsigned long long ull;
 typedef uint8_t Square;

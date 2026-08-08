@@ -21,12 +21,12 @@ static inline int _getch() { return std::cin.get(); }
 #endif
 #include <assert.h>
 
-#include <engine.hpp>
-#include <globals.hpp>
-#include <utility.hpp>
 
-
+#include "engine.hpp"
+#include "globals.hpp"
+#include "utility.hpp"
 #include "minimax.hpp"
+#include "status_output.hpp"
 
 using namespace std;
 using namespace ShumiChess;
@@ -88,10 +88,10 @@ int main(int argc, char** argv) {
     int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     if (argc < 2) {
-        //cout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
+        //sout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {
         time_to_use = atoi(argv[1]);
-        //cout << "You entered time_to_use of: " << time_to_use << endl;
+        //sout << "You entered time_to_use of: " << time_to_use << endl;
     }
     if (argc >= 3) {
         depth_to_use = atoi(argv[2]);
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
 
     int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
 
-    cout << "uzing level= " << depth_to_use
+    sout << "uzing level= " << depth_to_use
          << "  msec = " << time_to_use
          << "  max ply = " << max_ply_to_play 
          << "  play id = " << player_id
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
 
         // Show board
         string out = utility::representation::gameboard_to_string(engine.game_board);
-        cout << out << endl;
+        sout << out << endl;
 
 
         state = engine.is_game_over();
@@ -142,34 +142,30 @@ int main(int argc, char** argv) {
                                                             , iRandomMoves, flags);
 
             if (move.piece_type == Piece::NONE) {
-                cout << "No legal move returned at ply " << ply << endl;
+                sout << "No legal move returned at ply " << ply << endl;
                 break;
             }
 
-            // Show move
-            // cout << "\nPly " << ply << " "
-            //      << utility::representation::color_to_string(move.color)
-            //      << " move: " << move_to_uci(move) << endl;
 
             make_engine_move(engine, move);
 
             // Show board
             // out = utility::representation::gameboard_to_string(engine.game_board);
-            // cout << out << endl;
+            // sout << out << endl;
 
             state = engine.is_game_over();
         }
 
-        cout << "Game state: " << game_state_to_string(state) << endl;
-        cout << "PGN: " << engine.gamePGN.spitout() << endl;
+        sout << "Game state: " << game_state_to_string(state) << endl;
+        sout << "PGN: " << engine.gamePGN.spitout() << endl;
         steady_clock::time_point end_time = steady_clock::now();
-        cout << iPositions << "  Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
+        sout << iPositions << "  Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
 
     }
 
  
 
-    cout << "Press any key to exit..." << endl;
+    sout << "Press any key to exit..." << endl;
     _getch();
 
     return 0;
@@ -212,7 +208,7 @@ static void make_engine_move(Engine& engine, Move move)
     engine.move_history = stack<Move>();
 
     if (move.piece_type == Piece::NONE) {
-        cout << "\x1b[1;31mNo move to make\x1b[0m" << endl;
+        sout << "\x1b[1;31mNo move to make\x1b[0m" << endl;
         return;
     }
 

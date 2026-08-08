@@ -8,7 +8,7 @@
 #include "score.hpp"
 #include "utility"
 #include "score.hpp"   
-
+#include "status_output.hpp"
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
 #undef NDEBUG  
@@ -57,7 +57,7 @@ void PGN::clear()
 string PGN::spitout()
 {
     text += " *";
-    //std::cout << text << std::endl;
+
     return text;
 } 
 
@@ -100,7 +100,7 @@ Engine::Engine() {
     auto us  = duration_cast<microseconds>(now).count();
     rng.seed(static_cast<unsigned>(us));
 
-    //cout << "Created new engine" << us << endl;
+    sout << "Created new engine " << us << endl;
 
 
 }
@@ -134,7 +134,6 @@ Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
 void Engine::reset_engine() {         // New game.
     
  
-    //std::cout << "\x1b[94mNew Game \x1b[0m" << endl;
 
     // Setup the board
     //
@@ -220,7 +219,7 @@ void Engine::reset_engine() {         // New game.
 
     // Show board (debug only)
     // string out = utility::representation::gameboard_to_string(game_board);
-    // cout << out << endl;
+    // sout << out << endl;
 
 
     reset_all_but_FEN();
@@ -234,8 +233,7 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
 
     game_board = GameBoard(fen);
 
-    //std::cout << "\x1b[94m    hello world() I'm reset_engine(FEN)! \x1b[0m";
-    std::cout << "\x1b[94mNew Game (from FEN) \x1b[0m" << endl;
+    sout << "\x1b[94mNew Game (from FEN) \x1b[0m" << endl;
 
     reset_all_but_FEN();
 }
@@ -301,7 +299,7 @@ void Engine::reset_all_but_FEN()
 
 void Engine::resetStats()       // all of these are in units of ply
 {
-    cout << "\033[31mresetStats\n\033[0m";
+    //sout << "\033[31mresetStats\n\033[0m";
     sss.so_far = 0;
     sss.so_far_pawn = 0;
     sss.so_far_captures = 0;
@@ -548,15 +546,15 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
         }
         else {
             reason_for_draw = DRAW_STALEMATE;
-            //if (debugNow) cout<<"stalemate" << endl;
+            //if (debugNow) sout<<"stalemate" << endl;
             return GameState::DRAW;    //  Draw by Stalemate
         }
     }
     else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
-        //cout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
+        //sout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
         reason_for_draw = DRAW_50MOVERULE;
-        //cout<<"50 move rule" << endl;
+        //sout<<"50 move rule" << endl;
         return GameState::DRAW;           // draw by 50 move rule
 
     } else {
@@ -565,7 +563,7 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
         bool isOverThatWay = game_board.insufficient_material_simple();
         if (isOverThatWay) {
             reason_for_draw = DRAW_INSUFFMATER;
-            //if (debugNow) cout<<"no material" << endl;
+            //if (debugNow) ssout<<"no material" << endl;
             return GameState::DRAW;
         }
 
@@ -579,7 +577,7 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
         if (count >= THREE_TIME_REP) {
             // threefold repetition draw
             reason_for_draw = DRAW_3TIME_REP;
-            //if (debugNow) cout<<"3-time-rep"<< endl;
+            //if (debugNow) sout<<"3-time-rep"<< endl;
             return GameState::DRAW;
         }
 
@@ -595,8 +593,6 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
 
 
 int Engine::get_best_score_at_root() {
-
-    //cout << reason_for_draw << endl;
 
     int material_centPawns = 0;
 
@@ -989,7 +985,7 @@ ull& Engine::access_pieces_of_color(Piece piece, Color color) {
             return (color != 0) ? this->game_board.black_king
                                 : this->game_board.white_king;
         default:
-            std::cout << "Unexpected piece type: " << piece << std::endl;
+            sout << "Unexpected piece type: " << piece << std::endl;
             assert(0);
             return this->game_board.white_king;
     }
@@ -1488,8 +1484,7 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
     // if (user_request_next_move > 10) {
     //     user_request_next_move = 7;
     // }
-    // cout << "\x1b[34m nextMove->\x1b[0m" << user_request_next_move 
-    //      << "\x1b[34m<-nextMove \x1b[0m" << endl;
+
 
     //assert(0);  // exploratory
     //debugNow = !debugNow;
@@ -1498,7 +1493,7 @@ void Engine::set_random_on_next_move(int randomMoveCount) {
     // every random move chosen. When it hits zero, no more random plys will be chosen.
     if (computer_ply_so_far==0) {
         i_randomize_next_move = randomMoveCount;
-        //cout << "\033[1;34m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
+        //sout << "\033[1;34m\nrandomize_next_move: " << i_randomize_next_move << "\033[0m" << endl;
     }
 
 }

@@ -73,6 +73,36 @@ void print_bitboard(ull bitboard) {
 }
 
 
+void cerr_move_info(const ShumiChess::Move& move) {
+    auto print_if_not_none = [](const std::string& label, ShumiChess::Piece piece) {
+        if (piece != ShumiChess::Piece::NONE) {
+            cerr << label << piece_to_string(piece) << std::endl;
+        }
+    };
+
+    cerr << "--- Move Details for " << move_to_string(move) << " ---" << std::endl;
+    cerr << "Player: " << color_to_string(move.color) << std::endl;
+    cerr << "Piece: " << piece_to_string(move.piece_type) << std::endl;
+    
+    // Print optional information only if it's relevant
+    print_if_not_none("Capture: ", move.capture);
+    print_if_not_none("Promotion: ", move.promotion);
+    
+    
+    // Print en passant target square if it exists
+    if (move.en_passant_landingSQ != ShumiChess::NO_SQUARE) {
+        ull landSq_bb = utility::bit::square_to_bitboard(move.en_passant_landingSQ);
+        cerr << "En Passant Target: " << bb_to_position_string(landSq_bb) << std::endl;
+        //cerr << "En Passant Target: " << bb_to_position_string(move.en_passant_landing) << std::endl;
+    }
+
+    // Use std::bitset to clearly show castling rights (1 = available, 0 = unavailable)
+    // Assumes bit 1 is Kingside and bit 0 is Queenside
+    cerr << "White Castle Rights (KQ): " << std::bitset<2>(move.flags & 0b0011) << std::endl;
+    cerr << "Black Castle Rights (kq): " << std::bitset<2>(move.flags >> 2) << std::endl;
+    cerr << "----------------------------------" << std::endl;
+}
+
 
 
 

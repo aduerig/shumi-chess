@@ -79,7 +79,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
     
 
-    //cout << "\x1b[33mrestart from fen " << fen_notation << "\x1b[0m" << endl;
 
     // Make sure FEN components are valid
     assert(fen_components.size() == 6);
@@ -147,7 +146,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
             this->castle_rights |= FLAGS_CASTLE_NONE; 
             break;
         default:
-            std::cout << fen_notation << "Unexpected castling rights token: " << token << std::endl;
+            sout << fen_notation << "Unexpected castling rights token: " << token << std::endl;
             assert(0);
             break;
         }
@@ -233,7 +232,6 @@ void GameBoard::set_zobrist() {
 // piece placement, current colors turn, castling avaliablity, enpassant, halfmove number (fifty move rule), total moves 
 const string GameBoard::to_fen(bool bFullFEN) {
 
-    //cout << "\x1b[34mto_fen!\x1b[0m" << endl;
     vector<string> fen_components;
 
     // the board
