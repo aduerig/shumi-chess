@@ -78,8 +78,8 @@ public:
 
     ull Features_mask = _DEFAULT_FEATURES_MASK;
 
-
-    bool stop_calculation = false;
+    std::atomic<bool> stop_calculation{false};
+    //bool stop_calculation = false;
 
     ull nodes_visited = 0;
     ull nodes_visited_depth_zero = 0;
@@ -281,7 +281,7 @@ public:
                                             , int qPlys
                                         );
 
-    int loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
+    bool loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
                        bool in_check, Score d_stand_pat, 
                        const ShumiChess::Move& move_last,       // NOTE: remove me
                        const vector<ShumiChess::Move>* pMoves, 

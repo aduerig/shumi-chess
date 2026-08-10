@@ -209,7 +209,7 @@ TEST_P(ValidMoves, PushPopFenValidation) {
         if (move.color == ShumiChess::Color::WHITE) test_engine.pushMove_t<ShumiChess::Color::WHITE>(move);
         else                                        test_engine.pushMove_t<ShumiChess::Color::BLACK>(move);
         string in_between_fen = test_engine.game_board.to_fen();
-        if (move.color == ShumiChesss::Color::WHITE) test_engine.popMove_t<ShumiChess::Color::WHITE>();
+        if (move.color == ShumiChess::Color::WHITE) test_engine.popMove_t<ShumiChess::Color::WHITE>();
         else                                        test_engine.popMove_t<ShumiChess::Color::BLACK>();
         string after_fen = test_engine.game_board.to_fen();
         if (before_fen != after_fen) {

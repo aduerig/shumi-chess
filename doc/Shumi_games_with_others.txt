@@ -192,34 +192,9 @@ in opening only, dont move same piece twice
 ==========================================================================================================
 Games with stockfish (using cutechess as tournement director)
 ==========================================================================================================
-\
 
 
-            (test set A) 
-                Score of Shumi vs texel64-avx2-pop ELO 2200: 16 - 19 - 15 [0.470]
-                Score of Shumi vs stockfish_ELO 2300: 9 - 5 - 0 [0.643]
-                Score of Shumi vs arasanx-64 ELO 2200: 28 - 16 - 6 [0.620]
-                Score of Shumi vs stockfish_ELO 2300: 13 - 4 - 7 [0.688]
-                Score of Shumi vs stockfish_ELO 2400: 9 - 15 - 2 [0.385]
-                Score of Shumi vs stockfish_ELO 2600: 2 - 4 - 1 [0.357]
-                Score of Shumi vs arasanx-64 ELO 2300: 0 - 23 - 0 [0.000]
-                Score of Shumi vs stockfish_ELO 2300: 5 - 11 - 0 [0.313]
-                Score of Shumi vs stockfish_ELO 2600: 2 - 15 - 4 [0.190]
-
-            (test set B) 
-                Score of Shumi vs texel64-avx2-pop ELO 2200: 2 - 6 - 1 [0.278]
-                Score of Shumi vs stockfish_ELO 2300: 32 - 11 - 7 [0.710]
-                Score of Shumi vs arasanx-64 ELO 2200: 24 - 20 - 6 [0.540]
-                Score of Shumi vs texel64-avx2-pop ELO 2200: 15 - 27 - 8 [0.380]
-                Score of Shumi vs stockfish_ELO 2400: 17 - 11 - 6 [0.588]
-                Score of Shumi vs stockfish_ELO 2400: 8 - 7 - 2 [0.529]
-                Score of Shumi vs texel64-avx2-pop ELO 2200: 1 - 6 - 1 [0.188]
-
-            (test set C) 
-
-                Score of Shumi vs arasanx-64 ELO 2200: 2 - 5 - 2 [0.333]
-                Score of Shumi vs texel64-avx2-pop ELO 2200: 3 - 12 - 2 [0.235]
-                Score of Shumi vs texel64-avx2-pop ELO 2200: 13 - 26 - 5 [0.352]
+        Score of Shumi vs stockfish_ELO 2400: 25 - 39 - 4 [0.397]
 
 
 ==========================================================================================================
@@ -229,3 +204,32 @@ Games with stockfish (using cutechess as tournement director)
                 
                 Score of arasanx-64 ELO 2300 vs stockfish_ELO 2300: 23 - 1 - 1 [0.940]
                 Score of arasanx-64 ELO 2200 vs stockfish_ELO 2300: 11 - 13 - 1 [0.460]
+
+
+
+Score of Shumi vs stockfish_ELO 2400: 25 - 39 - 4 [0.397]
+...      Shumi playing White: 11 - 20 - 3  [0.368] 34
+...      Shumi playing Black: 14 - 19 - 1  [0.426] 34
+...      White vs Black: 30 - 34 - 4  [0.471] 68
+Elo difference: -72.6 +/- 83.4, LOS: 4.0 %, DrawRatio: 5.9 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+69 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 4
+   "Loss: Black disconnects": 4
+   "Loss: Black mates": 16
+   "Loss: White disconnects": 4
+   "Loss: White mates": 15
+   "No result": 1
+   "Win: Black mates": 14
+   "Win: White mates": 11
+Player: stockfish_ELO 2400
+   "Draw by 3-fold repetition": 4
+   "Loss: Black mates": 14
+   "Loss: White mates": 11
+   "No result": 1
+   "Win: Black disconnects": 4
+   "Win: Black mates": 16
+   "Win: White disconnects": 4
+   "Win: White mates": 15

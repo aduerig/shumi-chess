@@ -1249,16 +1249,24 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
    
     MoveText.clear();        // start fresh (does NOT free capacity)
 
-    // ull frm = the_move.from;
-    // ull to = the_move.to;
+
     const ull movefrom = utility::bit::square_to_bitboard(the_move.fromSQ);
     const ull moveto = utility::bit::square_to_bitboard(the_move.toSQ);
    
-    // if (game_board.bits_in(movefrom) != 1) {
-    //     cerr << game_board.bits_in(movefrom) << game_board.bits_in(moveto) << the_move.piece_type << endl;
-    //     assert(0);
-    // }
-    assert(game_board.bits_in(movefrom) == 1);
+    // Asserts
+    //assert(game_board.bits_in(movefrom) == 1);      // cutechess assert
+    if (game_board.bits_in(movefrom) != 1) {
+        cerr << "INVALID MOVEFROM:"
+            << " from_bits=" << game_board.bits_in(movefrom)
+            << " to_bits=" << game_board.bits_in(moveto)
+            << " piece_type=" << static_cast<int>(the_move.piece_type)
+            << endl;
+
+        string out = utility::representation::gameboard_to_string(game_board);
+        cerr << out << endl;
+
+        assert(0);
+    }
     assert(game_board.bits_in(moveto) == 1);
 
     if (the_move.piece_type == Piece::NONE) {
@@ -1564,6 +1572,7 @@ void Engine::print_moves_and_scores_to_file(MoveAndScoreList move_and_scores_lis
 
 void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, bool b_convert_to_abs_score, FILE* fp)
 {
+
     const ShumiChess::Move& best_move = move_and_score.first;
     Score d_best_move_valu = move_and_score.second;   
 
@@ -1579,6 +1588,7 @@ void Engine::print_move_and_score_to_file(const MoveAndScore move_and_score, boo
 // Puts best move and absolute score. 
 void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_valu, bool b_convert_to_abs_score)
 {
+
     move_string = "";
     // Convert relative score to abs score
     if (b_convert_to_abs_score) {
@@ -1587,6 +1597,7 @@ void Engine::move_and_score_to_string(const Move best_move, Score d_best_move_va
     
     if (std::abs(d_best_move_valu) < VERY_SMALL_SCORE) d_best_move_valu = 0;         // avoid negative zero
 
+    assert(0);  // cutechess assert
     bitboards_to_algebraic(game_board.turn, best_move
                     , (GameState::INPROGRESS)
                     , false
@@ -1862,6 +1873,7 @@ string Engine::moves_into_string(const std::vector<Move>& mvs)
     for (size_t i = 0; i < mvs.size(); i++) {
 
         move_string.clear();     // reuse the same output string each time
+        assert(0);  // cutechess debug
         move_into_string(mvs[i]); // fills move_string
 
         sret += move_string;
@@ -1886,13 +1898,14 @@ void Engine::move_into_string_full(ShumiChess::Move m) {
     if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE, false>(false, moves);
     else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK, false>(false, moves);
 
-
+    sout << "START ADDING TO PGN" << endl;
     bitboards_to_algebraic(game_board.turn, m
                 , (GameState::INPROGRESS)
                 , false
                 , false
                 , &moves
                 , move_string);    // Output
+    sout << "END ADDING TO PGN" << endl;
 }
 
 
@@ -1992,6 +2005,7 @@ void Engine::print_move_to_file(const ShumiChess::Move m, int nPly, GameState gs
 
     if (bFlipColor) aColor = utility::representation::opposite_color(aColor);
 
+    assert(0);  // cutechess assert
     bitboards_to_algebraic(aColor, m
                                 , gs
                                 , isInCheck
@@ -2024,6 +2038,7 @@ void Engine::print_move_to_file_with_prefix(const ShumiChess::Move m, int nPly, 
 
     if (bFlipColor) aColor = utility::representation::opposite_color(aColor);
 
+    assert(0);  // cutechess assert
     bitboards_to_algebraic(aColor, m
                                 , gs
                                 , isInCheck
@@ -2111,6 +2126,7 @@ void Engine::debug_SEE_for_all_captures(FILE* fp)
         // Convert move to SAN using your existing helper
         std::string san;
         san.reserve(_MAX_ALGEBRIAC_SIZE);
+        assert(0);  // cutechess assert
         bitboards_to_algebraic(
             mv.color,
             mv,

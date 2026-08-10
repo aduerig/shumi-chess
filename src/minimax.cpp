@@ -783,6 +783,9 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
                 , int feat
                 , SearchTimeControl time_control) {  
 
+    sout << "ENTERED get_move_iterative_deepening()" << endl;
+
+                    
     // Initialize the per-game countdown only when requested. The engine owns and
     // decrements the countdown across subsequent calls.
     if (iRandomMoves > 0) {
@@ -1003,13 +1006,12 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
         if (best_move.piece_type == Piece::NONE) break;     // NOTE: should this ever happen?
 
-        engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-                , (GameState::INPROGRESS), false, false, NULL
-                , engine.move_string);    // Output
-
         excluded_root_moves.push_back(std::make_pair(best_move, d_best_move_score));
         if (d_best_move_score == ONLY_MOVE_SCORE) break;
 
+        // engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+        //         , (GameState::INPROGRESS), false, false, NULL
+        //         , engine.move_string);    // Output
         //sout << " pvar! " << d_best_move_score << " " << engine.move_string << " \n";
 
     }
@@ -1037,11 +1039,12 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         d_best_move_score = std::get<0>(ret_val0);
         best_move = std::get<1>(ret_val0);
 
-        engine.bitboards_to_algebraic(engine.game_board.turn, best_move
-                , (GameState::INPROGRESS), false, false, NULL
-                , engine.move_string);    // Output
-
         #ifdef DISPLAY_DEEPING
+            engine.bitboards_to_algebraic(engine.game_board.turn, best_move
+                    , (GameState::INPROGRESS), false, false, NULL
+                    , engine.move_string);    // Output
+
+
             sout << "\n" << " end multisss " << d_best_move_score << "  "  
                     << engine.move_string << " out of=" <<  n_moves_within_delta << " \n";
         #endif
@@ -1201,11 +1204,14 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     bool bISOK = engine.is_legal_move(best_move);       // // debug only
     if (!bISOK) {
 
+        sout << " bad move!!" << endl; 
+        cerr << " bad move!!!" << endl; 
+
         engine.move_into_string(best_move);
        
-        sout << " bad move!!" << endl; 
         sout << " bad move!!!!" << engine.move_string << endl; 
         sout << " bad move!!" << endl; 
+
         assert(0);
     }
 
@@ -1529,7 +1535,6 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     }
     previous_elapsed_time = elapsed_time;
 
-    // codex resume 019fc607-1d81-7bf0-8f51-80b50f7c53cb
     // K was chosen so, with growth_factor 6.0, the minimum cumulative elapsed
     // curve stays tiny early and reaches about 10ms at deepening 10.
     const long double K = 0.333L;
@@ -1880,9 +1885,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 } else {
 
                     // Its a match but not a perfect match. Use the move for ordering anyway.
-                    // bool is_in = is_move_in_list(entry.best_move, legal_moves);
-                    // assert(is_in);
-
                     TT2_match_move = entry.best_move;
 
                 }
@@ -2017,14 +2019,14 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         // returns 0 if success, 1 if abort     n_legal_moves_found
         bool did_cutoff;
-        int ir = loop_over_all_moves(depth, alpha, beta, 
+        bool was_aborted = loop_over_all_moves(depth, alpha, beta, 
                         nPlys, qPlys, in_check, 
                         d_stand_pat, 
                         move_last,
                         p_moves_to_loop_over,               // input
                         the_best_move, d_best_score,        // outputs
                         did_cutoff);
-        if (ir != 0) {
+        if (was_aborted) {
             return {ABORT_SCORE, the_best_move};
         }
 
@@ -2033,7 +2035,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }   // END non zero moves to look at
 
     bool storeTT = ( (Features_mask & _FEATURE_TT2) && (n_Multis == 1) );
-    storeTT = false;        // debug only TT2 off
+    storeTT = false;        // debug only TT2 off if uncommented
     if (storeTT) {  // store in TT2  (from regular search)
 
         int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
@@ -2533,7 +2535,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     //GameState state = engine.is_game_over(legal_moves.size());
 
     // =====================================================================
-    // Terminal positions (game over)
+    // Terminal positions (game over), as in checkmate or stalemate
     // =====================================================================
     if (state != GameState::INPROGRESS) {
 
@@ -2676,21 +2678,20 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
         }
         the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
 
-        // returns 0 if success, 1 if abort     n_legal_moves_found
-        {
-            bool did_cutoff;
-            int ir = loop_over_all_moves(0, alpha, beta, 
-                            nPlys, qPlys, in_check, 
-                            d_stand_pat, 
-                            move_last,
-                            p_moves_to_loop_over,               // input
-                            the_best_move, d_best_score,        // outputs
-                            did_cutoff);
-            if (ir != 0) {
-                return {ABORT_SCORE, the_best_move};
-            }
-        }
 
+        bool did_cutoff;
+        // returns 0 if success, 1 if abort
+        bool was_aborted = loop_over_all_moves(0, alpha, beta, 
+                        nPlys, qPlys, in_check, 
+                        d_stand_pat, 
+                        move_last,
+                        p_moves_to_loop_over,               // input
+                        the_best_move, d_best_score,        // outputs
+                        did_cutoff);
+        if (was_aborted) {
+            return {ABORT_SCORE, the_best_move};
+        }
+   
 
     }   // END non zero oves to look at
     
@@ -2745,8 +2746,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// returns 0 if success, 1 if abort (ABORT_SCORE) happened
-int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
+// returns false if success, true if abort (ABORT_SCORE) happened
+bool MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
                        bool in_check,
                        Score d_stand_pat, 
                        const ShumiChess::Move& move_last,       // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
@@ -2975,10 +2976,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         Score d_return_score = get<0>(ret_val);     // units are pawns
         Move d_return_move = get<1>(ret_val);
   
-        // abort logic
-        if (d_return_score == ABORT_SCORE) {
-            return 1;
-        }
+    
 
         // We are done with the recursion. Remove zkey from the 3-time rep collector.
         assert(!engine.three_time_rep_stack.empty());   // Better not be empty, we just pushed a move up above.
@@ -2993,6 +2991,7 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
         // pop move
         if (m.color == Color::WHITE) engine.popMove_t<Color::WHITE>();
         else                         engine.popMove_t<Color::BLACK>();
+
 
         #ifdef _DEBUGGING_PUSH_POP
             std::string temp_fen_after = engine.game_board.to_fen();
@@ -3030,6 +3029,11 @@ int MinimaxAI::loop_over_all_moves(int depth, Score &alpha, const Score beta, in
                 assert(0);   
             }
         #endif
+
+        // abort logic
+        if (d_return_score == ABORT_SCORE) {
+            return true;
+        }
 
         // negamax, reverse returned score.  
         Score d_score_value = -d_return_score;
