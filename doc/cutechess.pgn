@@ -1,16 +1,1 @@
-rrrrrrrrrrrrrrrrrrrrrrrrrrrr[Event "My Tournament"]
-[Site "?"]
-[Date "2026.08.10"]
-[Round "1"]
-[White "Shumi"]
-[Black "stockfish_ELO 2300"]
-[Result "0-1"]
-[GameDuration "00:00:05"]
-[GameEndTime "2026-08-10T17:04:49.192 Eastern Daylight Time"]
-[GameStartTime "2026-08-10T17:04:43.917 Eastern Daylight Time"]
-[PlyCount "0"]
-[Termination "abandoned"]
-[TimeControl "40/300"]
-
-{White disconnects} 0-1
-
+ttt

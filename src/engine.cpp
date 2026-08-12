@@ -543,19 +543,19 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
             return GameState::BLACKWIN;     // Checkmate
         } else if ( (!game_board.black_king) || (is_square_in_check_t<Color::WHITE>(game_board.black_king)) ) {
             return GameState::WHITEWIN;     // Checkmate
-        }
-        else {
+        } else {
             reason_for_draw = DRAW_STALEMATE;
             //if (debugNow) sout<<"stalemate" << endl;
             return GameState::DRAW;    //  Draw by Stalemate
         }
-    }
-    else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
-        //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
-        //sout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
-        reason_for_draw = DRAW_50MOVERULE;
-        //sout<<"50 move rule" << endl;
-        return GameState::DRAW;           // draw by 50 move rule
+
+        //      codex resume 019ff3fa-51d8-7972-814f-c14d2856ade8
+    // } else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
+    //     //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
+    //     //sout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
+    //     reason_for_draw = DRAW_50MOVERULE;
+    //     //sout<<"50 move rule" << endl;
+    //     return GameState::DRAW;           // draw by 50 move rule
 
     } else {
 
@@ -1260,9 +1260,11 @@ void Engine::bitboards_to_algebraic(ShumiChess::Color color_that_moved
             << " from_bits=" << game_board.bits_in(movefrom)
             << " to_bits=" << game_board.bits_in(moveto)
             << " piece_type=" << static_cast<int>(the_move.piece_type)
+            << " fff " << (int)the_move.fromSQ
+            << " ttt " << (int)the_move.toSQ
             << endl;
 
-        string out = utility::representation::gameboard_to_string(game_board);
+        string out = utility::representation::gameboard_to_string_old(game_board);
         cerr << out << endl;
 
         assert(0);
@@ -1898,14 +1900,15 @@ void Engine::move_into_string_full(ShumiChess::Move m) {
     if (game_board.turn == Color::WHITE) iLegalMoves = get_legal_moves_fast_t<Color::WHITE, false>(false, moves);
     else                                 iLegalMoves = get_legal_moves_fast_t<Color::BLACK, false>(false, moves);
 
-    sout << "START ADDING TO PGN" << endl;
+    //sout << "START ADD PGN " << (int)m.fromSQ << " to=" << (int)m.toSQ << endl;
     bitboards_to_algebraic(game_board.turn, m
                 , (GameState::INPROGRESS)
                 , false
                 , false
                 , &moves
                 , move_string);    // Output
-    sout << "END ADDING TO PGN" << endl;
+                
+    //sout << "END   ADD PGN " << (int)m.fromSQ << " to=" <<(int)m.toSQ << endl;
 }
 
 

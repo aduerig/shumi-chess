@@ -503,7 +503,7 @@ static void start_searching_for_move(
          time_control]()
         {
             try {
-                sout << "SEARCH START go_id="
+                sout << "\nSEARCH START go_id="
                      << go_id
                      << endl;
 
@@ -570,7 +570,7 @@ static void found_move(Engine& engine,
     Move move = search_thread.move;
 
     if (move.piece_type == Piece::NONE) {
-        cerr << "No legal move returned at ply " << endl;
+        sout << "No legal move returned at ply " << endl;
         std::cout << "bestmove 0000\n";
         std::cout.flush();
         return;
@@ -578,9 +578,9 @@ static void found_move(Engine& engine,
 
     // Translate this Move into UCI coordinate notation
     string move_str = move_to_uci(move);
-    sout << "STARTING move_into_string" << endl;
+    //sout << "STARTING move_into_string from shumi_uci" << endl;
     engine.move_into_string(move);
-    sout << "ENDING move_into_string" << endl;
+    //sout << "ENDING move_into_string" << endl;
     string move_str_alebriac = engine.move_string;
     
 
@@ -773,7 +773,7 @@ static void make_engine_move(Engine& engine, Move move)
     engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
 
     bool b_reversable = engine.game_board.isReversableMove(move);
-    if (!b_reversable) {
+    if (!b_reversable) {    // dont pollute the 3-rep stack with pawn moves and stuff
         engine.boundary_stack.push_back((int)engine.three_time_rep_stack.size() - 1);
     }
 }

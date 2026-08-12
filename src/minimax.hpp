@@ -227,7 +227,7 @@ public:
     typedef std::chrono::high_resolution_clock::time_point TIME_TYPE;
 
 
-    std::tuple<Score, ShumiChess::Move> do_a_principal_variation(int depth, ShumiChess::Move null_move
+    std::tuple<Score, ShumiChess::Move> do_a_principal_variation(int depth
                                         , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
                                         , const SearchTimeControl& time_control
                                         , ull& elapsed_time);      // Output
@@ -240,8 +240,7 @@ public:
     tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time_display_only
                                                 , ull& last_elapsed_time_display_only
                                                 , long double estimated_elapsed_time
-                                                , bool estimated_elapsed_time_available
-                                                , const ShumiChess::Move& null_move);
+                                                , bool estimated_elapsed_time_available);
 
 
     std::tuple<Score, ShumiChess::Move> pick_random_within_delta_rand(std::vector<std::pair<ShumiChess::Move,Score>>& MovsFromRoot,
@@ -268,7 +267,7 @@ public:
     std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
                                             , Score alpha, Score beta
                                             , bool is_from_root
-                                            , const ShumiChess::Move& move_last //  debug (used only by _DEBUGGING_MOVE_CHAIN)
+                                            //, const ShumiChess::Move& move_last //  debug (used only by _DEBUGGING_MOVE_CHAIN)
                                             , int nPlys
                                             , int qPlys
                                         );
@@ -276,14 +275,16 @@ public:
                                             //int depth,
                                             Score alpha, Score beta
                                             //, bool is_from_root
-                                            , const ShumiChess::Move& move_last //  debug (used only by _DEBUGGING_MOVE_CHAIN)
+                                            //, const ShumiChess::Move& move_last //  debug (used only by _DEBUGGING_MOVE_CHAIN)
                                             , int nPlys
                                             , int qPlys
                                         );
 
-    bool loop_over_all_moves(int depth, Score &alpha, const Score beta, int nPlys, int qPlys,
+    bool loop_over_all_moves(int depth, Score &alpha, 
+                       const Score beta, 
+                       int nPlys, int qPlys,
                        bool in_check, Score d_stand_pat, 
-                       const ShumiChess::Move& move_last,       // NOTE: remove me
+                       //const ShumiChess::Move& move_last,       // NOTE: remove me
                        const vector<ShumiChess::Move>* pMoves, 
                        ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
                        bool& did_cutoff);     // outputs

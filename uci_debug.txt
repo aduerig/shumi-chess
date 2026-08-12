@@ -4,9 +4,9 @@ isready
 ucinewgame
 position startpos
 isready
-go wtime 120000 btime 120000 movestogo 40
+go wtime 60000 btime 60000 movestogo 40
+
 SEARCH START go_id=0
-ENTERED get_move_iterative_deepening()
 
 
 0 Deeping 1 ply of 4 msec=     0/_ Best: Nf3   ; +0.36
@@ -21,7 +21,7 @@ ENTERED get_move_iterative_deepening()
 0 Deeping 3 ply of 4 msec=     0/0 Best: Nc3   ; +0.36
 0 Deeping 4 ply of 4 msec=     0/0 Best: Nc3   ; +0.00
 0 Deeping 5 ply of 4 msec=     2/0 Best: Nc3   ; +0.31
-0 Deeping 6 ply of 4 msec=    10/12 Best: Nc3   ; +0.00
+0 Deeping 6 ply of 4 msec=    11/12 Best: Nc3   ; +0.00
 
 0 Deeping 1 ply of 4 msec=     0/_ Best: e4    ; +0.31
 0 Deeping 2 ply of 4 msec=     0/0 Best: e4    ; -0.05
@@ -35,14 +35,14 @@ ENTERED get_move_iterative_deepening()
 0 Deeping 3 ply of 4 msec=     0/0 Best: e4    ; +0.28
 0 Deeping 4 ply of 4 msec=     0/0 Best: e4    ; -0.05
 0 Deeping 5 ply of 4 msec=     3/0 Best: e4    ; +0.31
-0 Deeping 6 ply of 4 msec=    11/18 Best: e4    ; +0.00
+0 Deeping 6 ply of 4 msec=    16/18 Best: e4    ; +0.00
 
 0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.24
 0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.12
 0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.24
 0 Deeping 4 ply of 4 msec=     0/0 Best: f4    ; -0.12
-0 Deeping 5 ply of 4 msec=     1/0 Best: f4    ; +0.24
-0 Deeping 6 ply of 4 msec=     9/6 Best: f4    ; -0.07
+0 Deeping 5 ply of 4 msec=     2/0 Best: f4    ; +0.24
+0 Deeping 6 ply of 4 msec=    10/12 Best: f4    ; -0.07
 
 0 Deeping 1 ply of 4 msec=     0/_ Best: c4    ; +0.24
 0 Deeping 2 ply of 4 msec=     0/0 Best: c4    ; -0.12
@@ -57,3 +57,20 @@ ENTERED get_move_iterative_deepening()
 0 Deeping 4 ply of 4 msec=     0/0 Best: f3    ; -0.22
 0 Deeping 5 ply of 4 msec=     1/0 Best: e3    ; +0.14
 0 Deeping 6 ply of 4 msec=     9/6 Best: e3    ; -0.17
+[pick_random_within_delta_rand] n_top=7 from candidates: 
+1  [0]  Nf3
+  [1]  Nc3
+  [2]  d4
+  [3]  e4
+  [4]  f4
+  [5]  c4
+  [6]  e3
+
+ end multisss 0  Nc3 out of=7 
+[33m
+Went to depth 0 elapsed min= 0.0012 elapsed msec= 72 request msec= 212[0m
+[1;96mNc3[0m   [1;96m0.000 =score,  [0m[1;93mVisited: 138,638 / 715% nodes total ---- 991,254 Evals[0m
+[1;92mTotal time: 0.07 sec[0m[1;92m   nodes/sec= 1,922,161   evals/sec= 1[0m
+[aspiration summary] attempts=35 successes=35 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=1190074 retry-nodes=0
+SEARCH RETURNED go_id=0
+Nc3 SENDING bestmove b1c3 go_id=0

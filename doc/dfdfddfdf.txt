@@ -4,37 +4,49 @@ after (test set A and test set B). Note that the position of the player that app
 first or second in the "vs", only means who gets white in first game.
 
 
+DO not make any changes now, this is just a discussion. 
+OK. This helped, now cutechess is not terminating prematurally. I beieve its because now we send to 
+cout: "   std::cout << "bestmove 0000\n";", when we fail to get a move. This still does not solve the problem as to why its doing it.
+why we get no move. See the below cutechess output. (from a tourmeyment I terminated, cutechess did not terminate it,
+as what happend before you fixed the last bug).  Notice the illegal moves. 
 
 
+Score of Shumi vs stockfish_ELO 2300: 14 - 17 - 1 [0.453]
+...      Shumi playing White: 9 - 7 - 0  [0.563] 16
+...      Shumi playing Black: 5 - 10 - 1  [0.344] 16
+...      White vs Black: 19 - 12 - 1  [0.609] 32
+Elo difference: -32.7 +/- 124.0, LOS: 29.5 %, DrawRatio: 3.1 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+33 of 200 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 1
+   "Loss: Black makes an illegal move: 0000": 2
+   "Loss: Black mates": 6
+   "Loss: White makes an illegal move: 0000": 1
+   "Loss: White mates": 8
+   "No result": 1
+   "Win: Black mates": 5
+   "Win: White mates": 9
+Player: stockfish_ELO 2300
+   "Draw by 3-fold repetition": 1
+   "Loss: Black mates": 5
+   "Loss: White mates": 9
+   "No result": 1
+   "Win: Black makes an illegal move: 0000": 2
+   "Win: Black mates": 6
+   "Win: White makes an illegal move: 0000": 1
+   "Win: White mates": 8
 
 
-Here is the problem. Time control. There are three current mechaisms for ending thinking. 
-1. bThinkingOverByDepth, 2. bThinkingOverByTime, and 3. should_abort_search_by_time(). 
-Refer to the attached minimax.cpp 
+Here is the problem. There is a bug that happens every 20 games or so. Takes an hour or so to reproduce.
+The problem is that the recursion returns "null move", see " END r 0 from=64 to=64" below. Note that 64 is NO_SQUARE. So I am somehow exiting recursive_negamax()
+without assigning to the return: "the_best_move", WITHOUT delivering any text to "sout". The main() that is running is in 
+shumi_uci.cpp, but it calls into other files.
+My guess is that its a three time repetition thing. It always happens near the end of the game when there are
+only a few pieces on the board, no pawns. Note that  GameState::DRAW: is 2, and the "terminat" output shows a 2.
 
-1. bThinkingOverByDepth simply serves as a minimum, Shumi_uci.cpp sets it to 5, and that will
-force a minimum of only few dozen msecs. 2. bThinkingOverByTime is managed correctly now, and 
-is the main mechanism for controlling time spent. It works well, but I need a last ditch abort 
-when time til time control is less than 10 to 5 sec. This is the purpose of 
-3. should_abort_search_by_time(). But this is not the behavior I see. I deliberatly 
-set the debug line: "bThinkingOverByTime = false", just to test this hard abort. The behavior I see in this debug
-build is that shumi tries to take forever for each move (correct for this build), but aborts after exactly 5 or 10 seconds 
-(cant remember which). This is not the intended behavior The intended behavior is that once the time 
-until time control is less than "t" (this should be ten seconds), then the hard abort should happen after 
-"t/2" seconds. 
+ Here is the output of the last move with the failure at the end (delivered to sout).
 
 
-Look at shumi_uci.cpp. See the while loop over UCI inputs from cutechess. Note the switch/case over 
-the UCI inputs. Now the main point is that after a "go" 
-from cutechess, i do some code and then call get_move_iterative_deepening() This is a blocking call. Nothing happens in 
-the code until that routine returns. Then some more code is run , for that UCI case. Now. The goal is to convert 
-this to two threads. One thread runs get_move_iterative_deepening(), the other thread (main()) moniters the thread 
-completion, and potentail inputs from cutechess (UCI inputs). The code before (inclusive) and after the get_move_iterative_deepening()
-should be packaged in two static routines: "start_searching_for_move" and "found_move()". Also the condition at the top of the while
-loop, the while loop line, can no longer block on UCI input. "start_searching_for_move", should be called in response to a "go"
-But found_move() is only called after the new semaphore between the threads is set (indicating the seacrh is done).
-AN absolute minimum number of changes should occur in routines other than shumi_uci.cpp. DO not use LF endings
-use CRLF. All i mean by semaphore is a memory spoy bollean that both threads can reliably set and read. I suppose we have a problem
-in the main*() thread in that it must "sleep" ot something? Maybe not.
-)
 

@@ -675,7 +675,7 @@ bool GameBoard::insufficient_material_simple() {
 
 }
 
-
+// dont pollute the 3-rep stack with pawn moves and stuff
 bool GameBoard::isReversableMove(const Move& m)
 {
     // "Reversible" here means: does NOT reset the repetition window.
