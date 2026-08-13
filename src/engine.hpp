@@ -321,9 +321,17 @@ class Engine {
         int rand_int(int, int);
         bool flip_a_coin(void);
    
+        // Three time repetition
+        
         // These stacks handled in parallel
-        std::vector<uint64_t> three_time_rep_stack; // zobrist keys representing positions
-        std::vector<int> boundary_stack; // indices into three_time_rep_stack
+        std::vector<uint64_t> three_time_rep_stack;     // zobrist keys representing positions
+        std::vector<int> boundary_stack;                // indices into three_time_rep_stack
+
+        void push_to_three_time_rep_stack(const Move& move);
+        void pop_from_three_time_rep_stack();
+        int times_in_three_time_rep_stack();
+  
+
 
         // Holds data on pieces of color c that are pinned to the king of color c.
         struct PinnedInfo

@@ -220,10 +220,6 @@ static void make_engine_move(Engine& engine, Move move)
     }
 
     // Manage tree time repetition
-    engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
-
-    bool b_reversable = engine.game_board.isReversableMove(move);
-    if (!b_reversable) {    // dont pollute the 3-rep stack with pawn moves and stuff
-        engine.boundary_stack.push_back((int)engine.three_time_rep_stack.size() - 1);
-    }
+    engine.push_to_three_time_rep_stack(move);
+   
 }

@@ -284,7 +284,7 @@ void Engine::reset_all_but_FEN()
 
     //repetition_table.clear();
 
-    // Three time repition
+    // Three time repition stacks
     three_time_rep_stack.clear();
     boundary_stack.clear();
     three_time_rep_stack.reserve(MAX_MOVES);
@@ -549,7 +549,6 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
             return GameState::DRAW;    //  Draw by Stalemate
         }
 
-        //      codex resume 019ff3fa-51d8-7972-814f-c14d2856ade8
     } else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //sout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
@@ -567,22 +566,15 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
             return GameState::DRAW;
         }
 
-        // Count how many times this zobrist appears in the 3-time rep table
-        int start = boundary_stack.empty() ? 0 : boundary_stack.back();
-        int count = 0;
-        uint64_t cur = game_board.zobrist_key;
-        for (int i = start; i < (int)three_time_rep_stack.size(); ++i) {
-            if (three_time_rep_stack[i] == cur) count++;
-        }
+        // Three time repetition
+        int count = times_in_three_time_rep_stack();    // Count how many times this zobrist appears in the 3-time rep table
+
         if (count >= THREE_TIME_REP) {
             // threefold repetition draw
             reason_for_draw = DRAW_3TIME_REP;
             //if (debugNow) sout<<"3-time-rep"<< endl;
             return GameState::DRAW;
         }
-
-
-
     
 
     }
@@ -791,7 +783,47 @@ template<Color c> void Engine::pushMove_t(const Move& move) {
 
 }
 
- 
+
+void Engine::push_to_three_time_rep_stack(const Move& move)
+{
+    // Manage three time repetition
+    three_time_rep_stack.push_back(game_board.zobrist_key);
+
+    // Keep track of the last "irreversable move" in the three time stack.
+    // This is done so we only count position repetation after the last irreversable move.
+    // Irreversable moves are things like pawn moves, captures, promotions.
+    bool b_reversable = game_board.isReversableMove(move);
+    if (!b_reversable) {    // dont pollute the 3-rep stack with pawn moves and stuff
+        boundary_stack.push_back((int)three_time_rep_stack.size() - 1);
+    }
+}
+
+void Engine::pop_from_three_time_rep_stack()
+{
+    assert(!three_time_rep_stack.empty());   // Better not be empty, we just pushed a move up above.
+    //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() <= (int)engine.three_time_rep_stack.size());
+    three_time_rep_stack.pop_back();
+    while (!boundary_stack.empty() &&
+        boundary_stack.back() >= (int)three_time_rep_stack.size()) {
+        boundary_stack.pop_back();
+    }
+}
+
+int Engine::times_in_three_time_rep_stack() {
+
+    // Only look at positions after the last irreversable move
+    int start = boundary_stack.empty() ? 0 : boundary_stack.back();
+   
+    int cnt = 0;
+    uint64_t zkey = game_board.zobrist_key;
+    for (int i = start; i < (int)three_time_rep_stack.size(); ++i) {
+        if (three_time_rep_stack[i] == zkey) ++cnt;
+    }
+    return cnt;
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 // undos last move   (the opposite of "pushMove()")

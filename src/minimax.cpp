@@ -193,11 +193,9 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
     pawn_file_info.clear();
     pawn_file_info.reserve(1000000);    // NOTE: What size here?
 
-    // add the current position
+    // add the current position to 3 time rep stack.   reset_all_but_FEN()
     //engine.repetition_table.clear();
     //engine.repetition_table[key_now] = 1;
-
-    uint64_t key_now = engine.game_board.zobrist_key;
     engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
 
     // Set default features
@@ -1277,7 +1275,7 @@ void MinimaxAI::playground(int iPhase) {
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
 
 // TTable2
-    //sout << "TT " << TTable2.size() << "  " << NhitsTT2 << endl;
+    sout << "TT " << TTable2.size() << "  " << NhitsTT2 << endl;
 
     //int material_balance = ;  // evaluate_board();
     //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
@@ -1561,9 +1559,36 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     previous_elapsed_time = elapsed_time;
 
     // K was chosen so, with growth_factor 6.0, the minimum cumulative elapsed
-    // curve stays tiny early and reaches about 10ms at deepening 10.
-    const long double K = 0.333L;
+    // curve stays tiny early and 
+    
+    //const long double K = 0.333L;   // reaches about 10ms at deepening 10.
+
+    //const long double K = 0.55L;    // reaches about 500ms at deepening 9.
+    // Depth 1:    0.033 ms
+    // Depth 2:    0.111 ms
+    // Depth 3:    0.369 ms
+    // Depth 4:    1.23 ms
+    // Depth 5:    4.09 ms
+    // Depth 6:   13.6 ms
+    // Depth 7:   45.4 ms
+    // Depth 8:  151.3 ms
+    // Depth 9:  503.8 ms
+
+
+    const long double K = 0.80L;
+
     minimum_elapsed_time *= static_cast<long double>(growth_factor) * K;
+
+    // sout << "TIME CURVE:"       // debug only
+    //     << " elapsed=" << elapsed_time
+    //     << " growth=" << growth_factor
+    //     << " K=" << static_cast<double>(K)
+    //     << " minimum=" << static_cast<double>(minimum_elapsed_time)
+    //     << endl;
+
+
+
+
 
     // Take max of the "minimum elapsed time" and the passed in elapsed time". This is what you 
     // assume the elapsed time of the next level to be. 
@@ -1793,7 +1818,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }
 
     // =====================================================================
-    // Transposition table (TT2)
+    // Transposition table (TT2) probe
     // =====================================================================
 
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
@@ -2064,26 +2089,19 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }
 
     bool storeTT = ( (Features_mask & _FEATURE_TT2) && (n_Multis == 1) );
-    storeTT = false;        // debug only TT2 off if uncommented
+    //storeTT = false;        // debug only TT2 off if uncommented
     if (storeTT) {  // store in TT2  (from regular search)
 
         int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
 
-
         //
-        // Calculate "cnt", number of times this zobrist has been seen in the three_time_rep_stack.
+        // Calculate number of times this zobrist has been seen in the three_time_rep_stack.
         // This is so we don't add the same position to the TT2 twice.
-        //
-        int start = engine.boundary_stack.empty() ? 0 : engine.boundary_stack.back();
-        int cnt = 0;
-        uint64_t zkey = engine.game_board.zobrist_key;
-        for (int i = start; i < (int)engine.three_time_rep_stack.size(); ++i) {
-            if (engine.three_time_rep_stack[i] == zkey) ++cnt;
-        }
+        int cnt = engine.times_in_three_time_rep_stack();
 
-        bool bStoreThis = ( (depth > iLimit) && 
-                            (engine.game_board.halfmove < (FIFTY_MOVE_RULE_PLY/2)) &&
-                            (cnt<=1)
+        bool bStoreThis = ( (cnt<=1) &&
+                            (depth > iLimit) && 
+                            (engine.game_board.halfmove < (FIFTY_MOVE_RULE_PLY/2))
                           );
 
         if (bStoreThis) {
@@ -2961,6 +2979,7 @@ bool MinimaxAI::loop_over_all_moves(int depth,
         	g_live_ply = nPlys;
         #endif
 
+         // We are starting recursion. Add zkey from the 3-time rep collector.
         engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
 
         //
@@ -3011,14 +3030,8 @@ bool MinimaxAI::loop_over_all_moves(int depth,
     
 
         // We are done with the recursion. Remove zkey from the 3-time rep collector.
-        assert(!engine.three_time_rep_stack.empty());   // Better not be empty, we just pushed a move up above.
-        //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() <= (int)engine.three_time_rep_stack.size());
-        engine.three_time_rep_stack.pop_back();
-        while (!engine.boundary_stack.empty() &&
-            engine.boundary_stack.back() >= (int)engine.three_time_rep_stack.size()) {
-            engine.boundary_stack.pop_back();
-        }
-        //assert(engine.boundary_stack.empty() || engine.boundary_stack.back() < (int)engine.three_time_rep_stack.size());
+        engine.pop_from_three_time_rep_stack();
+      
 
         // pop move
         if (m.color == Color::WHITE) engine.popMove_t<Color::WHITE>();
@@ -3172,8 +3185,6 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
     return 0;
 }
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

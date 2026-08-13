@@ -241,13 +241,8 @@ engine_communicator_make_move_two_acn(PyObject* self, PyObject* args)
         // DO NOT remove the below line
         minimax_ai->playground(python_engine->game_phase);
         
-        python_engine->three_time_rep_stack.push_back(python_engine->game_board.zobrist_key);
-     
-        // Add only "reversable" moves to the 3-time rep stack.
-        bool bReversable = python_engine->game_board.isReversableMove(found_move);
-        if (!bReversable) {     // dont pollute the 3-rep stack with pawn moves and stuff
-            python_engine->boundary_stack.push_back((int)python_engine->three_time_rep_stack.size() - 1);
-        }
+        // Add this move to the three time repetaion stack
+        python_engine->push_to_three_time_rep_stack(found_move);
 
     }
     return Py_BuildValue("");

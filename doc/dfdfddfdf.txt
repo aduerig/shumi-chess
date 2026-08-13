@@ -39,6 +39,7 @@ Player: stockfish_ELO 2300
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+witout TT
 
    Score of Shumi vs stockfish_ELO 2300: 47 - 43 - 7 [0.521]
 ...      Shumi playing White: 25 - 22 - 2  [0.531] 49
@@ -70,3 +71,30 @@ Player: stockfish_ELO 2300
    "Win: Black mates": 21
    "Win: White loses on time": 1
    "Win: White mates": 21
+
+
+   with TT
+
+
+   Score of Shumi vs stockfish_ELO 2300: 43 - 42 - 15 [0.505]
+...      Shumi playing White: 24 - 18 - 8  [0.560] 50
+...      Shumi playing Black: 19 - 24 - 7  [0.450] 50
+...      White vs Black: 48 - 37 - 15  [0.555] 100
+Elo difference: 3.5 +/- 63.4, LOS: 54.3 %, DrawRatio: 15.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 14
+   "Draw by stalemate": 1
+   "Loss: Black mates": 18
+   "Loss: White mates": 24
+   "Win: Black mates": 19
+   "Win: White mates": 24
+Player: stockfish_ELO 2300
+   "Draw by 3-fold repetition": 14
+   "Draw by stalemate": 1
+   "Loss: Black mates": 19
+   "Loss: White mates": 24
+   "Win: Black mates": 18
+   "Win: White mates": 24

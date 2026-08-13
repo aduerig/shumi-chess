@@ -183,6 +183,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     rng.seed(static_cast<unsigned>(us));
 
     // !TODO doesn't belong here i don't think. I think it does.
+    // codex resume 019ffce2-f037-72d3-9e40-17fa0a9fb66c
     ShumiChess::initialize_zobrist();
     set_zobrist();
     
