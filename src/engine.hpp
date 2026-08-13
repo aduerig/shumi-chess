@@ -40,7 +40,7 @@ inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 3
     #define FIFTY_MOVE_RULE_PLY 5000      // This should be 100 as the units are ply.
     #define THREE_TIME_REP 3333            // Should be 3
 #else
-    #define FIFTY_MOVE_RULE_PLY 50      // This should be 100 as the units are ply.
+    #define FIFTY_MOVE_RULE_PLY 100      // This should be 100 as the units are ply.
     #define THREE_TIME_REP 3            // Should be 3
 #endif
 

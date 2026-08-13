@@ -11,42 +11,62 @@ why we get no move. See the below cutechess output. (from a tourmeyment I termin
 as what happend before you fixed the last bug).  Notice the illegal moves. 
 
 
-Score of Shumi vs stockfish_ELO 2300: 14 - 17 - 1 [0.453]
-...      Shumi playing White: 9 - 7 - 0  [0.563] 16
-...      Shumi playing Black: 5 - 10 - 1  [0.344] 16
-...      White vs Black: 19 - 12 - 1  [0.609] 32
-Elo difference: -32.7 +/- 124.0, LOS: 29.5 %, DrawRatio: 3.1 %
+Score of Shumi vs stockfish_ELO 2300: 32 - 43 - 5 [0.431]
+...      Shumi playing White: 19 - 20 - 1  [0.487] 40
+...      Shumi playing Black: 13 - 23 - 4  [0.375] 40
+...      White vs Black: 42 - 33 - 5  [0.556] 80
+Elo difference: -48.1 +/- 75.5, LOS: 10.2 %, DrawRatio: 6.3 %
 SPRT: llr 0 (0.0%), lbound -inf, ubound inf
-33 of 200 games finished.
+81 of 200 games finished.
 
 Player: Shumi
-   "Draw by 3-fold repetition": 1
-   "Loss: Black makes an illegal move: 0000": 2
-   "Loss: Black mates": 6
-   "Loss: White makes an illegal move: 0000": 1
-   "Loss: White mates": 8
+   "Draw by 3-fold repetition": 3
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 20
+   "Loss: White mates": 23
    "No result": 1
-   "Win: Black mates": 5
-   "Win: White mates": 9
+   "Win: Black mates": 13
+   "Win: White mates": 19
 Player: stockfish_ELO 2300
-   "Draw by 3-fold repetition": 1
-   "Loss: Black mates": 5
-   "Loss: White mates": 9
+   "Draw by 3-fold repetition": 3
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 13
+   "Loss: White mates": 19
    "No result": 1
-   "Win: Black makes an illegal move: 0000": 2
-   "Win: Black mates": 6
-   "Win: White makes an illegal move: 0000": 1
-   "Win: White mates": 8
+   "Win: Black mates": 20
+   "Win: White mates": 23
 
 
-Here is the problem. There is a bug that happens every 20 games or so. Takes an hour or so to reproduce.
-The problem is that the recursion returns "null move", see " END r 0 from=64 to=64" below. Note that 64 is NO_SQUARE. So I am somehow exiting recursive_negamax()
-without assigning to the return: "the_best_move", WITHOUT delivering any text to "sout". The main() that is running is in 
-shumi_uci.cpp, but it calls into other files.
-My guess is that its a three time repetition thing. It always happens near the end of the game when there are
-only a few pieces on the board, no pawns. Note that  GameState::DRAW: is 2, and the "terminat" output shows a 2.
-
- Here is the output of the last move with the failure at the end (delivered to sout).
+///////////////////////////////////////////////////////////////////////////////////////////
 
 
+   Score of Shumi vs stockfish_ELO 2300: 47 - 43 - 7 [0.521]
+...      Shumi playing White: 25 - 22 - 2  [0.531] 49
+...      Shumi playing Black: 22 - 21 - 5  [0.510] 48
+...      White vs Black: 46 - 44 - 7  [0.510] 97
+Elo difference: 14.3 +/- 67.4, LOS: 66.3 %, DrawRatio: 7.2 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+98 of 200 games finished.
 
+Player: Shumi
+   "Draw by 3-fold repetition": 3
+   "Draw by fifty moves rule": 2
+   "Draw by insufficient mating material": 2
+   "Loss: Black mates": 21
+   "Loss: White loses on time": 1
+   "Loss: White mates": 21
+   "No result": 1
+   "Win: Black mates": 20
+   "Win: White loses on time": 2
+   "Win: White mates": 25
+Player: stockfish_ELO 2300
+   "Draw by 3-fold repetition": 3
+   "Draw by fifty moves rule": 2
+   "Draw by insufficient mating material": 2
+   "Loss: Black mates": 20
+   "Loss: White loses on time": 2
+   "Loss: White mates": 25
+   "No result": 1
+   "Win: Black mates": 21
+   "Win: White loses on time": 1
+   "Win: White mates": 21

@@ -550,12 +550,12 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
         }
 
         //      codex resume 019ff3fa-51d8-7972-814f-c14d2856ade8
-    // } else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
-    //     //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
-    //     //sout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
-    //     reason_for_draw = DRAW_50MOVERULE;
-    //     //sout<<"50 move rule" << endl;
-    //     return GameState::DRAW;           // draw by 50 move rule
+    } else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
+        //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
+        //sout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
+        reason_for_draw = DRAW_50MOVERULE;
+        //sout<<"50 move rule" << endl;
+        return GameState::DRAW;           // draw by 50 move rule
 
     } else {
 
