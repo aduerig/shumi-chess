@@ -211,7 +211,7 @@ void Engine::reset_engine() {         // New game.
 
     ///////////////////////////////////////////////////////////////////////////////////
 
-    //game_board = GameBoard(UNDER_PROMOTION_FEN);
+    //game_board = GameBoard(THREE_TIME_REP_FEN);
 
     game_board = GameBoard();
 
@@ -290,6 +290,10 @@ void Engine::reset_all_but_FEN()
     three_time_rep_stack.reserve(MAX_MOVES);
     boundary_stack.reserve(MAX_MOVES);
     
+    assert(game_board.zobrist_key != 0);
+    three_time_rep_stack.push_back(game_board.zobrist_key);
+
+
     reason_for_draw = DRAW_NULL;
 
 

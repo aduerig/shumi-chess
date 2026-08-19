@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
         max_ply_to_play = atoi(argv[3]);
     }
 
-    int flags = _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+    int flags = _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
 
     sout << "uzing level= " << depth_to_use
          << "  msec = " << time_to_use

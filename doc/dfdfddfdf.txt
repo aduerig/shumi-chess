@@ -11,71 +11,11 @@ why we get no move. See the below cutechess output. (from a tourmeyment I termin
 as what happend before you fixed the last bug).  Notice the illegal moves. 
 
 
-Score of Shumi vs stockfish_ELO 2300: 32 - 43 - 5 [0.431]
-...      Shumi playing White: 19 - 20 - 1  [0.487] 40
-...      Shumi playing Black: 13 - 23 - 4  [0.375] 40
-...      White vs Black: 42 - 33 - 5  [0.556] 80
-Elo difference: -48.1 +/- 75.5, LOS: 10.2 %, DrawRatio: 6.3 %
-SPRT: llr 0 (0.0%), lbound -inf, ubound inf
-81 of 200 games finished.
+===============================================================================================
+   with TT (ordering also)
+===============================================================================================
 
-Player: Shumi
-   "Draw by 3-fold repetition": 3
-   "Draw by fifty moves rule": 2
-   "Loss: Black mates": 20
-   "Loss: White mates": 23
-   "No result": 1
-   "Win: Black mates": 13
-   "Win: White mates": 19
-Player: stockfish_ELO 2300
-   "Draw by 3-fold repetition": 3
-   "Draw by fifty moves rule": 2
-   "Loss: Black mates": 13
-   "Loss: White mates": 19
-   "No result": 1
-   "Win: Black mates": 20
-   "Win: White mates": 23
-
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
-witout TT
-
-   Score of Shumi vs stockfish_ELO 2300: 47 - 43 - 7 [0.521]
-...      Shumi playing White: 25 - 22 - 2  [0.531] 49
-...      Shumi playing Black: 22 - 21 - 5  [0.510] 48
-...      White vs Black: 46 - 44 - 7  [0.510] 97
-Elo difference: 14.3 +/- 67.4, LOS: 66.3 %, DrawRatio: 7.2 %
-SPRT: llr 0 (0.0%), lbound -inf, ubound inf
-98 of 200 games finished.
-
-Player: Shumi
-   "Draw by 3-fold repetition": 3
-   "Draw by fifty moves rule": 2
-   "Draw by insufficient mating material": 2
-   "Loss: Black mates": 21
-   "Loss: White loses on time": 1
-   "Loss: White mates": 21
-   "No result": 1
-   "Win: Black mates": 20
-   "Win: White loses on time": 2
-   "Win: White mates": 25
-Player: stockfish_ELO 2300
-   "Draw by 3-fold repetition": 3
-   "Draw by fifty moves rule": 2
-   "Draw by insufficient mating material": 2
-   "Loss: Black mates": 20
-   "Loss: White loses on time": 2
-   "Loss: White mates": 25
-   "No result": 1
-   "Win: Black mates": 21
-   "Win: White loses on time": 1
-   "Win: White mates": 21
-
-
-   with TT
-
-
+40/1 min -------------------------------------------------------------------------
    Score of Shumi vs stockfish_ELO 2300: 43 - 42 - 15 [0.505]
 ...      Shumi playing White: 24 - 18 - 8  [0.560] 50
 ...      Shumi playing Black: 19 - 24 - 7  [0.450] 50
@@ -98,3 +38,281 @@ Player: stockfish_ELO 2300
    "Loss: White mates": 24
    "Win: Black mates": 18
    "Win: White mates": 24
+
+40/1 min -------------------------------------------------------------------------
+   Score of arasanx-64 ELO 2200 vs Shumi: 58 - 37 - 5 [0.605]
+...      arasanx-64 ELO 2200 playing White: 33 - 15 - 2  [0.680] 50
+...      arasanx-64 ELO 2200 playing Black: 25 - 22 - 3  [0.530] 50
+...      White vs Black: 55 - 40 - 5  [0.575] 100
+Elo difference: 74.1 +/- 68.7, LOS: 98.4 %, DrawRatio: 5.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: arasanx-64 ELO 2200
+   "Draw by 3-fold repetition": 3
+   "Draw by insufficient mating material": 2
+   "Loss: Black mates": 15
+   "Loss: White mates": 22
+   "Win: Black mates": 25
+   "Win: White mates": 33
+Player: Shumi
+   "Draw by 3-fold repetition": 3
+   "Draw by insufficient mating material": 2
+   "Loss: Black mates": 25
+   "Loss: White mates": 33
+   "Win: Black mates": 15
+   "Win: White mates": 22
+
+40/1 min -------------------------------------------------------------------------
+Score of Shumi vs texel64-avx2-pop ELO 2200: 15 - 80 - 5 [0.175]
+...      Shumi playing White: 8 - 40 - 2  [0.180] 50
+...      Shumi playing Black: 7 - 40 - 3  [0.170] 50
+...      White vs Black: 48 - 47 - 5  [0.505] 100
+Elo difference: -269.4 +/- 89.9, LOS: 0.0 %, DrawRatio: 5.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 3
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 40
+   "Loss: White mates": 40
+   "Win: Black mates": 7
+   "Win: White mates": 8
+Player: texel64-avx2-pop ELO 2200
+   "Draw by 3-fold repetition": 3
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 7
+   "Loss: White mates": 8
+   "Win: Black mates": 40
+   "Win: White mates": 40
+
+
+40/1 min -------------------------------------------------------------------------
+Score of Shumi vs arasanx-64 ELO 2200: 43 - 53 - 4 [0.450]
+...      Shumi playing White: 22 - 27 - 1  [0.450] 50
+...      Shumi playing Black: 21 - 26 - 3  [0.450] 50
+...      White vs Black: 48 - 48 - 4  [0.500] 100
+Elo difference: -34.9 +/- 67.8, LOS: 15.4 %, DrawRatio: 4.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 3
+   "Draw by insufficient mating material": 1
+   "Loss: Black mates": 27
+   "Loss: White mates": 26
+   "Win: Black mates": 21
+   "Win: White mates": 22
+Player: arasanx-64 ELO 2200
+   "Draw by 3-fold repetition": 3
+   "Draw by insufficient mating material": 1
+   "Loss: Black mates": 21
+   "Loss: White mates": 22
+   "Win: Black mates": 27
+   "Win: White mates": 26
+
+
+40/1 min -------------------------------------------------------------------------
+Score of Shumi vs arasanx-64 ELO 2200: 43 - 50 - 7 [0.465]
+...      Shumi playing White: 23 - 26 - 1  [0.470] 50
+...      Shumi playing Black: 20 - 24 - 6  [0.460] 50
+...      White vs Black: 47 - 46 - 7  [0.505] 100
+Elo difference: -24.4 +/- 66.5, LOS: 23.4 %, DrawRatio: 7.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 2
+   "Draw by fifty moves rule": 1
+   "Draw by insufficient mating material": 4
+   "Loss: Black mates": 25
+   "Loss: White makes an illegal move: 0000": 1
+   "Loss: White mates": 24
+   "Win: Black mates": 20
+   "Win: White mates": 23
+Player: arasanx-64 ELO 2200
+   "Draw by 3-fold repetition": 2
+   "Draw by fifty moves rule": 1
+   "Draw by insufficient mating material": 4
+   "Loss: Black mates": 20
+   "Loss: White mates": 23
+   "Win: Black mates": 25
+   "Win: White makes an illegal move: 0000": 1
+   "Win: White mates": 24
+
+
+Score of Shumi vs texel64-avx2-pop ELO 2200: 18 - 75 - 7 [0.215]
+...      Shumi playing White: 7 - 38 - 5  [0.190] 50
+...      Shumi playing Black: 11 - 37 - 2  [0.240] 50
+...      White vs Black: 44 - 49 - 7  [0.475] 100
+Elo difference: -225.0 +/- 81.2, LOS: 0.0 %, DrawRatio: 7.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 5
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 38
+   "Loss: White mates": 37
+   "Win: Black mates": 11
+   "Win: White mates": 7
+Player: texel64-avx2-pop ELO 2200
+   "Draw by 3-fold repetition": 5
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 11
+   "Loss: White mates": 7
+   "Win: Black mates": 38
+   "Win: White mates": 37
+
+
+Score of Shumi vs stockfish_ELO 2300: 41 - 56 - 3 [0.425]
+...      Shumi playing White: 24 - 25 - 1  [0.490] 50
+...      Shumi playing Black: 17 - 31 - 2  [0.360] 50
+...      White vs Black: 55 - 42 - 3  [0.565] 100
+Elo difference: -52.5 +/- 68.7, LOS: 6.4 %, DrawRatio: 3.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 1
+   "Draw by fifty moves rule": 1
+   "Draw by insufficient mating material": 1
+   "Loss: Black mates": 25
+   "Loss: White mates": 31
+   "Win: Black mates": 17
+   "Win: White mates": 24
+Player: stockfish_ELO 2300
+   "Draw by 3-fold repetition": 1
+   "Draw by fifty moves rule": 1
+   "Draw by insufficient mating material": 1
+   "Loss: Black mates": 17
+   "Loss: White mates": 24
+   "Win: Black mates": 25
+   "Win: White mates": 31
+
+===============================================================================================
+TT with ordering only
+===============================================================================================
+
+40/1 min -------------------------------------------------------------------------
+Score of Shumi vs stockfish_ELO 2300: 41 - 50 - 9 [0.455]
+...      Shumi playing White: 23 - 20 - 7  [0.530] 50
+...      Shumi playing Black: 18 - 30 - 2  [0.380] 50
+...      White vs Black: 53 - 38 - 9  [0.575] 100
+Elo difference: -31.4 +/- 65.9, LOS: 17.3 %, DrawRatio: 9.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 9
+   "Loss: Black mates": 20
+   "Loss: White mates": 30
+   "Win: Black mates": 18
+   "Win: White mates": 23
+Player: stockfish_ELO 2300
+   "Draw by 3-fold repetition": 9
+   "Loss: Black mates": 18
+   "Loss: White mates": 23
+   "Win: Black mates": 20
+   "Win: White mates": 30
+
+40/1 min -------------------------------------------------------------------------
+Score of Shumi vs arasanx-64 ELO 2200: 45 - 49 - 6 [0.480]
+...      Shumi playing White: 22 - 24 - 4  [0.480] 50
+...      Shumi playing Black: 23 - 25 - 2  [0.480] 50
+...      White vs Black: 47 - 47 - 6  [0.500] 100
+Elo difference: -13.9 +/- 66.8, LOS: 34.0 %, DrawRatio: 6.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 3
+   "Draw by insufficient mating material": 3
+   "Loss: Black mates": 24
+   "Loss: White mates": 25
+   "Win: Black mates": 23
+   "Win: White mates": 22
+Player: arasanx-64 ELO 2200
+   "Draw by 3-fold repetition": 3
+   "Draw by insufficient mating material": 3
+   "Loss: Black mates": 23
+   "Loss: White mates": 22
+   "Win: Black mates": 24
+   "Win: White mates": 25
+
+40/1 min -------------------------------------------------------------------------
+Score of Shumi vs texel64-avx2-pop ELO 2200: 16 - 76 - 8 [0.200]
+...      Shumi playing White: 11 - 34 - 5  [0.270] 50
+...      Shumi playing Black: 5 - 42 - 3  [0.130] 50
+...      White vs Black: 53 - 39 - 8  [0.570] 100
+Elo difference: -240.8 +/- 82.6, LOS: 0.0 %, DrawRatio: 8.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 8
+   "Loss: Black mates": 34
+   "Loss: White mates": 42
+   "Win: Black mates": 5
+   "Win: White mates": 11
+Player: texel64-avx2-pop ELO 2200
+   "Draw by 3-fold repetition": 8
+   "Loss: Black mates": 5
+   "Loss: White mates": 11
+   "Win: Black mates": 34
+   "Win: White mates": 42
+
+40/1 min -------------------------------------------------------------------------
+Score of Shumi vs stockfish_ELO 2300: 50 - 42 - 8 [0.540]
+...      Shumi playing White: 28 - 17 - 5  [0.610] 50
+...      Shumi playing Black: 22 - 25 - 3  [0.470] 50
+...      White vs Black: 53 - 39 - 8  [0.570] 100
+Elo difference: 27.9 +/- 66.2, LOS: 79.8 %, DrawRatio: 8.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   "Draw by 3-fold repetition": 6
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 17
+   "Loss: White mates": 25
+   "Win: Black mates": 22
+   "Win: White mates": 28
+Player: stockfish_ELO 2300
+   "Draw by 3-fold repetition": 6
+   "Draw by fifty moves rule": 2
+   "Loss: Black mates": 22
+   "Loss: White mates": 28
+   "Win: Black mates": 17
+   "Win: White mates": 25
+
+
+   =====================================================================================
+Score of Shumi vs arasanx-64 ELO 2200: 42 - 51 - 7 [0.455]
+...      Shumi playing White: 20 - 27 - 3  [0.430] 50
+...      Shumi playing Black: 22 - 24 - 4  [0.480] 50
+...      White vs Black: 44 - 49 - 7  [0.475] 100
+Elo difference: -31.4 +/- 66.6, LOS: 17.5 %, DrawRatio: 7.0 %
+SPRT: llr 0 (0.0%), lbound -inf, ubound inf
+100 of 100 games finished.
+
+Player: Shumi
+   " makes an illegal move: 0000": 1
+   "Draw by 3-fold repetition": 4
+   "Draw by fifty moves rule": 1
+   "Draw by insufficient mating material": 1
+   "Loss: Black mates": 27
+   "Loss: White mates": 24
+   "Win: Black mates": 22
+   "Win: White mates": 20
+Player: arasanx-64 ELO 2200
+   " makes an illegal move: 0000": 1
+   "Draw by 3-fold repetition": 4
+   "Draw by fifty moves rule": 1
+   "Draw by insufficient mating material": 1
+   "Loss: Black mates": 22
+   "Loss: White mates": 20
+   "Win: Black mates": 27
+   "Win: White mates": 24
+

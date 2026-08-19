@@ -77,3 +77,34 @@
     inline constexpr Score ONLY_MOVE_SCORE = HUGE_SCORE + 2; 
 
 #endif
+
+
+inline Score mate_score_to_TT(Score score, int level)
+{
+    if (IS_MATE_SCORE(score)) {
+        if (score > 0) {
+            // Remove the distance from the current root.
+            return score + level;
+        } else {
+            // Remove the distance from the current root.
+            return score - level;
+        }
+    }
+
+    return score;
+}
+
+inline Score mate_score_from_TT(Score score, int level)
+{
+    if (IS_MATE_SCORE(score)) {
+        if (score > 0) {
+            // Apply the distance from the new root.
+            return score - level;
+        } else {
+            // Apply the distance from the new root.
+            return score + level;
+        }
+    }
+
+    return score;
+}

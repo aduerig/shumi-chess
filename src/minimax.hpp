@@ -51,8 +51,6 @@ constexpr int RANDOM_MOVE_CANDIDATES = 7;             // I must be greater than 
 class MinimaxAI {
 public:
 
-    ull next_TT_pulse_nodes = 0;            // debug only
-
     struct SearchTimeControl {
         ull clock_at_move_start = 0;       // Milliseconds remaining before this search.
         int moves_left = 0;                // Includes the move currently being searched.
@@ -190,6 +188,7 @@ public:
     };
 
     std::unordered_map<uint64_t, TTEntry2> TTable2;
+    ull max_TTable2_size = 0;
 
     std::unordered_map<uint64_t, ShumiChess::PawnFileInfo> pawn_file_info;
 
@@ -235,11 +234,11 @@ public:
     static bool should_stop_by_time(ull elapsed_time, double growth_factor
                                         , ull fallback_move_budget
                                         , const SearchTimeControl& time_control
-                                        , long double& estimated_elapsed_time);
+                                        , double& estimated_elapsed_time);
 
     tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time_display_only
                                                 , ull& last_elapsed_time_display_only
-                                                , long double estimated_elapsed_time
+                                                , double estimated_elapsed_time
                                                 , bool estimated_elapsed_time_available);
 
 
@@ -264,10 +263,29 @@ public:
                                           , iRandomMoves, feat, SearchTimeControl{});
     }
 
+    //
+    // Return true when the current position is safe for exact TT2 score reuse.
+    //      TT2 is disabled when the search result could depend on information that is
+    //      not fully represented by the position's Zobrist key:
+    //          - MultiPV searches after the first variation exclude root moves.
+    //          - A large halfmove count can make the 50-move rule affect the result.
+    //          - A repeated position can make threefold-repetition history affect the result.
+    //
+    inline bool is_TT2_Valid() {
+        if (n_Multis > 1) return false;
+        if (engine.game_board.halfmove > (FIFTY_MOVE_RULE_PLY / 2)) return false;
+    
+        int cnt = engine.times_in_three_time_rep_stack();
+        if (cnt > 1) return false;
+
+        return true;
+    }
+
+
+
     std::tuple<Score, ShumiChess::Move> recursive_negamax(int depth
                                             , Score alpha, Score beta
                                             , bool is_from_root
-                                            //, const ShumiChess::Move& move_last //  debug (used only by _DEBUGGING_MOVE_CHAIN)
                                             , int nPlys
                                             , int qPlys
                                         );

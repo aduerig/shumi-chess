@@ -1,4 +1,69 @@
 
+Shumi. Lookat the following table carefully. Note the oppnents and the ratings. 
+The question I want answered is this: has shumi changed its performance before and 
+after (test set A and test set B). Note that the position of the player that appears 
+first or second in the "vs", only means who gets white in first game.
+
+
+DO not make any changes now, this is just a discussion. 
+OK. This helped, now cutechess is not terminating prematurally. I beieve its because now we send to 
+cout: "   std::cout << "bestmove 0000\n";", when we fail to get a move. This still does not solve the problem as to why its doing it.
+why we get no move. See the below cutechess output. (from a tourmeyment I terminated, cutechess did not terminate it,
+as what happend before you fixed the last bug).  Notice the illegal moves. 
+
+
+All time control is 40/1 min -------------------------------------------------------------------------
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+   without TT (no TT move ordering either)
+   ******************************************************************************
+   Score of Shumi vs stockfish_ELO 2300: 47 - 43 - 7 [0.521]
+   Score of Shumi vs arasanx-64 ELO 2200: 43 - 53 - 4 [0.450]
+   Score of Shumi vs texel64-avx2-pop ELO 2200: 20 - 71 - 9 [0.245]
+
+
+   with TT
+   ******************************************************************************
+   Score of Shumi vs stockfish_ELO 2300: 43 - 42 - 15 [0.505]
+   Score of arasanx-64 ELO 2200 vs Shumi: 58 - 37 - 5 [0.605]        for shumi [0.395]
+   Score of Shumi vs texel64-avx2-pop ELO 2200: 15 - 80 - 5 [0.175]
+
+
+   without TT (yes TT move ordering)
+   ******************************************************************************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Shumi problems:
    Bishops should not be blocked by two pawns. Opening only. Make it smaall.
    number of checks is a bad thing? Maybe 4 or greater is bad. Certainly 5 or greater is. 

@@ -897,7 +897,7 @@ try:
 
   
 
-            # "admin" draw (used for debug only)
+            # "admin" draw (debug only, to test burp2)
             if move_number > DEBUG_MAX_MOVES:
                 # Debug-only forced draw by ply cap
                 #game_over_text.setText("GAME OVER: draw (debug ply cap)")
@@ -1069,7 +1069,7 @@ try:
         # show the win/lose/draw banner
         gamover = engine_communicator.is_game_over()
 
-        # "admin" draw (used for debug only)
+        # "admin" draw (debug only, to test burp2)
         move_number = engine_communicator.get_move_number()
         if move_number > DEBUG_MAX_MOVES:   
             gamover = engine_communicator.DRAW  

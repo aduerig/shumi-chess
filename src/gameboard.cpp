@@ -183,7 +183,6 @@ GameBoard::GameBoard(const std::string& fen_notation) {
     rng.seed(static_cast<unsigned>(us));
 
     // !TODO doesn't belong here i don't think. I think it does.
-    // codex resume 019ffce2-f037-72d3-9e40-17fa0a9fb66c
     ShumiChess::initialize_zobrist();
     set_zobrist();
     
@@ -2335,13 +2334,10 @@ bool GameBoard::bHasCastled_fake_t(int k_rank, int k_file) const {
  
     // king must be on back ranks to be castled.
     constexpr int homeRank   = (c == Color::WHITE) ? ROW_1 : ROW_8;
-    //constexpr int homeRankp1 = (c == Color::WHITE) ? ROW_2 : ROW_7;
-    //if ( (k_rank != homeRank) && (k_rank != homeRankp1) ) return false;
     if (k_rank != homeRank) return false;
 
     // If king still in "center", then you are not castled.
     if ((k_file > COL_G) && (k_file < COL_C)) return false;  // king cannot be on f,e,d files 
-
 
 
     ull occupied = get_pieces_template<Piece::ROOK, c>();
@@ -2351,7 +2347,7 @@ bool GameBoard::bHasCastled_fake_t(int k_rank, int k_file) const {
     // If a rook is found between the king and that edge, mark as blocked.
     // This means the rook would be trapped behind the king on that side.
     bool blocked = false;
-    if (k_file <= COL_G) {      // K side castle
+    if (k_file <= COL_G) {      // K side castle (King on g or h file)
         for (int f = k_file - 1; f >= 0; --f) {
             int sq = k_rank * 8 + f;
             if (occupied & (1ULL << sq)) {
@@ -2359,7 +2355,7 @@ bool GameBoard::bHasCastled_fake_t(int k_rank, int k_file) const {
                 break;
             }
         }
-    } else {                    // Q side castle
+    } else {                    // Q side castle (King on a or b or c file)
         for (int f = k_file + 1; f <= 7; ++f) {
             int sq = k_rank * 8 + f;
             if (occupied & (1ULL << sq)) {

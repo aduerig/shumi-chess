@@ -185,18 +185,13 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
 
     //TTable.clear();
-    //TTable.reserve(1000000);    // NOTE: What size here? (we dont even normally use this table)
+    //TTable.reserve(1'000'000);    // NOTE: What size here? (we dont even normally use this table)
     
     TTable2.clear();
-    TTable2.reserve(1000000);    // NOTE: What size here?
+    TTable2.reserve(200'000);    // NOTE: What size here? Games seem to use 150,000 max, of EXACT MATCH.
 
     pawn_file_info.clear();
-    pawn_file_info.reserve(1000000);    // NOTE: What size here?
-
-    // add the current position to 3 time rep stack.   reset_all_but_FEN()
-    //engine.repetition_table.clear();
-    //engine.repetition_table[key_now] = 1;
-    engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
+    pawn_file_info.reserve(1'000'000);    // NOTE: What size here?
 
     // Set default features
     Features_mask = _DEFAULT_FEATURES_MASK;
@@ -274,13 +269,8 @@ void MinimaxAI::hard_abort_start(ull hard_duration)
     hard_abort_budget_ms = hard_duration;
     hard_abort_start_time_ms = get_time_ms();  // milliseconds
     hard_abort_enabled = true;
-    //cerr << endl << "hard_abort_start " << hard_duration << endl;
-
-    #ifdef _DEBUGGING_TEMP1
-        fprintf(fpDebug, " hard_abort_start %lld\n", hard_abort_start_time_ms);
-    #endif
-
 }
+
 void MinimaxAI::hard_abort_end()
 {
     hard_abort_enabled = false;
@@ -575,7 +565,7 @@ int MinimaxAI::phase_of_game_full() {
 tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                                             , ull elapsed_time_display_only
                                             , ull& last_elapsed_time_display_only
-                                            , long double estimated_elapsed_time
+                                            , double estimated_elapsed_time
                                             , bool estimated_elapsed_time_available) {
 
     tuple<Score, Move> ret_val;
@@ -632,7 +622,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             sout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
                         << " msec=" << std::setw(6) << elapsed_time_display_only << '/';
             if (estimated_elapsed_time_available) {
-                sout << static_cast<ull>(estimated_elapsed_time);
+                sout << (ull)estimated_elapsed_time;
             } else {
                 sout << '_';
             }
@@ -801,8 +791,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     }
 
 
-    next_TT_pulse_nodes = 5'000'000ULL;            // debug only
-
     // Schedule the emergency (hard) abort. Once the remaining clock reaches the
     // emergency threshold, divide that remaining time equally among the
     // moves left until the time control. All values are milliseconds.
@@ -849,7 +837,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
  
  
     eval_person = (ShumiChess::EvalPersons)player_id;   
-    //eval_person = ShumiChess::CRAZY_IVAN;           // debug only
+    //eval_person = ShumiChess::CRAZY_IVAN;           // debug only (force IVAN)
 
     //sout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     //sout << "\n Player = " << eval_person << endl;
@@ -890,6 +878,8 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         //sss = format_with_commas(pawn_file_info.size());
         //printf("pawn_file_info size before clear = %s\n", sss.c_str());
         
+        max_TTable2_size = 0;
+
         pawn_file_info.clear();
 
         //sss = format_with_commas(pawn_file_info.size());
@@ -1220,19 +1210,19 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
     //assert(0);            
 
-    bool bISOK = engine.is_legal_move(best_move);       // // debug only
-    if (!bISOK) {
+    // bool bISOK = engine.is_legal_move(best_move);       // debug only (catches bugs in Shumi. Is this needed?)
+    // if (!bISOK) {
 
-        sout << " bad move!!" << endl; 
-        cerr << " bad move!!!" << endl; 
+    //     sout << " bad move!!" << endl; 
+    //     cerr << " bad move!!!" << endl; 
 
-        engine.move_into_string(best_move);
+    //     engine.move_into_string(best_move);
        
-        sout << " bad move!!!!" << engine.move_string << endl; 
-        sout << " bad move!!" << endl; 
+    //     sout << " bad move!!!!" << engine.move_string << endl; 
+    //     sout << " bad move!!" << endl; 
 
-        assert(0);
-    }
+    //     assert(0);
+    // }
 
     #ifdef _DEBUGGING_TO_FILE
         engine.move_into_string(best_move);
@@ -1275,7 +1265,10 @@ void MinimaxAI::playground(int iPhase) {
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
 
 // TTable2
-    sout << "TT " << TTable2.size() << "  " << NhitsTT2 << endl;
+
+    max_TTable2_size = std::max(max_TTable2_size, TTable2.size());
+
+    sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hits=" << NhitsTT2 << endl;
 
     //int material_balance = ;  // evaluate_board();
     //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
@@ -1361,9 +1354,9 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     
     elapsed_time = 0ULL; // in msec
     ull last_elapsed_time_display_only = 0ULL;
-    long double estimated_elapsed_time = 0.0L;
-    long double previous_estimated_elapsed_time = 0.0L;
-    long double estimated_elapsed_time_display_only = 0.0L;
+    double estimated_elapsed_time = 0.0;
+    double previous_estimated_elapsed_time = 0.0;
+    double estimated_elapsed_time_display_only = 0.0;
     bool estimated_elapsed_time_available = false;
 
     max_attained_depth = 0; 
@@ -1498,7 +1491,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             estimated_elapsed_time);
 
         // hard abort testing debug only only
-        //bThinkingOverByTime = false;        // debug only to test hard abort
+        //bThinkingOverByTime = false;        // debug only (to test hard abort)
 
         if (estimated_elapsed_time_available) {
             estimated_elapsed_time_display_only = previous_estimated_elapsed_time;
@@ -1524,6 +1517,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     return { d_best_move_score, best_move };
 }
 
+// codex resume 01a0184d-ca7a-73d0-bc6f-bcc5e85d23b4
 // I am called after each deepening, to try to figure out (based on time) wether I should start the
 // next deepeing or not.
 //      Returns true if search should stop, based on various things.
@@ -1532,7 +1526,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
                                     , ull fallback_move_budget
                                     , const SearchTimeControl& time_control
-                                    , long double& estimated_elapsed_time)      // output
+                                    , double& estimated_elapsed_time)      // output
 {
 
     // Sometimes I dont believe my incredibly fast (becasue of the TT2 on simple positions), 
@@ -1550,50 +1544,23 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     // exponential floor too, so ultra-fast TT2 deepenings do not make the next
     // deepening estimate unrealistically small.
     static ull previous_elapsed_time = 0ULL;
-    static long double minimum_elapsed_time = 0.01L;
+    static double minimum_elapsed_time = 0.01;
 
     // A new move search resets elapsed_time, so reset the minimum curve too.
     if (elapsed_time < previous_elapsed_time) {
-        minimum_elapsed_time = 0.01L;
+        minimum_elapsed_time = 0.01;
     }
     previous_elapsed_time = elapsed_time;
 
-    // K was chosen so, with growth_factor 6.0, the minimum cumulative elapsed
-    // curve stays tiny early and 
-    
-    //const long double K = 0.333L;   // reaches about 10ms at deepening 10.
+    const double K = 0.80;
 
-    //const long double K = 0.55L;    // reaches about 500ms at deepening 9.
-    // Depth 1:    0.033 ms
-    // Depth 2:    0.111 ms
-    // Depth 3:    0.369 ms
-    // Depth 4:    1.23 ms
-    // Depth 5:    4.09 ms
-    // Depth 6:   13.6 ms
-    // Depth 7:   45.4 ms
-    // Depth 8:  151.3 ms
-    // Depth 9:  503.8 ms
-
-
-    const long double K = 0.80L;
-
-    minimum_elapsed_time *= static_cast<long double>(growth_factor) * K;
-
-    // sout << "TIME CURVE:"       // debug only
-    //     << " elapsed=" << elapsed_time
-    //     << " growth=" << growth_factor
-    //     << " K=" << static_cast<double>(K)
-    //     << " minimum=" << static_cast<double>(minimum_elapsed_time)
-    //     << endl;
-
-
-
+    minimum_elapsed_time *= growth_factor * K;
 
 
     // Take max of the "minimum elapsed time" and the passed in elapsed time". This is what you 
     // assume the elapsed time of the next level to be. 
-    const long double adjusted_elapsed_time = std::max<long double>(
-        static_cast<long double>(elapsed_time),
+    const double adjusted_elapsed_time = std::max<double>(
+        (double)elapsed_time,
         minimum_elapsed_time);
 
     estimated_elapsed_time = adjusted_elapsed_time * growth_factor;
@@ -1611,11 +1578,8 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
 
         // Credit is positive after quick moves and negative after borrowed time was
         // used. It is measured against the original k-per-move schedule.
-        const long double scheduled_remaining =
-            static_cast<long double>(time_control.moves_left)
-            * time_control.nominal_time_per_move;
-        const long double credit =
-            static_cast<long double>(usable_clock) - scheduled_remaining;
+        const double scheduled_remaining = (double)time_control.moves_left * time_control.nominal_time_per_move;
+        const double credit = (double)usable_clock - scheduled_remaining;
 
         // Debt is allowed only when the remaining moves can repay it while retaining
         // minimum_future_time for each of those moves. This allowance reaches zero
@@ -1625,35 +1589,32 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
             time_control.nominal_time_per_move > time_control.minimum_future_time
                 ? time_control.nominal_time_per_move - time_control.minimum_future_time
                 : 0;
-        const long double repayment_capacity =
-            static_cast<long double>(future_moves)
-            * static_cast<long double>(repayment_per_future_move);
-        const long double permitted_loan = std::min<long double>(
-            static_cast<long double>(time_control.maximum_loan),
-            repayment_capacity);
+        const double repayment_capacity = (double)future_moves * (double)repayment_per_future_move;
+        const double permitted_loan = std::min<double>(
+              (double)time_control.maximum_loan, 
+              repayment_capacity);
 
-        long double move_budget =
-            static_cast<long double>(time_control.nominal_time_per_move)
+        double move_budget = (double)time_control.nominal_time_per_move
             + credit
             + permitted_loan;
 
-        const long double minimum_budget = std::min<long double>(
-            static_cast<long double>(time_control.minimum_future_time),
-            static_cast<long double>(usable_clock));
+        const double minimum_budget = std::min<double>(
+            (double)time_control.minimum_future_time, 
+            (double)usable_clock);
+
         move_budget = std::clamp(
             move_budget,
             minimum_budget,
-            static_cast<long double>(usable_clock));
+            (double)usable_clock);
 
         #ifdef DEBUGGING_TEMP
             fprintf(fpDebug, "%ld     elapsed_time1=%llu   %llu\n", time_control.enabled()
                 , static_cast<unsigned long long>(estimated_elapsed_time)
                 , static_cast<unsigned long long>(move_budget));
         #endif
-        return estimated_elapsed_time >= move_budget;
+        return (estimated_elapsed_time >= move_budget);
     }
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1669,7 +1630,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     int depth
                     ,Score alpha, Score beta
                     ,bool is_from_root
-                    //,const ShumiChess::Move& move_last      // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                     ,int nPlys
                     ,int qPlys
                     )
@@ -1709,11 +1669,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // Get all legal moves
     // =====================================================================
 
-    bool in_check = false;
-    in_check = (engine.game_board.turn == Color::WHITE)
-        ? engine.is_king_in_check_t<Color::WHITE>()
-        : engine.is_king_in_check_t<Color::BLACK>();
-
     bool caps_only = false;
    
 
@@ -1744,7 +1699,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             bool bExclude = false;
 
             for (int j = 0; j < (int)excluded_root_moves.size(); j++) {
-                //if (legal_moves[i] == excluded_root_moves[j]) {
                 if (legal_moves[i] == excluded_root_moves[j].first) {
                     bExclude = true;
                     break;
@@ -1756,6 +1710,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 legal_moves.erase(legal_moves.begin() + i);
             }
 
+            assert (!legal_moves.empty());
             // if (legal_moves.empty()) {
             //     //return;    // this better not happen!
             // }
@@ -1779,8 +1734,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }
 
     //if (alpha > beta) assert(0);
-
-    
 
 
 
@@ -1810,10 +1763,14 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {
-        if (should_abort_search_by_time()) {
-            sout << endl << "hard abort s" << endl;
-            return { ABORT_SCORE, the_best_move };
+    if ((nodes_visited % 10'000ULL) == 0ULL) {
+        // Hard abort is not allowed until we have seen at least one deepening, and 
+        // therefore have a usable move to fall back to.
+        if (hard_abort_allowed) {       // from regular search
+            if (should_abort_search_by_time()) {
+                sout << endl << "hard abort s" << endl;
+                return { ABORT_SCORE, the_best_move };
+            }
         }
     }
 
@@ -1859,13 +1816,19 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     #endif
 
+    bool is_the_TT2_Valid = is_TT2_Valid();
 
     TT2_match_move = {};
+    //
+    // Calculate number of times this zobrist has been seen in the three_time_rep_stack.
+    // This is so we don't add the same position to the TT2 twice.
+    int cnt = engine.times_in_three_time_rep_stack();
 
-    bool probeTT = ( (Features_mask & _FEATURE_TT2) && (n_Multis == 1) );
+    bool probeTT = ((Features_mask & _FEATURE_TT2) && is_the_TT2_Valid);
+
     if (probeTT) {     // probe in TT2
 
-        int iLimit = 1;   // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
+        int iLimit = 1;
         if (depth > iLimit) {
 
             // --- Normal TT2 probe (Note: exact-only version, no age yet)
@@ -1890,7 +1853,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     NhitsTT2++;
                 }
 
-
+                is_perfect_match = false;        // debug only to disable TT2 score reusage (still uses it for move ordering)
                 if (is_perfect_match) {      
                     // If debug, just compare to the computation. If not debug actually use the result. 
 
@@ -1928,13 +1891,16 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         found_move_history = entry.move_history_debug; 
 
                     #else
+                        const int level = top_deepening - depth;
                         Score dScore = convert_from_CP(entry.score_cp);
+                        dScore = mate_score_from_TT(dScore, level);
+
                         return { dScore, entry.best_move };
                     #endif
 
                 } else {
 
-                    // Its a match but not a perfect match. Use the move for ordering anyway.
+                    // Its a match but not a perfect match. Use the move for ordering anyway (orders it to be seen sooner).
                     TT2_match_move = entry.best_move;
 
                 }
@@ -2070,8 +2036,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         // returns 0 if success, 1 if abort     n_legal_moves_found
         bool did_cutoff;
+        // Regular-search futility pruning calculates check status lazily inside
+        // loop_over_all_moves(); this parameter is needed for qsearch/delta pruning.
         bool was_aborted = loop_over_all_moves(depth, alpha, beta, 
-                        nPlys, qPlys, in_check, 
+                        nPlys, qPlys, false, 
                         d_stand_pat, 
                         //move_last,
                         p_moves_to_loop_over,               // input
@@ -2088,22 +2056,12 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
          sout << "should not happen" << endl;
     }
 
-    bool storeTT = ( (Features_mask & _FEATURE_TT2) && (n_Multis == 1) );
-    //storeTT = false;        // debug only TT2 off if uncommented
+    bool storeTT = ((Features_mask & _FEATURE_TT2) && is_the_TT2_Valid);
     if (storeTT) {  // store in TT2  (from regular search)
 
-        int iLimit =1;  // (Features_mask & _FEATURE_ENHANCED_DEPTH_TT2) ? 0 : 1;       // 0 or 1 only
+        int iLimit =1;
 
-        //
-        // Calculate number of times this zobrist has been seen in the three_time_rep_stack.
-        // This is so we don't add the same position to the TT2 twice.
-        int cnt = engine.times_in_three_time_rep_stack();
-
-        bool bStoreThis = ( (cnt<=1) &&
-                            (depth > iLimit) && 
-                            (engine.game_board.halfmove < (FIFTY_MOVE_RULE_PLY/2))
-                          );
-
+        bool bStoreThis = (depth > iLimit);
         if (bStoreThis) {
 
             assert(qPlys==0);
@@ -2116,7 +2074,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
 
                 // Rolling size cap for TT2  (NOTE: 2 million?), This is a non-determinism that can break "burp2" TT2?
-                static const std::size_t MAX_TT2_SIZE = 20000000;
+                static const std::size_t MAX_TT2_SIZE = 1'000'000;
                 if (TTable2.size() >= MAX_TT2_SIZE) {
                     // one arbitrary existing entry is erased;
                     auto it = TTable2.begin();
@@ -2125,7 +2083,16 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     }
                 }
 
-                int cp_score_temp = convert_to_CP(d_best_score);
+                const int level = top_deepening - depth;
+                const Score score_for_TT = mate_score_to_TT(d_best_score, level);
+                const int cp_score_temp = convert_to_CP(score_for_TT);
+
+                #ifdef DEBUG_NODE_TT2
+                    const bool debug_in_check =
+                        (engine.game_board.turn == Color::WHITE)
+                            ? engine.is_king_in_check_t<Color::WHITE>()
+                            : engine.is_king_in_check_t<Color::BLACK>();
+                #endif
 
                 // --- DEBUG
                 #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
@@ -2173,7 +2140,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                                 print_mismatch(sout, "al", (int)foundAlpha,         (int)alpha_in);
                                 print_mismatch(sout, "bt", (int)foundBeta,          (int)beta);
                                 print_mismatch(sout, "dr", foundDraw,          (state == GameState::DRAW));
-                                print_mismatch(sout, "ck", foundIsCheck,       in_check);
+                                print_mismatch(sout, "ck", foundIsCheck,       debug_in_check);
 
                                 print_mismatch(sout, "rp", foundRepCount,      iRepCountNow);
                                 print_mismatch(sout, "nPlys", foundnPlys, nPlys);
@@ -2254,19 +2221,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 }   // END debug
                 #endif
 
-                //assert (!did_cutoff && !did_fail_low);
-                    
-                // this is an EXACT score (not an alpha/beta boundary).
-                //bool bdebug = false;
-
-
-                // --- New entry: actually insert and fill TT2 slot ---
-                // TTEntry2 &slot = TTable2[key];   // this inserts, since we know !existed_before
-
-                // slot.score_cp  = cp_score_temp;
-                // slot.best_move = the_best_move;
-                // slot.depth     = depth;
-
                 // Replace an existing entry (for position X) only when this
                 // search is at least as "deep" as the stored search.
                 // Greater depths mean there was less search to get to this position, depth is 
@@ -2293,7 +2247,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                         slot.nPlysDebug      = nPlys;
                         slot.drawDebug       = (state == GameState::DRAW);
-                        slot.bIsInCheckDebug = in_check;
+                        slot.bIsInCheckDebug = debug_in_check;
                         //slot.legalMovesSize  = legalMovesSize;
 
                         int repCountNow = 0;
@@ -2420,7 +2374,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
 tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
                     Score alpha, Score beta
-                    //,const ShumiChess::Move& move_last      // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                     ,int nPlys
                     ,int qPlys
                     )
@@ -2467,26 +2420,24 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     //if (alpha > beta) assert(0);
 
-    // Pick best static evaluation among all legal moves if hit the over ply
+    // Absolute qsearch fuse. Stop analysis at MAX_QPLY_H regardless of
+    // whether the side to move is in check, and return the current static
+    // evaluation as an approximate leaf score.
     if (qPlys >= MAX_QPLY_H) {
-        
         if (engine.game_board.turn == ShumiChess::Color::WHITE)
             cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
         else
             cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
 
         d_best_score = convert_from_CP(cp_score_best);
-        
+
         nFarts++;
-        
-        // debug
-        //engine.print_move_history_to_file(fpDebug, "MAX_QPLY_H");
-        //sout << "MAX_QPLY_H" << endl;       // debug ionly
+
         return { d_best_score, Move{} };
+
     } else if (qPlys >= MAX_QPLY_L) {
         nSemiFarts++;
     }
-
 
 
     // =====================================================================
@@ -2501,7 +2452,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     //
     //  If not in check, generate only captures. If in check generate all moves.
     //
-    bool in_check = false;
+    bool in_check = false; // (from qsearch)
     in_check = (engine.game_board.turn == Color::WHITE)
         ? engine.is_king_in_check_t<Color::WHITE>()
         : engine.is_king_in_check_t<Color::BLACK>();
@@ -2552,10 +2503,14 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     }
 
-    if (hard_abort_allowed && (nodes_visited % 10000ULL) == 0ULL) {         // illegal move from here?
-        if (should_abort_search_by_time()) {
-            sout << endl << "hard abort q" << endl;
-            return { ABORT_SCORE, the_best_move };
+    // Hard abort is not allowed until we have seen at least one deepening, and 
+    // therefore have a usable move to fall back to.
+    if (hard_abort_allowed) {       // from qsearch
+        if ((nodes_visited % 10'000ULL) == 0ULL) {
+            if (should_abort_search_by_time()) {
+                sout << endl << "hard abort q" << endl;
+                return { ABORT_SCORE, the_best_move };
+            }
         }
     }
 
@@ -2619,29 +2574,35 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
 
     //assert (depth >= 0);
-    Score d_stand_pat = HUGE_SCORE;   // If we evaluate, it will be the evaluate score.
 
+    // Sentinel value; replaced by the static evaluation only when standing pat is legal.
+    Score d_stand_pat = -HUGE_SCORE;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Static board evaluation
+    // Static board evaluation (from qsearch)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    if (engine.game_board.turn == ShumiChess::Color::WHITE)
-        cp_score_best = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
-    else
-        cp_score_best = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
+    if (in_check) {
+        // Standing pat is illegal while in check, so no static evaluation
+        // is needed. The score must come from a legal check evasion.
+        d_best_score = -HUGE_SCORE;
+    } else {
+        // Standing pat is legal. Use the static evaluation as the initial
+        // best score before searching captures and promotions.
+        if (engine.game_board.turn == ShumiChess::Color::WHITE)
+            cp_score_best =
+                evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+        else
+            cp_score_best =
+                evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
 
+        d_best_score = convert_from_CP(cp_score_best);
+        d_stand_pat = d_best_score;
+    }
 
-    d_best_score = convert_from_CP(cp_score_best);
-    d_stand_pat = d_best_score;  // "stand pat" means the evaluate_board() computed score
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////
-
-    //#define NO_QUISSENCE
-    #ifdef NO_QUISSENCE
-        return { d_best_score, Move{} };
-    #endif
 
     if (in_check) {
         // In check: use all legal moves, since by definition (see get_legal_moves() the set of all legal moves is equivnelent 
@@ -2714,17 +2675,21 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
         // Look (recurse) over all moves chosen (this is qsearch)
         //
         /////////////////////////////////////////////////////////////////////////////////////////
-        //  bug   -HUGE_SCORE was assummed for every starting point.
+        //  Big bug:   -HUGE_SCORE was assummed for every starting point.
         //  This violated the central qsearch rule that a player may decline every available capture.
+        
         if (in_check) {
+            // Standing pat is illegal. Start below every usable score so that
+            // the result must come from a legal check evasion. Initialize the
+            // move defensively because some legal evasion must be selected.
             d_best_score = -HUGE_SCORE;
             the_best_move = (*p_moves_to_loop_over)[0];
         } else {
-            // Stand-pat is currently best; no tactical move selected yet.
+            // Standing pat is legal. d_best_score already contains its static
+            // evaluation, and no move corresponds to that score. Keep the move
+            // empty unless a searched tactical move actually improves the score.
             the_best_move = {};
-        }
-        the_best_move = (*p_moves_to_loop_over)[0];   // Note: Is this the correct intialization? First move is the best move?
-
+        }        
 
         bool did_cutoff;
         // returns 0 if success, 1 if abort
@@ -2816,8 +2781,8 @@ bool MinimaxAI::loop_over_all_moves(int depth,
     bool futility_eval_have = false;
     Score futility_eval_cp = 0;
 
-    //bool futility_incheck_have = false;
-    //bool futility_bInCheck = false;
+    bool futility_incheck_have = false;
+    bool futility_bInCheck = false;
 
     bool bFutilityPrunedAny = false;
 
@@ -2924,37 +2889,36 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                 const bool bBoringQuietMove =
                     (m.capture == Piece::NONE) &&
                     (m.promotion == Piece::NONE);   
-            
-                if (!in_check) {
 
-                    if (bBoringQuietMove) { 
+                if (bBoringQuietMove) { 
 
-                        if (!futility_eval_have) {
-                            futility_eval_have = true;
+                    if (!futility_eval_have) {
+                        futility_eval_have = true;
+                        if (engine.game_board.turn == ShumiChess::Color::WHITE)
+                            futility_eval_cp = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+                        else
+                            futility_eval_cp = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
+                    }
+
+                    if ( (futility_eval_cp + FUTILITY_MARGIN) <= alpha) {
+                        if (!futility_incheck_have) {
+                            futility_incheck_have = true;
+
                             if (engine.game_board.turn == ShumiChess::Color::WHITE)
-                                futility_eval_cp = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+                                futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::WHITE>();
                             else
-                                futility_eval_cp = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
+                                futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::BLACK>();
                         }
 
+                        if (!futility_bInCheck) {
+                            // Determine whether this candidate move checks the enemy king only
+                            // when it would otherwise be discarded by futility pruning.
+                            const bool is_a_check =
+                                (m.color == ShumiChess::Color::WHITE)
+                                    ? engine.in_check_after_move_fast_t<ShumiChess::Color::WHITE, false>(m)
+                                    : engine.in_check_after_move_fast_t<ShumiChess::Color::BLACK, false>(m);
 
-                        if ( (futility_eval_cp + FUTILITY_MARGIN) <= alpha) {
-                            // if (!futility_incheck_have) {
-                            //     futility_incheck_have = true;
-                            //     if (engine.game_board.turn == ShumiChess::Color::WHITE)
-                            //         futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::WHITE>();
-                            //     else
-                            //         futility_bInCheck = engine.is_king_in_check_t<ShumiChess::Color::BLACK>();
-                            // }
-
-                            // does this move check the enemy king?
-                            bool is_a_check = (m.color == ShumiChess::Color::WHITE) ? 
-                                    engine.in_check_after_move_fast_t<ShumiChess::Color::WHITE, false>(m) : 
-                                    engine.in_check_after_move_fast_t<ShumiChess::Color::BLACK, false>(m);
-
-                            if (!is_a_check) { 
-                
-                                //if (!futility_bInCheck) {
+                            if (!is_a_check) {
                                 //engine.move_into_string(m);
                                 //sout << "futility toss " << engine.move_string << " " << endl;
 
@@ -3016,7 +2980,6 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
             ret_val = recursive_negamaxQ(
                 childAlpha, childBeta,
-                //m,
                 (nPlys+1),
                 (qPlys+1)
             );
@@ -3444,7 +3407,6 @@ try_again:
 
         const Score scP = MovsFromRoot[n_top].second;
       
-        // int cp_score_temp = convert_to_CP(d_best_score);
         const int scCp = convert_to_CP(scP);
 
         if (scCp < cutoffCp) break;

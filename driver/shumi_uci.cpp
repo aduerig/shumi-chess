@@ -151,7 +151,7 @@ int main()
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     int flags = 0;
     flags = flags | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
-    flags = flags | _FEATURE_ENHANCED_DEPTH_TT2 | _FEATURE_TT2;
+    flags = flags | _FEATURE_TT2;
 
     int iRandomMoves = 0;
     if (iMovesInGame < 3) iRandomMoves = 1;     // Just one random move.
