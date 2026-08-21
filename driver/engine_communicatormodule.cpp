@@ -349,7 +349,7 @@ engine_communicator_get_engine(PyObject* self, PyObject* args) {
 
 static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
 {
-    int milliseconds;      // required
+    int milliseconds;      // Required milliseconds. Keep signed until validated.
     int max_deepening;     // required
     int player_id;         // required
 
@@ -366,6 +366,12 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
         return NULL;
     }
 
+    if (milliseconds < 0) {
+        PyErr_SetString(PyExc_ValueError, "milliseconds must be non-negative");
+        return NULL;
+    }
+
+    const ull milliseconds_to_use = (ull)milliseconds + 1ULL;
 
     ShumiChess::Move gotten_move;
     std::string move_in_acn_notation;
@@ -379,7 +385,7 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     // `features_mask` is the feature mask supplied by Python.
     int iRandomMoves = 0;
     gotten_move = minimax_ai->get_move_iterative_deepening(
-        milliseconds+1,
+        milliseconds_to_use,
         max_deepening,
         player_id,
         iRandomMoves,

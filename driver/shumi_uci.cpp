@@ -19,7 +19,6 @@
 #include <cstdio>
 //#include <deque>
 #include <iostream>
-#include <limits>
 #include <ostream>
 #include <sstream>
 #include <thread>
@@ -71,7 +70,7 @@ struct UciSearchState {
 static void start_searching_for_move(MinimaxAI& minimax_ai,
                                      UciSearchState& search_thread,
                                      ull go_id,
-                                     int search_time_to_use,
+                                     ull search_time_to_use,
                                      int depth_to_use,
                                      int player_id,
                                      int iRandomMoves,
@@ -143,8 +142,7 @@ int main()
     //     7, 17000 is about 40 moves in 5 minumtes
     //
     int depth_to_use = 5;           // A minimum. Not  too large or SHumi loses in tuime control
-    int time_to_use = 10000;        // Not reallu used, the time control structure has all the data 
-
+   
     ull nominal_time_per_move[2] = {0, 0};
     int previous_moves_to_go[2] = {0, 0};
     //int max_ply_to_play = 4;
@@ -244,8 +242,10 @@ int main()
             current_base.clear();
             moves_so_far.clear();
             have_position = false;
-            nominal_time_per_move[0] = nominal_time_per_move[1] = 0;
-            previous_moves_to_go[0] = previous_moves_to_go[1] = 0;
+            nominal_time_per_move[0] = 0;
+            nominal_time_per_move[1] = 0;
+            previous_moves_to_go[0] = 0;
+            previous_moves_to_go[1] = 0;
 
         } else if (line.rfind("position ", 0) == 0) {
         //************************************************************************************** */
@@ -308,8 +308,8 @@ int main()
             current_go_id++;
 
             if (!have_position || engine == nullptr || minimax_ai == nullptr) {
+                // No valid position exists yet, so create the standard starting position.
 
-                // we have a valid position
                 vector<string> no_moves;
 
                 // Create a starting position
@@ -342,70 +342,106 @@ int main()
             }
 
 
-            int search_time_to_use = time_to_use;
+            // Assign these
+            ull search_time_to_use;                         // Milliseconds allocated to this search.
             MinimaxAI::SearchTimeControl time_control;
 
-            // set the hard abort time (zero means no hard abort)
-            time_control.hard_abort_threshold_ms = 10000;
-   
+           
 
             if (move_time > 0) {    
-                // A "movetime" parameter was passed by cutechess. So Cutechess wants a constant time per move.
+                // A "movetime" parameter was passed by Cutechess. So Cutechess wants a constant time per move.
 
-                // An explicit UCI movetime is a per-move limit, not a multi-move
-                // clock, so borrowing is deliberately disabled.
-                search_time_to_use = static_cast<int>(std::min<long long>(
-                    move_time,
-                    std::numeric_limits<int>::max()));
+                // An explicit UCI movetime is a per-move limit in milliseconds,
+                // not a multi-move clock, so borrowing is deliberately disabled.
+                search_time_to_use = (ull)move_time;
 
             } else if (moves_to_go > 0) {
-                // A "wtimew"/"btime" parameter was passed by cutechess. So Cutechess wants a constant time per set of moves.
-
+                // A "moves_to_go"  parameter was passed by Cutechess.  So Cutechess wants a constant time per set of moves. 
+                
+                // (here we assumme "wtime" and "btime" parameters were also passed by Cutechess). 
+                // Note: Can a valid UCI command can contain wtime and btime without movestogo — for example, a 
+                // sudden-death time control?
+                assert(white_time != -1);
+                assert(black_time != -1);
+             
+                // time_remaining_msec is the time allotted to shumi, until time control (including this move)
+                // Note that it can be zero or negative.
                 const int side = engine->game_board.turn == Color::WHITE ? 0 : 1;
-                const long long side_clock = side == 0 ? white_time : black_time;
+                const long long time_remaining_msec = (side == 0 ? white_time : black_time);
 
-                if (side_clock > 0) {
-                    const ull clock_at_move_start = static_cast<ull>(side_clock);
+                if (time_remaining_msec > 0) {
+                    // codex resume 01a023c8-68e6-7093-8ed5-e2f4587512f5 
+                    const ull time_left_msec = (ull)time_remaining_msec;
 
-                    const ull reserve = std::min<ull>(500, clock_at_move_start / 100);
+                    // Reserve 1% of the remaining clock for timing overhead, but never reserve 
+                    // more than 500 milliseconds.
+                    const ull reserve = std::min<ull>(500, (time_left_msec / 100));
 
-                    // Establish k once per time-control period. Recomputing k as
-                    // clock/movestogo on every move would erase accumulated debt.
-                    if (nominal_time_per_move[side] == 0
-                        || moves_to_go > previous_moves_to_go[side]) {
-                        const ull usable_clock = clock_at_move_start - reserve;
-                        nominal_time_per_move[side] = std::max<ull>(
-                            1,
-                            usable_clock / static_cast<ull>(moves_to_go));
+                    // Establish the nominal time per move only once per time-control period.
+                    // Recomputing it from clock/movestogo after every move would erase any
+                    // accumulated borrowing or saving.
+                    bool b_no_time_for_move = (nominal_time_per_move[side] == 0);
+                    bool b_new_time_control = (moves_to_go > previous_moves_to_go[side]);
+                    if (b_no_time_for_move || b_new_time_control) {
+                        const ull usable_clock = time_left_msec - reserve;
+            
+                        // nominal time must be at least 1 millisecond 
+                        assert(moves_to_go>0);
+                        nominal_time_per_move[side] = std::max<ull>(1, (usable_clock / (ull)moves_to_go));
                     }
                     previous_moves_to_go[side] = moves_to_go;
+                    assert(nominal_time_per_move[side] > 0);        // better have been computed
 
-                    const ull k = nominal_time_per_move[side];
-                    search_time_to_use = static_cast<int>(std::min<ull>(
-                        k,
-                        static_cast<ull>(std::numeric_limits<int>::max())));
+                    const ull time_per_move_msec = nominal_time_per_move[side];
 
-                    time_control.clock_at_move_start = clock_at_move_start;
+                    search_time_to_use = time_per_move_msec;
+
+
+                    time_control.time_left_msec = time_left_msec;
                     time_control.moves_left = moves_to_go;
-                    time_control.nominal_time_per_move = k;
+                    time_control.nominal_time_per_move = time_per_move_msec;
 
                     // Allow this move to borrow up to one full nominal move's time.
-                    // If k is 10000 ms, Shumi may add up to 10000 ms beyond the normal k budget.
+                    // For example, if time_per_move_msec is 10000 ms, Shumi may add up to 10000 ms beyond the normal budget.
                     // This is the main direct knob for how aggressive borrowing can be.
-                    time_control.maximum_loan = 3*k/2;
+                    time_control.maximum_loan = 3*time_per_move_msec/2;
 
                     // Protect future moves from being starved after borrowing on this move.
                     // Here each future move must be left at least k / 4 time, but never less than 1 ms.
                     // Lowering this makes borrowing more aggressive; raising it makes borrowing safer.
-                    time_control.minimum_future_time = std::max<ull>(1, k / 4);
+                    time_control.minimum_future_time = std::max<ull>(1, time_per_move_msec / 4);
 
                     // Keep this much clock completely outside Shumi's usable budget.
-                    // The search budgets from clock_at_move_start - reserve, not the full clock.
+                    // The search budgets from (time_left_msec - reserve), not the full clock.
                     // This protects against overshoot, GUI delay, and stop-check granularity.
                     time_control.clock_reserve = reserve;
                 }
+                else {      // time_remaining_msec is zero or negative
+
+                    // The clock has already expired. Search with the smallest possible
+                    // budget so Shumi returns a legal move as quickly as possible.
+                    search_time_to_use = 1;  // milliseconds
+
+                    time_control.time_left_msec = 1;
+                    time_control.moves_left = moves_to_go;
+                    time_control.nominal_time_per_move = 1;
+                    time_control.maximum_loan = 0;
+                    time_control.minimum_future_time = 1;
+                    time_control.clock_reserve = 0;
+
+                }
+            } else {
+                // Should this ever happen? Not unless cutechess passed us nonsense parameters.
+                search_time_to_use = 0;
+                sout << "Unsupported go command: " << line << endl;
+                assert(0);
+                continue;       // skip this go command (in release build)
             }
 
+            // set the hard abort time. This is the time before the end of the game,
+            // that the hard_abort logic kicks in. Zero means no hard abort.
+            time_control.hard_abort_threshold_ms = 10'000;
+   
             //
             // Start thread to "Get "best move" from Shumi"
             start_searching_for_move(*minimax_ai, search_thread, this_go_id, search_time_to_use, depth_to_use,
@@ -467,7 +503,7 @@ static void start_searching_for_move(
     MinimaxAI& minimax_ai,
     UciSearchState& search_thread,
     ull go_id,
-    int search_time_to_use,
+    ull search_time_to_use,
     int depth_to_use,
     int player_id,
     int iRandomMoves,

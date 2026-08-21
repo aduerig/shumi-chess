@@ -20,7 +20,7 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 /////////// Debug ////////////////////////////////////////////////////////////////////////////////////
 
-//#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
+#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
 
 
 
@@ -52,15 +52,15 @@ class MinimaxAI {
 public:
 
     struct SearchTimeControl {
-        ull clock_at_move_start = 0;       // Milliseconds remaining before this search.
-        int moves_left = 0;                // Includes the move currently being searched.
+        ull time_left_msec = 0;            // Milliseconds remaining until time control, before this search starts
+        int moves_left = 0;                // Moves until time control. (includes the move currently being searched)
         ull nominal_time_per_move = 0;     // k: time-control period / moves in period.
         ull maximum_loan = 0;              // Maximum permitted debt against future moves.
         ull minimum_future_time = 0;       // Time (milliseconds) protected for each future move.
         ull clock_reserve = 0;             // Time (milliseconds) never deliberately allocated to search.
 
         bool enabled() const {
-            return clock_at_move_start > clock_reserve
+            return time_left_msec > clock_reserve
                 && moves_left > 0
                 && nominal_time_per_move > 0;
         }
@@ -106,7 +106,7 @@ public:
 
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;
-    int maximum_duration = 0;
+    ull maximum_duration = 0;      // Milliseconds requested for the current search.
 
     int cp_score_material_avg = 0;
     //int cp_score_material_NP_avg = 0;
@@ -147,7 +147,7 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////
-    // Transposition table #2 (TT2)     Protects the node (recursive_negamax()). Cleared on every ??? 
+    // Transposition table #2 (TT2)     Protects the node (recursive_negamax()). Cleared on every game start. 
     enum class TTFlag : unsigned char {
         EXACT,       // exact alpha–beta result
         LOWER_BOUND, // fail-high node
@@ -219,6 +219,7 @@ public:
     void wakeup();
     void resign();
     bool should_abort_search_by_time();
+    bool should_abort_search_by_soft_time();
 
     bool sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
    
@@ -227,7 +228,7 @@ public:
 
 
     std::tuple<Score, ShumiChess::Move> do_a_principal_variation(int depth
-                                        , TIME_TYPE start_time, int i_time_requested, TIME_TYPE requested_end_time
+                                        , TIME_TYPE start_time, ull i_time_requested, TIME_TYPE requested_end_time
                                         , const SearchTimeControl& time_control
                                         , ull& elapsed_time);      // Output
 
@@ -248,7 +249,7 @@ public:
                                              int& n_moves_within_delta     // output
                                             );
 
-    ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
+    ShumiChess::Move get_move_iterative_deepening(ull i_time_requested, int max_deepening_requested, int player_id
                                                 , int iRandomMoves, int feat
                                                 , SearchTimeControl time_control);
 
@@ -256,7 +257,7 @@ public:
     // initializers are not available inside the enclosing class definition, so
     // "= {}" on the declaration above is ill-formed. A function body is parsed
     // after the enclosing class is complete, so building the default here is fine.
-    ShumiChess::Move get_move_iterative_deepening(int i_time_requested, int max_deepening_requested, int player_id
+    ShumiChess::Move get_move_iterative_deepening(ull i_time_requested, int max_deepening_requested, int player_id
                                                 , int iRandomMoves, int feat)
     {
         return get_move_iterative_deepening(i_time_requested, max_deepening_requested, player_id
@@ -352,15 +353,24 @@ public:
 
 private:
 
-    bool hard_abort_enabled = false;
-    ull hard_abort_budget_ms = 0;           // a relative time or duration
-    ull hard_abort_start_time_ms = 0;       // holds start time
-    bool hard_abort_allowed = false;
-    void hard_abort_start(ull hard_duration);
-    void hard_abort_end();
-
     int n_Multis = 1;           // MultiPV if greater than 1
 
 
+    bool aborts_allowed = false;        // Aborts cant happen until at least one deepening has finished, and
+                                        // given us a fallback move to use.
+
+    bool hard_abort_enabled = false;
+    ull hard_abort_budget_ms = 0;           // a relative time or duration
+    ull hard_abort_start_time_ms = 0;       // holds start time
+    
+    void hard_abort_start(ull hard_duration);
+    void hard_abort_end();
+
+    bool soft_abort_enabled = false;
+    ull soft_abort_budget_ms = 0;       // Relative duration in milliseconds
+    ull soft_abort_start_time_ms = 0;   // Absolute steady-clock time in milliseconds
+
+    void soft_abort_start(ull soft_duration);
+    void soft_abort_end();
 
 };

@@ -34,7 +34,7 @@ inline constexpr int MAX_MOVES = 256;
 inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
 inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 32;
 
-//#define _SUPRESSING_MOVE_HISTORY_RESULTS  // Prevents 3 time rep and the fifty move rule  
+#define _SUPRESSING_MOVE_HISTORY_RESULTS  // Prevents 3 time rep and the fifty move rule  
 
 #ifdef _SUPRESSING_MOVE_HISTORY_RESULTS
     #define FIFTY_MOVE_RULE_PLY 5000      // This should be 100 as the units are ply.
@@ -261,8 +261,6 @@ class Engine {
             return bReturn;
         }
         // Note: Should we also include:
-        //  captures of queen
-        //  captures of rook (optional)
         //  only checking captures (a capture that gives check).
         //  only checks that are “near king” (checker lands in king zone: 1–2 squares away / same ring). 
         bool inline is_unquiet_move(ShumiChess::Move mv) {

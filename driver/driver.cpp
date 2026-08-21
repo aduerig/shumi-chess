@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <ostream>
 #include <iostream>
 #include <cstring>
@@ -19,7 +20,7 @@ using namespace ShumiChess;
 int main(int argc, char** argv)
 {
     // defaults
-    int time_to_use_msec = 1000;   // -t1000
+    ull time_to_use_msec = 1000;   // Milliseconds. -t1000
     int depth_limit      = 5;        // -d5
     string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -29,7 +30,10 @@ int main(int argc, char** argv)
         // -t<number>
         if (std::strncmp(argv[i], "-t", 2) == 0 && argv[i][2] != '\0')
         {
-            time_to_use_msec = std::atof(argv[i] + 2);
+            const long long parsed_time_msec = std::atoll(argv[i] + 2);
+            if (parsed_time_msec > 0) {
+                time_to_use_msec = (ull)parsed_time_msec;
+            }
         }
         // -d<number>
         else if (std::strncmp(argv[i], "-d", 2) == 0 && argv[i][2] != '\0')

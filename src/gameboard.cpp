@@ -667,7 +667,7 @@ bool GameBoard::insufficient_material_simple() {
 
     int n_piecesW = n_knightsW + n_bishopsW;
     int n_piecesB = n_knightsB + n_bishopsB;
-    if ( (n_piecesW <= 1) && (n_piecesB <= 1) ) return true;    // no pieces
+    if ( (n_piecesW <= 1) && (n_piecesB <= 1) )  return true;   // no or just 1 minor pieces
     if ( (n_piecesW <= 1) && (n_knightsB == 2) ) return true;   // 2 knights
     if ( (n_piecesB <= 1) && (n_knightsW == 2) ) return true;   // 2 knights
 
@@ -1341,7 +1341,7 @@ std::string GameBoard::random_960_FEN_strict()
 //      (note: attack test may be conservative if king-blocking isn't modeled).
 //   3) Side to move is always White (" w - - 0 1").
 //
-// Note: This does NOT does not try to ensure the position is reachable from the initial position.
+// Note that this does NOT does not try to ensure the position is reachable from the initial position.
 //
 ///////////////////////////////////////////////////////////////
 

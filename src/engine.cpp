@@ -2349,11 +2349,7 @@ void Engine::add_pawn_moves_to_vector_t(vector<Move>& all_psuedo_legal_moves) {
                 //assert (one_move_forward == move_forward_one);
                 //ull move_forward_one_unblocked = one_move_forward & ~all_pieces;
 
-                // Note: simplify this ChatGPT says they are the same?
-                //assert(one_move_forward_unblocked == move_forward_one_unblocked);
-
                 ull move_forward_two;
-                //ull move_forward_two2 = utility::bit::bitshift_by_color_t<c>(move_forward_one_unblocked, 8);
                 if constexpr (c == Color::WHITE) {
                     move_forward_two = tables::movegen::white_pawn_double_adv_table[square];
                 } else {

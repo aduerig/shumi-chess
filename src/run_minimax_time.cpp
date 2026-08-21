@@ -1,6 +1,7 @@
 
 #include <math.h>
 
+#include <cstdlib>
 #include <chrono>
 #ifdef _WIN32
 #include <conio.h>
@@ -11,7 +12,6 @@ static inline int _getch() { return std::cin.get(); }
 #endif
 #include <cstdio>
 #include <iostream>
-#include <limits>
 #include <ostream>
 #include <sstream>
 #include <thread>
@@ -84,13 +84,16 @@ int main(int argc, char** argv) {
     int NPositions = 5;
     // Decide on arguments
     int depth_to_use = 8;
-    int time_to_use = 2;
+    ull time_to_use = 2;      // Milliseconds (default)
     int max_ply_to_play = 4;
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     if (argc < 2) {
         //sout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
     } else {
-        time_to_use = atoi(argv[1]);
+        const long long parsed_time_msec = atoll(argv[1]);
+        if (parsed_time_msec > 0) {
+            time_to_use = (ull)parsed_time_msec;
+        }
         //sout << "You entered time_to_use of: " << time_to_use << endl;
     }
     if (argc >= 3) {

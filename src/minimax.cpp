@@ -72,8 +72,8 @@ using namespace utility::bit;
 //#define DOING_TT_EVAL2       // used only in best_move_static (should be extinct)
 //#define DEBUG_LEAF_TT
 
-// #define DEBUG_NODE_TT2           // I must also be defined in the .hpp file to work
-// #define BURP2_THRESHOLD_CP 0    // "burps" or fails if the stored (TT) does not match the evaluaton made.
+#define DEBUG_NODE_TT2           // I must also be defined in the .hpp file to work
+#define BURP2_THRESHOLD_CP 1    // "burps" or fails if the stored (TT) does not match the evaluaton made.
 
 //#define DEBUGGING_KILLER_MOVES 
 
@@ -264,22 +264,30 @@ static inline ull get_time_ms()     // gets times since ?
     ).count();
 }
 
-void MinimaxAI::hard_abort_start(ull hard_duration)
-{
+void MinimaxAI::hard_abort_start(ull hard_duration) {
     hard_abort_budget_ms = hard_duration;
     hard_abort_start_time_ms = get_time_ms();  // milliseconds
     hard_abort_enabled = true;
 }
 
-void MinimaxAI::hard_abort_end()
-{
+void MinimaxAI::hard_abort_end() {
     hard_abort_enabled = false;
     hard_abort_budget_ms = 0ULL;
-
-    #ifdef _DEBUGGING_TEMP1
-        fprintf(fpDebug, " hard_abort_end\n");
-    #endif
 }
+
+void MinimaxAI::soft_abort_start(ull soft_duration) {
+    soft_abort_budget_ms = soft_duration;
+    soft_abort_start_time_ms = get_time_ms();  // milliseconds
+    soft_abort_enabled = true;
+}
+
+void MinimaxAI::soft_abort_end() {
+    soft_abort_enabled = false;
+    soft_abort_budget_ms = 0ULL;
+}
+
+
+
 
 bool MinimaxAI::should_abort_search_by_time()
 {
@@ -287,6 +295,8 @@ bool MinimaxAI::should_abort_search_by_time()
     if (hard_abort_budget_ms == 0ULL) return false;
 
     const ull abs_time_ms = get_time_ms();  // milliseconds
+
+    // duration_now is the time since 
     const ull duration_now = (abs_time_ms - hard_abort_start_time_ms);
 
   
@@ -298,6 +308,11 @@ bool MinimaxAI::should_abort_search_by_time()
         return true;
     }
 
+    return false;
+}
+
+bool MinimaxAI::should_abort_search_by_soft_time()
+{
     return false;
 }
 
@@ -606,17 +621,8 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
         const Score alpha_orig = alpha;
         const Score beta_orig = beta;
         const ull try_nodes_start = nodes_visited;
-
-        #ifdef DEBUGGING_RANDOM_DELTA1
-            fprintf(fpDebug, "\n");
-        #endif
-        // elapsed_time_display_only is from beginning of calculation
         
-        #ifdef DISPLAY_DEEPING      // i_duration_requested
-            ull ratio_last = 0;
-            if (last_elapsed_time_display_only != 0) {
-                ratio_last = elapsed_time_display_only / last_elapsed_time_display_only;
-            }
+        #ifdef DISPLAY_DEEPING
             last_elapsed_time_display_only = elapsed_time_display_only;
             if (depth==1) cerr << "\n";
             sout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
@@ -776,7 +782,7 @@ int g_this_depth = 6;
 //////////////////////////////////////////////////////////////////////////////////
 //
 // This is a "root position". The next human move triggers a new root position
-Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_deepening_requested, int player_id
+Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_deepening_requested, int player_id
                 , int iRandomMoves
                 , int feat
                 , SearchTimeControl time_control) {  
@@ -795,32 +801,28 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     // emergency threshold, divide that remaining time equally among the
     // moves left until the time control. All values are milliseconds.
     if (time_control.hard_abort_threshold_ms > 0ULL &&
-        time_control.clock_at_move_start > 0ULL &&
+        time_control.time_left_msec > 0ULL &&
         time_control.moves_left > 0) {
 
         const ull moves_left = (ull)time_control.moves_left;
 
         const ull emergency_clock_ms =
             std::min(
-                time_control.clock_at_move_start,
+                time_control.time_left_msec,
                 time_control.hard_abort_threshold_ms);
 
         assert (moves_left>0);
         const ull emergency_move_budget_ms = emergency_clock_ms / (moves_left+1);
 
-        ull hard_abort_duration_ms =
-            emergency_move_budget_ms;
+        ull hard_abort_duration_ms = emergency_move_budget_ms;
 
         // If we are not yet inside the emergency period, first wait until
         // the threshold is reached, then allow this move its equal share.
-        if (time_control.clock_at_move_start > time_control.hard_abort_threshold_ms) {
+        if (time_control.time_left_msec > time_control.hard_abort_threshold_ms) {
 
-            const ull time_until_emergency_ms =
-                time_control.clock_at_move_start - time_control.hard_abort_threshold_ms;
+            const ull time_until_emergency_ms = time_control.time_left_msec - time_control.hard_abort_threshold_ms;
 
-            hard_abort_duration_ms =
-                time_until_emergency_ms +
-                emergency_move_budget_ms;
+            hard_abort_duration_ms = time_until_emergency_ms + emergency_move_budget_ms;
         }
 
         hard_abort_start(hard_abort_duration_ms);
@@ -829,7 +831,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
     }
 
 
-    assert (i_duration_requested > 0);
+    assert (duration_requested > 0);
 
     // Obtain time now (milliseconds)
     TIME_TYPE start_of_calculation = chrono::high_resolution_clock::now();
@@ -837,7 +839,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
  
  
     eval_person = (ShumiChess::EvalPersons)player_id;   
-    //eval_person = ShumiChess::CRAZY_IVAN;           // debug only (force IVAN)
+    eval_person = ShumiChess::CRAZY_IVAN;           // debug only (force IVAN)
 
     //sout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     //sout << "\n Player = " << eval_person << endl;
@@ -868,6 +870,10 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         // this, but there it is: engine.reset_engine() starts a new game, and sets computer_ply_so_far = 0.
         //
 
+        // BUT
+
+
+
         #ifdef _DEBUGGING_TO_FILE
             fprintf(fpDebug, "\nnew game\n");
         #endif   
@@ -894,6 +900,8 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         nRandos = 0;
 
         nGames++;
+
+        sout << "game start=" << nGames << endl;
 
     }   
 
@@ -942,7 +950,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
     if (engine.i_randomize_next_move>0) {
         this_deepening--;
-        i_duration_requested /= (RANDOM_MOVE_CANDIDATES);
+        duration_requested /= (RANDOM_MOVE_CANDIDATES);
         // Zero the timecontrol, has the effect of forcing the Use of the divided per-candidate budget 
         // instead of the UCI loan budget.
         time_control = {};
@@ -950,9 +958,9 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
     // Obey requested deepening and duration
     //  (not actually a "endtime". The last deepening will start before or at this "requested" time)
-    TIME_TYPE requested_end_time = start_of_calculation + std::chrono::milliseconds(i_duration_requested); 
+    TIME_TYPE requested_end_time = start_of_calculation + std::chrono::milliseconds((long long)duration_requested); 
     maximum_deepening = this_deepening;
-    maximum_duration = i_duration_requested;
+    maximum_duration = duration_requested;
 
     // defaults
     int depth = 1;
@@ -995,7 +1003,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         elapsed_time = 0ULL; // in msec
 
         ret_val = do_a_principal_variation(depth
-                                        , start_of_calculation, i_duration_requested, requested_end_time
+                                        , start_of_calculation, duration_requested, requested_end_time
                                         , time_control
                                         , elapsed_time);        // Output
         d_best_move_score = get<0>(ret_val);
@@ -1007,6 +1015,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
         best_move = get<1>(ret_val);    
 
+        assert (best_move.piece_type != Piece::NONE);
         if (best_move.piece_type == Piece::NONE) break;     // NOTE: should this ever happen?
 
         excluded_root_moves.push_back(std::make_pair(best_move, d_best_move_score));
@@ -1106,7 +1115,7 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
         sout << "\x1b[33m\nWent to depth " << (depth - 1)  
             << " elapsed min= " << elapsed_time_min
-            << " elapsed msec= " << elapsed_time << " request msec= " << i_duration_requested 
+            << " elapsed msec= " << elapsed_time << " request msec= " << duration_requested 
             << std::fixed << std::setprecision(1)
             << "\x1b[0m" << endl;
 
@@ -1173,11 +1182,6 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
         engine.d_bestScore_at_root = d_best_move_score_abs;  
     }
 
-    // Note: this is required or tehe app hangs near the end of the game in autoplay?
-    #ifdef DISPLAY_DEEPING1
-        sout << "\n";
-    #endif
-
     #ifdef DEBUGGING_KILLER_MOVES
         sout << "Killers: tried=" << killer_tried
             << " cutoffs=" << killer_cutoff
@@ -1187,10 +1191,11 @@ Move MinimaxAI::get_move_iterative_deepening(int i_duration_requested, int max_d
 
     if (ASPIRATION_ENABLED) {
         #ifdef DISPLAY_DEEPING
+
             const double aspiration_success_pct = aspiration_attempts
-                ? (100.0 * static_cast<double>(aspiration_successes)
-                    / static_cast<double>(aspiration_attempts))
+                ? (100.0 * (double)aspiration_successes / (double)aspiration_attempts)
                 : 0.0;
+
             sout << "[aspiration summary] attempts=" << aspiration_attempts
                 << " successes=" << aspiration_successes
                 << " fail-lows=" << aspiration_fail_lows
@@ -1334,11 +1339,12 @@ void MinimaxAI::playground(int iPhase) {
 //  elapsed_time is an output
 //
 std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth
-                                        , TIME_TYPE start_time, int i_duration_requested, TIME_TYPE requested_end_time
+                                        , TIME_TYPE start_time, ull duration_requested, TIME_TYPE requested_end_time
                                         , const SearchTimeControl& time_control
                                         , ull& elapsed_time)      // output
 {
-    // Ha.
+    elapsed_time = 0ULL; // in msec
+
     bool b_Forced = false;
 
     bool bThinkingOver = false;
@@ -1352,7 +1358,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     Move best_move = {};
     Score d_best_move_score = ZERO_SCORE;
     
-    elapsed_time = 0ULL; // in msec
+
     ull last_elapsed_time_display_only = 0ULL;
     double estimated_elapsed_time = 0.0;
     double previous_estimated_elapsed_time = 0.0;
@@ -1365,7 +1371,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     Score d_Return_score = ZERO_SCORE;
 
     tuple<Score, Move> ret_val;
-    hard_abort_allowed = false;
+    aborts_allowed = false;
     bool has_completed_deepening = false;
 
 
@@ -1390,7 +1396,9 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         // the beast
 
         // Ha. Here we pass in the elapsed time, just for display, before the deeping.
-        ret_val = do_a_deepening(depth, elapsed_time, last_elapsed_time_display_only
+        ret_val = do_a_deepening(depth
+                                , elapsed_time                      // used for display only
+                                , last_elapsed_time_display_only
                                 , estimated_elapsed_time_display_only
                                 , estimated_elapsed_time_available);
 
@@ -1407,14 +1415,14 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             b_Forced = true;
             d_best_move_score = d_Return_score;
             best_move = get<1>(ret_val);        // this was the only legal move.
-            hard_abort_allowed = true;
+            aborts_allowed = true;
             break;   // Stop deepening, no more depths.
      
         } else {
             d_best_move_score = d_Return_score;
             best_move = get<1>(ret_val);
 
-            hard_abort_allowed = true;
+            aborts_allowed = true;
 
         }
 
@@ -1459,7 +1467,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         auto now_time = chrono::high_resolution_clock::now();
 
         elapsed_time = (ull)chrono::duration_cast<chrono::milliseconds>(now_time - start_time).count();
-        diff_s = (long long)elapsed_time - (long long)i_duration_requested;
+        diff_s = (long long)elapsed_time - (long long)duration_requested;
 
         // (Optional: keep these only for your printout)
         now_s = (long long)chrono::duration_cast<chrono::milliseconds>(now_time.time_since_epoch()).count();
@@ -1480,13 +1488,13 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         //bThinkingOverByTime = (diff_s > 0);
 
         //                      T           >=      D
-        //bThinkingOverByTime = (elapsed_time >= (ull)i_duration_requested);
+        //bThinkingOverByTime = (elapsed_time >= (ull)duration_requested);
         double growth_factor = 6.0;
         //        
         bThinkingOverByTime = should_stop_by_time(
             elapsed_time,
             growth_factor,
-            static_cast<ull>(i_duration_requested),
+            duration_requested,
             time_control,
             estimated_elapsed_time);
 
@@ -1513,15 +1521,14 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
     max_attained_depth = depth-1;       // minus one becuase it was incremented at the end of the loop
 
-    hard_abort_allowed = false;
+    aborts_allowed = false;
     return { d_best_move_score, best_move };
 }
 
-// codex resume 01a0184d-ca7a-73d0-bc6f-bcc5e85d23b4
 // I am called after each deepening, to try to figure out (based on time) wether I should start the
-// next deepeing or not.
-//      Returns true if search should stop, based on various things.
-//      input: elapsed_time is the elapsed time "so far", running the deepenings so far.
+// next deepeing or not. Note that "elapsed time" here is not cumulative. 
+//      Return: true if search should stop, based on various things.
+//      input:  elapsed_time is the elapsed time "so far", running the deepenings so far.
 //      output: estimated_elapsed_time is the estimated time this next deeping will take.
 bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
                                     , ull fallback_move_budget
@@ -1540,30 +1547,10 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     // 12 or more. Make the exponential try to follow growth_factor. The "minimum elapsed time", function should return very low values 
     // at depths of 1 - 7. 
 
-    // elapsed_time is cumulative for the current move search. Keep a cumulative
-    // exponential floor too, so ultra-fast TT2 deepenings do not make the next
-    // deepening estimate unrealistically small.
-    static ull previous_elapsed_time = 0ULL;
-    static double minimum_elapsed_time = 0.01;
-
-    // A new move search resets elapsed_time, so reset the minimum curve too.
-    if (elapsed_time < previous_elapsed_time) {
-        minimum_elapsed_time = 0.01;
-    }
-    previous_elapsed_time = elapsed_time;
-
-    const double K = 0.80;
-
-    minimum_elapsed_time *= growth_factor * K;
-
-
-    // Take max of the "minimum elapsed time" and the passed in elapsed time". This is what you 
-    // assume the elapsed time of the next level to be. 
-    const double adjusted_elapsed_time = std::max<double>(
-        (double)elapsed_time,
-        minimum_elapsed_time);
-
-    estimated_elapsed_time = adjusted_elapsed_time * growth_factor;
+    //
+    //  Here we asssumme that the growth of time spent on each deeening is exponential.
+    //  Note: should this instead be factorial?
+    estimated_elapsed_time = (double)elapsed_time * growth_factor;
 
     // Existing callers specify only a per-move duration. Preserve that behavior
     // until they provide a complete time-control description.
@@ -1574,7 +1561,8 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
 
     } else {
 
-        ull usable_clock = time_control.clock_at_move_start - time_control.clock_reserve;
+        // Subtract the reserve
+        ull usable_clock = time_control.time_left_msec - time_control.clock_reserve;
 
         // Credit is positive after quick moves and negative after borrowed time was
         // used. It is measured against the original k-per-move schedule.
@@ -1607,11 +1595,7 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
             minimum_budget,
             (double)usable_clock);
 
-        #ifdef DEBUGGING_TEMP
-            fprintf(fpDebug, "%ld     elapsed_time1=%llu   %llu\n", time_control.enabled()
-                , static_cast<unsigned long long>(estimated_elapsed_time)
-                , static_cast<unsigned long long>(move_budget));
-        #endif
+      
         return (estimated_elapsed_time >= move_budget);
     }
 }
@@ -1722,8 +1706,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
 
     // Over analysis sentinal Sorry, I should not be this large
-    // Note: why does this so high? Must be a better way to handle this. Always happens near draws.
-    // OR when 3-time rep is off.   // _SUPRESSING_MOVE_HISTORY_RESULTS is defined.
+    // Note: must be a better way to handle this. 
     assert(nPlys >= 0);
     if (nPlys > MAX_PLY) {
         // If a draw by 50/3/insuffieceint time, then we can get in loop here, where each deepeining is only 
@@ -1766,7 +1749,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     if ((nodes_visited % 10'000ULL) == 0ULL) {
         // Hard abort is not allowed until we have seen at least one deepening, and 
         // therefore have a usable move to fall back to.
-        if (hard_abort_allowed) {       // from regular search
+        if (aborts_allowed) {       // from regular search
             if (should_abort_search_by_time()) {
                 sout << endl << "hard abort s" << endl;
                 return { ABORT_SCORE, the_best_move };
@@ -1780,7 +1763,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
         bool   foundPos = false;
-        Score    foundScore = ZERO_SCORE;
+        Score  foundScore_cp = ZERO_SCORE;
         Move   foundMove = {};
         int    foundnPlys = 0;
         bool   foundDraw = 0;
@@ -1844,22 +1827,25 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 // probe found for this zobrist key
                 const TTEntry2 &entry = it->second;
 
-                // Qualification #1 on probe: 
-                // We are at position X. Use the stored result only if the previous search continued at least as 
-                // many plies beyond X as the current search intends to continue beyond X.
-                // Greater depths mean there was more search after position X.
+                // Qualification #1 on probe:
+                // We are at position X. Use the stored result only if the stored search continued at least as 
+                // many plies beyond X as the current search intends to continue beyond X (until qsearch)
+                // Greater depths mean there was more search (before qsearch) after position X.
+                //      entry.depth: how many regular-search plies were searched beyond X when the entry was stored.
+                //      depth: how many regular-search plies the current search wants beyond X.
+
                 if (entry.depth >= depth) {      
                     is_perfect_match = true;
                     NhitsTT2++;
                 }
 
-                is_perfect_match = false;        // debug only to disable TT2 score reusage (still uses it for move ordering)
+                //is_perfect_match = false;        // debug only to disable TT2 score reusage (still uses it for move ordering)
                 if (is_perfect_match) {      
                     // If debug, just compare to the computation. If not debug actually use the result. 
 
                     #ifdef DEBUG_NODE_TT2        // Store information recalled from the TT2 "record"
                         foundPos   = true;
-                        foundScore = entry.score_cp;
+                        foundScore_cp = entry.score_cp;
                         foundMove  = entry.best_move;
                         foundnPlys = entry.nPlysDebug;
                         foundDraw  = entry.drawDebug;
@@ -2016,13 +2002,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         bool bOK = sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
         assert (bOK);
 
-        #ifdef _DEBUGGING_MOVE_SORT
-            if (tempMovs != *p_moves_to_loop_over) {
-                print_moves_to_file(tempMovs, depth, "pre", "\n");
-                print_moves_to_file(*p_moves_to_loop_over, depth, "pst", "\n");
-            }
-        #endif
-
         //
         /////////////////////////////////////////////////////////////////////////////////////////
         //
@@ -2041,7 +2020,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         bool was_aborted = loop_over_all_moves(depth, alpha, beta, 
                         nPlys, qPlys, false, 
                         d_stand_pat, 
-                        //move_last,
                         p_moves_to_loop_over,               // input
                         the_best_move, d_best_score,        // outputs
                         did_cutoff);
@@ -2072,8 +2050,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 //
                 uint64_t key = engine.game_board.zobrist_key;
 
-
-                // Rolling size cap for TT2  (NOTE: 2 million?), This is a non-determinism that can break "burp2" TT2?
+                // Rolling size cap for TT2. Note: Is this a non-determinism that can break "burp2" TT2?
                 static const std::size_t MAX_TT2_SIZE = 1'000'000;
                 if (TTable2.size() >= MAX_TT2_SIZE) {
                     // one arbitrary existing entry is erased;
@@ -2099,122 +2076,144 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 {
                     if (foundPos && (foundDepth == depth) ) {            
 
-                        bool bBothScoresMates = (IS_MATE_SCORE(foundRawScore) && IS_MATE_SCORE(d_best_score));
+                        bool scoreMismatch = false;
 
-                        if (!bBothScoresMates) {
+                        const bool foundIsMate  = IS_MATE_SCORE(foundRawScore);
+                        const bool actualIsMate = IS_MATE_SCORE(d_best_score);
 
-                            Score score_Threshold = BURP2_THRESHOLD_CP;
+                        if (foundIsMate != actualIsMate) {
+                            // One search sees mate and the other does not.
+                            // This is definitely a significant disagreement.
+                            scoreMismatch = true;
+                        }
+                        else if (!foundIsMate) {
+                            // Both are ordinary evaluation scores.
+                            scoreMismatch = abs(foundScore_cp - cp_score_temp) > BURP2_THRESHOLD_CP;
+                        }
+                        else {
+                            // Both are mate scores.
+                            // At minimum, verify that they predict the same winner.
+                            const bool foundWinningMate = foundRawScore > 0;
+                            const bool actualWinningMate = d_best_score > 0;
 
-                            //assert(0);  // to maske sure we get here.
+                            if (foundWinningMate != actualWinningMate) {
+                                // One says we deliver mate; the other says we get mated.
+                                scoreMismatch = true;
+                            }
 
-                            if ( abs(foundScore - cp_score_temp) > score_Threshold) {
-                                //
-                                //  We found a burp.
-                                bool isFailure = true;
-                                int iRepCountNow = 0;
-                                // auto itRepNow = engine.repetition_table.find(key);
-                                // if (itRepNow != engine.repetition_table.end()) iRepCountNow = itRepNow->second;
+                            // Otherwise, both report mate for the same side.
+                            // Different mate distances may be legitimate because mate scores
+                            // can contain a ply-dependent distance.
+                        }
 
-                                char buf[256];
-                                std::snprintf(
-                                    buf, sizeof(buf),
-                                    "\n%llu burp2 %ld = %ld    %.2f = %.2f     q=%ld    rep  %ld %ld \n",
-                                    NhitsTT2,
-                                    foundScore, cp_score_temp,
-                                    foundRawScore, d_best_score,
-                                    qPlys, foundRepCount, iRepCountNow
-                                );
-                                std::sout << buf;
+
+                        //assert(0);  // to make sure we get here.
+
+                        if (scoreMismatch) {
+                            //
+                            //  We found a burp2.
+                            bool isFailure = true;
+                            int iRepCountNow = 0;
+
+                            char buf[256];
+                            std::snprintf(
+                                buf, sizeof(buf),
+                                "\n%llu burp2 %ld = %ld    %.2f = %.2f     q=%ld    rep  %ld %ld \n",
+                                NhitsTT2,
+                                foundScore_cp, cp_score_temp,
+                                foundRawScore, d_best_score,
+                                qPlys, foundRepCount, iRepCountNow
+                            );
+                            sout << buf;
+                            #ifdef _DEBUGGING_TO_FILE
+                                std::fputs(buf, fpDebug);
+
+                                // What we found in the table
+                                engine.print_move_history_to_file0(fpDebug, found_move_history);
+
+                                // What we have now from the analysis
+                                engine.print_move_history_to_file(fpDebug, "burp2 (actual)");
+
+                                std::fflush(fpDebug);   // force write to disk
+                            #endif
+
+                            print_mismatch(sout, "al", (int)foundAlpha,         (int)alpha_in);
+                            print_mismatch(sout, "bt", (int)foundBeta,          (int)beta);
+                            print_mismatch(sout, "dr", foundDraw,          (state == GameState::DRAW));
+                            print_mismatch(sout, "ck", foundIsCheck,       debug_in_check);
+
+                            print_mismatch(sout, "rp", foundRepCount,      iRepCountNow);
+                            print_mismatch(sout, "nPlys", foundnPlys, nPlys);
+
+                            print_mismatch(sout, "wp", found_wp, engine.game_board.white_pawns);
+                            print_mismatch(sout, "wn", found_wn, engine.game_board.white_knights);
+                            print_mismatch(sout, "wb", found_wb, engine.game_board.white_bishops);
+                            print_mismatch(sout, "wr", found_wr, engine.game_board.white_rooks);
+                            print_mismatch(sout, "wq", found_wq, engine.game_board.white_queens);
+                            print_mismatch(sout, "wk", found_wk, engine.game_board.white_king);
+
+                            print_mismatch(sout, "bp", found_bp, engine.game_board.black_pawns);
+                            print_mismatch(sout, "bn", found_bn, engine.game_board.black_knights);
+                            print_mismatch(sout, "bb", found_bb, engine.game_board.black_bishops);
+                            print_mismatch(sout, "br", found_br, engine.game_board.black_rooks);
+                            print_mismatch(sout, "bq", found_bq, engine.game_board.black_queens);
+                            print_mismatch(sout, "bk", found_bk, engine.game_board.black_king);
+
+                            //  found_move_history
+
+                            // sout << "  depth-> " << depth << " mv->" << engine.computer_ply_so_far 
+                            // << " dbg->" << bBothScoresMates << " idelta-> " << idelta 
+                            // << " , " << abs(foundScore_cp - cp_score_temp)
+                            // << endl;
+                            
+                            // Show board
+                            string out = gameboard_to_string(engine.game_board);
+                            sout << out << endl;
+
+                            //isFailure = true;
+                            char* pszTemp = ""; 
+                            (engine.game_board.turn == ShumiChess::WHITE) ? pszTemp = "WHITE to move" : pszTemp = "BLACK to move";
+                            sout << pszTemp << endl;
+
+                            string mv_string1;
+                            string mv_string2;
+                            engine.bitboards_to_algebraic(engine.game_board.turn, foundMove, (GameState::INPROGRESS)
+                                            , false, false, NULL, mv_string1);
+                            engine.bitboards_to_algebraic(engine.game_board.turn, the_best_move, (GameState::INPROGRESS)
+                                            , false, false, NULL, mv_string2);
+                            sout << mv_string1 << " = " << mv_string2 << endl;
+
+            
+                            if (!(foundMove == the_best_move)) {
+                                Move deadmove =  {};
+                                bool isEmpty = (the_best_move == deadmove);
+                                sout << " burp2m " << (int)foundMove.piece_type  << " = "  << (int)the_best_move.piece_type << "  " << isEmpty << " "  
+                                    << NhitsTT2 << " " << endl;
+
+                                isFailure = true;
+                            }
+
+                            if (isFailure) {
                                 #ifdef _DEBUGGING_TO_FILE
-                                    std::fputs(buf, fpDebug);
-
-                                    // What we found in the table
-                                    engine.print_move_history_to_file0(fpDebug, found_move_history);
-
-                                    // What we have now from the analysis
-                                    engine.print_move_history_to_file(fpDebug, "burp2 (actual)");
-
-                                    std::fflush(fpDebug);   // force write to disk
+                                    if (fpDebug) {
+                                        fflush(fpDebug);
+                                        fclose(fpDebug);
+                                        fpDebug = NULL;
+                                    }
                                 #endif
 
-                                print_mismatch(sout, "al", (int)foundAlpha,         (int)alpha_in);
-                                print_mismatch(sout, "bt", (int)foundBeta,          (int)beta);
-                                print_mismatch(sout, "dr", foundDraw,          (state == GameState::DRAW));
-                                print_mismatch(sout, "ck", foundIsCheck,       debug_in_check);
+                                std::string temp_fen_ = engine.game_board.to_fen();
+                                char szTemp[64];
+                                sprintf (szTemp, "burp22 %llu      %s\n", nGames, temp_fen_.c_str());
+                                sout << szTemp;
 
-                                print_mismatch(sout, "rp", foundRepCount,      iRepCountNow);
-                                print_mismatch(sout, "nPlys", foundnPlys, nPlys);
-
-                                print_mismatch(sout, "wp", found_wp, engine.game_board.white_pawns);
-                                print_mismatch(sout, "wn", found_wn, engine.game_board.white_knights);
-                                print_mismatch(sout, "wb", found_wb, engine.game_board.white_bishops);
-                                print_mismatch(sout, "wr", found_wr, engine.game_board.white_rooks);
-                                print_mismatch(sout, "wq", found_wq, engine.game_board.white_queens);
-                                print_mismatch(sout, "wk", found_wk, engine.game_board.white_king);
-
-                                print_mismatch(sout, "bp", found_bp, engine.game_board.black_pawns);
-                                print_mismatch(sout, "bn", found_bn, engine.game_board.black_knights);
-                                print_mismatch(sout, "bb", found_bb, engine.game_board.black_bishops);
-                                print_mismatch(sout, "br", found_br, engine.game_board.black_rooks);
-                                print_mismatch(sout, "bq", found_bq, engine.game_board.black_queens);
-                                print_mismatch(sout, "bk", found_bk, engine.game_board.black_king);
-
-                                //  found_move_history
-
-                                // sout << "  depth-> " << depth << " mv->" << engine.computer_ply_so_far 
-                                // << " dbg->" << bBothScoresMates << " idelta-> " << idelta 
-                                // << " , " << abs(foundScore - cp_score_temp)
-                                // << endl;
-                                
-                                // Show board
-                                string out = gameboard_to_string(engine.game_board);
-                                sout << out << endl;
-
-                                //isFailure = true;
-                                char* pszTemp = ""; 
-                                (engine.game_board.turn == ShumiChess::WHITE) ? pszTemp = "WHITE to move" : pszTemp = "BLACK to move";
-                                sout << pszTemp << endl;
-
-                                string mv_string1;
-                                string mv_string2;
-                                engine.bitboards_to_algebraic(engine.game_board.turn, foundMove, (GameState::INPROGRESS)
-                                                , false, false, NULL, mv_string1);
-                                engine.bitboards_to_algebraic(engine.game_board.turn, the_best_move, (GameState::INPROGRESS)
-                                                , false, false, NULL, mv_string2);
-                                sout << mv_string1 << " = " << mv_string2 << endl;
-
-                
-                                if (!(foundMove == the_best_move)) {
-                                    Move deadmove =  {};
-                                    bool isEmpty = (the_best_move == deadmove);
-                                    sout << " burp2m " << (int)foundMove.piece_type  << " = "  << (int)the_best_move.piece_type << "  " << isEmpty << " "  
-                                        << NhitsTT2 << " " << endl;
-
-                                    isFailure = true;
-                                }
-
-                                if (isFailure) {
-                                    #ifdef _DEBUGGING_TO_FILE
-                                        if (fpDebug) {
-                                            fflush(fpDebug);
-                                            fclose(fpDebug);
-                                            fpDebug = NULL;
-                                        }
-                                    #endif
-
-                                    std::string temp_fen_ = engine.game_board.to_fen();
-                                    char szTemp[64];
-                                    sprintf (szTemp, "burp22 %llu      %s\n", nGames, temp_fen_.c_str());
-                                    sout << szTemp;
-    
-                                    // Halt the program
-                                    getchar();
-                                    assert(0);
-                                }
+                                // Halt the program
+                                getchar();
+                                assert(0);
                             }
-                            else {
-                                NhitsTT2++;
-                            }
+                        }
+                        else {      // not a mismatch
+                            NhitsTT2++;
                         }
                     }
 
@@ -2505,7 +2504,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     // Hard abort is not allowed until we have seen at least one deepening, and 
     // therefore have a usable move to fall back to.
-    if (hard_abort_allowed) {       // from qsearch
+    if (aborts_allowed) {       // from qsearch
         if ((nodes_visited % 10'000ULL) == 0ULL) {
             if (should_abort_search_by_time()) {
                 sout << endl << "hard abort q" << endl;
@@ -2696,7 +2695,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
         bool was_aborted = loop_over_all_moves(0, alpha, beta, 
                         nPlys, qPlys, in_check, 
                         d_stand_pat, 
-                        //move_last,
                         p_moves_to_loop_over,               // input
                         the_best_move, d_best_score,        // outputs
                         did_cutoff);
@@ -2765,7 +2763,6 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                        int nPlys, int qPlys,
                        bool in_check,
                        Score d_stand_pat, 
-                       //const ShumiChess::Move& move_last,       // seems to be used for debug only... (used only by _DEBUGGING_MOVE_CHAIN)
                        const vector<ShumiChess::Move>* pMoves, 
                        ShumiChess::Move &bestMoveOut,   // output only 
                        Score &bestScoreOut,             // output and inout

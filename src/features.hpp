@@ -1,5 +1,5 @@
 
-// (NOTE: these must match the values defined in Features.py)
+// (NOTE that these must match the values defined in Features.py)
 //#define _FEATURE_ENHANCED_DEPTH_TT2      0x1
 #define _FEATURE_TT2            0x2
 #define _FEATURE_KILLER         0x4    // requires _FEATURE_UNQUIET_SORT to work.

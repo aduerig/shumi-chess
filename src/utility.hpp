@@ -186,13 +186,7 @@ inline constexpr ShumiChess::Color opposite_color(const ShumiChess::Color color)
 }
 // Compile-time opposite color
 template<ShumiChess::Color c>
-inline constexpr ShumiChess::Color opposite_color_t =
-    (c == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
-
-
-// inline constexpr string color_str(const ShumiChess::Color color) {
-//     return color == ShumiChess::WHITE ? "white" : "black";
-// }
+inline constexpr ShumiChess::Color opposite_color_t = (c == ShumiChess::WHITE) ? ShumiChess::BLACK : ShumiChess::WHITE;
 
 
 extern std::array<std::string, 8> row_to_letter;

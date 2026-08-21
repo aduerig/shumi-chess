@@ -58,7 +58,9 @@ All time control is 40/1 min ---------------------------------------------------
 
 
 
-
+new tasks:
+   slightly penalize qside castling
+   burp2  (try integer scores)
 
 
 

@@ -884,7 +884,7 @@ legal_moves = engine_communicator.get_legal_moves()
 is_dragging = False
 ai_is_thinking = False
 
-DEBUG_MAX_MOVES = 200  # or whatever cap you want    // # DRAW_ADMIN
+DEBUG_MAX_MOVES = 80  # or whatever cap you want    // # DRAW_ADMIN
 
 try:
     while True:
