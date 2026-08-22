@@ -14,7 +14,7 @@
 
 //
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
-#undef NDEBUG
+    #undef NDEBUG
 #endif
 #include <assert.h>
 
@@ -60,7 +60,7 @@ namespace ShumiChess {
     white_king   (0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00001000),   
     turn(WHITE),
     castle_rights((FLAGS_CASTLE_EITHER << 2) | FLAGS_CASTLE_EITHER),
-    en_passant_landing_bb(1),               // The square where the capturing pawn would land in an en-passant capture
+    en_passant_landing_bb(0),      // The square where the capturing pawn would land in an en-passant capture
     halfmove(0),
     fullmove(1) 
 
@@ -225,6 +225,14 @@ void GameBoard::set_zobrist() {
 
     if (turn == Color::BLACK) {
         zobrist_key ^= zobrist_side;
+    }
+
+    zobrist_key ^= zobrist_castling[castle_rights];
+
+    if (en_passant_landing_bb) {
+        int ep_sq = utility::bit::bitboard_to_lowest_square_safe(en_passant_landing_bb);
+        int ep_file = ep_sq & 7;
+        zobrist_key ^= zobrist_enpassant[ep_file];
     }
 }
 //

@@ -26,7 +26,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
-#undef NDEBUG
+    #undef NDEBUG
 #endif
 #include <assert.h>
 

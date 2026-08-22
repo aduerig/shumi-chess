@@ -24,9 +24,9 @@
 #include <thread>
 #include <vector>
 
-
-#ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
-#undef NDEBUG
+#define SHUMI_FORCE_ASSERTS
+#ifdef SHUMI_FORCE_ASSERTS
+    #undef NDEBUG
 #endif
 #include <assert.h>
 
@@ -370,7 +370,7 @@ int main()
                 const long long time_remaining_msec = (side == 0 ? white_time : black_time);
 
                 if (time_remaining_msec > 0) {
-                    // codex resume 01a023c8-68e6-7093-8ed5-e2f4587512f5 
+               
                     const ull time_left_msec = (ull)time_remaining_msec;
 
                     // Reserve 1% of the remaining clock for timing overhead, but never reserve 
@@ -539,9 +539,9 @@ static void start_searching_for_move(
          time_control]()
         {
             try {
-                sout << "\nSEARCH START go_id="
-                     << go_id
-                     << endl;
+                // sout << "\nSEARCH START go_id="
+                //      << go_id
+                //      << endl;
 
                 // Blocking call: this worker thread is occupied here until Shumi returns a move.
                 search_thread.move =

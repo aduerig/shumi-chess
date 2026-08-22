@@ -20,7 +20,7 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 /////////// Debug ////////////////////////////////////////////////////////////////////////////////////
 
-#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
+//#define DEBUG_NODE_TT2    // I must also be defined in the .cpp file to work
 
 
 

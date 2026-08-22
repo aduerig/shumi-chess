@@ -1,70 +1,131 @@
 
-Shumi. Lookat the following table carefully. Note the oppnents and the ratings. 
-The question I want answered is this: has shumi changed its performance before and 
-after (test set A and test set B). Note that the position of the player that appears 
-first or second in the "vs", only means who gets white in first game.
+
+I did not change files.
+
+  My strongest read: this is probably not a true 64-bit Zobrist collision, and the TT2 rolling cap is probably not the main cause unless TTable2.size()
+  is actually reaching 20'000'000.
+
+  The more likely causes are these:
+
+  1. DEBUG_NODE_TT2 is not re-running the same search
+
+  In normal mode, an exact TT2 hit returns immediately here:
+
+  src/minimax.cpp:1879
+
+  return { dScore, entry.best_move };
+
+  But under DEBUG_NODE_TT2, it records the found entry and then continues searching. That continued search is not equivalent to the original search that
+  created the entry, because:
+
+  - exact TT2 hits below this node also do not return;
+  - the table can be mutated while the debug verification search is underway;
+  - exact TT2 hit moves are not assigned to TT2_match_move, so the stored best move is not used for ordering on the verification pass;
+  - move ordering and pruning/cutoffs can therefore diverge.
+
+  So a burp2 may be detecting “debug recomputation differs from TT-assisted search”, not necessarily “stored TT2 value is invalid”.
+
+  2. There is still historical search state in move ordering
+
+  This is the big one relative to your “historical result” concern.
+
+  sort_moves_for_search() uses the previous move from engine.move_history:
+
+  src/minimax.cpp:3177
+
+  Square last_toSQ = ShumiChess::NO_SQUARE;
+  if (!engine.move_history.empty()) {
+      last_toSQ = engine.move_history.top().toSQ;
+  }
+
+  Then it gives a recapture/order bonus:
+
+  src/minimax.cpp:3246
+
+  if (mv.toSQ == last_toSQ) key += 800;
+
+  Pure alpha-beta with no selective pruning should produce the same score regardless of ordering. But this engine has qsearch limits, stand-pat cutoffs,
+  capture sorting variants, SEE-based behavior, beta cutoffs, and TT-assisted ordering. That makes “same position” not necessarily enough if the
+  previous move differs.
+
+  This matches your symptom: rare, variable, and more common in endgames where reversible move transpositions and recapture-shaped positions are common.
+
+  3. Zobrist initialization is incomplete
+
+  GameBoard::set_zobrist() hashes pieces and side-to-move only:
+
+  src/gameboard.cpp:202
+
+  It does not hash:
+
+  - castle_rights
+  - en_passant_landing_bb
+
+  But incremental push/pop does hash castling and en-passant changes:
+
+  src/engine.cpp:747
+  src/engine.cpp:777
+
+  That means a freshly constructed board key is not the same kind of key as a key reached by incremental play. 
+  
+  Also, the default constructor starts
+  with:
+
+  src/gameboard.cpp:63
+
+  en_passant_landing_bb(1)
+
+  That is suspicious: standard initial chess should have no en-passant square. Since set_zobrist() ignores EP, 
+  the first push can introduce an EP hash delta from a bogus initial EP square.
+
+  This may not explain the shown endgame burp2s by itself, but it is a real TT correctness issue.
+
+  4. Repetition stack handling inside search is incomplete
+
+  Game moves use:
+
+  src/engine.cpp:789
+
+  push_to_three_time_rep_stack(move)
+
+  which updates the irreversible-move boundary.
+
+  But search recursion directly does:
+
+  src/minimax.cpp:2944
+
+  engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
+
+  That does not update boundary_stack for pawn moves, captures, or promotions. With _SUPRESSING_MOVE_HISTORY_RESULTS, this is less likely to cause the
+  printed draw-result mismatch, but is_TT2_Valid() still consults repetition count:
+
+  src/minimax.hpp:275
+
+  So TT2 validity is still partly driven by a search-history structure that is not maintained the same way during recursive search as during real game
+  play.
+
+  On the rolling TT2 cap: yes, unordered_map::begin() is arbitrary, so this can introduce non-deterministic replacement once the cap is hit:
+
+  src/minimax.cpp:2053
+
+  But if entries are correct, deleting one arbitrary entry should mainly change speed/search shape, not create a wrong exact result. I would not chase
+  that first unless logs show the table is actually near 20 million entries.
+
+  My recommendation order:
+
+  1. Treat move_history.top().toSQ recapture bias as historical search state. Disable it under DEBUG_NODE_TT2, or include previous-move info in the
+     debug validity check, and see if burp2 disappears.
+
+  2. Make debug verification either fully TT-free below the checked node, or fully TT-equivalent. 
+  The current hybrid is not a clean oracle.
+  
+  3. Fix set_zobrist() to include castling and valid en-passant state, and initialize standard en_passant_landing_bb to zero.
+  
+  4. During recursive search, use a repetition push that also handles irreversible boundaries, or fully disable repetition-derived TT2 validity while
+     _SUPRESSING_MOVE_HISTORY_RESULTS is active.
 
 
-DO not make any changes now, this is just a discussion. 
-OK. This helped, now cutechess is not terminating prematurally. I beieve its because now we send to 
-cout: "   std::cout << "bestmove 0000\n";", when we fail to get a move. This still does not solve the problem as to why its doing it.
-why we get no move. See the below cutechess output. (from a tourmeyment I terminated, cutechess did not terminate it,
-as what happend before you fixed the last bug).  Notice the illegal moves. 
-
-
-All time control is 40/1 min -------------------------------------------------------------------------
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
-   without TT (no TT move ordering either)
-   ******************************************************************************
-   Score of Shumi vs stockfish_ELO 2300: 47 - 43 - 7 [0.521]
-   Score of Shumi vs arasanx-64 ELO 2200: 43 - 53 - 4 [0.450]
-   Score of Shumi vs texel64-avx2-pop ELO 2200: 20 - 71 - 9 [0.245]
-
-
-   with TT
-   ******************************************************************************
-   Score of Shumi vs stockfish_ELO 2300: 43 - 42 - 15 [0.505]
-   Score of arasanx-64 ELO 2200 vs Shumi: 58 - 37 - 5 [0.605]        for shumi [0.395]
-   Score of Shumi vs texel64-avx2-pop ELO 2200: 15 - 80 - 5 [0.175]
-
-
-   without TT (yes TT move ordering)
-   ******************************************************************************
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-new tasks:
-   slightly penalize qside castling
-   burp2  (try integer scores)
-
-
-
-
+=====================================================================================================================
 
 Shumi problems:
    Bishops should not be blocked by two pawns. Opening only. Make it smaall.

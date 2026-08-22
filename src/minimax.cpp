@@ -72,8 +72,8 @@ using namespace utility::bit;
 //#define DOING_TT_EVAL2       // used only in best_move_static (should be extinct)
 //#define DEBUG_LEAF_TT
 
-#define DEBUG_NODE_TT2           // I must also be defined in the .hpp file to work
-#define BURP2_THRESHOLD_CP 1    // "burps" or fails if the stored (TT) does not match the evaluaton made.
+// #define DEBUG_NODE_TT2           // I must also be defined in the .hpp file to work
+// #define BURP2_THRESHOLD_CP 1    // "burps" or fails if the stored (TT) does not match the evaluaton made.
 
 //#define DEBUGGING_KILLER_MOVES 
 
@@ -839,7 +839,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
  
  
     eval_person = (ShumiChess::EvalPersons)player_id;   
-    eval_person = ShumiChess::CRAZY_IVAN;           // debug only (force IVAN)
+    //eval_person = ShumiChess::CRAZY_IVAN;           // debug only (force IVAN)
 
     //sout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     //sout << "\n Player = " << eval_person << endl;
@@ -1418,7 +1418,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             aborts_allowed = true;
             break;   // Stop deepening, no more depths.
      
-        } else {
+        } else {    // Not a a special return. We have a score and a move.
             d_best_move_score = d_Return_score;
             best_move = get<1>(ret_val);
 
@@ -1526,7 +1526,12 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 }
 
 // I am called after each deepening, to try to figure out (based on time) wether I should start the
-// next deepeing or not. Note that "elapsed time" here is not cumulative. 
+// next deepening or not. Bascially a comparison: is t > a where
+//    t - Estimated time that the next deepening will take (we try but this can be wildly off, especially
+//        with TT usage). 
+//    a - Availalible time, this is complicated. 
+//
+// Note that "elapsed time" here is not cumulative (across deepenings).
 //      Return: true if search should stop, based on various things.
 //      input:  elapsed_time is the elapsed time "so far", running the deepenings so far.
 //      output: estimated_elapsed_time is the estimated time this next deeping will take.
@@ -1541,20 +1546,21 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     // suddenly at some depth all the TT2 entries can no longer be used. If I believe it, and I recommend continuing on
     // based on the blazinlglt fast times, and crash into a full recompute at deeping 13 or 14 on
     // simple positions, when elapsed time at these levewls is still 3-4 msec.
-    // When these numbers happen, Shumi stalls. Remember my elapsed times are cumulative over deepenings.
+    // When these numbers happen, Shumi stalls. 
     // So I want a minimum "elapsed time", that takes a maximum of some resaonbly exponetial curve, 
     // and the passed in "elapsed time". The "resaonbly exponetial curve" whould yield 10 msec or more at depths of
     // 12 or more. Make the exponential try to follow growth_factor. The "minimum elapsed time", function should return very low values 
     // at depths of 1 - 7. 
 
-    //
-    //  Here we asssumme that the growth of time spent on each deeening is exponential.
-    //  Note: should this instead be factorial?
+    //  elapsed_time is how long the last deepening took.
+    //  estimated_elapsed_time is how long we think the next deepening will take. 
+    //      Here we asssumme that the growth of time spent on each deeepening is exponential.
+    //      Note: should this instead be factorial?
     estimated_elapsed_time = (double)elapsed_time * growth_factor;
 
     // Existing callers specify only a per-move duration. Preserve that behavior
     // until they provide a complete time-control description.
-    // However, cutechess and other "GUI"s do pass in times that end up enabling time control.
+    // However, Cutechess and other "GUI"s do pass in times and this ends up enabling time control.
     if (!time_control.enabled()) {
         
         return (estimated_elapsed_time >= fallback_move_budget);
@@ -1751,7 +1757,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         // therefore have a usable move to fall back to.
         if (aborts_allowed) {       // from regular search
             if (should_abort_search_by_time()) {
-                sout << endl << "hard abort s" << endl;
+                sout << endl << "hard abort s=" << hard_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
         }
@@ -1839,7 +1845,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     NhitsTT2++;
                 }
 
-                //is_perfect_match = false;        // debug only to disable TT2 score reusage (still uses it for move ordering)
+                is_perfect_match = false;        // debug only to disable TT2 score reusage (still uses it for move ordering)
                 if (is_perfect_match) {      
                     // If debug, just compare to the computation. If not debug actually use the result. 
 
@@ -2048,32 +2054,54 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 //
                 //  This is an EXACT score (not an alpha/beta boundary).
                 //
-                uint64_t key = engine.game_board.zobrist_key;
 
-                // Rolling size cap for TT2. Note: Is this a non-determinism that can break "burp2" TT2?
-                static const std::size_t MAX_TT2_SIZE = 1'000'000;
-                if (TTable2.size() >= MAX_TT2_SIZE) {
-                    // one arbitrary existing entry is erased;
-                    auto it = TTable2.begin();
-                    if (it != TTable2.end()) {
-                        TTable2.erase(it);
+                uint64_t key = engine.game_board.zobrist_key;
+                auto it_existing = TTable2.find(key);
+
+                const bool b_not_in_table = (it_existing == TTable2.end());
+
+                // Store a new position, or replace an existing result when the new
+                // search continued at least as many plies beyond this position.
+                // Greater depths mean there was less search to get to this position, depth is 
+                // intialized to a higher value, so there was more search after position X.
+                const bool b_store_entry =
+                    b_not_in_table ||
+                    (depth >= it_existing->second.depth);
+
+                if (b_store_entry) {
+                    static const std::size_t MAX_TT2_SIZE = 2'000'000;
+
+                    // Adding a previously unseen position increases the table size.
+                    // If the table is full, erase one arbitrary existing entry first.
+                    // Replacing the same position does not require an eviction.
+                    if (b_not_in_table && TTable2.size() >= MAX_TT2_SIZE) {
+                        auto it = TTable2.begin();
+                        if (it != TTable2.end()) {
+                            TTable2.erase(it);
+                        }
                     }
                 }
+
+
+
 
                 const int level = top_deepening - depth;
                 const Score score_for_TT = mate_score_to_TT(d_best_score, level);
                 const int cp_score_temp = convert_to_CP(score_for_TT);
 
+
                 #ifdef DEBUG_NODE_TT2
-                    const bool debug_in_check =
-                        (engine.game_board.turn == Color::WHITE)
-                            ? engine.is_king_in_check_t<Color::WHITE>()
-                            : engine.is_king_in_check_t<Color::BLACK>();
+                const bool debug_in_check =
+                    (engine.game_board.turn == Color::WHITE)
+                        ? engine.is_king_in_check_t<Color::WHITE>()
+                        : engine.is_king_in_check_t<Color::BLACK>();
                 #endif
+
 
                 // --- DEBUG
                 #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
                 {
+
                     if (foundPos && (foundDepth == depth) ) {            
 
                         bool scoreMismatch = false;
@@ -2220,18 +2248,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 }   // END debug
                 #endif
 
-                // Replace an existing entry (for position X) only when this
-                // search is at least as "deep" as the stored search.
-                // Greater depths mean there was less search to get to this position, depth is 
-                // intialized to a higher value, so there was more search after position X.
-
-                auto it_existing = TTable2.find(key);
-
-                // no existing entry → store this one;
-                // new depth is equal or higher → replace the old entry;
-                // new depth is lower → retain the more valuable old entry.
-                if ((it_existing == TTable2.end()) ||           // does not exist
-                    (depth >= it_existing->second.depth)) {     // stored depth is inferior
+                if (b_store_entry) {
 
                     TTEntry2 &slot = TTable2[key];
 
@@ -2289,19 +2306,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                                 mv_string11
                             );
 
-                            if ((mv_string11 == "fxg4") && (cp_score_temp == 215))
-                            {
-                                // Report attempt to store, with size and whether key existed
-                                std::sprintf(
-                                    buf,
-                                    "\n %s  store_attempt %d\n",
-                                    mv_string11.c_str(),
-                                    cp_score_temp
-                                );
-                                std::fputs(buf, fpDebug);
-                                std::fflush(fpDebug);
-                                //bdebug = true;
-                            }
+                           
                         }
                         #endif
 
@@ -2392,7 +2397,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     //bool did_fail_low = false;  // TRUE if fail-low
 
     Score alpha_in = alpha;   //  save original alpha window lower bound
-    Score beta_in = beta;   //  save original alpha window lower bound
+    Score beta_in = beta;   //  save original alpha window upper bound
 
     nodes_visited++;
     nodes_visited_depth_zero++;
@@ -2504,10 +2509,11 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     // Hard abort is not allowed until we have seen at least one deepening, and 
     // therefore have a usable move to fall back to.
-    if (aborts_allowed) {       // from qsearch
-        if ((nodes_visited % 10'000ULL) == 0ULL) {
+    if ((nodes_visited % 10'000ULL) == 0ULL) {
+
+        if (aborts_allowed) {       // from qsearch
             if (should_abort_search_by_time()) {
-                sout << endl << "hard abort q" << endl;
+                sout << endl << "hard abort q=" << hard_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
         }
@@ -3037,7 +3043,6 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
         // abort logic
         if (d_return_score == ABORT_SCORE) {
-            sout << "empty loop" << endl;
             return true;
         }
 
@@ -3173,11 +3178,12 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
         return false;
     }
 
-    const bool have_last = !engine.move_history.empty();
+    // codex resume 01a027b0-cc89-7343-aa5d-5f766913b7e2
     Square last_toSQ = ShumiChess::NO_SQUARE;
-    if (have_last) {
-        last_toSQ = engine.move_history.top().toSQ;
-    }
+    #ifndef DEBUG_NODE_TT2
+        const bool have_last = !engine.move_history.empty();
+        if (have_last) last_toSQ = engine.move_history.top().toSQ;
+    #endif
 
     //  The sort, from top to bottom. Items 0 and 1 done always, the rest done if the unquiet sort is on.
     //      0. Move from the hash table hit (if any).
