@@ -289,7 +289,7 @@ void MinimaxAI::soft_abort_end() {
 
 
 
-bool MinimaxAI::should_abort_search_by_time()
+bool MinimaxAI::should_hard_abort()
 {
     if (!hard_abort_enabled) return false;
     if (hard_abort_budget_ms == 0ULL) return false;
@@ -299,7 +299,6 @@ bool MinimaxAI::should_abort_search_by_time()
     // duration_now is the time since 
     const ull duration_now = (abs_time_ms - hard_abort_start_time_ms);
 
-  
     if (duration_now >= hard_abort_budget_ms) {
         #ifdef _DEBUGGING_TEMP1
             fprintf(fpDebug, "\nstop_calculation %lld  %lld\n", duration_now, hard_abort_budget_ms);
@@ -1753,10 +1752,15 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }
 
     if ((nodes_visited % 10'000ULL) == 0ULL) {
-        // Hard abort is not allowed until we have seen at least one deepening, and 
-        // therefore have a usable move to fall back to.
+
         if (aborts_allowed) {       // from regular search
-            if (should_abort_search_by_time()) {
+
+            // Hard abort is not allowed until we have seen at least one deepening, and 
+            // therefore have a usable move to fall back to.
+
+            if (should_hard_abort()) {
+
+                // time limits say we should abort. These are measured from the game end.
                 sout << endl << "hard abort s=" << hard_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
@@ -1845,7 +1849,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     NhitsTT2++;
                 }
 
-                is_perfect_match = false;        // debug only to disable TT2 score reusage (still uses it for move ordering)
+                //is_perfect_match = false;        // debug only to disable TT2 score reusage (still uses it for move ordering)
                 if (is_perfect_match) {      
                     // If debug, just compare to the computation. If not debug actually use the result. 
 
@@ -2147,7 +2151,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                             std::snprintf(
                                 buf, sizeof(buf),
                                 "\n%llu burp2 %ld = %ld    %.2f = %.2f     q=%ld    rep  %ld %ld \n",
-                                NhitsTT2,
+                                nGames,
                                 foundScore_cp, cp_score_temp,
                                 foundRawScore, d_best_score,
                                 qPlys, foundRepCount, iRepCountNow
@@ -2507,17 +2511,23 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
     }
 
-    // Hard abort is not allowed until we have seen at least one deepening, and 
-    // therefore have a usable move to fall back to.
+
     if ((nodes_visited % 10'000ULL) == 0ULL) {
 
         if (aborts_allowed) {       // from qsearch
-            if (should_abort_search_by_time()) {
+
+            // Hard abort is not allowed until we have seen at least one deepening, and 
+            // therefore have a usable move to fall back to.
+
+            if (should_hard_abort()) {
+
+                // time limits say we should abort. These are measured from the game end.
                 sout << endl << "hard abort q=" << hard_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
         }
     }
+
 
     // Purpose: avoid a false zero (no-move, thus end-of-game) result when the quick/capture-only generation missed moves
     // (or when you only needed to know whether any legal move exists). 

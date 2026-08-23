@@ -125,6 +125,35 @@ I did not change files.
      _SUPRESSING_MOVE_HISTORY_RESULTS is active.
 
 
+
+
+
+0 Deeping 1 ply of 6 msec=     0/_ Best: Kd1   ; -1.63
+0 Deeping 2 ply of 6 msec=     0/0 Best: Bf3   ; -1.91
+0 Deeping 3 ply of 6 msec=     0/0 Best: Ba3   ; -1.88
+0 Deeping 4 ply of 6 msec=     2/0 Best: Bf3   ; -1.52
+0 Deeping 5 ply of 6 msec=     4/12 score=-0.7 result=fail-high retry=yes
+1 Deeping 5 ply of 6 msec=     4/12 Best: Bg5   ; -0.14
+0 Deeping 6 ply of 6 msec=    14/24
+216 burp2 0 = 0    -0.52 = -0.00     q=0    rep  0 0 
+ al -1 = 0
+ nPlys 6 = 5
+- - - - - - - - 
+- - - - - - - - 
+- b k - - - - - 
+- - - - - - B - 
+- - - - - p B - 
+- - - - - - - - 
+- - - - K - b - 
+- - - - - - - - 
+WHITE to move
+Bxf4 = Bxf4
+burp22 216      8/8/1bk5/6B1/5pB1/8/4K1b1/8 w - - 6 65
+
+
+
+
+
 =====================================================================================================================
 
 Shumi problems:

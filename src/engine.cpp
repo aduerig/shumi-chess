@@ -139,15 +139,6 @@ void Engine::reset_engine() {         // New game.
     //
     // Debug only. You can override the gameboard setup with fen positions as in:  FEN setup. Setup the FEN
 
-    // burp2 bug then c5 for black.
-    //game_board = GameBoard("rnbq1rk1/ppp2p1p/3ppp2/8/2PP4/2PQ1N2/P3PPPP/R3KB1R b KQ - 1 8");
-   
-    // burp2 bug then d5 for black.     (-t500 -d4)
-    //game_board = GameBoard("r1bqkb1r/pppppppp/2n2n2/8/6P1/2N2P2/PPPPP2P/R1BQKBNR b KQkq g3 0 3");
-
-    //   then g5 with CRAZY_IVAN
-    //game_board = GameBoard("r1bqkbnr/ppppp1pp/2n2p2/8/8/1PN2N2/P1PPPPPP/R1BQKB1R b KQkq - 3 3");
-
     // // Or you can pick a random simple endgame FEN. (maybe)
     // // Test: Black should ALWAYS win (hundreds of games) at: -d6 -t1000 -r0.
     // {
