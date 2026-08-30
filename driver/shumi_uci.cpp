@@ -401,8 +401,8 @@ int main()
                     time_control.moves_left = moves_to_go;
                     time_control.nominal_time_per_move = time_per_move_msec;
 
-                    // Allow this move to borrow up to one full nominal move's time.
-                    // For example, if time_per_move_msec is 10000 ms, Shumi may add up to 10000 ms beyond the normal budget.
+                    // Allow this move to borrow up to one full nominal move's time (or more).
+                    // For example, if time_per_move_msec is 10s, Shumi may add up to 10s beyond the normal budget.
                     // This is the main direct knob for how aggressive borrowing can be.
                     time_control.maximum_loan = 3*time_per_move_msec/2;
 

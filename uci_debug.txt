@@ -1,0 +1,2984 @@
+STARTING main()
+uci
+isready
+ucinewgame
+position startpos
+isready
+go wtime 300000 btime 300000 movestogo 40
+game start=1
+
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf3   ; +0.36
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf3   ; +0.36
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 5 ply of 4 msec=     2/0 Best: Nf3   ; +0.31
+0 Deeping 6 ply of 4 msec=    11/12 Best: e4    ; +0.05
+0 Deeping 7 ply of 4 msec=   111/66 Best: e4    ; +0.31
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf3   ; +0.36
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf3   ; +0.36
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 5 ply of 4 msec=     1/0 Best: Nf3   ; +0.31
+0 Deeping 6 ply of 4 msec=     8/6 Best: Nf3   ; +0.00
+0 Deeping 7 ply of 4 msec=    87/48 Best: Nf3   ; +0.28
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nc3   ; +0.36
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nc3   ; +0.00
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nc3   ; +0.36
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nc3   ; +0.00
+0 Deeping 5 ply of 4 msec=     1/0 Best: Nc3   ; +0.31
+0 Deeping 6 ply of 4 msec=     8/6 Best: Nc3   ; +0.00
+0 Deeping 7 ply of 4 msec=    89/48 Best: Nc3   ; +0.28
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: d4    ; +0.31
+0 Deeping 2 ply of 4 msec=     0/0 Best: d4    ; -0.05
+0 Deeping 3 ply of 4 msec=     0/0 Best: d4    ; +0.31
+0 Deeping 4 ply of 4 msec=     0/0 Best: d4    ; -0.05
+0 Deeping 5 ply of 4 msec=     1/0 Best: d4    ; +0.31
+0 Deeping 6 ply of 4 msec=     7/6 Best: d4    ; +0.00
+0 Deeping 7 ply of 4 msec=    70/42 Best: d4    ; +0.28
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.24
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.24
+0 Deeping 4 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 5 ply of 4 msec=     1/0 Best: f4    ; +0.24
+0 Deeping 6 ply of 4 msec=     8/6 Best: f4    ; -0.07
+0 Deeping 7 ply of 4 msec=    74/48 Best: e3    ; +0.14
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.24
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.24
+0 Deeping 4 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 5 ply of 4 msec=     1/0 Best: f4    ; +0.24
+0 Deeping 6 ply of 4 msec=     7/6 Best: f4    ; -0.07
+0 Deeping 7 ply of 4 msec=    70/42 Best: d3    ; +0.11
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.24
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.24
+0 Deeping 4 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 5 ply of 4 msec=     1/0 Best: f4    ; +0.24
+0 Deeping 6 ply of 4 msec=     6/6 Best: f4    ; -0.07
+0 Deeping 7 ply of 4 msec=    60/36 Best: f4    ; +0.07
+[pick_random_within_delta_rand] n_top=7 from candidates: 
+1  [0]  e4
+  [1]  Nf3
+  [2]  Nc3
+  [3]  d4
+  [4]  e3
+  [5]  d3
+  [6]  f4
+
+ end multisss 14  e3 out of=7 
+[33m
+Went to depth 0 elapsed min= 0.00548333 elapsed msec= 329 request msec= 1069[0m
+[1;96me3[0m   [1;96m14 =score,  [0m[1;93mVisited: 753,780 / 709% nodes total ---- 5,241,297 Evals[0m
+[1;92mTotal time: 0.33 sec[0m[1;92m   nodes/sec= 2,290,343   evals/sec= 3[0m
+[aspiration summary] attempts=42 successes=42 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=6175012 retry-nodes=0
+SEARCH RETURNED go_id=0
+e3 SENDING bestmove e2e3 go_id=0
+position startpos moves e2e3 g8f6
+isready
+go wtime 297257 btime 280423 movestogo 39
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf3   ; +0.14
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf3   ; -0.22
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nf3   ; +0.14
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nf3   ; -0.17
+0 Deeping 5 ply of 5 msec=     2/0 Best: Nf3   ; +0.14
+0 Deeping 6 ply of 5 msec=    15/12 Best: Nf3   ; -0.14
+0 Deeping 7 ply of 5 msec=   100/90 Best: Nf3   ; +0.17
+0 Deeping 8 ply of 5 msec=   439/600 Best: Nf3   ; -0.02
+0 Deeping 9 ply of 5 msec=  2013/2634 Best: Nf3   ; +0.27[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 8216 request msec= 7487[0m
+[1;96mNf3[0m   [1;96m27 =score,  [0m[1;93mVisited: 16,231,295 / 88% nodes total ---- 13,770,863 Evals[0m
+[1;92mTotal time: 8.22 sec[0m[1;92m   nodes/sec= 1,975,507   evals/sec= 8[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=16231264 retry-nodes=0
+SEARCH RETURNED go_id=1
+Nf3 SENDING bestmove g1f3 go_id=1
+position startpos moves e2e3 g8f6 g1f3 b7b6
+isready
+go wtime 289017 btime 273416 movestogo 38
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nc3   ; +0.69
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nc3   ; +0.27
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nc3   ; +0.58
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nc3   ; +0.22
+0 Deeping 5 ply of 5 msec=     3/0 score=72 result=fail-high retry=yes
+1 Deeping 5 ply of 5 msec=     3/0 Best: d4    ; +0.76
+0 Deeping 6 ply of 5 msec=    28/18 Best: d4    ; +0.37
+0 Deeping 7 ply of 5 msec=   109/168 Best: d4    ; +0.79
+0 Deeping 8 ply of 5 msec=   477/654 Best: d4    ; +0.37
+0 Deeping 9 ply of 5 msec=  2794/2862 Best: d4    ; +0.69[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 10101 request msec= 7487[0m
+[1;96md4[0m   [1;96m69 =score,  [0m[1;93mVisited: 18,449,962 / 89% nodes total ---- 15,910,243 Evals[0m
+[1;92mTotal time: 10.10 sec[0m[1;92m   nodes/sec= 1,826,524   evals/sec= 10[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=0 fail-highs=1 full-retries=1 success=87.5% first-try-nodes=18430288 retry-nodes=19645
+SEARCH RETURNED go_id=2
+d4 SENDING bestmove d2d4 go_id=2
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5
+isready
+go wtime 278888 btime 261368 movestogo 37
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nc3   ; +0.88
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nc3   ; +0.45
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nc3   ; +0.73
+0 Deeping 4 ply of 5 msec=     1/0 Best: Nd2   ; +0.67
+0 Deeping 5 ply of 5 msec=     3/6 Best: Nc3   ; +0.93
+0 Deeping 6 ply of 5 msec=    19/18 Best: Nd2   ; +0.67
+0 Deeping 7 ply of 5 msec=    93/114 Best: Nc3   ; +0.76
+0 Deeping 8 ply of 5 msec=   476/558 Best: c4    ; +0.57[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3582 request msec= 7487[0m
+[1;96mc4[0m   [1;96m57 =score,  [0m[1;93mVisited: 5,839,065 / 86% nodes total ---- 4,777,163 Evals[0m
+[1;92mTotal time: 3.58 sec[0m[1;92m   nodes/sec= 1,629,691   evals/sec= 4[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=5839029 retry-nodes=0
+SEARCH RETURNED go_id=3
+c4 SENDING bestmove c2c4 go_id=3
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6
+isready
+go wtime 275282 btime 254430 movestogo 36
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nc3   ; +0.98
+0 Deeping 2 ply of 5 msec=     0/0 Best: cxd5  ; +0.61
+0 Deeping 3 ply of 5 msec=     0/0 Best: cxd5  ; +0.88
+0 Deeping 4 ply of 5 msec=     2/0 Best: Bd3   ; +0.61
+0 Deeping 5 ply of 5 msec=    12/12 Best: cxd5  ; +0.99
+0 Deeping 6 ply of 5 msec=    35/72 Best: Bd3   ; +0.61
+0 Deeping 7 ply of 5 msec=   172/210 Best: cxd5  ; +0.88
+0 Deeping 8 ply of 5 msec=   833/1032 score=38 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=   833/1032 Best: cxd5  ; +0.36[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5020 request msec= 7487[0m
+[1;96mcxd5[0m   [1;96m36 =score,  [0m[1;93mVisited: 8,212,242 / 86% nodes total ---- 6,636,709 Evals[0m
+[1;92mTotal time: 5.02 sec[0m[1;92m   nodes/sec= 1,635,876   evals/sec= 5[0m
+[aspiration summary] attempts=7 successes=6 fail-lows=1 fail-highs=0 full-retries=1 success=85.7% first-try-nodes=6863817 retry-nodes=1348373
+SEARCH RETURNED go_id=4
+cxd5 SENDING bestmove c4d5 go_id=4
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4
+isready
+go wtime 270233 btime 244341 movestogo 35
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd2   ; +0.88
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bd2   ; +0.88
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nd2   ; +0.99
+0 Deeping 4 ply of 5 msec=     1/0 Best: Nd2   ; +0.90
+0 Deeping 5 ply of 5 msec=     2/6 Best: Nd2   ; +1.18
+0 Deeping 6 ply of 5 msec=    12/12 Best: Nd2   ; +0.85
+0 Deeping 7 ply of 5 msec=    25/72 Best: Nd2   ; +1.10
+0 Deeping 8 ply of 5 msec=   237/150 Best: Nd2   ; +0.68
+0 Deeping 9 ply of 5 msec=   874/1422 score=118 result=fail-high retry=yes
+1 Deeping 9 ply of 5 msec=   874/1422 Best: Bd2   ; +1.23[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6730 request msec= 7487[0m
+[1;96mBd2[0m   [1;96m123 =score,  [0m[1;93mVisited: 9,773,185 / 86% nodes total ---- 7,432,283 Evals[0m
+[1;92mTotal time: 6.73 sec[0m[1;92m   nodes/sec= 1,452,029   evals/sec= 7[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=0 fail-highs=1 full-retries=1 success=87.5% first-try-nodes=7981347 retry-nodes=1791768
+SEARCH RETURNED go_id=5
+Bd2 SENDING bestmove c1d2 go_id=5
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2
+isready
+go wtime 263482 btime 232761 movestogo 34
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxd2  ; +0.88
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nxd2  ; +1.28
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nxd2  ; +1.28
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nxd2  ; +1.28
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nxd2  ; +1.28
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nxd2  ; +1.28
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nxd2  ; +1.28
+0 Deeping 8 ply of 5 msec=     0/0 Best: Nxd2  ; +1.00
+0 Deeping 9 ply of 5 msec=   579/0 Best: Nxd2  ; +1.19
+0 Deeping 10 ply of 5 msec=  3320/3474 Best: Nxd2  ; +1.07[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 14411 request msec= 7487[0m
+[1;96mNxd2[0m   [1;96m107 =score,  [0m[1;93mVisited: 24,156,292 / 85% nodes total ---- 19,431,767 Evals[0m
+[1;92mTotal time: 14.41 sec[0m[1;92m   nodes/sec= 1,676,177   evals/sec= 14[0m
+[aspiration summary] attempts=9 successes=9 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=24156278 retry-nodes=0
+SEARCH RETURNED go_id=6
+Nxd2 SENDING bestmove b1d2 go_id=6
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5
+isready
+go wtime 249053 btime 221209 movestogo 33
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd3   ; +1.51
+0 Deeping 2 ply of 5 msec=     0/0 Best: e4    ; +1.17
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bc4   ; +1.28
+0 Deeping 4 ply of 5 msec=     1/0 Best: Bd3   ; +1.00
+0 Deeping 5 ply of 5 msec=     6/6 score=150 result=fail-high retry=yes
+1 Deeping 5 ply of 5 msec=     6/6 Best: Bd3   ; +1.51
+0 Deeping 6 ply of 5 msec=    40/36 Best: Bd3   ; +1.44
+0 Deeping 7 ply of 5 msec=   219/240 Best: Bd3   ; +1.63
+0 Deeping 8 ply of 5 msec=  1160/1314 Best: Bd3   ; +1.35[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5003 request msec= 7487[0m
+[1;96mBd3[0m   [1;96m135 =score,  [0m[1;93mVisited: 8,672,994 / 87% nodes total ---- 6,936,817 Evals[0m
+[1;92mTotal time: 5.00 sec[0m[1;92m   nodes/sec= 1,733,252   evals/sec= 5[0m
+[aspiration summary] attempts=7 successes=6 fail-lows=0 fail-highs=1 full-retries=1 success=85.7% first-try-nodes=8628834 retry-nodes=44063
+SEARCH RETURNED go_id=7
+Bd3 SENDING bestmove f1d3 go_id=7
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7
+isready
+go wtime 244022 btime 212331 movestogo 32
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O   ; +1.73
+0 Deeping 2 ply of 5 msec=     0/0 score=121 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: O-O   ; +1.21
+0 Deeping 3 ply of 5 msec=     0/0 score=173 result=fail-high retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Qa4   ; +1.77
+0 Deeping 4 ply of 5 msec=     2/0 Best: Qa4   ; +1.35
+0 Deeping 5 ply of 5 msec=     4/12 Best: Qa4   ; +1.73
+0 Deeping 6 ply of 5 msec=    18/24 Best: Qa4   ; +1.59
+0 Deeping 7 ply of 5 msec=    58/108 Best: Qa4   ; +1.59
+0 Deeping 8 ply of 5 msec=  1207/348 Best: Qa4   ; +1.41[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7425 request msec= 7487[0m
+[1;96mQa4[0m   [1;96m141 =score,  [0m[1;93mVisited: 12,468,959 / 87% nodes total ---- 9,771,242 Evals[0m
+[1;92mTotal time: 7.43 sec[0m[1;92m   nodes/sec= 1,679,221   evals/sec= 7[0m
+[aspiration summary] attempts=7 successes=5 fail-lows=1 fail-highs=1 full-retries=2 success=71.4% first-try-nodes=12467178 retry-nodes=1734
+SEARCH RETURNED go_id=8
+Qa4 SENDING bestmove d1a4 go_id=8
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8
+isready
+go wtime 236572 btime 192423 movestogo 31
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O   ; +1.87
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qc6   ; +1.41
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qc6   ; +1.41
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qc6   ; +1.41
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qc6   ; +1.41
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qc6   ; +1.41
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qc6   ; +1.40
+0 Deeping 8 ply of 5 msec=  2510/0 Best: Qc6   ; +1.17[33m
+Went to depth 0 elapsed min= 0.3 elapsed msec= 15292 request msec= 7487[0m
+[1;96mQc6[0m   [1;96m117 =score,  [0m[1;93mVisited: 24,298,334 / 88% nodes total ---- 18,946,902 Evals[0m
+[1;92mTotal time: 15.29 sec[0m[1;92m   nodes/sec= 1,588,895   evals/sec= 15[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=24298268 retry-nodes=0
+SEARCH RETURNED go_id=9
+Qc6 SENDING bestmove a4c6 go_id=9
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7
+isready
+go wtime 221247 btime 169098 movestogo 30
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxa8  ; +5.95
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxa8  ; +5.76
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qxa8  ; +5.40
+0 Deeping 4 ply of 5 msec=     2/0 Best: Qxa8  ; +5.40
+0 Deeping 5 ply of 5 msec=    13/12 Best: Qxa8  ; +5.40
+0 Deeping 6 ply of 5 msec=    64/78 score=490 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=    64/78 Best: Qxa8  ; +4.88
+0 Deeping 7 ply of 5 msec=   334/384 score=538 result=fail-high retry=yes
+1 Deeping 7 ply of 5 msec=   334/384 Best: Qxa8  ; +5.41
+0 Deeping 8 ply of 5 msec=  1368/2004 score=491 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=  1368/2004 Best: Qxa8  ; +4.42[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6183 request msec= 7487[0m
+[1;96mQxa8[0m   [1;96m442 =score,  [0m[1;93mVisited: 10,379,319 / 83% nodes total ---- 7,676,601 Evals[0m
+[1;92mTotal time: 6.18 sec[0m[1;92m   nodes/sec= 1,678,623   evals/sec= 6[0m
+[aspiration summary] attempts=7 successes=4 fail-lows=2 fail-highs=1 full-retries=3 success=57.1% first-try-nodes=6067986 retry-nodes=4311268
+SEARCH RETURNED go_id=10
+Qxa8 SENDING bestmove c6a8 go_id=10
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6
+isready
+go wtime 215043 btime 161453 movestogo 29
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxf8  ; +5.40
+0 Deeping 2 ply of 5 msec=     0/0 score=442 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Bxh7  ; +4.42
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bxh7  ; +4.42
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bxh7  ; +4.42
+0 Deeping 5 ply of 5 msec=     0/0 Best: Bxh7  ; +4.42
+0 Deeping 6 ply of 5 msec=     0/0 Best: Bxh7  ; +4.42
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bxh7  ; +4.42
+0 Deeping 8 ply of 5 msec=   288/0 Best: Bxh7  ; +4.49
+0 Deeping 9 ply of 5 msec=  1282/1728 Best: Bxh7  ; +4.52[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5453 request msec= 7487[0m
+[1;96mBxh7[0m   [1;96m452 =score,  [0m[1;93mVisited: 9,630,404 / 86% nodes total ---- 8,145,394 Evals[0m
+[1;92mTotal time: 5.45 sec[0m[1;92m   nodes/sec= 1,765,823   evals/sec= 5[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=9630170 retry-nodes=1
+SEARCH RETURNED go_id=11
+Bxh7 SENDING bestmove d3h7 go_id=11
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7
+isready
+go wtime 209561 btime 151624 movestogo 28
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxa7  ; +4.82
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxa7  ; +4.52
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qxa7  ; +4.52
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qxa7  ; +4.52
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qxa7  ; +4.52
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qxa7  ; +4.52
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qxa7  ; +4.52
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qxa7  ; +4.21
+0 Deeping 9 ply of 5 msec=   883/0 Best: Qxa7  ; +3.75[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4266 request msec= 7487[0m
+[1;96mQxa7[0m   [1;96m375 =score,  [0m[1;93mVisited: 8,737,715 / 83% nodes total ---- 6,880,020 Evals[0m
+[1;92mTotal time: 4.27 sec[0m[1;92m   nodes/sec= 2,048,214   evals/sec= 4[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=8737665 retry-nodes=0
+SEARCH RETURNED go_id=12
+Qxa7 SENDING bestmove a8a7 go_id=12
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8
+isready
+go wtime 205267 btime 141526 movestogo 27
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O-O ; +6.01
+0 Deeping 2 ply of 5 msec=     0/0 score=551 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: O-O-O ; +5.45
+0 Deeping 3 ply of 5 msec=     0/0 score=493 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Qa8   ; +4.93
+0 Deeping 4 ply of 5 msec=     4/0 score=442 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     4/0 Best: e4    ; +4.37
+0 Deeping 5 ply of 5 msec=    10/24 Best: a3    ; +4.61
+0 Deeping 6 ply of 5 msec=    32/60 Best: a3    ; +4.30
+0 Deeping 7 ply of 5 msec=   151/192 Best: Ne5   ; +4.56
+0 Deeping 8 ply of 5 msec=   984/906 Best: a3    ; +4.28[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3746 request msec= 7487[0m
+[1;96ma3[0m   [1;96m428 =score,  [0m[1;93mVisited: 7,850,117 / 87% nodes total ---- 6,484,955 Evals[0m
+[1;92mTotal time: 3.75 sec[0m[1;92m   nodes/sec= 2,095,091   evals/sec= 4[0m
+[aspiration summary] attempts=7 successes=4 fail-lows=3 fail-highs=0 full-retries=3 success=57.1% first-try-nodes=7837202 retry-nodes=12871
+SEARCH RETURNED go_id=13
+a3 SENDING bestmove a2a3 go_id=13
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8
+isready
+go wtime 201502 btime 134429 movestogo 26
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O-O ; +5.82
+0 Deeping 2 ply of 5 msec=     0/0 score=532 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: O-O-O ; +5.26
+0 Deeping 3 ply of 5 msec=     0/0 Best: O-O-O ; +5.45
+0 Deeping 4 ply of 5 msec=     2/0 Best: O-O-O ; +4.98
+0 Deeping 5 ply of 5 msec=    11/12 Best: O-O-O ; +5.15
+0 Deeping 6 ply of 5 msec=    34/66 Best: O-O-O ; +4.97
+0 Deeping 7 ply of 5 msec=   160/204 Best: O-O-O ; +4.72
+0 Deeping 8 ply of 5 msec=   856/960 Best: Qa8   ; +4.28[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6563 request msec= 7487[0m
+[1;96mQa8[0m   [1;96m428 =score,  [0m[1;93mVisited: 13,489,558 / 87% nodes total ---- 10,981,781 Evals[0m
+[1;92mTotal time: 6.56 sec[0m[1;92m   nodes/sec= 2,055,277   evals/sec= 7[0m
+[aspiration summary] attempts=7 successes=6 fail-lows=1 fail-highs=0 full-retries=1 success=85.7% first-try-nodes=13488962 retry-nodes=520
+SEARCH RETURNED go_id=14
+Qa8 SENDING bestmove a7a8 go_id=14
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5
+isready
+go wtime 194911 btime 126282 movestogo 25
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O-O ; +5.34
+0 Deeping 2 ply of 5 msec=     0/0 Best: O-O-O ; +5.20
+0 Deeping 3 ply of 5 msec=     0/0 Best: dxc5  ; +5.25
+0 Deeping 4 ply of 5 msec=     2/0 Best: dxc5  ; +5.25
+0 Deeping 5 ply of 5 msec=     7/12 Best: dxc5  ; +5.22
+0 Deeping 6 ply of 5 msec=    36/42 Best: dxc5  ; +4.82
+0 Deeping 7 ply of 5 msec=   124/216 Best: dxc5  ; +5.10
+0 Deeping 8 ply of 5 msec=   497/744 Best: dxc5  ; +4.81
+0 Deeping 9 ply of 5 msec=  1734/2982 Best: dxc5  ; +4.64[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7160 request msec= 7487[0m
+[1;96mdxc5[0m   [1;96m464 =score,  [0m[1;93mVisited: 14,998,298 / 89% nodes total ---- 12,375,427 Evals[0m
+[1;92mTotal time: 7.16 sec[0m[1;92m   nodes/sec= 2,094,599   evals/sec= 7[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=14998164 retry-nodes=0
+SEARCH RETURNED go_id=15
+dxc5 SENDING bestmove d4c5 go_id=15
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5
+isready
+go wtime 187719 btime 115950 movestogo 24
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: cxb6  ; +5.44
+0 Deeping 2 ply of 5 msec=     0/0 score=464 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: O-O-O ; +4.64
+0 Deeping 3 ply of 5 msec=     0/0 Best: O-O-O ; +4.64
+0 Deeping 4 ply of 5 msec=     0/0 Best: O-O-O ; +4.64
+0 Deeping 5 ply of 5 msec=     0/0 Best: O-O-O ; +4.64
+0 Deeping 6 ply of 5 msec=     0/0 Best: O-O-O ; +4.64
+0 Deeping 7 ply of 5 msec=     0/0 Best: O-O-O ; +4.64
+0 Deeping 8 ply of 5 msec=     0/0 Best: O-O-O ; +4.26
+0 Deeping 9 ply of 5 msec=  2194/0 Best: Nd4   ; +3.89[33m
+Went to depth 0 elapsed min= 0.3 elapsed msec= 18523 request msec= 7487[0m
+[1;96mNd4[0m   [1;96m389 =score,  [0m[1;93mVisited: 38,657,127 / 89% nodes total ---- 31,409,102 Evals[0m
+[1;92mTotal time: 18.52 sec[0m[1;92m   nodes/sec= 2,086,923   evals/sec= 19[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=38656591 retry-nodes=1
+SEARCH RETURNED go_id=16
+Nd4 SENDING bestmove f3d4 go_id=16
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2
+isready
+go wtime 169180 btime 106966 movestogo 23
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rb1   ; +3.41
+0 Deeping 2 ply of 5 msec=     0/0 score=419 result=fail-high retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Rb1   ; +4.19
+0 Deeping 3 ply of 5 msec=     0/0 Best: Rb1   ; +4.19
+0 Deeping 4 ply of 5 msec=     0/0 Best: Rb1   ; +4.19
+0 Deeping 5 ply of 5 msec=     0/0 Best: Rb1   ; +4.19
+0 Deeping 6 ply of 5 msec=     0/0 Best: Rb1   ; +4.19
+0 Deeping 7 ply of 5 msec=     0/0 Best: Rb1   ; +4.19
+0 Deeping 8 ply of 5 msec=     0/0 Best: Rb1   ; +3.76
+0 Deeping 9 ply of 5 msec=   722/0 Best: Rb1   ; +4.02[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3559 request msec= 7487[0m
+[1;96mRb1[0m   [1;96m402 =score,  [0m[1;93mVisited: 7,362,567 / 87% nodes total ---- 5,950,343 Evals[0m
+[1;92mTotal time: 3.56 sec[0m[1;92m   nodes/sec= 2,068,149   evals/sec= 4[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=0 fail-highs=1 full-retries=1 success=87.5% first-try-nodes=7362138 retry-nodes=1
+SEARCH RETURNED go_id=17
+Rb1 SENDING bestmove a1b1 go_id=17
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3
+isready
+go wtime 165598 btime 85994 movestogo 22
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: cxb6  ; +4.95
+0 Deeping 2 ply of 5 msec=     0/0 Best: cxb6  ; +4.95
+0 Deeping 3 ply of 5 msec=     1/0 Best: cxb6  ; +5.25
+0 Deeping 4 ply of 5 msec=     4/6 Best: cxb6  ; +4.85
+0 Deeping 5 ply of 5 msec=    11/24 Best: cxb6  ; +5.13
+0 Deeping 6 ply of 5 msec=    55/66 Best: cxb6  ; +4.75
+0 Deeping 7 ply of 5 msec=   165/330 Best: cxb6  ; +4.37
+0 Deeping 8 ply of 5 msec=   601/990 Best: cxb6  ; +3.89
+0 Deeping 9 ply of 5 msec=  2508/3606 Best: cxb6  ; +3.88[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 10770 request msec= 7487[0m
+[1;96mcxb6[0m   [1;96m388 =score,  [0m[1;93mVisited: 21,550,703 / 87% nodes total ---- 16,839,612 Evals[0m
+[1;92mTotal time: 10.77 sec[0m[1;92m   nodes/sec= 2,000,919   evals/sec= 11[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=21550409 retry-nodes=0
+SEARCH RETURNED go_id=18
+cxb6 SENDING bestmove c5b6 go_id=18
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8
+isready
+go wtime 154805 btime 73429 movestogo 21
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: b7    ; +6.79
+0 Deeping 2 ply of 5 msec=     0/0 score=629 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ne2   ; +4.92
+0 Deeping 3 ply of 5 msec=     2/0 Best: Kd1   ; +4.67
+0 Deeping 4 ply of 5 msec=     4/12 Best: Kd1   ; +4.55
+0 Deeping 5 ply of 5 msec=     9/24 Best: Kd1   ; +4.65
+0 Deeping 6 ply of 5 msec=    26/54 score=415 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=    26/54 Best: Kd1   ; +3.92
+0 Deeping 7 ply of 5 msec=    92/156 Best: Kd1   ; +3.92
+0 Deeping 8 ply of 5 msec=   353/552 score=342 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=   353/552 Best: Rd1   ; +3.38[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4683 request msec= 7487[0m
+[1;96mRd1[0m   [1;96m338 =score,  [0m[1;93mVisited: 10,262,026 / 91% nodes total ---- 8,333,062 Evals[0m
+[1;92mTotal time: 4.68 sec[0m[1;92m   nodes/sec= 2,191,131   evals/sec= 5[0m
+[aspiration summary] attempts=7 successes=4 fail-lows=3 fail-highs=0 full-retries=3 success=57.1% first-try-nodes=2480398 retry-nodes=7780728
+SEARCH RETURNED go_id=19
+Rd1 SENDING bestmove b1d1 go_id=19
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3
+isready
+go wtime 150093 btime 58150 movestogo 20
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: b7    ; +5.58
+0 Deeping 2 ply of 5 msec=     0/0 Best: b7    ; +5.58
+0 Deeping 3 ply of 5 msec=     0/0 Best: b7    ; +5.81
+0 Deeping 4 ply of 5 msec=     1/0 Best: b7    ; +5.46
+0 Deeping 5 ply of 5 msec=     4/6 Best: b7    ; +5.18
+0 Deeping 6 ply of 5 msec=    29/24 Best: b7    ; +4.82
+0 Deeping 7 ply of 5 msec=    63/174 score=432 result=fail-low retry=yes
+1 Deeping 7 ply of 5 msec=    63/174 Best: b7    ; +3.35
+0 Deeping 8 ply of 5 msec=  1009/378 Best: b7    ; +2.89
+0 Deeping 9 ply of 5 msec=  2641/6054 Best: b7    ; +2.80[33m
+Went to depth 0 elapsed min= 0.3 elapsed msec= 17080 request msec= 7487[0m
+[1;96mb7[0m   [1;96m280 =score,  [0m[1;93mVisited: 36,601,342 / 86% nodes total ---- 28,786,880 Evals[0m
+[1;92mTotal time: 17.08 sec[0m[1;92m   nodes/sec= 2,142,903   evals/sec= 17[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=35199987 retry-nodes=1401175
+SEARCH RETURNED go_id=20
+b7 SENDING bestmove b6b7 go_id=20
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7
+isready
+go wtime 132995 btime 53743 movestogo 19
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxb8  ; +6.40
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxb8  ; +6.40
+0 Deeping 3 ply of 5 msec=     1/0 score=589 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     1/0 Best: Qxb8  ; +5.89
+0 Deeping 4 ply of 5 msec=     3/6 score=537 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     3/6 Best: Qxb8  ; +4.82
+0 Deeping 5 ply of 5 msec=     7/18 Best: Qxb8  ; +4.68
+0 Deeping 6 ply of 5 msec=    14/42 Best: Qxb8  ; +4.68
+0 Deeping 7 ply of 5 msec=    82/84 Best: Qxb8  ; +4.76
+0 Deeping 8 ply of 5 msec=   314/492 Best: Qxb8  ; +4.47
+0 Deeping 9 ply of 5 msec=  1210/1884 score=397 result=fail-low retry=yes
+1 Deeping 9 ply of 5 msec=  1210/1884 Best: Qxb8  ; +3.45[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5557 request msec= 7487[0m
+[1;96mQxb8[0m   [1;96m345 =score,  [0m[1;93mVisited: 11,987,205 / 86% nodes total ---- 9,310,230 Evals[0m
+[1;92mTotal time: 5.56 sec[0m[1;92m   nodes/sec= 2,157,059   evals/sec= 6[0m
+[aspiration summary] attempts=8 successes=5 fail-lows=3 fail-highs=0 full-retries=3 success=62.5% first-try-nodes=7386658 retry-nodes=4600414
+SEARCH RETURNED go_id=21
+Qxb8 SENDING bestmove a8b8 go_id=21
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3
+isready
+go wtime 127408 btime 48010 movestogo 18
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nc4   ; +5.89
+0 Deeping 2 ply of 5 msec=     0/0 score=345 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qh8   ; +3.45
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qh8   ; +3.45
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qh8   ; +3.45
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qh8   ; +3.45
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qh8   ; +3.45
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qh8   ; +3.45
+0 Deeping 8 ply of 5 msec=     0/0 score=295 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: Qh8   ; +2.73[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2382 request msec= 7487[0m
+[1;96mQh8[0m   [1;96m273 =score,  [0m[1;93mVisited: 5,288,789 / 90% nodes total ---- 4,232,187 Evals[0m
+[1;92mTotal time: 2.38 sec[0m[1;92m   nodes/sec= 2,220,155   evals/sec= 2[0m
+[aspiration summary] attempts=7 successes=5 fail-lows=2 fail-highs=0 full-retries=2 success=71.4% first-try-nodes=2228908 retry-nodes=3058723
+SEARCH RETURNED go_id=22
+Qh8 SENDING bestmove b8h8 go_id=22
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8
+isready
+go wtime 125010 btime 42845 movestogo 17
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: b8=Q  ; +4.68
+0 Deeping 2 ply of 5 msec=     0/0 score=273 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: b8=Q  ; +2.73
+0 Deeping 3 ply of 5 msec=     0/0 Best: b8=Q  ; +2.73
+0 Deeping 4 ply of 5 msec=     0/0 Best: b8=Q  ; +2.73
+0 Deeping 5 ply of 5 msec=     0/0 Best: b8=Q  ; +2.73
+0 Deeping 6 ply of 5 msec=     0/0 Best: b8=Q  ; +2.73
+0 Deeping 7 ply of 5 msec=     0/0 Best: b8=Q  ; +2.95
+0 Deeping 8 ply of 5 msec=   116/0 score=245 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=   116/0 Best: b8=Q  ; +1.86
+0 Deeping 9 ply of 5 msec=   747/696 Best: b8=Q  ; +1.86
+0 Deeping 10 ply of 5 msec=  1873/4482 score=136 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=  1873/4482 Best: b8=Q  ; +1.23[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5861 request msec= 7487[0m
+[1;96mb8=Q[0m   [1;96m123 =score,  [0m[1;93mVisited: 12,663,261 / 79% nodes total ---- 8,942,653 Evals[0m
+[1;92mTotal time: 5.86 sec[0m[1;92m   nodes/sec= 2,160,435   evals/sec= 6[0m
+[aspiration summary] attempts=9 successes=6 fail-lows=3 fail-highs=0 full-retries=3 success=66.7% first-try-nodes=10172583 retry-nodes=2490400
+SEARCH RETURNED go_id=23
+b8=Q SENDING bestmove b7b8q go_id=23
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7
+isready
+go wtime 119131 btime 35149 movestogo 16
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rg1   ; +4.82
+0 Deeping 2 ply of 5 msec=     0/0 score=123 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 8 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 9 ply of 5 msec=     0/0 Best: Nb5   ; +1.23
+0 Deeping 10 ply of 5 msec=  2206/0 score=73 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=  2206/0 Best: Qb1   ; +0.46[33m
+Went to depth 0 elapsed min= 0.4 elapsed msec= 25626 request msec= 7487[0m
+[1;96mQb1[0m   [1;96m46 =score,  [0m[1;93mVisited: 57,294,943 / 86% nodes total ---- 44,120,067 Evals[0m
+[1;92mTotal time: 25.63 sec[0m[1;92m   nodes/sec= 2,235,780   evals/sec= 26[0m
+[aspiration summary] attempts=9 successes=7 fail-lows=2 fail-highs=0 full-retries=2 success=77.8% first-try-nodes=15287600 retry-nodes=42006933
+SEARCH RETURNED go_id=24
+Qb1 SENDING bestmove b8b1 go_id=24
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6
+isready
+go wtime 93473 btime 30655 movestogo 15
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ne2   ; +3.19
+0 Deeping 2 ply of 5 msec=     0/0 Best: Ne2   ; +3.19
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qe4   ; +2.96
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qe4   ; +2.96
+0 Deeping 5 ply of 5 msec=     3/0 Best: Qe4   ; +3.10
+0 Deeping 6 ply of 5 msec=    12/18 score=260 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=    12/18 Best: Qe4   ; +1.56
+0 Deeping 7 ply of 5 msec=    61/72 Best: Qe4   ; +1.56
+0 Deeping 8 ply of 5 msec=   192/366 Best: Qe4   ; +1.14[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 404 request msec= 7487[0m
+[1;96mQe4[0m   [1;96m114 =score,  [0m[1;93mVisited: 817,960 / 83% nodes total ---- 591,056 Evals[0m
+[1;92mTotal time: 0.40 sec[0m[1;92m   nodes/sec= 2,020,813   evals/sec= 0[0m
+[aspiration summary] attempts=7 successes=6 fail-lows=1 fail-highs=0 full-retries=1 success=85.7% first-try-nodes=739319 retry-nodes=78307
+SEARCH RETURNED go_id=25
+Qe4 SENDING bestmove b1e4 go_id=25
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1
+isready
+go wtime 93052 btime 26411 movestogo 14
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qh4   ; +2.96
+0 Deeping 2 ply of 5 msec=     0/0 score=114 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qh4   ; +1.14
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qh4   ; +1.14
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qh4   ; +1.14
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qh4   ; +1.14
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qh4   ; +1.14
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qh4   ; +1.42
+0 Deeping 8 ply of 5 msec=   190/0 Best: Qh4   ; +1.42
+0 Deeping 9 ply of 5 msec=   689/1140 Best: Qh4   ; +1.56[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2330 request msec= 7487[0m
+[1;96mQh4[0m   [1;96m156 =score,  [0m[1;93mVisited: 4,875,366 / 83% nodes total ---- 3,740,564 Evals[0m
+[1;92mTotal time: 2.33 sec[0m[1;92m   nodes/sec= 2,091,716   evals/sec= 2[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=4875315 retry-nodes=1
+SEARCH RETURNED go_id=26
+Qh4 SENDING bestmove e4h4 go_id=26
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7
+isready
+go wtime 90703 btime 22042 movestogo 13
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kxd1  ; +3.10
+0 Deeping 2 ply of 5 msec=     0/0 score=156 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nxe6  ; +1.56
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nxe6  ; +1.56
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nxe6  ; +1.56
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nxe6  ; +1.56
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nxe6  ; +1.56
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nxe6  ; +1.56
+0 Deeping 8 ply of 5 msec=     0/0 Best: Nxe6  ; +1.14
+0 Deeping 9 ply of 5 msec=   421/0 Best: Nxe6  ; +1.42[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 1993 request msec= 7487[0m
+[1;96mNxe6[0m   [1;96m142 =score,  [0m[1;93mVisited: 4,246,872 / 84% nodes total ---- 3,161,938 Evals[0m
+[1;92mTotal time: 1.99 sec[0m[1;92m   nodes/sec= 2,130,592   evals/sec= 2[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=4246823 retry-nodes=1
+SEARCH RETURNED go_id=27
+Nxe6 SENDING bestmove d4e6 go_id=27
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6
+isready
+go wtime 88688 btime 18625 movestogo 12
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kxd1  ; +1.56
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qd4   ; +1.42
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qd4   ; +1.42
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qd4   ; +1.42
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qd4   ; +1.42
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qd4   ; +1.42
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qd4   ; +1.42
+0 Deeping 8 ply of 5 msec=     0/0 score=92 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: Qd4   ; +0.00
+0 Deeping 9 ply of 5 msec=   541/0 Best: Qd4   ; +0.00
+0 Deeping 10 ply of 5 msec=  1262/3246 Best: Qd4   ; +0.00[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3123 request msec= 7487[0m
+[1;96mQd4[0m   [1;96m0 =score,  [0m[1;93mVisited: 6,619,613 / 80% nodes total ---- 4,558,460 Evals[0m
+[1;92mTotal time: 3.12 sec[0m[1;92m   nodes/sec= 2,118,976   evals/sec= 3[0m
+[aspiration summary] attempts=9 successes=8 fail-lows=1 fail-highs=0 full-retries=1 success=88.9% first-try-nodes=5853224 retry-nodes=766307
+SEARCH RETURNED go_id=28
+Qd4 SENDING bestmove h4d4 go_id=28
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6
+isready
+go wtime 85540 btime 16201 movestogo 11
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qf4   ; +3.38
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qf4   ; +3.38
+0 Deeping 3 ply of 5 msec=     0/0 score=242 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Qh4   ; +1.56
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qh4   ; +1.14
+0 Deeping 5 ply of 5 msec=     1/0 Best: Qh4   ; +1.42
+0 Deeping 6 ply of 5 msec=     8/6 score=92 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=     8/6 Best: Qh4   ; +0.00
+0 Deeping 7 ply of 5 msec=    31/48 Best: Qh4   ; +0.00
+0 Deeping 8 ply of 5 msec=    80/186 Best: Qh4   ; +0.00
+0 Deeping 9 ply of 5 msec=   164/480 Best: Qh4   ; +0.00
+0 Deeping 10 ply of 5 msec=  1430/984 Best: Qh4   ; +0.00[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3834 request msec= 7487[0m
+[1;96mQh4[0m   [1;96m0 =score,  [0m[1;93mVisited: 7,870,805 / 77% nodes total ---- 5,250,178 Evals[0m
+[1;92mTotal time: 3.84 sec[0m[1;92m   nodes/sec= 2,052,377   evals/sec= 4[0m
+[aspiration summary] attempts=9 successes=7 fail-lows=2 fail-highs=0 full-retries=2 success=77.8% first-try-nodes=7838503 retry-nodes=32228
+SEARCH RETURNED go_id=29
+Qh4 SENDING bestmove d4h4 go_id=29
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7
+isready
+go wtime 81676 btime 15264 movestogo 10
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kxd1  ; +1.56
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qd4   ; +1.14
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qd4   ; +1.42
+0 Deeping 4 ply of 5 msec=     0/0 score=0 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Qd4   ; +0.00
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qd4   ; +0.00
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qd4   ; +0.00
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qd4   ; +0.00
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qd4   ; +0.00
+0 Deeping 9 ply of 5 msec=     1/0 Best: Qd4   ; +0.00
+0 Deeping 10 ply of 5 msec=     2/6 Best: Qd4   ; +0.00
+0 Deeping 11 ply of 5 msec=   134/12 Best: Qd4   ; +0.00[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6961 request msec= 7487[0m
+[1;96mQd4[0m   [1;96m0 =score,  [0m[1;93mVisited: 15,069,102 / 83% nodes total ---- 10,863,768 Evals[0m
+[1;92mTotal time: 6.96 sec[0m[1;92m   nodes/sec= 2,164,518   evals/sec= 7[0m
+[aspiration summary] attempts=10 successes=9 fail-lows=1 fail-highs=0 full-retries=1 success=90.0% first-try-nodes=15068911 retry-nodes=109
+SEARCH RETURNED go_id=30
+Qd4 SENDING bestmove h4d4 go_id=30
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7
+isready
+go wtime 74686 btime 10983 movestogo 9
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qf4   ; +3.94
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qf4   ; +3.94
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qf4   ; +3.94
+0 Deeping 4 ply of 5 msec=     1/0 Best: Qf4   ; +3.69
+0 Deeping 5 ply of 5 msec=     3/6 Best: Qf4   ; +3.93
+0 Deeping 6 ply of 5 msec=    13/18 score=343 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=    13/18 Best: Qf4   ; +3.26
+0 Deeping 7 ply of 5 msec=    48/78 Best: Qf4   ; +3.64
+0 Deeping 8 ply of 5 msec=   155/288 Best: Qf4   ; +3.41
+0 Deeping 9 ply of 5 msec=   432/930 Best: Qf4   ; +3.83
+0 Deeping 10 ply of 5 msec=  1258/2592 Best: Qf4   ; +3.34
+0 Deeping 11 ply of 5 msec=  3680/7548 Best: Qf4   ; +3.55[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 10826 request msec= 7487[0m
+[1;96mQf4[0m   [1;96m355 =score,  [0m[1;93mVisited: 23,290,287 / 81% nodes total ---- 16,549,612 Evals[0m
+[1;92mTotal time: 10.83 sec[0m[1;92m   nodes/sec= 2,151,187   evals/sec= 11[0m
+[aspiration summary] attempts=10 successes=9 fail-lows=1 fail-highs=0 full-retries=1 success=90.0% first-try-nodes=23274771 retry-nodes=15433
+SEARCH RETURNED go_id=31
+Qf4 SENDING bestmove d4f4 go_id=31
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8
+isready
+go wtime 63843 btime 7062 movestogo 8
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxc7  ; +3.94
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 9 ply of 5 msec=     0/0 Best: Qxc7  ; +3.55
+0 Deeping 10 ply of 5 msec=     0/0 Best: Qxc7  ; +3.41
+0 Deeping 11 ply of 5 msec=  2660/0 Best: Qxc7  ; +3.64[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 9746 request msec= 7487[0m
+[1;96mQxc7[0m   [1;96m364 =score,  [0m[1;93mVisited: 21,447,811 / 82% nodes total ---- 15,217,054 Evals[0m
+[1;92mTotal time: 9.75 sec[0m[1;92m   nodes/sec= 2,200,593   evals/sec= 10[0m
+[aspiration summary] attempts=10 successes=10 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=21447770 retry-nodes=0
+SEARCH RETURNED go_id=32
+Qxc7 SENDING bestmove f4c7 go_id=32
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2
+isready
+go wtime 54071 btime 4344 movestogo 7
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +4.25
+0 Deeping 2 ply of 5 msec=     0/0 score=374 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qb8   ; +3.72
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qb8   ; +3.96
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qb8   ; +3.73
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qb8   ; +3.87
+0 Deeping 6 ply of 5 msec=     1/0 Best: Qb8   ; +3.66
+0 Deeping 7 ply of 5 msec=     8/6 Best: Qb8   ; +3.96
+0 Deeping 8 ply of 5 msec=    31/48 Best: Qb8   ; +3.59
+0 Deeping 9 ply of 5 msec=    94/186 Best: Qb8   ; +3.87
+0 Deeping 10 ply of 5 msec=   268/564 Best: Qb8   ; +3.38
+0 Deeping 11 ply of 5 msec=   905/1608 Best: Qb8   ; +3.60
+0 Deeping 12 ply of 5 msec=  2345/5430 Best: Qb8   ; +3.44[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7405 request msec= 7487[0m
+[1;96mQb8[0m   [1;96m344 =score,  [0m[1;93mVisited: 16,465,585 / 76% nodes total ---- 10,676,034 Evals[0m
+[1;92mTotal time: 7.41 sec[0m[1;92m   nodes/sec= 2,223,284   evals/sec= 7[0m
+[aspiration summary] attempts=11 successes=10 fail-lows=1 fail-highs=0 full-retries=1 success=90.9% first-try-nodes=16465307 retry-nodes=213
+SEARCH RETURNED go_id=33
+Qb8 SENDING bestmove c7b8 go_id=33
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7
+isready
+go wtime 46645 btime 2990 movestogo 6
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +4.10
+0 Deeping 2 ply of 5 msec=     0/0 score=344 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 9 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 10 ply of 5 msec=     0/0 Best: Qa7   ; +3.44
+0 Deeping 11 ply of 5 msec=     0/0 Best: Qa7   ; +3.45
+0 Deeping 12 ply of 5 msec=  2537/0 score=295 result=fail-low retry=yes
+1 Deeping 12 ply of 5 msec=  2537/0 Best: Qa7   ; +3.16[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 13498 request msec= 7487[0m
+[1;96mQa7[0m   [1;96m316 =score,  [0m[1;93mVisited: 30,770,602 / 83% nodes total ---- 21,681,219 Evals[0m
+[1;92mTotal time: 13.50 sec[0m[1;92m   nodes/sec= 2,279,593   evals/sec= 13[0m
+[aspiration summary] attempts=11 successes=9 fail-lows=2 fail-highs=0 full-retries=2 success=81.8% first-try-nodes=24670980 retry-nodes=6099564
+SEARCH RETURNED go_id=34
+Qa7 SENDING bestmove b8a7 go_id=34
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6
+isready
+go wtime 33127 btime 1600 movestogo 5
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +4.25
+0 Deeping 2 ply of 5 msec=     0/0 score=316 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 9 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 10 ply of 5 msec=     0/0 Best: Qa8   ; +3.16
+0 Deeping 11 ply of 5 msec=     0/0 Best: Qa8   ; +2.97[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4217 request msec= 7487[0m
+[1;96mQa8[0m   [1;96m297 =score,  [0m[1;93mVisited: 9,433,500 / 85% nodes total ---- 6,721,750 Evals[0m
+[1;92mTotal time: 4.22 sec[0m[1;92m   nodes/sec= 2,236,874   evals/sec= 4[0m
+[aspiration summary] attempts=10 successes=9 fail-lows=1 fail-highs=0 full-retries=1 success=90.0% first-try-nodes=9433438 retry-nodes=1
+SEARCH RETURNED go_id=35
+Qa8 SENDING bestmove a7a8 go_id=35
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7
+isready
+go wtime 28888 btime 769 movestogo 4
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +3.96
+0 Deeping 2 ply of 5 msec=     0/0 score=297 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 9 ply of 5 msec=     0/0 Best: Qa7   ; +2.97
+0 Deeping 10 ply of 5 msec=     0/0 Best: Qa7   ; +3.02
+0 Deeping 11 ply of 5 msec=   263/0 Best: Qa7   ; +3.02
+0 Deeping 12 ply of 5 msec=  1091/1578 Best: Qa7   ; +2.88[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3834 request msec= 7487[0m
+[1;96mQa7[0m   [1;96m288 =score,  [0m[1;93mVisited: 8,499,752 / 79% nodes total ---- 5,766,247 Evals[0m
+[1;92mTotal time: 3.84 sec[0m[1;92m   nodes/sec= 2,216,368   evals/sec= 4[0m
+[aspiration summary] attempts=11 successes=10 fail-lows=1 fail-highs=0 full-retries=1 success=90.9% first-try-nodes=8499698 retry-nodes=1
+SEARCH RETURNED go_id=36
+Qa7 SENDING bestmove a8a7 go_id=36
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6
+isready
+go wtime 25022 btime 712 movestogo 3
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +4.25
+0 Deeping 2 ply of 5 msec=     0/0 score=374 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nb1   ; +3.55
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa8   ; +3.96
+0 Deeping 4 ply of 5 msec=     0/0 score=345 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Qa8   ; +3.44
+0 Deeping 5 ply of 5 msec=     1/0 Best: f3    ; +3.05
+0 Deeping 6 ply of 5 msec=     2/6 Best: f3    ; +3.02
+0 Deeping 7 ply of 5 msec=     5/12 Best: f3    ; +3.02
+0 Deeping 8 ply of 5 msec=    11/30 Best: f3    ; +3.02
+0 Deeping 9 ply of 5 msec=    40/66 Best: f3    ; +3.02
+0 Deeping 10 ply of 5 msec=    78/240 Best: f3    ; +2.88
+0 Deeping 11 ply of 5 msec=   184/468 score=238 result=fail-low retry=yes
+1 Deeping 11 ply of 5 msec=   184/468 Best: f3    ; +2.88
+0 Deeping 12 ply of 5 msec=  2975/1104 score=238 result=fail-low retry=yes
+1 Deeping 12 ply of 5 msec=  2975/1104
+hard abort q=1
+loop_over_all_moves abortQ
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2975 request msec= 7487[0m
+[1;96mf3[0m   [1;96m288 =score,  [0m[1;93mVisited: 40,580,000 / 85% nodes total ---- 29,244,770 Evals[0m
+[1;92mTotal time: 17.52 sec[0m[1;92m   nodes/sec= 2,315,763   evals/sec= 18[0m
+[aspiration summary] attempts=11 successes=7 fail-lows=4 fail-highs=0 full-retries=4 success=63.6% first-try-nodes=9640936 retry-nodes=4004055
+SEARCH RETURNED go_id=37
+f3 SENDING bestmove f2f3 go_id=37
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3
+isready
+go wtime 7479 btime 648 movestogo 2
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +4.11
+0 Deeping 2 ply of 5 msec=     0/0 score=36 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 9 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 10 ply of 5 msec=     0/0 Best: Qa8   ; +0.36
+0 Deeping 11 ply of 5 msec=     0/0 Best: Qa8   ; +0.44[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2342 request msec= 7487[0m
+[1;96mQa8[0m   [1;96m44 =score,  [0m[1;93mVisited: 5,432,441 / 84% nodes total ---- 3,729,299 Evals[0m
+[1;92mTotal time: 2.34 sec[0m[1;92m   nodes/sec= 2,319,225   evals/sec= 2[0m
+[aspiration summary] attempts=10 successes=9 fail-lows=1 fail-highs=0 full-retries=1 success=90.0% first-try-nodes=5432351 retry-nodes=1
+SEARCH RETURNED go_id=38
+Qa8 SENDING bestmove a7a8 go_id=38
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7
+isready
+go wtime 5110 btime 598 movestogo 1
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +4.10
+0 Deeping 2 ply of 5 msec=     0/0 score=359 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa7   ; +3.59
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa7   ; +3.69
+0 Deeping 4 ply of 5 msec=     1/0 score=318 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     1/0 Best: Qa7   ; +3.03
+0 Deeping 5 ply of 5 msec=     1/6 Best: Qa7   ; +3.52
+0 Deeping 6 ply of 5 msec=     3/6 score=300 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=     3/6 Best: Qe4   ; +2.60
+0 Deeping 7 ply of 5 msec=    24/18 Best: Qe4   ; +2.60
+0 Deeping 8 ply of 5 msec=    51/144 score=210 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=    51/144 Best: Qe4   ; +0.66
+0 Deeping 9 ply of 5 msec=   228/306 Best: Qe4   ; +0.66
+0 Deeping 10 ply of 5 msec=   618/1368 Best: Qa7   ; +0.19[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 1357 request msec= 7487[0m
+[1;96mQa7[0m   [1;96m19 =score,  [0m[1;93mVisited: 3,118,108 / 85% nodes total ---- 2,252,604 Evals[0m
+[1;92mTotal time: 1.36 sec[0m[1;92m   nodes/sec= 2,296,677   evals/sec= 1[0m
+[aspiration summary] attempts=9 successes=5 fail-lows=4 fail-highs=0 full-retries=4 success=55.6% first-try-nodes=2849100 retry-nodes=268935
+SEARCH RETURNED go_id=39
+Qa7 SENDING bestmove a8a7 go_id=39
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8
+isready
+go wtime 303722 btime 300543 movestogo 40
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +4.25
+0 Deeping 2 ply of 5 msec=     0/0 score=372 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa8   ; +3.72
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qc5   ; +3.90
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qc5   ; +3.73
+0 Deeping 5 ply of 5 msec=     2/0 Best: Qc5   ; +3.52
+0 Deeping 6 ply of 5 msec=    12/12 score=302 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=    12/12 Best: Qc5   ; +2.99
+0 Deeping 7 ply of 5 msec=    27/72 Best: Qc5   ; +3.17
+0 Deeping 8 ply of 5 msec=    70/162 score=267 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=    70/162 Best: Qc5   ; +0.61
+0 Deeping 9 ply of 5 msec=   414/420 Best: Qc5   ; +0.61
+0 Deeping 10 ply of 5 msec=   896/2484 Best: Qc5   ; +0.61
+0 Deeping 11 ply of 5 msec=  1450/5376 Best: Qc5   ; +0.68[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3809 request msec= 7580[0m
+[1;96mQc5[0m   [1;96m68 =score,  [0m[1;93mVisited: 8,759,399 / 82% nodes total ---- 6,057,633 Evals[0m
+[1;92mTotal time: 3.81 sec[0m[1;92m   nodes/sec= 2,299,306   evals/sec= 4[0m
+[aspiration summary] attempts=10 successes=7 fail-lows=3 fail-highs=0 full-retries=3 success=70.0% first-try-nodes=8459533 retry-nodes=299766
+SEARCH RETURNED go_id=40
+Qc5 SENDING bestmove a7c5 go_id=40
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7
+isready
+go wtime 299886 btime 287259 movestogo 39
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +3.90
+0 Deeping 2 ply of 5 msec=     0/0 score=68 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 9 ply of 5 msec=     0/0 Best: Qe5   ; +0.68
+0 Deeping 10 ply of 5 msec=     0/0 Best: Qe5   ; +0.47
+0 Deeping 11 ply of 5 msec=  1114/0 Best: Qe5   ; +0.75
+0 Deeping 12 ply of 5 msec=  3247/6684 Best: Qe5   ; +0.51[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 13990 request msec= 7580[0m
+[1;96mQe5[0m   [1;96m51 =score,  [0m[1;93mVisited: 32,787,660 / 85% nodes total ---- 24,194,512 Evals[0m
+[1;92mTotal time: 13.99 sec[0m[1;92m   nodes/sec= 2,343,647   evals/sec= 14[0m
+[aspiration summary] attempts=11 successes=10 fail-lows=1 fail-highs=0 full-retries=1 success=90.9% first-try-nodes=32787574 retry-nodes=1
+SEARCH RETURNED go_id=41
+Qe5 SENDING bestmove c5e5 go_id=41
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5
+isready
+go wtime 285871 btime 264990 movestogo 38
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxb2  ; +6.21
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qg7   ; +6.21
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qg7   ; +6.35
+0 Deeping 4 ply of 5 msec=     0/0 score=581 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Qg7   ; +4.21
+0 Deeping 5 ply of 5 msec=     4/0 Best: f4    ; +4.24
+0 Deeping 6 ply of 5 msec=     8/24 score=374 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=     8/24 Best: h4    ; +1.74
+0 Deeping 7 ply of 5 msec=    42/48 Best: h4    ; +1.74
+0 Deeping 8 ply of 5 msec=    72/252 score=124 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=    72/252 Best: h4    ; +1.20
+0 Deeping 9 ply of 5 msec=   216/432 score=170 result=fail-high retry=yes
+1 Deeping 9 ply of 5 msec=   216/432 Best: h4    ; +1.76
+0 Deeping 10 ply of 5 msec=   733/1296 Best: h4    ; +1.59
+0 Deeping 11 ply of 5 msec=  1456/4398 Best: h4    ; +2.00[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4245 request msec= 7580[0m
+[1;96mh4[0m   [1;96m200 =score,  [0m[1;93mVisited: 9,559,760 / 79% nodes total ---- 6,394,640 Evals[0m
+[1;92mTotal time: 4.25 sec[0m[1;92m   nodes/sec= 2,251,636   evals/sec= 4[0m
+[aspiration summary] attempts=10 successes=6 fail-lows=3 fail-highs=1 full-retries=4 success=60.0% first-try-nodes=8658742 retry-nodes=900970
+SEARCH RETURNED go_id=42
+h4 SENDING bestmove h2h4 go_id=42
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2
+isready
+go wtime 281604 btime 242587 movestogo 37
+
+
+0 Deeping 1 ply of 5 msec=     0/_[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 0 request msec= 7580[0m
+[1;96mKxd2[0m   [1;96m1000002 =score,  [0m[1;93mVisited: 1 / 0% nodes total ---- 0 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 27,248   evals/sec= 0[0m
+[aspiration summary] attempts=0 successes=0 fail-lows=0 fail-highs=0 full-retries=0 success=0.0% first-try-nodes=0 retry-nodes=0
+SEARCH RETURNED go_id=43
+Kxd2 SENDING bestmove e1d2 go_id=43
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4
+isready
+go wtime 281574 btime 226763 movestogo 36
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kd1   ; +1.74
+0 Deeping 2 ply of 5 msec=     0/0 Best: Kc3   ; +2.00
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kc3   ; +2.00
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kc3   ; +2.00
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kc3   ; +2.00
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kc3   ; +2.00
+0 Deeping 7 ply of 5 msec=     0/0 Best: Kc3   ; +2.00
+0 Deeping 8 ply of 5 msec=     0/0 Best: Kc2   ; +1.73
+0 Deeping 9 ply of 5 msec=    50/0 Best: Kc3   ; +2.02
+0 Deeping 10 ply of 5 msec=   174/300 Best: Kc3   ; +1.95
+0 Deeping 11 ply of 5 msec=   518/1044 Best: Kc3   ; +2.19
+0 Deeping 12 ply of 5 msec=  1068/3108 Best: Kc3   ; +2.24
+0 Deeping 13 ply of 5 msec=  3666/6408 Best: Kc3   ; +2.65[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7817 request msec= 7580[0m
+[1;96mKc3[0m   [1;96m265 =score,  [0m[1;93mVisited: 18,994,132 / 78% nodes total ---- 13,892,188 Evals[0m
+[1;92mTotal time: 7.82 sec[0m[1;92m   nodes/sec= 2,429,542   evals/sec= 8[0m
+[aspiration summary] attempts=12 successes=12 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=18994097 retry-nodes=0
+SEARCH RETURNED go_id=44
+Kc3 SENDING bestmove d2c3 go_id=44
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5
+isready
+go wtime 273727 btime 206276 movestogo 35
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: hxg5  ; +1.46
+0 Deeping 2 ply of 5 msec=     0/0 score=265 result=fail-high retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 3 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 4 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 5 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 6 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 7 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 8 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 9 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 10 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 11 ply of 5 msec=     0/0 Best: h5    ; +2.65
+0 Deeping 12 ply of 5 msec=     0/0 Best: h5    ; +2.39[33m
+Went to depth 0 elapsed min= 0.3 elapsed msec= 15182 request msec= 7580[0m
+[1;96mh5[0m   [1;96m239 =score,  [0m[1;93mVisited: 38,458,106 / 76% nodes total ---- 27,280,850 Evals[0m
+[1;92mTotal time: 15.18 sec[0m[1;92m   nodes/sec= 2,533,044   evals/sec= 15[0m
+[aspiration summary] attempts=11 successes=10 fail-lows=0 fail-highs=1 full-retries=1 success=90.9% first-try-nodes=38458076 retry-nodes=1
+SEARCH RETURNED go_id=45
+h5 SENDING bestmove h4h5 go_id=45
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5
+isready
+go wtime 258517 btime 159238 movestogo 34
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rd1   ; +1.16
+0 Deeping 2 ply of 5 msec=     0/0 score=239 result=fail-high retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Rd1   ; +1.16
+0 Deeping 3 ply of 5 msec=     0/0 score=239 result=fail-high retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Rd1   ; +1.39
+0 Deeping 4 ply of 5 msec=     0/0 score=239 result=fail-high retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: h6    ; +1.86
+0 Deeping 5 ply of 5 msec=     2/0 score=239 result=fail-high retry=yes
+1 Deeping 5 ply of 5 msec=     2/0 Best: h6    ; +2.56
+0 Deeping 6 ply of 5 msec=     4/12 Best: h6    ; +2.56
+0 Deeping 7 ply of 5 msec=     9/24 Best: h6    ; +2.62
+0 Deeping 8 ply of 5 msec=    31/54 Best: h6    ; +2.76
+0 Deeping 9 ply of 5 msec=   191/186 Best: h6    ; +2.93
+0 Deeping 10 ply of 5 msec=   464/1146 score=343 result=fail-high retry=yes
+1 Deeping 10 ply of 5 msec=   464/1146 Best: h6    ; +3.87
+0 Deeping 11 ply of 5 msec=  2373/2784 Best: h6    ; +3.87[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4596 request msec= 7580[0m
+[1;96mh6[0m   [1;96m387 =score,  [0m[1;93mVisited: 11,367,398 / 81% nodes total ---- 8,653,272 Evals[0m
+[1;92mTotal time: 4.60 sec[0m[1;92m   nodes/sec= 2,473,319   evals/sec= 5[0m
+[aspiration summary] attempts=10 successes=5 fail-lows=0 fail-highs=5 full-retries=5 success=50.0% first-try-nodes=7060151 retry-nodes=4307196
+SEARCH RETURNED go_id=46
+h6 SENDING bestmove h5h6 go_id=46
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7
+isready
+go wtime 253904 btime 147235 movestogo 33
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: h7    ; +1.59
+0 Deeping 2 ply of 5 msec=     0/0 score=387 result=fail-high retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 3 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 4 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 5 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 6 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 7 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 8 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 9 ply of 5 msec=     0/0 Best: h7    ; +3.87
+0 Deeping 10 ply of 5 msec=     0/0 Best: h7    ; +3.76
+0 Deeping 11 ply of 5 msec=  1819/0 Best: h7    ; +3.90[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4517 request msec= 7580[0m
+[1;96mh7[0m   [1;96m390 =score,  [0m[1;93mVisited: 11,404,060 / 81% nodes total ---- 8,698,165 Evals[0m
+[1;92mTotal time: 4.52 sec[0m[1;92m   nodes/sec= 2,524,243   evals/sec= 5[0m
+[aspiration summary] attempts=10 successes=9 fail-lows=0 fail-highs=1 full-retries=1 success=90.0% first-try-nodes=11404032 retry-nodes=1
+SEARCH RETURNED go_id=47
+h7 SENDING bestmove h6h7 go_id=47
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2
+isready
+go wtime 249359 btime 118773 movestogo 32
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: h8=R  ; +4.63
+0 Deeping 2 ply of 5 msec=     0/0 Best: h8=Q  ; +4.63
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kd2   ; +4.50
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kd2   ; +4.63
+0 Deeping 5 ply of 5 msec=     1/0 Best: Kd2   ; +4.59
+0 Deeping 6 ply of 5 msec=     2/6 score=409 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=     2/6 Best: h8=R  ; +4.07
+0 Deeping 7 ply of 5 msec=    17/12 Best: Kd2   ; +4.24
+0 Deeping 8 ply of 5 msec=    40/102 Best: Kd2   ; +4.24
+0 Deeping 9 ply of 5 msec=   132/240 Best: h8=R  ; +4.26
+0 Deeping 10 ply of 5 msec=   639/792 Best: Ra1   ; +4.57
+0 Deeping 11 ply of 5 msec=  3050/3834 score=507 result=fail-high retry=yes
+1 Deeping 11 ply of 5 msec=  3050/3834 Best: Ra1   ; +5.13[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 9844 request msec= 7580[0m
+[1;96mRa1[0m   [1;96m513 =score,  [0m[1;93mVisited: 25,888,198 / 85% nodes total ---- 20,438,363 Evals[0m
+[1;92mTotal time: 9.84 sec[0m[1;92m   nodes/sec= 2,629,783   evals/sec= 10[0m
+[aspiration summary] attempts=10 successes=8 fail-lows=1 fail-highs=1 full-retries=2 success=80.0% first-try-nodes=13906413 retry-nodes=11981738
+SEARCH RETURNED go_id=48
+Ra1 SENDING bestmove h1a1 go_id=48
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4
+isready
+go wtime 239484 btime 102549 movestogo 31
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ra7   ; +5.24
+0 Deeping 2 ply of 5 msec=     0/0 Best: Ra7   ; +5.24
+0 Deeping 3 ply of 5 msec=     0/0 Best: Ra7   ; +5.24
+0 Deeping 4 ply of 5 msec=     0/0 score=577 result=fail-high retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Ra7   ; +7.74
+0 Deeping 5 ply of 5 msec=     2/0 Best: Ra7   ; +7.74
+0 Deeping 6 ply of 5 msec=     5/12 Best: Ra7   ; +7.74
+0 Deeping 7 ply of 5 msec=    14/30 score=826 result=fail-high retry=yes
+1 Deeping 7 ply of 5 msec=    14/30 Best: Ra7   ; +8.26
+0 Deeping 8 ply of 5 msec=    47/84 Best: Ra7   ; +8.26
+0 Deeping 9 ply of 5 msec=   108/282 Best: Ra7   ; +8.26
+0 Deeping 10 ply of 5 msec=   286/648 Best: Ra7   ; +8.01
+0 Deeping 11 ply of 5 msec=   972/1716 Best: Ra7   ; +8.26[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5048 request msec= 7580[0m
+[1;96mRa7[0m   [1;96m826 =score,  [0m[1;93mVisited: 13,300,106 / 86% nodes total ---- 10,365,940 Evals[0m
+[1;92mTotal time: 5.05 sec[0m[1;92m   nodes/sec= 2,634,318   evals/sec= 5[0m
+[aspiration summary] attempts=10 successes=8 fail-lows=0 fail-highs=2 full-retries=2 success=80.0% first-try-nodes=13222474 retry-nodes=77459
+SEARCH RETURNED go_id=49
+Ra7 SENDING bestmove a1a7 go_id=49
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4 a1a7 d7e8
+isready
+go wtime 234416 btime 97875 movestogo 30
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rxf7  ; +6.02
+0 Deeping 2 ply of 5 msec=     0/0 score=826 result=fail-high retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 3 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 4 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 5 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 6 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 7 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 8 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 9 ply of 5 msec=     0/0 Best: Rxf7  ; +8.26
+0 Deeping 10 ply of 5 msec=     0/0 Best: Rxf7  ; +8.15
+0 Deeping 11 ply of 5 msec=   618/0 Best: Rxf7  ; +8.37
+0 Deeping 12 ply of 5 msec=  1853/3708 Best: Rxf7  ; +8.37[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5481 request msec= 7580[0m
+[1;96mRxf7[0m   [1;96m837 =score,  [0m[1;93mVisited: 14,541,594 / 80% nodes total ---- 9,940,317 Evals[0m
+[1;92mTotal time: 5.48 sec[0m[1;92m   nodes/sec= 2,652,969   evals/sec= 5[0m
+[aspiration summary] attempts=11 successes=10 fail-lows=0 fail-highs=1 full-retries=1 success=90.9% first-try-nodes=14541359 retry-nodes=1
+SEARCH RETURNED go_id=50
+Rxf7 SENDING bestmove a7f7 go_id=50
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4 a1a7 d7e8 a7f7 e2d3
+isready
+go wtime 228912 btime 81413 movestogo 29
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: h8=Q  ; +12.54
+0 Deeping 2 ply of 5 msec=     0/0 Best: Kxd3  ; +12.54
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kxd3  ; +12.54
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kxd3  ; +12.54
+0 Deeping 5 ply of 5 msec=     1/0 Best: Kxd3  ; +12.54
+0 Deeping 6 ply of 5 msec=     3/6 Best: Kxd3  ; +12.26
+0 Deeping 7 ply of 5 msec=    10/18 Best: Kxd3  ; +12.40
+0 Deeping 8 ply of 5 msec=    34/60 Best: Rf8   ; +12.15
+0 Deeping 9 ply of 5 msec=    87/204 Best: Kxd3  ; +12.40
+0 Deeping 10 ply of 5 msec=   253/522 Best: Kxd3  ; +12.37
+0 Deeping 11 ply of 5 msec=   589/1518 Best: Kxd3  ; +12.67
+0 Deeping 12 ply of 5 msec=  1547/3534 Best: Kxd3  ; +12.77
+0 Deeping 13 ply of 5 msec=  3428/9282 Best: Kxd3  ; +12.94[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 9063 request msec= 7580[0m
+[1;96mKxd3[0m   [1;96m1294 =score,  [0m[1;93mVisited: 26,056,402 / 77% nodes total ---- 17,607,093 Evals[0m
+[1;92mTotal time: 9.06 sec[0m[1;92m   nodes/sec= 2,874,862   evals/sec= 9[0m
+[aspiration summary] attempts=12 successes=12 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=26056312 retry-nodes=0
+SEARCH RETURNED go_id=51
+Kxd3 SENDING bestmove c3d3 go_id=51
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4 a1a7 d7e8 a7f7 e2d3 c3d3 e8f7
+isready
+go wtime 219825 btime 75965 movestogo 28
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: h8=Q  ; +12.54
+0 Deeping 2 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 3 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 4 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 5 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 6 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 7 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 8 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 9 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 10 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 11 ply of 5 msec=     0/0 Best: h8=Q  ; +12.94
+0 Deeping 12 ply of 5 msec=     0/0 Best: h8=Q  ; +12.95
+0 Deeping 13 ply of 5 msec=   943/0 Best: h8=Q  ; +13.12
+0 Deeping 14 ply of 5 msec=  3525/5658 Best: h8=Q  ; +13.12[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 8206 request msec= 7580[0m
+[1;96mh8=Q[0m   [1;96m1312 =score,  [0m[1;93mVisited: 23,987,565 / 67% nodes total ---- 13,901,552 Evals[0m
+[1;92mTotal time: 8.21 sec[0m[1;92m   nodes/sec= 2,923,002   evals/sec= 8[0m
+[aspiration summary] attempts=13 successes=13 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=23987532 retry-nodes=0
+SEARCH RETURNED go_id=52
+h8=Q SENDING bestmove h7h8q go_id=52
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4 a1a7 d7e8 a7f7 e2d3 c3d3 e8f7 h7h8q g4f3
+isready
+go wtime 211594 btime 73569 movestogo 27
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: gxf3  ; +12.54
+0 Deeping 2 ply of 5 msec=     0/0 score=1312 result=fail-high retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 3 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 4 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 5 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 6 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 7 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 8 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 9 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 10 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 11 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 12 ply of 5 msec=     0/0 Best: gxf3  ; +13.12
+0 Deeping 13 ply of 5 msec=     0/0 Best: gxf3  ; +13.20[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6835 request msec= 7580[0m
+[1;96mgxf3[0m   [1;96m1320 =score,  [0m[1;93mVisited: 20,414,011 / 83% nodes total ---- 13,683,326 Evals[0m
+[1;92mTotal time: 6.84 sec[0m[1;92m   nodes/sec= 2,986,298   evals/sec= 7[0m
+[aspiration summary] attempts=12 successes=11 fail-lows=0 fail-highs=1 full-retries=1 success=91.7% first-try-nodes=20413962 retry-nodes=1
+SEARCH RETURNED go_id=53
+gxf3 SENDING bestmove g2f3 go_id=53
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4 a1a7 d7e8 a7f7 e2d3 c3d3 e8f7 h7h8q g4f3 g2f3 f7g6
+isready
+go wtime 204739 btime 71138 movestogo 26
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f4    ; +12.68
+0 Deeping 2 ply of 5 msec=     0/0 score=1320 result=fail-high retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ke4   ; +12.26
+0 Deeping 3 ply of 5 msec=     0/0 score=1320 result=fail-high retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Qf8   ; +12.93
+0 Deeping 4 ply of 5 msec=     0/0 Best: Ke4   ; +13.00
+0 Deeping 5 ply of 5 msec=     1/0 Best: Ke4   ; +13.16
+0 Deeping 6 ply of 5 msec=     2/6 Best: Ke4   ; +13.20
+0 Deeping 7 ply of 5 msec=     2/12 Best: Ke4   ; +13.22
+0 Deeping 8 ply of 5 msec=     3/12 Best: Ke4   ; +13.22
+0 Deeping 9 ply of 5 msec=    46/18 score=999987 result=fail-high retry=yes
+1 Deeping 9 ply of 5 msec=    46/18 Best: Ke4   ; +9999.91[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 159 request msec= 7580[0m
+[1;96mKe4[0m   [1;96m999991 =score,  [0m[1;93mVisited: 464,126 / 76% nodes total ---- 294,531 Evals[0m
+[1;92mTotal time: 0.16 sec[0m[1;92m   nodes/sec= 2,905,440   evals/sec= 0[0m
+[aspiration summary] attempts=8 successes=5 fail-lows=0 fail-highs=3 full-retries=3 success=62.5% first-try-nodes=138243 retry-nodes=325840
+SEARCH RETURNED go_id=54
+Ke4 SENDING bestmove d3e4 go_id=54
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4 a1a7 d7e8 a7f7 e2d3 c3d3 e8f7 h7h8q g4f3 g2f3 f7g6 d3e4 g6g5
+isready
+go wtime 204551 btime 70800 movestogo 25
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qe5   ; +12.92
+0 Deeping 2 ply of 5 msec=     0/0 Best: Ke5   ; +13.00
+0 Deeping 3 ply of 5 msec=     0/0 score=999993 result=fail-high retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: f4    ; +13.09
+0 Deeping 4 ply of 5 msec=     0/0 score=999993 result=fail-high retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Ke5   ; +13.12
+0 Deeping 5 ply of 5 msec=     0/0 score=999993 result=fail-high retry=yes
+1 Deeping 5 ply of 5 msec=     0/0 Best: Qg7   ; +9999.95[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 1 request msec= 7580[0m
+[1;96mQg7[0m   [1;96m999995 =score,  [0m[1;93mVisited: 2,563 / 76% nodes total ---- 1,633 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 2,317,779   evals/sec= 0[0m
+[aspiration summary] attempts=4 successes=1 fail-lows=0 fail-highs=3 full-retries=3 success=25.0% first-try-nodes=332 retry-nodes=2180
+SEARCH RETURNED go_id=55
+Qg7 SENDING bestmove h8g7 go_id=55
+position startpos moves e2e3 g8f6 g1f3 b7b6 d2d4 d7d5 c2c4 e7e6 c4d5 f8b4 c1d2 b4d2 b1d2 f6d5 f1d3 b8d7 d1a4 e8g8 a4c6 d8e7 c6a8 c8a6 d3h7 g8h7 a8a7 d7b8 a2a3 e7e8 a7a8 c7c5 d4c5 e8b5 f3d4 b5b2 a1b1 b2c3 c5b6 f8c8 b1d1 c3a3 b6b7 c8c7 a8b8 d5e3 b8h8 h7h8 b7b8q h8h7 b8b1 g7g6 b1e4 e3d1 e4h4 h7g7 d4e6 f7e6 h4d4 g7h6 d4h4 h6g7 h4d4 g7f7 d4f4 f7e8 f4c7 d1b2 c7b8 e8d7 b8a7 d7c6 a7a8 c6d7 a8a7 d7c6 f2f3 a3d3 a7a8 c6c7 a8a7 c7c8 a7c5 c8d7 c5e5 g6g5 h2h4 d3d2 e1d2 b2c4 d2c3 c4e5 h4h5 a6b5 h5h6 e5f7 h6h7 b5e2 h1a1 g5g4 a1a7 d7e8 a7f7 e2d3 c3d3 e8f7 h7h8q g4f3 g2f3 f7g6 d3e4 g6g5 h8g7 g5h4
+isready
+go wtime 204520 btime 70785 movestogo 24
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qg4   ; +9999.99[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 0 request msec= 7580[0m
+[1;96mQg4[0m   [1;96m999999 =score,  [0m[1;93mVisited: 42 / 98% nodes total ---- 31 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 510,949   evals/sec= 0[0m
+[aspiration summary] attempts=0 successes=0 fail-lows=0 fail-highs=0 full-retries=0 success=0.0% first-try-nodes=0 retry-nodes=0
+SEARCH RETURNED go_id=56
+Qg4 SENDING bestmove g7g4 go_id=56
+isready
+ucinewgame
+position startpos
+position startpos moves e2e4
+isready
+go wtime 276083 btime 300000 movestogo 40
+game start=1
+
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf6   ; -0.05
+0 Deeping 2 ply of 4 msec=     0/0 Best: d5    ; +0.19
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nc6   ; -0.05
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nc6   ; +0.31
+0 Deeping 5 ply of 4 msec=     2/0 Best: e5    ; +0.05
+0 Deeping 6 ply of 4 msec=    15/12 Best: e5    ; +0.31
+0 Deeping 7 ply of 4 msec=    91/90 Best: e6    ; +0.09
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf6   ; -0.05
+0 Deeping 2 ply of 4 msec=     0/0 Best: d5    ; +0.19
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nc6   ; -0.05
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nc6   ; +0.31
+0 Deeping 5 ply of 4 msec=     2/0 Best: e5    ; +0.05
+0 Deeping 6 ply of 4 msec=    12/12 Best: e5    ; +0.31
+0 Deeping 7 ply of 4 msec=    76/72 Best: c6    ; +0.11
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf6   ; -0.05
+0 Deeping 2 ply of 4 msec=     0/0 Best: d5    ; +0.19
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nc6   ; -0.05
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nc6   ; +0.31
+0 Deeping 5 ply of 4 msec=     1/0 Best: e5    ; +0.05
+0 Deeping 6 ply of 4 msec=    12/6 Best: e5    ; +0.31
+0 Deeping 7 ply of 4 msec=    78/72 Best: e5    ; +0.14
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf6   ; -0.05
+0 Deeping 2 ply of 4 msec=     0/0 Best: d5    ; +0.19
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nc6   ; -0.05
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nc6   ; +0.31
+0 Deeping 5 ply of 4 msec=     1/0 Best: c5    ; +0.07
+0 Deeping 6 ply of 4 msec=    11/6 Best: c5    ; +0.35
+0 Deeping 7 ply of 4 msec=    67/66 Best: Nc6   ; +0.14
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf6   ; -0.05
+0 Deeping 2 ply of 4 msec=     0/0 Best: d5    ; +0.19
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf6   ; +0.05
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf6   ; +0.41
+0 Deeping 5 ply of 4 msec=     1/0 Best: c5    ; +0.07
+0 Deeping 6 ply of 4 msec=    11/6 Best: c5    ; +0.35
+0 Deeping 7 ply of 4 msec=    56/66 Best: d6    ; +0.20
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf6   ; -0.05
+0 Deeping 2 ply of 4 msec=     0/0 Best: d5    ; +0.19
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf6   ; +0.05
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf6   ; +0.41
+0 Deeping 5 ply of 4 msec=     1/0 Best: c5    ; +0.07
+0 Deeping 6 ply of 4 msec=    10/6 Best: c5    ; +0.35
+0 Deeping 7 ply of 4 msec=    52/60 Best: c5    ; +0.21
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf6   ; -0.05
+0 Deeping 2 ply of 4 msec=     0/0 Best: d5    ; +0.19
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf6   ; +0.05
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf6   ; +0.41
+0 Deeping 5 ply of 4 msec=     1/0 Best: Nf6   ; +0.12
+0 Deeping 6 ply of 4 msec=     7/6 Best: Nf6   ; +0.46
+0 Deeping 7 ply of 4 msec=    44/42 Best: Nf6   ; +0.26
+[pick_random_within_delta_rand] n_top=7 from candidates: 
+1  [0]  e6
+  [1]  c6
+  [2]  e5
+  [3]  Nc6
+  [4]  d6
+  [5]  c5
+  [6]  Nf6
+
+ end multisss -20  d6 out of=7 
+[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 254 request msec= 1069[0m
+[1;96md6[0m   [1;96m20 =score,  [0m[1;93mVisited: 583,443 / 1002% nodes total ---- 5,560,694 Evals[0m
+[1;92mTotal time: 0.25 sec[0m[1;92m   nodes/sec= 2,292,504   evals/sec= 3[0m
+[aspiration summary] attempts=42 successes=42 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=6691311 retry-nodes=0
+SEARCH RETURNED go_id=57
+d6 SENDING bestmove d7d6 go_id=57
+position startpos moves e2e4 d7d6 b1c3
+isready
+go wtime 271852 btime 297012 movestogo 39
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf6   ; +0.17
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf6   ; +0.53
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nf6   ; +0.17
+0 Deeping 4 ply of 5 msec=     0/0 Best: e5    ; +0.44
+0 Deeping 5 ply of 5 msec=     3/0 Best: Nf6   ; +0.20
+0 Deeping 6 ply of 5 msec=    18/18 Best: Nf6   ; +0.44
+0 Deeping 7 ply of 5 msec=   100/108 Best: e5    ; +0.19
+0 Deeping 8 ply of 5 msec=   712/600 Best: f5    ; +0.49
+0 Deeping 9 ply of 5 msec=  3132/4272 Best: f5    ; +0.22[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 8094 request msec= 7487[0m
+[1;96mf5[0m   [1;96m22 =score,  [0m[1;93mVisited: 17,916,801 / 88% nodes total ---- 14,952,931 Evals[0m
+[1;92mTotal time: 8.10 sec[0m[1;92m   nodes/sec= 2,213,326   evals/sec= 8[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=17916773 retry-nodes=0
+SEARCH RETURNED go_id=58
+f5 SENDING bestmove f7f5 go_id=58
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4
+isready
+go wtime 263781 btime 288893 movestogo 38
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf6   ; +0.43
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf6   ; +0.57
+0 Deeping 3 ply of 5 msec=     0/0 Best: fxe4  ; +0.21
+0 Deeping 4 ply of 5 msec=     1/0 Best: Nf6   ; +0.53
+0 Deeping 5 ply of 5 msec=     4/6 Best: fxe4  ; +0.17
+0 Deeping 6 ply of 5 msec=    14/24 Best: Nf6   ; +0.38
+0 Deeping 7 ply of 5 msec=    59/84 Best: fxe4  ; +0.22
+0 Deeping 8 ply of 5 msec=   200/354 Best: Nf6   ; +0.50
+0 Deeping 9 ply of 5 msec=  1711/1200 Best: Nf6   ; +0.33[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7525 request msec= 7487[0m
+[1;96mNf6[0m   [1;96m33 =score,  [0m[1;93mVisited: 15,739,530 / 86% nodes total ---- 12,600,530 Evals[0m
+[1;92mTotal time: 7.53 sec[0m[1;92m   nodes/sec= 2,091,583   evals/sec= 8[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=15739490 retry-nodes=0
+SEARCH RETURNED go_id=59
+Nf6 SENDING bestmove g8f6 go_id=59
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5
+isready
+go wtime 256858 btime 281348 movestogo 37
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bxf5  ; +0.17
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxf5  ; +0.26
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bxf5  ; +0.26
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bxf5  ; +0.26
+0 Deeping 5 ply of 5 msec=     0/0 Best: Bxf5  ; +0.26
+0 Deeping 6 ply of 5 msec=     0/0 Best: Bxf5  ; +0.26
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bxf5  ; +0.26
+0 Deeping 8 ply of 5 msec=     0/0 Best: Bxf5  ; +0.51
+0 Deeping 9 ply of 5 msec=  1706/0 Best: Bxf5  ; +0.33[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 9381 request msec= 7487[0m
+[1;96mBxf5[0m   [1;96m33 =score,  [0m[1;93mVisited: 19,455,825 / 87% nodes total ---- 15,787,773 Evals[0m
+[1;92mTotal time: 9.38 sec[0m[1;92m   nodes/sec= 2,073,894   evals/sec= 9[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=19455795 retry-nodes=0
+SEARCH RETURNED go_id=60
+Bxf5 SENDING bestmove c8f5 go_id=60
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5
+isready
+go wtime 246854 btime 271939 movestogo 36
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: e6    ; -0.11
+0 Deeping 2 ply of 5 msec=     0/0 Best: e6    ; +0.25
+0 Deeping 3 ply of 5 msec=     0/0 Best: e6    ; -0.11
+0 Deeping 4 ply of 5 msec=     2/0 Best: Nc6   ; +0.10
+0 Deeping 5 ply of 5 msec=     8/12 Best: Nd7   ; +0.11
+0 Deeping 6 ply of 5 msec=    59/48 Best: Nd7   ; +0.27
+0 Deeping 7 ply of 5 msec=   271/354 Best: Nd7   ; +0.23
+0 Deeping 8 ply of 5 msec=  1801/1626 Best: Nd7   ; +0.45[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5006 request msec= 7487[0m
+[1;96mNd7[0m   [1;96m45 =score,  [0m[1;93mVisited: 10,154,231 / 88% nodes total ---- 8,403,768 Evals[0m
+[1;92mTotal time: 5.01 sec[0m[1;92m   nodes/sec= 2,028,288   evals/sec= 5[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=10154137 retry-nodes=0
+SEARCH RETURNED go_id=61
+Nd7 SENDING bestmove b8d7 go_id=61
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3
+isready
+go wtime 222749 btime 266909 movestogo 35
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: e6    ; -0.02
+0 Deeping 2 ply of 5 msec=     0/0 Best: e5    ; +0.39
+0 Deeping 3 ply of 5 msec=     0/0 Best: e5    ; +0.39
+0 Deeping 4 ply of 5 msec=     0/0 Best: e5    ; +0.39
+0 Deeping 5 ply of 5 msec=     0/0 Best: e5    ; +0.39
+0 Deeping 6 ply of 5 msec=     0/0 Best: e5    ; +0.39
+0 Deeping 7 ply of 5 msec=     0/0 Best: e5    ; +0.35
+0 Deeping 8 ply of 5 msec=   758/0 Best: e5    ; +0.61
+0 Deeping 9 ply of 5 msec=  3017/4548 Best: c6    ; +0.65[33m
+Went to depth 0 elapsed min= 0.3 elapsed msec= 19254 request msec= 7487[0m
+[1;96mc6[0m   [1;96m65 =score,  [0m[1;93mVisited: 37,847,758 / 86% nodes total ---- 30,684,396 Evals[0m
+[1;92mTotal time: 19.25 sec[0m[1;92m   nodes/sec= 1,965,659   evals/sec= 19[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=37847643 retry-nodes=0
+SEARCH RETURNED go_id=62
+c6 SENDING bestmove c7c6 go_id=62
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4
+isready
+go wtime 215120 btime 247626 movestogo 34
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: e6    ; +0.12
+0 Deeping 2 ply of 5 msec=     0/0 Best: d5    ; +0.37
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qb6   ; +0.24
+0 Deeping 4 ply of 5 msec=     1/0 Best: Qb6   ; +0.44
+0 Deeping 5 ply of 5 msec=     3/6 Best: Qb6   ; +0.02
+0 Deeping 6 ply of 5 msec=    36/18 Best: Qb6   ; +0.30
+0 Deeping 7 ply of 5 msec=   152/216 Best: Qb6   ; +0.19
+0 Deeping 8 ply of 5 msec=   697/912 Best: Qb6   ; +0.50[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3407 request msec= 7487[0m
+[1;96mQb6[0m   [1;96m50 =score,  [0m[1;93mVisited: 6,437,302 / 86% nodes total ---- 5,223,318 Evals[0m
+[1;92mTotal time: 3.41 sec[0m[1;92m   nodes/sec= 1,889,355   evals/sec= 3[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=6437187 retry-nodes=0
+SEARCH RETURNED go_id=63
+Qb6 SENDING bestmove d8b6 go_id=63
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3
+isready
+go wtime 207713 btime 244190 movestogo 33
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bxd3  ; -1.32
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxd3  ; -1.32
+0 Deeping 3 ply of 5 msec=     0/0 score=79 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Qxb2  ; -0.79
+0 Deeping 4 ply of 5 msec=     2/0 Best: Qxb2  ; -0.75
+0 Deeping 5 ply of 5 msec=     8/12 Best: Qxb2  ; -0.60
+0 Deeping 6 ply of 5 msec=    29/48 Best: Qxb2  ; -0.60
+0 Deeping 7 ply of 5 msec=   104/174 Best: Qxb2  ; -0.75
+0 Deeping 8 ply of 5 msec=   435/624 Best: Qxb2  ; -0.54
+0 Deeping 9 ply of 5 msec=  1898/2610 Best: Qxb2  ; -0.72[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6972 request msec= 7487[0m
+[1;96mQxb2[0m   [1;96m-72 =score,  [0m[1;93mVisited: 13,556,817 / 87% nodes total ---- 11,248,438 Evals[0m
+[1;92mTotal time: 6.97 sec[0m[1;92m   nodes/sec= 1,944,375   evals/sec= 7[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=13555037 retry-nodes=1699
+SEARCH RETURNED go_id=64
+Qxb2 SENDING bestmove b6b2 go_id=64
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2
+isready
+go wtime 198708 btime 237191 movestogo 32
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: e6    ; -1.74
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxd3  ; -1.49
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bxd3  ; -1.94
+0 Deeping 4 ply of 5 msec=     1/0 Best: Bxd3  ; -1.57
+0 Deeping 5 ply of 5 msec=     7/6 Best: Bxd3  ; -1.40
+0 Deeping 6 ply of 5 msec=    27/42 Best: Bxd3  ; -0.96
+0 Deeping 7 ply of 5 msec=   101/162 Best: Bxd3  ; -1.19
+0 Deeping 8 ply of 5 msec=   387/606 Best: Bxd3  ; -1.04
+0 Deeping 9 ply of 5 msec=  1562/2322 Best: Bxd3  ; -1.04[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6641 request msec= 7487[0m
+[1;96mBxd3[0m   [1;96m-104 =score,  [0m[1;93mVisited: 14,011,450 / 89% nodes total ---- 12,251,875 Evals[0m
+[1;92mTotal time: 6.64 sec[0m[1;92m   nodes/sec= 2,109,663   evals/sec= 7[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=14011367 retry-nodes=0
+SEARCH RETURNED go_id=65
+Bxd3 SENDING bestmove f5d3 go_id=65
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3
+isready
+go wtime 190446 btime 230533 movestogo 31
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O-O ; -1.94
+0 Deeping 2 ply of 5 msec=     0/0 score=104 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: O-O-O ; -1.04
+0 Deeping 3 ply of 5 msec=     0/0 Best: O-O-O ; -1.04
+0 Deeping 4 ply of 5 msec=     0/0 Best: O-O-O ; -1.04
+0 Deeping 5 ply of 5 msec=     0/0 Best: O-O-O ; -1.04
+0 Deeping 6 ply of 5 msec=     0/0 Best: O-O-O ; -1.04
+0 Deeping 7 ply of 5 msec=     0/0 Best: O-O-O ; -1.04
+0 Deeping 8 ply of 5 msec=     0/0 Best: O-O-O ; -0.79
+0 Deeping 9 ply of 5 msec=  2534/0 Best: O-O-O ; -1.10[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 13733 request msec= 7487[0m
+[1;96mO-O-O[0m   [1;96m-110 =score,  [0m[1;93mVisited: 28,978,642 / 89% nodes total ---- 24,778,433 Evals[0m
+[1;92mTotal time: 13.73 sec[0m[1;92m   nodes/sec= 2,110,040   evals/sec= 14[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=28978583 retry-nodes=1
+SEARCH RETURNED go_id=66
+O-O-O SENDING bestmove e8c8 go_id=66
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1
+isready
+go wtime 170495 btime 216774 movestogo 30
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qa3   ; -1.40
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qa3   ; -0.96
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa3   ; -1.38
+0 Deeping 4 ply of 5 msec=     1/0 Best: Qa3   ; -1.04
+0 Deeping 5 ply of 5 msec=     3/6 Best: Qa3   ; -1.04
+0 Deeping 6 ply of 5 msec=    11/18 Best: Qa3   ; -1.17
+0 Deeping 7 ply of 5 msec=    41/66 Best: Qa3   ; -1.17
+0 Deeping 8 ply of 5 msec=   146/246 Best: Qa3   ; -0.95
+0 Deeping 9 ply of 5 msec=  1231/876 Best: Qa3   ; -0.94[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7660 request msec= 7487[0m
+[1;96mQa3[0m   [1;96m-94 =score,  [0m[1;93mVisited: 15,384,951 / 88% nodes total ---- 12,569,336 Evals[0m
+[1;92mTotal time: 7.66 sec[0m[1;92m   nodes/sec= 2,008,424   evals/sec= 8[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=15384820 retry-nodes=0
+SEARCH RETURNED go_id=67
+Qa3 SENDING bestmove b2a3 go_id=67
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5
+isready
+go wtime 151868 btime 209095 movestogo 29
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: e5    ; -1.87
+0 Deeping 2 ply of 5 msec=     0/0 Best: e5    ; -1.87
+0 Deeping 3 ply of 5 msec=     0/0 Best: e5    ; -1.87
+0 Deeping 4 ply of 5 msec=     1/0 Best: e5    ; -1.60
+0 Deeping 5 ply of 5 msec=    10/6 Best: e5    ; -1.76
+0 Deeping 6 ply of 5 msec=    38/60 Best: e5    ; -1.74
+0 Deeping 7 ply of 5 msec=   148/228 Best: e5    ; -1.29
+0 Deeping 8 ply of 5 msec=   652/888 Best: e5    ; -1.16[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2809 request msec= 7487[0m
+[1;96me5[0m   [1;96m-116 =score,  [0m[1;93mVisited: 5,377,094 / 85% nodes total ---- 4,291,942 Evals[0m
+[1;92mTotal time: 2.81 sec[0m[1;92m   nodes/sec= 1,914,002   evals/sec= 3[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=5376968 retry-nodes=0
+SEARCH RETURNED go_id=68
+e5 SENDING bestmove e7e5 go_id=68
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5
+isready
+go wtime 144906 btime 206257 movestogo 28
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxd5  ; -2.99
+0 Deeping 2 ply of 5 msec=     0/0 score=116 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nc5   ; -1.16
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nc5   ; -1.16
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nc5   ; -1.16
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nc5   ; -1.16
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nc5   ; -1.16
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nxd5  ; -1.09
+0 Deeping 8 ply of 5 msec=   732/0 Best: Nc5   ; -1.12
+0 Deeping 9 ply of 5 msec=  2328/4392 Best: Nc5   ; -1.12[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6695 request msec= 7487[0m
+[1;96mNc5[0m   [1;96m-112 =score,  [0m[1;93mVisited: 13,127,648 / 87% nodes total ---- 10,533,705 Evals[0m
+[1;92mTotal time: 6.70 sec[0m[1;92m   nodes/sec= 1,960,735   evals/sec= 7[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=13127535 retry-nodes=1
+SEARCH RETURNED go_id=69
+Nc5 SENDING bestmove d7c5 go_id=69
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6
+isready
+go wtime 135663 btime 199538 movestogo 27
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxd3  ; -2.42
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nxd3  ; -2.42
+0 Deeping 3 ply of 5 msec=     0/0 score=188 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: bxc6  ; -1.25
+0 Deeping 4 ply of 5 msec=     1/0 Best: bxc6  ; -1.11
+0 Deeping 5 ply of 5 msec=     3/6 Best: bxc6  ; -1.12
+0 Deeping 6 ply of 5 msec=     3/18 Best: bxc6  ; -1.12
+0 Deeping 7 ply of 5 msec=    10/18 Best: bxc6  ; -1.12
+0 Deeping 8 ply of 5 msec=    55/60 Best: bxc6  ; -1.12
+0 Deeping 9 ply of 5 msec=  1212/330 Best: bxc6  ; -1.12[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5865 request msec= 7487[0m
+[1;96mbxc6[0m   [1;96m-112 =score,  [0m[1;93mVisited: 11,078,432 / 87% nodes total ---- 9,050,286 Evals[0m
+[1;92mTotal time: 5.87 sec[0m[1;92m   nodes/sec= 1,888,889   evals/sec= 6[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=11077229 retry-nodes=1096
+SEARCH RETURNED go_id=70
+bxc6 SENDING bestmove b7c6 go_id=70
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1
+isready
+go wtime 114305 btime 193657 movestogo 26
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxd3  ; -2.41
+0 Deeping 2 ply of 5 msec=     0/0 score=112 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Rd7   ; -1.12
+0 Deeping 3 ply of 5 msec=     0/0 Best: Rd7   ; -1.12
+0 Deeping 4 ply of 5 msec=     0/0 Best: Rd7   ; -1.12
+0 Deeping 5 ply of 5 msec=     0/0 Best: Rd7   ; -1.12
+0 Deeping 6 ply of 5 msec=     0/0 Best: Rd7   ; -1.12
+0 Deeping 7 ply of 5 msec=     0/0 Best: Rd7   ; -1.12
+0 Deeping 8 ply of 5 msec=     0/0 Best: Rd7   ; -0.94
+0 Deeping 9 ply of 5 msec=  2268/0 Best: Rd7   ; -1.08[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 10467 request msec= 7487[0m
+[1;96mRd7[0m   [1;96m-108 =score,  [0m[1;93mVisited: 21,906,052 / 87% nodes total ---- 18,166,519 Evals[0m
+[1;92mTotal time: 10.47 sec[0m[1;92m   nodes/sec= 2,092,825   evals/sec= 10[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=21906008 retry-nodes=1
+SEARCH RETURNED go_id=71
+Rd7 SENDING bestmove d8d7 go_id=71
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4
+isready
+go wtime 107568 btime 183168 movestogo 25
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxd3  ; -1.97
+0 Deeping 2 ply of 5 msec=     0/0 score=108 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nxe4  ; -1.08
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nxe4  ; -1.08
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nxe4  ; -1.08
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nxe4  ; -1.08
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nxe4  ; -1.08
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nxe4  ; -1.08
+0 Deeping 8 ply of 5 msec=     0/0 Best: Nxe4  ; -0.90
+0 Deeping 9 ply of 5 msec=  1373/0 Best: Nxe4  ; -1.04[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5773 request msec= 7487[0m
+[1;96mNxe4[0m   [1;96m-104 =score,  [0m[1;93mVisited: 12,139,793 / 86% nodes total ---- 10,097,578 Evals[0m
+[1;92mTotal time: 5.77 sec[0m[1;92m   nodes/sec= 2,102,582   evals/sec= 6[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=12139721 retry-nodes=1
+SEARCH RETURNED go_id=72
+Nxe4 SENDING bestmove c5e4 go_id=72
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4
+isready
+go wtime 99680 btime 177365 movestogo 24
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rb7   ; -1.18
+0 Deeping 2 ply of 5 msec=     0/0 Best: Rb7   ; -1.04
+0 Deeping 3 ply of 5 msec=     0/0 Best: Rb7   ; -1.04
+0 Deeping 4 ply of 5 msec=     0/0 Best: Rb7   ; -1.04
+0 Deeping 5 ply of 5 msec=     0/0 Best: Rb7   ; -1.04
+0 Deeping 6 ply of 5 msec=     0/0 Best: Rb7   ; -1.04
+0 Deeping 7 ply of 5 msec=     0/0 Best: Rb7   ; -1.04
+0 Deeping 8 ply of 5 msec=     0/0 Best: Rb7   ; -0.76
+0 Deeping 9 ply of 5 msec=  1729/0 Best: Rb7   ; -0.81[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7005 request msec= 7487[0m
+[1;96mRb7[0m   [1;96m-81 =score,  [0m[1;93mVisited: 15,044,953 / 89% nodes total ---- 12,561,639 Evals[0m
+[1;92mTotal time: 7.01 sec[0m[1;92m   nodes/sec= 2,147,522   evals/sec= 7[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=15044886 retry-nodes=0
+SEARCH RETURNED go_id=73
+Rb7 SENDING bestmove d7b7 go_id=73
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7
+isready
+go wtime 89811 btime 170340 movestogo 23
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kxb7  ; -1.78
+0 Deeping 2 ply of 5 msec=     0/0 Best: Kxb7  ; -1.42
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kxb7  ; -1.42
+0 Deeping 4 ply of 5 msec=     1/0 Best: Kxb7  ; -1.26
+0 Deeping 5 ply of 5 msec=     4/6 Best: Kxb7  ; -1.61
+0 Deeping 6 ply of 5 msec=    22/24 Best: Kxb7  ; -1.22
+0 Deeping 7 ply of 5 msec=    67/132 Best: Kxb7  ; -1.36
+0 Deeping 8 ply of 5 msec=   287/402 Best: Kxb7  ; -1.08
+0 Deeping 9 ply of 5 msec=  1221/1722 Best: Kxb7  ; -1.15[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5403 request msec= 7487[0m
+[1;96mKxb7[0m   [1;96m-115 =score,  [0m[1;93mVisited: 11,143,998 / 87% nodes total ---- 8,971,695 Evals[0m
+[1;92mTotal time: 5.40 sec[0m[1;92m   nodes/sec= 2,062,327   evals/sec= 5[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=11143968 retry-nodes=0
+SEARCH RETURNED go_id=74
+Kxb7 SENDING bestmove c8b7 go_id=74
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2
+isready
+go wtime 81500 btime 164912 movestogo 22
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kc7   ; -1.92
+0 Deeping 2 ply of 5 msec=     0/0 score=115 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kc8   ; -1.15
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kc8   ; -1.15
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kc8   ; -1.15
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kc8   ; -1.15
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kc8   ; -1.15
+0 Deeping 7 ply of 5 msec=     0/0 Best: Kc8   ; -1.15
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qa5   ; -0.97
+0 Deeping 9 ply of 5 msec=  2699/0 Best: Qc5   ; -0.98[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 8810 request msec= 7487[0m
+[1;96mQc5[0m   [1;96m-98 =score,  [0m[1;93mVisited: 19,079,450 / 87% nodes total ---- 15,171,493 Evals[0m
+[1;92mTotal time: 8.81 sec[0m[1;92m   nodes/sec= 2,165,417   evals/sec= 9[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=19079390 retry-nodes=1
+SEARCH RETURNED go_id=75
+Qc5 SENDING bestmove a3c5 go_id=75
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1
+isready
+go wtime 72842 btime 156084 movestogo 21
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kc7   ; -1.36
+0 Deeping 2 ply of 5 msec=     0/0 Best: Kc8   ; -0.98
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kc8   ; -0.98
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kc8   ; -0.98
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kc8   ; -0.98
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kc8   ; -0.98
+0 Deeping 7 ply of 5 msec=     0/0 Best: Kc8   ; -0.98
+0 Deeping 8 ply of 5 msec=     0/0 Best: Kc8   ; -0.65
+0 Deeping 9 ply of 5 msec=   784/0 Best: Kc8   ; -0.65[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4557 request msec= 7487[0m
+[1;96mKc8[0m   [1;96m-65 =score,  [0m[1;93mVisited: 9,489,755 / 85% nodes total ---- 7,123,456 Evals[0m
+[1;92mTotal time: 4.56 sec[0m[1;92m   nodes/sec= 2,082,358   evals/sec= 5[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=9489704 retry-nodes=0
+SEARCH RETURNED go_id=76
+Kc8 SENDING bestmove b7c8 go_id=76
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6
+isready
+go wtime 63636 btime 151507 movestogo 20
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kd7   ; -1.64
+0 Deeping 2 ply of 5 msec=     0/0 score=65 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kd8   ; -0.65
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kd8   ; -0.65
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kd8   ; -0.65
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kd8   ; -0.65
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kd8   ; -0.65
+0 Deeping 7 ply of 5 msec=     0/0 Best: Kd8   ; -0.65
+0 Deeping 8 ply of 5 msec=     0/0 score=15 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: Kd7   ; +0.30
+0 Deeping 9 ply of 5 msec=  2281/0 score=-80 result=fail-low retry=yes
+1 Deeping 9 ply of 5 msec=  2281/0 Best: Kd8   ; +0.38[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 10382 request msec= 7487[0m
+[1;96mKd8[0m   [1;96m38 =score,  [0m[1;93mVisited: 21,531,338 / 86% nodes total ---- 15,539,700 Evals[0m
+[1;92mTotal time: 10.38 sec[0m[1;92m   nodes/sec= 2,073,877   evals/sec= 10[0m
+[aspiration summary] attempts=8 successes=5 fail-lows=3 fail-highs=0 full-retries=3 success=62.5% first-try-nodes=712619 retry-nodes=20818711
+SEARCH RETURNED go_id=77
+Kd8 SENDING bestmove c8d8 go_id=77
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8
+isready
+go wtime 49604 btime 141109 movestogo 19
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ke7   ; -1.44
+0 Deeping 2 ply of 5 msec=     0/0 score=-38 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ke7   ; +0.38
+0 Deeping 3 ply of 5 msec=     0/0 Best: Ke7   ; +0.38
+0 Deeping 4 ply of 5 msec=     0/0 Best: Ke7   ; +0.38
+0 Deeping 5 ply of 5 msec=     0/0 Best: Ke7   ; +0.38
+0 Deeping 6 ply of 5 msec=     0/0 Best: Ke7   ; +0.38
+0 Deeping 7 ply of 5 msec=     0/0 Best: Ke7   ; +0.38
+0 Deeping 8 ply of 5 msec=     0/0 score=-88 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: Ke7   ; +3.69
+0 Deeping 9 ply of 5 msec=  1194/0 Best: Ke7   ; +3.69[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4114 request msec= 7487[0m
+[1;96mKe7[0m   [1;96m369 =score,  [0m[1;93mVisited: 8,546,185 / 86% nodes total ---- 5,904,747 Evals[0m
+[1;92mTotal time: 4.11 sec[0m[1;92m   nodes/sec= 2,077,092   evals/sec= 4[0m
+[aspiration summary] attempts=8 successes=6 fail-lows=2 fail-highs=0 full-retries=2 success=75.0% first-try-nodes=5936711 retry-nodes=2609460
+SEARCH RETURNED go_id=78
+Ke7 SENDING bestmove d8e7 go_id=78
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8
+isready
+go wtime 38292 btime 136978 movestogo 18
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kf7   ; -1.18
+0 Deeping 2 ply of 5 msec=     0/0 score=-369 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: d5    ; +3.69
+0 Deeping 3 ply of 5 msec=     0/0 Best: d5    ; +3.69
+0 Deeping 4 ply of 5 msec=     0/0 Best: d5    ; +3.69
+0 Deeping 5 ply of 5 msec=     0/0 Best: d5    ; +3.69
+0 Deeping 6 ply of 5 msec=     0/0 Best: d5    ; +3.69
+0 Deeping 7 ply of 5 msec=     0/0 Best: d5    ; +3.69
+0 Deeping 8 ply of 5 msec=     0/0 Best: Kf7   ; +3.96
+0 Deeping 9 ply of 5 msec=  1065/0 Best: Kf7   ; +3.90
+0 Deeping 10 ply of 5 msec=  3242/6390 Best: Kf7   ; +3.90[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 13956 request msec= 7487[0m
+[1;96mKf7[0m   [1;96m390 =score,  [0m[1;93mVisited: 30,696,919 / 90% nodes total ---- 23,535,808 Evals[0m
+[1;92mTotal time: 13.96 sec[0m[1;92m   nodes/sec= 2,199,396   evals/sec= 14[0m
+[aspiration summary] attempts=9 successes=8 fail-lows=1 fail-highs=0 full-retries=1 success=88.9% first-try-nodes=30696794 retry-nodes=1
+SEARCH RETURNED go_id=79
+Kf7 SENDING bestmove e7f7 go_id=79
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7
+isready
+go wtime 34655 btime 122997 movestogo 17
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kg8   ; -0.81
+0 Deeping 2 ply of 5 msec=     0/0 score=-390 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Be7   ; +3.90
+0 Deeping 3 ply of 5 msec=     0/0 Best: Be7   ; +3.90
+0 Deeping 4 ply of 5 msec=     0/0 Best: Be7   ; +3.90
+0 Deeping 5 ply of 5 msec=     0/0 Best: Be7   ; +3.90
+0 Deeping 6 ply of 5 msec=     0/0 Best: Be7   ; +3.90
+0 Deeping 7 ply of 5 msec=     0/0 Best: Be7   ; +3.90
+0 Deeping 8 ply of 5 msec=     0/0 Best: Be7   ; +3.90
+0 Deeping 9 ply of 5 msec=     0/0 Best: Be7   ; +3.66
+0 Deeping 10 ply of 5 msec=  1510/0 Best: Be7   ; +3.76[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5419 request msec= 7487[0m
+[1;96mBe7[0m   [1;96m376 =score,  [0m[1;93mVisited: 11,498,714 / 88% nodes total ---- 8,844,793 Evals[0m
+[1;92mTotal time: 5.42 sec[0m[1;92m   nodes/sec= 2,121,561   evals/sec= 5[0m
+[aspiration summary] attempts=9 successes=8 fail-lows=1 fail-highs=0 full-retries=1 success=88.9% first-try-nodes=11498491 retry-nodes=1
+SEARCH RETURNED go_id=80
+Be7 SENDING bestmove f8e7 go_id=80
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8
+isready
+go wtime 29087 btime 117556 movestogo 16
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: a6    ; +4.19
+0 Deeping 2 ply of 5 msec=     0/0 Best: d5    ; +3.76
+0 Deeping 3 ply of 5 msec=     0/0 Best: d5    ; +3.76
+0 Deeping 4 ply of 5 msec=     0/0 Best: d5    ; +3.76
+0 Deeping 5 ply of 5 msec=     0/0 Best: d5    ; +3.76
+0 Deeping 6 ply of 5 msec=     0/0 Best: d5    ; +3.76
+0 Deeping 7 ply of 5 msec=     0/0 Best: d5    ; +3.76
+0 Deeping 8 ply of 5 msec=     0/0 Best: d5    ; +3.76
+0 Deeping 9 ply of 5 msec=     0/0 Best: d5    ; +4.17[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 9241 request msec= 7487[0m
+[1;96md5[0m   [1;96m417 =score,  [0m[1;93mVisited: 19,418,024 / 88% nodes total ---- 13,362,733 Evals[0m
+[1;92mTotal time: 9.24 sec[0m[1;92m   nodes/sec= 2,101,083   evals/sec= 9[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=19417343 retry-nodes=0
+SEARCH RETURNED go_id=81
+d5 SENDING bestmove d6d5 go_id=81
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8
+isready
+go wtime 23749 btime 108285 movestogo 15
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: d4    ; +3.50
+0 Deeping 2 ply of 5 msec=     0/0 score=-417 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qd6   ; +4.17
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qd6   ; +4.17
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qd6   ; +4.17
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qd6   ; +4.17
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qd6   ; +4.17
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qd6   ; +4.17
+0 Deeping 8 ply of 5 msec=     0/0 score=-467 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: dxe4  ; +4.83[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3510 request msec= 7487[0m
+[1;96mdxe4[0m   [1;96m483 =score,  [0m[1;93mVisited: 7,922,215 / 93% nodes total ---- 6,327,489 Evals[0m
+[1;92mTotal time: 3.51 sec[0m[1;92m   nodes/sec= 2,256,864   evals/sec= 4[0m
+[aspiration summary] attempts=7 successes=5 fail-lows=2 fail-highs=0 full-retries=2 success=71.4% first-try-nodes=3447539 retry-nodes=4474563
+SEARCH RETURNED go_id=82
+dxe4 SENDING bestmove d5e4 go_id=82
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7
+isready
+go wtime 17411 btime 104753 movestogo 14
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: a6    ; +4.02
+0 Deeping 2 ply of 5 msec=     0/0 score=-483 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ne8   ; +4.83
+0 Deeping 3 ply of 5 msec=     0/0 Best: Ne8   ; +4.83
+0 Deeping 4 ply of 5 msec=     0/0 Best: Ne8   ; +4.83
+0 Deeping 5 ply of 5 msec=     0/0 Best: Ne8   ; +4.83
+0 Deeping 6 ply of 5 msec=     0/0 Best: Ne8   ; +4.83
+0 Deeping 7 ply of 5 msec=     0/0 score=-533 result=fail-low retry=yes
+1 Deeping 7 ply of 5 msec=     0/0 Best: Ke6   ; +5.37
+0 Deeping 8 ply of 5 msec=   704/0 Best: Ke6   ; +5.40
+0 Deeping 9 ply of 5 msec=  1633/4224 Best: a6    ; +5.56[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 9800 request msec= 7487[0m
+[1;96ma6[0m   [1;96m556 =score,  [0m[1;93mVisited: 20,722,631 / 84% nodes total ---- 13,888,190 Evals[0m
+[1;92mTotal time: 9.80 sec[0m[1;92m   nodes/sec= 2,114,468   evals/sec= 10[0m
+[aspiration summary] attempts=8 successes=6 fail-lows=2 fail-highs=0 full-retries=2 success=75.0% first-try-nodes=19640493 retry-nodes=1081846
+SEARCH RETURNED go_id=83
+a6 SENDING bestmove a7a6 go_id=83
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4
+isready
+go wtime 13939 btime 94923 movestogo 13
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxg4  ; +3.28
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nxg4  ; +3.28
+0 Deeping 3 ply of 5 msec=     0/0 score=-385 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: h6    ; +4.20
+0 Deeping 4 ply of 5 msec=     4/0 Best: h6    ; +4.23
+0 Deeping 5 ply of 5 msec=     7/24 score=-473 result=fail-low retry=yes
+1 Deeping 5 ply of 5 msec=     7/24 Best: Ng8   ; +4.91
+0 Deeping 6 ply of 5 msec=    39/42 Best: Kf8   ; +4.89
+0 Deeping 7 ply of 5 msec=   180/234 Best: Ng8   ; +4.96
+0 Deeping 8 ply of 5 msec=   325/1080 Best: Ng8   ; +5.06
+0 Deeping 9 ply of 5 msec=   976/1950 Best: Ng8   ; +4.96[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3506 request msec= 7487[0m
+[1;96mNg8[0m   [1;96m496 =score,  [0m[1;93mVisited: 7,353,961 / 85% nodes total ---- 5,034,513 Evals[0m
+[1;92mTotal time: 3.51 sec[0m[1;92m   nodes/sec= 2,097,319   evals/sec= 4[0m
+[aspiration summary] attempts=8 successes=6 fail-lows=2 fail-highs=0 full-retries=2 success=75.0% first-try-nodes=7313056 retry-nodes=40792
+SEARCH RETURNED go_id=84
+Ng8 SENDING bestmove f6g8 go_id=84
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8
+isready
+go wtime 11906 btime 91395 movestogo 12
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf6   ; +3.82
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf6   ; +4.01
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qd4   ; +3.95
+0 Deeping 4 ply of 5 msec=     2/0 Best: Qd4   ; +4.14
+0 Deeping 5 ply of 5 msec=     9/12 Best: Qd4   ; +4.11
+0 Deeping 6 ply of 5 msec=    24/54 Best: Qd4   ; +4.01
+0 Deeping 7 ply of 5 msec=   103/144 Best: Qd4   ; +4.02
+0 Deeping 8 ply of 5 msec=   278/618 Best: Qd4   ; +4.14
+0 Deeping 9 ply of 5 msec=   987/1668 score=-464 result=fail-low retry=yes
+1 Deeping 9 ply of 5 msec=   987/1668 Best: e3    ; +4.74[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5481 request msec= 7487[0m
+[1;96me3[0m   [1;96m474 =score,  [0m[1;93mVisited: 11,603,966 / 86% nodes total ---- 7,985,602 Evals[0m
+[1;92mTotal time: 5.48 sec[0m[1;92m   nodes/sec= 2,117,019   evals/sec= 5[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=4481351 retry-nodes=7122358
+SEARCH RETURNED go_id=85
+e3 SENDING bestmove e4e3 go_id=85
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5
+isready
+go wtime 8214 btime 85887 movestogo 11
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf6   ; +4.53
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf6   ; +4.53
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nf6   ; +4.25
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nf6   ; +4.53
+0 Deeping 5 ply of 5 msec=     2/0 Best: Nf6   ; +4.47
+0 Deeping 6 ply of 5 msec=    13/12 Best: Nf6   ; +4.53
+0 Deeping 7 ply of 5 msec=    30/78 Best: Nf6   ; +4.44
+0 Deeping 8 ply of 5 msec=    79/180 Best: Nf6   ; +4.45
+0 Deeping 9 ply of 5 msec=   405/474 score=-495 result=fail-low retry=yes
+1 Deeping 9 ply of 5 msec=   405/474 Best: Nf6   ; +5.70
+0 Deeping 10 ply of 5 msec=  2625/2430 Best: Nf6   ; +6.12[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6136 request msec= 7487[0m
+[1;96mNf6[0m   [1;96m612 =score,  [0m[1;93mVisited: 13,356,162 / 89% nodes total ---- 9,976,810 Evals[0m
+[1;92mTotal time: 6.14 sec[0m[1;92m   nodes/sec= 2,176,623   evals/sec= 6[0m
+[aspiration summary] attempts=9 successes=8 fail-lows=1 fail-highs=0 full-retries=1 success=88.9% first-try-nodes=9235827 retry-nodes=4120275
+SEARCH RETURNED go_id=86
+Nf6 SENDING bestmove g8f6 go_id=86
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3
+isready
+go wtime 6483 btime 79727 movestogo 10
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxc3  ; +1.42
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxc3  ; +1.62
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qxc3  ; +1.24
+0 Deeping 4 ply of 5 msec=     1/0 Best: Qxc3  ; +1.27
+0 Deeping 5 ply of 5 msec=     5/6 score=-178 result=fail-low retry=yes
+1 Deeping 5 ply of 5 msec=     5/6 Best: Qxc3  ; +3.16
+0 Deeping 6 ply of 5 msec=    28/30 Best: Qxc3  ; +3.16
+0 Deeping 7 ply of 5 msec=    57/168 Best: Qxc3  ; +3.51
+0 Deeping 8 ply of 5 msec=   257/342 Best: Qxc3  ; +3.51
+0 Deeping 9 ply of 5 msec=   604/1542 score=-401 result=fail-low retry=yes
+1 Deeping 9 ply of 5 msec=   604/1542 Best: Qxc3  ; +4.47
+0 Deeping 10 ply of 5 msec=  3280/3624 score=-497 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=  3280/3624 Best: Qxc3  ; +5.01[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 13251 request msec= 7487[0m
+[1;96mQxc3[0m   [1;96m501 =score,  [0m[1;93mVisited: 29,864,811 / 91% nodes total ---- 22,594,978 Evals[0m
+[1;92mTotal time: 13.25 sec[0m[1;92m   nodes/sec= 2,253,759   evals/sec= 13[0m
+[aspiration summary] attempts=9 successes=6 fail-lows=3 fail-highs=0 full-retries=3 success=66.7% first-try-nodes=3584105 retry-nodes=26280646
+SEARCH RETURNED go_id=87
+Qxc3 SENDING bestmove c5c3 go_id=87
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5
+isready
+go wtime 4571 btime 66445 movestogo 9
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qe1   ; +1.08
+0 Deeping 2 ply of 5 msec=     0/0 score=-501 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 8 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 9 ply of 5 msec=     0/0 Best: Qa3   ; +5.01
+0 Deeping 10 ply of 5 msec=  2514/0 score=-551 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=  2514/0 Best: Qa3   ; +5.63[33m
+Went to depth 0 elapsed min= 0.3 elapsed msec= 16473 request msec= 7487[0m
+[1;96mQa3[0m   [1;96m563 =score,  [0m[1;93mVisited: 37,869,344 / 92% nodes total ---- 28,555,286 Evals[0m
+[1;92mTotal time: 16.47 sec[0m[1;92m   nodes/sec= 2,298,767   evals/sec= 16[0m
+[aspiration summary] attempts=9 successes=7 fail-lows=2 fail-highs=0 full-retries=2 success=77.8% first-try-nodes=6120568 retry-nodes=31747878
+SEARCH RETURNED go_id=88
+Qa3 SENDING bestmove c3a3 go_id=88
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6
+isready
+go wtime 2839 btime 49951 movestogo 8
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: gxf6  ; +4.32
+0 Deeping 2 ply of 5 msec=     0/0 score=-563 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: gxf6  ; +5.63
+0 Deeping 3 ply of 5 msec=     0/0 Best: gxf6  ; +5.63
+0 Deeping 4 ply of 5 msec=     0/0 Best: gxf6  ; +5.63
+0 Deeping 5 ply of 5 msec=     0/0 Best: gxf6  ; +5.63
+0 Deeping 6 ply of 5 msec=     0/0 Best: gxf6  ; +5.63
+0 Deeping 7 ply of 5 msec=     0/0 Best: gxf6  ; +5.63
+0 Deeping 8 ply of 5 msec=     0/0 Best: gxf6  ; +5.63
+0 Deeping 9 ply of 5 msec=     0/0 Best: gxf6  ; +5.91[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3094 request msec= 7487[0m
+[1;96mgxf6[0m   [1;96m591 =score,  [0m[1;93mVisited: 7,142,641 / 86% nodes total ---- 4,476,247 Evals[0m
+[1;92mTotal time: 3.09 sec[0m[1;92m   nodes/sec= 2,308,327   evals/sec= 3[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=7142410 retry-nodes=1
+SEARCH RETURNED go_id=89
+gxf6 SENDING bestmove g7f6 go_id=89
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7
+isready
+go wtime 1673 btime 46826 movestogo 7
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ke6   ; +4.32
+0 Deeping 2 ply of 5 msec=     0/0 score=-591 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ke6   ; +5.91
+0 Deeping 3 ply of 5 msec=     0/0 Best: Ke6   ; +5.91
+0 Deeping 4 ply of 5 msec=     0/0 Best: Ke6   ; +5.91
+0 Deeping 5 ply of 5 msec=     0/0 Best: Ke6   ; +5.91
+0 Deeping 6 ply of 5 msec=     0/0 Best: Ke6   ; +5.91
+0 Deeping 7 ply of 5 msec=     0/0 Best: Ke6   ; +5.91
+0 Deeping 8 ply of 5 msec=     0/0 score=-641 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: Ke6   ; +7.55
+0 Deeping 9 ply of 5 msec=   996/0 Best: Ke6   ; +7.41[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3077 request msec= 7487[0m
+[1;96mKe6[0m   [1;96m741 =score,  [0m[1;93mVisited: 7,162,246 / 85% nodes total ---- 4,791,186 Evals[0m
+[1;92mTotal time: 3.08 sec[0m[1;92m   nodes/sec= 2,327,107   evals/sec= 3[0m
+[aspiration summary] attempts=8 successes=6 fail-lows=2 fail-highs=0 full-retries=2 success=75.0% first-try-nodes=4745067 retry-nodes=2417167
+SEARCH RETURNED go_id=90
+Ke6 SENDING bestmove f7e6 go_id=90
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3
+isready
+go wtime 922 btime 43731 movestogo 6
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f5    ; +4.20
+0 Deeping 2 ply of 5 msec=     0/0 score=-741 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: f5    ; +7.41
+0 Deeping 3 ply of 5 msec=     0/0 Best: f5    ; +7.41
+0 Deeping 4 ply of 5 msec=     0/0 Best: f5    ; +7.41
+0 Deeping 5 ply of 5 msec=     0/0 Best: f5    ; +7.41
+0 Deeping 6 ply of 5 msec=     0/0 Best: f5    ; +7.41
+0 Deeping 7 ply of 5 msec=     0/0 Best: f5    ; +7.41
+0 Deeping 8 ply of 5 msec=     0/0 Best: f5    ; +7.83
+0 Deeping 9 ply of 5 msec=   440/0 Best: f5    ; +8.26
+0 Deeping 10 ply of 5 msec=  1609/2640 score=-876 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=  1609/2640 Best: e4    ; +9.50[33m
+Went to depth 0 elapsed min= 0.4 elapsed msec= 21758 request msec= 7487[0m
+[1;96me4[0m   [1;96m950 =score,  [0m[1;93mVisited: 52,917,621 / 93% nodes total ---- 39,752,786 Evals[0m
+[1;92mTotal time: 21.76 sec[0m[1;92m   nodes/sec= 2,432,016   evals/sec= 22[0m
+[aspiration summary] attempts=9 successes=7 fail-lows=2 fail-highs=0 full-retries=2 success=77.8% first-try-nodes=3901004 retry-nodes=49016512
+SEARCH RETURNED go_id=91
+e4 SENDING bestmove e5e4 go_id=91
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4
+isready
+go wtime 895 btime 21948 movestogo 5
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kf7   ; +5.63
+0 Deeping 2 ply of 5 msec=     0/0 score=-929 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kf7   ; +9.29
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kf7   ; +9.29
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kf7   ; +9.29
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kf7   ; +9.29
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kf7   ; +9.29
+0 Deeping 7 ply of 5 msec=     0/0 Best: Kf7   ; +9.29
+0 Deeping 8 ply of 5 msec=     0/0 Best: Kf7   ; +9.29
+0 Deeping 9 ply of 5 msec=     0/0 Best: Kf7   ; +9.28[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2434 request msec= 7487[0m
+[1;96mKf7[0m   [1;96m928 =score,  [0m[1;93mVisited: 5,587,448 / 81% nodes total ---- 3,395,816 Evals[0m
+[1;92mTotal time: 2.44 sec[0m[1;92m   nodes/sec= 2,294,650   evals/sec= 2[0m
+[aspiration summary] attempts=8 successes=7 fail-lows=1 fail-highs=0 full-retries=1 success=87.5% first-try-nodes=5587407 retry-nodes=1
+SEARCH RETURNED go_id=92
+Kf7 SENDING bestmove e6f7 go_id=92
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4
+isready
+go wtime 825 btime 19484 movestogo 4
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kf8   ; +5.63
+0 Deeping 2 ply of 5 msec=     0/0 score=-928 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kg6   ; +9.28
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kg6   ; +9.28
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kg6   ; +9.28
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kg6   ; +9.28
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kg6   ; +9.28
+0 Deeping 7 ply of 5 msec=     0/0 Best: Kg6   ; +9.28
+0 Deeping 8 ply of 5 msec=     0/0 score=-978 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: Kg6   ; +10.46
+0 Deeping 9 ply of 5 msec=  1197/0 Best: Kg6   ; +10.46[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3203 request msec= 7487[0m
+[1;96mKg6[0m   [1;96m1046 =score,  [0m[1;93mVisited: 7,426,388 / 84% nodes total ---- 5,145,196 Evals[0m
+[1;92mTotal time: 3.20 sec[0m[1;92m   nodes/sec= 2,318,038   evals/sec= 3[0m
+[aspiration summary] attempts=8 successes=6 fail-lows=2 fail-highs=0 full-retries=2 success=75.0% first-try-nodes=5650971 retry-nodes=1775357
+SEARCH RETURNED go_id=93
+Kg6 SENDING bestmove f7g6 go_id=93
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4
+isready
+go wtime 752 btime 16254 movestogo 3
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kf7   ; +5.63
+0 Deeping 2 ply of 5 msec=     0/0 Best: Kf7   ; +5.91
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kf7   ; +5.91
+0 Deeping 4 ply of 5 msec=     0/0 score=-644 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Kf7   ; +6.44
+0 Deeping 5 ply of 5 msec=     3/0 score=-705 result=fail-low retry=yes
+1 Deeping 5 ply of 5 msec=     3/0 Best: Kf7   ; +7.42
+0 Deeping 6 ply of 5 msec=    25/18 score=-802 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=    25/18 Best: Kf7   ; +10.46
+0 Deeping 7 ply of 5 msec=    37/150 Best: Kf7   ; +10.46
+0 Deeping 8 ply of 5 msec=    42/222 Best: Kf7   ; +10.46
+0 Deeping 9 ply of 5 msec=    56/252 Best: Kf7   ; +10.46
+0 Deeping 10 ply of 5 msec=   109/336 score=-1096 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=   109/336
+hard abort q=1
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 109 request msec= 7487[0m
+[1;96mKf7[0m   [1;96m1046 =score,  [0m[1;93mVisited: 22,030,000 / 93% nodes total ---- 17,379,277 Evals[0m
+[1;92mTotal time: 8.75 sec[0m[1;92m   nodes/sec= 2,516,741   evals/sec= 9[0m
+[aspiration summary] attempts=9 successes=5 fail-lows=4 fail-highs=0 full-retries=4 success=55.6% first-try-nodes=3933651 retry-nodes=56659
+SEARCH RETURNED go_id=94
+Kf7 SENDING bestmove g6f7 go_id=94
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4
+isready
+go wtime 710 btime 7471 movestogo 2
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kf8   ; +5.63
+0 Deeping 2 ply of 5 msec=     0/0 score=-644 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kg6   ; +6.44
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kg6   ; +6.44
+0 Deeping 4 ply of 5 msec=     0/0 score=-1046 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Kg6   ; +10.46
+0 Deeping 5 ply of 5 msec=     2/0 Best: Kg6   ; +10.46
+0 Deeping 6 ply of 5 msec=     2/12 Best: Kg6   ; +10.46
+0 Deeping 7 ply of 5 msec=     3/12 Best: Kg6   ; +10.46
+0 Deeping 8 ply of 5 msec=     5/18 Best: Kg6   ; +10.46
+0 Deeping 9 ply of 5 msec=    41/30 Best: Kg6   ; +10.46
+0 Deeping 10 ply of 5 msec=    80/246 score=-1096 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=    80/246
+hard abort q=1
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 80 request msec= 7487[0m
+[1;96mKg6[0m   [1;96m1046 =score,  [0m[1;93mVisited: 6,280,000 / 93% nodes total ---- 4,896,799 Evals[0m
+[1;92mTotal time: 2.49 sec[0m[1;92m   nodes/sec= 2,520,240   evals/sec= 2[0m
+[aspiration summary] attempts=9 successes=6 fail-lows=3 fail-highs=0 full-retries=3 success=66.7% first-try-nodes=3005579 retry-nodes=551
+SEARCH RETURNED go_id=95
+Kg6 SENDING bestmove f7g6 go_id=95
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6
+isready
+go wtime 300659 btime 4960 movestogo 1
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd6   ; +5.91
+0 Deeping 2 ply of 5 msec=     0/0 score=-1097 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: c5    ; +9.26
+0 Deeping 3 ply of 5 msec=     0/0 score=-1097 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Qa5   ; +9.27
+0 Deeping 4 ply of 5 msec=     0/0 score=-1097 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Qa5   ; +9.55
+0 Deeping 5 ply of 5 msec=     2/0 score=-1097 result=fail-low retry=yes
+1 Deeping 5 ply of 5 msec=     2/0 Best: Qa5   ; +9.35
+0 Deeping 6 ply of 5 msec=     9/12 score=-1097 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=     9/12 Best: Qa4   ; +10.46
+0 Deeping 7 ply of 5 msec=    58/54 score=-1097 result=fail-low retry=yes
+1 Deeping 7 ply of 5 msec=    58/54 Best: Qa4   ; +11.29
+0 Deeping 8 ply of 5 msec=   171/348 score=-1180 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=   171/348 Best: Qd6   ; +13.28[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2033 request msec= 7487[0m
+[1;96mQd6[0m   [1;96m1328 =score,  [0m[1;93mVisited: 5,105,184 / 93% nodes total ---- 4,067,406 Evals[0m
+[1;92mTotal time: 2.03 sec[0m[1;92m   nodes/sec= 2,510,814   evals/sec= 2[0m
+[aspiration summary] attempts=7 successes=0 fail-lows=7 fail-highs=0 full-retries=7 success=0.0% first-try-nodes=10172 retry-nodes=5094927
+SEARCH RETURNED go_id=96
+Qd6 SENDING bestmove a3d6 go_id=96
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8
+isready
+go wtime 290796 btime 302908 movestogo 40
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kf5   ; +5.69
+0 Deeping 2 ply of 5 msec=     0/0 score=-1328 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kf5   ; +13.28
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kf5   ; +13.28
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kf5   ; +13.28
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kf5   ; +13.28
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kf5   ; +13.28
+0 Deeping 7 ply of 5 msec=     0/0 Best: Kf5   ; +13.28
+0 Deeping 8 ply of 5 msec=    77/0 Best: Kf5   ; +13.64
+0 Deeping 9 ply of 5 msec=   660/462 Best: Kf5   ; +13.64
+0 Deeping 10 ply of 5 msec=  2100/3960 Best: Kf5   ; +13.81[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 10490 request msec= 7560[0m
+[1;96mKf5[0m   [1;96m1381 =score,  [0m[1;93mVisited: 24,815,266 / 90% nodes total ---- 18,712,621 Evals[0m
+[1;92mTotal time: 10.49 sec[0m[1;92m   nodes/sec= 2,365,423   evals/sec= 10[0m
+[aspiration summary] attempts=9 successes=8 fail-lows=1 fail-highs=0 full-retries=1 success=88.9% first-try-nodes=24815258 retry-nodes=1
+SEARCH RETURNED go_id=97
+Kf5 SENDING bestmove g6f5 go_id=97
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4
+isready
+go wtime 285314 btime 292399 movestogo 39
+
+
+0 Deeping 1 ply of 5 msec=     0/_[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 0 request msec= 7560[0m
+[1;96mKe5[0m   [1;96m-1000002 =score,  [0m[1;93mVisited: 1 / 0% nodes total ---- 0 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 32,154   evals/sec= 0[0m
+[aspiration summary] attempts=0 successes=0 fail-lows=0 fail-highs=0 full-retries=0 success=0.0% first-try-nodes=0 retry-nodes=0
+SEARCH RETURNED go_id=98
+Ke5 SENDING bestmove f5e5 go_id=98
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4
+isready
+go wtime 279834 btime 292369 movestogo 38
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kd5   ; +12.44
+0 Deeping 2 ply of 5 msec=     0/0 score=-1381 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kd5   ; +13.81
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kd5   ; +13.81
+0 Deeping 4 ply of 5 msec=     0/0 Best: Kd5   ; +13.81
+0 Deeping 5 ply of 5 msec=     0/0 Best: Kd5   ; +13.81
+0 Deeping 6 ply of 5 msec=     0/0 Best: Kd5   ; +13.81
+0 Deeping 7 ply of 5 msec=     0/0 score=-1431 result=fail-low retry=yes
+1 Deeping 7 ply of 5 msec=     0/0 Best: Kd5   ; +14.70
+0 Deeping 8 ply of 5 msec=    67/0 Best: Kd5   ; +14.90
+0 Deeping 9 ply of 5 msec=   417/402 score=-1543 result=fail-low retry=yes
+1 Deeping 9 ply of 5 msec=   417/402 Best: Kd5   ; +15.85
+0 Deeping 10 ply of 5 msec=  1397/2502 score=-1635 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=  1397/2502 Best: Kd5   ; +17.36[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7969 request msec= 7560[0m
+[1;96mKd5[0m   [1;96m1736 =score,  [0m[1;93mVisited: 20,213,450 / 91% nodes total ---- 15,026,811 Evals[0m
+[1;92mTotal time: 7.97 sec[0m[1;92m   nodes/sec= 2,536,389   evals/sec= 8[0m
+[aspiration summary] attempts=9 successes=5 fail-lows=4 fail-highs=0 full-retries=4 success=55.6% first-try-nodes=1118416 retry-nodes=19095008
+SEARCH RETURNED go_id=99
+Kd5 SENDING bestmove e5d5 go_id=99
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3
+isready
+go wtime 273285 btime 284378 movestogo 37
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kc5   ; +13.25
+0 Deeping 2 ply of 5 msec=     0/0 score=-1711 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ke6   ; +17.11
+0 Deeping 3 ply of 5 msec=     0/0 Best: Ke6   ; +17.11
+0 Deeping 4 ply of 5 msec=     0/0 Best: Ke6   ; +17.11
+0 Deeping 5 ply of 5 msec=     0/0 Best: Ke6   ; +17.11
+0 Deeping 6 ply of 5 msec=     0/0 Best: Ke6   ; +17.11
+0 Deeping 7 ply of 5 msec=     0/0 Best: Ke6   ; +17.11
+0 Deeping 8 ply of 5 msec=     0/0 Best: Ke6   ; +17.11
+0 Deeping 9 ply of 5 msec=     0/0 Best: Ke6   ; +17.58
+0 Deeping 10 ply of 5 msec=  1057/0 Best: Ke6   ; +17.58
+0 Deeping 11 ply of 5 msec=  3659/6342 Best: Ke6   ; +17.93[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 11378 request msec= 7560[0m
+[1;96mKe6[0m   [1;96m1793 =score,  [0m[1;93mVisited: 26,936,865 / 76% nodes total ---- 16,585,496 Evals[0m
+[1;92mTotal time: 11.38 sec[0m[1;92m   nodes/sec= 2,367,371   evals/sec= 11[0m
+[aspiration summary] attempts=10 successes=9 fail-lows=1 fail-highs=0 full-retries=1 success=90.0% first-try-nodes=26936808 retry-nodes=1
+SEARCH RETURNED go_id=100
+Ke6 SENDING bestmove d5e6 go_id=100
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6
+isready
+go wtime 263571 btime 272973 movestogo 36
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kxd6  ; +13.25
+0 Deeping 2 ply of 5 msec=     0/0 score=-1793 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 5 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 6 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 8 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 9 ply of 5 msec=     0/0 Best: Bxd6  ; +17.93
+0 Deeping 10 ply of 5 msec=     0/0 score=-1843 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=     0/0 Best: Bxd6  ; +19.37[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 10585 request msec= 7560[0m
+[1;96mBxd6[0m   [1;96m1937 =score,  [0m[1;93mVisited: 29,872,115 / 94% nodes total ---- 22,656,948 Evals[0m
+[1;92mTotal time: 10.59 sec[0m[1;92m   nodes/sec= 2,821,946   evals/sec= 11[0m
+[aspiration summary] attempts=9 successes=7 fail-lows=2 fail-highs=0 full-retries=2 success=77.8% first-try-nodes=1606737 retry-nodes=28265356
+SEARCH RETURNED go_id=101
+Bxd6 SENDING bestmove e7d6 go_id=101
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6
+isready
+go wtime 257422 btime 262358 movestogo 35
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ke5   ; +14.06
+0 Deeping 2 ply of 5 msec=     0/0 score=-1937 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ke5   ; +19.37
+0 Deeping 3 ply of 5 msec=     0/0 Best: Ke5   ; +19.37
+0 Deeping 4 ply of 5 msec=     0/0 Best: Ke5   ; +19.37
+0 Deeping 5 ply of 5 msec=     0/0 Best: Ke5   ; +19.37
+0 Deeping 6 ply of 5 msec=     0/0 Best: Ke5   ; +19.37
+0 Deeping 7 ply of 5 msec=     0/0 Best: Ke5   ; +19.37
+0 Deeping 8 ply of 5 msec=     0/0 Best: Ke5   ; +19.37
+0 Deeping 9 ply of 5 msec=     0/0 Best: Ke5   ; +19.51
+0 Deeping 10 ply of 5 msec=  1019/0 score=-999990 result=fail-low retry=yes
+1 Deeping 10 ply of 5 msec=  1019/0 Best: Ke5   ; +9999.90[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 8085 request msec= 7560[0m
+[1;96mKe5[0m   [1;96m999990 =score,  [0m[1;93mVisited: 23,263,329 / 91% nodes total ---- 17,100,012 Evals[0m
+[1;92mTotal time: 8.09 sec[0m[1;92m   nodes/sec= 2,877,322   evals/sec= 8[0m
+[aspiration summary] attempts=9 successes=7 fail-lows=2 fail-highs=0 full-retries=2 success=77.8% first-try-nodes=3097442 retry-nodes=20165873
+SEARCH RETURNED go_id=102
+Ke5 SENDING bestmove e6e5 go_id=102
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2
+isready
+go wtime 251165 btime 254256 movestogo 34
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: a5    ; +13.78
+0 Deeping 2 ply of 5 msec=     0/0 score=-1430 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Ke6   ; +14.73
+0 Deeping 3 ply of 5 msec=     0/0 Best: f5    ; +14.86
+0 Deeping 4 ply of 5 msec=     0/0 score=-1543 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: a5    ; +16.23
+0 Deeping 5 ply of 5 msec=     8/0 score=-1694 result=fail-low retry=yes
+1 Deeping 5 ply of 5 msec=     8/0 Best: Bf8   ; +17.08
+0 Deeping 6 ply of 5 msec=    16/48 score=-1761 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=    16/48 Best: Bf8   ; +17.89
+0 Deeping 7 ply of 5 msec=    97/96 Best: Ba3   ; +18.21
+0 Deeping 8 ply of 5 msec=   289/582 score=-1871 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=   289/582 Best: Ba3   ; +19.18
+0 Deeping 9 ply of 5 msec=  2471/1734 Best: Ba3   ; +19.18[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3837 request msec= 7560[0m
+[1;96mBa3[0m   [1;96m1918 =score,  [0m[1;93mVisited: 10,918,913 / 86% nodes total ---- 7,529,827 Evals[0m
+[1;92mTotal time: 3.84 sec[0m[1;92m   nodes/sec= 2,845,288   evals/sec= 4[0m
+[aspiration summary] attempts=8 successes=3 fail-lows=5 fail-highs=0 full-retries=5 success=37.5% first-try-nodes=6705234 retry-nodes=4213642
+SEARCH RETURNED go_id=103
+Ba3 SENDING bestmove d6a3 go_id=103
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2 d6a3 g2f3
+isready
+go wtime 244816 btime 250401 movestogo 33
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd6   ; +14.48
+0 Deeping 2 ply of 5 msec=     0/0 score=-1918 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Bf8   ; +19.18
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bf8   ; +19.18
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bf8   ; +19.18
+0 Deeping 5 ply of 5 msec=     0/0 Best: Bf8   ; +19.18
+0 Deeping 6 ply of 5 msec=     0/0 Best: Bf8   ; +19.18
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bf8   ; +19.18
+0 Deeping 8 ply of 5 msec=     0/0 score=-1968 result=fail-low retry=yes
+1 Deeping 8 ply of 5 msec=     0/0 Best: Be7   ; +9999.92[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 353 request msec= 7560[0m
+[1;96mBe7[0m   [1;96m999992 =score,  [0m[1;93mVisited: 961,504 / 94% nodes total ---- 737,774 Evals[0m
+[1;92mTotal time: 0.35 sec[0m[1;92m   nodes/sec= 2,717,806   evals/sec= 0[0m
+[aspiration summary] attempts=7 successes=5 fail-lows=2 fail-highs=0 full-retries=2 success=71.4% first-try-nodes=20166 retry-nodes=941314
+SEARCH RETURNED go_id=104
+Be7 SENDING bestmove a3e7 go_id=104
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2 d6a3 g2f3 a3e7 b7e7
+isready
+go wtime 238332 btime 250026 movestogo 32
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kd4   ; +19.00
+0 Deeping 2 ply of 5 msec=     0/0 score=-999994 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kf5   ; +9999.94[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 0 request msec= 7560[0m
+[1;96mKf5[0m   [1;96m999994 =score,  [0m[1;93mVisited: 25 / 88% nodes total ---- 18 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 242,718   evals/sec= 0[0m
+[aspiration summary] attempts=1 successes=0 fail-lows=1 fail-highs=0 full-retries=1 success=0.0% first-try-nodes=1 retry-nodes=1
+SEARCH RETURNED go_id=105
+Kf5 SENDING bestmove e5f5 go_id=105
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2 d6a3 g2f3 a3e7 b7e7 e5f5 f3e3
+isready
+go wtime 238256 btime 249995 movestogo 31
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: a5    ; +18.59
+0 Deeping 2 ply of 5 msec=     0/0 score=-1909 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kg5   ; +19.15
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kg5   ; +19.15
+0 Deeping 4 ply of 5 msec=     0/0 score=-1965 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Kg6   ; +19.93
+0 Deeping 5 ply of 5 msec=     1/0 Best: Kg6   ; +20.07
+0 Deeping 6 ply of 5 msec=     4/6 score=-999994 result=fail-low retry=yes
+1 Deeping 6 ply of 5 msec=     4/6 Best: Kg6   ; +9999.94[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 29 request msec= 7560[0m
+[1;96mKg6[0m   [1;96m999994 =score,  [0m[1;93mVisited: 87,541 / 93% nodes total ---- 70,186 Evals[0m
+[1;92mTotal time: 0.03 sec[0m[1;92m   nodes/sec= 2,977,615   evals/sec= 0[0m
+[aspiration summary] attempts=5 successes=2 fail-lows=3 fail-highs=0 full-retries=3 success=40.0% first-try-nodes=8881 retry-nodes=78651
+SEARCH RETURNED go_id=106
+Kg6 SENDING bestmove f5g6 go_id=106
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2 d6a3 g2f3 a3e7 b7e7 e5f5 f3e3 f5g6 c6g2
+isready
+go wtime 238157 btime 249949 movestogo 30
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kf5   ; +18.73
+0 Deeping 2 ply of 5 msec=     0/0 score=-999996 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kh6   ; +9999.96[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 0 request msec= 7560[0m
+[1;96mKh6[0m   [1;96m999996 =score,  [0m[1;93mVisited: 6 / 50% nodes total ---- 3 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 116,279   evals/sec= 0[0m
+[aspiration summary] attempts=1 successes=0 fail-lows=1 fail-highs=0 full-retries=1 success=0.0% first-try-nodes=1 retry-nodes=1
+SEARCH RETURNED go_id=107
+Kh6 SENDING bestmove g6h6 go_id=107
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2 d6a3 g2f3 a3e7 b7e7 e5f5 f3e3 f5g6 c6g2 g6h6 g2e4
+isready
+go wtime 238092 btime 249918 movestogo 29
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kg5   ; +18.84
+0 Deeping 2 ply of 5 msec=     0/0 score=-1937 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: a5    ; +19.37
+0 Deeping 3 ply of 5 msec=     0/0 Best: Kg5   ; +19.37
+0 Deeping 4 ply of 5 msec=     0/0 score=-1993 result=fail-low retry=yes
+1 Deeping 4 ply of 5 msec=     0/0 Best: Kg5   ; +9999.96[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 1 request msec= 7560[0m
+[1;96mKg5[0m   [1;96m999996 =score,  [0m[1;93mVisited: 2,524 / 91% nodes total ---- 1,873 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 2,135,544   evals/sec= 0[0m
+[aspiration summary] attempts=3 successes=1 fail-lows=2 fail-highs=0 full-retries=2 success=33.3% first-try-nodes=517 retry-nodes=2001
+SEARCH RETURNED go_id=108
+Kg5 SENDING bestmove h6g5 go_id=108
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2 d6a3 g2f3 a3e7 b7e7 e5f5 f3e3 f5g6 c6g2 g6h6 g2e4 h6g5 e7g7
+isready
+go wtime 238023 btime 249887 movestogo 28
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Kh6   ; +19.23
+0 Deeping 2 ply of 5 msec=     0/0 score=-999998 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Kh5   ; +9999.98[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 0 request msec= 7560[0m
+[1;96mKh5[0m   [1;96m999998 =score,  [0m[1;93mVisited: 129 / 95% nodes total ---- 92 Evals[0m
+[1;92mTotal time: 0.00 sec[0m[1;92m   nodes/sec= 1,120,765   evals/sec= 0[0m
+[aspiration summary] attempts=1 successes=0 fail-lows=1 fail-highs=0 full-retries=1 success=0.0% first-try-nodes=52 retry-nodes=74
+SEARCH RETURNED go_id=109
+Kh5 SENDING bestmove g5h5 go_id=109
+position startpos moves e2e4 d7d6 b1c3 f7f5 d2d4 g8f6 e4f5 c8f5 c1g5 b8d7 g1f3 c7c6 f1c4 d8b6 c4d3 b6b2 g5d2 f5d3 c2d3 e8c8 a1b1 b2a3 f3g5 e7e5 d4d5 d7c5 d5c6 b7c6 e1g1 d8d7 g5e4 c5e4 d3e4 d7b7 b1b7 c8b7 d1e2 a3c5 f1b1 b7c8 e2a6 c8d8 b1b8 d8e7 a6c8 e7f7 b8b7 f8e7 c8h8 d6d5 h8c8 d5e4 c8c7 a7a6 g2g4 f6g8 c7c8 e4e3 c8f5 g8f6 d2e3 c5c3 g4g5 c3a3 g5f6 g7f6 f5h7 f7e6 h2h3 e5e4 h7e4 e6f7 e4c4 f7g6 c4e4 g6f7 e4c4 f7g6 c4e6 a3d6 e6g8 g6f5 g8g4 f5e5 e3f4 e5d5 g4f3 d5e6 f4d6 e7d6 f3c6 e6e5 g1g2 d6a3 g2f3 a3e7 b7e7 e5f5 f3e3 f5g6 c6g2 g6h6 g2e4 h6g5 e7g7 g5h5 e4h7
+isready
+ucinewgame
+position startpos
+isready
+go wtime 300000 btime 300000 movestogo 40
+game start=1
+
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf3   ; +0.36
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf3   ; +0.36
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 5 ply of 4 msec=     2/0 Best: Nf3   ; +0.31
+0 Deeping 6 ply of 4 msec=    11/12 Best: e4    ; +0.05
+0 Deeping 7 ply of 4 msec=   100/66 Best: e4    ; +0.31
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf3   ; +0.36
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf3   ; +0.36
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf3   ; +0.00
+0 Deeping 5 ply of 4 msec=     1/0 Best: Nf3   ; +0.31
+0 Deeping 6 ply of 4 msec=     8/6 Best: Nf3   ; +0.00
+0 Deeping 7 ply of 4 msec=    84/48 Best: Nf3   ; +0.28
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nc3   ; +0.36
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nc3   ; +0.00
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nc3   ; +0.36
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nc3   ; +0.00
+0 Deeping 5 ply of 4 msec=     1/0 Best: Nc3   ; +0.31
+0 Deeping 6 ply of 4 msec=     7/6 Best: Nc3   ; +0.00
+0 Deeping 7 ply of 4 msec=    79/42 Best: Nc3   ; +0.28
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: d4    ; +0.31
+0 Deeping 2 ply of 4 msec=     0/0 Best: d4    ; -0.05
+0 Deeping 3 ply of 4 msec=     0/0 Best: d4    ; +0.31
+0 Deeping 4 ply of 4 msec=     0/0 Best: d4    ; -0.05
+0 Deeping 5 ply of 4 msec=     1/0 Best: d4    ; +0.31
+0 Deeping 6 ply of 4 msec=     7/6 Best: d4    ; +0.00
+0 Deeping 7 ply of 4 msec=    74/42 Best: d4    ; +0.28
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.24
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.24
+0 Deeping 4 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 5 ply of 4 msec=     1/0 Best: f4    ; +0.24
+0 Deeping 6 ply of 4 msec=     7/6 Best: f4    ; -0.07
+0 Deeping 7 ply of 4 msec=    72/42 Best: e3    ; +0.14
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.24
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.24
+0 Deeping 4 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 5 ply of 4 msec=     1/0 Best: f4    ; +0.24
+0 Deeping 6 ply of 4 msec=     8/6 Best: f4    ; -0.07
+0 Deeping 7 ply of 4 msec=    69/48 Best: d3    ; +0.11
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.24
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.24
+0 Deeping 4 ply of 4 msec=     0/0 Best: f4    ; -0.12
+0 Deeping 5 ply of 4 msec=     1/0 Best: f4    ; +0.24
+0 Deeping 6 ply of 4 msec=     6/6 Best: f4    ; -0.07
+0 Deeping 7 ply of 4 msec=    66/36 Best: f4    ; +0.07
+[pick_random_within_delta_rand] n_top=7 from candidates: 
+1  [0]  e4
+  [1]  Nf3
+  [2]  Nc3
+  [3]  d4
+  [4]  e3
+  [5]  d3
+  [6]  f4
+
+ end multisss 28  Nc3 out of=7 
+[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 337 request msec= 1069[0m
+[1;96mNc3[0m   [1;96m28 =score,  [0m[1;93mVisited: 753,780 / 709% nodes total ---- 5,241,297 Evals[0m
+[1;92mTotal time: 0.34 sec[0m[1;92m   nodes/sec= 2,233,932   evals/sec= 3[0m
+[aspiration summary] attempts=42 successes=42 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=6175012 retry-nodes=0
+SEARCH RETURNED go_id=110
+Nc3 SENDING bestmove b1c3 go_id=110
+position startpos moves b1c3 c7c6
+isready
+go wtime 297272 btime 291182 movestogo 39
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf3   ; +0.58
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf3   ; +0.22
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nf3   ; +0.53
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nf3   ; +0.22
+0 Deeping 5 ply of 5 msec=     3/0 Best: Nf3   ; +0.50
+0 Deeping 6 ply of 5 msec=    13/18 Best: Nf3   ; +0.22
+0 Deeping 7 ply of 5 msec=    54/78 Best: d4    ; +0.39
+0 Deeping 8 ply of 5 msec=   327/324 Best: d4    ; +0.15
+0 Deeping 9 ply of 5 msec=  1131/1962 Best: e4    ; +0.45[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 8219 request msec= 7487[0m
+[1;96me4[0m   [1;96m45 =score,  [0m[1;93mVisited: 13,693,018 / 88% nodes total ---- 11,609,170 Evals[0m
+[1;92mTotal time: 8.22 sec[0m[1;92m   nodes/sec= 1,665,919   evals/sec= 8[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=13692995 retry-nodes=0
+SEARCH RETURNED go_id=111
+e4 SENDING bestmove e2e4 go_id=111
+position startpos moves b1c3 c7c6 e2e4 g7g6
+isready
+go wtime 289036 btime 281183 movestogo 38
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf3   ; +1.08
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf3   ; +0.66
+0 Deeping 3 ply of 5 msec=     0/0 Best: d4    ; +0.97
+0 Deeping 4 ply of 5 msec=     1/0 Best: Nf3   ; +0.61
+0 Deeping 5 ply of 5 msec=     5/6 Best: Nf3   ; +0.89
+0 Deeping 6 ply of 5 msec=    24/30 Best: d4    ; +0.58
+0 Deeping 7 ply of 5 msec=   176/144 Best: Nf3   ; +0.81
+0 Deeping 8 ply of 5 msec=   689/1056 Best: d4    ; +0.57
+0 Deeping 9 ply of 5 msec=  3270/4134 Best: d4    ; +0.75[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 13832 request msec= 7487[0m
+[1;96md4[0m   [1;96m75 =score,  [0m[1;93mVisited: 24,406,751 / 89% nodes total ---- 21,052,547 Evals[0m
+[1;92mTotal time: 13.83 sec[0m[1;92m   nodes/sec= 1,764,414   evals/sec= 14[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=24406718 retry-nodes=0
+SEARCH RETURNED go_id=112
+d4 SENDING bestmove d2d4 go_id=112
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7
+isready
+go wtime 275187 btime 252925 movestogo 37
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf3   ; +0.97
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf3   ; +0.75
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nf3   ; +0.75
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nf3   ; +0.75
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nf3   ; +0.75
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nf3   ; +0.75
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nf3   ; +0.75
+0 Deeping 8 ply of 5 msec=     0/0 Best: Nf3   ; +0.67[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3933 request msec= 7487[0m
+[1;96mNf3[0m   [1;96m67 =score,  [0m[1;93mVisited: 6,132,046 / 82% nodes total ---- 4,635,870 Evals[0m
+[1;92mTotal time: 3.93 sec[0m[1;92m   nodes/sec= 1,558,970   evals/sec= 4[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=6132002 retry-nodes=0
+SEARCH RETURNED go_id=113
+Nf3 SENDING bestmove g1f3 go_id=113
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6
+isready
+go wtime 271237 btime 245968 movestogo 36
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd3   ; +0.89
+0 Deeping 2 ply of 5 msec=     0/0 Best: e5    ; +0.85
+0 Deeping 3 ply of 5 msec=     0/0 Best: e5    ; +0.85
+0 Deeping 4 ply of 5 msec=     0/0 Best: e5    ; +0.85
+0 Deeping 5 ply of 5 msec=     0/0 Best: e5    ; +0.85
+0 Deeping 6 ply of 5 msec=     0/0 Best: e5    ; +0.85
+0 Deeping 7 ply of 5 msec=     0/0 Best: e5    ; +0.85
+0 Deeping 8 ply of 5 msec=   641/0 Best: Bd3   ; +0.50[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 4974 request msec= 7487[0m
+[1;96mBd3[0m   [1;96m50 =score,  [0m[1;93mVisited: 8,366,557 / 85% nodes total ---- 6,747,093 Evals[0m
+[1;92mTotal time: 4.98 sec[0m[1;92m   nodes/sec= 1,681,735   evals/sec= 5[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=8366507 retry-nodes=0
+SEARCH RETURNED go_id=114
+Bd3 SENDING bestmove f1d3 go_id=114
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8
+isready
+go wtime 266240 btime 235640 movestogo 35
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O   ; +0.80
+0 Deeping 2 ply of 5 msec=     0/0 Best: O-O   ; +0.50
+0 Deeping 3 ply of 5 msec=     0/0 Best: O-O   ; +0.50
+0 Deeping 4 ply of 5 msec=     0/0 Best: O-O   ; +0.50
+0 Deeping 5 ply of 5 msec=     0/0 Best: O-O   ; +0.50
+0 Deeping 6 ply of 5 msec=     0/0 Best: O-O   ; +0.50
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qe2   ; +0.84
+0 Deeping 8 ply of 5 msec=  1331/0 Best: O-O   ; +0.64[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6790 request msec= 7487[0m
+[1;96mO-O[0m   [1;96m64 =score,  [0m[1;93mVisited: 10,168,089 / 85% nodes total ---- 8,279,417 Evals[0m
+[1;92mTotal time: 6.79 sec[0m[1;92m   nodes/sec= 1,497,354   evals/sec= 7[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=10168046 retry-nodes=0
+SEARCH RETURNED go_id=115
+O-O SENDING bestmove e1g1 go_id=115
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6
+isready
+go wtime 259423 btime 231027 movestogo 34
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ng5   ; +0.99
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxa6  ; +0.89
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bxa6  ; +1.08
+0 Deeping 4 ply of 5 msec=     2/0 Best: Qe2   ; +0.89
+0 Deeping 5 ply of 5 msec=    23/12 Best: Bg5   ; +1.11
+0 Deeping 6 ply of 5 msec=    75/138 Best: Bg5   ; +0.97
+0 Deeping 7 ply of 5 msec=   464/450 Best: e5    ; +1.10
+0 Deeping 8 ply of 5 msec=  1433/2784 Best: e5    ; +1.03[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5333 request msec= 7487[0m
+[1;96me5[0m   [1;96m103 =score,  [0m[1;93mVisited: 7,517,705 / 86% nodes total ---- 6,185,088 Evals[0m
+[1;92mTotal time: 5.33 sec[0m[1;92m   nodes/sec= 1,409,653   evals/sec= 5[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=7517664 retry-nodes=0
+SEARCH RETURNED go_id=116
+e5 SENDING bestmove e4e5 go_id=116
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8
+isready
+go wtime 254072 btime 203511 movestogo 33
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ng5   ; +1.18
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxa6  ; +1.08
+0 Deeping 3 ply of 5 msec=     0/0 Best: Be3   ; +1.13
+0 Deeping 4 ply of 5 msec=     2/0 Best: Qe2   ; +1.08
+0 Deeping 5 ply of 5 msec=    12/12 Best: Qe2   ; +1.24
+0 Deeping 6 ply of 5 msec=    55/72 Best: Bf4   ; +1.08
+0 Deeping 7 ply of 5 msec=   385/330 Best: Bxa6  ; +1.43
+0 Deeping 8 ply of 5 msec=  1646/2310 Best: Bxa6  ; +1.24[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7155 request msec= 7487[0m
+[1;96mBxa6[0m   [1;96m124 =score,  [0m[1;93mVisited: 12,017,794 / 87% nodes total ---- 9,979,199 Evals[0m
+[1;92mTotal time: 7.16 sec[0m[1;92m   nodes/sec= 1,679,516   evals/sec= 7[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=12017750 retry-nodes=0
+SEARCH RETURNED go_id=117
+Bxa6 SENDING bestmove d3a6 go_id=117
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6
+isready
+go wtime 246886 btime 196156 movestogo 32
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ng5   ; +1.27
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qe2   ; +1.24
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qe2   ; +1.24
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qe2   ; +1.24
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qe2   ; +1.24
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qe2   ; +1.24
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bf4   ; +1.30
+0 Deeping 8 ply of 5 msec=  1069/0 Best: Qd3   ; +1.10[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7847 request msec= 7487[0m
+[1;96mQd3[0m   [1;96m110 =score,  [0m[1;93mVisited: 12,726,976 / 90% nodes total ---- 11,053,968 Evals[0m
+[1;92mTotal time: 7.85 sec[0m[1;92m   nodes/sec= 1,621,705   evals/sec= 8[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=12726937 retry-nodes=0
+SEARCH RETURNED go_id=118
+Qd3 SENDING bestmove d1d3 go_id=118
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6
+isready
+go wtime 239013 btime 182248 movestogo 31
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Be3   ; +1.71
+0 Deeping 2 ply of 5 msec=     0/0 Best: Be3   ; +1.43
+0 Deeping 3 ply of 5 msec=     0/0 Best: Be3   ; +1.57
+0 Deeping 4 ply of 5 msec=     3/0 Best: Be3   ; +1.29
+0 Deeping 5 ply of 5 msec=    13/18 Best: Bf4   ; +1.43
+0 Deeping 6 ply of 5 msec=    70/78 Best: Bf4   ; +1.25
+0 Deeping 7 ply of 5 msec=   497/420 Best: Qe2   ; +1.28
+0 Deeping 8 ply of 5 msec=  2607/2982 Best: Bf4   ; +1.21[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 13013 request msec= 7487[0m
+[1;96mBf4[0m   [1;96m121 =score,  [0m[1;93mVisited: 20,209,504 / 88% nodes total ---- 16,906,256 Evals[0m
+[1;92mTotal time: 13.01 sec[0m[1;92m   nodes/sec= 1,552,908   evals/sec= 13[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=20209391 retry-nodes=0
+SEARCH RETURNED go_id=119
+Bf4 SENDING bestmove c1f4 go_id=119
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4
+isready
+go wtime 225978 btime 175681 movestogo 30
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ng5   ; +1.90
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxa6  ; +1.77
+0 Deeping 3 ply of 5 msec=     2/0 Best: exd6  ; +1.94
+0 Deeping 4 ply of 5 msec=     4/12 Best: exd6  ; +1.67
+0 Deeping 5 ply of 5 msec=    39/24 Best: exd6  ; +1.69
+0 Deeping 6 ply of 5 msec=   112/234 Best: exd6  ; +1.55
+0 Deeping 7 ply of 5 msec=   416/672 Best: h3    ; +1.42
+0 Deeping 8 ply of 5 msec=  3262/2496 Best: exd6  ; +1.25[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 8357 request msec= 7487[0m
+[1;96mexd6[0m   [1;96m125 =score,  [0m[1;93mVisited: 12,663,779 / 84% nodes total ---- 10,144,298 Evals[0m
+[1;92mTotal time: 8.36 sec[0m[1;92m   nodes/sec= 1,515,171   evals/sec= 8[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=12663478 retry-nodes=0
+SEARCH RETURNED go_id=120
+exd6 SENDING bestmove e5d6 go_id=120
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6
+isready
+go wtime 217600 btime 168533 movestogo 29
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Be5   ; +1.94
+0 Deeping 2 ply of 5 msec=     0/0 Best: Be5   ; +1.94
+0 Deeping 3 ply of 5 msec=     0/0 Best: Be5   ; +1.88
+0 Deeping 4 ply of 5 msec=     2/0 Best: Ne5   ; +1.63
+0 Deeping 5 ply of 5 msec=    12/12 Best: Ne5   ; +1.63
+0 Deeping 6 ply of 5 msec=    58/72 Best: Ne5   ; +1.49
+0 Deeping 7 ply of 5 msec=   262/348 Best: Ne5   ; +1.49
+0 Deeping 8 ply of 5 msec=  1343/1572 Best: Ne5   ; +1.28[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 5857 request msec= 7487[0m
+[1;96mNe5[0m   [1;96m128 =score,  [0m[1;93mVisited: 9,467,283 / 82% nodes total ---- 7,346,672 Evals[0m
+[1;92mTotal time: 5.86 sec[0m[1;92m   nodes/sec= 1,616,237   evals/sec= 6[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=9467151 retry-nodes=0
+SEARCH RETURNED go_id=121
+Ne5 SENDING bestmove f3e5 go_id=121
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5
+isready
+go wtime 211717 btime 158030 movestogo 28
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qxa6  ; +1.63
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxa6  ; +1.63
+0 Deeping 3 ply of 5 msec=     1/0 Best: Qxa6  ; +1.63
+0 Deeping 4 ply of 5 msec=     1/6 Best: Qxa6  ; +1.71
+0 Deeping 5 ply of 5 msec=     3/6 Best: Qxa6  ; +1.77
+0 Deeping 6 ply of 5 msec=    49/18 Best: Qxa6  ; +1.57
+0 Deeping 7 ply of 5 msec=   242/294 Best: Qxa6  ; +1.71
+0 Deeping 8 ply of 5 msec=  1186/1452 Best: Qxa6  ; +2.19[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 3586 request msec= 7487[0m
+[1;96mQxa6[0m   [1;96m219 =score,  [0m[1;93mVisited: 5,528,728 / 79% nodes total ---- 4,172,971 Evals[0m
+[1;92mTotal time: 3.59 sec[0m[1;92m   nodes/sec= 1,541,427   evals/sec= 4[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=5528402 retry-nodes=0
+SEARCH RETURNED go_id=122
+Qxa6 SENDING bestmove d3a6 go_id=122
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5 d3a6 d8c8
+isready
+go wtime 208114 btime 135686 movestogo 27
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qe2   ; +2.34
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qxc6  ; +2.19
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qxc6  ; +2.19
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qxc6  ; +2.19
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qxc6  ; +2.19
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qxc6  ; +2.19
+0 Deeping 7 ply of 5 msec=     0/0 Best: Qxc6  ; +2.19
+0 Deeping 8 ply of 5 msec=   662/0 Best: Qxc6  ; +1.82
+0 Deeping 9 ply of 5 msec=  3074/3972 Best: Qxc6  ; +1.82[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 14955 request msec= 7487[0m
+[1;96mQxc6[0m   [1;96m182 =score,  [0m[1;93mVisited: 24,485,170 / 89% nodes total ---- 21,359,109 Evals[0m
+[1;92mTotal time: 14.96 sec[0m[1;92m   nodes/sec= 1,637,245   evals/sec= 15[0m
+[aspiration summary] attempts=8 successes=8 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=24484896 retry-nodes=0
+SEARCH RETURNED go_id=123
+Qxc6 SENDING bestmove a6c6 go_id=123
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5 d3a6 d8c8 a6c6 f8e8
+isready
+go wtime 193137 btime 129100 movestogo 26
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qa4   ; +3.37
+0 Deeping 2 ply of 5 msec=     0/0 score=285 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qa4   ; +2.60
+0 Deeping 3 ply of 5 msec=     2/0 Best: Qa4   ; +2.60
+0 Deeping 4 ply of 5 msec=     9/12 Best: Nd5   ; +2.43
+0 Deeping 5 ply of 5 msec=    34/54 Best: Qa4   ; +2.69
+0 Deeping 6 ply of 5 msec=   153/204 Best: Qa4   ; +2.55
+0 Deeping 7 ply of 5 msec=   500/918 Best: Qa4   ; +2.47
+0 Deeping 8 ply of 5 msec=  2737/3000 Best: Qa4   ; +2.47[33m
+Went to depth 0 elapsed min= 0.2 elapsed msec= 9041 request msec= 7487[0m
+[1;96mQa4[0m   [1;96m247 =score,  [0m[1;93mVisited: 13,609,329 / 85% nodes total ---- 10,750,452 Evals[0m
+[1;92mTotal time: 9.04 sec[0m[1;92m   nodes/sec= 1,505,237   evals/sec= 9[0m
+[aspiration summary] attempts=7 successes=6 fail-lows=1 fail-highs=0 full-retries=1 success=85.7% first-try-nodes=13607708 retry-nodes=864
+SEARCH RETURNED go_id=124
+Qa4 SENDING bestmove c6a4 go_id=124
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5 d3a6 d8c8 a6c6 f8e8 c6a4 c8b7
+isready
+go wtime 184074 btime 110379 movestogo 25
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rb1   ; +2.60
+0 Deeping 2 ply of 5 msec=     2/12 Best: Rb1   ; +2.47
+0 Deeping 3 ply of 5 msec=     2/12 Best: Rb1   ; +2.47
+0 Deeping 4 ply of 5 msec=     2/12 Best: Rb1   ; +2.47
+0 Deeping 5 ply of 5 msec=     2/12 Best: Rb1   ; +2.47
+0 Deeping 6 ply of 5 msec=     2/12 Best: Rb1   ; +2.47
+0 Deeping 7 ply of 5 msec=     2/12 Best: Rb1   ; +2.41[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2963 request msec= 7487[0m
+[1;96mRb1[0m   [1;96m241 =score,  [0m[1;93mVisited: 4,642,027 / 93% nodes total ---- 4,038,166 Evals[0m
+[1;92mTotal time: 2.96 sec[0m[1;92m   nodes/sec= 1,566,657   evals/sec= 3[0m
+[aspiration summary] attempts=6 successes=6 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=4639835 retry-nodes=0
+SEARCH RETURNED go_id=125
+Rb1 SENDING bestmove a1b1 go_id=125
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5 d3a6 d8c8 a6c6 f8e8 c6a4 c8b7 a1b1 g6g5
+isready
+go wtime 181082 btime 96174 movestogo 24
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bxg5  ; +3.85
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxg5  ; +3.71
+0 Deeping 3 ply of 5 msec=     0/0 score=312 result=fail-low retry=yes
+1 Deeping 3 ply of 5 msec=     0/0 Best: Be3   ; +2.97
+0 Deeping 4 ply of 5 msec=     5/0 Best: Bg3   ; +2.81
+0 Deeping 5 ply of 5 msec=    25/30 Best: Be3   ; +2.83
+0 Deeping 6 ply of 5 msec=   146/150 Best: Be3   ; +2.62
+0 Deeping 7 ply of 5 msec=   344/876 Best: Be3   ; +2.50
+0 Deeping 8 ply of 5 msec=  1834/2064 Best: Bg3   ; +2.42[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 7694 request msec= 7487[0m
+[1;96mBg3[0m   [1;96m242 =score,  [0m[1;93mVisited: 13,044,314 / 88% nodes total ---- 10,812,074 Evals[0m
+[1;92mTotal time: 7.69 sec[0m[1;92m   nodes/sec= 1,695,217   evals/sec= 8[0m
+[aspiration summary] attempts=7 successes=6 fail-lows=1 fail-highs=0 full-retries=1 success=85.7% first-try-nodes=13038299 retry-nodes=5852
+SEARCH RETURNED go_id=126
+Bg3 SENDING bestmove f4g3 go_id=126
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5 d3a6 d8c8 a6c6 f8e8 c6a4 c8b7 a1b1 g6g5 f4g3 e7e6
+isready
+go wtime 173368 btime 90620 movestogo 23
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: f3    ; +3.14
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nf3   ; +2.99
+0 Deeping 3 ply of 5 msec=     2/0 Best: Re1   ; +2.83
+0 Deeping 4 ply of 5 msec=     9/12 Best: f3    ; +2.82
+0 Deeping 5 ply of 5 msec=    23/54 Best: f3    ; +2.76
+0 Deeping 6 ply of 5 msec=   120/138 Best: f3    ; +2.69
+0 Deeping 7 ply of 5 msec=   355/720 Best: f3    ; +2.45
+0 Deeping 8 ply of 5 msec=  2428/2130 Best: f3    ; +2.43[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6782 request msec= 7487[0m
+[1;96mf3[0m   [1;96m243 =score,  [0m[1;93mVisited: 10,418,917 / 85% nodes total ---- 8,050,324 Evals[0m
+[1;92mTotal time: 6.78 sec[0m[1;92m   nodes/sec= 1,536,145   evals/sec= 7[0m
+[aspiration summary] attempts=7 successes=7 fail-lows=0 fail-highs=0 full-retries=0 success=100.0% first-try-nodes=10418703 retry-nodes=0
+SEARCH RETURNED go_id=127
+f3 SENDING bestmove f2f3 go_id=127
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5 d3a6 d8c8 a6c6 f8e8 c6a4 c8b7 a1b1 g6g5 f4g3 e7e6 f2f3 a8c8
+isready
+go wtime 166561 btime 83643 movestogo 22
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Re1   ; +3.14
+0 Deeping 2 ply of 5 msec=     0/0 score=243 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Re1   ; +2.43
+0 Deeping 3 ply of 5 msec=     0/0 Best: Re1   ; +2.43
+0 Deeping 4 ply of 5 msec=     0/0 Best: Re1   ; +2.43
+0 Deeping 5 ply of 5 msec=     0/0 Best: Re1   ; +2.43
+0 Deeping 6 ply of 5 msec=     0/0 Best: Re1   ; +2.43
+0 Deeping 7 ply of 5 msec=     0/0 Best: Re1   ; +2.32
+0 Deeping 8 ply of 5 msec=  1921/0 Best: Re1   ; +2.26[33m
+Went to depth 0 elapsed min= 0.1 elapsed msec= 6638 request msec= 7487[0m
+[1;96mRe1[0m   [1;96m226 =score,  [0m[1;93mVisited: 10,426,788 / 85% nodes total ---- 8,072,566 Evals[0m
+[1;92mTotal time: 6.64 sec[0m[1;92m   nodes/sec= 1,570,649   evals/sec= 7[0m
+[aspiration summary] attempts=7 successes=6 fail-lows=1 fail-highs=0 full-retries=1 success=85.7% first-try-nodes=10425880 retry-nodes=1
+SEARCH RETURNED go_id=128
+Re1 SENDING bestmove f1e1 go_id=128
+position startpos moves b1c3 c7c6 e2e4 g7g6 d2d4 f8g7 g1f3 g8f6 f1d3 e8g8 e1g1 b8a6 e4e5 f6e8 d3a6 b7a6 d1d3 d7d6 c1f4 c8g4 e5d6 e8d6 f3e5 g4f5 d3a6 d8c8 a6c6 f8e8 c6a4 c8b7 a1b1 g6g5 f4g3 e7e6 f2f3 a8c8 f1e1 c8c7
+isready
+go wtime 159905 btime 71610 movestogo 21
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxf7  ; +5.14
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nxf7  ; +5.14
+0 Deeping 3 ply of 5 msec=     1/0 Best: Nxf7  ; +5.14
+0 Deeping 4 ply of 5 msec=     4/6 Best: Nxf7  ; +5.14
+0 Deeping 5 ply of 5 msec=    19/24 score=463 result=fail-low retry=yes
+1 Deeping 5 ply of 5 msec=    19/24 Best: Nxf7  ; +3.92
+0 Deeping 6 ply of 5 msec=   245/114 Best: Nxf7  ; +3.92
+0 Deeping 7 ply of 5 msec=   638/1470 Best: Nxf7  ; +3.64
+0 Deeping 8 ply of 5 msec=  2677/3828stop
+
+! STOP CALCULATION requested
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+loop_over_all_moves abort
+[33m
+Went to depth 0 elapsed min= 0.0 elapsed msec= 2677 request msec= 7487[0m
+[1;96mNxf7[0m   [1;96m364 =score,  [0m[1;93mVisited: 7,313,235 / 87% nodes total ---- 5,910,725 Evals[0m
+[1;92mTotal time: 4.55 sec[0m[1;92m   nodes/sec= 1,608,780   evals/sec= 5[0m
+[aspiration summary] attempts=7 successes=5 fail-lows=1 fail-highs=0 full-retries=1 success=71.4% first-try-nodes=4101203 retry-nodes=159571
+SEARCH RETURNED go_id=129
+Nxf7 SENDING bestmove e5f7 go_id=129
+isready
+quit
+quit received
+UCI INPUT LOOP ENDED eof=0 fail=0 bad=0
+Shumi UCI exiting normally

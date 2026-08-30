@@ -7,6 +7,7 @@ Weights::Weights()
     // Fill table from the static constants
     aW[HAS_CASTLED]          = HAS_CASTLED_WGHT;
     aW[CAN_CASTLE]           = CAN_CASTLE_WGHT;
+    aW[QUEEN_SIDE_CASTLE]    = QUEEN_SIDE_CASTLE_WGHT;
     aW[ISOLANI]              = ISOLANI_WGHT;
     aW[ISOLANI_ROOK]         = ISOLANI_ROOK_WGHT;
     aW[PAWN_HOLE]            = PAWN_HOLE_WGHT;

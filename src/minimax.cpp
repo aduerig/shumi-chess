@@ -898,6 +898,15 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         NTriesP = 0;
         nRandos = 0;
 
+        tt_exact_writes = 0;
+        tt_lower_writes = 0;
+        tt_upper_writes = 0;
+        tt_lower_probes = 0;
+        tt_lower_would_cutoff = 0;
+        tt_upper_probes = 0;
+        tt_upper_would_cutoff = 0;
+
+
         nGames++;
 
         sout << "game start=" << nGames << endl;
@@ -909,7 +918,9 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
     nFarts = 0;             // Queiseence low level (forced eval) this move
     nSemiFarts = 0;         // Queiseence low level (forced eval) this move
     n_futility_tosses = 0;
-    n_delta_tosses = 0;
+    n_delta_tosses = 0ULL;
+
+
     //
     // Clear debug every move
     // #ifdef _DEBUGGING_TO_FILE 
@@ -1274,6 +1285,43 @@ void MinimaxAI::playground(int iPhase) {
 
     sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hits=" << NhitsTT2 << endl;
 
+
+    // ull exact_entries = 0;
+    // ull lower_entries = 0;
+    // ull upper_entries = 0;
+
+    // for (const auto& pair : TTable2) {
+    //     switch (pair.second.flagg) {
+    //         case TTFlag::EXACT:
+    //             exact_entries++;
+    //             break;
+
+    //         case TTFlag::LOWER_BOUND:
+    //             lower_entries++;
+    //             break;
+
+    //         case TTFlag::UPPER_BOUND:
+    //             upper_entries++;
+    //             break;
+    //     }
+    // }
+
+    // sout << "TT2 size=" << TTable2.size()
+    //     << " exact=" << exact_entries
+    //     << " lower=" << lower_entries
+    //     << " upper=" << upper_entries
+    //     << endl;
+
+    // sout << "tt_exact_writes=" << tt_exact_writes << 
+    //    " tt_lower_writes=" << tt_lower_writes << " tt_upper_writes=" << tt_upper_writes << endl;
+                           
+    // sout << " lower probes=" << tt_lower_probes
+    //     << " would-cutoff=" << tt_lower_would_cutoff
+    //     << " upper probes=" << tt_upper_probes
+    //     << " would-cutoff=" << tt_upper_would_cutoff
+    //     << endl;
+        
+
     //int material_balance = ;  // evaluate_board();
     //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
 
@@ -1290,7 +1338,7 @@ void MinimaxAI::playground(int iPhase) {
     // sout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
     // sout << " n_futility_tosses " << n_futility_tosses << endl;
-    // sout << " n_delta_tosses " << n_delta_tosses << endl;
+    sout << " n_delta_tosses " << n_delta_tosses << endl;
     // sout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
 
     //engine.debug_print_repetition_table();
@@ -1312,17 +1360,6 @@ void MinimaxAI::playground(int iPhase) {
 
     // sout << "\n\n" << pszPhase << "  tempW " << itemp1 << "           tempB " << itemp2 << endl;
 
-
-    // sout << "COUNTS"
-    //      << "  W minors=" << (int)(engine.game_board.Bits_In[Color::WHITE][Piece::KNIGHT] +
-    //                                engine.game_board.Bits_In[Color::WHITE][Piece::BISHOP])
-    //      << " rooks="     << (int)engine.game_board.Bits_In[Color::WHITE][Piece::ROOK]
-    //      << " queens="    << (int)engine.game_board.Bits_In[Color::WHITE][Piece::QUEEN]
-    //      << "     B minors=" << (int)(engine.game_board.Bits_In[Color::BLACK][Piece::KNIGHT] +
-    //                                   engine.game_board.Bits_In[Color::BLACK][Piece::BISHOP])
-    //      << " rooks="        << (int)engine.game_board.Bits_In[Color::BLACK][Piece::ROOK]
-    //      << " queens="       << (int)engine.game_board.Bits_In[Color::BLACK][Piece::QUEEN]
-    //      << endl;
 
     // sout << "TRADE WEIGHTS"
     //      << " max=" << engine.game_board.wghts.GetWeight(TRADE_MAX_BONUS)
@@ -1605,6 +1642,51 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     }
 }
 
+//
+// How to use your TT. The control knobs.
+//
+constexpr bool STORE_TT_BOUNDS          = true;
+constexpr bool USE_TT_BOUND_CUTOFFS     = false;
+constexpr bool USE_TT_BOUND_MOVE_ORDER  = false;
+
+
+//     
+//  ----------------------------------------------------------------------------------------------------              
+///                                      STORE_TT_BOUNDS   USE_TT_BOUND_CUTOFFS   USE_TT_BOUND_MOVE_ORDER
+//  ----------------------------------------------------------------------------------------------------
+//
+//  Case A: Old behavior                       0                    0                         0
+//          Store and use EXACT entries only.
+//
+//  Case B: Bound-storage overhead only        1                    0                         0
+//          Store bounds, but never use their scores or moves for ordering.
+//
+//  Case C: Bound cutoffs only                 1                    1                         0
+//          Store bounds and use their scores for cutoffs,
+//          but do not use their moves for ordering.
+//
+//  Case D: Bound move ordering only           1                    0                         1
+//          Store bounds and use their moves for ordering,
+//          but do not use their scores for cutoffs.
+//
+//  Case E: Complete bounded TT                1                    1                         1
+//          Store bounds and use both their scores and moves.
+//
+//
+//  Irrelevant combinations:
+//
+//                                             0                    0                         1
+//                                             0                    1                         0
+//                                             0                    1                         1
+//
+//  If bounds are not stored, bound cutoffs and bound move ordering have
+//  nothing to use. Assuming TT2 is cleared before the test, all three
+//  combinations behave like Case A.
+
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1774,6 +1856,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     #ifdef  DEBUG_NODE_TT2       // Declare variables for holding "record" found in the TT2
         bool   foundPos = false;
         Score  foundScore_cp = ZERO_SCORE;
+        bool   foundWasExact = false;
         Move   foundMove = {};
         int    foundnPlys = 0;
         bool   foundDraw = 0;
@@ -1824,7 +1907,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         int iLimit = 1;
         if (depth > iLimit) {
 
-            // --- Normal TT2 probe (Note: exact-only version, no age yet)
+            // --- Normal TT2 probe (Note: no age yet)
 
             bool is_perfect_match = false;
 
@@ -1837,6 +1920,40 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 // probe found for this zobrist key
                 const TTEntry2 &entry = it->second;
 
+                // debug only
+                if (entry.depth >= depth) {
+                    const int level = top_deepening - depth;
+
+                    Score stored_score = convert_from_CP(entry.score_cp);
+                    stored_score = mate_score_from_TT(stored_score, level);
+
+                    if (entry.flagg == TTFlag::LOWER_BOUND) {
+                        tt_lower_probes++;
+
+                        if (stored_score >= beta) {
+                            tt_lower_would_cutoff++;
+
+                            if (USE_TT_BOUND_CUTOFFS) {
+                                return {stored_score, entry.best_move};
+                            }
+                        }
+                    }
+                    else if (entry.flagg == TTFlag::UPPER_BOUND) {
+                        tt_upper_probes++;
+
+                        if (stored_score <= alpha) {
+                            tt_upper_would_cutoff++;
+
+                            if (USE_TT_BOUND_CUTOFFS) {
+                                return {stored_score, entry.best_move};
+                            }
+                        }
+                    }
+              
+
+                }
+
+
                 // Qualification #1 on probe:
                 // We are at position X. Use the stored result only if the stored search continued at least as 
                 // many plies beyond X as the current search intends to continue beyond X (until qsearch)
@@ -1844,7 +1961,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 //      entry.depth: how many regular-search plies were searched beyond X when the entry was stored.
                 //      depth: how many regular-search plies the current search wants beyond X.
 
-                if (entry.depth >= depth) {      
+                if ((entry.depth >= depth) && (entry.flagg == TTFlag::EXACT)) {
                     is_perfect_match = true;
                     NhitsTT2++;
                 }
@@ -1856,13 +1973,14 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     #ifdef DEBUG_NODE_TT2        // Store information recalled from the TT2 "record"
                         foundPos   = true;
                         foundScore_cp = entry.score_cp;
+                        foundWasExact = (entry.flagg == TTFlag::EXACT);
                         foundMove  = entry.best_move;
                         foundnPlys = entry.nPlysDebug;
                         foundDraw  = entry.drawDebug;
                         foundAlpha = entry.dAlphaDebug;
                         foundBeta  = entry.dBetaDebug;
                         foundDepth = entry.depth;
-                        foundIsCheck = entry.bIsInCheckDebug;
+                        //foundIsCheck = entry.bIsInCheckDebug;
                         //foundLegalMoveSize = entry.legalMovesSize;
                         foundRepCount = entry.repCountDebug;
                         foundRawScore = entry.dScoreDebug;
@@ -1895,10 +2013,16 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     #endif
 
                 } else {
-
+            
                     // Its a match but not a perfect match. Use the move for ordering anyway (orders it to be seen sooner).
-                    TT2_match_move = entry.best_move;
+                    
+                    const bool entry_is_exact = (entry.flagg == TTFlag::EXACT);
+                    if (entry_is_exact || USE_TT_BOUND_MOVE_ORDER) {
 
+                        TT2_match_move = entry.best_move;
+                    }
+                    
+                    
                 }
                 
                 
@@ -1927,16 +2051,16 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     bool first_node_in_deepening = (top_deepening == depth);
 
     if (first_node_in_deepening) {
-        // Change 3: legal_moves needs a size() that discounts "zero moves".
+
         if (legal_moves.size() == 1) {
-            sout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
+            //sout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
 
-            #ifdef _DEBUGGING_TO_FILE1
-                // Show board
-                sout << gameboard_to_string(engine.game_board) << endl;
-                assert(0);
-            #endif
-
+            // // Show board (debug only)
+            // sout << gameboard_to_string(engine.game_board) << endl;
+            // engine.move_into_string(legal_moves[0]);
+            // sout << engine.move_string.c_str() << endl;
+            // assert(0);
+        
             return {ONLY_MOVE_SCORE, legal_moves[0]};
         }
     }
@@ -2054,34 +2178,84 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
             assert(qPlys==0);
 
-            if ((alpha_in < d_best_score) && (d_best_score < beta_in)) {
+
+
+            TTFlag new_flag;
+            if (d_best_score <= alpha_in) {
+                // The search failed low. The stored score is an upper bound.
+                new_flag = TTFlag::UPPER_BOUND;
+            }
+            else if (d_best_score >= beta_in) {
+                // The search failed high. The stored score is a lower bound.
+                new_flag = TTFlag::LOWER_BOUND;
+            }
+            else {
+                // The result landed strictly inside the original window.
+                // This is an EXACT score (not an alpha/beta boundary).
+                new_flag = TTFlag::EXACT;
+            }
+
+            if (STORE_TT_BOUNDS || (new_flag == TTFlag::EXACT)) {
+            //if ((alpha_in < d_best_score) && (d_best_score < beta_in)) {
                 //
                 //  This is an EXACT score (not an alpha/beta boundary).
                 //
 
+                // One consequence is worth understanding: a deeper bound can replace a shallower EXACT entry. 
+                // That is intentional under this policy because search depth is given first priority. 
+                // It is a normal and reasonable choice.
+                // At equal depth, an EXACT entry is protected from being replaced by a bound.
+                // Later, you could improve equal-depth bound replacement:
+
+
                 uint64_t key = engine.game_board.zobrist_key;
                 auto it_existing = TTable2.find(key);
 
-                const bool b_not_in_table = (it_existing == TTable2.end());
+                //const bool b_not_in_table = (it_existing == TTable2.end());
 
                 // Store a new position, or replace an existing result when the new
                 // search continued at least as many plies beyond this position.
                 // Greater depths mean there was less search to get to this position, depth is 
                 // intialized to a higher value, so there was more search after position X.
+
+
+                const bool b_new_position = (it_existing == TTable2.end());
+
+                bool b_deeper_result = false;
+                bool b_equal_depth_acceptable = false;
+
+                if (!b_new_position) {
+                    // The new search looked farther beyond this position.
+                    b_deeper_result = (depth > it_existing->second.depth);
+
+                    // At equal depth, never replace an EXACT result with a bound.
+                    const bool b_equal_depth = (depth == it_existing->second.depth);
+
+                    const bool b_new_result_is_exact = (new_flag == TTFlag::EXACT);
+
+                    const bool b_old_result_is_not_exact = (it_existing->second.flagg != TTFlag::EXACT);
+
+                    b_equal_depth_acceptable = b_equal_depth &&
+                        (b_new_result_is_exact || b_old_result_is_not_exact);
+                }
+
+                // Store if this position is new, was searched deeper, or has an
+                // acceptable replacement result at the same depth.
                 const bool b_store_entry =
-                    b_not_in_table ||
-                    (depth >= it_existing->second.depth);
+                    b_new_position ||
+                    b_deeper_result ||
+                    b_equal_depth_acceptable;
 
                 if (b_store_entry) {
-                    static const std::size_t MAX_TT2_SIZE = 2'000'000;
+                    static const std::size_t MAX_TT2_SIZE = 7'000'000;
 
                     // Adding a previously unseen position increases the table size.
                     // If the table is full, erase one arbitrary existing entry first.
                     // Replacing the same position does not require an eviction.
-                    if (b_not_in_table && TTable2.size() >= MAX_TT2_SIZE) {
+                    if (b_new_position && TTable2.size() >= MAX_TT2_SIZE) {
                         auto it = TTable2.begin();
                         if (it != TTable2.end()) {
-                            TTable2.erase(it);
+                            TTable2.erase(it);      // Remove a random entry
                         }
                     }
                 }
@@ -2094,19 +2268,11 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 const int cp_score_temp = convert_to_CP(score_for_TT);
 
 
-                #ifdef DEBUG_NODE_TT2
-                const bool debug_in_check =
-                    (engine.game_board.turn == Color::WHITE)
-                        ? engine.is_king_in_check_t<Color::WHITE>()
-                        : engine.is_king_in_check_t<Color::BLACK>();
-                #endif
-
-
                 // --- DEBUG
                 #ifdef DEBUG_NODE_TT2        // Compare "found" record to actual situation now.
                 {
-
-                    if (foundPos && (foundDepth == depth) ) {            
+                  
+                    if (foundPos && (foundDepth == depth) && foundWasExact && (new_flag == TTFlag::EXACT)) {            
 
                         bool scoreMismatch = false;
 
@@ -2172,7 +2338,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                             print_mismatch(sout, "al", (int)foundAlpha,         (int)alpha_in);
                             print_mismatch(sout, "bt", (int)foundBeta,          (int)beta);
                             print_mismatch(sout, "dr", foundDraw,          (state == GameState::DRAW));
-                            print_mismatch(sout, "ck", foundIsCheck,       debug_in_check);
+                            //print_mismatch(sout, "ck", foundIsCheck,       debug_in_check);
 
                             print_mismatch(sout, "rp", foundRepCount,      iRepCountNow);
                             print_mismatch(sout, "nPlys", foundnPlys, nPlys);
@@ -2259,6 +2425,23 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     slot.score_cp  = cp_score_temp;
                     slot.best_move = the_best_move;
                     slot.depth     = depth;
+                    slot.flagg     = new_flag;
+
+
+                    switch (new_flag) {
+                        case TTFlag::EXACT:
+                            tt_exact_writes++;
+                            break;
+
+                        case TTFlag::LOWER_BOUND:
+                            tt_lower_writes++;
+                            break;
+
+                        case TTFlag::UPPER_BOUND:
+                            tt_upper_writes++;
+                            break;
+                    }
+
 
                     #ifdef DEBUG_NODE_TT2
 
@@ -2267,7 +2450,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                         slot.nPlysDebug      = nPlys;
                         slot.drawDebug       = (state == GameState::DRAW);
-                        slot.bIsInCheckDebug = debug_in_check;
+                        //slot.bIsInCheckDebug = debug_in_check;
                         //slot.legalMovesSize  = legalMovesSize;
 
                         int repCountNow = 0;
@@ -2850,13 +3033,12 @@ bool MinimaxAI::loop_over_all_moves(int depth,
         //      DONE You are in quiescence search.
         //      DONE The side to move (engine.game_board.turn) is not in check.
         //      DONE The candidate is a capture.
-        //      Subtract the promotion value
         //      The position is not near a mate score.
         //      DONE A safety margin (DELTA_MARGIN) is included.
         //      DONE You must have a stand_pat score (cp_score_best / d_stand_pat) 
         //
         #define DELTA_MARGIN_CP 300
-        if (0) {
+        if (1) {
             if ((depth == 0) &&
                 (!in_check) &&
                 (nSearched > 0) &&                 // always search first move
@@ -2868,9 +3050,8 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
                 const Score optimistic_score =
                     d_stand_pat +
-                    capture_value_cp +
-                    DELTA_MARGIN_CP;
-
+                    convert_from_CP(capture_value_cp + DELTA_MARGIN_CP);
+             
                 if (optimistic_score <= alpha) {
                     // We cant hardly get back to this score
                     const bool is_a_check =
@@ -2883,6 +3064,18 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                     if (!is_a_check) {
                         // prune this capture
                         n_delta_tosses++;
+
+                        // if ( n_delta_tosses == 10) {
+                        //     // show board
+                        //     sout << endl << gameboard_to_string(engine.game_board) << endl;
+                        //     // show move
+                        //     engine.move_into_string(m);
+                        //     sout << engine.move_string.c_str() << endl;
+
+                        //     sout << optimistic_score << "  " << d_stand_pat  << "  " << capture_value_cp  << "  " << DELTA_MARGIN_CP;
+                        //     assert(0);
+                        // }
+
                         continue;
                     }
                 }
@@ -3669,10 +3862,10 @@ int MinimaxAI::cp_score_positional_get_middle_cp_t(int nPhase) {
     icp_temp = engine.game_board.rook_7th_rankness_cp_t<c>();
     cp_score_position_temp += icp_temp;
 
-    if (nPhase != GamePhase::ENDGAME_LATE) {
-        icp_temp = engine.game_board.potential_checks_against_king_cp_t<c>();
-        cp_score_position_temp += icp_temp;
-    }
+    // if (nPhase != GamePhase::ENDGAME_LATE) {
+    //     icp_temp = engine.game_board.potential_checks_against_king_cp_t<c>();
+    //     cp_score_position_temp += icp_temp;
+    // }
 
 
     return cp_score_position_temp;

@@ -158,7 +158,7 @@ public:
         int              score_cp;   // search score in centipawns
         int              depth;      // depth this node was searched to
         ShumiChess::Move best_move;  // move that produced score_cp
-        TTFlag           flag;       // optional: EXACT / LOWER_BOUND / UPPER_BOUND
+        TTFlag           flagg;       // optional: EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
 
   
@@ -170,7 +170,7 @@ public:
             // All the below to end is debug
             int nPlysDebug;
             bool drawDebug;  // 0 = not draw, 1 = draw
-            bool bIsInCheckDebug;
+            //bool bIsInCheckDebug;
             //int legalMovesSize;
             int repCountDebug;
             Score dScoreDebug;
@@ -330,7 +330,17 @@ public:
     int nFarts = 0;
     int nSemiFarts = 0;
     int n_futility_tosses = 0;
-    int n_delta_tosses = 0;
+    ull n_delta_tosses = 0;
+
+    int tt_exact_writes = 0;
+    int tt_lower_writes = 0;
+    int tt_upper_writes = 0;
+    int tt_lower_probes = 0;
+    int tt_lower_would_cutoff = 0;
+    int tt_upper_probes = 0;
+    int tt_upper_would_cutoff = 0;
+
+
 
     template<class T> string format_with_commas(T value);
     void playgroundOld(int iPhase);

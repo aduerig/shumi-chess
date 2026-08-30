@@ -5,6 +5,7 @@ enum WghtIndxs
 {
     HAS_CASTLED = 0,
     CAN_CASTLE,
+    QUEEN_SIDE_CASTLE,
     ISOLANI,
     ISOLANI_ROOK,
     PAWN_HOLE,
@@ -64,6 +65,7 @@ private:
     // castling is not actual "castling". It means getting the king to the side (on back rank), without trapping a rook.
     static constexpr int HAS_CASTLED_WGHT = 200;
     static constexpr int CAN_CASTLE_WGHT = 50;
+    static constexpr int QUEEN_SIDE_CASTLE_WGHT = -10;
 
     // Isolated pawns.
     //      One count for each instance.
@@ -115,7 +117,7 @@ private:
     static constexpr int QUEEN_OUT_EARLY_WGHT = -30;    // for landing on center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -170;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). Only in opening.
     //static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
-    static constexpr int BLOCKED_HOME_BISHOP_WGHT = 20; // only in opening. Bishop on home square blocked by 2 pawns
+    static constexpr int BLOCKED_HOME_BISHOP_WGHT = 21; // only in opening. Bishop on home square blocked by 2 pawns
     static constexpr int BISHOP_OUTSIDE_WORLD_WGHT = 12; // per original bishop whose pawn cage has been opened (a diagonal door is free)
     static constexpr int BISHOP_CAGED_WGHT = 12;         // penalty (subtracted) per bishop still home with both diagonal doors pawn-blocked
     
@@ -140,7 +142,7 @@ private:
     static constexpr int KINGS_CLOSE_TOGETHER_WGHT = 30;   // Only in late ending, to force enemy king to edge
 
     // Attackers are NOT kings. Otherwise everybody else.
-    static constexpr int ATTACKERS_ON_KING_WGHT = 20;      // For each square (per square) at or around the king box. Includes the king square itself.
+    static constexpr int ATTACKERS_ON_KING_WGHT = 23;      // For each square (per square) at or around the king box. Includes the king square itself.
 
     static constexpr int CENTER_OCCUPY_PIECES_WGHT = 24;  // Used only in CRAZY_IVAN. Doesnt count pawns or kings.
 

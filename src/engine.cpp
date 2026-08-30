@@ -198,9 +198,14 @@ void Engine::reset_engine() {         // New game.
     
     #define PROMOTION_TEST_FEN "4k3/8/8/8/8/8/4PPPP/4K3 w KQkq - 0 1"
 
+
+    #define TEMP_FEN "r1bq1rk1/pp2bp2/3p1n1Q/2p1p3/2BnP3/2NP1N2/PPP2PPP/R4RK1 w - - 1 11"
+
+    #define TEMP_FEN1 "r3qrk1/pb1nbppp/1pN2n2/2pp4/Q2P4/2NBP3/PP1B1PPP/R4RK1 w - - 8 13"
+
     ///////////////////////////////////////////////////////////////////////////////////
 
-    //game_board = GameBoard(THREE_TIME_REP_FEN);
+    //game_board = GameBoard(TEMP_FEN1);
 
     game_board = GameBoard();
 

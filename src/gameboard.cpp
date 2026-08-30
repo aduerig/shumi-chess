@@ -2428,6 +2428,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         else if (nGuardPawns==0) cpWght = 0;
         else assert(0);
 
+        if (k_file >= COL_C) cpWght += wghts.GetWeight(QUEEN_SIDE_CASTLE);
 
 
     }
