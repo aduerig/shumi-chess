@@ -118,6 +118,11 @@ int main(int argc, char** argv) {
 
     GameState state;
 
+    long long totalNodesSum = 0;
+    ull totalNodesSamples=0;
+
+    long long total_elapsed_time=0; 
+
     for (int iPositions=0; iPositions<NPositions; iPositions++) {
 
         // Make engine
@@ -149,26 +154,32 @@ int main(int argc, char** argv) {
                 break;
             }
 
-
             make_engine_move(engine, move);
 
             // Show board
             // out = utility::representation::gameboard_to_string(engine.game_board);
             // sout << out << endl;
 
+            // Get total number of nodes used in search
+            totalNodesSum += minimax_ai.nodes_visited;
+            totalNodesSamples++;
+            sout << "siz=" << (totalNodesSum/totalNodesSamples) << endl;
+
+
             state = engine.is_game_over();
         }
 
-        sout << "Game state: " << game_state_to_string(state) << endl;
+        sout << "Gammme state: " << game_state_to_string(state) << endl;
         sout << "PGN: " << engine.gamePGN.spitout() << endl;
         steady_clock::time_point end_time = steady_clock::now();
-        sout << iPositions << "  Elapsed time: " << elapsed_time_msec(start_time, end_time) << " msec" << endl;
+        total_elapsed_time = elapsed_time_msec(start_time, end_time);
+        sout << iPositions << "  Elapsed time: " << total_elapsed_time << " msec" << endl;
 
     }
 
- 
+    sout <<" ep=" << total_elapsed_time <<" nd=" << (totalNodesSum/totalNodesSamples) << endl;
 
-    sout << "Press any key to exit..." << endl;
+    sout << "Press any keeeeeeey to exit..." << endl;
     _getch();
 
     return 0;

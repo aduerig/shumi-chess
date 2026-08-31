@@ -1643,11 +1643,11 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
 }
 
 //
-// How to use your TT. The control knobs.
+// How to use your TT bounds. The control knobs.
 //
 constexpr bool STORE_TT_BOUNDS          = true;
-constexpr bool USE_TT_BOUND_CUTOFFS     = false;
-constexpr bool USE_TT_BOUND_MOVE_ORDER  = false;
+constexpr bool USE_TT_BOUND_CUTOFFS     = true;
+constexpr bool USE_TT_BOUND_MOVE_ORDER  = true;
 
 
 //     
@@ -1658,20 +1658,42 @@ constexpr bool USE_TT_BOUND_MOVE_ORDER  = false;
 //  Case A: Old behavior                       0                    0                         0
 //          Store and use EXACT entries only.
 //
+//          ep=116369 nd=11474322
+//          ep=119481 nd=11474322
+//          ep=116927 nd=11474322
+
 //  Case B: Bound-storage overhead only        1                    0                         0
 //          Store bounds, but never use their scores or moves for ordering.
 //
+//          ep=124133 nd=11881925
+//          ep=146440 nd=11881925
+//          ep=121594 nd=11881925
+
+
 //  Case C: Bound cutoffs only                 1                    1                         0
 //          Store bounds and use their scores for cutoffs,
 //          but do not use their moves for ordering.
 //
+//           ep=73977 nd=7222520
+//           ep=74875 nd=7222520
+//           ep=73506 nd=7222520
+
 //  Case D: Bound move ordering only           1                    0                         1
 //          Store bounds and use their moves for ordering,
 //          but do not use their scores for cutoffs.
+//          ep=88947 nd=8560074
+//          ep=87620 nd=8560074
+//          ep=87900 nd=8560074
+
 //
 //  Case E: Complete bounded TT                1                    1                         1
 //          Store bounds and use both their scores and moves.
 //
+//       ep=49019 nd=4783822
+//       ep=48813 nd=4783822
+//       ep=49132 nd=4783822
+
+
 //
 //  Irrelevant combinations:
 //
