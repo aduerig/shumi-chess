@@ -158,7 +158,7 @@ public:
         int              score_cp;   // search score in centipawns
         int              depth;      // depth this node was searched to
         ShumiChess::Move best_move;  // move that produced score_cp
-        TTFlag           flagg;       // optional: EXACT / LOWER_BOUND / UPPER_BOUND
+        TTFlag           flagg;       // EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
 
   
@@ -219,7 +219,6 @@ public:
     void wakeup();
     void resign();
     bool should_hard_abort();
-    bool should_abort_search_by_soft_time();
 
     bool sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
    
@@ -230,12 +229,12 @@ public:
     std::tuple<Score, ShumiChess::Move> do_a_principal_variation(int depth
                                         , TIME_TYPE start_time, ull i_time_requested, TIME_TYPE requested_end_time
                                         , const SearchTimeControl& time_control
-                                        , ull& elapsed_time);      // Output
+                                        , ull& cumul_time_msec);      // Output
 
-    static bool should_stop_by_time(ull elapsed_time, double growth_factor
+    static bool should_stop_by_time(ull accum_time, double growth_factor
                                         , ull fallback_move_budget
                                         , const SearchTimeControl& time_control
-                                        , double& estimated_elapsed_time);
+                                        , double& estimated_accum_time);
 
     tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time_display_only
                                                 , ull& last_elapsed_time_display_only
@@ -332,13 +331,13 @@ public:
     int n_futility_tosses = 0;
     ull n_delta_tosses = 0;
 
-    int tt_exact_writes = 0;
-    int tt_lower_writes = 0;
-    int tt_upper_writes = 0;
-    int tt_lower_probes = 0;
-    int tt_lower_would_cutoff = 0;
-    int tt_upper_probes = 0;
-    int tt_upper_would_cutoff = 0;
+    // int tt_exact_writes = 0;
+    // int tt_lower_writes = 0;
+    // int tt_upper_writes = 0;
+    // int tt_lower_probes = 0;
+    // int tt_lower_would_cutoff = 0;
+    // int tt_upper_probes = 0;
+    // int tt_upper_would_cutoff = 0;
 
 
 

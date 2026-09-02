@@ -180,15 +180,33 @@ bool global_debug_flag = false;
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
 
-    //sout << "\033[1;34mNew Match\033[0m" << endl;
+  
 
     // Initialize storage buffers (they live here to avoid extra allocation during the game)
 
     //TTable.clear();
     //TTable.reserve(1'000'000);    // NOTE: What size here? (we dont even normally use this table)
     
+
+
+
+
+    sout << "\033[1;34mNew Match\033[0m" << endl;
+    sout << "TTable2 entries before clear=" << TTable2.size() << endl;
+    const auto clear_start_time = std::chrono::steady_clock::now();
+
     TTable2.clear();
-    TTable2.reserve(200'000);    // NOTE: What size here? Games seem to use 150,000 max, of EXACT MATCH.
+
+    const auto clear_end_time = std::chrono::steady_clock::now();
+    const auto clear_elapsed_msec =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            clear_end_time - clear_start_time
+        ).count();
+
+    sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
+
+    TTable2.reserve(200'000);
+
 
     pawn_file_info.clear();
     pawn_file_info.reserve(1'000'000);    // NOTE: What size here?
@@ -296,7 +314,7 @@ bool MinimaxAI::should_hard_abort()
 
     const ull abs_time_ms = get_time_ms();  // milliseconds
 
-    // duration_now is the time since 
+    // duration_now is the time since the hard abort timer started.
     const ull duration_now = (abs_time_ms - hard_abort_start_time_ms);
 
     if (duration_now >= hard_abort_budget_ms) {
@@ -307,11 +325,6 @@ bool MinimaxAI::should_hard_abort()
         return true;
     }
 
-    return false;
-}
-
-bool MinimaxAI::should_abort_search_by_soft_time()
-{
     return false;
 }
 
@@ -624,6 +637,8 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
         #ifdef DISPLAY_DEEPING
             last_elapsed_time_display_only = elapsed_time_display_only;
             if (depth==1) cerr << "\n";
+    
+            sout << "TTT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;  
             sout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
                         << " msec=" << std::setw(6) << elapsed_time_display_only << '/';
             if (estimated_elapsed_time_available) {
@@ -759,10 +774,6 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 
 }
 
-
-
-int g_this_depth = 6;
-
 //////////////////////////////////////////////////////////////////////////////////
 //
 //   This the entry point into the C to get a minimax AI move.
@@ -871,19 +882,32 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
 
         // BUT
 
-
-
         #ifdef _DEBUGGING_TO_FILE
             fprintf(fpDebug, "\nnew game\n");
         #endif   
 
-        string sss;
-        TTable2.clear();    // Clear even if we don't use it.
+    sout << "\033[1;34mNew Game\033[0m" << endl;
+    sout << "TTable2 entries before clear=" << TTable2.size() << endl;
+    const auto clear_start_time = std::chrono::steady_clock::now();
 
+        TTable2.clear();    // Clear even if we don't use it.
+        
+    const auto clear_end_time = std::chrono::steady_clock::now();
+    const auto clear_elapsed_msec =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            clear_end_time - clear_start_time
+        ).count();
+
+    sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
+
+
+        max_TTable2_size = 0;
+
+        //string sss;
         //sss = format_with_commas(pawn_file_info.size());
         //printf("pawn_file_info size before clear = %s\n", sss.c_str());
         
-        max_TTable2_size = 0;
+  
 
         pawn_file_info.clear();
 
@@ -898,13 +922,13 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         NTriesP = 0;
         nRandos = 0;
 
-        tt_exact_writes = 0;
-        tt_lower_writes = 0;
-        tt_upper_writes = 0;
-        tt_lower_probes = 0;
-        tt_lower_would_cutoff = 0;
-        tt_upper_probes = 0;
-        tt_upper_would_cutoff = 0;
+        // tt_exact_writes = 0;
+        // tt_lower_writes = 0;
+        // tt_upper_writes = 0;
+        // tt_lower_probes = 0;
+        // tt_lower_would_cutoff = 0;
+        // tt_upper_probes = 0;
+        // tt_upper_would_cutoff = 0;
 
 
         nGames++;
@@ -982,7 +1006,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         killer2[ii] = {};
     }
 
-    ull elapsed_time = 0ULL; // in msec
+    ull cumul_time_msec = 0ULL;
     tuple<Score, Move> ret_val;
 
     n_Multis = 1;           // MultiPV if greater than 1
@@ -1010,12 +1034,12 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         std::fill(std::begin(prev_root_best_), std::end(prev_root_best_),
                   std::pair<Move, Score>{});
         start_of_calculation = chrono::high_resolution_clock::now();
-        elapsed_time = 0ULL; // in msec
+        cumul_time_msec = 0ULL; // in msec
 
         ret_val = do_a_principal_variation(depth
                                         , start_of_calculation, duration_requested, requested_end_time
                                         , time_control
-                                        , elapsed_time);        // Output
+                                        , cumul_time_msec);        // Output (cumulative over all deepenings)
         d_best_move_score = get<0>(ret_val);
         if (d_best_move_score == ABORT_SCORE) {
             multipv_aborted = true;
@@ -1122,10 +1146,10 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         // calls engine_communicator_make_move_two_acn() to make the move.
         //playgroundOld(iPhase);
 
-        double elapsed_time_min = elapsed_time / 1000.0 / 60.0;
+        double cumul_time_min = cumul_time_msec / 1000.0 / 60.0;
         sout << "\x1b[33m\nWent to depth " << (depth - 1)  
-            << " elapsed min= " << elapsed_time_min
-            << " elapsed msec= " << elapsed_time << " request msec= " << duration_requested 
+            << " acumulatated min= " << cumul_time_min
+            << " acumulatated msec= " << cumul_time_msec << " request msec= " << duration_requested 
             << std::fixed << std::setprecision(1)
             << "\x1b[0m" << endl;
 
@@ -1279,51 +1303,10 @@ void MinimaxAI::playground(int iPhase) {
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
 
-// TTable2
-
     max_TTable2_size = std::max(max_TTable2_size, TTable2.size());
 
-    sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hits=" << NhitsTT2 << endl;
+    sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;    // <<  
 
-
-    // ull exact_entries = 0;
-    // ull lower_entries = 0;
-    // ull upper_entries = 0;
-
-    // for (const auto& pair : TTable2) {
-    //     switch (pair.second.flagg) {
-    //         case TTFlag::EXACT:
-    //             exact_entries++;
-    //             break;
-
-    //         case TTFlag::LOWER_BOUND:
-    //             lower_entries++;
-    //             break;
-
-    //         case TTFlag::UPPER_BOUND:
-    //             upper_entries++;
-    //             break;
-    //     }
-    // }
-
-    // sout << "TT2 size=" << TTable2.size()
-    //     << " exact=" << exact_entries
-    //     << " lower=" << lower_entries
-    //     << " upper=" << upper_entries
-    //     << endl;
-
-    // sout << "tt_exact_writes=" << tt_exact_writes << 
-    //    " tt_lower_writes=" << tt_lower_writes << " tt_upper_writes=" << tt_upper_writes << endl;
-                           
-    // sout << " lower probes=" << tt_lower_probes
-    //     << " would-cutoff=" << tt_lower_would_cutoff
-    //     << " upper probes=" << tt_upper_probes
-    //     << " would-cutoff=" << tt_upper_would_cutoff
-    //     << endl;
-        
-
-    //int material_balance = ;  // evaluate_board();
-    //itemp1 = engine.game_board.opposite_bishops_cp_t(material_balance);
 
 
     // sout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
@@ -1338,7 +1321,7 @@ void MinimaxAI::playground(int iPhase) {
     // sout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
     // sout << " n_futility_tosses " << n_futility_tosses << endl;
-    sout << " n_delta_tosses " << n_delta_tosses << endl;
+    //sout << " n_delta_tosses " << n_delta_tosses << endl;
     // sout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
 
     //engine.debug_print_repetition_table();
@@ -1372,14 +1355,14 @@ void MinimaxAI::playground(int iPhase) {
 
 ////////// loop over all "deepenings" /////////////////////////////////////////////////////////////////////////
 //
-//  elapsed_time is an output
+//  cumul_time_msec is an output (time spent over all deepenings)
 //
 std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth
                                         , TIME_TYPE start_time, ull duration_requested, TIME_TYPE requested_end_time
                                         , const SearchTimeControl& time_control
-                                        , ull& elapsed_time)      // output
+                                        , ull& cumul_time_msec)      // output
 {
-    elapsed_time = 0ULL; // in msec
+    cumul_time_msec = 0ULL; // in msec
 
     bool b_Forced = false;
 
@@ -1387,9 +1370,9 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     bool bThinkingOverByTime = false;
     bool bThinkingOverByDepth = false;
 
-    long long now_s;    // milliseconds 
-    long long end_s;    // milliseconds
-    long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
+    // long long now_s;    // milliseconds 
+    // long long end_s;    // milliseconds
+    //long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
 
     Move best_move = {};
     Score d_best_move_score = ZERO_SCORE;
@@ -1433,7 +1416,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
         // Ha. Here we pass in the elapsed time, just for display, before the deeping.
         ret_val = do_a_deepening(depth
-                                , elapsed_time                      // used for display only
+                                , cumul_time_msec                      // used for display only
                                 , last_elapsed_time_display_only
                                 , estimated_elapsed_time_display_only
                                 , estimated_elapsed_time_available);
@@ -1500,14 +1483,14 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         #endif
 
 
+        // "cumulative" means time spent over all deepenings.
         auto now_time = chrono::high_resolution_clock::now();
-
-        elapsed_time = (ull)chrono::duration_cast<chrono::milliseconds>(now_time - start_time).count();
-        diff_s = (long long)elapsed_time - (long long)duration_requested;
+        cumul_time_msec = (ull)chrono::duration_cast<chrono::milliseconds>(now_time - start_time).count();
+        //diff_s = (long long)cumul_time_msec - (long long)duration_requested;
 
         // (Optional: keep these only for your printout)
-        now_s = (long long)chrono::duration_cast<chrono::milliseconds>(now_time.time_since_epoch()).count();
-        end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
+        // now_s = (long long)chrono::duration_cast<chrono::milliseconds>(now_time.time_since_epoch()).count();
+        // end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
 
         // The completed root search proved a forced mate.
         // Further iterative deepening is unnecessary.
@@ -1518,17 +1501,10 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         // Next deepening
         depth++;
 
-        // Let D be user duration. Let T be elapsed time so far. Because of exponential growth in 
-        // branching, each deepeining takes a lot longer than the previous ones.
-        // time based ending of thinking
-        //bThinkingOverByTime = (diff_s > 0);
-
-        //                      T           >=      D
-        //bThinkingOverByTime = (elapsed_time >= (ull)duration_requested);
         double growth_factor = 6.0;
-        //        
+                
         bThinkingOverByTime = should_stop_by_time(
-            elapsed_time,
+            cumul_time_msec,
             growth_factor,
             duration_requested,
             time_control,
@@ -1569,13 +1545,19 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 //
 // Note that "elapsed time" here is not cumulative (across deepenings).
 //      Return: true if search should stop, based on various things.
-//      input:  elapsed_time is the elapsed time "so far", running the deepenings so far.
+//      input:  cumul_time_msec is the elapsed time "so far", running the deepenings so far.
 //      output: estimated_elapsed_time is the estimated time this next deeping will take.
-bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
+bool MinimaxAI::should_stop_by_time(ull accum_time, double growth_factor
                                     , ull fallback_move_budget
                                     , const SearchTimeControl& time_control
-                                    , double& estimated_elapsed_time)      // output
+                                    , double& estimated_accum_time)      // output
 {
+
+
+
+    //  "budget"s are the total time Shumi is allowed to spend on the entire move search, starting from when 
+    //  thinking began.
+
 
     // Sometimes I dont believe my incredibly fast (becasue of the TT2 on simple positions), 
     // elapsed times that are very small (3 or 4 msec) because a "search cliff" may happen when 
@@ -1583,23 +1565,17 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
     // based on the blazinlglt fast times, and crash into a full recompute at deeping 13 or 14 on
     // simple positions, when elapsed time at these levewls is still 3-4 msec.
     // When these numbers happen, Shumi stalls. 
-    // So I want a minimum "elapsed time", that takes a maximum of some resaonbly exponetial curve, 
-    // and the passed in "elapsed time". The "resaonbly exponetial curve" whould yield 10 msec or more at depths of
-    // 12 or more. Make the exponential try to follow growth_factor. The "minimum elapsed time", function should return very low values 
-    // at depths of 1 - 7. 
-
-    //  elapsed_time is how long the last deepening took.
-    //  estimated_elapsed_time is how long we think the next deepening will take. 
-    //      Here we asssumme that the growth of time spent on each deeepening is exponential.
+    //
+    //      Here we assumme that the growth of time spent on each deeepening is exponential.
     //      Note: should this instead be factorial?
-    estimated_elapsed_time = (double)elapsed_time * growth_factor;
+    estimated_accum_time = (double)accum_time * growth_factor;
 
     // Existing callers specify only a per-move duration. Preserve that behavior
     // until they provide a complete time-control description.
     // However, Cutechess and other "GUI"s do pass in times and this ends up enabling time control.
     if (!time_control.enabled()) {
         
-        return (estimated_elapsed_time >= fallback_move_budget);
+        return (estimated_accum_time >= fallback_move_budget);
 
     } else {
 
@@ -1638,7 +1614,7 @@ bool MinimaxAI::should_stop_by_time(ull elapsed_time, double growth_factor
             (double)usable_clock);
 
       
-        return (estimated_elapsed_time >= move_budget);
+        return (estimated_accum_time >= move_budget);
     }
 }
 
@@ -1950,10 +1926,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     stored_score = mate_score_from_TT(stored_score, level);
 
                     if (entry.flagg == TTFlag::LOWER_BOUND) {
-                        tt_lower_probes++;
+                        //tt_lower_probes++;
 
                         if (stored_score >= beta) {
-                            tt_lower_would_cutoff++;
+                            //tt_lower_would_cutoff++;
 
                             if (USE_TT_BOUND_CUTOFFS) {
                                 return {stored_score, entry.best_move};
@@ -1961,10 +1937,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         }
                     }
                     else if (entry.flagg == TTFlag::UPPER_BOUND) {
-                        tt_upper_probes++;
+                        //tt_upper_probes++;
 
                         if (stored_score <= alpha) {
-                            tt_upper_would_cutoff++;
+                            //tt_upper_would_cutoff++;
 
                             if (USE_TT_BOUND_CUTOFFS) {
                                 return {stored_score, entry.best_move};
@@ -2450,19 +2426,19 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     slot.flagg     = new_flag;
 
 
-                    switch (new_flag) {
-                        case TTFlag::EXACT:
-                            tt_exact_writes++;
-                            break;
+                    // switch (new_flag) {
+                    //     case TTFlag::EXACT:
+                    //         tt_exact_writes++;
+                    //         break;
 
-                        case TTFlag::LOWER_BOUND:
-                            tt_lower_writes++;
-                            break;
+                    //     case TTFlag::LOWER_BOUND:
+                    //         tt_lower_writes++;
+                    //         break;
 
-                        case TTFlag::UPPER_BOUND:
-                            tt_upper_writes++;
-                            break;
-                    }
+                    //     case TTFlag::UPPER_BOUND:
+                    //         tt_upper_writes++;
+                    //         break;
+                    // }
 
 
                     #ifdef DEBUG_NODE_TT2
