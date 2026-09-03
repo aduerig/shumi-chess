@@ -328,6 +328,26 @@ bool MinimaxAI::should_hard_abort()
     return false;
 }
 
+bool MinimaxAI::should_abort_search_by_soft_time()
+{
+    if (!soft_abort_enabled) return false;
+
+    const ull abs_time_ms = get_time_ms();  // milliseconds
+
+    // duration_now is the time since the soft abort timer started.
+    const ull duration_now = (abs_time_ms - soft_abort_start_time_ms);
+
+    if (duration_now >= soft_abort_budget_ms) {
+        #ifdef _DEBUGGING_TEMP1
+            fprintf(fpDebug, "\nsoft stop_calculation %lld  %lld\n", duration_now, soft_abort_budget_ms);
+        #endif
+        stop_calculation = true;
+        return true;
+    }
+
+    return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // This is a "leaf". Returns " relative (negamax) score". in centipawns. Relative score is positive for great
@@ -638,7 +658,6 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
             last_elapsed_time_display_only = elapsed_time_display_only;
             if (depth==1) cerr << "\n";
     
-            sout << "TTT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;  
             sout << endl << aspiration_tries << " Deeping " << depth << " ply of " << maximum_deepening
                         << " msec=" << std::setw(6) << elapsed_time_display_only << '/';
             if (estimated_elapsed_time_available) {
@@ -838,6 +857,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         hard_abort_start(hard_abort_duration_ms);
     } else {
         hard_abort_end();
+        soft_abort_end();
     }
 
 
@@ -886,19 +906,22 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
             fprintf(fpDebug, "\nnew game\n");
         #endif   
 
-    sout << "\033[1;34mNew Game\033[0m" << endl;
-    sout << "TTable2 entries before clear=" << TTable2.size() << endl;
-    const auto clear_start_time = std::chrono::steady_clock::now();
+        response_time_sum = 0.0;
+        response_time_cnts = 0;
+            
+        sout << "\033[1;34mNew Game\033[0m" << endl;
+        sout << "TTable2 entries before clear=" << TTable2.size() << endl;
+        const auto clear_start_time = std::chrono::steady_clock::now();
 
         TTable2.clear();    // Clear even if we don't use it.
         
-    const auto clear_end_time = std::chrono::steady_clock::now();
-    const auto clear_elapsed_msec =
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            clear_end_time - clear_start_time
-        ).count();
+        const auto clear_end_time = std::chrono::steady_clock::now();
+        const auto clear_elapsed_msec =
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                clear_end_time - clear_start_time
+            ).count();
 
-    sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
+        sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
 
 
         max_TTable2_size = 0;
@@ -990,11 +1013,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         time_control = {};
     }
 
-    // Obey requested deepening and duration
-    //  (not actually a "endtime". The last deepening will start before or at this "requested" time)
-    TIME_TYPE requested_end_time = start_of_calculation + std::chrono::milliseconds((long long)duration_requested); 
-    maximum_deepening = this_deepening;
-    maximum_duration = duration_requested;
+    maximum_deepening = this_deepening;     // used for display only
 
     // defaults
     int depth = 1;
@@ -1037,7 +1056,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         cumul_time_msec = 0ULL; // in msec
 
         ret_val = do_a_principal_variation(depth
-                                        , start_of_calculation, duration_requested, requested_end_time
+                                        , start_of_calculation, duration_requested  //  , requested_end_time
                                         , time_control
                                         , cumul_time_msec);        // Output (cumulative over all deepenings)
         d_best_move_score = get<0>(ret_val);
@@ -1100,6 +1119,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
 
     if (best_move.piece_type == Piece::NONE) {          // from get_move_iterative_deepening()
         hard_abort_end();
+        soft_abort_end();
         sout << "No legal root move; returning bestmove 0000" << endl;
         return best_move;
     }
@@ -1190,6 +1210,9 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
 
         chrono::duration<double> total_time2 = chrono::high_resolution_clock::now() - start_of_calculation; // still prints seconds
 
+        //
+        //  The "green line" printout line
+        //
         double dElapsedTime = total_time2.count();
         sout << colorize(AColor::BRIGHT_GREEN, (static_cast<std::ostringstream&&>(std::ostringstream()
             << "Total time: " << std::fixed << std::setprecision(2) << dElapsedTime << " sec")).str());
@@ -1200,12 +1223,18 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         else 
             engine.game_black_time_msec += running_time_msec;
 
+        response_time_sum += dElapsedTime;
+        response_time_cnts++;
+        double dtemp = response_time_sum / response_time_cnts;
 
-
-        double evals_per_sec = evals_visited / total_time.count();
-        sout << colorize(AColor::BRIGHT_GREEN, 
-            "   nodes/sec= " + format_with_commas(std::llround(nodes_per_sec)) + 
-            "   evals/sec= " + format_with_commas(std::llround(last_depth_seconds))) << endl;
+     
+        sout << colorize(
+            AColor::BRIGHT_GREEN,
+            "   nodes/sec= " +
+            format_with_commas(std::llround(nodes_per_sec)) +
+            "   resp_avg= " +
+            std::to_string(dtemp))
+            << endl;
 
   #endif
 
@@ -1246,6 +1275,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
     ////////// done with "main" move displays /////////////////////////////////////////////////////////////////////////
     
     hard_abort_end();
+    soft_abort_end();
 
     //assert(0);            
 
@@ -1303,9 +1333,9 @@ void MinimaxAI::playground(int iPhase) {
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
 
-    max_TTable2_size = std::max(max_TTable2_size, TTable2.size());
+    //max_TTable2_size = std::max(max_TTable2_size, TTable2.size());
 
-    sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;    // <<  
+    //sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;    // <<  
 
 
 
@@ -1358,7 +1388,7 @@ void MinimaxAI::playground(int iPhase) {
 //  cumul_time_msec is an output (time spent over all deepenings)
 //
 std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth
-                                        , TIME_TYPE start_time, ull duration_requested, TIME_TYPE requested_end_time
+                                        , TIME_TYPE start_time, ull duration_requested  //, TIME_TYPE requested_end_time
                                         , const SearchTimeControl& time_control
                                         , ull& cumul_time_msec)      // output
 {
@@ -1370,10 +1400,6 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     bool bThinkingOverByTime = false;
     bool bThinkingOverByDepth = false;
 
-    // long long now_s;    // milliseconds 
-    // long long end_s;    // milliseconds
-    //long long diff_s;   // Holds (actual time - requested time). Positive if past due. Negative if sooner than expected
-
     Move best_move = {};
     Score d_best_move_score = ZERO_SCORE;
     
@@ -1383,6 +1409,8 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
     double previous_estimated_elapsed_time = 0.0;
     double estimated_elapsed_time_display_only = 0.0;
     bool estimated_elapsed_time_available = false;
+    
+    ull move_budget_ms = duration_requested;
 
     max_attained_depth = 0; 
     max_attained_qdepth = 0; 
@@ -1480,6 +1508,9 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             engine.move_string += " ; ";
             engine.move_string += score_buf;
             sout << " Best: " << engine.move_string;
+
+            sout << "  TTT " << TTable2.size();  
+
         #endif
 
 
@@ -1488,10 +1519,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         cumul_time_msec = (ull)chrono::duration_cast<chrono::milliseconds>(now_time - start_time).count();
         //diff_s = (long long)cumul_time_msec - (long long)duration_requested;
 
-        // (Optional: keep these only for your printout)
-        // now_s = (long long)chrono::duration_cast<chrono::milliseconds>(now_time.time_since_epoch()).count();
-        // end_s = (long long)chrono::duration_cast<chrono::milliseconds>(requested_end_time.time_since_epoch()).count();
-
+      
         // The completed root search proved a forced mate.
         // Further iterative deepening is unnecessary.
         if (IS_MATE_SCORE(d_Return_score)) {
@@ -1501,14 +1529,27 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         // Next deepening
         depth++;
 
+        //
+        // Try to figure out (based on time) wether I should start the next deepening or not. 
+        //  Basically a comparison: is t > a where
+        //    t - Estimated time that the next deepening will take (we try but this can be wildly off, especially
+        //        with TT usage). 
+        //    a - Availalible time, this is complicated. If time control not enabled, its the fallback_move_budget. If time control
+        //        is enabled, then its a complicated computation based on a number of things. See TimeControl.
         double growth_factor = 6.0;
-                
         bThinkingOverByTime = should_stop_by_time(
-            cumul_time_msec,
-            growth_factor,
-            duration_requested,
-            time_control,
-            estimated_elapsed_time);
+            cumul_time_msec,            // Cumulative time spent in all previous deepenings
+            growth_factor,              // Expected growth factor (exponetial)
+            duration_requested,         // (used only if time control not enabled) The user requested this as the total time for this move (all deepenings)
+            time_control,               // If playing in time control, this is all the details,
+            estimated_elapsed_time,     // I am returned as the estimate of the next deepening's time
+            move_budget_ms);            // I am returned as ??
+
+        //
+        // Establish soft abort (this is to prevent seacrh cliffs from taking too much time.)
+        const ull soft_limit_ms = (ull)((double)move_budget_ms * SOFT_ABORT_SAFETY_FACTOR);
+        const ull remaining_soft_time_ms = (soft_limit_ms > cumul_time_msec) ? soft_limit_ms - cumul_time_msec : 0ULL;
+        soft_abort_start(remaining_soft_time_ms);
 
         // hard abort testing debug only only
         //bThinkingOverByTime = false;        // debug only (to test hard abort)
@@ -1538,25 +1579,28 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 }
 
 // I am called after each deepening, to try to figure out (based on time) wether I should start the
-// next deepening or not. Bascially a comparison: is t > a where
+// next deepening or not. 
+//  Basically a comparison: is t > a where
 //    t - Estimated time that the next deepening will take (we try but this can be wildly off, especially
 //        with TT usage). 
-//    a - Availalible time, this is complicated. 
+//    a - Availalible time, this is complicated. If time control not enabled, its the fallback_move_budget. If time control
+//        is enabled, then its a complicated computation based on a number of things. See TimeControl.
 //
-// Note that "elapsed time" here is not cumulative (across deepenings).
 //      Return: true if search should stop, based on various things.
 //      input:  cumul_time_msec is the elapsed time "so far", running the deepenings so far.
 //      output: estimated_elapsed_time is the estimated time this next deeping will take.
 bool MinimaxAI::should_stop_by_time(ull accum_time, double growth_factor
-                                    , ull fallback_move_budget
+                                    , ull fallback_move_budget      // Used only if time control not eneabled
                                     , const SearchTimeControl& time_control
-                                    , double& estimated_accum_time)      // output
+                                    , double& estimated_accum_time      // output
+                                    , ull& move_budget_ms)              // output
 {
 
 
 
     //  "budget"s are the total time Shumi is allowed to spend on the entire move search, starting from when 
     //  thinking began.
+
 
 
     // Sometimes I dont believe my incredibly fast (becasue of the TT2 on simple positions), 
@@ -1574,6 +1618,7 @@ bool MinimaxAI::should_stop_by_time(ull accum_time, double growth_factor
     // until they provide a complete time-control description.
     // However, Cutechess and other "GUI"s do pass in times and this ends up enabling time control.
     if (!time_control.enabled()) {
+        move_budget_ms = fallback_move_budget;
         
         return (estimated_accum_time >= fallback_move_budget);
 
@@ -1613,6 +1658,7 @@ bool MinimaxAI::should_stop_by_time(ull accum_time, double growth_factor
             minimum_budget,
             (double)usable_clock);
 
+        move_budget_ms = (ull)move_budget;
       
         return (estimated_accum_time >= move_budget);
     }
@@ -1835,13 +1881,20 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         if (aborts_allowed) {       // from regular search
 
-            // Hard abort is not allowed until we have seen at least one deepening, and 
+            // Aaborts is not allowed until we have seen at least one deepening, and 
             // therefore have a usable move to fall back to.
 
             if (should_hard_abort()) {
 
                 // time limits say we should abort. These are measured from the game end.
                 sout << endl << "hard abort s=" << hard_abort_enabled << endl;
+                return { ABORT_SCORE, the_best_move };
+            }
+
+            if (should_abort_search_by_soft_time()) {
+
+                // time limits say we should abort. These are measured from the game end.
+                sout << endl << "soft abort s=" << soft_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
         }
@@ -2156,7 +2209,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         the_best_move, d_best_score,        // outputs
                         did_cutoff);
         if (was_aborted) {
-            sout << "loop_over_all_moves abort" << endl;
+            //sout << "loop_over_all_moves abort" << endl;
             return {ABORT_SCORE, the_best_move};
         }
 
@@ -2697,13 +2750,20 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
         if (aborts_allowed) {       // from qsearch
 
-            // Hard abort is not allowed until we have seen at least one deepening, and 
+            // Abort is not allowed until we have seen at least one deepening, and 
             // therefore have a usable move to fall back to.
 
             if (should_hard_abort()) {
 
                 // time limits say we should abort. These are measured from the game end.
                 sout << endl << "hard abort q=" << hard_abort_enabled << endl;
+                return { ABORT_SCORE, the_best_move };
+            }
+
+            if (should_abort_search_by_soft_time()) {
+
+                // time limits say we should abort. These are measured from the game end.
+                sout << endl << "soft abort q=" << soft_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
         }
@@ -2896,7 +2956,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
                         the_best_move, d_best_score,        // outputs
                         did_cutoff);
         if (was_aborted) {
-            sout << "loop_over_all_moves abortQ" << endl;
+            //sout << "loop_over_all_moves abortQ" << endl;
             return {ABORT_SCORE, the_best_move};
         }
    

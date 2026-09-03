@@ -42,6 +42,7 @@ constexpr int MAXIMUM_DEEPENING = 40;       // If this wall hit, deepening stops
                                             // zips through these, that it runs out of depth before the time limit
 constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (last deepeining discarded)
 constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead past this far.
+#define SOFT_ABORT_SAFETY_FACTOR 5.0
 //assert(MAXIMUM_DEEPENING < MAX_PLY);
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
@@ -105,8 +106,8 @@ public:
     ull aspiration_retry_nodes = 0;
 
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
-    int maximum_deepening = 0;
-    ull maximum_duration = 0;      // Milliseconds requested for the current search.
+    int maximum_deepening = 0;      // used for display only
+    //ull maximum_duration = 0;      // Milliseconds requested for the current search.
 
     int cp_score_material_avg = 0;
     //int cp_score_material_NP_avg = 0;
@@ -219,6 +220,7 @@ public:
     void wakeup();
     void resign();
     bool should_hard_abort();
+    bool should_abort_search_by_soft_time();
 
     bool sort_moves_for_search(vector<ShumiChess::Move>* p_moves_to_loop_over, int depth, int nPlys, bool is_top_of_deepening);
    
@@ -227,14 +229,15 @@ public:
 
 
     std::tuple<Score, ShumiChess::Move> do_a_principal_variation(int depth
-                                        , TIME_TYPE start_time, ull i_time_requested, TIME_TYPE requested_end_time
+                                        , TIME_TYPE start_time, ull i_time_requested   //, TIME_TYPE requested_end_time
                                         , const SearchTimeControl& time_control
                                         , ull& cumul_time_msec);      // Output
 
     static bool should_stop_by_time(ull accum_time, double growth_factor
                                         , ull fallback_move_budget
                                         , const SearchTimeControl& time_control
-                                        , double& estimated_accum_time);
+                                        , double& estimated_accum_time
+                                        , ull& move_budget_ms);
 
     tuple<Score, ShumiChess::Move> do_a_deepening(int depth, ull elapsed_time_display_only
                                                 , ull& last_elapsed_time_display_only
@@ -338,7 +341,8 @@ public:
     // int tt_lower_would_cutoff = 0;
     // int tt_upper_probes = 0;
     // int tt_upper_would_cutoff = 0;
-
+    double response_time_sum = 0.0;
+    ull response_time_cnts = 0;
 
 
     template<class T> string format_with_commas(T value);

@@ -53,7 +53,7 @@ enum WghtIndxs
     LAST_VALUE              // I must be last in this list
 };
 
-constexpr double VOLUME_CONTROL = 0.63;
+constexpr double VOLUME_CONTROL = 0.66;
 
 // All valudes in integer centipawns. Positive values are bonus, negative values are penelties
 class Weights
