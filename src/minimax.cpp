@@ -191,19 +191,18 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
 
 
-    sout << "\033[1;34mNew Match\033[0m" << endl;
-    sout << "TTable2 entries before clear=" << TTable2.size() << endl;
-    const auto clear_start_time = std::chrono::steady_clock::now();
+    // sout << "\033[1;34mNew Match\033[0m" << endl;
+    // sout << "TTable2 entries before clear=" << TTable2.size() << endl;
+    // const auto clear_start_time = std::chrono::steady_clock::now();
 
     TTable2.clear();
 
-    const auto clear_end_time = std::chrono::steady_clock::now();
-    const auto clear_elapsed_msec =
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            clear_end_time - clear_start_time
-        ).count();
-
-    sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
+    // const auto clear_end_time = std::chrono::steady_clock::now();
+    // const auto clear_elapsed_msec =
+    //     std::chrono::duration_cast<std::chrono::milliseconds>(
+    //         clear_end_time - clear_start_time
+    //     ).count();
+    // sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
 
     TTable2.reserve(200'000);
 
@@ -1334,7 +1333,6 @@ void MinimaxAI::playground(int iPhase) {
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
 
     //max_TTable2_size = std::max(max_TTable2_size, TTable2.size());
-
     //sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;    // <<  
 
 
