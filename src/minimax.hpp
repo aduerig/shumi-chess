@@ -138,11 +138,11 @@ public:
     
     /////////////////////////////////////////////////////////////////////
     // Transposition table (TT)    Protects the evaluator (evaluate_board(). Cleared on every move 
-    struct TTEntry {
-        int score_cp;
-        ShumiChess::Move movee;
-        int depth;
-    };
+    // struct TTEntry {
+    //     int score_cp;
+    //     ShumiChess::Move movee;
+    //     int depth;
+    // };
 
     //std::unordered_map<uint64_t, TTEntry> TTable;
 
@@ -157,9 +157,9 @@ public:
 
     struct TTEntry2 {
         int              score_cp;   // search score in centipawns
-        int              depth;      // depth this node was searched to
+        uint8_t          depthh;      // depth this node was searched to
         ShumiChess::Move best_move;  // move that produced score_cp
-        TTFlag           flagg;       // EXACT / LOWER_BOUND / UPPER_BOUND
+        TTFlag           flagg;      // EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement
 
   

@@ -1336,8 +1336,9 @@ void MinimaxAI::playground(int iPhase) {
     //sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;    // <<  
 
 
-
-    // sout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << itemp3 <<  "  " << itemp4 << endl;
+    int itemp1 = sizeof(TTEntry2);
+    int itemp2 = sizeof(Move);
+    sout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << endl;
 
     //utemp1 = pawn_file_info.size();
     // string sss1 = format_with_commas(NTriesP); 
@@ -1847,7 +1848,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     //if (alpha > beta) assert(0);
 
-
+    assert(depth >= 0 && depth <= 255);
 
     // =====================================================================
     // Aborts
@@ -1969,8 +1970,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 // probe found for this zobrist key
                 const TTEntry2 &entry = it->second;
 
-                // debug only
-                if (entry.depth >= depth) {
+                if (entry.depthh >= depth) {
                     const int level = top_deepening - depth;
 
                     Score stored_score = convert_from_CP(entry.score_cp);
@@ -2010,7 +2010,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 //      entry.depth: how many regular-search plies were searched beyond X when the entry was stored.
                 //      depth: how many regular-search plies the current search wants beyond X.
 
-                if ((entry.depth >= depth) && (entry.flagg == TTFlag::EXACT)) {
+                if ((entry.depthh >= depth) && (entry.flagg == TTFlag::EXACT)) {
                     is_perfect_match = true;
                     NhitsTT2++;
                 }
@@ -2275,10 +2275,10 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                 if (!b_new_position) {
                     // The new search looked farther beyond this position.
-                    b_deeper_result = (depth > it_existing->second.depth);
+                    b_deeper_result = (depth > it_existing->second.depthh);
 
                     // At equal depth, never replace an EXACT result with a bound.
-                    const bool b_equal_depth = (depth == it_existing->second.depth);
+                    const bool b_equal_depth = (depth == it_existing->second.depthh);
 
                     const bool b_new_result_is_exact = (new_flag == TTFlag::EXACT);
 
@@ -2473,7 +2473,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                     slot.score_cp  = cp_score_temp;
                     slot.best_move = the_best_move;
-                    slot.depth     = depth;
+                    slot.depthh    = (uint8_t)depth;
                     slot.flagg     = new_flag;
 
 
