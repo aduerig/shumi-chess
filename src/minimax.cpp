@@ -1336,9 +1336,9 @@ void MinimaxAI::playground(int iPhase) {
     //sout << "TT " << TTable2.size() << " max=" << max_TTable2_size << " hitts=" << NhitsTT2 << endl;    // <<  
 
 
-    int itemp1 = sizeof(TTEntry2);
-    int itemp2 = sizeof(Move);
-    sout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << endl;
+    // int itemp1 = sizeof(TTEntry2);       // 16 and 8
+    // int itemp2 = sizeof(Move);
+    // sout << "blk " << itemp1 <<  "  " << itemp2 <<  "  " << endl;
 
     //utemp1 = pawn_file_info.size();
     // string sss1 = format_with_commas(NTriesP); 
@@ -1545,7 +1545,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             move_budget_ms);            // I am returned as ??
 
         //
-        // Establish soft abort (this is to prevent seacrh cliffs from taking too much time.)
+        // Establish soft abort (this is to prevent search cliffs from taking too much time)
         const ull soft_limit_ms = (ull)((double)move_budget_ms * SOFT_ABORT_SAFETY_FACTOR);
         const ull remaining_soft_time_ms = (soft_limit_ms > cumul_time_msec) ? soft_limit_ms - cumul_time_msec : 0ULL;
         soft_abort_start(remaining_soft_time_ms);
@@ -1880,7 +1880,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
         if (aborts_allowed) {       // from regular search
 
-            // Aaborts is not allowed until we have seen at least one deepening, and 
+            // Aborts are not allowed until we have seen at least one deepening, and 
             // therefore have a usable move to fall back to.
 
             if (should_hard_abort()) {
@@ -2748,7 +2748,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 
         if (aborts_allowed) {       // from qsearch
 
-            // Abort is not allowed until we have seen at least one deepening, and 
+            // Aborts are not allowed until we have seen at least one deepening, and 
             // therefore have a usable move to fall back to.
 
             if (should_hard_abort()) {
@@ -3093,8 +3093,7 @@ bool MinimaxAI::loop_over_all_moves(int depth,
         //      DONE A safety margin (DELTA_MARGIN) is included.
         //      DONE You must have a stand_pat score (cp_score_best / d_stand_pat) 
         //
-        #define DELTA_MARGIN_CP 300
-        if (1) {
+        if (DELTA_PRUNE_ON) {
             if ((depth == 0) &&
                 (!in_check) &&
                 (nSearched > 0) &&                 // always search first move

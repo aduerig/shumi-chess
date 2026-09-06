@@ -1,6 +1,26 @@
 #pragma once
 
+#include "Score.hpp"
 
+/// feature adjustments //////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// Soft abort. Soft aborts are complicated. There are hard and soft aborts. 
+// Both both are called at 10,000 or so called from.  Hard aborts are measured from the end of the time control.
+// The purpose of soft abort is to prevent search cliffs from taking too much time. 
+#define SOFT_ABORT_SAFETY_FACTOR 5.0  // This is times the "expected time" we expect it to take
+
+
+// Delta pruning
+#define DELTA_PRUNE_ON true
+#define DELTA_MARGIN_CP 300
+
+// Root aspiration-window
+static constexpr bool ASPIRATION_ENABLED = true;        // set to false to stop aspiration
+static constexpr int ASPIRATION_MIN_DEPTH = 2;
+static constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );
+
+// These are related to evaluation only ////////////////////////////////////////////////////////////////////////////
 enum WghtIndxs
 {
     HAS_CASTLED = 0,

@@ -42,8 +42,7 @@ constexpr int MAXIMUM_DEEPENING = 40;       // If this wall hit, deepening stops
                                             // zips through these, that it runs out of depth before the time limit
 constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (last deepeining discarded)
 constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead past this far.
-#define SOFT_ABORT_SAFETY_FACTOR 5.0
-//assert(MAXIMUM_DEEPENING < MAX_PLY);
+
 
 // Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
 constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
@@ -78,18 +77,14 @@ public:
     ull Features_mask = _DEFAULT_FEATURES_MASK;
 
     std::atomic<bool> stop_calculation{false};
-    //bool stop_calculation = false;
 
     ull nodes_visited = 0;
     ull nodes_visited_depth_zero = 0;
     ull evals_visited = 0;
     int iNodes_per_Second = 0;
 
-    // Root aspiration-window controls and statistics. Scores are in pawns.
-    static constexpr bool ASPIRATION_ENABLED = true;        // debug only set to false to stop aspiration
-    static constexpr int ASPIRATION_MIN_DEPTH = 2;
+ 
 
-    static constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );
     // ---case---msec------approx sucess rates
     // Baseline 44592       na
     // 0.5      32300       %75 
@@ -132,20 +127,8 @@ public:
     ull nGames = 0;
 
   
-
-
     ShumiChess::Move TT2_match_move = {};
     
-    /////////////////////////////////////////////////////////////////////
-    // Transposition table (TT)    Protects the evaluator (evaluate_board(). Cleared on every move 
-    // struct TTEntry {
-    //     int score_cp;
-    //     ShumiChess::Move movee;
-    //     int depth;
-    // };
-
-    //std::unordered_map<uint64_t, TTEntry> TTable;
-
 
     /////////////////////////////////////////////////////////////////////
     // Transposition table #2 (TT2)     Protects the node (recursive_negamax()). Cleared on every game start. 
@@ -305,7 +288,6 @@ public:
                        const Score beta, 
                        int nPlys, int qPlys,
                        bool in_check, Score d_stand_pat, 
-                       //const ShumiChess::Move& move_last,       // NOTE: remove me
                        const vector<ShumiChess::Move>* pMoves, 
                        ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
                        bool& did_cutoff);     // outputs
