@@ -4,6 +4,8 @@
 
 #include <atomic>
 #include <chrono>
+
+
 #ifdef _WIN32
     #include <conio.h>
     #ifndef NOMINMAX
@@ -631,7 +633,7 @@ static void found_move(Engine& engine,
     int nodesSeen = minimax_ai.nodes_visited;
 
     //
-    // Show move info
+    // Show move info to the "GUI"
     // options to the "info" command sent to the "GUI"
     //
     // depth 8                  // search depth reached
@@ -661,6 +663,7 @@ static void found_move(Engine& engine,
     int centiPawnsRel = (int)convert_to_CP(minimax_ai.d_best_move_score_rel);
 
     std::cout << "info string testing\n";
+
     std::cout << "info"
             << " depth " << minimax_ai.max_attained_depth
             << " seldepth " << minimax_ai.max_attained_qdepth
@@ -700,6 +703,8 @@ static bool extract_pending_line(string& pending_input, string& line)
 
     return true;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////
 
 static bool try_read_uci_line(std::string& line, bool& input_closed)
 {

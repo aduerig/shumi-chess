@@ -29,7 +29,6 @@ using MoveAndScoreList = std::vector<MoveAndScore>;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline constexpr int MAX_MOVES = 256;
 
 inline constexpr std::size_t _MAX_ALGEBRIAC_SIZE = 16;
 inline constexpr std::size_t _MAX_MOVE_PLUS_SCORE_SIZE = _MAX_ALGEBRIAC_SIZE + 32;

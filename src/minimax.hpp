@@ -36,17 +36,7 @@ public:
     //ShumiChess::Move& get_move(vector<ShumiChess::Move>&);
 };
 
-//
-// fuses. Causes varous actions when limits hit
-constexpr int MAXIMUM_DEEPENING = 40;       // If this wall hit, deepening stops. This can happen  50-move rule, all nodes return DRAW, so in so quickly
-                                            // zips through these, that it runs out of depth before the time limit
-constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (last deepeining discarded)
-constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead past this far.
-
-
-// Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
-constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
-constexpr int RANDOM_MOVE_CANDIDATES = 7;             // I must be greater than 1
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MinimaxAI {
 public:
@@ -71,7 +61,6 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
-    //ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;   // CRAZY_IVAN;
     ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;
 
     ull Features_mask = _DEFAULT_FEATURES_MASK;
@@ -83,8 +72,7 @@ public:
     ull evals_visited = 0;
     int iNodes_per_Second = 0;
 
- 
-
+    // Aspiration statistics
     // ---case---msec------approx sucess rates
     // Baseline 44592       na
     // 0.5      32300       %75 
@@ -94,6 +82,7 @@ public:
     // 2.0      42000       %100
     ull aspiration_attempts = 0;
     ull aspiration_successes = 0;
+    
     ull aspiration_fail_lows = 0;
     ull aspiration_fail_highs = 0;
     ull aspiration_full_retries = 0;
@@ -102,10 +91,8 @@ public:
 
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;      // used for display only
-    //ull maximum_duration = 0;      // Milliseconds requested for the current search.
 
     int cp_score_material_avg = 0;
-    //int cp_score_material_NP_avg = 0;
 
     ull passed_pawns_white = 0ULL; 
     ull passed_pawns_black = 0ULL; 
@@ -184,9 +171,6 @@ public:
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
 
-
-    int TT_ntrys = 0;
-    int TT_ntrys1 = 0;
 
     // Template variants (compile-time color)
     const ShumiChess::PawnFileInfo& get_pawn_file_info_for_position();
@@ -292,11 +276,6 @@ public:
                        ShumiChess::Move &bestMoveOut, Score &bestScoreOut,
                        bool& did_cutoff);     // outputs
 
-    // Total of 4000 centipawns for each side.  Suppose minor pieces are all 300. 
-    // Say two minor pieces traded. Then 4*300=1200, and 8000-1200=6800
-    // Suppose queens and rooks traded , its 2*900+4*500=3800 or 8000-3800=4200
-    // 0 - opening, 1- middle, 2- ending, 3 - ? extreme ending?
-
 
     int phase_of_game(int material_cp);
     int phase_of_game_full();
@@ -316,13 +295,6 @@ public:
     int n_futility_tosses = 0;
     ull n_delta_tosses = 0;
 
-    // int tt_exact_writes = 0;
-    // int tt_lower_writes = 0;
-    // int tt_upper_writes = 0;
-    // int tt_lower_probes = 0;
-    // int tt_lower_would_cutoff = 0;
-    // int tt_upper_probes = 0;
-    // int tt_upper_would_cutoff = 0;
     double response_time_sum = 0.0;
     ull response_time_cnts = 0;
 

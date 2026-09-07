@@ -9,14 +9,6 @@
 #include "endgameTables.hpp"
 #include "status_output.hpp"
 
-#define LOWERQ 7
-#define UPPERQ 5
-
-
-// Note neither of these include the "depth". So if depth=6, then add 6
-#define MAX_QPLY_L (LOWERQ+1)        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
-#define MAX_QPLY_H  (UPPERQ+LOWERQ+1) // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
-
 
 namespace ShumiChess {
 
@@ -63,8 +55,7 @@ struct PotentialCheckInfo {
     int knight_checks;
     int total_checks;
 };
-// #define friendlyP 0 
-// #define enemyP    1
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 

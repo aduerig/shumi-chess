@@ -6,4 +6,9 @@ siutatuins when the loss becomew obvious to me
 
 
 
-1 Endgame   Shumi has overexposed king although shumi has a pawn and the exchange. 
+
+
+
+ ep=50309 nd=4663352
+ ep=47635 nd=4663352
+ ep=47762 nd=4663352

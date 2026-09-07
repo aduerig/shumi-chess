@@ -893,7 +893,10 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
     //sout << "ENTERED1 get_move... " << engine.computer_ply_so_far << endl;
 
 
+    
     if (engine.computer_ply_so_far == 0) {
+
+        nGames++;
         //
         // Here we do MinimaxAI stuff to be done at the beginning of a game. Clumsy way to have to detect 
         // this, but there it is: engine.reset_engine() starts a new game, and sets computer_ply_so_far = 0.
@@ -905,9 +908,15 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
             fprintf(fpDebug, "\nnew game\n");
         #endif   
 
+        // These measure avg aspiration success
+        aspiration_attempts = 0;
+        aspiration_successes = 0;
+
+        // This measures avg total response time for whole move
         response_time_sum = 0.0;
         response_time_cnts = 0;
             
+        // Clear the TT (extra stuff to time it)
         sout << "\033[1;34mNew Game\033[0m" << endl;
         sout << "TTable2 entries before clear=" << TTable2.size() << endl;
         const auto clear_start_time = std::chrono::steady_clock::now();
@@ -922,38 +931,27 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
 
         sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
 
-
+        // Initialize TT hash table hit counts
+        NhitsTT = 0;
+        NhitsTT2 = 0;
         max_TTable2_size = 0;
 
         //string sss;
         //sss = format_with_commas(pawn_file_info.size());
         //printf("pawn_file_info size before clear = %s\n", sss.c_str());
         
-  
 
+        // Clear the pawn information hash table.
         pawn_file_info.clear();
 
         //sss = format_with_commas(pawn_file_info.size());
         //printf("pawn_file_info size after clear = %s\n", sss.c_str());
         //system("pause");
 
-        // Initialize hash table hit counts
-        NhitsTT = 0;
-        NhitsTT2 = 0;
-        NhitsP = 0;
+        NhitsP = 0;     // for the pawn info hash
         NTriesP = 0;
+
         nRandos = 0;
-
-        // tt_exact_writes = 0;
-        // tt_lower_writes = 0;
-        // tt_upper_writes = 0;
-        // tt_lower_probes = 0;
-        // tt_lower_would_cutoff = 0;
-        // tt_upper_probes = 0;
-        // tt_upper_would_cutoff = 0;
-
-
-        nGames++;
 
         sout << "game start=" << nGames << endl;
 
@@ -985,13 +983,15 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
     nodes_visited = 0;
     nodes_visited_depth_zero = 0;
     evals_visited = 0;
-    aspiration_attempts = 0;
-    aspiration_successes = 0;
+
+
+
     aspiration_fail_lows = 0;
     aspiration_fail_highs = 0;
     aspiration_full_retries = 0;
     aspiration_first_try_nodes = 0;
     aspiration_retry_nodes = 0;
+
     NhitsP = 0;
     NTriesP = 0;
 
@@ -1228,11 +1228,9 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
 
      
         sout << colorize(
-            AColor::BRIGHT_GREEN,
-            "   nodes/sec= " +
+            AColor::BRIGHT_GREEN, "   nodes/sec= " +
             format_with_commas(std::llround(nodes_per_sec)) +
-            "   resp_avg= " +
-            std::to_string(dtemp))
+            "   resp_avg= " + std::to_string(dtemp))
             << endl;
 
   #endif
@@ -1251,24 +1249,29 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
             << "%)\n\n";
     #endif
 
-    if (ASPIRATION_ENABLED) {
-        #ifdef DISPLAY_DEEPING
+    #ifdef DISPLAY_DEEPING
 
+        if (ASPIRATION_ENABLED) {
+ 
+            assert (aspiration_attempts > 0);
             const double aspiration_success_pct = aspiration_attempts
                 ? (100.0 * (double)aspiration_successes / (double)aspiration_attempts)
                 : 0.0;
 
-            sout << "[aspiration summary] attempts=" << aspiration_attempts
-                << " successes=" << aspiration_successes
-                << " fail-lows=" << aspiration_fail_lows
-                << " fail-highs=" << aspiration_fail_highs
+            sout << 
+                aspiration_success_pct << "% "
+                << "[aspiration summary] attempts=" << aspiration_attempts
+                //<< " successes=" << aspiration_successes
+                //<< " fail-lows=" << aspiration_fail_lows
+                //<< " fail-highs=" << aspiration_fail_highs
                 << " full-retries=" << aspiration_full_retries
-                << " success=" << std::fixed << std::setprecision(1)
-                << aspiration_success_pct << "%"
-                << " first-try-nodes=" << aspiration_first_try_nodes
-                << " retry-nodes=" << aspiration_retry_nodes << endl;
-        #endif
-    }
+                //<< " success=" << std::fixed << std::setprecision(1)
+                //<< " first-try-nodes=" << aspiration_first_try_nodes
+                //<< " retry-nodes=" << aspiration_retry_nodes 
+                << endl;
+        }
+
+    #endif
 
 
     ////////// done with "main" move displays /////////////////////////////////////////////////////////////////////////
@@ -1545,10 +1548,12 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             move_budget_ms);            // I am returned as ??
 
         //
-        // Establish soft abort (this is to prevent search cliffs from taking too much time)
-        const ull soft_limit_ms = (ull)((double)move_budget_ms * SOFT_ABORT_SAFETY_FACTOR);
-        const ull remaining_soft_time_ms = (soft_limit_ms > cumul_time_msec) ? soft_limit_ms - cumul_time_msec : 0ULL;
-        soft_abort_start(remaining_soft_time_ms);
+        #ifdef SOFT_ABORT_ENABLED
+            // Establish soft abort (this is to prevent search cliffs from taking too much time)
+            const ull soft_limit_ms = (ull)((double)move_budget_ms * SOFT_ABORT_SAFETY_FACTOR);
+            const ull remaining_soft_time_ms = (soft_limit_ms > cumul_time_msec) ? soft_limit_ms - cumul_time_msec : 0ULL;
+            soft_abort_start(remaining_soft_time_ms);
+        #endif
 
         // hard abort testing debug only only
         //bThinkingOverByTime = false;        // debug only (to test hard abort)
@@ -1662,72 +1667,6 @@ bool MinimaxAI::should_stop_by_time(ull accum_time, double growth_factor
         return (estimated_accum_time >= move_budget);
     }
 }
-
-//
-// How to use your TT bounds. The control knobs.
-//
-constexpr bool STORE_TT_BOUNDS          = true;
-constexpr bool USE_TT_BOUND_CUTOFFS     = true;
-constexpr bool USE_TT_BOUND_MOVE_ORDER  = true;
-
-
-//     
-//  ----------------------------------------------------------------------------------------------------              
-///                                      STORE_TT_BOUNDS   USE_TT_BOUND_CUTOFFS   USE_TT_BOUND_MOVE_ORDER
-//  ----------------------------------------------------------------------------------------------------
-//
-//  Case A: Old behavior                       0                    0                         0
-//          Store and use EXACT entries only.
-//
-//          ep=116369 nd=11474322
-//          ep=119481 nd=11474322
-//          ep=116927 nd=11474322
-
-//  Case B: Bound-storage overhead only        1                    0                         0
-//          Store bounds, but never use their scores or moves for ordering.
-//
-//          ep=124133 nd=11881925
-//          ep=146440 nd=11881925
-//          ep=121594 nd=11881925
-
-
-//  Case C: Bound cutoffs only                 1                    1                         0
-//          Store bounds and use their scores for cutoffs,
-//          but do not use their moves for ordering.
-//
-//           ep=73977 nd=7222520
-//           ep=74875 nd=7222520
-//           ep=73506 nd=7222520
-
-//  Case D: Bound move ordering only           1                    0                         1
-//          Store bounds and use their moves for ordering,
-//          but do not use their scores for cutoffs.
-//          ep=88947 nd=8560074
-//          ep=87620 nd=8560074
-//          ep=87900 nd=8560074
-
-//
-//  Case E: Complete bounded TT                1                    1                         1
-//          Store bounds and use both their scores and moves.
-//
-//       ep=49019 nd=4783822
-//       ep=48813 nd=4783822
-//       ep=49132 nd=4783822
-
-
-//
-//  Irrelevant combinations:
-//
-//                                             0                    0                         1
-//                                             0                    1                         0
-//                                             0                    1                         1
-//
-//  If bounds are not stored, bound cutoffs and bound move ordering have
-//  nothing to use. Assuming TT2 is cleared before the test, all three
-//  combinations behave like Case A.
-
-
-
 
 
 
@@ -2477,21 +2416,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     slot.flagg     = new_flag;
 
 
-                    // switch (new_flag) {
-                    //     case TTFlag::EXACT:
-                    //         tt_exact_writes++;
-                    //         break;
-
-                    //     case TTFlag::LOWER_BOUND:
-                    //         tt_lower_writes++;
-                    //         break;
-
-                    //     case TTFlag::UPPER_BOUND:
-                    //         tt_upper_writes++;
-                    //         break;
-                    // }
-
-
                     #ifdef DEBUG_NODE_TT2
 
                         slot.dAlphaDebug = alpha_in;
@@ -3085,11 +3009,11 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
 
 
-        // Delta pruning normally applies only when:
+        // Delta pruning applies only when:
         //      DONE You are in quiescence search.
         //      DONE The side to move (engine.game_board.turn) is not in check.
         //      DONE The candidate is a capture.
-        //      The position is not near a mate score.
+        //      Done? The position is not near a mate score.
         //      DONE A safety margin (DELTA_MARGIN) is included.
         //      DONE You must have a stand_pat score (cp_score_best / d_stand_pat) 
         //
