@@ -1547,7 +1547,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             move_budget_ms);            // I am returned as ??
 
         //
-        if (SOFT_ABORT_ENABLED) {
+        if (Features_mask & _FEATURE_SOFT_ABORT) {
             // Establish soft abort (this is to prevent search cliffs from taking too much time)
             const ull soft_limit_ms = (ull)((double)move_budget_ms * SOFT_ABORT_SAFETY_FACTOR);
             const ull remaining_soft_time_ms = (soft_limit_ms > cumul_time_msec) ? soft_limit_ms - cumul_time_msec : 0ULL;
@@ -3379,90 +3379,87 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     //      3. Killer moves (quiet, bubbled to the front of the remaining quiet region).
     //      4. Remaining quiet moves.
 
-    if (Features_mask &_FEATURE_UNQUIET_SORT) {
+
+    // it_split still points to the first quiet move, exactly as the later code expects.
 
 
 
-        // it_split still points to the first quiet move, exactly as the later code expects.
+    // --- 1. Partition unquiet moves (captures/promotions) to the front ---
+    //
+    // Scan the move list once. Each unquiet move is swapped into the next
+    // available position at the front of the vector.
+    //
+    std::vector<ShumiChess::Move>::iterator it_split = pMovesInOut->begin();
+
+    for (std::vector<ShumiChess::Move>::iterator it = pMovesInOut->begin();
+        it != pMovesInOut->end();
+        ++it) {
+
+        if (engine.is_unquiet_move(*it)) {
+            if (it != it_split) std::iter_swap(it, it_split);
+            ++it_split;
+        }
+    }
 
 
+    // --- 2. Sort the unquiet prefix using MVV-LVA and SEE ---
+    //
+    // Calculate each move's ordering key once. This avoids repeatedly
+    // calculating SEE while the moves are being sorted.
+    //
+    const int nUnquietMoves =
+        static_cast<int>(std::distance(pMovesInOut->begin(), it_split));
 
-        // --- 1. Partition unquiet moves (captures/promotions) to the front ---
-        //
-        // Scan the move list once. Each unquiet move is swapped into the next
-        // available position at the front of the vector.
-        //
-        std::vector<ShumiChess::Move>::iterator it_split = pMovesInOut->begin();
+    std::vector<int> moveKeys(nUnquietMoves);
 
-        for (std::vector<ShumiChess::Move>::iterator it = pMovesInOut->begin();
-            it != pMovesInOut->end();
-            ++it) {
+    for (int i = 0; i < nUnquietMoves; i++) {
+        const ShumiChess::Move& mv = (*pMovesInOut)[i];
 
-            if (engine.is_unquiet_move(*it)) {
-                if (it != it_split) std::iter_swap(it, it_split);
-                ++it_split;
-            }
+        int key = 0;
+
+        // Captures are ordered by MVV-LVA.
+        if (mv.capture != ShumiChess::Piece::NONE) {
+            key = engine.mvv_lva_key(mv) << 10;
+
+            // Strongly penalize captures that lose material.
+            const int see =
+                engine.game_board.SEE_for_capture_new(
+                    engine.game_board.turn, mv, nullptr);
+
+            if (see < 0) key += see * 100;
         }
 
+        // Prefer a move to the destination square of the preceding move.
+        if (mv.toSQ == last_toSQ) key += 800;
 
-        // --- 2. Sort the unquiet prefix using MVV-LVA and SEE ---
-        //
-        // Calculate each move's ordering key once. This avoids repeatedly
-        // calculating SEE while the moves are being sorted.
-        //
-        const int nUnquietMoves =
-            static_cast<int>(std::distance(pMovesInOut->begin(), it_split));
+        moveKeys[i] = key;
+    }
 
-        std::vector<int> moveKeys(nUnquietMoves);
+    // Sort the unquiet moves from highest key to lowest key.
+    //
+    // Capture lists are normally small, so insertion sort is appropriate here.
+    // The already-calculated keys move with their corresponding moves.
+    //
+    for (int i = 1; i < nUnquietMoves; i++) {
+        const ShumiChess::Move moveToInsert = (*pMovesInOut)[i];
+        const int keyToInsert = moveKeys[i];
 
-        for (int i = 0; i < nUnquietMoves; i++) {
-            const ShumiChess::Move& mv = (*pMovesInOut)[i];
+        int j = i - 1;
 
-            int key = 0;
-
-            // Captures are ordered by MVV-LVA.
-            if (mv.capture != ShumiChess::Piece::NONE) {
-                key = engine.mvv_lva_key(mv) << 10;
-
-                // Strongly penalize captures that lose material.
-                const int see =
-                    engine.game_board.SEE_for_capture_new(
-                        engine.game_board.turn, mv, nullptr);
-
-                if (see < 0) key += see * 100;
-            }
-
-            // Prefer a move to the destination square of the preceding move.
-            if (mv.toSQ == last_toSQ) key += 800;
-
-            moveKeys[i] = key;
+        while (j >= 0 && moveKeys[j] < keyToInsert) {
+            (*pMovesInOut)[j + 1] = (*pMovesInOut)[j];
+            moveKeys[j + 1] = moveKeys[j];
+            j--;
         }
 
-        // Sort the unquiet moves from highest key to lowest key.
-        //
-        // Capture lists are normally small, so insertion sort is appropriate here.
-        // The already-calculated keys move with their corresponding moves.
-        //
-        for (int i = 1; i < nUnquietMoves; i++) {
-            const ShumiChess::Move moveToInsert = (*pMovesInOut)[i];
-            const int keyToInsert = moveKeys[i];
-
-            int j = i - 1;
-
-            while (j >= 0 && moveKeys[j] < keyToInsert) {
-                (*pMovesInOut)[j + 1] = (*pMovesInOut)[j];
-                moveKeys[j + 1] = moveKeys[j];
-                j--;
-            }
-
-            (*pMovesInOut)[j + 1] = moveToInsert;
-            moveKeys[j + 1] = keyToInsert;
-        }
+        (*pMovesInOut)[j + 1] = moveToInsert;
+        moveKeys[j + 1] = keyToInsert;
+    }
 
 
-        // It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
-        // later analysis is profited by these killer moves.
-        #ifndef DEBUG_NODE_TT2
+    // It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
+    // later analysis is profited by these killer moves.
+    #ifndef DEBUG_NODE_TT2
         if (Features_mask & _FEATURE_KILLER) {
             // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
             auto quiet_begin = it_split;
@@ -3501,9 +3498,8 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
             bring_front(killer2[nPlys]);
 
         }
-        #endif
+    #endif
 
-    }
 
     //       1. PV from the previous iteration (previous deepening’s best). 
     //          So this is a reasonable guess to start with. (cpmapered to an arbitrarily ordered move).

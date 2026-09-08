@@ -61,6 +61,8 @@ class PGN {
         string spitout();
     private:
         std::string text;
+        int moves_added = 0;
+        bool starts_with_black = false;
 };
 
 

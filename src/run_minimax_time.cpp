@@ -50,13 +50,9 @@ int main(int argc, char** argv) {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //
-    // From opening position:
-    //
-    // From "random1_FENs[0]" position:
-    //       uzing level= 8  msec = 3  max ply = 1  play id = 3  Last best value is about  31,400 msec
-    //       uzing level= 8  msec = 3  max ply = 4  play id = 3  Last best value is about  93,500 msec
-    //
-    //
+    // This is just to measure speed, and number of nodes ... over a fixed set of chess positrions.
+    // Look at a fixed number of starting positions, searching a given number of ply. 
+    // The difficulty here is that this approach underrepresents endsgames.
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -64,46 +60,51 @@ int main(int argc, char** argv) {
     //string FENString = "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
 
 
- 
+    // Setup the starting positions. We will sample a given number of ply from each starting position
     constexpr int MAX_FENS = 10;
     string FENs[MAX_FENS];
+    string PGNs[MAX_FENS];
 
-    FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Random Petrov
-    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giaco Piano
+    FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Petrov
+    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giuco Piano
     FENs[2] = "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2RR1 w - - 0 20";                // random middlegame
     FENs[3] = "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30";             // random middlegame
     FENs[4] = "3k4/8/3P1p2/p4P2/8/2P2N2/4KB2/8 w - - 0 51";                             // random endgame
-    //FENs[4] = 
 
-
-    // Using the above collection of FENs   
-    //      uzing level= 7  msec = 200      34776    34807      34729
+    int NPositions = 5;
+    int max_ply_to_play = 4;    // measured from the start of each starting position
 
     /////////////////////////////////////////////////////////////////////////////////////
     //
-    int NPositions = 5;
-    // Decide on arguments
-    int depth_to_use = 8;
-    ull time_to_use = 2;      // Milliseconds (default)
-    int max_ply_to_play = 4;
-    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
-    if (argc < 2) {
-        //sout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
-    } else {
-        const long long parsed_time_msec = atoll(argv[1]);
-        if (parsed_time_msec > 0) {
-            time_to_use = (ull)parsed_time_msec;
-        }
-        //sout << "You entered time_to_use of: " << time_to_use << endl;
-    }
-    if (argc >= 3) {
-        depth_to_use = atoi(argv[2]);
-    }
-    if (argc >= 4) {
-        max_ply_to_play = atoi(argv[3]);
-    }
 
-    int flags = _FEATURE_TT2 | _FEATURE_KILLER | _FEATURE_UNQUIET_SORT;
+    // Deterime the "time arguments" to the search
+    int depth_to_use = 8;       // We will look this many deepenings for each move.
+
+    // Milliseconds. The purpose of this low value, is to make us go only (and exactly) a fixed number of deepenings 
+    ull time_to_use = 2;      
+
+    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
+
+    // if (argc < 2) {
+    //     //sout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
+    // } else {
+    //     const long long parsed_time_msec = atoll(argv[1]);
+    //     if (parsed_time_msec > 0) {
+    //         time_to_use = (ull)parsed_time_msec;
+    //     }
+    //     //sout << "You entered time_to_use of: " << time_to_use << endl;
+    // }
+    // if (argc >= 3) {
+    //     depth_to_use = atoi(argv[2]);
+    // }
+    // if (argc >= 4) {
+    //     max_ply_to_play = atoi(argv[3]);
+    // }
+
+    int flags = _DEFAULT_FEATURES_MASK;
+
+    // Since there is no time control there is no hard abort.
+    flags &= ~_FEATURE_SOFT_ABORT;      // remove soft abort
 
     sout << "uzing level= " << depth_to_use
          << "  msec = " << time_to_use
@@ -119,7 +120,7 @@ int main(int argc, char** argv) {
     GameState state;
 
     long long totalNodesSum = 0;
-    ull totalNodesSamples=0;
+    ull totalNodesPerMove=0;
 
     long long total_elapsed_time=0; 
 
@@ -160,24 +161,35 @@ int main(int argc, char** argv) {
             // out = utility::representation::gameboard_to_string(engine.game_board);
             // sout << out << endl;
 
-            // Get total number of nodes used in search
+            // Sum total number of nodes used in move search
             totalNodesSum += minimax_ai.nodes_visited;
-            totalNodesSamples++;
-            sout << "siz=" << (totalNodesSum/totalNodesSamples) << endl;
+            totalNodesPerMove++;
+            //sout << "nodes=" << (totalNodesSum/totalNodesPerMove) << endl;
 
 
             state = engine.is_game_over();
         }
 
-        sout << "Gammme state: " << game_state_to_string(state) << endl;
-        sout << "PGN: " << engine.gamePGN.spitout() << endl;
+        //sout << "Gammme state: " << game_state_to_string(state) << endl;
+        PGNs[iPositions] = engine.gamePGN.spitout();
+        sout << "PGN: " << PGNs[iPositions] << endl;
         steady_clock::time_point end_time = steady_clock::now();
         total_elapsed_time = elapsed_time_msec(start_time, end_time);
         sout << iPositions << "  Elapsed time: " << total_elapsed_time << " msec" << endl;
 
-    }
+    }   // End loop over all starting positions
 
-    sout <<" ep=" << total_elapsed_time <<" nd=" << (totalNodesSum/totalNodesSamples) << endl;
+    //
+    // Show results
+    //
+    sout << endl << "flags=0x" << std::hex << flags << std::dec << endl;
+    for (int i=0;i<NPositions;i++) {
+        sout << PGNs[i] << endl;
+    }
+    assert (totalNodesPerMove > 0);
+
+    sout << endl;
+    sout <<" ep=" << total_elapsed_time <<" nd=" << (totalNodesSum/totalNodesPerMove) << endl;
 
     sout << "Press any keeeeeeey to exit..." << endl;
     _getch();

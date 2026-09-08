@@ -93,7 +93,7 @@ constexpr int FLAGS_CASTLE_QUEEN        = 0b00000010;
 constexpr int FLAGS_IS_EP_CAPTURE       = 0b00010000;
 constexpr int FLAGS_IS_CASTLE_MOVE      = 0b00100000;
 
-// NOTE: Can this be a class? How would it help?
+
 struct Move {
   
     Square fromSQ = NO_SQUARE;

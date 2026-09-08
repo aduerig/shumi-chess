@@ -50,6 +50,8 @@ PGN::PGN()
 void PGN::clear()
 {
     text.clear();      // sets size to 0, keeps the reserved capacity
+    moves_added = 0;
+    starts_with_black = false;
 }
 
 string PGN::spitout()
@@ -61,10 +63,17 @@ string PGN::spitout()
 
 int PGN::addMe(Move& m, Engine& e)
 {
+    if (moves_added == 0) {
+        starts_with_black = (e.game_board.turn == ShumiChess::BLACK);
+    }
+
     // Add the move number to the string (PGN needs this)
-    if (e.game_board.turn == ShumiChess::WHITE) {
+    if (e.game_board.turn == ShumiChess::WHITE || moves_added == 0) {
         char sztmp[16];
-        snprintf(sztmp, sizeof(sztmp), "%i. ", (e.ply_so_far/2+1));
+        const int move_number = (moves_added / 2) + 1
+                              + ((starts_with_black && e.game_board.turn == ShumiChess::WHITE) ? 1 : 0);
+        const char* separator = (e.game_board.turn == ShumiChess::WHITE) ? ". " : "... ";
+        snprintf(sztmp, sizeof(sztmp), "%i%s", move_number, separator);
         
         text += sztmp;
     }
@@ -78,6 +87,7 @@ int PGN::addMe(Move& m, Engine& e)
     e.move_string += " ";
     
     text += e.move_string;
+    ++moves_added;
 
     return 0;
     

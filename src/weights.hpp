@@ -28,7 +28,7 @@ inline constexpr bool USE_TT_BOUND_MOVE_ORDER  = true;
 // control. The purpose of soft abort is to prevent search cliffs from taking too much time. 
 inline constexpr ull ABORT_SAMPLE_INTERVAL = 10'000;    // We check for aborts every this many nodes.
 inline constexpr ull HARD_ABORT_TIME_MSEC = 10'000;     // Used only in time control. Hard abort starts this far from the end of time control. Set to zero to disable.
-inline constexpr bool SOFT_ABORT_ENABLED = true;
+inline constexpr bool SOFT_ABORT_ENABLED = true; 
 inline constexpr double SOFT_ABORT_SAFETY_FACTOR = 10.0;  // This is times the "expected time" we expect it to take
 
 // Delta pruning controls
