@@ -41,6 +41,12 @@ public:
 class MinimaxAI {
 public:
 
+    MinimaxAI(ShumiChess::Engine&);
+    ~MinimaxAI();
+
+    // The chess engine
+    ShumiChess::Engine& engine;
+
     struct SearchTimeControl {
         ull time_left_msec = 0;            // Milliseconds remaining until time control, before this search starts
         int moves_left = 0;                // Moves until time control. (includes the move currently being searched)
@@ -57,9 +63,6 @@ public:
         ull hard_abort_threshold_ms = 0;
 
     };
-
-    MinimaxAI(ShumiChess::Engine&);
-    ~MinimaxAI();
 
     ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;
 
@@ -82,7 +85,7 @@ public:
     // 2.0      42000       %100
     ull aspiration_attempts = 0;
     ull aspiration_successes = 0;
-    
+
     ull aspiration_fail_lows = 0;
     ull aspiration_fail_highs = 0;
     ull aspiration_full_retries = 0;
@@ -101,11 +104,8 @@ public:
     static constexpr int MAX_PLY_PV = 256;
     std::pair<ShumiChess::Move, Score> prev_root_best_[MAX_PLY_PV + 2];
 
-    // The chess engine
-    ShumiChess::Engine& engine;
 
     // Hash table hit counts
-    ull NhitsTT = 0;            // eval Transposition table (TT) (not normally used)
     ull NhitsTT2 = 0;           // node Transposition table (TT2)
     ull NhitsP = 0;             // pawn/file hash table
     ull NTriesP = 0;            // pawn/file hash table

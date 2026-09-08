@@ -1,6 +1,6 @@
 do not delet me the idea is a 
 
-game by game critsism, when shumi loses, as to fllaws or at least 
+game by game critsism, when shumi loses, as to flaws or at least 
 siutatuins when the loss becomew obvious to me
 
 
@@ -12,3 +12,4 @@ siutatuins when the loss becomew obvious to me
  ep=50309 nd=4663352
  ep=47635 nd=4663352
  ep=47762 nd=4663352
+ ep=48011 nd=4663352

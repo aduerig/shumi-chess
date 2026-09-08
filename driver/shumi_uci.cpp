@@ -156,14 +156,6 @@ int main()
     int iRandomMoves = 0;
     if (iMovesInGame < 3) iRandomMoves = 1;     // Just one random move.
 
-
-
-    constexpr int MAX_FENS = 10;
-    string FENs[MAX_FENS];
-
-
-    FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Random Petrov
-    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giaco
     int iPositions = 0;
 
     Engine* engine = nullptr;
@@ -442,7 +434,7 @@ int main()
 
             // set the hard abort time. This is the time before the end of the game,
             // that the hard_abort logic kicks in. Zero means no hard abort.
-            time_control.hard_abort_threshold_ms = 10'000;
+            time_control.hard_abort_threshold_ms = HARD_ABORT_TIME_MSEC;
    
             //
             // Start thread to "Get "best move" from Shumi"
@@ -656,7 +648,6 @@ static void found_move(Engine& engine,
     // refutation e2e4 e7e5     // refutation line for a move
     // currline 1 e2e4 e7e5     // current line for CPU/thread 1
 
-    //int nps = 1234567;
     int nps = minimax_ai.iNodes_per_Second;
 
     //int centiPawnsRel = (int)(minimax_ai.d_best_move_score_rel * 100.0);

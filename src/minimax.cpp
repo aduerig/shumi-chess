@@ -932,7 +932,6 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
 
         // Initialize TT hash table hit counts
-        NhitsTT = 0;
         NhitsTT2 = 0;
         max_TTable2_size = 0;
 
@@ -1438,7 +1437,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         if (depth>=MAXIMUM_DEEPENING) {
             //sout << "\x1b[31m \nOver Deepening " << depth << "\x1b[0m" << endl;
             //sout << gameboard_to_string_old(engine.game_board) << endl;
-            //assert(0);      // NOTE: this happens close to draws. Noone knows why.
+            assert(0);      // NOTE: this happens close to draws. Noone knows why.
             break;   // Stop deepening, no more depths.
         }
 
@@ -1548,12 +1547,12 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             move_budget_ms);            // I am returned as ??
 
         //
-        #ifdef SOFT_ABORT_ENABLED
+        if (SOFT_ABORT_ENABLED) {
             // Establish soft abort (this is to prevent search cliffs from taking too much time)
             const ull soft_limit_ms = (ull)((double)move_budget_ms * SOFT_ABORT_SAFETY_FACTOR);
             const ull remaining_soft_time_ms = (soft_limit_ms > cumul_time_msec) ? soft_limit_ms - cumul_time_msec : 0ULL;
             soft_abort_start(remaining_soft_time_ms);
-        #endif
+        }
 
         // hard abort testing debug only only
         //bThinkingOverByTime = false;        // debug only (to test hard abort)
@@ -1815,7 +1814,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     }
 
-    if ((nodes_visited % 10'000ULL) == 0ULL) {
+    if ((nodes_visited % ABORT_SAMPLE_INTERVAL) == 0ULL) {
 
         if (aborts_allowed) {       // from regular search
 
@@ -2535,6 +2534,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Note neither of these include the "depth". So if depth=6, then add 6
+#define MAX_QPLY_L (LOWERQ+1)        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
+#define MAX_QPLY_H  (UPPERQ+LOWERQ+1) // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
 
 tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
                     Score alpha, Score beta
@@ -2668,7 +2670,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     }
 
 
-    if ((nodes_visited % 10'000ULL) == 0ULL) {
+    if ((nodes_visited % ABORT_SAMPLE_INTERVAL) == 0ULL) {
 
         if (aborts_allowed) {       // from qsearch
 

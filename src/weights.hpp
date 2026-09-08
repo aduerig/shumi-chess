@@ -6,44 +6,44 @@
 /// feature adjustments //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// fuses. Causes varous actions when limits hit
-inline constexpr int MAX_MOVES = 256;
-constexpr int MAXIMUM_DEEPENING = 40;       // If this wall hit, deepening stops. This can happen  50-move rule, all nodes return DRAW, so in so quickly
-                                            // zips through these, that it runs out of depth before the time limit
-constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (last deepening discarded)
-constexpr int MAX_PLY = 50;                 // Last fuse! Can never look ahead past this far.
+// Fuses. Causes varous actions when limits hit
+inline constexpr int MAX_MOVES = 256;       // Maximum number of legal moves.
+inline constexpr int MAXIMUM_DEEPENING = 40;       //    If this wall hit, deepening stops. This can happen  50-move rule, all nodes return DRAW, so in so quickly
+                                                   // zips through these, that it runs out of depth before the time limit
+inline constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (last deepening discarded)
+inline constexpr int MAX_PLY = 50;                 // Can never look ahead past this many ply.
 
+// Quissence controls
+inline constexpr int LOWERQ = 7;    // how many depths of "lower quissence" there are.
+inline constexpr int UPPERQ = 5;    // how many depths of "upper quissence" there are.
 
-// quissence controls
-#define LOWERQ 7    // how many depths of "lower quissence" there are.
-#define UPPERQ 5    // how many depths of "upper quissence" there are.
-// Note neither of these include the "depth". So if depth=6, then add 6
-#define MAX_QPLY_L (LOWERQ+1)        // Units = plys. Late in analysis! So discard negative SEE captures below one pawn.
-#define MAX_QPLY_H  (UPPERQ+LOWERQ+1) // Units = plys. Very late in analysis! At this point we just evaluate (stand pat)
+// How to use your TT bounds. The control knobs. False for all means no TT bounds
+inline constexpr bool STORE_TT_BOUNDS          = true;
+inline constexpr bool USE_TT_BOUND_CUTOFFS     = true;
+inline constexpr bool USE_TT_BOUND_MOVE_ORDER  = true;
 
-// How to use your TT bounds. The control knobs.
-constexpr bool STORE_TT_BOUNDS          = true;
-constexpr bool USE_TT_BOUND_CUTOFFS     = true;
-constexpr bool USE_TT_BOUND_MOVE_ORDER  = true;
+// Abort controls. There are user, hard and soft aborts. All aborts stop analysis and drop back to the last 
+// completed deepening. Hard and soft aborts are both sampled for at the sample interval of nodes. 
+// The purpose of hard aborts is to prevent losing in time control. Hard aborts are measured from the end of the time
+// control. The purpose of soft abort is to prevent search cliffs from taking too much time. 
+inline constexpr ull ABORT_SAMPLE_INTERVAL = 10'000;    // We check for aborts every this many nodes.
+inline constexpr ull HARD_ABORT_TIME_MSEC = 10'000;     // Used only in time control. Hard abort starts this far from the end of time control. Set to zero to disable.
+inline constexpr bool SOFT_ABORT_ENABLED = true;
+inline constexpr double SOFT_ABORT_SAFETY_FACTOR = 10.0;  // This is times the "expected time" we expect it to take
 
-// Soft abort controls. Soft aborts are complicated. There are hard and soft aborts. 
-// Both both are called at 10,000 or so called from.  Hard aborts are measured from the end of the time control.
-// The purpose of soft abort is to prevent search cliffs from taking too much time. 
-//#define SOFT_ABORT_ENABLED
-#define SOFT_ABORT_SAFETY_FACTOR 5.0  // This is times the "expected time" we expect it to take
-
-// Delta pruning
-#define DELTA_PRUNE_ON true
-#define DELTA_MARGIN_CP 300
+// Delta pruning controls
+inline constexpr bool DELTA_PRUNE_ON = true;
+inline constexpr int DELTA_MARGIN_CP = 300;
 
 // Root aspiration-window
-static constexpr bool ASPIRATION_ENABLED = true;        // set to false to stop aspiration
-static constexpr int ASPIRATION_MIN_DEPTH = 2;
-static constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );
+inline constexpr bool ASPIRATION_ENABLED = true;        // set to false to stop aspiration
+inline constexpr int ASPIRATION_MIN_DEPTH = 2;
+inline constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );
 
 // MultiPV. Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
-constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
-constexpr int RANDOM_MOVE_CANDIDATES = 7;             // I must be greater than 1
+// works off of the -r flag.
+inline constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
+inline constexpr int RANDOM_MOVE_CANDIDATES = 7;             // I must be greater than 1
 
 
 

@@ -89,11 +89,9 @@ constexpr int FLAGS_CASTLE_NONE         = 0b00000000;
 constexpr int FLAGS_CASTLE_EITHER       = 0b00000011;
 constexpr int FLAGS_CASTLE_KING         = 0b00000001;
 constexpr int FLAGS_CASTLE_QUEEN        = 0b00000010;
+
 constexpr int FLAGS_IS_EP_CAPTURE       = 0b00010000;
 constexpr int FLAGS_IS_CASTLE_MOVE      = 0b00100000;
-
-constexpr int FLAGS_CASTLE_ALL_BITS     = 0b00001111;
-
 
 // NOTE: Can this be a class? How would it help?
 struct Move {
@@ -101,7 +99,7 @@ struct Move {
     Square fromSQ = NO_SQUARE;
     Square toSQ = NO_SQUARE;
 
-    Square en_passant_landingSQ = NO_SQUARE;  // A 1-bitboard, the square where the capturing pawn would land in an en-passant capture
+    Square en_passant_landingSQ = NO_SQUARE;    // the square where the capturing pawn would land in an en-passant capture
 
     Color color = ShumiChess::WHITE;
     Piece piece_type =  Piece::NONE;       // As in "pawn", "queen", etc. that is moving.
