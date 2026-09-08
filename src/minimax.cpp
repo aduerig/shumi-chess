@@ -135,7 +135,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -923,13 +923,13 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
 
         TTable2.clear();    // Clear even if we don't use it.
         
-        const auto clear_end_time = std::chrono::steady_clock::now();
-        const auto clear_elapsed_msec =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                clear_end_time - clear_start_time
-            ).count();
+        // const auto clear_end_time = std::chrono::steady_clock::now();
+        // const auto clear_elapsed_msec =
+        //     std::chrono::duration_cast<std::chrono::milliseconds>(
+        //         clear_end_time - clear_start_time
+        //     ).count();
 
-        sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
+        // sout << "TTable2 clear elapsed msec=" << clear_elapsed_msec << endl;
 
         // Initialize TT hash table hit counts
         NhitsTT2 = 0;
@@ -951,8 +951,6 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         NTriesP = 0;
 
         nRandos = 0;
-
-        sout << "game start=" << nGames << endl;
 
     }   
 
@@ -1548,7 +1546,8 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
 
         //
         if (Features_mask & _FEATURE_SOFT_ABORT) {
-            // Establish soft abort (this is to prevent search cliffs from taking too much time)
+            // Establish soft abort (this is to prevent search cliffs from taking too much time).
+            // This feature is to stop only extreme runaways.
             const ull soft_limit_ms = (ull)((double)move_budget_ms * SOFT_ABORT_SAFETY_FACTOR);
             const ull remaining_soft_time_ms = (soft_limit_ms > cumul_time_msec) ? soft_limit_ms - cumul_time_msec : 0ULL;
             soft_abort_start(remaining_soft_time_ms);

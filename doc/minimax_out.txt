@@ -1,0 +1,9 @@
+
+ ep=63332 nd=2309446
+flags=0x6
+1. Qe2 O-O 2. Bxe4 dxe4 3. Ng5 Bf5 4. Qb5 Qc8 5. Nd2 c6  *
+1... exd4 2. e5 Ng4 3. cxd4 Bb4 4. Bd2 Bxd2 5. Nbxd2 d5 6. Bb5  *
+1. cxd3 g6 2. Rg5 Re8 3. Rxh7 Rd8 4. Rff7 Rxd3 5. Rxg6 Rd8  *
+1. R6e4 f5 2. Re7 Nd5 3. Bxd5 cxd5 4. g3 f4 5. g4 b6  *
+1... Bd7 2. e4 Rfd8 3. Rfc1 Be8 4. h3 Qc7 5. Qb4 b6 6. Qb3  *
+1... Rxf2 2. Qxf2 Qxb3 3. Kh1 Qxb4 4. Re2 Qa4 5. Re3 Qd1 6. Qe1  *

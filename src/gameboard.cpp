@@ -2414,12 +2414,12 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         constexpr int homeRank   = (c == Color::WHITE) ? ROW_1 : ROW_8;
         constexpr int homeRankp1 = (c == Color::WHITE) ? ROW_2 : ROW_7;
 
-        // If king is not on home rank or one step off it, do not count guard pawns.
+        // If king is not on home rank or one step off it, do not count guard pawns, there is no fortress.
         if ((k_rank != homeRank) && (k_rank != homeRankp1)) {
             return 0;
         }
 
-        // Take guard files into account
+        // Take guard files into account, as to pawns
         int nGuardPawns = count_guard_pawn_files_t<c>(PInfoIn, k_file);
 
         if (nGuardPawns==3) cpWght = cpWght;

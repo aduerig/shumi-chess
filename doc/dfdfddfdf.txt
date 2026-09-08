@@ -1,7 +1,31 @@
 do not delet me the idea is a 
 
 game by game critsism, when shumi loses, as to flaws or at least 
-siutatuins when the loss becomes obvious to me
+situations when the loss becomes obvious to me.
+
+
+
+========================================================================================
+
+
+
+Timing results, with data set #1.  DeltaPrune=300 -d7
+
+"same"
+ ep=33568 nd=1205085
+ ep=34021 nd=1205085
+
+
+"same" but no DeltaPrune=0
+ ep=36335 nd=1286869
+
+
+"same" but no aspiration
+ ep=40493 nd=1422094
+
+"same" but no TT bounds
+ ep=63332 nd=2309446
+
 
 
 

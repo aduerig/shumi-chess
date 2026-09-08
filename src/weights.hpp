@@ -33,7 +33,7 @@ inline constexpr double SOFT_ABORT_SAFETY_FACTOR = 10.0;  // This is times the "
 
 // Delta pruning controls
 inline constexpr bool DELTA_PRUNE_ON = true;
-inline constexpr int DELTA_MARGIN_CP = 300;
+inline constexpr int DELTA_MARGIN_CP = 300;     // Raise me and there is less pruning
 
 // Root aspiration-window
 inline constexpr bool ASPIRATION_ENABLED = true;        // set to false to stop aspiration

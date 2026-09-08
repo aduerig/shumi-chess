@@ -3,6 +3,8 @@
 
 #include <cstdlib>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #ifdef _WIN32
 #include <conio.h>
 #else
@@ -14,6 +16,7 @@ static inline int _getch() { return std::cin.get(); }
 #include <iostream>
 #include <ostream>
 #include <sstream>
+#include <streambuf>
 #include <thread>
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
@@ -40,6 +43,38 @@ static const char* game_state_to_string(GameState state);
 static string move_to_uci(const Move& move);
 static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time);
 static void make_engine_move(Engine& engine, Move move);
+static ofstream open_minimax_results_file(filesystem::path& opened_path);
+
+class TeeStreamBuf : public streambuf
+{
+public:
+    TeeStreamBuf(streambuf* first, streambuf* second) : first(first), second(second) {}
+
+protected:
+    int overflow(int ch) override
+    {
+        if (ch == traits_type::eof()) {
+            return traits_type::not_eof(ch);
+        }
+
+        const int first_result = first->sputc(static_cast<char>(ch));
+        const int second_result = second ? second->sputc(static_cast<char>(ch)) : ch;
+        return (first_result == traits_type::eof() || second_result == traits_type::eof())
+            ? traits_type::eof()
+            : ch;
+    }
+
+    int sync() override
+    {
+        const int first_result = first->pubsync();
+        const int second_result = second ? second->pubsync() : 0;
+        return (first_result == 0 && second_result == 0) ? 0 : -1;
+    }
+
+private:
+    streambuf* first;
+    streambuf* second;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,16 +104,16 @@ int main(int argc, char** argv) {
     FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giuco Piano
     FENs[2] = "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2RR1 w - - 0 20";                // random middlegame
     FENs[3] = "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30";             // random middlegame
-    FENs[4] = "3k4/8/3P1p2/p4P2/8/2P2N2/4KB2/8 w - - 0 51";                             // random endgame
 
-    int NPositions = 5;
-    int max_ply_to_play = 4;    // measured from the start of each starting position
+    FENs[4] = "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14";     // middlegame from QP opening
+    FENs[5] = "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42";                             // random endgame
 
-    /////////////////////////////////////////////////////////////////////////////////////
-    //
+    int NPositions = 6;
+    int max_ply_to_play = 10;    // measured from the start of each starting position
+
 
     // Deterime the "time arguments" to the search
-    int depth_to_use = 8;       // We will look this many deepenings for each move.
+    int depth_to_use = 7;       // We will look this many deepenings for each move.
 
     // Milliseconds. The purpose of this low value, is to make us go only (and exactly) a fixed number of deepenings 
     ull time_to_use = 2;      
@@ -96,7 +131,7 @@ int main(int argc, char** argv) {
     // }
     // if (argc >= 3) {
     //     depth_to_use = atoi(argv[2]);
-    // }
+    // }1
     // if (argc >= 4) {
     //     max_ply_to_play = atoi(argv[3]);
     // }
@@ -182,19 +217,64 @@ int main(int argc, char** argv) {
     //
     // Show results
     //
-    sout << endl << "flags=0x" << std::hex << flags << std::dec << endl;
+    filesystem::path minimax_results_path;
+    ofstream minimax_results_file = open_minimax_results_file(minimax_results_path);
+    if (!minimax_results_file.is_open()) {
+        sout << "Could not open doc\\minimax_out.txt for writing; results will only be printed to sout." << endl;
+    } else if (minimax_results_path.filename() != "minimax_out.txt") {
+        sout << "doc\\minimax_out.txt was not writable; writing results to "
+             << minimax_results_path.string() << endl;
+    }
+
+    TeeStreamBuf results_buf(sout.rdbuf(), minimax_results_file.is_open() ? minimax_results_file.rdbuf() : nullptr);
+    ostream results(&results_buf);
+
+    results << endl;
+    results <<" ep=" << total_elapsed_time <<" nd=" << (totalNodesSum/totalNodesPerMove) << endl;
+
+    results << "flags=0x" << std::hex << flags << std::dec << endl;
     for (int i=0;i<NPositions;i++) {
-        sout << PGNs[i] << endl;
+        results << PGNs[i] << endl;
     }
     assert (totalNodesPerMove > 0);
 
-    sout << endl;
-    sout <<" ep=" << total_elapsed_time <<" nd=" << (totalNodesSum/totalNodesPerMove) << endl;
 
     sout << "Press any keeeeeeey to exit..." << endl;
     _getch();
 
     return 0;
+}
+
+// codex resume 01a07fb8-ab90-7fc2-98ba-9b09335a1803
+
+/////////////////////////////////////////////////////////////////////////////
+
+static ofstream open_minimax_results_file(filesystem::path& opened_path)
+{
+    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+    const filesystem::path doc_dir = repo_root / "doc";
+    error_code ignored_error;
+    filesystem::create_directories(doc_dir, ignored_error);
+
+    opened_path = doc_dir / "minimax_out.txt";
+    ofstream file;
+    file.open(opened_path, ios::out | ios::trunc);
+    if (file.is_open()) {
+        return file;
+    }
+    file.clear();
+
+    for (int i = 1; i <= 99; ++i) {
+        opened_path = doc_dir / ("minimax_out (" + to_string(i) + ").txt");
+        file.open(opened_path, ios::out | ios::trunc);
+        if (file.is_open()) {
+            return file;
+        }
+        file.clear();
+    }
+
+    opened_path.clear();
+    return file;
 }
 
 
