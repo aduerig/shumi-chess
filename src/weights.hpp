@@ -10,7 +10,7 @@
 inline constexpr int MAX_MOVES = 256;       // Maximum number of legal moves.
 inline constexpr int MAXIMUM_DEEPENING = 40;       //    If this wall hit, deepening stops. This can happen  50-move rule, all nodes return DRAW, so in so quickly
                                                    // zips through these, that it runs out of depth before the time limit
-inline constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (last deepening discarded)
+inline constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (drops back to last deepening)
 inline constexpr int MAX_PLY = 50;                 // Can never look ahead past this many ply.
 
 // Quissence controls

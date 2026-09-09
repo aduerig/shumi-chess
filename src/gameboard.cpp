@@ -2379,7 +2379,7 @@ bool GameBoard::bHasCastled_fake_t(int k_rank, int k_file) const {
 
 // ---------- get_castled_bonus_cp_t ----------
 template<Color c>
-int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
+int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PInfo& PInfoEnemy) const {
 
     int i_NumerB = 0;
     int i_DenomB = 0;
@@ -2420,12 +2420,9 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
         }
 
         // Take guard files into account, as to pawns
-        int nGuardPawns = count_guard_pawn_files_t<c>(PInfoIn, k_file);
+        double nGuardPawns = count_guard_pawn_files_t<c>(PInfoIn, PInfoEnemy, k_file);
 
-        if (nGuardPawns==3) cpWght = cpWght;
-        else if (nGuardPawns==2) cpWght = (cpWght * 2) / 3;
-        else if (nGuardPawns==1) cpWght = (cpWght * 1) / 3;
-        else if (nGuardPawns==0) cpWght = 0;
+        if (nGuardPawns <= 3.0 && nGuardPawns >= 0.0) cpWght = static_cast<int>((cpWght * nGuardPawns) / 3.0);
         else assert(0);
 
         if (k_file >= COL_C) cpWght += wghts.GetWeight(QUEEN_SIDE_CASTLE);
@@ -2487,8 +2484,12 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const {
 // It only checks whether a plausible 3-file pawn shelter exists
 // near the king's current side.
 //
-#define GUARD_ADDER 1
-template<Color c> int GameBoard::count_guard_pawn_files_t(const PInfo& PInfoIn, int k_file) const
+static constexpr double GUARD_FILE_PRESENT_SCORE = 1.0;                 // Bonus, file blocked by a guard pawn.
+static constexpr double GUARD_FILE_MISSING_SCORE = 0.0;                 // No guard pawn on this file, sorry.
+static constexpr double GUARD_FILE_OPEN_MAJORS_SCORE = -0.25;           // Penelty, Majors on, and this guard file is open.
+static constexpr double GUARD_FILE_OPEN_HEAVY_MAJORS_SCORE = -0.75;     // Penelty, Heavy majors on, and this guard file is open.
+
+template<Color c> double GameBoard::count_guard_pawn_files_t(const PInfo& PInfoIn, const PInfo& PInfoEnemy, int k_file) const
 {
     int file0;
     int file1;
@@ -2507,15 +2508,32 @@ template<Color c> int GameBoard::count_guard_pawn_files_t(const PInfo& PInfoIn, 
         file2 = COL_H;
     }
     else {
-        return 0;
+        return 0.0;
     }
 
-    int nGuardFiles = 0;
+    constexpr Color enemyColor = utility::representation::opposite_color_t<c>;
+    const int enemy_major_pressure =
+        bits_in(get_pieces_template<Piece::ROOK, enemyColor>()) +
+        (2 * bits_in(get_pieces_template<Piece::QUEEN, enemyColor>()));
+    const double open_file_penalty =
+        (enemy_major_pressure >= 3) ? GUARD_FILE_OPEN_HEAVY_MAJORS_SCORE :
+        (enemy_major_pressure > 0)  ? GUARD_FILE_OPEN_MAJORS_SCORE :
+                                      GUARD_FILE_MISSING_SCORE;
 
-    if (PInfoIn.guard_files_23 & (1u << file0)) nGuardFiles+=GUARD_ADDER;
-    if (PInfoIn.guard_files_23 & (1u << file1)) nGuardFiles+=GUARD_ADDER;
-    if (PInfoIn.guard_files_23 & (1u << file2)) nGuardFiles+=GUARD_ADDER;
+    auto guard_file_score = [&](int file) {
+        const uint8_t fileMask = static_cast<uint8_t>(1u << file);
+        if (PInfoIn.guard_files_23 & fileMask) return GUARD_FILE_PRESENT_SCORE;
+        if (!(PInfoIn.files_present & fileMask) && !(PInfoEnemy.files_present & fileMask)) return open_file_penalty;
+        return GUARD_FILE_MISSING_SCORE;
+    };
 
+    double nGuardFiles = 0.0;
+    nGuardFiles += guard_file_score(file0);
+    nGuardFiles += guard_file_score(file1);
+    nGuardFiles += guard_file_score(file2);
+
+    if (nGuardFiles < 0.0) return 0.0;
+    if (nGuardFiles > 3.0) return 3.0;
     return nGuardFiles;
 }
 
@@ -4114,8 +4132,8 @@ template bool GameBoard::bHasCastled_fake_t<Color::WHITE>(int k_rank, int k_file
 template bool GameBoard::bHasCastled_fake_t<Color::BLACK>(int k_rank, int k_file) const;
 
 // get_castled_bonus_cp_t
-template int GameBoard::get_castled_bonus_cp_t<Color::WHITE>(int,const PInfo& PInfoIn) const;
-template int GameBoard::get_castled_bonus_cp_t<Color::BLACK>(int,const PInfo& PInfoIn) const;
+template int GameBoard::get_castled_bonus_cp_t<Color::WHITE>(int,const PInfo& PInfoIn,const PInfo& PInfoEnemy) const;
+template int GameBoard::get_castled_bonus_cp_t<Color::BLACK>(int,const PInfo& PInfoIn,const PInfo& PInfoEnemy) const;
 
 // center_closeness_bonus
 template int GameBoard::center_closeness_bonus<Color::WHITE>();

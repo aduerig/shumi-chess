@@ -1060,7 +1060,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
             multipv_aborted = true;
             break;
         }
-        //if (d_Return_score == ONLY_MOVE_SCORE)
+
 
         best_move = get<1>(ret_val);    
 
@@ -3719,7 +3719,7 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase, const PawnFileInfo*
     const PInfo& pawnF = pawnFileInfo.p[c];
     const PInfo& pawnE = pawnFileInfo.p[enemyColor];
 
-    icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnF);
+    icp_temp = engine.game_board.get_castled_bonus_cp_t<c>(nPhase, pawnF, pawnE);
     cp_score_position_temp += icp_temp;
 
 

@@ -415,12 +415,12 @@ class GameBoard {
         std::mt19937 rng;       // 32-bit Mersenne Twister PRNG. For randomness. This is fine. Let it go.
         int rand_new();
 
-        template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn) const;
+        template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PInfo& PInfoEnemy) const;
         template<Color c> int get_material_for_color_t(int& cp_pawns_only);
         template<Color c> int get_material_for_color2_t(int& cp_pawns_only);    // faster, but needs compute_bits_in() called first)
         template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
 
-        template<Color c> int count_guard_pawn_files_t(const PInfo& PInfoIn, int k_file) const;
+        template<Color c> double count_guard_pawn_files_t(const PInfo& PInfoIn, const PInfo& PInfoEnemy, int k_file) const;
         template<Color c> int rook_endgame_keep_rooks_when_down_cp_t();
         template<Color c> int blocked_home_bishops_cp_t();
         Score compress_drawish_score_cp(Score score_cp, int k_cp) const;

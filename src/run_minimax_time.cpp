@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
     FENs[5] = "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42";                             // random endgame
 
     int NPositions = 6;
-    int max_ply_to_play = 10;    // measured from the start of each starting position
+    int max_ply_to_play = 14;    // measured from the start of each starting position
 
 
     // Deterime the "time arguments" to the search
