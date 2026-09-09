@@ -1,9 +1,9 @@
 
- ep=44867 nd=1130645
+ ep=45583 nd=1124980
 flags=0x6
 1. Qe2 O-O 2. Bxe4 dxe4 3. Ng5 Bf5 4. Qb5 Qc8 5. Nd2 c6 6. Qe2 Re8 7. O-O Bf4  *
 1... exd4 2. e5 Ng4 3. cxd4 Bb4 4. Bd2 Bxd2 5. Nbxd2 d5 6. Bb5 O-O 7. Bxc6 bxc6 8. h3  *
-1. cxd3 g6 2. Rg5 Re8 3. Rxh7 Rd8 4. Rff7 Rxd3 5. Rxg6 Rd7 6. Rxd7 Kb8 7. Rg8 Ka7  *
+1. cxd3 b6 2. Rxg7 Rd8 3. Kc2 b5 4. Rf6 Kb8 5. Rxc6 c4 6. dxc4 bxc4 7. Rxc4 Rf8  *
 1. R6e4 f5 2. Re7 Nd5 3. Bxd5 cxd5 4. g3 f4 5. g4 b6 6. Nd2 Rg7 7. c4 dxc4  *
 1... Bd7 2. e4 Rfd8 3. Rfc1 Be8 4. h3 Qc7 5. Qb4 b6 6. Qb3 a5 7. Qa3 Rab8 8. Re1  *
 1... Rxf2 2. Qxf2 Qxb3 3. Kh1 Qxb4 4. Re2 Qa4 5. Re3 Qd1 6. Qe1 Qxe1 7. Rxe1 Bg4 8. Kg2  *

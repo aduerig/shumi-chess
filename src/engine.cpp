@@ -211,7 +211,7 @@ void Engine::reset_engine() {         // New game.
 
     #define TEMP_FEN "r1bq1rk1/pp2bp2/3p1n1Q/2p1p3/2BnP3/2NP1N2/PPP2PPP/R4RK1 w - - 1 11"
 
-    #define TEMP_FEN1 "r3qrk1/pb1nbppp/1pN2n2/2pp4/Q2P4/2NBP3/PP1B1PPP/R4RK1 w - - 8 13"
+    #define TEMP_FEN1 "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20"
 
     ///////////////////////////////////////////////////////////////////////////////////
 
