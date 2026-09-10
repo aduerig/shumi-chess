@@ -48,7 +48,7 @@ print('Building for:', 'debug' if not args.release else 'release')
 
 # shared_build_code.build_shumi_chess(args.release, build_tests=False)
 shared_build_code.build_shumi_chess(args.release, build_tests=False, shumi_asserts=args.shumi_asserts)
-shared_build_code.build_python_gui_module(args.release)
+shared_build_code.build_python_gui_module(args.release, shumi_asserts=args.shumi_asserts)
 
 
 shared_build_code.run_python_gui(

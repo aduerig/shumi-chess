@@ -26,19 +26,32 @@ if sys.platform == 'darwin':
 
 
 release_mode = 'release'
+shumi_asserts = True
 if '--release' in sys.argv:
     del sys.argv[sys.argv.index('--release')]
 if '--debug' in sys.argv:
     release_mode = 'debug'
     del sys.argv[sys.argv.index('--debug')]
+if '--asserts' in sys.argv:
+    shumi_asserts = True
+    del sys.argv[sys.argv.index('--asserts')]
+if '--no-asserts' in sys.argv:
+    shumi_asserts = False
+    del sys.argv[sys.argv.index('--no-asserts')]
 
-print_cyan(f'building with {release_mode=}, {root_of_project_directory=}, {this_file_directory=}')
+print_cyan(f'building with {release_mode=}, {shumi_asserts=}, {root_of_project_directory=}, {this_file_directory=}')
 
 lib_dir = root_of_project_directory.joinpath('build', 'lib')
 
 extra_compile_args=['-std=c++17']
 if is_windows():
     extra_compile_args = ['/std:c++17']
+
+if shumi_asserts:
+    if is_windows():
+        extra_compile_args += ['/DSHUMI_FORCE_ASSERTS=1']
+    else:
+        extra_compile_args += ['-DSHUMI_FORCE_ASSERTS=1']
 
 
 config_subdir = 'Release' if release_mode == 'release' else 'Debug'

@@ -41,57 +41,7 @@ using namespace std;
 
 namespace ShumiChess {
 
-#define PGN_MAX 10000
-PGN::PGN() 
-{
-    text.reserve(PGN_MAX);
-};
 
-void PGN::clear()
-{
-    text.clear();      // sets size to 0, keeps the reserved capacity
-    moves_added = 0;
-    starts_with_black = false;
-}
-
-string PGN::spitout()
-{
-    text += " *";
-
-    return text;
-} 
-
-int PGN::addMe(Move& m, Engine& e)
-{
-    if (moves_added == 0) {
-        starts_with_black = (e.game_board.turn == ShumiChess::BLACK);
-    }
-
-    // Add the move number to the string (PGN needs this)
-    if (e.game_board.turn == ShumiChess::WHITE || moves_added == 0) {
-        char sztmp[16];
-        const int move_number = (moves_added / 2) + 1
-                              + ((starts_with_black && e.game_board.turn == ShumiChess::WHITE) ? 1 : 0);
-        const char* separator = (e.game_board.turn == ShumiChess::WHITE) ? ". " : "... ";
-        snprintf(sztmp, sizeof(sztmp), "%i%s", move_number, separator);
-        
-        text += sztmp;
-    }
-
-    // Puts the move in simple algebriac (SAN)
-    // Warning: this function is expensive. (because of disambigouation) Should be called only 
-    // for making formal PGN or move files.
-    e.move_into_string_full(m);
-
-    // Add the algebriac (disambiguated) to the string
-    e.move_string += " ";
-    
-    text += e.move_string;
-    ++moves_added;
-
-    return 0;
-    
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -116,7 +66,7 @@ Engine::Engine() {
 // This routine is called only in tests
 Engine::Engine(const string& fen_notation) : game_board(fen_notation) {
     
-    //assert(0);      // exploratory assert Is this a dead path?
+    //assert(0);      // exploratory assert.
 
     reset_all_but_FEN();
 
@@ -208,14 +158,14 @@ void Engine::reset_engine() {         // New game.
     
     #define PROMOTION_TEST_FEN "4k3/8/8/8/8/8/4PPPP/4K3 w KQkq - 0 1"
 
+    #define SIMPLE_ROOKS "rk6/8/8/8/8/8/8/6KR w KQkq - 0 1"     // should always draw
 
     #define TEMP_FEN "r1bq1rk1/pp2bp2/3p1n1Q/2p1p3/2BnP3/2NP1N2/PPP2PPP/R4RK1 w - - 1 11"
 
-    #define TEMP_FEN1 "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20"
 
     ///////////////////////////////////////////////////////////////////////////////////
 
-    //game_board = GameBoard(TEMP_FEN1);
+    //game_board = GameBoard(SIMPLE_ROOKS);
 
     game_board = GameBoard();
 
@@ -533,13 +483,22 @@ static inline void process_pin_ray(
 // I am called only from python, when the game is over. I am very wasteful. as get_legal_moves() is very 
 // expensive
 GameState Engine::is_game_over() {
+    return is_game_over(&reason_for_draw);
+}
+
+GameState Engine::is_game_over(int* draw_reason_out) {
     int moves_found = get_legal_moves_fast(game_board.turn, false, false, psuedo_legal_moves);
-    return is_game_over(moves_found);
+    return is_game_over(moves_found, draw_reason_out);
 }
 
 // I am called in every node C++ only). Here speed is not a problem, as we are passed in the legal moves.
 // I require Bits_In to be filled out.
 GameState Engine::is_game_over(int n_leg_moves_found) {
+    return is_game_over(n_leg_moves_found, &reason_for_draw);
+}
+
+GameState Engine::is_game_over(int n_leg_moves_found, int* draw_reason_out) {
+    if (draw_reason_out != nullptr) *draw_reason_out = DRAW_NULL;
 
     if (n_leg_moves_found == 0) {
 
@@ -552,7 +511,7 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
         } else if ( (!game_board.black_king) || (is_square_in_check_t<Color::WHITE>(game_board.black_king)) ) {
             return GameState::WHITEWIN;     // Checkmate
         } else {
-            reason_for_draw = DRAW_STALEMATE;
+            if (draw_reason_out != nullptr) *draw_reason_out = DRAW_STALEMATE;
             //if (debugNow) sout<<"stalemate" << endl;
             return GameState::DRAW;    //  Draw by Stalemate
         }
@@ -560,7 +519,7 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
     } else if (game_board.halfmove >= FIFTY_MOVE_RULE_PLY) {
         //  After fifty  or 50 "ply" or half moves, without a pawn move or capture, its a draw.
         //sout << "Draw by 50-move rule at ply " << game_board.halfmove ;   50 move rule here
-        reason_for_draw = DRAW_50MOVERULE;
+        if (draw_reason_out != nullptr) *draw_reason_out = DRAW_50MOVERULE;
         //sout<<"50 move rule" << endl;
         return GameState::DRAW;           // draw by 50 move rule
 
@@ -569,7 +528,7 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
         // Insuffecient material.
         bool isOverThatWay = game_board.insufficient_material_simple();
         if (isOverThatWay) {
-            reason_for_draw = DRAW_INSUFFMATER;
+            if (draw_reason_out != nullptr) *draw_reason_out = DRAW_INSUFFMATER;
             //if (debugNow) ssout<<"no material" << endl;
             return GameState::DRAW;
         }
@@ -579,7 +538,7 @@ GameState Engine::is_game_over(int n_leg_moves_found) {
 
         if (count >= THREE_TIME_REP) {
             // threefold repetition draw
-            reason_for_draw = DRAW_3TIME_REP;
+            if (draw_reason_out != nullptr) *draw_reason_out = DRAW_3TIME_REP;
             //if (debugNow) sout<<"3-time-rep"<< endl;
             return GameState::DRAW;
         }
@@ -3192,5 +3151,61 @@ template void Engine::pushMove_t<Color::WHITE>(const Move&);
 template void Engine::pushMove_t<Color::BLACK>(const Move&);
 template void Engine::popMove_t<Color::WHITE>();
 template void Engine::popMove_t<Color::BLACK>();  
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define PGN_MAX 10000       // Maximum number of moves in game.
+PGN::PGN() 
+{
+    text.reserve(PGN_MAX);
+};
+
+void PGN::clear()
+{
+    text.clear();      // sets size to 0, keeps the reserved capacity
+    moves_added = 0;
+    starts_with_black = false;
+}
+
+string PGN::spitout()
+{
+    text += " *";
+
+    return text;
+} 
+
+int PGN::addMe(Move& m, Engine& e)
+{
+    if (moves_added == 0) {
+        starts_with_black = (e.game_board.turn == ShumiChess::BLACK);
+    }
+
+    // Add the move number to the string (PGN needs this)
+    if (e.game_board.turn == ShumiChess::WHITE || moves_added == 0) {
+        char sztmp[16];
+        const int move_number = (moves_added / 2) + 1
+                              + ((starts_with_black && e.game_board.turn == ShumiChess::WHITE) ? 1 : 0);
+        const char* separator = (e.game_board.turn == ShumiChess::WHITE) ? ". " : "... ";
+        snprintf(sztmp, sizeof(sztmp), "%i%s", move_number, separator);
+        
+        text += sztmp;
+    }
+
+    // Puts the move in simple algebriac (SAN)
+    // Warning: this function is expensive. (because of disambigouation) Should be called only 
+    // for making formal PGN or move files.
+    e.move_into_string_full(m);
+
+    // Add the algebriac (disambiguated) to the string
+    e.move_string += " ";
+    
+    text += e.move_string;
+    ++moves_added;
+
+    return 0;
+    
+}
+
 
 } // end namespace ShumiChess

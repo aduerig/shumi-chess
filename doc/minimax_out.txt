@@ -1,5 +1,5 @@
 
- ep=45583 nd=1124980
+ ep=41612 nd=1124980
 flags=0x6
 1. Qe2 O-O 2. Bxe4 dxe4 3. Ng5 Bf5 4. Qb5 Qc8 5. Nd2 c6 6. Qe2 Re8 7. O-O Bf4  *
 1... exd4 2. e5 Ng4 3. cxd4 Bb4 4. Bd2 Bxd2 5. Nbxd2 d5 6. Bb5 O-O 7. Bxc6 bxc6 8. h3  *

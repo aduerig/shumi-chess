@@ -99,7 +99,9 @@ class Engine {
         template<Color c> void popMove_t();
 
         GameState is_game_over();
+        GameState is_game_over(int* draw_reason_out);
         GameState is_game_over(int nLegMovesFound);
+        GameState is_game_over(int nLegMovesFound, int* draw_reason_out);
         int i_randomize_next_move = 0;
 
         // Returns direct pointer (reference) to a bit board.

@@ -3845,37 +3845,46 @@ int GameBoard::is_knight_on_edge_cp_t() {
 
 template<Color c> int GameBoard::blocked_home_bishops_cp_t()
 {
-    int cp = 0;
-
     const int k_cp = wghts.GetWeight(BLOCKED_HOME_BISHOP);
+    const ull my_bishops = get_pieces_template<Piece::BISHOP, c>();
+    const ull my_pawns = get_pieces_template<Piece::PAWN, c>();
 
-    if constexpr (c == WHITE) {
-        if ((white_bishops & (1ULL << square_c1)) &&
-            (white_pawns   & (1ULL << square_d2)) &&
-            (white_pawns   & (1ULL << square_e2))) {
-            cp -= k_cp;
+    int blocked_doors = 0;
+
+    ull remaining_start_bishops = start_bishops_bb[c];
+
+    while (remaining_start_bishops) {
+        const ull start_bishop_bb = remaining_start_bishops & (0ULL - remaining_start_bishops);
+        remaining_start_bishops &= remaining_start_bishops - 1;
+
+        if ((my_bishops & start_bishop_bb) == 0) {
+            continue;
         }
 
-        if ((white_bishops & (1ULL << square_f1)) &&
-            (white_pawns   & (1ULL << square_e2)) &&
-            (white_pawns   & (1ULL << square_g2))) {
-            cp -= k_cp;
-        }
-    } else {
-        if ((black_bishops & (1ULL << square_c8)) &&
-            (black_pawns   & (1ULL << square_d7)) &&
-            (black_pawns   & (1ULL << square_e7))) {
-            cp -= k_cp;
+        const Square start_square = utility::bit::bitboard_to_lowest_square_fast(start_bishop_bb);
+        const int start_file = (int)start_square % 8;
+        const int start_rank = (int)start_square / 8;
+        const int pawn_rank = (c == Color::WHITE) ? (start_rank + 1) : (start_rank - 1);
+
+        assert(pawn_rank >= 0);
+        assert(pawn_rank < 8);
+
+        if (start_file > 0) {
+            const int pawn_square = pawn_rank * 8 + (start_file - 1);
+            if (my_pawns & (1ULL << pawn_square)) {
+                blocked_doors++;
+            }
         }
 
-        if ((black_bishops & (1ULL << square_f8)) &&
-            (black_pawns   & (1ULL << square_e7)) &&
-            (black_pawns   & (1ULL << square_g7))) {
-            cp -= k_cp;
+        if (start_file < 7) {
+            const int pawn_square = pawn_rank * 8 + (start_file + 1);
+            if (my_pawns & (1ULL << pawn_square)) {
+                blocked_doors++;
+            }
         }
     }
 
-    return cp;
+    return ((k_cp * blocked_doors) - 1) / 2;
 }
 
 void GameBoard::set_development_start_masks() {
@@ -3941,100 +3950,6 @@ template<Color c> int GameBoard::development_minor_cp_t() {
     return developed_knights * knight_weight +
            developed_bishops * bishop_weight;
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
-//
-// ---------- bishop_outside_world_cp_t ----------
-// Opening bishop-access term.
-//
-// This does not measure current bishop mobility.
-// It measures whether each original bishop's pawn cage has been opened.
-//
-// For normal chess:
-//      c1 bishop: b-pawn or d-pawn moved
-//      f1 bishop: e-pawn or g-pawn moved
-//
-// In Chess960 this uses start_bishops_bb[c], so the same idea applies to
-// whatever squares the bishops actually started on.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-
-template<Color c> int GameBoard::bishop_outside_world_cp_t() {
-    constexpr Color enemy = utility::representation::opposite_color_t<c>;
-
-    const ull my_bishops = get_pieces_template<Piece::BISHOP, c>();
-    const ull my_pawns   = get_pieces_template<Piece::PAWN, c>();
-
-    const int bishops_total = (int)Bits_In[c][Piece::BISHOP];
-    if (bishops_total <= 0) return 0;
-
-    const int open_bonus = wghts.GetWeight(BISHOP_OUTSIDE_WORLD);
-    const int caged_penalty = wghts.GetWeight(BISHOP_CAGED);
-
-    int open_count = 0;
-    int caged_count = 0;
-
-    ull remaining_start_bishops = start_bishops_bb[c];
-
-    while (remaining_start_bishops) {
-        const ull start_bishop_bb = remaining_start_bishops & (0ULL - remaining_start_bishops);
-        remaining_start_bishops &= remaining_start_bishops - 1;
-
-        const Square start_square = utility::bit::bitboard_to_lowest_square_fast(start_bishop_bb);
-
-        const int start_file = (int)start_square % 8;
-        const int start_rank = (int)start_square / 8;
-
-        const int pawn_rank = (c == Color::WHITE) ? (start_rank + 1) : (start_rank - 1);
-
-        bool has_door = false;
-        bool checked_door = false;
-
-        // One diagonal pawn door.
-        if (start_file > 0) {
-            const int pawn_square = pawn_rank * 8 + (start_file - 1);
-            const ull pawn_square_bb = 1ULL << pawn_square;
-
-            checked_door = true;
-            if ((my_pawns & pawn_square_bb) == 0) {
-                has_door = true;
-            }
-        }
-
-        // Other diagonal pawn door.
-        if (start_file < 7) {
-            const int pawn_square = pawn_rank * 8 + (start_file + 1);
-            const ull pawn_square_bb = 1ULL << pawn_square;
-
-            checked_door = true;
-            if ((my_pawns & pawn_square_bb) == 0) {
-                has_door = true;
-            }
-        }
-
-        assert(checked_door);
-
-        if (has_door) {
-            open_count++;
-        } else {
-            // Only penalize a closed cage if the bishop is still sitting there.
-            if (my_bishops & start_bishop_bb) {
-                caged_count++;
-            }
-        }
-    }
-
-    // Avoid giving more outside-world credit than we have bishops.
-    if (open_count > bishops_total) {
-        open_count = bishops_total;
-    }
-
-    const int cp = (open_count * open_bonus) - (caged_count * caged_penalty);
-
-    return cp;
-}
-
-
 
 // ---------- rook_endgame_keep_rooks_when_down_cp_t ----------
 // Trading
@@ -4297,6 +4212,5 @@ template int GameBoard::is_knight_on_edge_cp_t<Color::BLACK>();
 // development_minor_cp_t
 template int GameBoard::development_minor_cp_t<Color::WHITE>();
 template int GameBoard::development_minor_cp_t<Color::BLACK>();
-
 
 } // end namespace ShumiChess

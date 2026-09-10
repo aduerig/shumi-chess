@@ -546,9 +546,9 @@ static void start_searching_for_move(
                         time_control
                     );
 
-                sout << "SEARCH RETURNED go_id="
-                     << go_id
-                     << endl;
+                //sout << "SEARCH RETURNED go_id="
+                //     << go_id
+                //     << endl;
             }
             catch (const std::exception& exception) {
                 sout << "SEARCH EXCEPTION go_id="
@@ -665,7 +665,7 @@ static void found_move(Engine& engine,
     // Show move
     iMovesInGame++;
 
-    sout << move_str_alebriac << " SENDING bestmove " << move_str << " go_id=" << search_thread.go_id << endl;
+    //sout << move_str_alebriac << " SENDING bestmove " << move_str << " go_id=" << search_thread.go_id << endl;
 
     std::cout << "bestmove " << move_str << "\n";
     std::cout.flush();

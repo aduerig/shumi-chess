@@ -61,9 +61,14 @@ if(BUILD_TESTS)
 endif(BUILD_TESTS)
 
 add_library(${project_name} STATIC ${Sources} ${Headers})
+add_library(${project_name}NoAsserts STATIC ${Sources} ${Headers})
 
 if(MSVC)
     target_compile_options(${project_name} PRIVATE
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/W3 /O2 /Ob2>
+        $<$<CONFIG:RelWithDebInfo>:/Zi>
+    )
+    target_compile_options(${project_name}NoAsserts PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/W3 /O2 /Ob2>
         $<$<CONFIG:RelWithDebInfo>:/Zi>
     )
@@ -85,8 +90,16 @@ endif()
 
 
 set_property(TARGET ${project_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET ${project_name}NoAsserts PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(${project_name} PUBLIC
+    src
+    ${CMAKE_SOURCE_DIR}/extern/Fathom-master/src
+)
+
+target_compile_definitions(${project_name}NoAsserts PRIVATE NDEBUG=1)
+
+target_include_directories(${project_name}NoAsserts PUBLIC
     src
     ${CMAKE_SOURCE_DIR}/extern/Fathom-master/src
 )
@@ -96,7 +109,8 @@ add_executable(measure_speed_random_games driver/measure_speed_random_games.cpp)
 target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
 add_executable(run_minimax_time src/run_minimax_time.cpp)
-target_link_libraries(run_minimax_time PUBLIC ${project_name})
+target_compile_definitions(run_minimax_time PRIVATE NDEBUG=1)
+target_link_libraries(run_minimax_time PUBLIC ${project_name}NoAsserts)
 if(MSVC)
     target_link_options(run_minimax_time PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/INCREMENTAL:NO /DEBUG:FULL>

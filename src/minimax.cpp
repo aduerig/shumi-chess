@@ -135,7 +135,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -1064,7 +1064,11 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
 
         best_move = get<1>(ret_val);    
 
-        assert (best_move.piece_type != Piece::NONE);
+        if (best_move.piece_type == Piece::NONE)
+        {
+            sout << " n_Multis=" << n_Multis << "  xx " << excluded_root_moves.size() << "  rr  " << endl;
+            assert(0);
+        }
         if (best_move.piece_type == Piece::NONE) break;     // NOTE: should this ever happen?
 
         excluded_root_moves.push_back(std::make_pair(best_move, d_best_move_score));
@@ -1435,7 +1439,14 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         if (depth>=MAXIMUM_DEEPENING) {
             //sout << "\x1b[31m \nOver Deepening " << depth << "\x1b[0m" << endl;
             //sout << gameboard_to_string_old(engine.game_board) << endl;
-            assert(0);      // NOTE: this happens close to draws. Noone knows why.
+            // show board
+            // string out = utility::representation::gameboard_to_string(engine.game_board);
+            // sout << out << endl;
+            //assert(0);      // NOTE: this happens close to draws. Noone knows why. Or maybe they do, see below.
+            //    In draw-saturated positions, each deepening may complete almost instantly.
+            // "draw saturated", means that we hit stalemate, 3-timerep, or 50 rule in every line.
+            //    This doesnt happen with mates, because "draw " is only indicated by "scvore=0", 
+            // but "score=0" can happen for many reasons.
             break;   // Stop deepening, no more depths.
         }
 
@@ -2080,7 +2091,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             case GameState::DRAW:
                 d_best_score = ZERO_SCORE;          // Stalemate
 
-                if (is_from_root) engine.reason_for_draw = DRAW_STALEMATE;
+                //if (is_from_root) engine.reason_for_draw = DRAW_STALEMATE;
                 break;
 
             default:
@@ -3775,6 +3786,11 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase, const PawnFileInfo*
 
     if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
         icp_temp = engine.game_board.development_minor_cp_t<c>();
+        cp_score_position_temp += icp_temp;
+    }
+
+    if (nPhase == GamePhase::OPENING) {
+        icp_temp = engine.game_board.blocked_home_bishops_cp_t<c>();
         cp_score_position_temp += icp_temp;
     }
 

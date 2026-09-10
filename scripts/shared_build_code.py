@@ -58,7 +58,7 @@ def build_shumi_chess(release, build_tests=False, shumi_asserts=True):
     if return_code:
         sys.exit(1)
 
-def build_python_gui_module(release):
+def build_python_gui_module(release, shumi_asserts=True):
     build_type_str = 'Debug'
     if release:
         build_type_str = 'Release'
@@ -72,6 +72,7 @@ def build_python_gui_module(release):
         '--build-lib=driver', 
         '--build-temp=driver/build',
         f'--{build_type_str.lower()}',
+        '--asserts' if shumi_asserts else '--no-asserts',
     ]
     if is_windows():
         # cmd_options.append('--compiler=mingw32')

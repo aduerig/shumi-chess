@@ -31,6 +31,10 @@ static inline int _getch() { return std::cin.get(); }
 #include "minimax.hpp"
 #include "status_output.hpp"
 
+#ifndef NDEBUG
+#error "run_minimax_time must be compiled with NDEBUG so assert() checks are disabled."
+#endif
+
 using namespace std;
 using namespace ShumiChess;
 using namespace std::chrono;
@@ -94,6 +98,7 @@ int main(int argc, char** argv) {
     // Make board
     //string FENString = "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
 
+    
 
     // Setup the starting positions. We will sample a given number of ply from each starting position
     constexpr int MAX_FENS = 10;

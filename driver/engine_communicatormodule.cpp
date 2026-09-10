@@ -353,7 +353,6 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     int max_deepening;     // required
     int player_id;         // required
 
-
     int features_mask = 0;      // optional, default 0
 
     // required int, required int, required int, optional int
@@ -415,6 +414,10 @@ engine_communicator_wakeup(PyObject* self, PyObject* args) {
 static PyObject*
 engine_communicator_get_draw_reason(PyObject* self, PyObject* args) {
     char reason[32];
+    int current_draw_reason = DRAW_NULL;
+    python_engine->is_game_over(&current_draw_reason);
+
+    assert(current_draw_reason == minimax_ai->engine.reason_for_draw);
 
     switch (minimax_ai->engine.reason_for_draw)
     {

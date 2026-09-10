@@ -28,7 +28,7 @@ inline constexpr bool USE_TT_BOUND_MOVE_ORDER  = true;
 // control. The purpose of soft abort is to prevent search cliffs from taking too much time. 
 inline constexpr ull ABORT_SAMPLE_INTERVAL = 10'000;    // We check for aborts every this many nodes.
 inline constexpr ull HARD_ABORT_TIME_MSEC = 10'000;     // Used only in time control. Hard abort starts this far from the end of time control. Set to zero to disable.
-inline constexpr bool SOFT_ABORT_ENABLED = true; 
+//inline constexpr bool SOFT_ABORT_ENABLED = true; 
 inline constexpr double SOFT_ABORT_SAFETY_FACTOR = 10.0;  // This is times the "expected time" we expect it to take
 
 // Delta pruning controls
@@ -92,8 +92,6 @@ enum WghtIndxs
     PAWN_HOLE_OPEN_FILE,
     OPPOSITE_BISHOPS,
     BLOCKED_HOME_BISHOP,
-    BISHOP_OUTSIDE_WORLD,
-    BISHOP_CAGED,
     TRADE_MAX_BONUS,
     TRADE_ADVANTAGE_CAP,
     UNPUSHABLE_KNIGHT,
@@ -164,9 +162,7 @@ private:
     static constexpr int QUEEN_OUT_EARLY_WGHT = -30;    // for landing on center squares only. only in opening.
     static constexpr int BISHOP_PATTERN_WGHT = -170;    // stupid bishop blocking king/queen pawn (on d3,e3 or d6,e6). Only in opening.
     //static constexpr int F_PAWN_MOVED_EARLY_WGHT = 0; // only in opening. Boo hoo, no Bird opening.
-    static constexpr int BLOCKED_HOME_BISHOP_WGHT = 21; // only in opening. Bishop on home square blocked by 2 pawns
-    static constexpr int BISHOP_OUTSIDE_WORLD_WGHT = 12; // per original bishop whose pawn cage has been opened (a diagonal door is free)
-    static constexpr int BISHOP_CAGED_WGHT = 12;         // penalty (subtracted) per bishop still home with both diagonal doors pawn-blocked
+    static constexpr int BLOCKED_HOME_BISHOP_WGHT = -31; // only in opening. Full penalty for 2 blocked diagonal pawn doors, half for 1.
     
     static constexpr int DEVELOPMENT_OPENINGK_WGHT = 14;  // Opening only.  Counts knights, off their starting square.
     static constexpr int DEVELOPMENT_OPENINGB_WGHT = 22;  // Opening only.  Counts bishops, off their starting square.

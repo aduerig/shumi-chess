@@ -399,7 +399,6 @@ class GameBoard {
         template<Color c> int king_center_manhattan_dist_t();
         template<Color c> int is_knight_on_edge_cp_t();
         template<Color c> int development_minor_cp_t();
-        template<Color c> int bishop_outside_world_cp_t();
         template<Color c> bool hasNoMajorPieces_t();
         bool is_king_highest_piece();
         //bool IsSimpleEndGame(Color for_color);
