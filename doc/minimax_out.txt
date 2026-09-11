@@ -1,15 +1,40 @@
 
-settings depth=7 max_ply=18 positions=6 flags=0x6 player=3 time_ms=2
-summary ep=49720 nd=114667451 nd_avg=1061735 moves=108
-pos=0 ply_played=18 nd=30595879 final_state=in progress
-PGN: 1. Qe2 O-O 2. Bxe4 dxe4 3. Ng5 Bf5 4. Qb5 Qc8 5. Nd2 c6 6. Qe2 Re8 7. O-O Bf4 8. Nc4 Bc7 9. f3 e3  *
-pos=1 ply_played=18 nd=20966451 final_state=in progress
-PGN: 1... exd4 2. e5 Ng4 3. cxd4 Bb4 4. Bd2 Bxd2 5. Nbxd2 d5 6. Bb5 O-O 7. Bxc6 bxc6 8. h3 Nh6 9. Qb3 Ba6 10. Qa3  *
-pos=2 ply_played=18 nd=5213021 final_state=in progress
-PGN: 1. cxd3 b6 2. Rxg7 Rd8 3. Kc2 b5 4. Rf6 Kb8 5. Rxc6 c4 6. dxc4 bxc4 7. Rxc4 Rf8 8. Nb4 h5 9. Nc6 Kc8  *
-pos=3 ply_played=18 nd=6253879 final_state=in progress
-PGN: 1. R6e4 f5 2. Re7 Nd5 3. Bxd5 cxd5 4. g3 f4 5. g4 b6 6. Nd2 Rg7 7. c4 dxc4 8. Nxc4 h5 9. Rxg7 Kxg7  *
-pos=4 ply_played=18 nd=42804605 final_state=in progress
-PGN: 1... Bd7 2. e4 Rfd8 3. Rfc1 Be8 4. h3 Qc7 5. Qb4 b6 6. Qb3 a5 7. Qa3 Rab8 8. Re1 Rd7 9. Rbc1 Rbd8 10. e5  *
-pos=5 ply_played=18 nd=8833616 final_state=in progress
-PGN: 1... Rxf2 2. Qxf2 Qxb3 3. Kh1 Qxb4 4. Re2 Qa4 5. Re3 Qd1 6. Qe1 Qxe1 7. Rxe1 Bg4 8. Kg2 Bf3 9. Kf1 c5 10. Re3  *
+settings depth=7 max_ply=20 positions=6 flags=0x6 player=3 time_ms=2
+summary ep=52822 nd=122160020 nd_avg=1018000 moves=120
+
+[Event "Shumi minimax regression pos 0"]
+[Result "*"]
+pos=0 ply_played=20 nd=33345751 final_state=in progress
+FEN: rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8
+PGN: 1. Qe2 O-O 2. Bxe4 dxe4 3. Ng5 Bf5 4. Qb5 Qc8 5. Nd2 c6 6. Qe2 Re8 7. O-O Bf4 8. Nc4 Bc7 9. f3 e3 10. Bxe3 f6  *
+
+[Event "Shumi minimax regression pos 1"]
+[Result "*"]
+pos=1 ply_played=20 nd=23212201 final_state=in progress
+FEN: r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5
+PGN: 1... exd4 2. e5 Ng4 3. cxd4 Bb4 4. Bd2 Bxd2 5. Nbxd2 d5 6. Bb5 O-O 7. Bxc6 bxc6 8. h3 Nh6 9. Qb3 Ba6 10. Qa3 Bb5 11. O-O-O  *
+
+[Event "Shumi minimax regression pos 2"]
+[Result "*"]
+pos=2 ply_played=20 nd=5732981 final_state=in progress
+FEN: 2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20
+PGN: 1. cxd3 b6 2. Rxg7 Rd8 3. Kc2 b5 4. Rf6 Kb8 5. Rxc6 c4 6. dxc4 bxc4 7. Rxc4 Rf8 8. Nb4 h5 9. Nc6 Kc8 10. Rb4 Rf2  *
+
+[Event "Shumi minimax regression pos 3"]
+[Result "*"]
+pos=3 ply_played=20 nd=6625074 final_state=in progress
+FEN: 2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30
+PGN: 1. R6e4 f5 2. Re7 Nd5 3. Bxd5 cxd5 4. g3 f4 5. g4 b6 6. Nd2 Rg7 7. c4 dxc4 8. Nxc4 h5 9. Rxg7 Kxg7 10. Re7 Kg8  *
+
+[Event "Shumi minimax regression pos 4"]
+[Result "*"]
+pos=4 ply_played=20 nd=44269027 final_state=in progress
+FEN: r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14
+PGN: 1... Bd7 2. e4 Rfd8 3. Rfc1 Be8 4. h3 Qc7 5. Qb4 b6 6. Qb3 a5 7. Qa3 Rab8 8. Re1 Rd7 9. Rbc1 Rbd8 10. e5 Nd5 11. Nb5  *
+
+[Event "Shumi minimax regression pos 5"]
+[Result "*"]
+pos=5 ply_played=20 nd=8974986 final_state=in progress
+FEN: 8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42
+PGN: 1... Rxf2 2. Qxf2 Qxb3 3. Kh1 Qxb4 4. Re2 Qa4 5. Re3 Qd1 6. Qe1 Qxe1 7. Rxe1 Bg4 8. Kg2 Bf3 9. Kf1 c5 10. Re3 c4 11. Kf2  *
+

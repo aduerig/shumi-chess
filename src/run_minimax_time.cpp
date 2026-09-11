@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     FENs[5] = "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42";                             // random endgame
 
     int NPositions = 6;
-    int max_ply_to_play = 18;    // measured from the start of each starting position
+    int max_ply_to_play = 20;    // measured from the start of each starting position
 
 
     // Deterime the "time arguments" to the search
@@ -127,6 +127,7 @@ int main(int argc, char** argv) {
     ull time_to_use = 2;      
 
     int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
+    bool display_results_to_terminal = false;
 
     // if (argc < 2) {
     //     //sout << "You entered no argument for 'time_to_use', using default value of " << time_to_use << "msec" << endl;
@@ -238,7 +239,8 @@ int main(int argc, char** argv) {
              << minimax_results_path.string() << endl;
     }
 
-    TeeStreamBuf results_buf(sout.rdbuf(), minimax_results_file.is_open() ? minimax_results_file.rdbuf() : nullptr);
+    TeeStreamBuf results_buf(minimax_results_file.is_open() ? minimax_results_file.rdbuf() : sout.rdbuf(),
+                             display_results_to_terminal && minimax_results_file.is_open() ? sout.rdbuf() : nullptr);
     ostream results(&results_buf);
 
     results << endl;
@@ -256,14 +258,19 @@ int main(int argc, char** argv) {
             << " nd_avg=" << (totalNodesSum/totalNodesPerMove)
             << " moves=" << totalNodesPerMove
             << endl;
+    results << endl;
 
     for (int i=0;i<NPositions;i++) {
+        results << "[Event \"Shumi minimax regression pos " << i << "\"]" << endl;
+        results << "[Result \"*\"]" << endl;
         results << "pos=" << i
                 << " ply_played=" << positionPlyPlayed[i]
                 << " nd=" << positionNodes[i]
                 << " final_state=" << game_state_to_string(positionFinalStates[i])
                 << endl;
+        results << "FEN: " << FENs[i] << endl;
         results << "PGN: " << PGNs[i] << endl;
+        results << endl;
     }
     assert (totalNodesPerMove > 0);
 
