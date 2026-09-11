@@ -1,9 +1,15 @@
 
- ep=41612 nd=1124980
-flags=0x6
-1. Qe2 O-O 2. Bxe4 dxe4 3. Ng5 Bf5 4. Qb5 Qc8 5. Nd2 c6 6. Qe2 Re8 7. O-O Bf4  *
-1... exd4 2. e5 Ng4 3. cxd4 Bb4 4. Bd2 Bxd2 5. Nbxd2 d5 6. Bb5 O-O 7. Bxc6 bxc6 8. h3  *
-1. cxd3 b6 2. Rxg7 Rd8 3. Kc2 b5 4. Rf6 Kb8 5. Rxc6 c4 6. dxc4 bxc4 7. Rxc4 Rf8  *
-1. R6e4 f5 2. Re7 Nd5 3. Bxd5 cxd5 4. g3 f4 5. g4 b6 6. Nd2 Rg7 7. c4 dxc4  *
-1... Bd7 2. e4 Rfd8 3. Rfc1 Be8 4. h3 Qc7 5. Qb4 b6 6. Qb3 a5 7. Qa3 Rab8 8. Re1  *
-1... Rxf2 2. Qxf2 Qxb3 3. Kh1 Qxb4 4. Re2 Qa4 5. Re3 Qd1 6. Qe1 Qxe1 7. Rxe1 Bg4 8. Kg2  *
+settings depth=7 max_ply=18 positions=6 flags=0x6 player=3 time_ms=2
+summary ep=49720 nd=114667451 nd_avg=1061735 moves=108
+pos=0 ply_played=18 nd=30595879 final_state=in progress
+PGN: 1. Qe2 O-O 2. Bxe4 dxe4 3. Ng5 Bf5 4. Qb5 Qc8 5. Nd2 c6 6. Qe2 Re8 7. O-O Bf4 8. Nc4 Bc7 9. f3 e3  *
+pos=1 ply_played=18 nd=20966451 final_state=in progress
+PGN: 1... exd4 2. e5 Ng4 3. cxd4 Bb4 4. Bd2 Bxd2 5. Nbxd2 d5 6. Bb5 O-O 7. Bxc6 bxc6 8. h3 Nh6 9. Qb3 Ba6 10. Qa3  *
+pos=2 ply_played=18 nd=5213021 final_state=in progress
+PGN: 1. cxd3 b6 2. Rxg7 Rd8 3. Kc2 b5 4. Rf6 Kb8 5. Rxc6 c4 6. dxc4 bxc4 7. Rxc4 Rf8 8. Nb4 h5 9. Nc6 Kc8  *
+pos=3 ply_played=18 nd=6253879 final_state=in progress
+PGN: 1. R6e4 f5 2. Re7 Nd5 3. Bxd5 cxd5 4. g3 f4 5. g4 b6 6. Nd2 Rg7 7. c4 dxc4 8. Nxc4 h5 9. Rxg7 Kxg7  *
+pos=4 ply_played=18 nd=42804605 final_state=in progress
+PGN: 1... Bd7 2. e4 Rfd8 3. Rfc1 Be8 4. h3 Qc7 5. Qb4 b6 6. Qb3 a5 7. Qa3 Rab8 8. Re1 Rd7 9. Rbc1 Rbd8 10. e5  *
+pos=5 ply_played=18 nd=8833616 final_state=in progress
+PGN: 1... Rxf2 2. Qxf2 Qxb3 3. Kh1 Qxb4 4. Re2 Qa4 5. Re3 Qd1 6. Qe1 Qxe1 7. Rxe1 Bg4 8. Kg2 Bf3 9. Kf1 c5 10. Re3  *

@@ -52,24 +52,29 @@ inline constexpr int PVS_MIN_DEPTH = 1;
 
 When `PVS_ENABLED` is false, search behavior must follow the existing full-window path exactly.
 
-`PVS_MIN_DEPTH` is the minimum remaining normal-search depth at which PVS may be used. Do not reinterpret this as iterative-deepening depth.
+`PVS_MIN_DEPTH` is the minimum remaining normal-search depth at which PVS may be used. If PVS_MIN_DEPTH is 1, then all
+all depths above quissence perform PVS
+ Do not reinterpret this as iterative-deepening depth.
 
 Do not add a tunable PVS window width. PVS must use a one-score-unit null window.
 
-Use Shumi’s existing `Score` representation correctly. If one centipawn is one `Score` unit, use `1`. If an existing constant or conversion is required to represent one score unit, use that existing mechanism. Do not change the `Score` system.
+As to "one score unit" as mentioned below, this should be 1 centipawn. 
+Note my score.hpp. Do not change the `Score` system. Other than: I have a ONE_PAWN. Make a similar constant for
+ ONE_CENTIPAWN and use that for "one score unit".
+ 
 
 2. Add game-wide PVS statistics
 
-Add unsigned 64-bit counters alongside the existing search statistics:
+Add unsigned ull counters alongside the existing search statistics:
 
 ```cpp
-uint64_t pvs_attempts = 0;
-uint64_t pvs_successes = 0;
-uint64_t pvs_researches = 0;
-uint64_t pvs_cutoffs = 0;
+ull pvs_attempts = 0;
+ull pvs_successes = 0;
+ull pvs_researches = 0;
+ull pvs_cutoffs = 0;
 ```
 
-Meanings:
+Meanings: (add the test below as inline comments to the declarations)
 
 * `pvs_attempts`: completed narrow-window PVS searches.
 * `pvs_successes`: narrow searches that did not require a full-window re-search.
@@ -116,7 +121,8 @@ Because Shumi uses negamax, pass the corresponding negated child window:
 
 Preserve the existing negation of the returned child score.
 
-Use the current value of `alpha` that exists immediately before searching this move. If helpful for clarity and correctness, save it in a temporary variable such as:
+Use the current value of `alpha` that exists immediately before searching this move. 
+If helpful for clarity and correctness, save it in a temporary variable such as:
 
 ```cpp
 const Score pvs_alpha = alpha;
@@ -192,7 +198,8 @@ Preserve the existing negamax score conversion.
 
 The result of the full-window re-search replaces the narrow-search result. All existing alpha updates, best-move handling, PV handling, TT storage, cutoff handling, and return handling must use the final result exactly as they did before PVS was added.
 
-Do not perform a full-window re-search when the narrow result is already greater than or equal to beta. The narrow search has already proved the cutoff.
+Do not perform a full-window re-search when the narrow result is already greater than or equal to beta. 
+The narrow search has already proved the cutoff.
 
 6. Preserve abort behavior
 
@@ -242,7 +249,7 @@ Do not apply PVS:
 * To a search that has already been aborted.
 * By changing aspiration-window logic.
 * By changing MultiPV logic.
-* By changing TT flags, TT probing, TT replacement, or TT storage.
+* By changing TT flags, TT probing, TT replacement, or TT storage (the TT is sometimes called TT2).
 * By changing move sorting or move generation.
 
 Do not change the existing meaning of `nSearched`.
@@ -258,6 +265,7 @@ Build first with:
 ```cpp
 inline constexpr bool PVS_ENABLED = false;
 ```
+
 
 Verify:
 

@@ -104,6 +104,9 @@ int main(int argc, char** argv) {
     constexpr int MAX_FENS = 10;
     string FENs[MAX_FENS];
     string PGNs[MAX_FENS];
+    ull positionNodes[MAX_FENS] = {};
+    int positionPlyPlayed[MAX_FENS] = {};
+    GameState positionFinalStates[MAX_FENS] = {};
 
     FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Petrov
     FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giuco Piano
@@ -114,7 +117,7 @@ int main(int argc, char** argv) {
     FENs[5] = "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42";                             // random endgame
 
     int NPositions = 6;
-    int max_ply_to_play = 14;    // measured from the start of each starting position
+    int max_ply_to_play = 18;    // measured from the start of each starting position
 
 
     // Deterime the "time arguments" to the search
@@ -159,7 +162,7 @@ int main(int argc, char** argv) {
 
     GameState state;
 
-    long long totalNodesSum = 0;
+    ull totalNodesSum = 0;
     ull totalNodesPerMove=0;
 
     long long total_elapsed_time=0; 
@@ -180,6 +183,7 @@ int main(int argc, char** argv) {
 
 
         state = engine.is_game_over();
+        ull nodes_before_position = totalNodesSum;
         //
         // Loop over ply
         //
@@ -204,6 +208,7 @@ int main(int argc, char** argv) {
             // Sum total number of nodes used in move search
             totalNodesSum += minimax_ai.nodes_visited;
             totalNodesPerMove++;
+            positionPlyPlayed[iPositions] = ply;
             //sout << "nodes=" << (totalNodesSum/totalNodesPerMove) << endl;
 
 
@@ -211,6 +216,8 @@ int main(int argc, char** argv) {
         }
 
         //sout << "Gammme state: " << game_state_to_string(state) << endl;
+        positionNodes[iPositions] = totalNodesSum - nodes_before_position;
+        positionFinalStates[iPositions] = state;
         PGNs[iPositions] = engine.gamePGN.spitout();
         sout << "PGN: " << PGNs[iPositions] << endl;
         steady_clock::time_point end_time = steady_clock::now();
@@ -235,11 +242,28 @@ int main(int argc, char** argv) {
     ostream results(&results_buf);
 
     results << endl;
-    results <<" ep=" << total_elapsed_time <<" nd=" << (totalNodesSum/totalNodesPerMove) << endl;
+    results << "settings"
+            << " depth=" << depth_to_use
+            << " max_ply=" << max_ply_to_play
+            << " positions=" << NPositions
+            << " flags=0x" << std::hex << flags << std::dec
+            << " player=" << player_id
+            << " time_ms=" << time_to_use
+            << endl;
+    results << "summary"
+            << " ep=" << total_elapsed_time
+            << " nd=" << totalNodesSum
+            << " nd_avg=" << (totalNodesSum/totalNodesPerMove)
+            << " moves=" << totalNodesPerMove
+            << endl;
 
-    results << "flags=0x" << std::hex << flags << std::dec << endl;
     for (int i=0;i<NPositions;i++) {
-        results << PGNs[i] << endl;
+        results << "pos=" << i
+                << " ply_played=" << positionPlyPlayed[i]
+                << " nd=" << positionNodes[i]
+                << " final_state=" << game_state_to_string(positionFinalStates[i])
+                << endl;
+        results << "PGN: " << PGNs[i] << endl;
     }
     assert (totalNodesPerMove > 0);
 
