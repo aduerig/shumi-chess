@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <chrono>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #ifdef _WIN32
@@ -18,6 +19,7 @@ static inline int _getch() { return std::cin.get(); }
 #include <sstream>
 #include <streambuf>
 #include <thread>
+#include <vector>
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
     #undef NDEBUG
@@ -45,6 +47,8 @@ using namespace std::chrono;
 
 static const char* game_state_to_string(GameState state);
 static string move_to_uci(const Move& move);
+static string pgn_with_fen_move_numbers(const string& pgn, const string& fen);
+static string wrap_pgn_line(const string& pgn);
 static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time);
 static void make_engine_move(Engine& engine, Move move);
 static ofstream open_minimax_results_file(filesystem::path& opened_path);
@@ -262,14 +266,11 @@ int main(int argc, char** argv) {
 
     for (int i=0;i<NPositions;i++) {
         results << "[Event \"Shumi minimax regression pos " << i << "\"]" << endl;
+        results << "[SetUp \"1\"]" << endl;
+        results << "[FEN \"" << FENs[i] << "\"]" << endl;
         results << "[Result \"*\"]" << endl;
-        results << "pos=" << i
-                << " ply_played=" << positionPlyPlayed[i]
-                << " nd=" << positionNodes[i]
-                << " final_state=" << game_state_to_string(positionFinalStates[i])
-                << endl;
-        results << "FEN: " << FENs[i] << endl;
-        results << "PGN: " << PGNs[i] << endl;
+        results << endl;
+        results << wrap_pgn_line(pgn_with_fen_move_numbers(PGNs[i], FENs[i])) << endl;
         results << endl;
     }
     assert (totalNodesPerMove > 0);
@@ -333,6 +334,116 @@ static string move_to_uci(const Move& move)
         move_text += promo;
     }
     return move_text;
+}
+
+static string pgn_with_fen_move_numbers(const string& pgn, const string& fen)
+{
+    string board_part;
+    string side_to_move;
+    string castling;
+    string en_passant;
+    int halfmove = 0;
+    int fullmove = 1;
+
+    stringstream fen_stream(fen);
+    fen_stream >> board_part >> side_to_move >> castling >> en_passant >> halfmove >> fullmove;
+
+    vector<string> moves;
+    string token;
+    stringstream pgn_stream(pgn);
+    while (pgn_stream >> token) {
+        if (token == "*" || token == "1-0" || token == "0-1" || token == "1/2-1/2") {
+            continue;
+        }
+
+        bool is_move_number = true;
+        bool has_digit = false;
+        for (char ch : token) {
+            const unsigned char uch = static_cast<unsigned char>(ch);
+            if (isdigit(uch)) {
+                has_digit = true;
+            } else if (ch != '.') {
+                is_move_number = false;
+                break;
+            }
+        }
+
+        if (has_digit && is_move_number) {
+            continue;
+        }
+
+        moves.push_back(token);
+    }
+
+    const bool starts_with_white = (side_to_move != "b");
+    bool white_to_move = starts_with_white;
+    int move_number = fullmove;
+
+    string out;
+    for (size_t i = 0; i < moves.size(); ++i) {
+        if (!out.empty()) {
+            out += " ";
+        }
+
+        if (white_to_move) {
+            out += to_string(move_number);
+            out += ". ";
+        } else if (i == 0) {
+            out += to_string(move_number);
+            out += "... ";
+        }
+
+        out += moves[i];
+
+        if (!white_to_move) {
+            ++move_number;
+        }
+        white_to_move = !white_to_move;
+    }
+
+    if (!out.empty()) {
+        out += " ";
+    }
+    out += "*";
+    return out;
+}
+
+static string wrap_pgn_line(const string& pgn)
+{
+    constexpr size_t MAX_LINE_LENGTH = 78;
+
+    string wrapped;
+    string line;
+    string token;
+    stringstream stream(pgn);
+
+    while (stream >> token) {
+        const size_t next_length = line.empty()
+            ? token.size()
+            : line.size() + 1 + token.size();
+
+        if (!line.empty() && next_length > MAX_LINE_LENGTH) {
+            if (!wrapped.empty()) {
+                wrapped += '\n';
+            }
+            wrapped += line;
+            line = token;
+        } else {
+            if (!line.empty()) {
+                line += ' ';
+            }
+            line += token;
+        }
+    }
+
+    if (!line.empty()) {
+        if (!wrapped.empty()) {
+            wrapped += '\n';
+        }
+        wrapped += line;
+    }
+
+    return wrapped;
 }
 
 static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time)
