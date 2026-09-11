@@ -124,7 +124,7 @@ private:
     static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
     static constexpr int PAWN_HOLE_OPEN_FILE_WGHT = -15;    // also applies to the backward pawn behind the hole
 
-    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 25;
+    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 25;    // NOT USED
 
     // Doubled pawns
     static constexpr int DOUBLED_WGHT      = -18;           // One slam for each pawn more than one on a file
@@ -190,14 +190,14 @@ private:
     static constexpr int CENTER_OCCUPY_PIECES_WGHT = 24;  // Used only in CRAZY_IVAN. Doesnt count pawns or kings.
 
     static constexpr int KEEP_ROOKS_WHEN_DOWN_PAWN_WGHT = 10;
-    static constexpr int TRADE_MAX_BONUS_WGHT = 120;
-    static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;
+    static constexpr int TRADE_MAX_BONUS_WGHT = 120;    // NOT USED
+    static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;    // NOT USED
 
 
 
     static constexpr int NO_MOVE_SAME_TWICE_WGHT = -20; // NOT USED
 
-    static constexpr int OPPOSITE_BISHOPS_WGHT = 50; //   subtracted from the ahead side
+    static constexpr int OPPOSITE_BISHOPS_WGHT = 50; // NOT USED   subtracted from the ahead side
     
 
 public:
