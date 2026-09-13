@@ -1,6 +1,6 @@
 
 settings depth=7 max_ply=20 positions=6 flags=0x6 player=3 time_ms=2
-summary ep=52971 nd=122376058 nd_avg=1019800 moves=120
+summary ep=52513 nd=122376058 nd_avg=1019800 moves=120
 
 [Event "Shumi minimax regression pos 0"]
 [SetUp "1"]
@@ -36,17 +36,17 @@ dxc4 37. Nxc4 h5 38. Rxg7 Kxg7 39. Re7 Kg8 *
 
 [Event "Shumi minimax regression pos 4"]
 [SetUp "1"]
-[FEN "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14"]
-[Result "*"]
-
-14... Bd7 15. e4 Rfd8 16. Rfc1 Be8 17. h3 Qc7 18. Qb4 b6 19. Qb3 a5 20. Qa3
-Rab8 21. Re1 Rd7 22. Rbc1 Rbd8 23. e5 Nd5 24. Nb5 *
-
-[Event "Shumi minimax regression pos 5"]
-[SetUp "1"]
 [FEN "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42"]
 [Result "*"]
 
 42... Rxf2 43. Qxf2 Qxb3 44. Kh1 Qxb4 45. Re2 Qa4 46. Re3 Qd1 47. Qe1 Qxe1 48.
 Rxe1 Bg4 49. Kg2 Bf3 50. Kf1 c5 51. Re3 c4 52. Kf2 *
+
+[Event "Shumi minimax regression pos 5"]
+[SetUp "1"]
+[FEN "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14"]
+[Result "*"]
+
+14... Bd7 15. e4 Rfd8 16. Rfc1 Be8 17. h3 Qc7 18. Qb4 b6 19. Qb3 a5 20. Qa3
+Rab8 21. Re1 Rd7 22. Rbc1 Rbd8 23. e5 Nd5 24. Nb5 *
 

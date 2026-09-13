@@ -3423,11 +3423,13 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 //
 //  Resort moves in this order (they will later be searched in this order):
 //      TT move              (move from the hash table hit (if any))
-//      PV move              (prevous deepenings best).
+//      PV move              (prevous deepenings best).  used only at the root of a deepening.
 //      captures/promotions  (unquiet moves (captures/promotions, sorted by MVV-LVA, and "last square")
+//                           (sorted bt MVV-LVA, negative SEE, and recapture preference)
 //      castling
 //      killer moves         (quiet, bubbled to the front of the "cutoff" quiet slice).
-//      remaining quiet moves
+//      remaining quiet moves 
+//
 //  Sorts moves in place.
 //      Explanation: So why sort, if we look at all legal moves? Regular search considers all legal moves except those removed by pruning.
 //      But move ordering still matters: searching strong moves first raises alpha sooner
@@ -3451,21 +3453,6 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
         const bool have_last = !engine.move_history.empty();
         if (have_last) last_toSQ = engine.move_history.top().toSQ;
     #endif
-
-    //  The sort, from top to bottom. Items 0 and 1 done always, the rest done if the unquiet sort is on.
-    //      0. Move from the hash table hit (if any).
-    //      1. PV from the previous iteration (previous deepening’s best).
-    //      2. Unquiet moves (captures and promotions). Captures receive MVV-LVA-based
-    //         ordering; non-capture promotions stay in the unquiet region but do not
-    //         get an MVV-LVA base score here.
-    //      2.5 Bubble castling moves to the front of the quiet region.
-    //      3. Killer moves (quiet, bubbled to the front of the remaining quiet region).
-    //      4. Remaining quiet moves.
-
-
-    // it_split still points to the first quiet move, exactly as the later code expects.
-
-
 
     // --- 1. Partition unquiet moves (captures/promotions) to the front ---
     //
@@ -3539,24 +3526,24 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
         moveKeys[j + 1] = keyToInsert;
     }
 
+    auto quiet_begin = it_split;
+    auto quiet_end   = pMovesInOut->end();
+
+    // 2.5  Bubble castling moves to the front of the quiet region ---
+    for (auto it = quiet_begin; it != quiet_end; ++it) {
+        const ShumiChess::Move& mv = *it;
+
+        if (mv.flags & FLAGS_IS_CASTLE_MOVE) {
+            std::rotate(quiet_begin, it, it + 1);
+            ++quiet_begin;   // if a second castle move exists, it goes just after the first
+        }
+    }
 
     // It is known that Killer moves force "TT2 unrepeatibility". The theory is I guess that the
     // later analysis is profited by these killer moves.
     #ifndef DEBUG_NODE_TT2
         if (Features_mask & _FEATURE_KILLER) {
             // --- 3. Apply killer moves to the quiet region (for speed, not re-sorting) ---
-            auto quiet_begin = it_split;
-            auto quiet_end   = pMovesInOut->end();
-
-            // 2.5  Bubble castling moves to the front of the quiet region ---
-            for (auto it = quiet_begin; it != quiet_end; ++it) {
-                const ShumiChess::Move& mv = *it;
-
-                if (mv.flags & FLAGS_IS_CASTLE_MOVE) {
-                    std::rotate(quiet_begin, it, it + 1);
-                    ++quiet_begin;   // if a second castle move exists, it goes just after the first
-                }
-            }
 
             auto bring_front = [&](const ShumiChess::Move& km)
             {
