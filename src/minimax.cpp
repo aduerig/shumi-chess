@@ -911,6 +911,10 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         // These measure avg aspiration success
         aspiration_attempts = 0;
         aspiration_successes = 0;
+        pvs_attempts = 0;
+        pvs_successes = 0;
+        pvs_researches = 0;
+        pvs_cutoffs = 0;
 
         // This measures avg total response time for whole move
         response_time_sum = 0.0;
@@ -1270,6 +1274,18 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
                 //<< " first-try-nodes=" << aspiration_first_try_nodes
                 //<< " retry-nodes=" << aspiration_retry_nodes 
                 << endl;
+
+            const double pvs_success_pct =
+                (pvs_attempts == 0)
+                    ? 0.0
+                    : 100.0 * (double)pvs_successes / (double)pvs_attempts;
+            std::ostringstream pvs_summary;
+            pvs_summary << std::fixed << std::setprecision(1)
+                << "[PVS summary] success=" << pvs_success_pct << "% "
+                << "attempts=" << pvs_attempts
+                << " researches=" << pvs_researches
+                << " cutoffs=" << pvs_cutoffs;
+            sout << pvs_summary.str() << endl;
         }
 
     #endif
@@ -1354,7 +1370,10 @@ void MinimaxAI::playground(int iPhase) {
     // sout << "PinfoTries: " << sss1 << " PinfoHits= " << sss2 << "  evals= " << sss3 << endl;
  
     // sout << " n_futility_tosses " << n_futility_tosses << endl;
-    //sout << " n_delta_tosses " << n_delta_tosses << endl;
+    // double val;
+    // if (n_delta_tries==0) val=1.0;
+    // else                  val=(double)n_delta_tosses/(double)n_delta_tries;
+    // sout << " n_delta_tosses=" << n_delta_tosses << " ratio=" << val << endl;
     // sout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
 
     //engine.debug_print_repetition_table();
@@ -3029,6 +3048,7 @@ bool MinimaxAI::loop_over_all_moves(int depth,
         //      DONE A safety margin (DELTA_MARGIN) is included.
         //      DONE You must have a stand_pat score (cp_score_best / d_stand_pat) 
         //
+        n_delta_tries++;
         if (DELTA_PRUNE_ON) {
             if ((depth == 0) &&
                 (!in_check) &&
@@ -3161,12 +3181,20 @@ bool MinimaxAI::loop_over_all_moves(int depth,
         // recurse a new level
         int new_depth = (depth > 0 ? depth - 1 : 0);
         tuple<Score, Move> ret_val;
+        const bool use_pvs =
+            PVS_ENABLED &&
+            (depth > 0) &&
+            (new_depth > 0) &&
+            (depth >= PVS_MIN_DEPTH) &&
+            (nSearched > 1);
+        const Score pvs_alpha = alpha;
 
         if (new_depth) {
 
             ret_val = recursive_negamax(
                 new_depth,
-                childAlpha, childBeta,
+                use_pvs ? (-pvs_alpha - ONE_CENTIPAWN) : childAlpha,
+                use_pvs ? -pvs_alpha : childBeta,
                 false,                    // I am NOT called from the root
                 //m,
                 (nPlys+1),
@@ -3238,6 +3266,51 @@ bool MinimaxAI::loop_over_all_moves(int depth,
         // abort logic
         if (d_return_score == ABORT_SCORE) {
             return true;
+        }
+
+        if (use_pvs) {
+            Score pvs_score_value = -d_return_score;
+            pvs_attempts++;
+
+            if (pvs_score_value >= beta) {
+                pvs_cutoffs++;
+                pvs_successes++;
+            }
+            else if (pvs_score_value <= pvs_alpha) {
+                pvs_successes++;
+            }
+            else {
+                pvs_researches++;
+
+                if (m.color == Color::WHITE) engine.pushMove_t<Color::WHITE>(m);
+                else                         engine.pushMove_t<Color::BLACK>(m);
+
+                engine.three_time_rep_stack.push_back(engine.game_board.zobrist_key);
+
+                childAlpha = -beta;
+                childBeta  = -pvs_alpha;
+
+                ret_val = recursive_negamax(
+                    new_depth,
+                    childAlpha, childBeta,
+                    false,                    // I am NOT called from the root
+                    //m,
+                    (nPlys+1),
+                    qPlys
+                );
+
+                d_return_score = get<0>(ret_val);
+                d_return_move = get<1>(ret_val);
+
+                engine.pop_from_three_time_rep_stack();
+
+                if (m.color == Color::WHITE) engine.popMove_t<Color::WHITE>();
+                else                         engine.popMove_t<Color::BLACK>();
+
+                if (d_return_score == ABORT_SCORE) {
+                    return true;
+                }
+            }
         }
 
         // negamax, reverse returned score.  

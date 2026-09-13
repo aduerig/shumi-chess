@@ -893,29 +893,28 @@ try:
             # stuff to do every frame no matter what
             # print(f'Loop: {acn_focused}')
 
-            move_number = engine_communicator.get_move_number()
+            if not ai_is_thinking:
+                move_number = engine_communicator.get_move_number()
 
-  
+                # "admin" draw (debug only, to test burp2)
+                if move_number > DEBUG_MAX_MOVES:
+                    # Debug-only forced draw by ply cap
+                    #game_over_text.setText("GAME OVER: draw (debug ply cap)")
+                    # You can add any other text you like here (e.g. curr_move_text)
+                    break
 
-            # "admin" draw (debug only, to test burp2)
-            if move_number > DEBUG_MAX_MOVES:
-                # Debug-only forced draw by ply cap
-                #game_over_text.setText("GAME OVER: draw (debug ply cap)")
-                # You can add any other text you like here (e.g. curr_move_text)
-                break
+                # once the game has really started (move > 2), erase this text.
+                if move_number > 2:
+                    phase_text = engine_communicator.get_phase();
+                    game_over_text.setText(phase_text)
 
-            # once the game has really started (move > 2), erase this text.
-            if move_number > 2:
-                phase_text = engine_communicator.get_phase();
-                game_over_text.setText(phase_text)
+                current_turn_text.setText(turn_text_values[player_index])
+                curr_game_text.setText('Game {}'.format(curr_game))
+                curr_move_text.setText('Move {}'.format(move_number))
 
-            current_turn_text.setText(turn_text_values[player_index])
-            curr_game_text.setText('Game {}'.format(curr_game))
-            curr_move_text.setText('Move {}'.format(move_number))
+                # show material
+                material_text.setText(str(engine_communicator.get_best_score_at_root()))
 
-            current_turn_text.setText(turn_text_values[player_index])
-            curr_game_text.setText('Game {}'.format(curr_game))
-            curr_move_text.setText('Move {}'.format(engine_communicator.get_move_number()))
 
             if (args.rand == 0):
                 common_flags_text.setText('')
@@ -944,16 +943,14 @@ try:
 
             black_flags_text.setText(" ".join(b_parts))
 
-            # show material
-            material_text.setText(str(engine_communicator.get_best_score_at_root()))
-
             curr_player = both_players[player_index]
 
             if game_started and 'ai' in curr_player and not ai_is_thinking:
                 # start thread
+                ai_is_thinking = True
                 ai_thread = threading.Thread(target=get_ai_move_threaded, args=(legal_moves, curr_player), daemon=True)
                 ai_thread.start()
-                ai_is_thinking = True
+
 
             # Make the computer's move
             if ai_is_thinking:

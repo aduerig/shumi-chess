@@ -92,6 +92,11 @@ public:
     ull aspiration_first_try_nodes = 0;
     ull aspiration_retry_nodes = 0;
 
+    ull pvs_attempts = 0;    // completed narrow-window PVS searches.
+    ull pvs_successes = 0;   // narrow searches that did not require a full-window re-search.
+    ull pvs_researches = 0;  // narrow searches followed by a full-window re-search.
+    ull pvs_cutoffs = 0;     // narrow searches that returned a score greater than or equal to beta and therefore caused a cutoff without a full-window re-search.
+
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;      // used for display only
 
@@ -294,6 +299,7 @@ public:
     int nSemiFarts = 0;
     int n_futility_tosses = 0;
     ull n_delta_tosses = 0;
+    ull n_delta_tries = 0;
 
     double response_time_sum = 0.0;
     ull response_time_cnts = 0;

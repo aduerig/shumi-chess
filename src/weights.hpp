@@ -14,8 +14,12 @@ inline constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts
 inline constexpr int MAX_PLY = 50;                 // Can never look ahead past this many ply.
 
 // Quissence controls
-inline constexpr int LOWERQ = 7;    // how many depths of "lower quissence" there are.
-inline constexpr int UPPERQ = 5;    // how many depths of "upper quissence" there are.
+inline constexpr int LOWERQ = 9;    // how many depths of "lower quissence" there are.
+inline constexpr int UPPERQ = 7;    // how many depths of "upper quissence" there are.
+
+// Principal Variation Search controls.
+inline constexpr bool PVS_ENABLED = false;
+inline constexpr int PVS_MIN_DEPTH = 1;
 
 // How to use your TT bounds. The control knobs. False for all means no TT bounds
 inline constexpr bool STORE_TT_BOUNDS          = true;
@@ -33,7 +37,7 @@ inline constexpr double SOFT_ABORT_SAFETY_FACTOR = 10.0;  // This is times the "
 
 // Delta pruning controls
 inline constexpr bool DELTA_PRUNE_ON = true;
-inline constexpr int DELTA_MARGIN_CP = 300;     // Raise me and there is less pruning
+inline constexpr int DELTA_MARGIN_CP = 200;     // Raise me and there is less pruning
 
 // Root aspiration-window
 inline constexpr bool ASPIRATION_ENABLED = true;        // set to false to stop aspiration

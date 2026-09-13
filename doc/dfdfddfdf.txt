@@ -4,10 +4,27 @@ game by game critsism, when shumi loses, as to flaws or at least
 situations when the loss becomes obvious to me.
 
 
+I have a bug in the python chess app, running scripts/run_gui.py. 
+If I set both players to "Shumi-ai", and start a game it runs fine. But if I also set the 
+"Auto reset" to true, it should play games indefitnitly. It does, if DISPLAY_DEEPING is uncommented.
+If I comment that out, then play stops at the end of the game (actually one move short of checkmate)
+and does not start another game, even if Auto reset is true. I have seen this bug at other times
+and if I add other debug printouts instead of DISPLAY_DEEPING, the bug goes away. Also, it doesnt always happen
+If i take focus away from the window it doesnt happen. It has to be a timing thing. DO not change any code until you
+tell me what might be the fix.
 
 ========================================================================================
+========================================================================================
+task liste
 
-
+History heuristic — safest and most natural next step.
+Countermove heuristic — remembers a good reply to the opponent’s previous move.
+Late Move Reductions (LMR) — searches late, unpromising quiet moves less deeply.
+Fixed-array TT — memory and cache-efficiency improvement.
+Null-move pruning — potentially powerful, but more dangerous and requires zugzwang safeguards.
+Check extensions or singular extensions — useful, but considerably more delicate.
+========================================================================================
+========================================================================================
 
 Timing results, with data set #1.  DeltaPrune=300 -d7
 
@@ -31,263 +48,295 @@ Timing results, with data set #1.  DeltaPrune=300 -d7
 
 ========================================================================================
 
+Add a new ShumiChess evaluation feature for pawn-versus-piece material imbalances.
 
-Implement Principal Variation Search (PVS) in ShumiChess.
-
-Make only the changes required to add PVS, its compile-time controls, and its statistics. Do not refactor, rename, reformat, optimize, or clean up unrelated code. Do not change aspiration search, transposition-table behavior, quiescence search, move ordering, evaluation, time control, abort handling, minimum depth, MultiPV behavior, or any other feature.
+Make only the changes required for this feature. Do not refactor, rename, reformat, optimize, or clean up unrelated code. Do not change the basic piece values, existing pawn evaluation, passed-pawn evaluation, search, move ordering, transposition tables, PVS, aspiration, time control, or any other feature.
 
 All modified files use CRLF line endings. Preserve CRLF line endings exactly.
 
-1. Add PVS controls to `weights.hpp`
+The first goal is to detect the specified material imbalances correctly and integrate them through the existing `weights.hpp` and `weights.cpp` system.
 
-Place these with the other search-control constants near the top of `weights.hpp`:
+## 1. Meaning of `x/y/z`
 
-```cpp
-// Principal Variation Search controls.
-inline constexpr bool PVS_ENABLED = true;
-inline constexpr int PVS_MIN_DEPTH = 1;
-```
-
-`PVS_ENABLED` must completely enable or disable PVS.
-
-When `PVS_ENABLED` is false, search behavior must follow the existing full-window path exactly.
-
-`PVS_MIN_DEPTH` is the minimum remaining normal-search depth at which PVS may be used. If PVS_MIN_DEPTH is 1, then all
-all depths above quissence perform PVS
- Do not reinterpret this as iterative-deepening depth.
-
-Do not add a tunable PVS window width. PVS must use a one-score-unit null window.
-
-As to "one score unit" as mentioned below, this should be 1 centipawn. 
-Note my score.hpp. Do not change the `Score` system. Other than: I have a ONE_PAWN. Make a similar constant for
- ONE_CENTIPAWN and use that for "one score unit".
- 
-
-2. Add game-wide PVS statistics
-
-Add unsigned ull counters alongside the existing search statistics:
-
-```cpp
-ull pvs_attempts = 0;
-ull pvs_successes = 0;
-ull pvs_researches = 0;
-ull pvs_cutoffs = 0;
-```
-
-Meanings: (add the test below as inline comments to the declarations)
-
-* `pvs_attempts`: completed narrow-window PVS searches.
-* `pvs_successes`: narrow searches that did not require a full-window re-search.
-* `pvs_researches`: narrow searches followed by a full-window re-search.
-* `pvs_cutoffs`: narrow searches that returned a score greater than or equal to beta and therefore caused a cutoff without a full-window re-search.
-
-Reset these counters at the same place where the existing game-wide aspiration statistics are reset. Do not change how or when the existing statistics are reset.
-
-Do not count an interrupted or aborted narrow search as a completed PVS attempt.
-
-3. Modify only the normal move-search portion of `loop_over_all_moves()`
-
-`loop_over_all_moves()` is also used by quiescence search. PVS must never operate in quiescence.
-
-A move qualifies for a PVS narrow search only when all of these are true:
-
-```cpp
-PVS_ENABLED
-depth >= PVS_MIN_DEPTH
-nSearched > 0
-```
-
-Also retain any existing condition necessary to distinguish normal search from quiescence. In Shumi, `depth > 0` identifies normal search, so the qualification must ensure that `depth > 0`.
-
-The first searched move at every node must continue to receive the existing full-window search.
-
-Every quiescence move must continue to receive the existing full-window search.
-
-Do not change move ordering. PVS relies upon the first move already being ordered well.
-
-4. Implement the PVS narrow search
-
-For a qualifying move after the first searched move, search it first with the parent null window:
+Describe an imbalance as:
 
 ```text
-[alpha, alpha + one score unit]
+x/y/z
 ```
 
-Because Shumi uses negamax, pass the corresponding negated child window:
+where:
 
 ```text
-[-alpha - one score unit, -alpha]
+x = pawn surplus belonging to the pawn-heavy side
+y = minor-piece surplus belonging to the piece-heavy side
+z = rook surplus belonging to the piece-heavy side
 ```
 
-Preserve the existing negation of the returned child score.
+A minor piece means either a bishop or a knight.
 
-Use the current value of `alpha` that exists immediately before searching this move. 
-If helpful for clarity and correctness, save it in a temporary variable such as:
-
-```cpp
-const Score pvs_alpha = alpha;
-```
-
-Do not alter `alpha` between the narrow search and the decision about whether a full-window re-search is needed.
-
-Preserve every existing argument passed to the recursive search except for the alpha and beta arguments needed for the narrow window.
-
-5. Decide whether to re-search
-
-After a completed narrow search, increment:
-
-```cpp
-pvs_attempts++;
-```
-
-The narrow search is sufficient in either of these cases:
-
-```cpp
-score <= pvs_alpha
-score >= beta
-```
-
-If:
-
-```cpp
-score >= beta
-```
-
-increment:
-
-```cpp
-pvs_cutoffs++;
-pvs_successes++;
-```
-
-Then allow the existing beta-cutoff logic to process the result. Do not perform a full-window re-search.
-
-If:
-
-```cpp
-score <= pvs_alpha
-```
-
-increment:
-
-```cpp
-pvs_successes++;
-```
-
-No full-window re-search is needed.
-
-Only this case requires a full-window re-search:
-
-```cpp
-(score > pvs_alpha) && (score < beta)
-```
-
-For that case:
-
-```cpp
-pvs_researches++;
-```
-
-Then search the same move again using the exact full window that the old code used:
-
-```text
-[-beta, -pvs_alpha]
-```
-
-Preserve the existing negamax score conversion.
-
-The result of the full-window re-search replaces the narrow-search result. All existing alpha updates, best-move handling, PV handling, TT storage, cutoff handling, and return handling must use the final result exactly as they did before PVS was added.
-
-Do not perform a full-window re-search when the narrow result is already greater than or equal to beta. 
-The narrow search has already proved the cutoff.
-
-6. Preserve abort behavior
-
-After the narrow search, use the same existing abort/stop handling that follows an ordinary recursive search.
-
-If the narrow search was interrupted:
-
-* Do not increment `pvs_attempts`.
-* Do not increment any other PVS counter.
-* Do not begin a full-window re-search.
-* Follow the existing abort return path exactly.
-
-After a full-window re-search, retain the existing abort handling exactly.
-
-Do not add new timers, abort checks, or stop conditions.
-
-7. Display the PVS summary in `playground()`
-
-Display the counters in `playground()` beside the existing whole-game aspiration summary.
+These are differences between the two sides, not total material counts.
 
 Calculate:
 
 ```cpp
-const double pvs_success_pct =
-    (pvs_attempts == 0)
-        ? 0.0
-        : 100.0 * (double)pvs_successes / (double)pvs_attempts;
+pawn_surplus =
+    pawn_side_pawn_count - piece_side_pawn_count;
+
+minor_surplus =
+    piece_side_minor_count - pawn_side_minor_count;
+
+rook_surplus =
+    piece_side_rook_count - pawn_side_rook_count;
 ```
 
-Print a simple summary in this form:
+Calculate each side’s minor count as:
+
+```cpp
+minor_count = bishop_count + knight_count;
+```
+
+Use Shumi’s existing `BitsIn` arrays in the same manner they are already used elsewhere to count the relevant bitboards. Do not introduce a new popcount implementation.
+
+Kings are ignored.
+
+Queens must balance. If one side has more queens than the other, this feature must not apply.
+
+The six exact imbalance cases to recognize are:
 
 ```text
-[PVS summary] success=95.2% attempts=123456 researches=5925 cutoffs=18420
+2/1/0
+3/1/0
+4/0/1
+5/0/1
+5/2/0
+6/2/0
 ```
 
-Use the project’s existing output stream and formatting conventions. Do not introduce a new output mechanism.
+Do not match approximate cases or ranges. Each case must match the exact pawn, minor-piece, and rook surpluses shown.
 
-When PVS is disabled, the counters should remain zero.
+Examples:
 
-8. Required safeguards
+```text
+2/1/0
+```
 
-Do not apply PVS:
+means the pawn-heavy side has two more pawns, while the other side has one more minor piece and no rook surplus.
 
-* To the first searched move at a node.
-* At `depth == 0`.
-* Anywhere inside quiescence search.
-* To a search that has already been aborted.
-* By changing aspiration-window logic.
-* By changing MultiPV logic.
-* By changing TT flags, TT probing, TT replacement, or TT storage (the TT is sometimes called TT2).
-* By changing move sorting or move generation.
+```text
+5/0/1
+```
 
-Do not change the existing meaning of `nSearched`.
+means the pawn-heavy side has five more pawns, while the other side has one more rook and no minor-piece surplus.
 
-Do not alter when `nSearched` is incremented.
+```text
+6/2/0
+```
 
-Do not alter the existing full-window search expression except where necessary to select between the original full-window path and the new PVS path.
+means the pawn-heavy side has six more pawns, while the other side has two more minor pieces and no rook surplus.
 
-9. Verification
+Equal pieces on the two sides cancel naturally when the differences are calculated.
 
-Build first with:
+## 2. Piece-side pawn qualification
+
+This feature depends upon the number of pawns remaining on the piece-heavy side.
+
+Use the piece-heavy side’s actual total pawn count, not its pawn difference.
+
+Apply the selected imbalance penalty as follows:
+
+```text
+piece side has 0 pawns:  apply none of the penalty
+piece side has 1 pawn:   apply one-half of the penalty
+piece side has 2+ pawns: apply the full penalty
+```
+
+Use ordinary integer division for the half penalty:
 
 ```cpp
-inline constexpr bool PVS_ENABLED = false;
+penalty_cp /= 2;
 ```
 
+The zero-pawn exception is intentional. Do not remove or reinterpret it.
 
-Verify:
+## 3. Add weights using the existing weight system
 
-* The project compiles.
-* PVS counters remain zero.
-* The fixed test set produces the same moves, scores, and node counts as the current baseline.
-* Aspiration statistics remain unchanged.
+Inspect `weights.hpp` and `weights.cpp` and follow the established declaration, definition, naming, initialization, and access pattern used by the other evaluation weights.
 
-Then build with:
+Add one independently adjustable centipawn weight for each case:
+
+```text
+PAWN_VS_PIECE_2_1_0
+PAWN_VS_PIECE_3_1_0
+PAWN_VS_PIECE_4_0_1
+PAWN_VS_PIECE_5_0_1
+PAWN_VS_PIECE_5_2_0
+PAWN_VS_PIECE_6_2_0
+```
+
+Adapt the names only as necessary to match the project’s existing weight naming convention.
+
+For this detection-first stage, initialize all six weights to zero:
+
+```text
+2/1/0 = 0 cp
+3/1/0 = 0 cp
+4/0/1 = 0 cp
+5/0/1 = 0 cp
+5/2/0 = 0 cp
+6/2/0 = 0 cp
+```
+
+Do not invent penalty values. The weights will be changed only after the detector has been verified.
+
+These weights represent positive penalty magnitudes. The evaluation feature must subtract the selected weight from the pawn-heavy side.
+
+## 4. Implement one focused evaluation function
+
+Add one evaluation function following the style of Shumi’s existing evaluation features.
+
+Use a clear name such as:
 
 ```cpp
-inline constexpr bool PVS_ENABLED = true;
+pawn_vs_piece_imbalance_cp_t<Color c>()
 ```
 
-Verify:
+Adapt the name and location only to match the established evaluation organization.
 
-* The project compiles.
-* PVS attempts are nonzero.
-* `pvs_attempts == pvs_successes + pvs_researches`.
-* `pvs_cutoffs <= pvs_successes`.
-* Quiescence searches produce no PVS attempts.
-* Final moves and scores remain consistent with the baseline.
-* No illegal moves, assertion failures, or TT inconsistencies occur.
+For color `c`, determine whether that color is the pawn-heavy side in one of the six exact cases.
 
-Report exactly which files and search block were changed, the build result, and the PVS summary from one fixed test. Make no other changes.
+The function must:
+
+1. Count pawns, bishops, knights, rooks, and queens for both colors.
+2. Confirm that color `c` has a positive pawn surplus.
+3. Confirm that the opponent has the required minor-piece or rook surplus.
+4. Confirm that the queen counts are equal.
+5. Select at most one of the six weights.
+6. Apply the zero, half, or full multiplier based on the opponent’s total pawn count.
+7. Return a negative centipawn value for the pawn-heavy side.
+8. Return zero when no exact case matches.
+
+Use simple temporary variables with inline comments. Do not put the entire detector into one complex conditional.
+
+The six cases are mutually exclusive. Use a straightforward `if`/`else if` sequence or an equally clear existing project style.
+
+Do not allocate memory and do not create containers.
+
+## 5. Exceptional pawns
+
+Do not add new passed-pawn, protected-pawn, connected-pawn, or advanced-pawn detection in this feature.
+
+Shumi already rewards exceptional pawns elsewhere in the evaluation. Those existing rewards should be allowed to offset this material-imbalance penalty naturally.
+
+This feature supplies a general correction for the poor practical value of a mass of ordinary pawns against surviving pieces. It must not duplicate existing pawn-quality evaluation.
+
+## 6. Integrate it symmetrically
+
+Add the feature to the existing evaluation in the same place and manner as comparable weighted evaluation components.
+
+Evaluate it symmetrically for White and Black.
+
+Do not accidentally count the same imbalance twice. Only the pawn-heavy side should receive the negative value.
+
+This correction concerns the interpretation of material imbalance. Do not multiply it by the global positional “volume control” unless the existing material-correction features are already handled that way. Follow the existing treatment of material corrections rather than ordinary positional bonuses.
+
+Do not change the volume control itself.
+
+## 7. Add temporary detection statistics
+
+Add six unsigned counters, one for each detected case, using the project’s existing counter type `ull`.
+
+The counters should count detection before application of the zero/half/full pawn qualification, so it is possible to see:
+
+```text
+case detected
+piece side had zero pawns
+piece side had one pawn
+piece side had two or more pawns
+```
+
+Also add three qualification counters:
+
+```text
+piece_side_zero_pawns
+piece_side_one_pawn
+piece_side_two_or_more_pawns
+```
+
+Increment exactly one case counter and exactly one qualification counter whenever one of the six exact material patterns is detected.
+
+Keep these statistics diagnostic only. They must not influence evaluation or search decisions.
+
+Reset them at the same place as the existing game-wide evaluation statistics.
+
+Display one concise summary from `playground()` using the existing output stream. For example:
+
+```text
+[pawn/piece imbalance]
+2/1/0=12 3/1/0=8 4/0/1=3 5/0/1=2 5/2/0=1 6/2/0=0
+piece-pawns: zero=4 one=7 two-plus=15
+```
+
+Do not add output to the UCI `cout` stream if the project reserves that stream for UCI communication.
+
+If calling the evaluation through the evaluation TT would make these counters count only cache misses, add a short comment stating that limitation. Do not bypass or change the evaluation TT merely to collect statistics.
+
+## 8. Required safeguards
+
+Do not:
+
+* Change any basic pawn, bishop, knight, rook, queen, or king value.
+* Change existing pawn bonuses.
+* Change the global positional volume.
+* Change game-phase calculation.
+* Add a special rule for a particular square.
+* Add a special rule for a particular opening.
+* Modify search or move generation.
+* Modify any transposition table.
+* Modify PVS or aspiration search.
+* Add generalized material-imbalance cases beyond the six listed.
+* Assign nonzero weights during this detection-first stage.
+* Make unrelated formatting changes.
+
+## 9. Verification
+
+Create or use controlled board positions that verify all six exact cases.
+
+For every case, verify:
+
+```text
+The correct x/y/z case is selected.
+No other case is selected.
+Zero opposing pawns produces zero evaluation penalty.
+One opposing pawn produces half the configured penalty.
+Two or more opposing pawns produce the full configured penalty.
+Reversing the colors reverses which side receives the penalty.
+Equal queen counts permit the feature.
+Unequal queen counts suppress the feature.
+```
+
+Because the six production weights initially equal zero, temporarily use a local test-only nonzero value if required by the existing test framework. Do not leave that temporary value in production code.
+
+Also verify nearby nonmatching cases, including:
+
+```text
+1/1/0
+4/1/0
+3/0/1
+6/0/1
+4/2/0
+7/2/0
+```
+
+All nearby nonmatching cases must return zero.
+
+Build the project and report:
+
+* The files changed.
+* The function added.
+* How `x/y/z` was calculated.
+* The six initial weight values.
+* The build result.
+* The controlled detection-test results.
+* One sample `playground()` statistics line.
+
+Make no other changes.

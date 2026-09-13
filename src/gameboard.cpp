@@ -3884,6 +3884,8 @@ template<Color c> int GameBoard::blocked_home_bishops_cp_t()
         }
     }
 
+    // Bonus 1/2 for unblocked bishop (both doors open). Neutral for one door open. 1/2 off for no doors open. Note that 
+    // neutral is also for the bishop being gone, So bishop gone equal to one door open.
     return ((k_cp * blocked_doors) - 1) / 2;
 }
 

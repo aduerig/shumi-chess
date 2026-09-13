@@ -12,6 +12,7 @@
 
     #define ZERO_SCORE 0.0
     #define ONE_PAWN 1.0
+    #define ONE_CENTIPAWN 0.01
 
 
     // Explicit centipawn integer type (32-bit).
@@ -54,6 +55,7 @@
 
     #define ZERO_SCORE 0
     #define ONE_PAWN 100
+    #define ONE_CENTIPAWN 1
 
 
     // Note: clean me up, remove me after testing

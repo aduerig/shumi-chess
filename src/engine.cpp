@@ -58,7 +58,7 @@ Engine::Engine() {
     auto us  = duration_cast<microseconds>(now).count();
     rng.seed(static_cast<unsigned>(us));
 
-    sout << "Created new engine " << us << endl;
+    //sout << "Created new engine " << us << endl;
 
 
 }

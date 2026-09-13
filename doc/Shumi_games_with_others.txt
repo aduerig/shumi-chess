@@ -199,6 +199,7 @@ Games with other engines (using cutechess as tournement director)
 Score of Shumi vs texel64-avx2-pop ELO 2200: 19 - 23 - 8 [0.460]
 Score of Shumi vs stockfish_ELO 2600: 20 - 24 - 6 [0.460]
 Score of Shumi vs arasanx-64 ELO 2300: 5 - 42 - 3 [0.130]
+Score of Shumi vs Stocfish_ELO 2700: 8 - 40 - 2 [0.180]
 
 ---------------------------------------------------
 Score of Shumi vs Stocfish_ELO 2700: 10 - 35 - 5 [0.250]
