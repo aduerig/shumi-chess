@@ -76,6 +76,7 @@ using namespace utility::bit;
 // #define BURP2_THRESHOLD_CP 1    // "burps" or fails if the stored (TT) does not match the evaluaton made.
 
 //#define DEBUGGING_KILLER_MOVES 
+//#define DEBUGGING_KILLER_MOVES1       // shows moves declared as killers.
 
 //#define DEBUGGING_PAWN_HASH     // burp3
 
@@ -3396,11 +3397,15 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                 // Quiet moves that "cut off" are "notable", or "killer moves"
                 if (killer1[nPlys] == ShumiChess::Move{}) {
                     killer1[nPlys] = m;
+              
                     #ifdef DEBUGGING_KILLER_MOVES1
+                        sout << endl << gameboard_to_string(engine.game_board) << endl;
                         engine.move_into_string(killer1[nPlys]);
-                        fprintf(fpDebug, "\nkiller1-> %s\n", engine.move_string.c_str());
-                        
-                        engine.print_move_history_to_file(fpDebug, "AA");
+                        sout << " killer1=" << engine.move_string.c_str() << endl;
+                        // #ifdef _DEBUGGING_TO_FILE
+                        //     fprintf(fpDebug, " killer1-> %s\n", engine.move_string.c_str());
+                        //     engine.print_move_history_to_file(fpDebug, "BB");
+                        // #endif
                     #endif
                 }
                 else if (!(m == killer1[nPlys])) {
@@ -3559,11 +3564,6 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
             
             bring_front(killer1[nPlys]);
 
-            #ifdef DEBUGGING_KILLER_MOVES1
-                engine.move_into_string(killer1[nPlys]);
-                fprintf(fpDebug, " killer1-> %s\n", engine.move_string.c_str());
-                engine.print_move_history_to_file(fpDebug, "BB");
-            #endif
 
             bring_front(killer2[nPlys]);
 
