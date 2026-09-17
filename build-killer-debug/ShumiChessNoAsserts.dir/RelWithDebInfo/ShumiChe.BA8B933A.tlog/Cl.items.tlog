@@ -1,9 +1,0 @@
-C:\programming\shumi-chess\src\gameboard.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\gameboard.obj
-C:\programming\shumi-chess\src\globals.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\globals.obj
-C:\programming\shumi-chess\src\engine.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\engine.obj
-C:\programming\shumi-chess\src\move_tables.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\move_tables.obj
-C:\programming\shumi-chess\src\utility.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\utility.obj
-C:\programming\shumi-chess\src\minimax.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\minimax.obj
-C:\programming\shumi-chess\src\endgameTables.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\endgameTables.obj
-C:\programming\shumi-chess\src\weights.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\weights.obj
-C:\programming\shumi-chess\src\status_output.cpp;C:\programming\shumi-chess\build-killer-debug\ShumiChessNoAsserts.dir\RelWithDebInfo\status_output.obj
