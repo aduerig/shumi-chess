@@ -374,7 +374,7 @@ class GameBoard {
 
         template<Color c> int get_king_near_squares_t(int king_near_squares_out[9]);
         int kings_in_opposition(Color defender_color);
-        template<Color c> int sliders_and_knights_attacking_square2_t(int sq);
+        template<Color c> int sliders_and_knights_attacking_square_t(int sq);
         template<Color c> int attackers_on_enemy_king_near_cp_t();
         
         template<Color c> PotentialCheckInfo potential_checks_against_king_t();

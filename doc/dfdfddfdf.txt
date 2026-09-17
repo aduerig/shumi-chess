@@ -1,21 +1,8 @@
-do not delet me the idea is a 
-
-game by game critsism, when shumi loses, as to flaws or at least 
-situations when the loss becomes obvious to me.
-
-
-I have a bug in the python chess app, running scripts/run_gui.py. 
-If I set both players to "Shumi-ai", and start a game it runs fine. But if I also set the 
-"Auto reset" to true, it should play games indefitnitly. It does, if DISPLAY_DEEPING is uncommented.
-If I comment that out, then play stops at the end of the game (actually one move short of checkmate)
-and does not start another game, even if Auto reset is true. I have seen this bug at other times
-and if I add other debug printouts instead of DISPLAY_DEEPING, the bug goes away. Also, it doesnt always happen
-If i take focus away from the window it doesnt happen. It has to be a timing thing. DO not change any code until you
-tell me what might be the fix.
+do not delete me
 
 ========================================================================================
 ========================================================================================
-task liste
+task list
 
 History heuristic — safest and most natural next step.
 Countermove heuristic — remembers a good reply to the opponent’s previous move.

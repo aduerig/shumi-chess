@@ -76,7 +76,7 @@ using namespace utility::bit;
 // #define BURP2_THRESHOLD_CP 1    // "burps" or fails if the stored (TT) does not match the evaluaton made.
 
 //#define DEBUGGING_KILLER_MOVES 
-//#define DEBUGGING_KILLER_MOVES1       // shows moves declared as killers.
+//#define DEBUGGING_KILLER_MOVES1       // shows moves declared as killer1s.
 
 //#define DEBUGGING_PAWN_HASH     // burp3
 
@@ -683,6 +683,11 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 
 
 
+        const bool setting_under_aspiration = use_aspiration && aspiration_tries == 0;
+        const bool saved_under_aspiration = under_aspiration_search;
+        if (setting_under_aspiration) {
+            under_aspiration_search = true;
+        }
 
         ret_val = recursive_negamax(depth
                                     , alpha, beta
@@ -690,6 +695,10 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                                     , (nPlys+1)
                                     , qPlys
                                  );
+
+        if (setting_under_aspiration) {
+            under_aspiration_search = saved_under_aspiration;
+        }
 
         // ret_val is a tuple of the score and the move.
         Score d_Return_score = get<0>(ret_val);
@@ -3399,13 +3408,17 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                     killer1[nPlys] = m;
               
                     #ifdef DEBUGGING_KILLER_MOVES1
+                    //if (!under_aspiration_search) {
                         sout << endl << gameboard_to_string(engine.game_board) << endl;
                         engine.move_into_string(killer1[nPlys]);
                         sout << " killer1=" << engine.move_string.c_str() << endl;
+                        sout << " under_aspiration="
+                             << (under_aspiration_search ? 1 : 0) << endl;
                         // #ifdef _DEBUGGING_TO_FILE
                         //     fprintf(fpDebug, " killer1-> %s\n", engine.move_string.c_str());
                         //     engine.print_move_history_to_file(fpDebug, "BB");
                         // #endif
+                    //}
                     #endif
                 }
                 else if (!(m == killer1[nPlys])) {
@@ -3983,7 +3996,7 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
 
     int tempsum = 0;
 
-    // Computes "Bits_In" (many eval routines use these shortcuts for speed)
+    // Computes "Bits_In" for each piece (many eval routines use these shortcuts for speed)
     engine.game_board.compute_bits_in();        // Computes shortcuts for "bits_in()", used in the eval.
 
     //int tempsumNP = 0;

@@ -91,6 +91,7 @@ public:
     ull aspiration_full_retries = 0;
     ull aspiration_first_try_nodes = 0;
     ull aspiration_retry_nodes = 0;
+    bool under_aspiration_search = false;
 
     ull pvs_attempts = 0;    // completed narrow-window PVS searches.
     ull pvs_successes = 0;   // narrow searches that did not require a full-window re-search.

@@ -1,0 +1,18 @@
+
+
+I have been watching shumi play for a while and am seeing the same things over and over again. Howevr it is not clear
+wether the eval is inadequete, or its just an artifact.  (see 3. for a discussion of this).
+
+1. Shumi is ahead, but the opponent gets a perpetual check, drawing. These checks may be long and compicated, but there is no way out.
+2. Shumi gets a piece, usuallty the queen, trapped. The opponent cant take it, but Shumis piece 
+   is trapped, and no longer plays a role. Now this makes sense in that Shumi prevents the piece 
+   capture (by caluclating material), but i have no mechaism for trapped pieces or [piece mobility.]
+3. Shumi is always on the "pawn heavy" side of exchanges or near exchanges. Examples:
+      one minor piece for 2-3 pawns
+      a rook for 4-5 pawns
+      two pieces for a rook and a pawn or two.
+   Now, I realize that I may see a lot or these situations. A superior player may not see a way to get a full pawn up,
+   but more easily may find a way to get 2 peices for a rook and pawn (material difference is less than a pawn). 
+   But why is Shumi always on the pawn heavy side?
+  4. Sumi does not finachetto eniough.
+  5. 

@@ -45,11 +45,13 @@ inline constexpr int ASPIRATION_MIN_DEPTH = 2;
 inline constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );
 
 // MultiPV. Only randomizes a small amount a list formed on the root node, when at maxiumum deepening-1.
-// works off of the -r flag.
+// works off of the -r flag. If "-rn" where n is an integer, then it does it for the first n moves.
 inline constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of centi-pawns
 inline constexpr int RANDOM_MOVE_CANDIDATES = 7;             // I must be greater than 1
 
-
+// These are to control borrowing of time. Shumi and stockfish borrow a lot. The higher this ratio is, the more time it borrows.
+inline constexpr ull time_controlMaximum_loan_over = 5;     // used only in time control
+inline constexpr ull time_controlMaximum_loan_under= 2;     // used only in time control I cant be zero or all hell breaks loose
 
 // These are related to evaluation only ////////////////////////////////////////////////////////////////////////////
 enum WghtIndxs

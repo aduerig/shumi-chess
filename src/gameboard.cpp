@@ -1200,8 +1200,8 @@ int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
         Square sq = utility::bit::lsb_and_pop_to_square(tmp);  // 0..63
 
         int nAttackers = (attacker_color == Color::WHITE)
-            ? sliders_and_knights_attacking_square2_t<Color::WHITE>(sq)
-            : sliders_and_knights_attacking_square2_t<Color::BLACK>(sq);
+            ? sliders_and_knights_attacking_square_t<Color::WHITE>(sq)
+            : sliders_and_knights_attacking_square_t<Color::BLACK>(sq);
         total += nAttackers;
     }
 
@@ -2425,6 +2425,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PIn
         if (nGuardPawns <= 3.0 && nGuardPawns >= 0.0) cpWght = static_cast<int>((cpWght * nGuardPawns) / 3.0);
         else assert(0);
 
+        // Queen side castling penalize a little
         if (k_file >= COL_C) cpWght += wghts.GetWeight(QUEEN_SIDE_CASTLE);
 
 
@@ -2470,6 +2471,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PIn
 //
 // Returns how many of the 3 guard files for the king's side
 // contain at least one friendly pawn on relative rank 2, 3.
+// However the return is a double, each guard file is checked for.
 //
 // White:
 //   queenside king  -> files a,b,c
@@ -2495,6 +2497,7 @@ template<Color c> double GameBoard::count_guard_pawn_files_t(const PInfo& PInfoI
     int file1;
     int file2;
 
+    // Find the "guard files"
     if (k_file >= COL_C) {
         // King on a/b/c side -> guard files a,b,c
         file0 = COL_A;
@@ -2511,6 +2514,7 @@ template<Color c> double GameBoard::count_guard_pawn_files_t(const PInfo& PInfoI
         return 0.0;
     }
 
+    // Compute open_file_penalty  (purpose: dont castle into open files, especially if major pieces are on board)
     constexpr Color enemyColor = utility::representation::opposite_color_t<c>;
     const int enemy_major_pressure =
         bits_in(get_pieces_template<Piece::ROOK, enemyColor>()) +
@@ -2527,18 +2531,19 @@ template<Color c> double GameBoard::count_guard_pawn_files_t(const PInfo& PInfoI
         return GUARD_FILE_MISSING_SCORE;
     };
 
-    double nGuardFiles = 0.0;
-    nGuardFiles += guard_file_score(file0);
-    nGuardFiles += guard_file_score(file1);
-    nGuardFiles += guard_file_score(file2);
+    double dGuardFiles = 0.0;
+    dGuardFiles += guard_file_score(file0);
+    dGuardFiles += guard_file_score(file1);
+    dGuardFiles += guard_file_score(file2);
 
-    if (nGuardFiles < 0.0) return 0.0;
-    if (nGuardFiles > 3.0) return 3.0;
-    return nGuardFiles;
+    // Hold on i dont like this
+    if (dGuardFiles < 0.0) return 0.0;      // should this ever happen?
+    if (dGuardFiles > 3.0) return 3.0;      // should this ever happen? 
+
+    return dGuardFiles;
 }
 
-template<Color c>
-int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
+template<Color c> int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     int cp_score_mat_temp = 0;
     cp_pawns_only = bits_in(get_pieces_template<Piece::PAWN, c>()) * centipawn_score_of(Piece::PAWN);
 
@@ -2548,7 +2553,6 @@ int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::ROOK, c>())   * centipawn_score_of(Piece::ROOK);
     cp_score_mat_temp += bits_in(get_pieces_template<Piece::QUEEN, c>())  * centipawn_score_of(Piece::QUEEN);
 
-    
     return cp_score_mat_temp;
 }
 
@@ -3689,8 +3693,7 @@ int GameBoard::get_king_near_squares_t(int king_near_squares_out[9])
     return count;
 }
 
-template<Color c>
-int GameBoard::sliders_and_knights_attacking_square2_t(int sq)
+template<Color c> int GameBoard::sliders_and_knights_attacking_square_t(int sq)
 {
     const ull occ = get_pieces();
 
@@ -3706,9 +3709,7 @@ int GameBoard::sliders_and_knights_attacking_square2_t(int sq)
 
     if (deadly_diags) {
 
-        //const ull diag_attacks2 = get_diagonal_attacks(occ, sq);
         const ull diag_attacks = get_diagonal_attacks_mbb(occ, sq);
-        //assert(diag_attacks == diag_attacks2);
 
         attackers |= (diag_attacks & deadly_diags);
     }
@@ -3726,8 +3727,8 @@ int GameBoard::sliders_and_knights_attacking_square2_t(int sq)
 }
 
 // ---------- attackers_on_enemy_king_near_cp_t ----------
-template<Color c>
-int GameBoard::attackers_on_enemy_king_near_cp_t()
+//    So if a square near the king is attacked by 2 pieces, it contributes 2 to total.
+template<Color c> int GameBoard::attackers_on_enemy_king_near_cp_t()
 {
     constexpr Color defender_color = utility::representation::opposite_color_t<c>;
 
@@ -3738,7 +3739,7 @@ int GameBoard::attackers_on_enemy_king_near_cp_t()
 
     for (int i = 0; i < count; ++i) {
         int sq = king_near_squares[i];
-        int nAttackers = sliders_and_knights_attacking_square2_t<c>(sq);
+        int nAttackers = sliders_and_knights_attacking_square_t<c>(sq);
         total += nAttackers;
         total += pawns_attacking_square_t<c>(sq);
     }
@@ -4176,8 +4177,8 @@ template int GameBoard::potential_checks_against_king_cp_t<Color::BLACK>();
 template int GameBoard::get_king_near_squares_t<Color::WHITE>(int[9]);
 template int GameBoard::get_king_near_squares_t<Color::BLACK>(int[9]);
 
-template int GameBoard::sliders_and_knights_attacking_square2_t<Color::WHITE>(int);
-template int GameBoard::sliders_and_knights_attacking_square2_t<Color::BLACK>(int);
+template int GameBoard::sliders_and_knights_attacking_square_t<Color::WHITE>(int);
+template int GameBoard::sliders_and_knights_attacking_square_t<Color::BLACK>(int);
 
 // attackers_on_enemy_king_near_cp_t
 template int GameBoard::attackers_on_enemy_king_near_cp_t<Color::WHITE>();
