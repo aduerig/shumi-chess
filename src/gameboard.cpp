@@ -2420,10 +2420,33 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PIn
         }
 
         // Take guard files into account, as to pawns
-        double nGuardPawns = count_guard_pawn_files_t<c>(PInfoIn, PInfoEnemy, k_file);
+        double dGuardPawns = count_guard_pawn_files_t<c>(PInfoIn, PInfoEnemy, k_file);
 
-        if (nGuardPawns <= 3.0 && nGuardPawns >= 0.0) cpWght = static_cast<int>((cpWght * nGuardPawns) / 3.0);
-        else assert(0);
+
+        // add one "guardpawn's worth for a finachettoed bishop in front of king (g or b file)
+        int fianchetto_file = -1;
+        if (k_file >= COL_C) {
+            fianchetto_file = COL_B;
+        }
+        else if (k_file <= COL_G) {
+            fianchetto_file = COL_G;
+        }
+        if (fianchetto_file >= 0) {
+            const int fianchetto_sq = homeRankp1 * 8 + fianchetto_file;
+            if (get_pieces_template<Piece::BISHOP, c>() & (1ULL << fianchetto_sq)) {
+                dGuardPawns += 1.0;
+            }
+        }
+
+        cpWght = static_cast<int>((cpWght * dGuardPawns) / 3.0);
+        // else 
+        // {
+        //     // sout << " dGuardPawns=" << dGuardPawns  << " color=" << utility::representation::color_to_string(c) << endl;
+        //     // // show board 
+        //     // string out = utility::representation::gameboard_to_string(*this);
+        //     // sout << out << endl;
+        //     // assert(0);
+        // }
 
         // Queen side castling penalize a little
         if (k_file >= COL_C) cpWght += wghts.GetWeight(QUEEN_SIDE_CASTLE);
@@ -2465,7 +2488,6 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PIn
 
     return final_cp;
 }
-
 
 
 //
@@ -2524,21 +2546,46 @@ template<Color c> double GameBoard::count_guard_pawn_files_t(const PInfo& PInfoI
         (enemy_major_pressure > 0)  ? GUARD_FILE_OPEN_MAJORS_SCORE :
                                       GUARD_FILE_MISSING_SCORE;
 
-    auto guard_file_score = [&](int file) {
-        const uint8_t fileMask = static_cast<uint8_t>(1u << file);
-        if (PInfoIn.guard_files_23 & fileMask) return GUARD_FILE_PRESENT_SCORE;
-        if (!(PInfoIn.files_present & fileMask) && !(PInfoEnemy.files_present & fileMask)) return open_file_penalty;
-        return GUARD_FILE_MISSING_SCORE;
-    };
-
     double dGuardFiles = 0.0;
-    dGuardFiles += guard_file_score(file0);
-    dGuardFiles += guard_file_score(file1);
-    dGuardFiles += guard_file_score(file2);
 
-    // Hold on i dont like this
-    if (dGuardFiles < 0.0) return 0.0;      // should this ever happen?
-    if (dGuardFiles > 3.0) return 3.0;      // should this ever happen? 
+    uint8_t fileMask = static_cast<uint8_t>(1u << file0);
+    if (PInfoIn.guard_files_23 & fileMask) {
+        dGuardFiles += GUARD_FILE_PRESENT_SCORE;
+    }
+    else if (!(PInfoIn.files_present & fileMask) &&
+             !(PInfoEnemy.files_present & fileMask)) {
+        dGuardFiles += open_file_penalty;
+    }
+    else {
+        dGuardFiles += GUARD_FILE_MISSING_SCORE;
+    }
+
+    fileMask = (int8_t)(1u << file1);
+    if (PInfoIn.guard_files_23 & fileMask) {
+        // I have a pawn on this file (on 2cnd or 3rd rank)
+        dGuardFiles += GUARD_FILE_PRESENT_SCORE;
+    }
+    else if (!(PInfoIn.files_present & fileMask) &&
+             !(PInfoEnemy.files_present & fileMask)) {
+        // niether I nor the opponent have pawns on this file
+        dGuardFiles += open_file_penalty;
+    }
+    else {
+
+        dGuardFiles += GUARD_FILE_MISSING_SCORE;
+    }
+
+    fileMask = static_cast<uint8_t>(1u << file2);
+    if (PInfoIn.guard_files_23 & fileMask) {
+        dGuardFiles += GUARD_FILE_PRESENT_SCORE;
+    }
+    else if (!(PInfoIn.files_present & fileMask) &&
+             !(PInfoEnemy.files_present & fileMask)) {
+        dGuardFiles += open_file_penalty;
+    }
+    else {
+        dGuardFiles += GUARD_FILE_MISSING_SCORE;
+    }
 
     return dGuardFiles;
 }
