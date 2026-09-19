@@ -98,6 +98,24 @@ public:
     ull pvs_researches = 0;  // narrow searches followed by a full-window re-search.
     ull pvs_cutoffs = 0;     // narrow searches that returned a score greater than or equal to beta and therefore caused a cutoff without a full-window re-search.
 
+    // Quiet beta-cutoff moves added to the history table.
+    ull history_updates = 0;
+
+    // Nodes where at least two remaining quiet moves were history ordered.
+    ull history_ordered_nodes = 0;
+
+    // Total remaining quiet moves examined by history ordering.
+    ull history_moves_scored = 0;
+
+    // Examined quiet moves whose history score was greater than zero.
+    ull history_nonzero_scores_seen = 0;
+
+    // Nodes where history changed the first remaining quiet move.
+    ull history_front_changes = 0;
+
+    // Largest history-table value produced during the game.
+    int history_largest_score = 0;
+
     int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;      // used for display only
 
@@ -176,6 +194,7 @@ public:
     // Killer moves
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
+    int history_moves[2][64][64] = {};
 
 
     // Template variants (compile-time color)

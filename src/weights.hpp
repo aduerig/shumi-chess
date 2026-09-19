@@ -21,6 +21,12 @@ inline constexpr int UPPERQ = 7;    // how many depths of "upper quissence" ther
 inline constexpr bool PVS_ENABLED = false;
 inline constexpr int PVS_MIN_DEPTH = 1;
 
+// History heuristic controls.
+inline constexpr bool HISTORY_ENABLED = false;
+inline constexpr int HISTORY_MAX_SCORE = 16384;
+inline constexpr int HISTORY_BONUS_MULTIPLIER = 32;
+inline constexpr int HISTORY_MAX_BONUS = 2048;
+
 // How to use your TT bounds. The control knobs. False for all means no TT bounds
 inline constexpr bool STORE_TT_BOUNDS          = true;
 inline constexpr bool USE_TT_BOUND_CUTOFFS     = true;

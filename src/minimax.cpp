@@ -136,7 +136,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -925,6 +925,12 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         pvs_successes = 0;
         pvs_researches = 0;
         pvs_cutoffs = 0;
+        history_updates = 0;
+        history_ordered_nodes = 0;
+        history_moves_scored = 0;
+        history_nonzero_scores_seen = 0;
+        history_front_changes = 0;
+        history_largest_score = 0;
 
         // This measures avg total response time for whole move
         response_time_sum = 0.0;
@@ -1034,6 +1040,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         killer1[ii] = {}; 
         killer2[ii] = {};
     }
+    std::fill(&history_moves[0][0][0], &history_moves[0][0][0] + 2 * 64 * 64, 0);
 
     ull cumul_time_msec = 0ULL;
     tuple<Score, Move> ret_val;
@@ -1296,6 +1303,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
                 << " researches=" << pvs_researches
                 << " cutoffs=" << pvs_cutoffs;
             sout << pvs_summary.str() << endl;
+
         }
 
     #endif
@@ -1411,6 +1419,14 @@ void MinimaxAI::playground(int iPhase) {
     //      << " cap=" << engine.game_board.wghts.GetWeight(TRADE_ADVANTAGE_CAP)
     //      << " max_side=" << MAX_CP_PER_SIDE
     //      << endl;
+
+    // sout << "[history summary] updates=" << history_updates
+    //     << " ordered-nodes=" << history_ordered_nodes
+    //     << " moves-scored=" << history_moves_scored
+    //     << " nonzero=" << history_nonzero_scores_seen
+    //     << " front-changes=" << history_front_changes
+    //     << " max-score=" << history_largest_score
+    //     << endl;
 
 
 }
@@ -3424,6 +3440,30 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                 else if (!(m == killer1[nPlys])) {
                     killer2[nPlys] = m;
                 }
+
+                if (HISTORY_ENABLED) {
+                    int history_bonus = HISTORY_BONUS_MULTIPLIER * depth * depth;
+
+                    if (history_bonus > HISTORY_MAX_BONUS) {
+                        history_bonus = HISTORY_MAX_BONUS;
+                    }
+
+                    int& history_score =
+                        history_moves[(int)m.color][(int)m.fromSQ][(int)m.toSQ];
+
+                    history_score += history_bonus -
+                        (history_score * history_bonus / HISTORY_MAX_SCORE);
+
+                    if (history_score > HISTORY_MAX_SCORE) {
+                        history_score = HISTORY_MAX_SCORE;
+                    }
+
+                    history_updates++;
+
+                    if (history_score > history_largest_score) {
+                        history_largest_score = history_score;
+                    }
+                }
             }
 
           
@@ -3582,6 +3622,51 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
         }
     #endif
+
+    if (HISTORY_ENABLED) {
+        const int nHistoryQuietMoves =
+            static_cast<int>(std::distance(quiet_begin, quiet_end));
+
+        if (nHistoryQuietMoves >= 2) {
+            history_ordered_nodes++;
+
+            const ShumiChess::Move firstQuietBeforeHistory = *quiet_begin;
+            std::vector<int> historyKeys(nHistoryQuietMoves);
+
+            for (int i = 0; i < nHistoryQuietMoves; i++) {
+                const ShumiChess::Move& mv = *(quiet_begin + i);
+                const int history_score =
+                    history_moves[(int)mv.color][(int)mv.fromSQ][(int)mv.toSQ];
+
+                historyKeys[i] = history_score;
+                history_moves_scored++;
+
+                if (history_score > 0) {
+                    history_nonzero_scores_seen++;
+                }
+            }
+
+            for (int i = 1; i < nHistoryQuietMoves; i++) {
+                const ShumiChess::Move moveToInsert = *(quiet_begin + i);
+                const int keyToInsert = historyKeys[i];
+
+                int j = i - 1;
+
+                while (j >= 0 && historyKeys[j] < keyToInsert) {
+                    *(quiet_begin + j + 1) = *(quiet_begin + j);
+                    historyKeys[j + 1] = historyKeys[j];
+                    j--;
+                }
+
+                *(quiet_begin + j + 1) = moveToInsert;
+                historyKeys[j + 1] = keyToInsert;
+            }
+
+            if (!(*quiet_begin == firstQuietBeforeHistory)) {
+                history_front_changes++;
+            }
+        }
+    }
 
 
     //       1. PV from the previous iteration (previous deepening’s best). 
