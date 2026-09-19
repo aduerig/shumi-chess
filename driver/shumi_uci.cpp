@@ -537,7 +537,7 @@ static void start_searching_for_move(
                 //      << endl;
 
                 // Blocking call: this worker thread is occupied here until Shumi returns a move.
-                search_thread.move =
+                auto move_ret_val =
                     minimax_ai.get_move_iterative_deepening(
                         search_time_to_use,
                         depth_to_use,
@@ -546,6 +546,8 @@ static void start_searching_for_move(
                         flags,
                         time_control
                     );
+
+                search_thread.move = get<1>(move_ret_val);
 
                 //sout << "SEARCH RETURNED go_id="
                 //     << go_id

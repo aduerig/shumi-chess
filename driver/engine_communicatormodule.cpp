@@ -383,13 +383,14 @@ static PyObject* ai_get_move_iterative_deepening(PyObject* self, PyObject* args)
     // set_random_number_of_moves(). This argument must stay zero here;
     // `features_mask` is the feature mask supplied by Python.
     int iRandomMoves = 0;
-    gotten_move = minimax_ai->get_move_iterative_deepening(
+    auto move_ret_val = minimax_ai->get_move_iterative_deepening(
         milliseconds_to_use,
         max_deepening,
         player_id,
         iRandomMoves,
         features_mask
     );
+    gotten_move = get<1>(move_ret_val);
 
     // "Convert" the SAN form of the move (algebriac) into ACN. ACN is simply 2 squares so is 
     // always 4 characters. But ACN cannot represent promotions. So we add the promotion character

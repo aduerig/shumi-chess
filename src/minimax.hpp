@@ -243,7 +243,7 @@ public:
                                              int& n_moves_within_delta     // output
                                             );
 
-    ShumiChess::Move get_move_iterative_deepening(ull i_time_requested, int max_deepening_requested, int player_id
+    tuple<Score, ShumiChess::Move> get_move_iterative_deepening(ull i_time_requested, int max_deepening_requested, int player_id
                                                 , int iRandomMoves, int feat
                                                 , SearchTimeControl time_control);
 
@@ -251,7 +251,7 @@ public:
     // initializers are not available inside the enclosing class definition, so
     // "= {}" on the declaration above is ill-formed. A function body is parsed
     // after the enclosing class is complete, so building the default here is fine.
-    ShumiChess::Move get_move_iterative_deepening(ull i_time_requested, int max_deepening_requested, int player_id
+    tuple<Score, ShumiChess::Move> get_move_iterative_deepening(ull i_time_requested, int max_deepening_requested, int player_id
                                                 , int iRandomMoves, int feat)
     {
         return get_move_iterative_deepening(i_time_requested, max_deepening_requested, player_id

@@ -1,6 +1,6 @@
 
 settings depth=7 max_ply=20 positions=6 flags=0x6 player=3 time_ms=2
-summary ep=52171 nd=122377007 nd_avg=1019808 moves=120
+summary ep=52496 nd=122377007 nd_avg=1019808 moves=120
 
 [Event "Shumi minimax regression pos 0"]
 [SetUp "1"]

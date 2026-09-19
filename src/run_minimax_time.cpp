@@ -196,8 +196,9 @@ int main(int argc, char** argv) {
         for (int ply = 1; ( (state == INPROGRESS) && (ply <= max_ply_to_play)); ++ply) {
            
             int iRandomMoves = 0;
-            Move move = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id
+            auto ret_val = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id
                                                             , iRandomMoves, flags);
+            Move move = get<1>(ret_val);
 
             if (move.piece_type == Piece::NONE) {
                 sout << "No legal move returned at ply " << ply << endl;

@@ -69,7 +69,8 @@ int main(int argc, char** argv)
 
     int player_id = UNCLE_SHUMI;
     int iRandomMoves = 0;
-    move_best = minimax_ai.get_move_iterative_deepening(time_to_use_msec, depth_limit, player_id, iRandomMoves, 0);
+    auto move_ret_val = minimax_ai.get_move_iterative_deepening(time_to_use_msec, depth_limit, player_id, iRandomMoves, 0);
+    move_best = get<1>(move_ret_val);
 
 
     engine.move_into_string(move_best);

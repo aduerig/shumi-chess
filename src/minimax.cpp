@@ -820,7 +820,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 //////////////////////////////////////////////////////////////////////////////////
 //
 // This is a "root position". The next human move triggers a new root position
-Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_deepening_requested, int player_id
+tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_deepening_requested, int player_id
                 , int iRandomMoves
                 , int feat
                 , SearchTimeControl time_control) {  
@@ -1142,7 +1142,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         hard_abort_end();
         soft_abort_end();
         sout << "No legal root move; returning bestmove 0000" << endl;
-        return best_move;
+        return {d_best_move_score, best_move};
     }
 
     // Convert the moves "relative score" to "absolute score". Relative means positve is good for mover. 
@@ -1335,7 +1335,7 @@ Move MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_dee
         fprintf(fpDebug, "move %s \n",  engine.move_string.c_str());
     #endif
 
-    return best_move;
+    return {d_best_move_score, best_move};
 }
 
 
