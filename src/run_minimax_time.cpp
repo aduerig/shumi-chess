@@ -6,6 +6,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #ifdef _WIN32
 #include <conio.h>
 #else
@@ -19,6 +20,7 @@ static inline int _getch() { return std::cin.get(); }
 #include <sstream>
 #include <streambuf>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
@@ -48,6 +50,7 @@ using namespace std::chrono;
 static const char* game_state_to_string(GameState state);
 static string move_to_uci(const Move& move);
 static string pgn_with_fen_move_numbers(const string& pgn, const string& fen);
+static string add_score_comments_to_pgn(const string& numbered_pgn, const vector<double>& move_scores);
 static string wrap_pgn_line(const string& pgn);
 static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time);
 static void make_engine_move(Engine& engine, Move move);
@@ -111,6 +114,7 @@ int main(int argc, char** argv) {
     ull positionNodes[MAX_FENS] = {};
     int positionPlyPlayed[MAX_FENS] = {};
     GameState positionFinalStates[MAX_FENS] = {};
+    vector<double> positionMoveScores[MAX_FENS];
 
     FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Petrov
     FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giuco Piano
@@ -196,14 +200,19 @@ int main(int argc, char** argv) {
         for (int ply = 1; ( (state == INPROGRESS) && (ply <= max_ply_to_play)); ++ply) {
            
             int iRandomMoves = 0;
-            auto ret_val = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id
+            tuple<Score, Move> ret_val = minimax_ai.get_move_iterative_deepening(time_to_use, depth_to_use, player_id
                                                             , iRandomMoves, flags);
+            Score move_score = get<0>(ret_val);
             Move move = get<1>(ret_val);
 
             if (move.piece_type == Piece::NONE) {
                 sout << "No legal move returned at ply " << ply << endl;
                 break;
             }
+
+            // Shumi scores are stored side-to-move relative.
+            double score_pawns = (double)move_score / (double)ONE_PAWN;
+            positionMoveScores[iPositions].push_back(score_pawns);
 
             make_engine_move(engine, move);
 
@@ -271,7 +280,9 @@ int main(int argc, char** argv) {
         results << "[FEN \"" << FENs[i] << "\"]" << endl;
         results << "[Result \"*\"]" << endl;
         results << endl;
-        results << wrap_pgn_line(pgn_with_fen_move_numbers(PGNs[i], FENs[i])) << endl;
+        string numbered_pgn = pgn_with_fen_move_numbers(PGNs[i], FENs[i]);
+        string scored_pgn = add_score_comments_to_pgn(numbered_pgn, positionMoveScores[i]);
+        results << wrap_pgn_line(scored_pgn) << endl;
         results << endl;
     }
     assert (totalNodesPerMove > 0);
@@ -405,6 +416,47 @@ static string pgn_with_fen_move_numbers(const string& pgn, const string& fen)
         out += " ";
     }
     out += "*";
+    return out;
+}
+
+static string add_score_comments_to_pgn(const string& numbered_pgn, const vector<double>& move_scores)
+{
+    string out;
+    string token;
+    stringstream stream(numbered_pgn);
+    size_t score_index = 0;
+
+    while (stream >> token) {
+        if (!out.empty()) {
+            out += " ";
+        }
+        out += token;
+
+        const bool is_result = (token == "*" || token == "1-0" || token == "0-1" || token == "1/2-1/2");
+        bool is_move_number = true;
+        bool has_digit = false;
+        for (char ch : token) {
+            const unsigned char uch = static_cast<unsigned char>(ch);
+            if (isdigit(uch)) {
+                has_digit = true;
+            } else if (ch != '.') {
+                is_move_number = false;
+                break;
+            }
+        }
+
+        if (!is_result && !(has_digit && is_move_number)) {
+            assert(score_index < move_scores.size());
+            ostringstream score_text;
+            score_text << fixed << setprecision(2) << move_scores.at(score_index);
+            out += " {";
+            out += score_text.str();
+            out += "}";
+            ++score_index;
+        }
+    }
+
+    assert(score_index == move_scores.size());
     return out;
 }
 

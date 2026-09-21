@@ -208,6 +208,7 @@ Score of Shumi vs stockfish_ELO 2600: 20 - 27 - 3 [0.430]
 Score of Shumi vs stockfish_ELO 2600: 17 - 30 - 3 [0.370]
 Score of Shumi vs stockfish_ELO 2600: 14 - 27 - 9 [0.370]
 Score of Shumi vs stockfish_ELO 2600: 16 - 31 - 3 [0.350]
+Score of Shumi vs stockfish_ELO 2400: 23 - 25 - 2 [0.480]
 
 ==========================================================================================================
 engines to engine matches

@@ -45,8 +45,12 @@ inline constexpr double SOFT_ABORT_SAFETY_FACTOR = 10.0;  // This is times the "
 inline constexpr bool DELTA_PRUNE_ON = true;
 inline constexpr int DELTA_MARGIN_CP = 300;     // Raise me and there is less pruning
 
+inline constexpr bool FUTILITY_PRUNE_ON = false;
+inline constexpr int FUTILITY_MARGIN_CP = 400;     // Raise me and there is less pruning
+
+
 // Root aspiration-window
-inline constexpr bool ASPIRATION_ENABLED = true;        // set to false to stop aspiration
+inline constexpr bool ASPIRATION_ENABLED = true;
 inline constexpr int ASPIRATION_MIN_DEPTH = 2;
 inline constexpr Score aspiration_window_delta = (Score)( (double)ONE_PAWN*0.5 );
 
@@ -86,7 +90,7 @@ enum WghtIndxs
     //F_PAWN_MOVED_EARLY,
     ROOK_CONNECTED,
     ROOK_ON_OPEN_FILE,
-    KING_ON_FILE,
+    KING_ON_OPEN_FILE,
     MAJOR_ON_RANK7,
     MAJOR_ON_RANK8,
     KNIGHT_ON_EDGE,
@@ -97,6 +101,7 @@ enum WghtIndxs
     DEVELOPMENT_OPENINGK,
     DEVELOPMENT_OPENINGB,
     PASSED_PAWN_CONNECTED,
+    PASSED_PAWN_CONNECTABLE,
     ISOLANI_OPEN_FILE,
     KING_CENTER_LATE,
     KEEP_ROOKS_WHEN_DOWN_PAWN,
@@ -156,8 +161,8 @@ private:
     //    5       206     // 6th rank
     //    6       305     // 7th rank
     
-
-    static constexpr int PASSED_PAWN_CONNECTED_WGHT = 4;   // Multiplied by passed pawn bonus, then divide it all by 3
+    static constexpr int PASSED_PAWN_CONNECTED_WGHT = 5;   // Multiplied by passed pawn bonus, then divide it all by 3
+    static constexpr int PASSED_PAWN_CONNECTABLE_WGHT = 5; // Added in cp for adjacent passed pawns on connectable ranks
 
     // Pawn controlling center squares: (one per qualifiing pawn)
     static constexpr int PAWN_ON_CTR_DEF_WGHT = 22;     // center e4,d4 (white); and e5,d5, (black) "defensive" center squares
@@ -168,7 +173,7 @@ private:
     static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
     static constexpr int BISHOP_ON_CTR_WGHT = 23;  // Bishop controlling center squares (per square) (here we can look through other pieces)
 
-    static constexpr int TWO_BISHOPS_WGHT = 25;    // 2 or more bishops (only one bonus per side)
+    static constexpr int TWO_BISHOPS_WGHT = 28;    // 2 or more bishops (only one bonus per side). Weighted by phase, more in endgame)
 
     // Weird conditions to stop stupid moves in the opening
     static constexpr int QUEEN_OUT_EARLY_WGHT = -30;    // for landing on center squares only. only in opening.
@@ -182,8 +187,8 @@ private:
     static constexpr int ROOK_CONNECTED_WGHT = 100;      // if any connected rook pair exists (one bonus only)
 
     // Rooks on open or semi open files
-    static constexpr int ROOK_ON_OPEN_FILE_WGHT = 23;     // open=2x, semi-open=1x
-    static constexpr int KING_ON_FILE_WGHT    = 16;      // extra per rook if enemy king on same file (even if pieces between he king and rook)
+    static constexpr int ROOK_ON_OPEN_FILE_WGHT = 23;   // open=2x, semi-open=1x
+    static constexpr int KING_ON_OPEN_FILE_WGHT = 18;   // extra per rook if enemy king on same file (even if pieces between he king and rook)
 
     static constexpr int MAJOR_ON_RANK7_WGHT = 33;      // Rook or queen on 7th rank (if 2 major then 3 times)
     static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank (if 2 major then 3 times)

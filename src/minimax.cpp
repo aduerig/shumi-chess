@@ -3008,8 +3008,6 @@ bool MinimaxAI::loop_over_all_moves(int depth,
     did_cutoff = false;
     int nSearched = 0;
 
-    
-    const int FUTILITY_MARGIN = 400;     // centipawns
 
     bool futility_eval_have = false;
     Score futility_eval_cp = 0;
@@ -3122,8 +3120,7 @@ bool MinimaxAI::loop_over_all_moves(int depth,
         //
         // Futility pruning 
         //
-        if (0) {        // Note: fix me
-        //if (Features_mask & _FEATURE_FUTILITY_PRUNE) {
+        if (FUTILITY_PRUNE_ON) { 
 
             if ( (depth == 1) &&             // last regular-search ply
                 (nSearched > 0) &&           // always search first move
@@ -3143,7 +3140,7 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                             futility_eval_cp = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
                     }
 
-                    if ( (futility_eval_cp + FUTILITY_MARGIN) <= alpha) {
+                    if ( (futility_eval_cp + FUTILITY_MARGIN_CP) <= alpha) {
                         if (!futility_incheck_have) {
                             futility_incheck_have = true;
 
@@ -3154,7 +3151,7 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                         }
 
                         if (!futility_bInCheck) {
-                            // Determine whether this candidate move checks the enemy king only
+                            // Determine whether this candidate move checks the enemy king, only
                             // when it would otherwise be discarded by futility pruning.
                             const bool is_a_check =
                                 (m.color == ShumiChess::Color::WHITE)
@@ -3905,23 +3902,7 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase, const PawnFileInfo*
                                                         holes_cp,
                                                         passed_pawns_bb,
                                                         passed_cp);
-    // #ifndef NDEBUG
-    //     ull holes_bb_old = 0ULL;
-    //     ull passed_pawns_bb_old = 0ULL;
-    //     int holes_cp_old;
-    //     int passed_cp_old;
 
-    //     engine.game_board.count_pawn_holes_and_passed_pawns_cp_t<c>(pawnF, pawnE,
-    //                                                         holes_bb_old,
-    //                                                         holes_cp_old,
-    //                                                         passed_pawns_bb_old,
-    //                                                         passed_cp_old);
-
-    //     assert(holes_bb_old == holes_bb);
-    //     assert(holes_cp_old == holes_cp);
-    //     assert(passed_pawns_bb_old == passed_pawns_bb);
-    //     assert(passed_cp_old == passed_cp);
-    // #endif
 
     cp_score_position_temp += holes_cp;
 

@@ -774,26 +774,26 @@ template<Color c> bool GameBoard::build_pawn_file_summary_t(PInfo& pinfo)
 void GameBoard::dump_pinfo_mismatch(const PInfo& a, const PInfo& b)
 {
     if (a.files_present != b.files_present) {
-        printf("PInfo mismatch: files_present a=0x%X b=0x%X\n",  unsigned(a.files_present),  unsigned(b.files_present));
+        printf("PInfo mismatch: files_present a=0x%X b=0x%X\r\n",  unsigned(a.files_present),  unsigned(b.files_present));
         //return;
     }
 
     for (int i = 0; i < 8; ++i) {
         if (a.file_count[i] != b.file_count[i]) {
-            printf("PInfo mismatch: file_count[%d] a=%d b=%d\n", i, a.file_count[i], b.file_count[i]);
+            printf("PInfo mismatch: file_count[%d] a=%d b=%d\r\n", i, a.file_count[i], b.file_count[i]);
             //return;
         }
         if (a.advancedSq[i] != b.advancedSq[i]) {
-            printf("PInfo mismatch: advancedSq[%d] a=%d b=%d\n", i, a.advancedSq[i], b.advancedSq[i]);
+            printf("PInfo mismatch: advancedSq[%d] a=%d b=%d\r\n", i, a.advancedSq[i], b.advancedSq[i]);
             //return;
         }
         if (a.rearSq[i] != b.rearSq[i]) {
-            printf("PInfo mismatch: rearSq[%d] a=%d b=%d\n", i, a.rearSq[i], b.rearSq[i]);
+            printf("PInfo mismatch: rearSq[%d] a=%d b=%d\r\n", i, a.rearSq[i], b.rearSq[i]);
             //return;
         }
     }
 
-    //printf("PInfo mismatch: (unexpected) no field differed\n");
+    //printf("PInfo mismatch: (unexpected) no field differed\r\n");
 }
 
 
@@ -830,13 +830,13 @@ static void print_bb64(ull bb)
             ull bit = (1ULL << sq);
             std::printf("%c ", (bb & bit) ? '1' : '.');
         }
-        std::printf("\n");
+        std::printf("\r\n");
     }
 }
 // Called only after board setup, To help make sure the masks matrch the board properly
 void GameBoard::validate_row_col_masks_h1_0()
 {
-    //printf("\nder\n");
+    //printf("\r\nder\r\n");
     // 1) Each row mask must match (sq/8 == r)
     for (int r = 0; r < 8; ++r) {
         ull expect = 0ULL;
@@ -846,9 +846,9 @@ void GameBoard::validate_row_col_masks_h1_0()
         }
 
         if (row_masks[r] != expect) {
-            std::printf("ROW MASK MISMATCH r=%d\n", r);
-            std::printf("expected:\n"); print_bb64(expect);
-            std::printf("actual:\n");   print_bb64(row_masks[r]);
+            std::printf("ROW MASK MISMATCH r=%d\r\n", r);
+            std::printf("expected:\r\n"); print_bb64(expect);
+            std::printf("actual:\r\n");   print_bb64(row_masks[r]);
             assert(0);          // To force an exit
         }
     }
@@ -862,9 +862,9 @@ void GameBoard::validate_row_col_masks_h1_0()
         }
 
         if (col_masks[f] != expect) {
-            std::printf("FILE MASK MISMATCH f=%d (this f is sq%%8)\n", f);
-            std::printf("expected:\n"); print_bb64(expect);
-            std::printf("actual:\n");   print_bb64(col_masks[f]);
+            std::printf("FILE MASK MISMATCH f=%d (this f is sq%%8)\r\n", f);
+            std::printf("expected:\r\n"); print_bb64(expect);
+            std::printf("actual:\r\n");   print_bb64(col_masks[f]);
             assert(0);          // To force an exit
         }
     }
@@ -880,7 +880,7 @@ void GameBoard::validate_row_col_masks_h1_0()
         for (int f = 0; f < 8; ++f) if (col_masks[f] & bit) ++colHits;
 
         if (rowHits != 1 || colHits != 1) {
-            std::printf("SQUARE MEMBERSHIP BAD sq=%d rowHits=%d colHits=%d\n", sq, rowHits, colHits);
+            std::printf("SQUARE MEMBERSHIP BAD sq=%d rowHits=%d colHits=%d\r\n", sq, rowHits, colHits);
             assert(0);          // To force an exit
         }
     }
@@ -893,15 +893,15 @@ void GameBoard::validate_row_col_masks_h1_0()
             ull got = row_masks[r] & col_masks[f];
 
             if (got != expect) {
-                std::printf("INTERSECTION BAD r=%d f=%d (expect sq=%d)\n", r, f, sq);
-                std::printf("expected one-bit:\n"); print_bb64(expect);
-                std::printf("got:\n");             print_bb64(got);
+                std::printf("INTERSECTION BAD r=%d f=%d (expect sq=%d)\r\n", r, f, sq);
+                std::printf("expected one-bit:\r\n"); print_bb64(expect);
+                std::printf("got:\r\n");             print_bb64(got);
                 assert(0);          // To force an exit
             }
         }
     }
 
-    //std::printf("validate_row_col_masks_h1_0(): OK\n");
+    //std::printf("validate_row_col_masks_h1_0(): OK\r\n");
 }
 
 
@@ -1468,8 +1468,8 @@ retry_all:
 
     static int n = 0;
     ++n;
-    if ((n % 1000) == 0) printf("made %d fens\n", n);
-    printf("K/Q/R fen=%s\n", fen.c_str());
+    if ((n % 1000) == 0) printf("made %d fens\r\n", n);
+    printf("K/Q/R fen=%s\r\n", fen.c_str());
 
 
     return fen;
@@ -1628,7 +1628,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
         fprintf(fpDebug,
                 "debug (before forced capture): side=%s from_bb=0x%016llx to_bb=0x%016llx "
-                "from_sq=%d to_sq=%d victim=%d mover=%d\n",
+                "from_sq=%d to_sq=%d victim=%d mover=%d\r\n",
                 utility::representation::color_to_string(side).c_str(),
                 (unsigned long long)from_bb,
                 (unsigned long long)to_bb,
@@ -1640,7 +1640,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
             fprintf(fpDebug, "    %s attackers on sq %d:", label, to_sq);
             if (!mask)
             {
-                fprintf(fpDebug, " [none]\n");
+                fprintf(fpDebug, " [none]\r\n");
                 return;
             }
             ull tmp2 = mask;
@@ -1649,7 +1649,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
                 Square s = utility::bit::lsb_and_pop_to_square(tmp2);
                 fprintf(fpDebug, " %d", s);
             }
-            fprintf(fpDebug, "\n");
+            fprintf(fpDebug, "\r\n");
         };
 
         dump_attackers("white", att_w0);
@@ -1934,7 +1934,7 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 
     if (fpDebug) {
         fprintf(fpDebug,
-                "debug final: move(from_sq=%d,to_sq=%d) side=%s SEE=%d\n",
+                "debug final: move(from_sq=%d,to_sq=%d) side=%s SEE=%d\r\n",
                 from_sq, to_sq,
                 utility::representation::color_to_string(side).c_str(),
                 result);
@@ -2110,7 +2110,7 @@ int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
 
     if (fpDebug) {
         fprintf(fpDebug,
-                "debug final: move(from_sq=%d,to_sq=%d) clt=%s SEE=%d\n",
+                "debug final: move(from_sq=%d,to_sq=%d) clt=%s SEE=%d\r\n",
                 from_sq, to_sq,
                 utility::representation::color_to_string(clr).c_str(),
                 result);
@@ -2419,7 +2419,7 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PIn
             return 0;
         }
 
-        // Take guard files into account, as to pawns
+        // Take guard files into account, as to pawns. This can be negative
         double dGuardPawns = count_guard_pawn_files_t<c>(PInfoIn, PInfoEnemy, k_file);
 
 
@@ -2510,8 +2510,8 @@ int GameBoard::get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PIn
 //
 static constexpr double GUARD_FILE_PRESENT_SCORE = 1.0;                 // Bonus, file blocked by a guard pawn.
 static constexpr double GUARD_FILE_MISSING_SCORE = 0.0;                 // No guard pawn on this file, sorry.
-static constexpr double GUARD_FILE_OPEN_MAJORS_SCORE = -0.25;           // Penelty, Majors on, and this guard file is open.
-static constexpr double GUARD_FILE_OPEN_HEAVY_MAJORS_SCORE = -0.75;     // Penelty, Heavy majors on, and this guard file is open.
+static constexpr double GUARD_FILE_OPEN_MAJORS_SCORE = -0.5;            // Penelty, Majors on, and this guard file is open.
+static constexpr double GUARD_FILE_OPEN_HEAVY_MAJORS_SCORE = -1.75;     // Penelty, Heavy majors on, and this guard file is open.
 
 template<Color c> double GameBoard::count_guard_pawn_files_t(const PInfo& PInfoIn, const PInfo& PInfoEnemy, int k_file) const
 {
@@ -2793,8 +2793,7 @@ int GameBoard::bishops_attacking_center_squares_cp_t()
 }
 
 // ---------- two bishops (2 bishops)
-template<Color c>
-int GameBoard::two_bishops_cp_t(int nPhase) const {
+template<Color c> int GameBoard::two_bishops_cp_t(int nPhase) const {
     //ull friendlyBishops = get_pieces_template<Piece::BISHOP, c>();
     //int bishops2 = bits_in(friendlyBishops);
     int bishops = Bits_In[c][Piece::BISHOP];
@@ -2886,7 +2885,7 @@ int GameBoard::rook_connectiveness_cp_t() const
 //   - Closed file    (friendly pawn present):             ignored
 //
 //   - Additional bonus if enemy king is on the same file:
-//         KING_ON_FILE * file_mult * (# rooks on file)
+//         KING_ON_OPEN_FILE * file_mult * (# rooks on file)
 //
 template<Color c>
 int GameBoard::rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE)
@@ -2916,7 +2915,7 @@ int GameBoard::rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnI
         score_cp += nRooksOnFile * file_mult * wghts.GetWeight(ROOK_ON_OPEN_FILE);
 
         if (enemy_king & file_mask) {
-            score_cp += nRooksOnFile * file_mult * wghts.GetWeight(KING_ON_FILE);
+            score_cp += nRooksOnFile * file_mult * wghts.GetWeight(KING_ON_OPEN_FILE);
         }
     }
 
@@ -3055,8 +3054,7 @@ int GameBoard::count_isolated_and_doubled_pawns_cp_t(const PInfo& pawnInfoF, con
 }
 
 
-template<Color c>
-void GameBoard::build_pawn_holes_and_passed_summary_t(
+template<Color c> void GameBoard::build_pawn_holes_and_passed_summary_t(
         const PInfo& pawnInfoF,
         const PInfo& pawnInfoE,
         ull& holes_bb,
@@ -3075,9 +3073,12 @@ void GameBoard::build_pawn_holes_and_passed_summary_t(
 
     const ull all_pawns = get_pieces_template<Piece::PAWN>();
 
+
     const int passed_pawn_slope = wghts.GetWeight(PASSED_PAWN_SLOPE);
     const int passed_pawn_yinrcpt_cp = wghts.GetWeight(PASSED_PAWN_YINRCPT);
     const int passed_pawn_connected_mult = wghts.GetWeight(PASSED_PAWN_CONNECTED);
+    const int passed_pawn_connectable_cp = wghts.GetWeight(PASSED_PAWN_CONNECTABLE);
+
     const unsigned enemy_open_files = (~pawnInfoE.files_present) & 0xFFu;
 
     int friendly_rear_rank[8];
@@ -3182,7 +3183,7 @@ void GameBoard::build_pawn_holes_and_passed_summary_t(
             // Set bonus based on how advanced rank its on, increasing bonus for greater rank 
             int bonus = ((passed_pawn_slope * adv * adv) / 2) + passed_pawn_yinrcpt_cp;
 
-            // See if the passed pawn is connected
+            // See if the passed pawn is "connected"
             ull protect_mask = 0ULL;
             if constexpr (c == Color::WHITE) {
                 if (r > 0) {
@@ -3201,6 +3202,46 @@ void GameBoard::build_pawn_holes_and_passed_summary_t(
                 // Multiply by passed pawn mult (normally 4 or larger), then divide it all by 3
                 int temp = (passed_pawn_connected_mult * bonus);
                 bonus = (temp / 3);
+            }
+
+            bool has_connectable_passed_neighbor = false;
+            for (int adjacent_file = f - 1; adjacent_file <= f + 1; adjacent_file += 2) {
+                if ((adjacent_file < 0) || (adjacent_file > 7)) continue;
+
+                ull adjacent_pawns = my_pawns & col_masks[adjacent_file];
+                while (adjacent_pawns) {
+                    Square adjacent_s = utility::bit::lsb_and_pop_to_square(adjacent_pawns);
+                    int adjacent_r = adjacent_s >> 3;
+                    int rank_diff = adjacent_r - r;
+                    if (rank_diff < 0) rank_diff = -rank_diff;
+
+                    if ((rank_diff != 0) && (rank_diff != 2) && (rank_diff != 3)) continue;
+
+                    bool adjacent_enemy_ahead;
+                    if constexpr (c == Color::WHITE) {
+                        adjacent_enemy_ahead =
+                            (enemy_rear_rank[adjacent_file] > adjacent_r) ||
+                            (adjacent_file > 0 && enemy_rear_rank[adjacent_file - 1] > adjacent_r) ||
+                            (adjacent_file < 7 && enemy_rear_rank[adjacent_file + 1] > adjacent_r);
+                    }
+                    else {
+                        adjacent_enemy_ahead =
+                            (enemy_rear_rank[adjacent_file] < adjacent_r) ||
+                            (adjacent_file > 0 && enemy_rear_rank[adjacent_file - 1] < adjacent_r) ||
+                            (adjacent_file < 7 && enemy_rear_rank[adjacent_file + 1] < adjacent_r);
+                    }
+
+                    if (!adjacent_enemy_ahead) {
+                        has_connectable_passed_neighbor = true;
+                        break;
+                    }
+                }
+
+                if (has_connectable_passed_neighbor) break;
+            }
+
+            if (has_connectable_passed_neighbor) {
+                bonus += passed_pawn_connectable_cp;
             }
 
             passed_cp += bonus;
@@ -3236,164 +3277,6 @@ void GameBoard::count_pawn_holes_and_passed_pawns_cp_new_t(
 }
 
 
-// template<Color c>
-// void GameBoard::count_pawn_holes_and_passed_pawns_cp_t(
-//         const PInfo& pawnInfoF,
-//         const PInfo& pawnInfoE,
-//         ull& holes_bb,
-//         int& holes_cp,
-//         ull& passed_pawns,
-//         int& passed_cp)
-// {
-//     holes_bb = 0ULL;
-//     holes_cp = 0;
-
-//     passed_pawns = 0ULL;
-//     passed_cp = 0;
-
-//     ull my_pawns = get_pieces_template<Piece::PAWN, c>();
-//     if (!my_pawns) return;
-
-//     const ull all_pawns = get_pieces_template<Piece::PAWN>();
-
-//     const int pawn_hole_cp = wghts.GetWeight(PAWN_HOLE);
-//     const int pawn_hole_open_file_cp = wghts.GetWeight(PAWN_HOLE_OPEN_FILE);
-//     const int passed_pawn_slope = wghts.GetWeight(PASSED_PAWN_SLOPE);
-//     const int passed_pawn_yinrcpt_cp = wghts.GetWeight(PASSED_PAWN_YINRCPT);
-//     const int passed_pawn_connected_cp = wghts.GetWeight(PASSED_PAWN_CONNECTED);
-//     const bool b_have_majors = get_major_pieces<c>() != 0ULL;
-//     const unsigned enemy_open_files = (~pawnInfoE.files_present) & 0xFFu;
-
-//     int friendly_rear_rank[8];
-//     int enemy_rear_rank[8];
-
-    
-//     for (int file = 0; file < 8; ++file) {
-//         const Square friendly_rear = pawnInfoF.rearSq[file];
-//         const Square enemy_rear = pawnInfoE.rearSq[file];
-
-//         if constexpr (c == Color::WHITE) {
-//             friendly_rear_rank[file] = (friendly_rear == NO_SQUARE) ? 8 : (friendly_rear >> 3);
-//             enemy_rear_rank[file] = (enemy_rear == NO_SQUARE) ? -1 : (enemy_rear >> 3);
-//         }
-//         else {
-//             friendly_rear_rank[file] = (friendly_rear == NO_SQUARE) ? -1 : (friendly_rear >> 3);
-//             enemy_rear_rank[file] = (enemy_rear == NO_SQUARE) ? 8 : (enemy_rear >> 3);
-//         }
-//     }
-
-//     ull tmp = my_pawns;
-
-//     while (tmp) {
-
-//         Square s = utility::bit::lsb_and_pop_to_square(tmp);
-
-//         int f = s & 7;
-//         int r = s >> 3;
-
-//         // ------------------------------------------------------------
-//         // pawn holes
-//         // ------------------------------------------------------------
-
-//         int hole_sq;
-
-//         if constexpr (c == Color::WHITE) {
-//             assert (r != 7);           // should never happen, pawns cant be on this rank
-//             hole_sq = s + 8;
-//         }
-//         else {
-//             assert(r != 0);             // should never happen, pawns cant be on this rank
-//             hole_sq = s - 8;
-//         }
-
-//         ull hole_only_bb = (1ULL << hole_sq) ;
-//         if (all_pawns & hole_only_bb) continue;
-
-//         bool friend_pawn_can_cover;
-
-//         if constexpr (c == Color::WHITE) {
-//             friend_pawn_can_cover =
-//                 (f > 0 && friendly_rear_rank[f - 1] <= r) ||
-//                 (f < 7 && friendly_rear_rank[f + 1] <= r);
-//         }
-//         else {
-//             friend_pawn_can_cover =
-//                 (f > 0 && friendly_rear_rank[f - 1] >= r) ||
-//                 (f < 7 && friendly_rear_rank[f + 1] >= r);
-//         }
-
-//         if (!friend_pawn_can_cover) {
-
-//             holes_bb |= (1ULL << hole_sq);
-
-//             int this_cp = pawn_hole_cp;
-
-//             if (b_have_majors && (enemy_open_files & (1u << f))) {
-//                 this_cp += pawn_hole_open_file_cp;
-//             }
-
-//             holes_cp += this_cp;
-//         }
-
-//         // ------------------------------------------------------------
-//         // passed pawns (new compact version)
-//         // ------------------------------------------------------------
-
-//         bool enemy_ahead;
-
-//         if constexpr (c == Color::WHITE) {
-//             enemy_ahead =
-//                 (enemy_rear_rank[f] > r) ||
-//                 (f > 0 && enemy_rear_rank[f - 1] > r) ||
-//                 (f < 7 && enemy_rear_rank[f + 1] > r);
-//         }
-//         else {
-//             enemy_ahead =
-//                 (enemy_rear_rank[f] < r) ||
-//                 (f > 0 && enemy_rear_rank[f - 1] < r) ||
-//                 (f < 7 && enemy_rear_rank[f + 1] < r);
-//         }
-
-//         if (!enemy_ahead) {
-//             int adv;
-
-//             passed_pawns |= (1ULL << s);
-
-//             // adv is "rank" (queens at 7)
-//             if constexpr (c == Color::WHITE) adv = r;
-//             else                             adv = (7 - r);
-//             assert((adv > 0) && (adv < 7));
-
-//             int bonus = ((passed_pawn_slope * adv * adv) / 2) + passed_pawn_yinrcpt_cp;
-
-//             ull protect_mask = 0ULL;
-
-//             if constexpr (c == Color::WHITE) {
-
-//                 if (r > 0) {
-//                     if (f < 7) protect_mask |= (1ULL << (s - 7));
-//                     if (f > 0) protect_mask |= (1ULL << (s - 9));
-//                 }
-//             }
-//             else {
-
-//                 if (r < 7) {
-//                     if (f < 7) protect_mask |= (1ULL << (s + 9));
-//                     if (f > 0) protect_mask |= (1ULL << (s + 7));
-//                 }
-//             }
-
-//             if ((my_pawns & protect_mask) != 0ULL) {
-
-//                 int temp = (bonus * passed_pawn_connected_cp);
-
-//                 bonus = (temp / 3);
-//             }
-
-//             passed_cp += bonus;
-//         }
-//     }
-// }
 
 
 // ---------- count_knights_on_holes_cp_t ----------
