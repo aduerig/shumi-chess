@@ -365,6 +365,7 @@ class GameBoard {
 
         template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
         template<Color c> int advanced_unpushable_knights_cp_t();
+        template<Color c> int no_pawns_left_cp_t();
         template<Color c> int rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE);
 
 

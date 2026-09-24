@@ -1357,15 +1357,11 @@ void MinimaxAI::playground(int iPhase) {
     //python_engine->updateStats(found_move);
 
 
-    //ull holes;
-
-    //PawnFileInfo pwnFileInfo;
-    // ull holes_bb;
-    // int holes_cp;
-    // ull passed_pawns;
-    // int passed_cp;      
-
-
+    Score wcp_score = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+    cout << " evaltest W = " << wcp_score << endl;
+    Score bcp_score = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
+    cout << " evaltest B = " << bcp_score << endl;
+    assert (wcp_score == -bcp_score);
 
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
@@ -4012,6 +4008,9 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
     int icp_temp;
     int cp_score_position_temp = 0;
 
+    icp_temp = engine.game_board.no_pawns_left_cp_t<c>();
+    cp_score_position_temp += icp_temp;
+
     if (nPhase > GamePhase::OPENING) {
         icp_temp = engine.game_board.attackers_on_enemy_king_near_cp_t<c>();
         cp_score_position_temp += icp_temp;
@@ -4165,6 +4164,9 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
         case UNCLE_SHUMI:
         default:
         {
+            int cpWght = engine.game_board.wghts.GetWeight(SIDE_TO_MOVE);
+            if (engine.game_board.turn == c) cp_score_position_temp += cpWght;
+
             // no major pieces, and no more than one minor piece
             bool NoMajorPiecesEnemy  = engine.game_board.hasNoMajorPieces_t<enemy_of_color>();
             bool NoMajorPiecesFriend = engine.game_board.hasNoMajorPieces_t<c>();

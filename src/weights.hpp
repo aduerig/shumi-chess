@@ -21,7 +21,7 @@ inline constexpr int UPPERQ = 7;    // how many depths of "upper quissence" ther
 inline constexpr bool PVS_ENABLED = false;
 inline constexpr int PVS_MIN_DEPTH = 1;
 
-// History heuristic controls.
+// History heuristic controls (only used for move ordering)
 inline constexpr bool HISTORY_ENABLED = false;
 inline constexpr int HISTORY_MAX_SCORE = 16384;
 inline constexpr int HISTORY_BONUS_MULTIPLIER = 32;
@@ -41,11 +41,11 @@ inline constexpr ull HARD_ABORT_TIME_MSEC = 10'000;     // Used only in time con
 //inline constexpr bool SOFT_ABORT_ENABLED = true; 
 inline constexpr double SOFT_ABORT_SAFETY_FACTOR = 10.0;  // This is times the "expected time" we expect it to take
 
-// Delta pruning controls
+// Pruning controls
 inline constexpr bool DELTA_PRUNE_ON = true;
 inline constexpr int DELTA_MARGIN_CP = 300;     // Raise me and there is less pruning
 
-inline constexpr bool FUTILITY_PRUNE_ON = false;
+inline constexpr bool FUTILITY_PRUNE_ON = true;
 inline constexpr int FUTILITY_MARGIN_CP = 400;     // Raise me and there is less pruning
 
 
@@ -102,6 +102,7 @@ enum WghtIndxs
     DEVELOPMENT_OPENINGB,
     PASSED_PAWN_CONNECTED,
     PASSED_PAWN_CONNECTABLE,
+    NO_PAWNS,
     ISOLANI_OPEN_FILE,
     KING_CENTER_LATE,
     KEEP_ROOKS_WHEN_DOWN_PAWN,
@@ -112,6 +113,7 @@ enum WghtIndxs
     TRADE_MAX_BONUS,
     TRADE_ADVANTAGE_CAP,
     UNPUSHABLE_KNIGHT,
+    SIDE_TO_MOVE,
     LAST_VALUE              // I must be last in this list
 };
 
@@ -163,6 +165,7 @@ private:
     
     static constexpr int PASSED_PAWN_CONNECTED_WGHT = 5;   // Multiplied by passed pawn bonus, then divide it all by 3
     static constexpr int PASSED_PAWN_CONNECTABLE_WGHT = 5; // Added in cp for adjacent passed pawns on connectable ranks
+    static constexpr int NO_PAWNS_WGHT = -10;              // no pawns left
 
     // Pawn controlling center squares: (one per qualifiing pawn)
     static constexpr int PAWN_ON_CTR_DEF_WGHT = 22;     // center e4,d4 (white); and e5,d5, (black) "defensive" center squares
@@ -173,7 +176,7 @@ private:
     static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
     static constexpr int BISHOP_ON_CTR_WGHT = 23;  // Bishop controlling center squares (per square) (here we can look through other pieces)
 
-    static constexpr int TWO_BISHOPS_WGHT = 28;    // 2 or more bishops (only one bonus per side). Weighted by phase, more in endgame)
+    static constexpr int TWO_BISHOPS_WGHT = 29;    // 2 or more bishops (only one bonus per side). Weighted by phase, more in endgame)
 
     // Weird conditions to stop stupid moves in the opening
     static constexpr int QUEEN_OUT_EARLY_WGHT = -30;    // for landing on center squares only. only in opening.
@@ -209,6 +212,8 @@ private:
     static constexpr int KEEP_ROOKS_WHEN_DOWN_PAWN_WGHT = 10;
     static constexpr int TRADE_MAX_BONUS_WGHT = 120;    // NOT USED
     static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;    // NOT USED
+
+    static constexpr int SIDE_TO_MOVE_WGHT = 10;
 
 
 

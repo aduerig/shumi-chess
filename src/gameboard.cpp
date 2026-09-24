@@ -3291,6 +3291,14 @@ int GameBoard::count_knights_on_holes_cp_t(ull holes_bb) {
     return (n * wghts.GetWeight(KNIGHT_HOLE));
 }
 
+// ---------- no_pawns_left_cp_t ----------
+template<Color c> int GameBoard::no_pawns_left_cp_t() {
+    if (Bits_In[c][Piece::PAWN] == 0) {
+        return wghts.GetWeight(NO_PAWNS);
+    }
+    return 0;
+}
+
 // ---------- advanced_unpushable_knights_cp_t ----------
 // Reward knights on relative 5th/6th/7th ranks that can never be attacked
 // by an enemy pawn. Rook files are ignored.
@@ -4116,6 +4124,8 @@ template int GameBoard::attackers_on_enemy_king_near_cp_t<Color::BLACK>();
 
 template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::WHITE>();
 template int GameBoard::rook_endgame_keep_rooks_when_down_cp_t<Color::BLACK>();
+template int GameBoard::no_pawns_left_cp_t<Color::WHITE>();
+template int GameBoard::no_pawns_left_cp_t<Color::BLACK>();
 template int GameBoard::opposite_bishops_cp_t<Color::WHITE>(Score material_balance) const;
 template int GameBoard::opposite_bishops_cp_t<Color::BLACK>(Score material_balance) const;
 template int GameBoard::blocked_home_bishops_cp_t<Color::WHITE>();

@@ -654,7 +654,7 @@ static void found_move(Engine& engine,
     //int centiPawnsRel = (int)(minimax_ai.d_best_move_score_rel * 100.0);
     int centiPawnsRel = (int)convert_to_CP(minimax_ai.d_best_move_score_rel);
 
-    std::cout << "info string testing\n";
+    //std::cout << "info string testing\n";
 
     std::cout << "info"
             << " depth " << minimax_ai.max_attained_depth
