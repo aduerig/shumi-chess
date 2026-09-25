@@ -15,7 +15,7 @@ inline constexpr int MAX_PLY = 50;                 // Can never look ahead past 
 
 // Quissence controls
 inline constexpr int LOWERQ = 9;    // how many depths of "lower quissence" there are.
-inline constexpr int UPPERQ = 7;    // how many depths of "upper quissence" there are.
+inline constexpr int UPPERQ = 9;    // how many depths of "upper quissence" there are.
 
 // Principal Variation Search controls.
 inline constexpr bool PVS_ENABLED = false;
@@ -60,7 +60,7 @@ inline constexpr int RANDOMIZING_EQUAL_MOVES_DELTA = 45;      // In units of cen
 inline constexpr int RANDOM_MOVE_CANDIDATES = 8;             // I must be greater than 1
 
 // These are to control borrowing of time. Shumi and stockfish borrow a lot. The higher this ratio is, the more time it borrows.
-inline constexpr ull time_controlMaximum_loan_over = 5;     // used only in time control
+inline constexpr ull time_controlMaximum_loan_over = 6;     // used only in time control
 inline constexpr ull time_controlMaximum_loan_under= 2;     // used only in time control I cant be zero or all hell breaks loose
 
 // These are related to evaluation only ////////////////////////////////////////////////////////////////////////////

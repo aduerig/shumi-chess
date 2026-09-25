@@ -670,7 +670,6 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 
 
         #ifdef _DEBUGGING_TEMP
-
             if (fpDebug != nullptr) {
                 std::fprintf(fpDebug,
                     "\n Deeping ggg %d ply of %d msec=%6llu",
@@ -1082,12 +1081,20 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
             break;
         }
 
-
+        // tuple<Score, Move>, 
         best_move = get<1>(ret_val);    
 
         if (best_move.piece_type == Piece::NONE)
         {
             sout << " n_Multis=" << n_Multis << "  xx " << excluded_root_moves.size() << "  rr  " << endl;
+
+            GameState state = engine.is_game_over();
+            sout << "root no-move"
+                << " state=" << (int)state
+                << " draw_reason=" << engine.reason_for_draw
+                << " halfmove=" << engine.game_board.halfmove
+                << " fen=" << engine.game_board.to_fen()
+                << endl;
             assert(0);
         }
         if (best_move.piece_type == Piece::NONE) break;     // NOTE: should this ever happen?
@@ -1357,11 +1364,11 @@ void MinimaxAI::playground(int iPhase) {
     //python_engine->updateStats(found_move);
 
 
-    Score wcp_score = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
-    cout << " evaltest W = " << wcp_score << endl;
-    Score bcp_score = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
-    cout << " evaltest B = " << bcp_score << endl;
-    assert (wcp_score == -bcp_score);
+    // Score wcp_score = evaluate_board_t<ShumiChess::Color::WHITE>(eval_person);
+    // cout << " evaltest W = " << wcp_score << endl;
+    // Score bcp_score = evaluate_board_t<ShumiChess::Color::BLACK>(eval_person);
+    // cout << " evaltest B = " << bcp_score << endl;
+    // assert (wcp_score == -bcp_score);
 
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::WHITE>( pwnFileInfo.p[0]);
     // isOK = engine.game_board.build_pawn_file_summary_t<Color::BLACK>( pwnFileInfo.p[1]);
@@ -1388,7 +1395,9 @@ void MinimaxAI::playground(int iPhase) {
     // if (n_delta_tries==0) val=1.0;
     // else                  val=(double)n_delta_tosses/(double)n_delta_tries;
     // sout << " n_delta_tosses=" << n_delta_tosses << " ratio=" << val << endl;
-    // sout << "nFarts: " << nFarts << "  "  << nSemiFarts << "  " << endl;
+    assert (nodes_visited > 0);
+    double drat =  (double)nFarts / (double)nodes_visited;
+    sout << " nFarts=" << nFarts << "  "  << nSemiFarts << " rat= " << drat << endl;
 
     //engine.debug_print_repetition_table();
 
