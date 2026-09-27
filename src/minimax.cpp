@@ -18,9 +18,13 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-  #include <io.h>     // _fileno, _chsize (MSVC/MinGW)
+    #include <io.h>     // _fileno, _chsize (MSVC/MinGW)
+    #include <conio.h>     // _getch
 #else
-  #include <unistd.h> // fileno, ftruncate (POSIX)
+    #include <unistd.h> // fileno, ftruncate (POSIX)
+    // conio.h is Microsoft-only. On other platforms wait on a line instead of a keystroke.
+    #include <iostream>
+    static inline int _getch() { return std::cin.get(); }
 #endif
 
 
@@ -804,7 +808,8 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 //////////////////////////////////////////////////////////////////////////////////
 //
 //   This the entry point into the C to get a minimax AI move.
-//   It does "Iterative deepening". This is a "root position".
+//   This is a root position.
+//   It does "Iterative deepening". 
 //
 //     i_time_requested         -  requested time to spend (milliseconds)
 //     max_deepening_requested  -  requested depth
@@ -818,7 +823,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
 //
 //////////////////////////////////////////////////////////////////////////////////
 //
-// This is a "root position". The next human move triggers a new root position
+// This is a "root position". The next human move triggers a new root position.
 tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requested, int max_deepening_requested, int player_id
                 , int iRandomMoves
                 , int feat
@@ -1438,6 +1443,7 @@ void MinimaxAI::playground(int iPhase) {
 
 ////////// loop over all "deepenings" /////////////////////////////////////////////////////////////////////////
 //
+//  starts with a root position and performs successive deepenings from that position.
 //  cumul_time_msec is an output (time spent over all deepenings)
 //
 std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int depth
@@ -1500,7 +1506,7 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
             break;   // Stop deepening, no more depths.
         }
 
-        // the beast
+        // Perform one deepening at the current search depth.
 
         // Ha. Here we pass in the elapsed time, just for display, before the deeping.
         ret_val = do_a_deepening(depth
@@ -1969,7 +1975,13 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 const TTEntry2 &entry = it->second;
 
                 if (entry.depthh >= depth) {
+
                     const int level = top_deepening - depth;
+                    int level2 = (nPlys - 1);
+                    if (level != level2) {
+                        cout << level << "  "  << level2 << endl;
+                        assert(0);
+                    }
 
                     Score stored_score = convert_from_CP(entry.score_cp);
                     stored_score = mate_score_from_TT(stored_score, level);
@@ -2053,6 +2065,13 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                     #else
                         const int level = top_deepening - depth;
+                        int level2 = (nPlys - 1);
+                        if (level != level2) {
+                            cout << level << " sss "  << level2 << endl;
+                            assert(0);
+                        }
+
+
                         Score dScore = convert_from_CP(entry.score_cp);
                         dScore = mate_score_from_TT(dScore, level);
 
@@ -2067,9 +2086,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     if (entry_is_exact || USE_TT_BOUND_MOVE_ORDER) {
 
                         TT2_match_move = entry.best_move;
-                    }
-                    
-                    
+                    }       
                 }
                 
                 
@@ -2082,8 +2099,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // Purpose: avoid a false zero (no-move) result when the quick/capture-only generation missed moves
     // (or when you only needed to know whether any legal move exists). 
     if (n_legal_moves_found == 0) {
-        //assert(depth==0);
-        //assert (caps_only);
 
         // Call get_legal_moves_fast(), but only in "check mode". In this mode in is only trying to decide
         // wether its 0 moves or not. So it returns if it finds just one move.
@@ -2096,6 +2111,11 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     
     // Only one of me, per deepening.
     bool first_node_in_deepening = (top_deepening == depth);
+    bool level2 = (nPlys == 1);
+    if (first_node_in_deepening != level2) {
+        cout << first_node_in_deepening << "  "  << level2 << endl;
+        assert(0);
+    }
 
     if (first_node_in_deepening) {
 
@@ -2121,6 +2141,11 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     if (state != GameState::INPROGRESS) {
 
         int level = (top_deepening - depth);
+        int level2 = nPlys - 1;
+        if (level != level2) {
+            cout << level << "  "  << level2 << endl;
+            assert(0);
+        }
         assert(level >= 0);
 
         Score d_level = static_cast<Score>(level);
@@ -2167,6 +2192,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     if (!p_moves_to_loop_over->empty()) {
 
         // Resort moves based on varoius things
+        
         // Fascinating tradeoff. We could also call this if depth==0 and in check.
         // On one hand why not, because there could be a lot of responses, But on 
         // the otherhand there wont be that many. ANf we must be super fast here.
@@ -2179,6 +2205,12 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         #endif
 
         bool is_top_of_deepening = (depth == top_deepening);
+        bool level2 = (nPlys == 1);
+        if (is_top_of_deepening != level2) {
+            cout << is_top_of_deepening << "  "  << level2 << endl;
+            assert(0);
+        }
+
 
         bool bOK = sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
         assert (bOK);
@@ -2307,10 +2339,13 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     }
                 }
 
-
-
-
-                const int level = top_deepening - depth;
+                const int level = top_deepening - depth; 
+                int level2 = (nPlys - 1);
+                if (level != level2) {
+                    cout << level << "  "  << level2 << endl;
+                    assert(0);
+                }
+      
                 const Score score_for_TT = mate_score_to_TT(d_best_score, level);
                 const int cp_score_temp = convert_to_CP(score_for_TT);
 
@@ -3998,6 +4033,9 @@ int MinimaxAI::cp_score_positional_get_middle_cp_t(int nPhase) {
     icp_temp = engine.game_board.rook_7th_rankness_cp_t<c>();
     cp_score_position_temp += icp_temp;
 
+    icp_temp = engine.game_board.opposite_wing_pawn_storm_cp_t<c>();
+    cp_score_position_temp += icp_temp;
+
     // if (nPhase != GamePhase::ENDGAME_LATE) {
     //     icp_temp = engine.game_board.potential_checks_against_king_cp_t<c>();
     //     cp_score_position_temp += icp_temp;
@@ -4038,7 +4076,7 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
 
     // if (nPhase >= GamePhase::MIDDLE) {
     //     icp_temp = engine.game_board.opposite_bishops_cp_t<c>(cp_material_all);
-    //     cp_score_position_temp += icp_temp;
+    //     //cp_score_position_temp += icp_temp;
     // }
 
     if (noMajorPiecesEnemy) {
@@ -4072,9 +4110,6 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
 
     // Computes "Bits_In" for each piece (many eval routines use these shortcuts for speed)
     engine.game_board.compute_bits_in();        // Computes shortcuts for "bits_in()", used in the eval.
-
-    //int tempsumNP = 0;
-
     // 
     // First compute up the material.  (final eval is (material+positional)).
     // Outputs of this section:
@@ -4089,8 +4124,8 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
         int cp_pawns_only_temp;
 
         int cp_score_mat_temp = (color1 == Color::WHITE)
-            ? engine.game_board.get_material_for_color2_t<Color::WHITE>(cp_pawns_only_temp)
-            : engine.game_board.get_material_for_color2_t<Color::BLACK>(cp_pawns_only_temp);
+            ? engine.game_board.get_material_for_color2_fast<Color::WHITE>(cp_pawns_only_temp)
+            : engine.game_board.get_material_for_color2_fast<Color::BLACK>(cp_pawns_only_temp);
         //assert(cp_score_mat_temp == cp_score_mat_temp2);
         assert(cp_score_mat_temp >= 0);
 

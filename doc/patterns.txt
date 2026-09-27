@@ -15,3 +15,19 @@ wether the eval is inadequete, or its just an artifact.  (see 3. for a discussio
    but more easily may find a way to get 2 peices for a rook and pawn (material difference is less than a pawn). 
    But why is Shumi always on the pawn heavy side?
   5. 
+
+
+
+
+
+
+
+
+  session 5678
+  ========================
+
+
+  Over advanced pawns (no support)
+  No king protection
+  LOsing a queen for r,n,p. 
+

@@ -9,7 +9,7 @@
 // Fuses. Causes varous actions when limits hit
 inline constexpr int MAX_MOVES = 256;       // Maximum number of legal moves.
 inline constexpr int MAXIMUM_DEEPENING = 40;       //    If this wall hit, deepening stops. This can happen  50-move rule, all nodes return DRAW, so in so quickly
-                                                   // zips through these, that it runs out of depth before the time limit
+                                                   // zips through these, that it runs out of deepinings before the time limit
 inline constexpr ull MAX_NODES = (ull)5.0e10;      // When this happens, it acts like a user abort (drops back to last deepening)
 inline constexpr int MAX_PLY = 50;                 // Can never look ahead past this many ply.
 
@@ -82,6 +82,7 @@ enum WghtIndxs
     PAWN_ON_CTR_OFF,
     PAWN_ON_ADV_CTR,
     PAWN_ON_ADV_FLK,
+    OPPOSITE_WING_PAWN_STORM,
     KNIGHT_ON_CTR,
     BISHOP_ON_CTR,
     TWO_BISHOPS,
@@ -143,8 +144,6 @@ private:
     static constexpr int KNIGHT_HOLE_WGHT = -25;      // A knight sitting in a hole.
     static constexpr int PAWN_HOLE_OPEN_FILE_WGHT = -15;    // also applies to the backward pawn behind the hole
 
-    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 25;    // NOT USED
-
     // Doubled pawns
     static constexpr int DOUBLED_WGHT      = -18;           // One slam for each pawn more than one on a file
     static constexpr int DOUBLED_ROOK_WGHT = -18;           // Same, but doubled pawn on rook file
@@ -172,6 +171,7 @@ private:
     static constexpr int PAWN_ON_CTR_OFF_WGHT = 38;     // center e5,d5 (white); and e4,d4, (white) "offensive" center squares
     static constexpr int PAWN_ON_ADV_CTR_WGHT = 26;     // "advanced center" e6,d6,e7,d7 (White); or e3,d3,e2,d2 (Black)
     static constexpr int PAWN_ON_ADV_FLK_WGHT = 11;      // "advanced flank" c5,f5 (White), c4,f4 (black); 
+    static constexpr int OPPOSITE_WING_PAWN_STORM_WGHT = 5;
 
     static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
     static constexpr int BISHOP_ON_CTR_WGHT = 23;  // Bishop controlling center squares (per square) (here we can look through other pieces)
@@ -208,13 +208,16 @@ private:
     static constexpr int ATTACKERS_ON_KING_WGHT = 23;      // For each square (per square) at or around the king box. Includes the king square itself.
 
     static constexpr int CENTER_OCCUPY_PIECES_WGHT = 24;  // Used only in CRAZY_IVAN. Doesnt count pawns or kings.
-
+    
+    static constexpr int SIDE_TO_MOVE_WGHT = 10;
     static constexpr int KEEP_ROOKS_WHEN_DOWN_PAWN_WGHT = 10;
+
+
+
+    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 25;    // NOT USED
+
     static constexpr int TRADE_MAX_BONUS_WGHT = 120;    // NOT USED
     static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;    // NOT USED
-
-    static constexpr int SIDE_TO_MOVE_WGHT = 10;
-
 
 
     static constexpr int NO_MOVE_SAME_TWICE_WGHT = -20; // NOT USED

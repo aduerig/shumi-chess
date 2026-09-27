@@ -1,5 +1,346 @@
 do not delete me
 
+
+
+
+
+
+Add one new evaluation feature to ShumiChess: a gentle pawn-storm incentive when the kings are on opposite wings.
+
+Make only the changes required for this feature. Do not refactor, rename, reformat, optimize, or clean up unrelated code.
+
+Preserve CRLF line endings in every modified file.
+
+## 1. Feature purpose
+
+The feature should:
+
+- Encourage friendly pawns to advance on the wing containing the enemy king.
+- Discourage friendly pawns from advancing on the wing containing their own king.
+- Use equal reward and penalty magnitudes.
+- Activate only when the kings are on opposite wings.
+- Be classified through the existing weight system as a middlegame evaluation feature.
+
+This feature supplies only a gentle positional motivation. It must not attempt to determine whether a particular pawn move is tactically safe.
+
+## 2. Follow the existing evaluation architecture
+
+Locate nearby evaluation features that:
+
+- Have a named weight in the existing weight enum or identifier system.
+- Are registered in `weights.cpp`.
+- Are accessed through `wghts.GetWeight(...)`.
+- Are classified as middlegame evaluation features.
+- Have templated White/Black implementations if that is the nearby convention.
+- Are incorporated into the main evaluation using the existing sign and perspective conventions.
+
+Duplicate that established structure exactly.
+
+Do not introduce a second weight system.
+
+Do not bypass the existing evaluation-volume control.
+
+Do not change any existing feature or weight.
+
+## 3. Add one weight only
+
+Add one new weight identifier with a clear name such as:
+
+```cpp
+OPPOSITE_WING_PAWN_STORM
+```
+
+Use the project’s exact existing naming and registration conventions.
+
+Register it as a middlegame-type evaluation term.
+
+Use an initial value equivalent to:
+
+```text
+2 centipawns per pawn per counted advanced rank
+```
+
+Use only this one tunable weight for both:
+
+- The reward for advancing toward the enemy king.
+- The penalty for advancing in front of the friendly king.
+
+Do not add separate offensive and defensive weights.
+
+Do not add separate weights by file, pawn, color, or rank.
+
+## 4. Define the king wings by current file
+
+Use each king’s current file.
+
+Classify king files as:
+
+```text
+Queenside wing: files a, b, c
+Center:         files d, e
+Kingside wing: files f, g, h
+```
+
+Do not use castling history.
+
+Do not require that either king actually castled.
+
+Do not use castling rights.
+
+The feature is active only in these two cases:
+
+```text
+Friendly king on a/b/c and enemy king on f/g/h
+Friendly king on f/g/h and enemy king on a/b/c
+```
+
+The feature must return zero when:
+
+- Either king is on file d or e.
+- Both kings are on files a/b/c.
+- Both kings are on files f/g/h.
+
+Use the existing square/file constants and the project’s reversed bitboard-file representation correctly. Do not assume that numerical file zero means file a.
+
+## 5. Evaluate every existing friendly pawn
+
+When the feature is active, inspect every existing pawn belonging to the evaluated color.
+
+For each pawn:
+
+- Pawns on files d and e contribute zero.
+- Pawns on the enemy king’s three-file wing receive a reward.
+- Pawns on the friendly king’s three-file wing receive an equal penalty.
+
+Count each existing pawn separately, including doubled pawns.
+
+Do not assume that one pawn exists on each original file.
+
+Do not penalize a missing pawn in this feature. Existing pawn-shelter evaluation remains responsible for missing shelter pawns.
+
+Do not modify passed-pawn, isolated-pawn, doubled-pawn, backward-pawn, or pawn-hole evaluation.
+
+## 6. Measure relative pawn advancement
+
+Measure advancement from the pawn’s normal starting rank.
+
+Conceptually:
+
+```cpp
+// White pawn
+advance = current_rank - white_starting_pawn_rank;
+
+// Black pawn
+advance = black_starting_pawn_rank - current_rank;
+```
+
+Use the project’s existing rank constants or rank representation.
+
+A pawn on its original rank contributes zero.
+
+Cap the counted advancement at three ranks:
+
+```cpp
+const int counted_advance = std::min(advance, 3);
+```
+
+Do not award more than three advancement units to one pawn through this feature.
+
+The passed-pawn evaluation remains responsible for the special value of very advanced pawns.
+
+Legal pawns should not produce negative advancement. Preserve existing assertions or add a narrowly relevant debug assertion if appropriate, but do not add runtime clamping or unrelated defensive code.
+
+## 7. Calculate the raw feature value
+
+For the evaluated color, calculate:
+
+```text
+raw units =
+    sum of capped advancement for pawns on the enemy king’s wing
+  - sum of capped advancement for pawns on the friendly king’s wing
+```
+
+Then apply the single existing weight:
+
+```cpp
+score_cp = raw_units * wghts.GetWeight(OPPOSITE_WING_PAWN_STORM);
+```
+
+Examples with a weight of 2 cp:
+
+```text
+Pawn on enemy wing advanced 0 ranks:   0 cp
+Pawn on enemy wing advanced 1 rank:   +2 cp
+Pawn on enemy wing advanced 2 ranks:  +4 cp
+Pawn on enemy wing advanced 3+ ranks: +6 cp
+
+Pawn on own wing advanced 1 rank:     -2 cp
+Pawn on own wing advanced 2 ranks:    -4 cp
+Pawn on own wing advanced 3+ ranks:   -6 cp
+```
+
+If both offensive and defensive pawns have advanced, add all their contributions normally.
+
+## 8. Integrate it as a middlegame feature
+
+Add the result to the evaluation in the same location and manner as nearby middlegame positional features.
+
+Use the existing phase machinery.
+
+The feature should be:
+
+- A middlegame consideration.
+- Reduced or absent in the endgame according to the existing middlegame-feature classification.
+- Subject to the same non-material evaluation scaling or volume control as comparable nearby features.
+
+Do not create custom phase interpolation.
+
+Do not change existing game-phase detection.
+
+Do not add an independent endgame test if the weight system’s middlegame classification already supplies the correct phase behavior.
+
+## 9. Preserve evaluation symmetry
+
+The implementation must be color-symmetric.
+
+For the same board:
+
+```cpp
+evaluate_board_t<WHITE>(...) == -evaluate_board_t<BLACK>(...)
+```
+
+must remain true, subject to the evaluator’s existing conventions.
+
+Use a templated implementation if that matches nearby evaluation code.
+
+Do not write separate unrelated White and Black algorithms.
+
+## 10. No additional behavior
+
+Do not:
+
+- Change pawn movement or move generation.
+- Change search.
+- Change move ordering.
+- Change pruning.
+- Change king-safety features.
+- Change pawn-shelter evaluation.
+- Change castling rewards.
+- Change passed-pawn bonuses.
+- Detect open files.
+- Detect attacks on the king.
+- Detect whether pawn pushes are safe.
+- Add mobility evaluation.
+- Add new statistics.
+- Add diagnostic output.
+- Add a feature-control boolean.
+- Add a feature-mask bit.
+- Change existing comments.
+- Remove unused code.
+- Modify unrelated formatting.
+
+This task adds only the opposite-wing pawn-storm evaluation feature.
+
+## 11. Verification positions
+
+Add no permanent test framework unless one already exists and a nearby evaluation feature has directly comparable tests. Temporary local verification is acceptable but must not remain as unrelated debug code.
+
+Verify at least these cases.
+
+### Case A: Kings on the same wing
+
+```text
+White king: g1
+Black king: g8
+```
+
+Expected feature score:
+
+```text
+0
+```
+
+regardless of pawn advancement.
+
+### Case B: One king in the center
+
+```text
+White king: g1
+Black king: e8
+```
+
+Expected feature score:
+
+```text
+0
+```
+
+### Case C: Opposite-wing kings
+
+```text
+White king: g1
+Black king: b8
+```
+
+For White:
+
+```text
+a/b/c pawn advancement: positive
+f/g/h pawn advancement: negative
+d/e pawn advancement: zero
+```
+
+### Case D: Reversed colors and wings
+
+```text
+White king: b1
+Black king: g8
+```
+
+Verify the exact color-reversed behavior.
+
+### Case E: Advancement cap
+
+Verify that a pawn advanced four or five ranks contributes the same raw advancement value as three ranks.
+
+### Case F: Symmetry
+
+Verify that the new feature preserves the evaluator’s White/Black sign symmetry.
+
+## 12. Regression verification
+
+Build the existing targets.
+
+Run the fixed minimax regression test.
+
+Verify:
+
+- The project compiles without new warnings.
+- No illegal moves or assertions occur.
+- Search functionality is unchanged.
+- Only evaluation-dependent move or score changes are possible.
+- Disabling the new weight by setting it to zero reproduces the previous move chains, scores, and node counts exactly.
+- Restoring the initial weight activates the feature.
+
+## 13. Report
+
+Report:
+
+- Every file modified.
+- The new weight identifier.
+- Its initial value.
+- Where it was classified as a middlegame feature.
+- The evaluation routine added or extended.
+- Where the result was incorporated into evaluation.
+- Build result.
+- Results of the six verification cases.
+
+Make no other changes.
+
+
+
+
+
 ========================================================================================
 ========================================================================================
 task list

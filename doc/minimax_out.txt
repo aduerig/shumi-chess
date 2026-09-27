@@ -1,6 +1,6 @@
 
 settings depth=7 max_ply=20 positions=6 flags=0x6 player=3 time_ms=2
-summary ep=38132 nd=79101866 nd_avg=659182 moves=120
+summary ep=38678 nd=81148174 nd_avg=676234 moves=120
 
 [Event "Shumi minimax regression pos 0"]
 [SetUp "1"]
@@ -37,10 +37,10 @@ Nc3 {0.99} O-O {-0.89} 12. h3 {0.88} Nh6 {-0.89} 13. O-O {0.89} Nb4 {-0.79}
 [FEN "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30"]
 [Result "*"]
 
-30. R6e4 {2.42} f5 {-2.50} 31. Re7 {2.52} Nd5 {-2.46} 32. Bxd5 {2.49} cxd5
-{-2.51} 33. g3 {2.55} Rg7 {-2.42} 34. R7e5 {2.53} Rd8 {-2.56} 35. R1e3 {2.66}
-h5 {-2.49} 36. Nd2 {2.58} h4 {-2.45} 37. Nf1 {2.56} hxg3 {-2.39} 38. fxg3
-{2.47} b6 {-2.40} 39. Kd2 {2.55} f4 {-2.37} *
+30. R6e4 {2.36} Nd5 {-2.47} 31. Kd1 {2.57} f5 {-2.25} 32. Rh4 {2.38} Rg6
+{-2.35} 33. c4 {2.33} Nf6 {-2.33} 34. Nd2 {2.38} Rd8 {-2.30} 35. b3 {2.26} Ne4
+{-2.17} 36. Nxe4 {2.44} Rxd4 {-2.35} 37. Kc1 {2.34} b6 {-2.12} 38. Rf4 {2.44}
+fxe4 {-2.58} 39. Rexe4 {2.58} Rd8 {-2.70} *
 
 [Event "Shumi minimax regression pos 4"]
 [SetUp "1"]

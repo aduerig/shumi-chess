@@ -366,6 +366,7 @@ class GameBoard {
         template<Color c> int count_knights_on_holes_cp_t(ull holes_bb);
         template<Color c> int advanced_unpushable_knights_cp_t();
         template<Color c> int no_pawns_left_cp_t();
+        template<Color c> int opposite_wing_pawn_storm_cp_t();
         template<Color c> int rooks_file_status_cp_t(const PInfo& pawnInfoF, const PInfo& pawnInfoE);
 
 
@@ -417,7 +418,7 @@ class GameBoard {
 
         template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PInfo& PInfoEnemy) const;
         template<Color c> int get_material_for_color_t(int& cp_pawns_only);
-        template<Color c> int get_material_for_color2_t(int& cp_pawns_only);    // faster, but needs compute_bits_in() called first)
+        template<Color c> int get_material_for_color2_fast(int& cp_pawns_only);    // faster, but needs compute_bits_in() called first)
         template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
 
         template<Color c> double count_guard_pawn_files_t(const PInfo& PInfoIn, const PInfo& PInfoEnemy, int k_file) const;

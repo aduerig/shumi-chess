@@ -116,7 +116,7 @@ public:
     // Largest history-table value produced during the game.
     int history_largest_score = 0;
 
-    int top_deepening = 0;         // thhis is depth at top of recursion (depth==0 at bottom of recursion)
+    int top_deepening = 0;         // this is depth at top of recursion (depth==0 at bottom of recursion)
     int maximum_deepening = 0;      // used for display only
 
     int cp_score_material_avg = 0;

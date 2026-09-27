@@ -80,12 +80,15 @@
 
 #endif
 
-
+//
+// The incoming score has had a "mate marker" added to it. Here we remove that marker, so now
+// its a real "Score" that can be comraed to other Scores.
+//
 inline Score mate_score_to_TT(Score score, int level)
 {
     if (IS_MATE_SCORE(score)) {
         if (score > 0) {
-            // Remove the distance from the current root.
+            // Remove the "distance from the current root".
             return score + level;
         } else {
             // Remove the distance from the current root.

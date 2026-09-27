@@ -5,11 +5,22 @@
 #include <random>
 #include <chrono>  
 
+#ifdef _WIN32
+    #include <io.h>     // _fileno, _chsize (MSVC/MinGW)
+    #include <conio.h>     // _getch
+#else
+    #include <unistd.h> // fileno, ftruncate (POSIX)
+    // conio.h is Microsoft-only. On other platforms wait on a line instead of a keystroke.
+    #include <iostream>
+    static inline int _getch() { return std::cin.get(); }
+#endif
+
 
 #include "gameboard.hpp"
 #include "weights.hpp"
+
 #if defined(_MSC_VER)
-#include <intrin.h>   // _BitScanForward64 / _BitScanReverse64
+    #include <intrin.h>   // _BitScanForward64 / _BitScanReverse64
 #endif
 
 //
@@ -2603,7 +2614,8 @@ template<Color c> int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     return cp_score_mat_temp;
 }
 
-template<Color c> int GameBoard::get_material_for_color2_t(int& cp_pawns_only) {
+// Faster but I need the "Bits_in" arrays to be already computed.
+template<Color c> int GameBoard::get_material_for_color2_fast(int& cp_pawns_only) {
     int cp_score_mat_temp = 0;
 
     cp_pawns_only = Bits_In[c][Piece::PAWN] * centipawn_score_of(Piece::PAWN);
@@ -2790,6 +2802,53 @@ int GameBoard::bishops_attacking_center_squares_cp_t()
     itemp += bishops_attacking_square_t<c>(square_d5);
 
     return (itemp*wghts.GetWeight(BISHOP_ON_CTR));
+}
+
+// ---------- opposite_wing_pawn_storm_cp_t ----------
+template<Color c>
+int GameBoard::opposite_wing_pawn_storm_cp_t()
+{
+    constexpr Color enemy = utility::representation::opposite_color_t<c>;
+
+    const ull friendly_king = get_pieces_template<Piece::KING, c>();
+    const ull enemy_king = get_pieces_template<Piece::KING, enemy>();
+
+    assert(friendly_king != 0ULL);
+    assert(enemy_king != 0ULL);
+
+    const int friendly_king_file = utility::bit::bitboard_to_lowest_square_fast(friendly_king) & 7;
+    const int enemy_king_file = utility::bit::bitboard_to_lowest_square_fast(enemy_king) & 7;
+
+    auto wing = [](int file) {
+        if (file <= ColHA::COL_F) return 1;
+        if (file >= ColHA::COL_C) return -1;
+        return 0;
+    };
+
+    const int friendly_king_wing = wing(friendly_king_file);
+    const int enemy_king_wing = wing(enemy_king_file);
+
+    if (friendly_king_wing == 0 || enemy_king_wing == 0) return 0;
+    if (friendly_king_wing == enemy_king_wing) return 0;
+
+    int raw_units = 0;
+    ull pawns = get_pieces_template<Piece::PAWN, c>();
+
+    while (pawns) {
+        const Square pawn_square = utility::bit::lsb_and_pop_to_square(pawns);
+        const int pawn_wing = wing(pawn_square & 7);
+        if (pawn_wing == 0) continue;
+
+        const int pawn_rank = pawn_square >> 3;
+        const int advance = (c == Color::WHITE) ? (pawn_rank - Row::ROW_2) : (Row::ROW_7 - pawn_rank);
+        assert(advance >= 0);
+
+        const int counted_advance = std::min(advance, 3);
+        if (pawn_wing == enemy_king_wing) raw_units += counted_advance;
+        if (pawn_wing == friendly_king_wing) raw_units -= counted_advance;
+    }
+
+    return raw_units * wghts.GetWeight(OPPOSITE_WING_PAWN_STORM);
 }
 
 // ---------- two bishops (2 bishops)
@@ -3922,35 +3981,19 @@ template<Color c> int GameBoard::rook_endgame_keep_rooks_when_down_cp_t()
     return wghts.GetWeight(KEEP_ROOKS_WHEN_DOWN_PAWN);
 }
 
-//
-// Compresses a score toward zero using, where x=score_cp, and y is returned.
-//      Formulae: y = x^2 / (x + k)
-//
-// Properties:
-//      * preserves sign of x
-//      * monotonic
-//      * y <= x    (naturally bounded below identity)
-//      * y->x as x->infinity
-//      * y = x/2 when x = k
-//
 Score GameBoard::compress_drawish_score_cp(Score score_cp, int k_cp) const
 {
     if (score_cp == 0) return 0;
 
-    assert(k_cp >= 0);
+    assert(k_cp >= 0 && k_cp <= 100);
 
-    const bool b_positive = (score_cp > 0);
+    const Score reduction_cp = (score_cp * k_cp) / 100;
+    const Score compressed_score = score_cp - reduction_cp;
 
-    const Score x =
-        b_positive ? score_cp
-                   : -score_cp;
+    assert(compressed_score >= 0);
+    assert(compressed_score <= score_cp);
 
-    const Score y = (x * x) / (x + k_cp);
-
-    assert(y >= 0);
-    assert(y <= x);
-
-    return b_positive ? y : -y;
+    return compressed_score;
 }
 
 
@@ -3964,17 +4007,63 @@ Score GameBoard::compress_drawish_score_cp(Score score_cp, int k_cp) const
 // Therefore return value is <= 0.
 template<Color c> int GameBoard::opposite_bishops_cp_t(Score material_balance_cp) const
 {
+//    cout
+//         << "opposite_bishops_cp_t"
+//         //<< " fen=" << to_fen()
+//         << " material=" << material_balance_cp
+//         << " wb_bits=" << bits_in(white_bishops)
+//         << " bb_bits=" << bits_in(black_bishops)
+//         << " Bits_In_wb=" << (int)Bits_In[Color::WHITE][Piece::BISHOP]
+//         << " Bits_In_bb=" << (int)Bits_In[Color::BLACK][Piece::BISHOP]
+//         << endl;
+
     if (material_balance_cp <= 0) return 0;
 
-    const int k_cp = wghts.GetWeight(OPPOSITE_BISHOPS);
+    const int white_bishop_count = bits_in(white_bishops);
+    const int black_bishop_count = bits_in(black_bishops);
+
+    if (white_bishop_count != 1) return 0;
+    if (black_bishop_count != 1) return 0;
+
+    const Square white_bishop_sq = utility::bit::bitboard_to_lowest_square_fast(white_bishops);
+    const Square black_bishop_sq = utility::bit::bitboard_to_lowest_square_fast(black_bishops);
+
+    const int white_bishop_color = ((white_bishop_sq % 8) + (white_bishop_sq / 8)) & 1;
+    const int black_bishop_color = ((black_bishop_sq % 8) + (black_bishop_sq / 8)) & 1;
+
+    if (white_bishop_color == black_bishop_color) return 0;     // bishops are not 
+
+    const int max_reduction_percent = wghts.GetWeight(OPPOSITE_BISHOPS);
+
+    const int bishop_value_cp = centipawn_score_of(Piece::BISHOP);
+    const int opposite_bishops_material_cp = 2 * bishop_value_cp;
+
+    const int total_non_pawn_material_cp =
+        (Bits_In[Color::WHITE][Piece::KNIGHT] + Bits_In[Color::BLACK][Piece::KNIGHT]) * centipawn_score_of(Piece::KNIGHT)
+        + (white_bishop_count + black_bishop_count) * bishop_value_cp
+        + (Bits_In[Color::WHITE][Piece::ROOK]   + Bits_In[Color::BLACK][Piece::ROOK])   * centipawn_score_of(Piece::ROOK)
+        + (Bits_In[Color::WHITE][Piece::QUEEN]  + Bits_In[Color::BLACK][Piece::QUEEN])  * centipawn_score_of(Piece::QUEEN);
+
+    assert(total_non_pawn_material_cp >= opposite_bishops_material_cp);
+
+    const int material_scaled_reduction_percent =
+        (max_reduction_percent * opposite_bishops_material_cp) / total_non_pawn_material_cp;
 
     // Brings score closer to zero.
-    const Score compressed_score = compress_drawish_score_cp(material_balance_cp, k_cp);
-
+    const Score compressed_score = compress_drawish_score_cp(material_balance_cp, material_scaled_reduction_percent);
+  
     const Score delta = compressed_score - material_balance_cp;
 
     assert(delta <= 0);             // returned score change is always negative
     assert(material_balance_cp + delta >= 0);
+
+    // show board
+    string out = utility::representation::gameboard_to_string(*this);
+    sout << out << endl;
+    cout << "      assert()!=" << delta << " wee=" << material_balance_cp << endl;
+    // _getch();
+    // assert(0);
+
 
     return (int)delta;
 }
@@ -3997,8 +4086,8 @@ template int GameBoard::center_closeness_bonus<Color::BLACK>();
 
 template int GameBoard::get_material_for_color_t<Color::WHITE>(int& cp_pawns_only);
 template int GameBoard::get_material_for_color_t<Color::BLACK>(int& cp_pawns_only);
-template int GameBoard::get_material_for_color2_t<Color::WHITE>(int& cp_pawns_only);
-template int GameBoard::get_material_for_color2_t<Color::BLACK>(int& cp_pawns_only);
+template int GameBoard::get_material_for_color2_fast<Color::WHITE>(int& cp_pawns_only);
+template int GameBoard::get_material_for_color2_fast<Color::BLACK>(int& cp_pawns_only);
 
 // pawns_attacking_square_t
 template int GameBoard::pawns_attacking_square_t<Color::WHITE>(int);
@@ -4028,6 +4117,10 @@ template int GameBoard::bishops_attacking_square_t<Color::BLACK>(int);
 // bishops_attacking_center_squares_cp_t
 template int GameBoard::bishops_attacking_center_squares_cp_t<Color::WHITE>();
 template int GameBoard::bishops_attacking_center_squares_cp_t<Color::BLACK>();
+
+// opposite_wing_pawn_storm_cp_t
+template int GameBoard::opposite_wing_pawn_storm_cp_t<Color::WHITE>();
+template int GameBoard::opposite_wing_pawn_storm_cp_t<Color::BLACK>();
 
 // two_bishops_cp_t
 template int GameBoard::two_bishops_cp_t<Color::WHITE>(int) const;
