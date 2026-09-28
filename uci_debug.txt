@@ -7,3 +7,443 @@ isready
 go wtime 300000 btime 300000 movestogo 40
 [1;34mNew Game[0m
 TTable2 entries before clear=0
+
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: e4    ; +0.33  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: e4    ; +0.06  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: d4    ; +0.31  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: e4    ; +0.16  TTT 0
+0 Deeping 5 ply of 4 msec=     4/0 Best: e4    ; +0.26  TTT 0
+0 Deeping 6 ply of 4 msec=    19/24 Best: e4    ; +0.15  TTT 0
+0 Deeping 7 ply of 4 msec=   118/114 Best: e4    ; +0.31  TTT 0
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: d4    ; +0.33  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: d4    ; +0.06  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: d4    ; +0.31  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: d4    ; +0.06  TTT 0
+0 Deeping 5 ply of 4 msec=     2/0 Best: d4    ; +0.26  TTT 0
+0 Deeping 6 ply of 4 msec=    16/12 Best: d4    ; +0.06  TTT 0
+0 Deeping 7 ply of 4 msec=   118/96 Best: d4    ; +0.26  TTT 0
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf3   ; +0.26  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nf3   ; -0.01  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf3   ; +0.26  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nc3   ; +0.06  TTT 0
+0 Deeping 5 ply of 4 msec=     2/0 Best: Nc3   ; +0.26  TTT 0
+0 Deeping 6 ply of 4 msec=    17/12 Best: Nc3   ; +0.06  TTT 0
+0 Deeping 7 ply of 4 msec=   102/102 Best: Nc3   ; +0.26  TTT 0
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: Nf3   ; +0.26  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: Nf3   ; -0.01  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: Nf3   ; +0.26  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: Nf3   ; +0.01  TTT 0
+0 Deeping 5 ply of 4 msec=     2/0 Best: Nf3   ; +0.26  TTT 0
+0 Deeping 6 ply of 4 msec=    15/12 Best: Nf3   ; +0.06  TTT 0
+0 Deeping 7 ply of 4 msec=    98/90 Best: Nf3   ; +0.26  TTT 0
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.17  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.10  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: e3    ; +0.17  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: c4    ; -0.01  TTT 0
+0 Deeping 5 ply of 4 msec=     3/0 Best: e3    ; +0.16  TTT 0
+0 Deeping 6 ply of 4 msec=    20/18 Best: e3    ; -0.04  TTT 0
+0 Deeping 7 ply of 4 msec=   107/120 Best: e3    ; +0.16  TTT 0
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.17  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.10  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: d3    ; +0.14  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: c4    ; -0.01  TTT 0
+0 Deeping 5 ply of 4 msec=     3/0 Best: d3    ; +0.09  TTT 0
+0 Deeping 6 ply of 4 msec=    16/18 Best: d3    ; -0.11  TTT 0
+0 Deeping 7 ply of 4 msec=   105/96 Best: d3    ; +0.09  TTT 0
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.17  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.10  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.10  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: c4    ; -0.01  TTT 0
+0 Deeping 5 ply of 4 msec=     2/0 Best: c3    ; +0.07  TTT 0
+0 Deeping 6 ply of 4 msec=    15/12 Best: c3    ; -0.13  TTT 0
+0 Deeping 7 ply of 4 msec=   105/90 Best: c3    ; +0.07  TTT 0
+
+0 Deeping 1 ply of 4 msec=     0/_ Best: f4    ; +0.17  TTT 0
+0 Deeping 2 ply of 4 msec=     0/0 Best: f4    ; -0.10  TTT 0
+0 Deeping 3 ply of 4 msec=     0/0 Best: f4    ; +0.10  TTT 0
+0 Deeping 4 ply of 4 msec=     0/0 Best: c4    ; -0.01  TTT 0
+0 Deeping 5 ply of 4 msec=     2/0 Best: c4    ; +0.05  TTT 0
+0 Deeping 6 ply of 4 msec=    13/12 Best: f3    ; -0.13  TTT 0
+0 Deeping 7 ply of 4 msec=    91/78 Best: c4    ; +0.03  TTT 0
+[pick_random_within_delta_rand] n_top=8 from candidates: 
+1  [0]  e4
+  [1]  d4
+  [2]  Nc3
+  [3]  Nf3
+  [4]  e3
+  [5]  d3
+  [6]  c3
+  [7]  c4
+
+ end multisss 26  Nc3 out of=8 
+[33m
+Went to depth 0 acumulatated min= 0.00711667 acumulatated msec= 427 request msec= 935[0m
+[1;96mNc3[0m   [1;96m26 =score,  [0m[1;93mVisited: 859,410 / 752% nodes total ---- 6,662,169 Evals[0m
+[1;92mTotal time: 0.43 sec[0m[1;92m   nodes/sec= 2,008,168   resp_avg= 0.429387[0m
+100.0% [aspiration summary] attempts=48 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5
+isready
+go wtime 296321 btime 290170 movestogo 39
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: d4    ; +0.26  TTT 0
+0 Deeping 2 ply of 5 msec=     0/0 Best: e4    ; +0.10  TTT 1
+0 Deeping 3 ply of 5 msec=     0/0 Best: d4    ; +0.26  TTT 23
+0 Deeping 4 ply of 5 msec=     1/0 Best: d4    ; +0.06  TTT 71
+0 Deeping 5 ply of 5 msec=     2/6 Best: d4    ; +0.26  TTT 557
+0 Deeping 6 ply of 5 msec=    11/12 Best: d4    ; +0.06  TTT 1737
+0 Deeping 7 ply of 5 msec=    65/66 Best: d4    ; +0.21  TTT 11666
+0 Deeping 8 ply of 5 msec=   284/390 Best: d4    ; +0.05  TTT 39429
+0 Deeping 9 ply of 5 msec=  1180/1704 Best: e3    ; +0.20  TTT 410408[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 8740 request msec= 7487[0m
+[1;96me3[0m   [1;96m20 =score,  [0m[1;93mVisited: 16,757,838 / 85% nodes total ---- 14,084,625 Evals[0m
+[1;92mTotal time: 8.74 sec[0m[1;92m   nodes/sec= 1,917,156   resp_avg= 4.585275[0m
+100.0% [aspiration summary] attempts=56 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5
+isready
+go wtime 287561 btime 266150 movestogo 38
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: d4    ; +0.09  TTT 410408
+0 Deeping 2 ply of 5 msec=     0/0 Best: d4    ; +0.26  TTT 410408
+0 Deeping 3 ply of 5 msec=     0/0 Best: d4    ; +0.26  TTT 410419
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nf3   ; +0.19  TTT 410455
+0 Deeping 5 ply of 5 msec=     4/0 Best: d4    ; +0.26  TTT 410833
+0 Deeping 6 ply of 5 msec=    14/24 Best: Qh5   ; +0.12  TTT 412324
+0 Deeping 7 ply of 5 msec=   152/84 Best: d4    ; +0.24  TTT 421160
+0 Deeping 8 ply of 5 msec=   297/912 Best: d4    ; +0.05  TTT 478229
+0 Deeping 9 ply of 5 msec=  2830/1782 Best: d4    ; +0.11  TTT 944598[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 8770 request msec= 7487[0m
+[1;96md4[0m   [1;96m11 =score,  [0m[1;93mVisited: 15,818,659 / 83% nodes total ---- 12,432,667 Evals[0m
+[1;92mTotal time: 8.77 sec[0m[1;92m   nodes/sec= 1,803,575   resp_avg= 5.980478[0m
+100.0% [aspiration summary] attempts=64 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4
+isready
+go wtime 278773 btime 244760 movestogo 37
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ne2   ; +0.40  TTT 944598
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bb5   ; +0.28  TTT 944598
+0 Deeping 3 ply of 5 msec=     0/0 Best: f3    ; +0.20  TTT 944598
+0 Deeping 4 ply of 5 msec=     0/0 Best: f3    ; +0.20  TTT 944598
+0 Deeping 5 ply of 5 msec=     2/0 Best: f3    ; +0.21  TTT 944598
+0 Deeping 6 ply of 5 msec=     5/12 Best: f3    ; +0.19  TTT 944598
+0 Deeping 7 ply of 5 msec=    12/30 Best: f3    ; +0.31  TTT 965288
+0 Deeping 8 ply of 5 msec=   268/72 Best: f3    ; +0.12  TTT 1008742
+0 Deeping 9 ply of 5 msec=  2194/1608 Best: f3    ; +0.17  TTT 1414822[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 6782 request msec= 7487[0m
+[1;96mf3[0m   [1;96m17 =score,  [0m[1;93mVisited: 12,392,884 / 82% nodes total ---- 9,797,551 Evals[0m
+[1;92mTotal time: 6.78 sec[0m[1;92m   nodes/sec= 1,827,308   resp_avg= 6.180909[0m
+100.0% [aspiration summary] attempts=72 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3
+isready
+go wtime 271962 btime 234961 movestogo 36
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nxf3  ; +0.44  TTT 1414822
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nxf3  ; +0.20  TTT 1414822
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nxf3  ; +0.44  TTT 1414822
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nxf3  ; +0.24  TTT 1414822
+0 Deeping 5 ply of 5 msec=     1/0 Best: Nxf3  ; +0.44  TTT 1414838
+0 Deeping 6 ply of 5 msec=     6/6 Best: Nxf3  ; +0.15  TTT 1414838
+0 Deeping 7 ply of 5 msec=     8/36 Best: Nxf3  ; +0.23  TTT 1428135
+0 Deeping 8 ply of 5 msec=   171/48 Best: Nxf3  ; +0.03  TTT 1469946
+0 Deeping 9 ply of 5 msec=  1622/1026 Best: Nxf3  ; +0.28  TTT 1788328[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 6603 request msec= 7487[0m
+[1;96mNxf3[0m   [1;96m28 =score,  [0m[1;93mVisited: 12,145,870 / 83% nodes total ---- 9,531,741 Evals[0m
+[1;92mTotal time: 6.60 sec[0m[1;92m   nodes/sec= 1,839,437   resp_avg= 6.265376[0m
+100.0% [aspiration summary] attempts=80 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6
+isready
+go wtime 265343 btime 227432 movestogo 35
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd3   ; +0.48  TTT 1788328
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bd2   ; +0.28  TTT 1788328
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bd2   ; +0.28  TTT 1788328
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bd2   ; +0.28  TTT 1788328
+0 Deeping 5 ply of 5 msec=     0/0 Best: Bd2   ; +0.28  TTT 1788328
+0 Deeping 6 ply of 5 msec=     0/0 Best: Bd2   ; +0.28  TTT 1788328
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bd2   ; +0.28  TTT 1788328
+0 Deeping 8 ply of 5 msec=     0/0 Best: Bd2   ; +0.11  TTT 1841712
+0 Deeping 9 ply of 5 msec=  3487/0 Best: Bd2   ; +0.29  TTT 2432697[33m
+Went to depth 0 acumulatated min= 0.2 acumulatated msec= 12952 request msec= 7487[0m
+[1;96mBd2[0m   [1;96m29 =score,  [0m[1;93mVisited: 24,314,609 / 87% nodes total ---- 20,231,421 Evals[0m
+[1;92mTotal time: 12.95 sec[0m[1;92m   nodes/sec= 1,877,182   resp_avg= 7.379961[0m
+100.0% [aspiration summary] attempts=88 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4
+isready
+go wtime 252371 btime 219993 movestogo 34
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd3   ; +0.49  TTT 2432697
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bb5   ; +0.23  TTT 2432697
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bb5   ; +0.34  TTT 2432697
+0 Deeping 4 ply of 5 msec=     1/0 Best: a3    ; +0.09  TTT 2432723
+0 Deeping 5 ply of 5 msec=     6/6 Best: Bd3   ; +0.51  TTT 2433288
+0 Deeping 6 ply of 5 msec=    36/36 Best: Bd3   ; +0.39  TTT 2434026
+0 Deeping 7 ply of 5 msec=   110/216 Best: Bd3   ; +0.51  TTT 2445009
+0 Deeping 8 ply of 5 msec=   647/660 Best: Bd3   ; +0.44  TTT 2489658
+0 Deeping 9 ply of 5 msec=  2033/3882 Best: Bd3   ; +0.44  TTT 2696584[33m
+Went to depth 0 acumulatated min= 0.2 acumulatated msec= 9508 request msec= 7487[0m
+[1;96mBd3[0m   [1;96m44 =score,  [0m[1;93mVisited: 17,385,909 / 89% nodes total ---- 14,228,149 Evals[0m
+[1;92mTotal time: 9.51 sec[0m[1;92m   nodes/sec= 1,828,479   resp_avg= 7.684046[0m
+100.0% [aspiration summary] attempts=96 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3
+isready
+go wtime 242842 btime 212589 movestogo 33
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bxc3  ; +0.71  TTT 2696584
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxc3  ; +0.49  TTT 2696584
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bxc3  ; +0.57  TTT 2696596
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bxc3  ; +0.40  TTT 2696615
+0 Deeping 5 ply of 5 msec=     2/0 Best: Bxc3  ; +0.65  TTT 2696855
+0 Deeping 6 ply of 5 msec=     9/12 Best: Bxc3  ; +0.61  TTT 2697255
+0 Deeping 7 ply of 5 msec=    40/54 Best: Bxc3  ; +0.65  TTT 2701903
+0 Deeping 8 ply of 5 msec=   141/240 Best: Bxc3  ; +0.36  TTT 2730741
+0 Deeping 9 ply of 5 msec=  1285/846 Best: Bxc3  ; +0.50  TTT 3008466[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 5515 request msec= 7487[0m
+[1;96mBxc3[0m   [1;96m50 =score,  [0m[1;93mVisited: 9,993,235 / 83% nodes total ---- 7,781,172 Evals[0m
+[1;92mTotal time: 5.52 sec[0m[1;92m   nodes/sec= 1,811,728   resp_avg= 7.413042[0m
+100.0% [aspiration summary] attempts=104 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8
+isready
+go wtime 237309 btime 205209 movestogo 32
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ng5   ; +0.57  TTT 3008466
+0 Deeping 2 ply of 5 msec=     0/0 Best: O-O   ; +0.40  TTT 3008466
+0 Deeping 3 ply of 5 msec=     0/0 Best: O-O   ; +0.65  TTT 3008466
+0 Deeping 4 ply of 5 msec=     0/0 Best: O-O   ; +0.65  TTT 3008466
+0 Deeping 5 ply of 5 msec=     2/0 Best: Qe2   ; +0.51  TTT 3008500
+0 Deeping 6 ply of 5 msec=     8/12 Best: Qe2   ; +0.51  TTT 3008532
+0 Deeping 7 ply of 5 msec=    21/48 Best: Qe2   ; +0.51  TTT 3023323
+0 Deeping 8 ply of 5 msec=   201/126 Best: Qe2   ; +0.41  TTT 3076384
+0 Deeping 9 ply of 5 msec=  3363/1206 Best: Qe2   ; +0.34  TTT 3877150[33m
+Went to depth 0 acumulatated min= 0.2 acumulatated msec= 14199 request msec= 7487[0m
+[1;96mQe2[0m   [1;96m34 =score,  [0m[1;93mVisited: 26,151,885 / 84% nodes total ---- 21,152,736 Evals[0m
+[1;92mTotal time: 14.20 sec[0m[1;92m   nodes/sec= 1,841,709   resp_avg= 8.167143[0m
+100.0% [aspiration summary] attempts=112 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7
+isready
+go wtime 223088 btime 179685 movestogo 31
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: O-O-O ; +1.05  TTT 3877150
+0 Deeping 2 ply of 5 msec=     0/0 Best: O-O-O ; +1.01  TTT 3877150
+0 Deeping 3 ply of 5 msec=     0/0 Best: O-O-O ; +1.11  TTT 3877183
+0 Deeping 4 ply of 5 msec=     2/0 Best: O-O-O ; +1.07  TTT 3877244
+0 Deeping 5 ply of 5 msec=    10/12 Best: O-O-O ; +0.94  TTT 3878858
+0 Deeping 6 ply of 5 msec=    60/60 Best: O-O-O ; +0.90  TTT 3881407
+0 Deeping 7 ply of 5 msec=   273/360 Best: O-O-O ; +0.78  TTT 3934886
+0 Deeping 8 ply of 5 msec=  1250/1638 Best: O-O-O ; +0.67  TTT 4037174[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 6985 request msec= 7487[0m
+[1;96mO-O-O[0m   [1;96m67 =score,  [0m[1;93mVisited: 11,391,385 / 82% nodes total ---- 8,639,353 Evals[0m
+[1;92mTotal time: 6.99 sec[0m[1;92m   nodes/sec= 1,630,808   resp_avg= 8.048965[0m
+100.0% [aspiration summary] attempts=119 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8
+isready
+go wtime 216075 btime 173057 movestogo 30
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Ng5   ; +1.11  TTT 4037174
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bb4   ; +0.67  TTT 4037174
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bb4   ; +0.67  TTT 4037174
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bb4   ; +0.67  TTT 4037174
+0 Deeping 5 ply of 5 msec=     0/0 Best: Bb4   ; +0.67  TTT 4037174
+0 Deeping 6 ply of 5 msec=     0/0 Best: Bb4   ; +0.67  TTT 4037174
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bb4   ; +0.72  TTT 4080895
+0 Deeping 8 ply of 5 msec=  1173/0 Best: Ng5   ; +0.45  TTT 4319513[33m
+Went to depth 0 acumulatated min= 0.2 acumulatated msec= 13735 request msec= 7487[0m
+[1;96mNg5[0m   [1;96m45 =score,  [0m[1;93mVisited: 18,661,504 / 86% nodes total ---- 14,883,252 Evals[0m
+[1;92mTotal time: 13.74 sec[0m[1;92m   nodes/sec= 1,358,597   resp_avg= 8.565972[0m
+100.0% [aspiration summary] attempts=126 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8
+isready
+go wtime 202314 btime 166457 movestogo 29
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rf1   ; +1.41  TTT 4319513
+0 Deeping 2 ply of 5 msec=     0/0 Best: Rf1   ; +1.37  TTT 4319513
+0 Deeping 3 ply of 5 msec=     1/0 Best: Rf1   ; +1.15  TTT 4319540
+0 Deeping 4 ply of 5 msec=     7/6 Best: Rf1   ; +0.67  TTT 4319673
+0 Deeping 5 ply of 5 msec=    39/42 Best: Qd2   ; +0.67  TTT 4321212
+0 Deeping 6 ply of 5 msec=   100/234 Best: Qd2   ; +0.48  TTT 4326527
+0 Deeping 7 ply of 5 msec=   478/600 Best: Qd2   ; +0.50  TTT 4371212
+0 Deeping 8 ply of 5 msec=  1314/2868 Best: Rf1   ; +0.39  TTT 4590449[33m
+Went to depth 0 acumulatated min= 0.2 acumulatated msec= 10490 request msec= 7487[0m
+[1;96mRf1[0m   [1;96m39 =score,  [0m[1;93mVisited: 15,760,959 / 84% nodes total ---- 12,219,581 Evals[0m
+[1;92mTotal time: 10.49 sec[0m[1;92m   nodes/sec= 1,502,332   resp_avg= 8.726405[0m
+100.0% [aspiration summary] attempts=133 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7
+isready
+go wtime 191801 btime 150956 movestogo 28
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Re1   ; +1.27  TTT 4590449
+0 Deeping 2 ply of 5 msec=     0/0 score=39 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qe1   ; +0.39  TTT 4590449
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qe1   ; +0.39  TTT 4590449
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qe1   ; +0.39  TTT 4590449
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qe1   ; +0.39  TTT 4590449
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qe1   ; +0.39  TTT 4590449
+0 Deeping 7 ply of 5 msec=     0/0 Best: Re1   ; +0.34  TTT 4643713
+0 Deeping 8 ply of 5 msec=   917/0 Best: Re1   ; +0.29  TTT 4724476[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 4957 request msec= 7487[0m
+[1;96mRe1[0m   [1;96m29 =score,  [0m[1;93mVisited: 8,549,228 / 82% nodes total ---- 6,347,309 Evals[0m
+[1;92mTotal time: 4.96 sec[0m[1;92m   nodes/sec= 1,724,465   resp_avg= 8.436511[0m
+99.3% [aspiration summary] attempts=140 full-retries=1
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7 f1e1 h7h6
+isready
+go wtime 186822 btime 129526 movestogo 27
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf3   ; +1.10  TTT 4724476
+0 Deeping 2 ply of 5 msec=     0/0 score=31 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nf3   ; +0.31  TTT 4724476
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nf3   ; +0.31  TTT 4724476
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nf3   ; +0.31  TTT 4724476
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nf3   ; +0.31  TTT 4724476
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nf3   ; +0.31  TTT 4724476
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nf3   ; +0.32  TTT 4750930
+0 Deeping 8 ply of 5 msec=   393/0 Best: Nf3   ; +0.28  TTT 4803556
+0 Deeping 9 ply of 5 msec=  2178/2358 Best: Nf3   ; +0.21  TTT 5247823[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 8543 request msec= 7487[0m
+[1;96mNf3[0m   [1;96m21 =score,  [0m[1;93mVisited: 14,593,289 / 80% nodes total ---- 11,159,452 Evals[0m
+[1;92mTotal time: 8.54 sec[0m[1;92m   nodes/sec= 1,708,123   resp_avg= 8.444163[0m
+98.6% [aspiration summary] attempts=148 full-retries=1
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7 f1e1 h7h6 g5f3 f6e4
+isready
+go wtime 178247 btime 126068 movestogo 26
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Bd2   ; +0.77  TTT 5247823
+0 Deeping 2 ply of 5 msec=     0/0 Best: Bxe4  ; +0.39  TTT 5247823
+0 Deeping 3 ply of 5 msec=     0/0 Best: Bxe4  ; +0.39  TTT 5247823
+0 Deeping 4 ply of 5 msec=     0/0 Best: Bxe4  ; +0.39  TTT 5247823
+0 Deeping 5 ply of 5 msec=     0/0 Best: Bxe4  ; +0.39  TTT 5247823
+0 Deeping 6 ply of 5 msec=     0/0 Best: Bxe4  ; +0.39  TTT 5247823
+0 Deeping 7 ply of 5 msec=     0/0 Best: Bxe4  ; +0.39  TTT 5247823
+0 Deeping 8 ply of 5 msec=     0/0 Best: Bxe4  ; +0.29  TTT 5277942
+0 Deeping 9 ply of 5 msec=   863/0 Best: Bxe4  ; +0.22  TTT 5522928[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 3921 request msec= 7487[0m
+[1;96mBxe4[0m   [1;96m22 =score,  [0m[1;93mVisited: 6,752,806 / 77% nodes total ---- 5,051,666 Evals[0m
+[1;92mTotal time: 3.92 sec[0m[1;92m   nodes/sec= 1,722,107   resp_avg= 8.142646[0m
+98.7% [aspiration summary] attempts=156 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7 f1e1 h7h6 g5f3 f6e4 d3e4 e7e4
+isready
+go wtime 174309 btime 112110 movestogo 25
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Qd3   ; +0.77  TTT 5522928
+0 Deeping 2 ply of 5 msec=     0/0 score=22 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nd2   ; +0.22  TTT 5522928
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nd2   ; +0.22  TTT 5522928
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nd2   ; +0.22  TTT 5522928
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nd2   ; +0.22  TTT 5522928
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nd2   ; +0.22  TTT 5522928
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nd2   ; +0.22  TTT 5522928
+0 Deeping 8 ply of 5 msec=     0/0 Best: Nd2   ; +0.22  TTT 5599346
+0 Deeping 9 ply of 5 msec=  2550/0 Best: Nd2   ; +0.07  TTT 6161562[33m
+Went to depth 0 acumulatated min= 0.2 acumulatated msec= 13925 request msec= 7487[0m
+[1;96mNd2[0m   [1;96m7 =score,  [0m[1;93mVisited: 23,831,858 / 81% nodes total ---- 18,136,450 Evals[0m
+[1;92mTotal time: 13.93 sec[0m[1;92m   nodes/sec= 1,711,337   resp_avg= 8.504109[0m
+98.2% [aspiration summary] attempts=164 full-retries=1
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7 f1e1 h7h6 g5f3 f6e4 d3e4 e7e4 f3d2 e4g6
+isready
+go wtime 160364 btime 107000 movestogo 24
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: e4    ; +1.13  TTT 6161562
+0 Deeping 2 ply of 5 msec=     0/0 score=7 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Nf3   ; +0.07  TTT 6161562
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nf3   ; +0.07  TTT 6161562
+0 Deeping 4 ply of 5 msec=     0/0 Best: Nf3   ; +0.07  TTT 6161562
+0 Deeping 5 ply of 5 msec=     0/0 Best: Nf3   ; +0.07  TTT 6161562
+0 Deeping 6 ply of 5 msec=     0/0 Best: Nf3   ; +0.07  TTT 6161562
+0 Deeping 7 ply of 5 msec=     0/0 Best: Nf3   ; +0.07  TTT 6161562
+0 Deeping 8 ply of 5 msec=     0/0 Best: Nf3   ; +0.09  TTT 6269851[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 4410 request msec= 7487[0m
+[1;96mNf3[0m   [1;96m9 =score,  [0m[1;93mVisited: 7,827,593 / 87% nodes total ---- 6,386,720 Evals[0m
+[1;92mTotal time: 4.41 sec[0m[1;92m   nodes/sec= 1,774,925   resp_avg= 8.263295[0m
+97.7% [aspiration summary] attempts=171 full-retries=1
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7 f1e1 h7h6 g5f3 f6e4 d3e4 e7e4 f3d2 e4g6 d2f3 f7f6
+isready
+go wtime 155925 btime 102402 movestogo 23
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Rf1   ; +0.85  TTT 6269851
+0 Deeping 2 ply of 5 msec=     0/0 Best: Nh4   ; +0.59  TTT 6269851
+0 Deeping 3 ply of 5 msec=     0/0 Best: Nh4   ; +0.71  TTT 6269883
+0 Deeping 4 ply of 5 msec=     1/0 Best: Rg1   ; +0.23  TTT 6269992
+0 Deeping 5 ply of 5 msec=    15/6 Best: Ba5   ; +0.27  TTT 6271047
+0 Deeping 6 ply of 5 msec=    42/90 Best: Nh4   ; +0.13  TTT 6274956
+0 Deeping 7 ply of 5 msec=   312/252 Best: Nh4   ; +0.15  TTT 6303069
+0 Deeping 8 ply of 5 msec=   733/1872 Best: Nh4   ; +0.11  TTT 6384664[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 4458 request msec= 7487[0m
+[1;96mNh4[0m   [1;96m11 =score,  [0m[1;93mVisited: 8,028,330 / 86% nodes total ---- 6,512,294 Evals[0m
+[1;92mTotal time: 4.46 sec[0m[1;92m   nodes/sec= 1,800,598   resp_avg= 8.051937[0m
+97.8% [aspiration summary] attempts=178 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7 f1e1 h7h6 g5f3 f6e4 d3e4 e7e4 f3d2 e4g6 d2f3 f7f6 f3h4 g6e4
+isready
+go wtime 151444 btime 95716 movestogo 22
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf3   ; +0.71  TTT 6384664
+0 Deeping 2 ply of 5 msec=     0/0 score=15 result=fail-low retry=yes
+1 Deeping 2 ply of 5 msec=     0/0 Best: Qf2   ; +0.15  TTT 6384664
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qf2   ; +0.15  TTT 6384664
+0 Deeping 4 ply of 5 msec=     0/0 Best: Qf2   ; +0.15  TTT 6384664
+0 Deeping 5 ply of 5 msec=     0/0 Best: Qf2   ; +0.15  TTT 6384664
+0 Deeping 6 ply of 5 msec=     0/0 Best: Qf2   ; +0.15  TTT 6384664
+0 Deeping 7 ply of 5 msec=     0/0 Best: g3    ; -0.04  TTT 6412178
+0 Deeping 8 ply of 5 msec=   677/0 Best: g3    ; -0.09  TTT 6495133[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 3067 request msec= 7487[0m
+[1;96mg3[0m   [1;96m-9 =score,  [0m[1;93mVisited: 4,863,122 / 84% nodes total ---- 3,790,099 Evals[0m
+[1;92mTotal time: 3.07 sec[0m[1;92m   nodes/sec= 1,585,566   resp_avg= 7.789588[0m
+97.3% [aspiration summary] attempts=185 full-retries=1
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0
+position startpos moves b1c3 d7d5 e2e3 e7e5 d2d4 e5e4 f2f3 e4f3 g1f3 g8f6 c1d2 f8b4 f1d3 b4c3 d2c3 e8g8 d1e2 b8d7 e1c1 f8e8 f3g5 d7f8 d1f1 d8e7 f1e1 h7h6 g5f3 f6e4 d3e4 e7e4 f3d2 e4g6 d2f3 f7f6 f3h4 g6e4 g2g3 a7a5
+isready
+go wtime 148352 btime 83878 movestogo 21
+
+
+0 Deeping 1 ply of 5 msec=     0/_ Best: Nf3   ; +0.50  TTT 6495133
+0 Deeping 2 ply of 5 msec=     0/0 Best: Qd3   ; +0.43  TTT 6495133
+0 Deeping 3 ply of 5 msec=     0/0 Best: Qd3   ; +0.43  TTT 6495164
+0 Deeping 4 ply of 5 msec=     2/0 Best: Qb5   ; +0.40  TTT 6495263
+0 Deeping 5 ply of 5 msec=    20/12 Best: Qd3   ; +0.28  TTT 6496094
+0 Deeping 6 ply of 5 msec=    42/120 Best: Qd3   ; +0.22  TTT 6499069
+0 Deeping 7 ply of 5 msec=   282/252 Best: Qd3   ; +0.28  TTT 6517388
+0 Deeping 8 ply of 5 msec=   573/1692 Best: h3    ; +0.14  TTT 6667551[33m
+Went to depth 0 acumulatated min= 0.1 acumulatated msec= 5724 request msec= 7487[0m
+[1;96mh3[0m   [1;96m14 =score,  [0m[1;93mVisited: 7,577,148 / 87% nodes total ---- 6,144,595 Evals[0m
+[1;92mTotal time: 5.72 sec[0m[1;92m   nodes/sec= 1,323,743   resp_avg= 7.686320[0m
+97.4% [aspiration summary] attempts=192 full-retries=0
+[PVS summary] success=0.0% attempts=0 researches=0 cutoffs=0

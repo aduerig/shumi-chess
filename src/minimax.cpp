@@ -140,7 +140,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-//#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -1047,6 +1047,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
     std::fill(&history_moves[0][0][0], &history_moves[0][0][0] + 2 * 64 * 64, 0);
 
     ull cumul_time_msec = 0ULL;
+    last_search_time_msec = 0ULL;
     tuple<Score, Move> ret_val;
 
     n_Multis = 1;           // MultiPV if greater than 1
@@ -1080,6 +1081,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
                                         , start_of_calculation, duration_requested  //  , requested_end_time
                                         , time_control
                                         , cumul_time_msec);        // Output (cumulative over all deepenings)
+        last_search_time_msec = cumul_time_msec;
         d_best_move_score = get<0>(ret_val);
         if (d_best_move_score == ABORT_SCORE) {
             multipv_aborted = true;
@@ -1097,7 +1099,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
             sout << "root no-move"
                 << " state=" << (int)state
                 << " draw_reason=" << engine.reason_for_draw
-                << " halfmove=" << engine.game_board.halfmove
+                << " halfmove=" << (int)engine.game_board.halfmove
                 << " fen=" << engine.game_board.to_fen()
                 << endl;
             assert(0);
@@ -1400,8 +1402,9 @@ void MinimaxAI::playground(int iPhase) {
     // if (n_delta_tries==0) val=1.0;
     // else                  val=(double)n_delta_tosses/(double)n_delta_tries;
     // sout << " n_delta_tosses=" << n_delta_tosses << " ratio=" << val << endl;
-    assert (nodes_visited > 0);
-    double drat =  (double)nFarts / (double)nodes_visited;
+    double drat;
+    if (nodes_visited > 0) drat = (double)nFarts / (double)nodes_visited;
+    else  drat = 1.0;
     sout << " nFarts=" << nFarts << "  "  << nSemiFarts << " rat= " << drat << endl;
 
     //engine.debug_print_repetition_table();
@@ -1507,6 +1510,16 @@ std::tuple<Score, ShumiChess::Move> MinimaxAI::do_a_principal_variation(int dept
         }
 
         // Perform one deepening at the current search depth.
+        if (thread_callback != nullptr) {
+            thread_callback_structure callback_data;
+            // fill out the stucture we are snding
+            callback_data.depth = depth;
+            callback_data.elapsed_time_msecc = cumul_time_msec;
+            callback_data.nodes_so_far = nodes_visited;
+            callback_data.best_scoree = d_best_move_score;
+
+            thread_callback(callback_data, thread_callback_user_data);
+        }
 
         // Ha. Here we pass in the elapsed time, just for display, before the deeping.
         ret_val = do_a_deepening(depth
@@ -1975,13 +1988,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                 const TTEntry2 &entry = it->second;
 
                 if (entry.depthh >= depth) {
-
-                    const int level = top_deepening - depth;
-                    int level2 = (nPlys - 1);
-                    if (level != level2) {
-                        cout << level << "  "  << level2 << endl;
-                        assert(0);
-                    }
+      
+                    int level = (nPlys - 1);
 
                     Score stored_score = convert_from_CP(entry.score_cp);
                     stored_score = mate_score_from_TT(stored_score, level);
@@ -2038,7 +2046,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         foundDraw  = entry.drawDebug;
                         foundAlpha = entry.dAlphaDebug;
                         foundBeta  = entry.dBetaDebug;
-                        foundDepth = entry.depth;
+                        foundDepth = entry.depthh;
                         //foundIsCheck = entry.bIsInCheckDebug;
                         //foundLegalMoveSize = entry.legalMovesSize;
                         foundRepCount = entry.repCountDebug;
@@ -2064,13 +2072,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         found_move_history = entry.move_history_debug; 
 
                     #else
-                        const int level = top_deepening - depth;
-                        int level2 = (nPlys - 1);
-                        if (level != level2) {
-                            cout << level << " sss "  << level2 << endl;
-                            assert(0);
-                        }
-
+                 
+                        int level = (nPlys - 1);
 
                         Score dScore = convert_from_CP(entry.score_cp);
                         dScore = mate_score_from_TT(dScore, level);
@@ -2110,12 +2113,9 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }
     
     // Only one of me, per deepening.
-    bool first_node_in_deepening = (top_deepening == depth);
-    bool level2 = (nPlys == 1);
-    if (first_node_in_deepening != level2) {
-        cout << first_node_in_deepening << "  "  << level2 << endl;
-        assert(0);
-    }
+  
+    bool first_node_in_deepening = (nPlys == 1);
+   
 
     if (first_node_in_deepening) {
 
@@ -2140,12 +2140,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     // =====================================================================
     if (state != GameState::INPROGRESS) {
 
-        int level = (top_deepening - depth);
-        int level2 = nPlys - 1;
-        if (level != level2) {
-            cout << level << "  "  << level2 << endl;
-            assert(0);
-        }
+        int level = nPlys - 1;
+        
         assert(level >= 0);
 
         Score d_level = static_cast<Score>(level);
@@ -2204,13 +2200,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             vector<Move> tempMovs = *p_moves_to_loop_over;
         #endif
 
-        bool is_top_of_deepening = (depth == top_deepening);
-        bool level2 = (nPlys == 1);
-        if (is_top_of_deepening != level2) {
-            cout << is_top_of_deepening << "  "  << level2 << endl;
-            assert(0);
-        }
-
+        bool is_top_of_deepening = (nPlys == 1);
 
         bool bOK = sort_moves_for_search(p_moves_to_loop_over, depth, nPlys, is_top_of_deepening);
         assert (bOK);
@@ -2339,12 +2329,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     }
                 }
 
-                const int level = top_deepening - depth; 
-                int level2 = (nPlys - 1);
-                if (level != level2) {
-                    cout << level << "  "  << level2 << endl;
-                    assert(0);
-                }
+                int level = (nPlys - 1);
+              
       
                 const Score score_for_TT = mate_score_to_TT(d_best_score, level);
                 const int cp_score_temp = convert_to_CP(score_for_TT);
@@ -2814,8 +2800,8 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     // Terminal positions (game over), as in checkmate or stalemate
     // =====================================================================
     if (state != GameState::INPROGRESS) {
-
-        int level = (top_deepening);
+   
+        int level = nPlys - 1;
         assert(level >= 0);
 
         Score d_level = static_cast<Score>(level);
@@ -3709,9 +3695,10 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     //       1. PV from the previous iteration (previous deepening’s best). 
     //          So this is a reasonable guess to start with. (cpmapered to an arbitrarily ordered move).
     if (is_top_of_deepening) {
-        assert(top_deepening > 0);
+
         assert(top_deepening == depth);
 
+        assert(top_deepening > 0);
         const ShumiChess::Move pv_move = prev_root_best_[top_deepening-1].first;
 
         #ifdef _DEBUGGING_MOVE_CHAIN1

@@ -61,7 +61,7 @@ int main(int argc, char** argv)
     // show what we parsed
     sout << endl;
     sout << "time = " << time_to_use_msec << " msec\n";
-    sout << "depth = " << depth_limit << "\n";
+    sout << "depthh = " << depth_limit << "\n";
     sout << "fen = " << fen << "\n";
     sout << endl;
 

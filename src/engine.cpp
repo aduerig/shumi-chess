@@ -2084,7 +2084,7 @@ void Engine::print_move_to_file_from_string(const char* p_move_text, Color turn,
     int ierr;
     char szValue[_MAX_ALGEBRIAC_SIZE+8];
 
-    // Indent the whole thing over based on depth level
+    // Indent the whole thing over based on ply
     print_tabOver(nPly, fp);
 
     // print prestring

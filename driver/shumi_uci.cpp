@@ -1,4 +1,4 @@
-﻿
+
 #include <math.h>
 #include <cstdlib>
 
@@ -21,6 +21,7 @@
 #include <cstdio>
 //#include <deque>
 #include <iostream>
+#include <mutex>
 #include <ostream>
 #include <sstream>
 #include <thread>
@@ -60,6 +61,8 @@ static bool create_position(const string& base,
                             Engine*& engine,
                             MinimaxAI*& minimax_ai);
 static bool try_read_uci_line(std::string& line, bool& input_closed);
+static void report_thread_callback(const MinimaxAI::thread_callback_structure& callback_data,
+                                   void* user_data);
 
 struct UciSearchState {
     std::atomic<bool> running{false};
@@ -89,6 +92,7 @@ static void found_move(Engine& engine,
 
 
 static std::ofstream sout_file;
+static std::mutex uci_output_mutex;
 
 int main()
 {
@@ -218,6 +222,7 @@ int main()
 
         if (line == "uci") {
         //************************************************************************************** */
+            std::lock_guard<std::mutex> lock(uci_output_mutex);
             std::cout << "id name ShumiChess\n";
             std::cout << "id author Paul Duerig\n";
             std::cout << "uciok\n";
@@ -225,6 +230,7 @@ int main()
 
         } else if (line == "isready") {
         //************************************************************************************** */
+            std::lock_guard<std::mutex> lock(uci_output_mutex);
             std::cout << "readyok\n";
             std::cout.flush();
 
@@ -306,6 +312,7 @@ int main()
 
                 // Create a starting position
                 if (!create_position("startpos", no_moves, engine, minimax_ai)) {
+                    std::lock_guard<std::mutex> lock(uci_output_mutex);
                     std::cout << "bestmove 0000\n";
                     std::cout.flush();
                     continue;
@@ -516,6 +523,9 @@ static void start_searching_for_move(
         search_thread.thread.join();
     }
 
+    minimax_ai.thread_callback = report_thread_callback;
+    minimax_ai.thread_callback_user_data = nullptr;
+
     search_thread.go_id = go_id;
     search_thread.done.store(false, std::memory_order_release);
     search_thread.running.store(true, std::memory_order_release);
@@ -584,6 +594,22 @@ static void start_searching_for_move(
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+static void report_thread_callback(const MinimaxAI::thread_callback_structure& callback_data,
+                                   void* user_data)
+{
+    (void)user_data;
+
+    std::lock_guard<std::mutex> lock(uci_output_mutex);
+    std::cout << "info depth " << callback_data.depth
+              << " time " << callback_data.elapsed_time_msecc
+              << " nodes " << callback_data.nodes_so_far
+              << " score " << (int) callback_data.best_scoree
+              << "\n";
+    std::cout.flush();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 static void found_move(Engine& engine,
                        MinimaxAI& minimax_ai,
                        UciSearchState& search_thread,
@@ -602,6 +628,7 @@ static void found_move(Engine& engine,
 
     if (move.piece_type == Piece::NONE) {
         sout << "No legal move returned at ply " << endl;
+        std::lock_guard<std::mutex> lock(uci_output_mutex);
         std::cout << "bestmove 0000\n";
         std::cout.flush();
         return;
@@ -656,22 +683,27 @@ static void found_move(Engine& engine,
 
     //std::cout << "info string testing\n";
 
-    std::cout << "info"
-            << " depth " << minimax_ai.max_attained_depth
-            << " seldepth " << minimax_ai.max_attained_qdepth
-            << " score cp " << centiPawnsRel
-            << " nodes " << nodesSeen
-            << " nps " << nps
-            << "\n";
+    {
+        std::lock_guard<std::mutex> lock(uci_output_mutex);
+
+        std::cout << "info"
+                << " depth " << minimax_ai.max_attained_depth
+                << " time " << minimax_ai.last_search_time_msec
+                << " seldepth " << minimax_ai.max_attained_qdepth
+                << " score cp " << centiPawnsRel
+                << " nodes " << nodesSeen
+                << " nps " << nps
+                << "\n";
 
 
-    // Show move
-    iMovesInGame++;
+        // Show move
+        iMovesInGame++;
 
-    //sout << move_str_alebriac << " SENDING bestmove " << move_str << " go_id=" << search_thread.go_id << endl;
+        //sout << move_str_alebriac << " SENDING bestmove " << move_str << " go_id=" << search_thread.go_id << endl;
 
-    std::cout << "bestmove " << move_str << "\n";
-    std::cout.flush();
+        std::cout << "bestmove " << move_str << "\n";
+        std::cout.flush();
+    }
 
     // // cerr << "\nPly " << ply << " "
     // //      << utility::representation::color_to_string(move.color)

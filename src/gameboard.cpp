@@ -1,4 +1,4 @@
-
+﻿
 #include <math.h>
 #include <vector>
 
@@ -664,9 +664,11 @@ static inline bool clear_between_file(ull occupancy, int a, int b)
 
 
 //
-// returns true only if "insufficient material
+// Returns true only if "insufficient material"
 // NOTE: known errors here: this logic declares the following positions drawn, when they are not:
 //      two knights and pawn .vs. king. 
+// NOTE: Suprisingly FIDE does not count B .vs. N, and N .vs. N as a draw because of possible help mates
+// NOTE: FIDE does count B.vs.B as draw iff the bishops are the same color. 
 //      
 bool GameBoard::insufficient_material_simple() {
     // 1) No pawns anywhere
@@ -686,9 +688,22 @@ bool GameBoard::insufficient_material_simple() {
 
     int n_piecesW = n_knightsW + n_bishopsW;
     int n_piecesB = n_knightsB + n_bishopsB;
-    if ( (n_piecesW <= 1) && (n_piecesB <= 1) )  return true;   // no or just 1 minor pieces
-    if ( (n_piecesW <= 1) && (n_knightsB == 2) ) return true;   // 2 knights
-    if ( (n_piecesB <= 1) && (n_knightsW == 2) ) return true;   // 2 knights
+
+    if ((n_piecesW == 0) && (n_piecesB == 0)) return true;    // K vs. K
+
+    if ((n_piecesW == 1) && (n_piecesB == 0)) return true;    // K+B vs. K, or K+N vs. K
+    if ((n_piecesW == 0) && (n_piecesB == 1)) return true;    // K vs. K+B, or K vs. K+N
+
+    if ((n_bishopsW == 1) && (n_bishopsB == 1) &&
+        (n_knightsW == 0) && (n_knightsB == 0)) {
+        const Square white_bishop_sq = utility::bit::bitboard_to_lowest_square_fast(white_bishops);
+        const Square black_bishop_sq = utility::bit::bitboard_to_lowest_square_fast(black_bishops);
+
+        const int white_bishop_color = ((white_bishop_sq % 8) + (white_bishop_sq / 8)) & 1;
+        const int black_bishop_color = ((black_bishop_sq % 8) + (black_bishop_sq / 8)) & 1;
+
+        if (white_bishop_color == black_bishop_color) return true;    // K+B vs. K+B, bishops on same color
+    }
 
     return false;
 

@@ -44,6 +44,19 @@ public:
     MinimaxAI(ShumiChess::Engine&);
     ~MinimaxAI();
 
+    struct thread_callback_structure {
+        int depth = 0;
+        ull elapsed_time_msecc = 0;
+        ull nodes_so_far = 0;
+        Score best_scoree = 0;
+    };
+
+    using thread_callback_function =
+        void (*)(const thread_callback_structure& callback_data, void* user_data);
+
+    thread_callback_function thread_callback = nullptr;
+    void* thread_callback_user_data = nullptr;
+
     // The chess engine
     ShumiChess::Engine& engine;
 
@@ -311,6 +324,7 @@ public:
     Score d_best_move_score_rel = ZERO_SCORE;
     int max_attained_depth = 0;
     int max_attained_qdepth = 0;
+    ull last_search_time_msec = 0;
 
     std::vector<std::pair<ShumiChess::Move, Score>> excluded_root_moves;          // for "MultiPV"
 
