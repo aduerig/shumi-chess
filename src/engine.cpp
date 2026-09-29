@@ -1910,6 +1910,74 @@ void Engine::move_into_string_full(ShumiChess::Move m) {
     //sout << "END   ADD PGN " << (int)m.fromSQ << " to=" <<(int)m.toSQ << endl;
 }
 
+// I see an error i think in the SEE_for_capture_new. Look at this FEN
+// "rnb1qrk1/pp3pbp/1np3p1/4P1N1/3P4/PB3Q2/1PP2PPP/RNB1K2R w KQ - 0 10" and the output: Notivce the SEE values 
+// on moves to f7: Nxf7 and Bxf7. They do not seem accurate.
+// Nd2 0
+// Nc3 0
+// Nxh7 -220
+// Nxf7 -220
+// Nh3 0
+// Ne4 0
+// Ne6 0
+// Bd2 0
+// Be3 0
+// Bf4 0
+// Bxf7 -230
+// Ba2 0
+// Bc4 0
+// Ba4 0
+// Bd5 0
+// Be6 0
+// h3 0
+// h4 0
+// g3 0
+// g4 0
+// c3 0
+// c4 0
+// a4 0
+// d5 0
+// exd6 0
+// e6 0
+// Qxc6 -800
+// Qxf7 -800
+// Qd1 0
+// Qe2 0
+// Qh3 0
+// Qg3 0
+// Qe3 0
+// Qd3 0
+// Qc3 0
+// Qg4 0
+// Qf4 0
+// Qe4 0
+// Qh5 0
+// Qf5 0
+// Qd5 0
+// Qf6 0
+// Kf1 0
+// Kd1 0
+// Ke2 0
+// Kd2 0
+// O-O 0
+// Rg1 0
+// Rf1 0
+// Ra2 0
+
+void Engine::test_SEE_for_capture_new()
+{
+    vector<Move> legal_moves;
+    get_legal_moves_fast(game_board.turn, false, false, legal_moves);
+
+    for (const Move& move : legal_moves) {
+        move_into_string(move);
+        sout << move_string << " " << game_board.SEE_for_capture_new(game_board.turn, move, nullptr) << endl;
+    }
+
+    // char ch;
+    // cin >> ch;
+}
+
 
 void Engine::print_move_history_to_buffer(char *out, size_t out_size)
 {

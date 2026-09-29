@@ -227,6 +227,7 @@ class Engine {
 
         void move_into_string(ShumiChess::Move m);
         void move_into_string_full(ShumiChess::Move m);
+        void test_SEE_for_capture_new();
         string moves_into_string(const std::vector<Move>& mvs);
 
         std::string move_string;             // longest text possible? -> "exd8=Q#" or "axb8=R+"

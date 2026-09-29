@@ -164,7 +164,7 @@ private:
     
     static constexpr int PASSED_PAWN_CONNECTED_WGHT = 5;   // Multiplied by passed pawn bonus, then divide it all by 3
     static constexpr int PASSED_PAWN_CONNECTABLE_WGHT = 5; // Added in cp for adjacent passed pawns on connectable ranks
-    static constexpr int NO_PAWNS_WGHT = -10;              // no pawns left
+    static constexpr int NO_PAWNS_WGHT = -20;              // no pawns left
 
     // Pawn controlling center squares: (one per qualifiing pawn)
     static constexpr int PAWN_ON_CTR_DEF_WGHT = 22;     // center e4,d4 (white); and e5,d5, (black) "defensive" center squares

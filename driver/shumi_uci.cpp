@@ -603,7 +603,7 @@ static void report_thread_callback(const MinimaxAI::thread_callback_structure& c
     std::cout << "info depth " << callback_data.depth
               << " time " << callback_data.elapsed_time_msecc
               << " nodes " << callback_data.nodes_so_far
-              << " score " << (int) callback_data.best_scoree
+              << " score cp " << (int) callback_data.best_scoree
               << "\n";
     std::cout.flush();
 }

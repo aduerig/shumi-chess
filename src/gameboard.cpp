@@ -1973,11 +1973,10 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 // -----------------------------------------------------------------------------
 // Static Exchange Evaluation (SEE) for a *single* capture move.
 //
-// Given a capture move `mv`
-// this routine estimates the net material gain/loss in centipawns assuming
-// optimal recaptures on the destination square.
-// Positive value returned means the capture is materially profitable for the side to move.
-// Zero value means the capture is materially neutral after exchanges.
+// Given a capture move `mv` this routine estimates the net material gain/loss in centipawns assuming
+// "optimal" recaptures on the destination square.
+// Positive value returned means the capture is materially profitable for the side to move (clr).
+// Zero value means the capture is materially neutral after exchanges, or the mv.to square is empty.
 //   1) It identifies the moving piece (mover) on `from` and the captured piece
 //      (victim) on `to`. If there is no victim (e.g. en-passant), it returns 0.
 //   2) It "plays" the forced first capture on local copies of all piece
@@ -1995,15 +1994,10 @@ int GameBoard::SEE_for_capture(Color side, const Move &mv, FILE* fpDebug)
 int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
 {
     // from and to are BITBOARDS (ull) with exactly one bit set.
-    // ull frm = mv.from;
-    // ull to  = mv.to;
     const ull from_bb = utility::bit::square_to_bitboard(mv.fromSQ);
     const ull to_bb = utility::bit::square_to_bitboard(mv.toSQ);
-    // assert(frm == from_bb);
-    // assert(to == to_bb);
-
-    assert (bits_in(from_bb) == 1);
-    assert (bits_in(to_bb) == 1);
+    // assert (bits_in(from_bb) == 1);
+    // assert (bits_in(to_bb) == 1);
 
     if (from_bb == 0ULL || to_bb == 0ULL) {   
         assert(0);      // NULL bitboards in the Move, should never happen.
@@ -2235,6 +2229,28 @@ ull GameBoard::SEE_attackers_on_square_local(Color c,
 }
 
 
+static Piece SEE_piece_type_on_bitboard_local(Color c, ull bb, const GameBoard::SEEBoards& b)
+{
+    if (c == Color::WHITE) {
+        if (bb & b.wp) return Piece::PAWN;
+        if (bb & b.wn) return Piece::KNIGHT;
+        if (bb & b.wb) return Piece::BISHOP;
+        if (bb & b.wr) return Piece::ROOK;
+        if (bb & b.wq) return Piece::QUEEN;
+        if (bb & b.wk) return Piece::KING;
+    } else {
+        if (bb & b.bp) return Piece::PAWN;
+        if (bb & b.bn) return Piece::KNIGHT;
+        if (bb & b.bb) return Piece::BISHOP;
+        if (bb & b.br) return Piece::ROOK;
+        if (bb & b.bq) return Piece::QUEEN;
+        if (bb & b.bk) return Piece::KING;
+    }
+
+    return Piece::NONE;
+}
+
+
 int GameBoard::SEE_recursive(Color stm,
                        Color root_side,
                        int to_sq,
@@ -2287,8 +2303,8 @@ int GameBoard::SEE_recursive(Color stm,
             else if (target_piece == Piece::KING)   b2.bk &= ~to_mask_local;
         }
 
-        // Identify attacker piece (you already have this overload in your code)
-        Piece attacker_piece = get_piece_type_on_bitboard(stm, attacker_bb);
+        Piece attacker_piece = SEE_piece_type_on_bitboard_local(stm, attacker_bb, b_local);
+        assert(attacker_piece != Piece::NONE);
 
         // Remove attacker from its origin square
         if (stm == Color::WHITE) {
@@ -2333,8 +2349,12 @@ int GameBoard::SEE_recursive(Color stm,
         Piece new_target_piece = attacker_piece;
         Color new_target_color = stm;
 
-        //Color next = (stm == Color::WHITE) ? Color::BLACK : Color::WHITE;
         Color next = utility::representation::opposite_color(stm);
+
+        if (attacker_piece == Piece::KING
+            && SEE_attackers_on_square_local(next, to_sq, occ2, b2)) {
+            continue;
+        }
 
         int child = SEE_recursive(next,
                             root_side,

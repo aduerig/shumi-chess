@@ -1362,6 +1362,9 @@ void MinimaxAI::playgroundOld(int iPhase) {
 void MinimaxAI::playground(int iPhase) {
   
   
+    engine.test_SEE_for_capture_new();
+
+    
     // const char* pszPhase = str_from_GamePhase(iPhase);
     // const int itemp1 = engine.game_board.count_potential_checks_against_king_t<Color::WHITE>();
     // const int itemp2 = engine.game_board.count_potential_checks_against_king_t<Color::BLACK>();
@@ -1402,10 +1405,10 @@ void MinimaxAI::playground(int iPhase) {
     // if (n_delta_tries==0) val=1.0;
     // else                  val=(double)n_delta_tosses/(double)n_delta_tries;
     // sout << " n_delta_tosses=" << n_delta_tosses << " ratio=" << val << endl;
-    double drat;
-    if (nodes_visited > 0) drat = (double)nFarts / (double)nodes_visited;
-    else  drat = 1.0;
-    sout << " nFarts=" << nFarts << "  "  << nSemiFarts << " rat= " << drat << endl;
+    // double drat;
+    // if (nodes_visited > 0) drat = (double)nFarts / (double)nodes_visited;
+    // else  drat = 1.0;
+    // sout << " nFarts=" << nFarts << "  "  << nSemiFarts << " rat= " << drat << endl;
 
     //engine.debug_print_repetition_table();
 
