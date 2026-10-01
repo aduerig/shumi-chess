@@ -48,6 +48,10 @@ inline constexpr int DELTA_MARGIN_CP = 300;     // Raise me and there is less pr
 inline constexpr bool FUTILITY_PRUNE_ON = true;
 inline constexpr int FUTILITY_MARGIN_CP = 400;     // Raise me and there is less pruning
 
+inline constexpr bool CHECK_EXTENSION_ON = true;
+inline constexpr int CHECK_EXTENSION_SEE_CP = 1;
+inline constexpr int CHECK_EXTENSION_MAX_PER_LINE = 2;
+
 
 // Root aspiration-window
 inline constexpr bool ASPIRATION_ENABLED = true;
@@ -196,7 +200,7 @@ private:
     static constexpr int MAJOR_ON_RANK7_WGHT = 33;      // Rook or queen on 7th rank (if 2 major then 3 times)
     static constexpr int MAJOR_ON_RANK8_WGHT = 10;      // Rook or queen on 8th rank (if 2 major then 3 times)
 
-    static constexpr int KNIGHT_ON_EDGE_WGHT = -14;     // knight on edge penatly (doubled if knight in corner)
+    static constexpr int KNIGHT_ON_EDGE_WGHT = -15;     // knight on edge penatly (doubled if knight in corner)
 
     static constexpr int KING_EDGE_WGHT = 40;              // Only in late ending, to force enemy king to edge
 

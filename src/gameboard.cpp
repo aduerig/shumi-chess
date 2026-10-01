@@ -1202,6 +1202,7 @@ template<Color c> int GameBoard::king_center_manhattan_dist_t()
     return iReturn;
 }
 
+// NOT USED
 // Counts sliders+knights attacking the enemy's passed pawns.
 // passed_white_pwns / passed_black_pwns are bitboards of all passed pawns.
 int GameBoard::attackers_on_enemy_passed_pawns(Color attacker_color,
@@ -2029,6 +2030,10 @@ int GameBoard::SEE_for_capture_new(Color clr, const Move &mv, FILE* fpDebug)
     // Identify the moving piece on 'from_sq'
     Piece mover = get_piece_type_on_bitboard(from_bb);
     if (mover == Piece::NONE) {
+        // engine.move_into_string(m);
+        // sout << engine.move_string.c_str() << endl;
+
+        // sout << 
         assert(0);      // Caller should prevent this. Cant take nothing!
         return 0;
     }

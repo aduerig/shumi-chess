@@ -697,6 +697,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                                     , true              // I am called from the root
                                     , (nPlys+1)
                                     , qPlys
+                                    , 0
                                  );
 
         if (setting_under_aspiration) {
@@ -770,6 +771,7 @@ tuple<Score, Move> MinimaxAI::do_a_deepening(int depth
                                                 , true
                                                 , (nPlys+1)
                                                 , qPlys
+                                                , 0
                                              );
 
                     if (get<0>(full_ret_val) == ABORT_SCORE) return full_ret_val;
@@ -925,10 +927,12 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         // These measure avg aspiration success
         aspiration_attempts = 0;
         aspiration_successes = 0;
+
         pvs_attempts = 0;
         pvs_successes = 0;
         pvs_researches = 0;
         pvs_cutoffs = 0;
+
         history_updates = 0;
         history_ordered_nodes = 0;
         history_moves_scored = 0;
@@ -978,13 +982,11 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
 
     }   
 
-    //
-    // These are statistics indicators,that are output in the playground
+    // These are statistics indicators,that are output in the playground, updated per move.
     nFarts = 0;             // Queiseence low level (forced eval) this move
     nSemiFarts = 0;         // Queiseence low level (forced eval) this move
     n_futility_tosses = 0;
     n_delta_tosses = 0ULL;
-
 
     //
     // Clear debug every move
@@ -1004,8 +1006,6 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
     nodes_visited = 0;
     nodes_visited_depth_zero = 0;
     evals_visited = 0;
-
-
 
     aspiration_fail_lows = 0;
     aspiration_fail_highs = 0;
@@ -1766,6 +1766,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                     ,bool is_from_root
                     ,int nPlys
                     ,int qPlys
+                    ,int extended_checks
                     )
 {
 
@@ -2224,7 +2225,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         // Regular-search futility pruning calculates check status lazily inside
         // loop_over_all_moves(); this parameter is needed for qsearch/delta pruning.
         bool was_aborted = loop_over_all_moves(depth, alpha, beta, 
-                        nPlys, qPlys, false, 
+                        nPlys, qPlys, extended_checks, false, 
                         d_stand_pat, 
                         p_moves_to_loop_over,               // input
                         the_best_move, d_best_score,        // outputs
@@ -2958,7 +2959,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
         bool did_cutoff;
         // returns 0 if success, 1 if abort
         bool was_aborted = loop_over_all_moves(0, alpha, beta, 
-                        nPlys, qPlys, in_check, 
+                        nPlys, qPlys, 0, in_check, 
                         d_stand_pat, 
                         p_moves_to_loop_over,               // input
                         the_best_move, d_best_score,        // outputs
@@ -3026,6 +3027,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
 bool MinimaxAI::loop_over_all_moves(int depth, 
                        Score &alpha, const Score beta, 
                        int nPlys, int qPlys,
+                       int extended_checks,
                        bool in_check,
                        Score d_stand_pat, 
                        const vector<ShumiChess::Move>* pMoves, 
@@ -3046,8 +3048,8 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
     bool bFutilityPrunedAny = false;
 
-
-    for (const Move& m : *pMoves) {
+    //for (const Move& m : *pMoves) {
+    for (const Move m : *pMoves) {
         //int nChars;
 
         #ifdef _DEBUGGING_PUSH_POP
@@ -3120,10 +3122,8 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                     // We cant hardly get back to this score
                     const bool is_a_check =
                         (m.color == ShumiChess::Color::WHITE)
-                            ? engine.in_check_after_move_fast_t<
-                                ShumiChess::Color::WHITE, false>(m)
-                            : engine.in_check_after_move_fast_t<
-                                ShumiChess::Color::BLACK, false>(m);
+                            ? engine.in_check_after_move_fast_t<ShumiChess::Color::WHITE, false>(m)
+                            : engine.in_check_after_move_fast_t<ShumiChess::Color::BLACK, false>(m);
 
                     if (!is_a_check) {
                         // prune this capture
@@ -3202,6 +3202,63 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
         }
 
+
+        // Check extensions
+        int new_depth = (depth > 0 ? depth - 1 : 0);
+        int child_extended_checks = extended_checks;
+        if (CHECK_EXTENSION_ON &&
+            (depth > 0) &&
+            (extended_checks < CHECK_EXTENSION_MAX_PER_LINE) &&
+            (m.capture != Piece::NONE) &&
+            (m.promotion == Piece::NONE)) {
+
+            //const std::string fen_before_check_test = engine.game_board.to_fen();
+
+            const bool is_a_check =
+                (m.color == ShumiChess::Color::WHITE)
+                    ? engine.in_check_after_move_fast_t<ShumiChess::Color::WHITE, false>(m)
+                    : engine.in_check_after_move_fast_t<ShumiChess::Color::BLACK, false>(m);
+
+            //const std::string fen_after_check_test = engine.game_board.to_fen();
+            // if (fen_before_check_test != fen_after_check_test) {
+            //     engine.move_into_string(m);
+            //     sout << "in_check_after_move_fast_t changed board" << endl;
+            //     sout << "move=" << engine.move_string.c_str() << endl;
+            //     sout << "before=" << fen_before_check_test << endl;
+            //     sout << "after =" << fen_after_check_test << endl;
+            //     assert(0);
+            // }
+
+            if (is_a_check) {
+                const ull from_bb = utility::bit::square_to_bitboard(m.fromSQ);
+                const Piece actual_from_piece =
+                    engine.game_board.get_piece_type_on_bitboard(from_bb);
+
+                // if (actual_from_piece == Piece::NONE) {
+                //     engine.move_into_string(m);
+                //     sout << "CHECK EXTENSION SEE BUG" << endl;
+                //     sout << "move=" << engine.move_string.c_str() << endl;
+                //     sout << "m.piece_type=" << (int)m.piece_type << endl;
+                //     sout << "m.color=" << (int)m.color << endl;
+                //     sout << "turn=" << (int)engine.game_board.turn << endl;
+                //     sout << "depth=" << depth << endl;
+                //     sout << "nPlys=" << nPlys << endl;
+                //     sout << "extended_checks=" << extended_checks << endl;
+                //     sout << "fen=" << engine.game_board.to_fen() << endl;
+                //     assert(0);
+                // }
+
+                const int see =
+                    engine.game_board.SEE_for_capture_new(engine.game_board.turn, m, nullptr);
+
+                if (see >= CHECK_EXTENSION_SEE_CP) {
+                    new_depth = depth;
+                    child_extended_checks++;
+                }
+            }
+        }
+
+
         // push move
         nSearched++;
         assert(m.piece_type != Piece::NONE);
@@ -3231,7 +3288,6 @@ bool MinimaxAI::loop_over_all_moves(int depth,
 
         //
         // recurse a new level
-        int new_depth = (depth > 0 ? depth - 1 : 0);
         tuple<Score, Move> ret_val;
         const bool use_pvs =
             PVS_ENABLED &&
@@ -3250,7 +3306,8 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                 false,                    // I am NOT called from the root
                 //m,
                 (nPlys+1),
-                qPlys
+                qPlys,
+                child_extended_checks
             );
 
         } else {
@@ -3348,7 +3405,8 @@ bool MinimaxAI::loop_over_all_moves(int depth,
                     false,                    // I am NOT called from the root
                     //m,
                     (nPlys+1),
-                    qPlys
+                    qPlys,
+                    child_extended_checks
                 );
 
                 d_return_score = get<0>(ret_val);

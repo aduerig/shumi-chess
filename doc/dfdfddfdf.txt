@@ -1,8 +1,62 @@
 do not delete me
+=== shumi loses ============================================================================================
+`
+texel shumi     bad endgame play . Passed pawn out of control.
+texel shumi     queen trapped on enemy side
+texel shumi     undeveloped pices (especiall q rook)
+arsan shumi     stipid opening, totall inability to see holes
+
+a square near the king should not have two pieces on the square. 
+
+
+The "king box" is the set of from 3 to 9 squares the king can move to, plus the square the king is on.
+    i = number of squares in "king box" that are "attacked" by an enemy piece (see below). 
+    j = number of squares in king box that are attacked by 2 or more enemy piecces
+    k = number of squares in king box that are attacked by 3 or more enemy piecces
+    p = muber of pieces with 1 or more squares in the king box
+
+
+
+    a = user set constant or multiplier or addeditive
+    b = user set constant or multiplier or addeditive2
+
+
+   (j-1)*2 + (k-1)*3 + (p-1)*3 
+
+
+ By attacked is meant this: The square can be moved to by a king or knight or, The square can be moved to by a pawn 
+ if the square was occupied by the enemey, or for queens, rooks bishops, not if they can move there but if there
+ isa "line of sight" path to the king. This computation is cheaper I think. Enemy pieces block "line of sight",
+ except if the enemy piece is in the king box. Freiendly pieces do not block line of sight.
+
+    
+===============================================================================================
+DO not use LF line endings. All these changes should occur in gameboard.cpp and gameboard,hpp. 
+Ask for permission putside these files.
+
+I need a system as follows. This is an evaluator routine. Should live in gamevoard.cpp. Using the Bits_In arrays, identify "excess pieces." 
+These are pieces that do not have a matching enemy still on the board. So for every position, there are both black and white
+excess pieces. The idea here is to identify siuations, i will call "excess exceptions", like for example where white has a Q for a rook,knight and pawn. 
+I am unsurehow to store this information, other than making it easiest to access as follows:
+I call this the "application loop"
+
+for each defined excess exception (there will be perhaps 10 of these), 
+   for eacxh color
+        if  the few pieces in the exception matc (checking it against the enemy excess list)
+           apply the exception Score.
+
+So there must be a data struncture for each excesss exception, having  a. The pieces involved, and b. the pnenalty/reward Score. I will 
+define the actual data in the rules. We can start with just one exception: Q, vs, R,N,P.
+Well b. is a Score type. As I said I am not sure how to store a. properly. I am also undure how to code and deal with color here. 
+Obviously we must "loop over" color here, so white and black see the same thing. Shoud I simply have two exceptions. the same
+but flipping color? As in "q, vs, R,N,P.", and "Q, vs, r,n,p.". Or do I loop over color in the "application loop" above.
+ To me it all depends on speed in the application loop. This must nbe optimized. 
 
 
 
 
+
+===============================================================================================
 
 
 Add one new evaluation feature to ShumiChess: a gentle pawn-storm incentive when the kings are on opposite wings.
