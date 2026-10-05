@@ -117,6 +117,8 @@ enum WghtIndxs
     BLOCKED_HOME_BISHOP,
     TRADE_MAX_BONUS,
     TRADE_ADVANTAGE_CAP,
+    QUEEN_MINOR_ROOK,
+    ROOK_2_MINORS,
     UNPUSHABLE_KNIGHT,
     SIDE_TO_MOVE,
     LAST_VALUE              // I must be last in this list
@@ -209,19 +211,23 @@ private:
     static constexpr int KINGS_CLOSE_TOGETHER_WGHT = 30;   // Only in late ending, to force enemy king to edge
 
     // Attackers are NOT kings. Otherwise everybody else.
-    static constexpr int ATTACKERS_ON_KING_WGHT = 23;      // For each square (per square) at or around the king box. Includes the king square itself.
+    static constexpr int ATTACKERS_ON_KING_WGHT = 16;      // For each square (per square) at or around the king box. Includes the king square itself.
 
     static constexpr int CENTER_OCCUPY_PIECES_WGHT = 24;  // Used only in CRAZY_IVAN. Doesnt count pawns or kings.
     
     static constexpr int SIDE_TO_MOVE_WGHT = 10;
     static constexpr int KEEP_ROOKS_WHEN_DOWN_PAWN_WGHT = 10;
 
+    // material adjustments
+    static constexpr int QUEEN_MINOR_ROOK_WGHT = 66;        // favoring the queen
+    static constexpr int ROOK_2_MINORS_WGHT = 30;           // favoring the two pieces
 
 
     static constexpr int UNPUSHABLE_KNIGHT_WGHT = 25;    // NOT USED
 
     static constexpr int TRADE_MAX_BONUS_WGHT = 120;    // NOT USED
     static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;    // NOT USED
+
 
 
     static constexpr int NO_MOVE_SAME_TWICE_WGHT = -20; // NOT USED

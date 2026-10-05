@@ -2668,6 +2668,116 @@ template<Color c> int GameBoard::get_material_for_color2_fast(int& cp_pawns_only
 
     return cp_score_mat_temp;
 }
+
+///////////////////////////////////////////////////////////////////////////
+
+// excess pieces
+
+void GameBoard::build_excess_pieces(ExcessPieces excess[2]) const
+{
+    for (int color = Color::WHITE; color <= Color::BLACK; ++color) {
+        for (int piece = EXCESS_PAWN; piece < NUM_EXCESS_PIECES; ++piece) {
+            excess[color].count[piece] = 0;
+        }
+    }
+
+    for (int color = Color::WHITE; color <= Color::BLACK; ++color) {
+        const int enemy = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+        const int pawn_delta = Bits_In[color][Piece::PAWN] - Bits_In[enemy][Piece::PAWN];
+        const int rook_delta = Bits_In[color][Piece::ROOK] - Bits_In[enemy][Piece::ROOK];
+        const int minor_delta =
+            (Bits_In[color][Piece::KNIGHT] + Bits_In[color][Piece::BISHOP]) -
+            (Bits_In[enemy][Piece::KNIGHT] + Bits_In[enemy][Piece::BISHOP]);
+        const int queen_delta = Bits_In[color][Piece::QUEEN] - Bits_In[enemy][Piece::QUEEN];
+
+        if (pawn_delta > 0) {
+            excess[color].count[EXCESS_PAWN] = static_cast<uint8_t>(pawn_delta);
+        }
+        if (rook_delta > 0) {
+            excess[color].count[EXCESS_ROOK] = static_cast<uint8_t>(rook_delta);
+        }
+        if (minor_delta > 0) {
+            excess[color].count[EXCESS_MINOR] = static_cast<uint8_t>(minor_delta);
+        }
+        if (queen_delta > 0) {
+            excess[color].count[EXCESS_QUEEN] = static_cast<uint8_t>(queen_delta);
+        }
+    }
+}
+
+bool GameBoard::excess_pieces_match(const ExcessPieces& board_excess, const ExcessPieces& rule_excess) const
+{
+    for (int piece = EXCESS_PAWN; piece < NUM_EXCESS_PIECES; ++piece) {
+        // Pawns stay in the exception table for accounting/documentation, but
+        // they are not part of the exception identity.
+        if (piece == EXCESS_PAWN) continue;
+
+        if (board_excess.count[piece] != rule_excess.count[piece]) return false;
+    }
+
+    return true;
+}
+//
+// This guy is weird in that in returns in "abs coordinates" (positive good for white, negative good for black)
+// NOT based on the color of the mover, like all the others.
+Score GameBoard::excess_exceptions_cp() const
+{
+    ExcessPieces excess[2];
+
+    const int exception_count = 2;
+    const ExcessException excess_exceptions[] = {
+        {
+            // Rule 1: friendly has the excess queen, enemy has excess rook, minor, and pawn.
+            // This rewards the queen side by .35 pawn; the color loop makes it work for White or Black.
+            //
+            // PAWN, ROOK, MINOR, QUEEN.
+            // PAWN is counted here but ignored by excess_pieces_match().
+            {{0, 0, 0, 1}},       // Q (friendly)
+            {{1, 1, 1, 0}},       // R, minor, P (enemy)
+            (Score)(wghts.GetWeight(QUEEN_MINOR_ROOK) * ONE_CENTIPAWN)    // for the friend
+        },
+        {
+            // Rule 2: friendly has two excess minors, enemy has the excess rook.
+            // This rewards the minor side by .30 pawn; the color loop makes it work for White or Black.
+            //
+            // PAWN, ROOK, MINOR, QUEEN.
+            // PAWN is counted here but ignored by excess_pieces_match().
+            {{0, 0, 2, 0}},       // 2 minors (friendly)
+            {{0, 1, 0, 0}},       // R (enemy)
+            (Score)(wghts.GetWeight(ROOK_2_MINORS) * ONE_CENTIPAWN)    // for the friend
+        }
+    };
+
+    build_excess_pieces(excess);
+
+    Score score = 0;
+
+
+    for (int exception_index = 0; exception_index < exception_count; ++exception_index) {
+        const ExcessException& rule = excess_exceptions[exception_index];
+
+        for (int color = Color::WHITE; color <= Color::BLACK; ++color) {
+            //const int enemy = utility::representation::opposite_color(color);
+            const int enemy = (color == Color::WHITE) ? Color::BLACK : Color::WHITE;
+
+            if (excess_pieces_match(excess[color], rule.friendly) &&
+                excess_pieces_match(excess[enemy], rule.enemy)) {
+                if (color == Color::WHITE) {
+                    score += rule.score;
+                } else {
+                    score -= rule.score;
+                }
+            }
+        }
+    }
+
+    return score;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+
 // Given a single square, returns a count of the pawns attacking that square.
 // Note: is en passant considered here?
 template<Color c>
@@ -3769,19 +3879,79 @@ template<Color c> int GameBoard::attackers_on_enemy_king_near_cp_t()
 {
     constexpr Color defender_color = utility::representation::opposite_color_t<c>;
 
+
+    //   Builds each king-box square’s attacker bitboard with `|=`.
+    //   A king box is the square the king is on and the 3 to 8 adjacent squares.
     int king_near_squares[9];
     int count = get_king_near_squares_t<defender_color>(king_near_squares);
 
-    int total = 0;
 
-    for (int i = 0; i < count; ++i) {
-        int sq = king_near_squares[i];
-        int nAttackers = sliders_and_knights_attacking_square_t<c>(sq);
-        total += nAttackers;
-        total += pawns_attacking_square_t<c>(sq);
+    //   Just some shortcuts 
+    const ull FILE_H = col_masks[ColHA::COL_H];
+    const ull FILE_A = col_masks[ColHA::COL_A];
+
+    //   Just some shortcuts , for the attacking piece
+    const ull pawns = get_pieces_template<Piece::PAWN, c>();
+    const ull knights = get_pieces_template<Piece::KNIGHT, c>();
+    const ull bishops = get_pieces_template<Piece::BISHOP, c>();
+    const ull rooks = get_pieces_template<Piece::ROOK, c>();
+    const ull queens = get_pieces_template<Piece::QUEEN, c>();
+    const ull deadly_diags = bishops | queens;
+    const ull deadly_straights = rooks | queens;
+
+    // take into account transparent pieces
+    const ull occ = get_pieces();
+    // Attacking non-pawn pieces are transparent for this evaluation only.
+    // All pawns and all defending pieces remain blockers.
+    const ull transparent =
+        knights | bishops | rooks | queens |
+        get_pieces_template<Piece::KING, c>();
+
+    //const ull occ = get_pieces() & ~transparent;
+
+
+
+    //
+    // i = Number of king-box squares attacked by at least one piece of color c.
+    // j = Number of king-box squares attacked by at least two pieces of color c.
+    // k = Number of king-box squares attacked by at least three pieces of color c; unused in this formula.
+    // p = Number of distinct pieces of color c attacking at least one king-box square.
+    // a = Existing ATTACKERS_ON_KING weight; its name and value remain unchanged.
+    int i = 0;
+    int j = 0;
+    ull participating_attackers = 0ULL;
+
+    for (int idx = 0; idx < count; ++idx) {
+        int sq = king_near_squares[idx];
+        ull sq_bb = 1ULL << sq;
+        ull attackers = 0ULL;
+
+        if constexpr (c == Color::WHITE) {
+            attackers |= ((((sq_bb & ~FILE_A) >> 7) | ((sq_bb & ~FILE_H) >> 9)) & pawns);
+        } else {
+            attackers |= ((((sq_bb & ~FILE_H) << 7) | ((sq_bb & ~FILE_A) << 9)) & pawns);
+        }
+
+        attackers |= tables::movegen::knight_attack_table[sq] & knights;
+
+        if (deadly_diags) {
+            attackers |= get_diagonal_attacks_mbb(occ, sq) & deadly_diags;
+        }
+
+        if (deadly_straights) {
+            attackers |= get_straight_attacks_mbb(occ, sq) & deadly_straights;
+        }
+
+        int n_attackers = bits_in(attackers);
+        if (n_attackers >= 1) ++i;
+        if (n_attackers >= 2) ++j;      // this counts 3 or more attackers twice
+        participating_attackers |= attackers;
     }
 
-    return (total*wghts.GetWeight(ATTACKERS_ON_KING));
+    int p = bits_in(participating_attackers);
+    int a = wghts.GetWeight(ATTACKERS_ON_KING);
+
+    return a * (i + (p*p) + j);
 }
 
 // ---------- kings_far_apart_t ----------

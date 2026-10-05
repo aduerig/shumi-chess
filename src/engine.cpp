@@ -162,12 +162,14 @@ void Engine::reset_engine() {         // New game.
 
     #define TEMP_FEN "r1bq1rk1/pp2bp2/3p1n1Q/2p1p3/2BnP3/2NP1N2/PPP2PPP/R4RK1 w - - 1 11"
 
+    #define EXCEPT_TEST_FEN1 "rnb1kbnr/pppppppp/8/8/8/8/1PPPPPPP/2BQKBNR w KQkq - 0 1"  // good for side with Q (white)
+    #define EXCEPT_TEST_FEN2 "2nqkbnr/1pppppp1/8/8/8/8/PPPPPPPP/RNB1KBNR w KQkq - 0 1"  // good for side with q (black)
 
     ///////////////////////////////////////////////////////////////////////////////////
 
-    //game_board = GameBoard(SIMPLE_ROOKS);
+    game_board = GameBoard(EXCEPT_TEST_FEN2);
 
-    game_board = GameBoard();
+    //game_board = GameBoard();
 
     ///////////////////////////////////////////////////////////////////////////////////
 

@@ -56,6 +56,24 @@ struct PotentialCheckInfo {
     int total_checks;
 };
 
+enum ExcessPiece : std::uint8_t {
+    EXCESS_PAWN = 0,
+    EXCESS_ROOK,
+    EXCESS_MINOR,
+    EXCESS_QUEEN,
+    NUM_EXCESS_PIECES,
+};
+
+struct ExcessPieces {
+    uint8_t count[NUM_EXCESS_PIECES];
+};
+
+struct ExcessException {
+    ExcessPieces friendly;
+    ExcessPieces enemy;
+    Score score;
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -420,6 +438,9 @@ class GameBoard {
         template<Color c> int get_material_for_color_t(int& cp_pawns_only);
         template<Color c> int get_material_for_color2_fast(int& cp_pawns_only);    // faster, but needs compute_bits_in() called first)
         template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
+        void build_excess_pieces(ExcessPieces excess[2]) const;
+        bool excess_pieces_match(const ExcessPieces& board_excess, const ExcessPieces& rule_excess) const;
+        Score excess_exceptions_cp() const;
 
         template<Color c> double count_guard_pawn_files_t(const PInfo& PInfoIn, const PInfo& PInfoEnemy, int k_file) const;
         template<Color c> int rook_endgame_keep_rooks_when_down_cp_t();

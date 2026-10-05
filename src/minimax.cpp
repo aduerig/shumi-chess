@@ -140,7 +140,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+// #define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -1362,7 +1362,10 @@ void MinimaxAI::playgroundOld(int iPhase) {
 void MinimaxAI::playground(int iPhase) {
   
   
-    engine.test_SEE_for_capture_new();
+    //engine.test_SEE_for_capture_new();
+
+    engine.game_board.compute_bits_in();
+    sout << "excess_exceptions_cp=" << engine.game_board.excess_exceptions_cp() << endl;
 
     
     // const char* pszPhase = str_from_GamePhase(iPhase);
@@ -4106,10 +4109,10 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
     icp_temp = engine.game_board.no_pawns_left_cp_t<c>();
     cp_score_position_temp += icp_temp;
 
-    if (nPhase > GamePhase::OPENING) {
+    //if (nPhase > GamePhase::OPENING) {
         icp_temp = engine.game_board.attackers_on_enemy_king_near_cp_t<c>();
         cp_score_position_temp += icp_temp;
-    }
+    //}
 
     if (nPhase == GamePhase::ENDGAME_LATE) {
         icp_temp = engine.game_board.rook_endgame_keep_rooks_when_down_cp_t<c>();
@@ -4214,6 +4217,13 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
     int cp_score_position_temp;
 
     const PawnFileInfo* pawnFileInfoP = NULL;   // Initialize the lazy pointer
+
+
+    // This guy is weird in that in returns in "abs coordinates" (positive good for white, negative for black)
+    cp_score_position_temp = engine.game_board.excess_exceptions_cp();
+    if constexpr (for_color != Color::WHITE) cp_score_position_temp *= -1;  //  Convert to for_color's perspective before adding it.
+    cp_score_position += cp_score_position_temp;
+
 
     cp_score_position_temp =  get_positional_for_one_color<Color::WHITE>(nPhase, evp, cp_score_material_all, pawnFileInfoP);
     if (Color::WHITE != for_color) cp_score_position_temp *= -1;
