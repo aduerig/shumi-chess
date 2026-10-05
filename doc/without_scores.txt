@@ -1,0 +1,52 @@
+
+settings depth=7 max_ply=20 positions=6 flags=0x6 player=3 time_ms=2
+summary ep=45433 nd=86453928 nd_avg=720449 moves=120
+
+[Event "Shumi minimax regression pos 0"]
+[SetUp "1"]
+[FEN "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8"]
+[Result "*"]
+
+8. Qb3 f5 9. Qxd5 c6 10. Qb3 Qe7 11. O-O Be6 12. c4 O-O 13. Nbd2 b5 14. Re1
+Qf7 15. a4 Nxd2 16. Nxd2 bxc4 17. Nxc4 Bd5 *
+
+[Event "Shumi minimax regression pos 1"]
+[SetUp "1"]
+[FEN "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5"]
+[Result "*"]
+
+5... exd4 6. e5 Ng4 7. cxd4 Bb4 8. Nbd2 d5 9. Bd3 f6 10. h3 fxe5 11. hxg4 e4
+12. Bxe4 dxe4 13. Ne5 Qxd4 14. Nxc6 bxc6 15. Qe2 *
+
+[Event "Shumi minimax regression pos 2"]
+[SetUp "1"]
+[FEN "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20"]
+[Result "*"]
+
+20. cxd3 Rd8 21. Rxg7 h6 22. Rff7 b5 23. Rg6 Rxd3 24. Rxh6 b4 25. Kc2 Rd7 26.
+Rxc6 Kb7 27. Rxd7 Kxc6 28. Rd5 a5 29. Nc1 c4 *
+
+[Event "Shumi minimax regression pos 3"]
+[SetUp "1"]
+[FEN "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30"]
+[Result "*"]
+
+30. R6e4 Nd5 31. c4 f5 32. Rh4 Nf6 33. Nd2 Rg6 34. d5 cxd5 35. cxd5 Rd8 36.
+Rc4 Rg7 37. Re5 Rf7 38. a4 b5 39. Rc6 Bb7 *
+
+[Event "Shumi minimax regression pos 4"]
+[SetUp "1"]
+[FEN "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42"]
+[Result "*"]
+
+42... Rxf2 43. Qxf2 Qxb3 44. Kh1 Qxb4 45. Re3 Qb6 46. Qe1 Ng4 47. Re2 c5 48.
+Rd2 c4 49. h5 a5 50. Rc2 Qb3 51. Re2 c3 52. Qc1 *
+
+[Event "Shumi minimax regression pos 5"]
+[SetUp "1"]
+[FEN "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14"]
+[Result "*"]
+
+14... Bd7 15. Ne5 Rfd8 16. Na4 Qc7 17. Nc5 Be8 18. Qb4 b6 19. Ncd3 a5 20. Qa3
+Ne4 21. Rbc1 f6 22. f3 Ng5 23. Nc4 Rac8 24. Nf4 *
+

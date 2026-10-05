@@ -3900,14 +3900,15 @@ template<Color c> int GameBoard::attackers_on_enemy_king_near_cp_t()
     const ull deadly_straights = rooks | queens;
 
     // take into account transparent pieces
-    const ull occ = get_pieces();
+    //const ull occ = get_pieces();
     // Attacking non-pawn pieces are transparent for this evaluation only.
     // All pawns and all defending pieces remain blockers.
-    const ull transparent =
-        knights | bishops | rooks | queens |
-        get_pieces_template<Piece::KING, c>();
+    ull transparent = 0;
+    // transparent =
+    //     knights | bishops | rooks | queens |
+    //     get_pieces_template<Piece::KING, c>();
 
-    //const ull occ = get_pieces() & ~transparent;
+    const ull occ = get_pieces() & ~transparent;
 
 
 

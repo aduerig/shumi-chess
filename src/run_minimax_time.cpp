@@ -54,7 +54,7 @@ static string add_score_comments_to_pgn(const string& numbered_pgn, const vector
 static string wrap_pgn_line(const string& pgn);
 static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time);
 static void make_engine_move(Engine& engine, Move move);
-static ofstream open_minimax_results_file(filesystem::path& opened_path);
+static ofstream open_minimax_results_file(filesystem::path& opened_path, const string& filename);
 
 class TeeStreamBuf : public streambuf
 {
@@ -120,9 +120,9 @@ int main(int argc, char** argv) {
     FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giuco Piano
     FENs[2] = "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20";                 // random middlegame
     FENs[3] = "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30";             // random middlegame
-
-    FENs[5] = "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14";     // middlegame from QP opening
     FENs[4] = "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42";                             // random endgame
+    FENs[5] = "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14";     // middlegame from QP opening
+
 
     int NPositions = 6;
     int max_ply_to_play = 20;    // measured from the start of each starting position
@@ -244,20 +244,32 @@ int main(int argc, char** argv) {
     //
     // Show results
     //
-    filesystem::path minimax_results_path;
-    ofstream minimax_results_file = open_minimax_results_file(minimax_results_path);
-    if (!minimax_results_file.is_open()) {
-        sout << "Could not open doc\\minimax_out.txt for writing; results will only be printed to sout." << endl;
-    } else if (minimax_results_path.filename() != "minimax_out.txt") {
-        sout << "doc\\minimax_out.txt was not writable; writing results to "
-             << minimax_results_path.string() << endl;
+    filesystem::path with_scores_path;
+    ofstream with_scores_file = open_minimax_results_file(with_scores_path, "with_scores.txt");
+    if (!with_scores_file.is_open()) {
+        sout << "Could not open doc\\with_scores.txt for writing; results will only be printed to sout." << endl;
+    } else if (with_scores_path.filename() != "with_scores.txt") {
+        sout << "doc\\with_scores.txt was not writable; writing results to "
+             << with_scores_path.string() << endl;
     }
 
-    TeeStreamBuf results_buf(minimax_results_file.is_open() ? minimax_results_file.rdbuf() : sout.rdbuf(),
-                             display_results_to_terminal && minimax_results_file.is_open() ? sout.rdbuf() : nullptr);
+    filesystem::path without_scores_path;
+    ofstream without_scores_file = open_minimax_results_file(without_scores_path, "without_scores.txt");
+    if (!without_scores_file.is_open()) {
+        sout << "Could not open doc\\without_scores.txt for writing." << endl;
+    } else if (without_scores_path.filename() != "without_scores.txt") {
+        sout << "doc\\without_scores.txt was not writable; writing results to "
+             << without_scores_path.string() << endl;
+    }
+
+    TeeStreamBuf results_buf(with_scores_file.is_open() ? with_scores_file.rdbuf() : sout.rdbuf(),
+                             display_results_to_terminal && with_scores_file.is_open() ? sout.rdbuf() : nullptr);
     ostream results(&results_buf);
 
     results << endl;
+    if (without_scores_file.is_open()) {
+        without_scores_file << endl;
+    }
     results << "settings"
             << " depth=" << depth_to_use
             << " max_ply=" << max_ply_to_play
@@ -266,6 +278,16 @@ int main(int argc, char** argv) {
             << " player=" << player_id
             << " time_ms=" << time_to_use
             << endl;
+    if (without_scores_file.is_open()) {
+        without_scores_file << "settings"
+                            << " depth=" << depth_to_use
+                            << " max_ply=" << max_ply_to_play
+                            << " positions=" << NPositions
+                            << " flags=0x" << std::hex << flags << std::dec
+                            << " player=" << player_id
+                            << " time_ms=" << time_to_use
+                            << endl;
+    }
     results << "summary"
             << " ep=" << total_elapsed_time
             << " nd=" << totalNodesSum
@@ -273,6 +295,15 @@ int main(int argc, char** argv) {
             << " moves=" << totalNodesPerMove
             << endl;
     results << endl;
+    if (without_scores_file.is_open()) {
+        without_scores_file << "summary"
+                            << " ep=" << total_elapsed_time
+                            << " nd=" << totalNodesSum
+                            << " nd_avg=" << (totalNodesSum/totalNodesPerMove)
+                            << " moves=" << totalNodesPerMove
+                            << endl;
+        without_scores_file << endl;
+    }
 
     for (int i=0;i<NPositions;i++) {
         results << "[Event \"Shumi minimax regression pos " << i << "\"]" << endl;
@@ -284,6 +315,16 @@ int main(int argc, char** argv) {
         string scored_pgn = add_score_comments_to_pgn(numbered_pgn, positionMoveScores[i]);
         results << wrap_pgn_line(scored_pgn) << endl;
         results << endl;
+
+        if (without_scores_file.is_open()) {
+            without_scores_file << "[Event \"Shumi minimax regression pos " << i << "\"]" << endl;
+            without_scores_file << "[SetUp \"1\"]" << endl;
+            without_scores_file << "[FEN \"" << FENs[i] << "\"]" << endl;
+            without_scores_file << "[Result \"*\"]" << endl;
+            without_scores_file << endl;
+            without_scores_file << wrap_pgn_line(numbered_pgn) << endl;
+            without_scores_file << endl;
+        }
     }
     assert (totalNodesPerMove > 0);
 
@@ -297,14 +338,15 @@ int main(int argc, char** argv) {
 
 /////////////////////////////////////////////////////////////////////////////
 
-static ofstream open_minimax_results_file(filesystem::path& opened_path)
+static ofstream open_minimax_results_file(filesystem::path& opened_path, const string& filename)
 {
     const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
     const filesystem::path doc_dir = repo_root / "doc";
     error_code ignored_error;
     filesystem::create_directories(doc_dir, ignored_error);
 
-    opened_path = doc_dir / "minimax_out.txt";
+    opened_path = doc_dir / filename;
+    
     ofstream file;
     file.open(opened_path, ios::out | ios::trunc);
     if (file.is_open()) {
@@ -313,7 +355,10 @@ static ofstream open_minimax_results_file(filesystem::path& opened_path)
     file.clear();
 
     for (int i = 1; i <= 99; ++i) {
-        opened_path = doc_dir / ("minimax_out (" + to_string(i) + ").txt");
+        const filesystem::path fallback_filename = filesystem::path(filename).stem().string()
+            + " (" + to_string(i) + ")"
+            + filesystem::path(filename).extension().string();
+        opened_path = doc_dir / fallback_filename;
         file.open(opened_path, ios::out | ios::trunc);
         if (file.is_open()) {
             return file;
