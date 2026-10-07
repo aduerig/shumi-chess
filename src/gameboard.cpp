@@ -2723,9 +2723,9 @@ bool GameBoard::excess_pieces_match(const ExcessPieces& board_excess, const Exce
 // NOT based on the color of the mover, like all the others.
 Score GameBoard::excess_exceptions_cp() const
 {
-    ExcessPieces excess[2];
+    ExcessPieces excess[5];
 
-    const int exception_count = 2;
+    const int exception_count = 3;
     const ExcessException excess_exceptions[] = {
         {
             // Rule 1: friendly has the excess queen, enemy has excess rook, minor, and pawn.
@@ -2738,7 +2738,17 @@ Score GameBoard::excess_exceptions_cp() const
             (Score)(wghts.GetWeight(QUEEN_MINOR_ROOK) * ONE_CENTIPAWN)    // for the friend
         },
         {
-            // Rule 2: friendly has two excess minors, enemy has the excess rook.
+          // Rule 2: friendly has the excess queen, enemy has 2 excess rooks.
+            // This rewards the queen side by .35 pawn; the color loop makes it work for White or Black.
+            //
+            // PAWN, ROOK, MINOR, QUEEN.
+            // PAWN is counted here but ignored by excess_pieces_match().
+            {{0, 0, 0, 1}},       // Q (friendly)
+            {{0, 2, 0, 0}},       // R, R enemy
+            (Score)(wghts.GetWeight(QUEEN_ROOKS) * ONE_CENTIPAWN)    // for the friend
+        },
+        {
+            // Rule 3: friendly has two excess minors, enemy has the excess rook.
             // This rewards the minor side by .30 pawn; the color loop makes it work for White or Black.
             //
             // PAWN, ROOK, MINOR, QUEEN.
@@ -2981,6 +2991,15 @@ int GameBoard::opposite_wing_pawn_storm_cp_t()
     if (friendly_king_wing == 0 || enemy_king_wing == 0) return 0;
     if (friendly_king_wing == enemy_king_wing) return 0;
 
+
+    // raw_units measures pawn advancement on the enemy king's wing
+    // minus pawn advancement on our own king's wing.
+    // Each pawn contributes 0..3 units: one per rank advanced from its
+    // starting rank, capped at 3. Pawns for which wing() returns 0 are ignored.
+    // If both kings occupy the same wing, the contributions cancel.
+    // Positive means more advancement on the enemy king's wing;
+    // negative means more advancement on our own king's wing.
+    // This is a raw positional measure, not yet a centipawn score.
     int raw_units = 0;
     ull pawns = get_pieces_template<Piece::PAWN, c>();
 
@@ -3515,9 +3534,9 @@ template<Color c> int GameBoard::advanced_unpushable_knights_cp_t()
 {
     constexpr Color enemy = utility::representation::opposite_color_t<c>;
 
-    const int rank5_bonus_cp = wghts.GetWeight(KNIGHT_HOLE)/2;
-    const int rank6_bonus_cp = wghts.GetWeight(KNIGHT_HOLE);
-    const int rank7_bonus_cp = wghts.GetWeight(KNIGHT_HOLE);
+    const int rank5_bonus_cp = wghts.GetWeight(UNPUSHABLE_KNIGHT)/2;
+    const int rank6_bonus_cp = wghts.GetWeight(UNPUSHABLE_KNIGHT);
+    const int rank7_bonus_cp = wghts.GetWeight(UNPUSHABLE_KNIGHT);
 
     ull knights;
     ull enemy_pawns;
@@ -3904,9 +3923,9 @@ template<Color c> int GameBoard::attackers_on_enemy_king_near_cp_t()
     // Attacking non-pawn pieces are transparent for this evaluation only.
     // All pawns and all defending pieces remain blockers.
     ull transparent = 0;
-    // transparent =
-    //     knights | bishops | rooks | queens |
-    //     get_pieces_template<Piece::KING, c>();
+    transparent =
+        knights | bishops | rooks | queens |
+        get_pieces_template<Piece::KING, c>();
 
     const ull occ = get_pieces() & ~transparent;
 

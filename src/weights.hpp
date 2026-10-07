@@ -118,6 +118,7 @@ enum WghtIndxs
     TRADE_MAX_BONUS,
     TRADE_ADVANTAGE_CAP,
     QUEEN_MINOR_ROOK,
+    QUEEN_ROOKS,
     ROOK_2_MINORS,
     UNPUSHABLE_KNIGHT,
     SIDE_TO_MOVE,
@@ -177,7 +178,7 @@ private:
     static constexpr int PAWN_ON_CTR_OFF_WGHT = 38;     // center e5,d5 (white); and e4,d4, (white) "offensive" center squares
     static constexpr int PAWN_ON_ADV_CTR_WGHT = 26;     // "advanced center" e6,d6,e7,d7 (White); or e3,d3,e2,d2 (Black)
     static constexpr int PAWN_ON_ADV_FLK_WGHT = 11;      // "advanced flank" c5,f5 (White), c4,f4 (black); 
-    static constexpr int OPPOSITE_WING_PAWN_STORM_WGHT = 5;
+    static constexpr int OPPOSITE_WING_PAWN_STORM_WGHT = 10;
 
     static constexpr int KNIGHT_ON_CTR_WGHT = 14;  // Knight controlling center squares (per square)
     static constexpr int BISHOP_ON_CTR_WGHT = 23;  // Bishop controlling center squares (per square) (here we can look through other pieces)
@@ -220,10 +221,11 @@ private:
 
     // material adjustments
     static constexpr int QUEEN_MINOR_ROOK_WGHT = 66;        // favoring the queen
+    static constexpr int QUEEN_ROOKS_WGHT = 66;             // favoring the queen
     static constexpr int ROOK_2_MINORS_WGHT = 30;           // favoring the two pieces
 
 
-    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 25;    // NOT USED
+    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 0;
 
     static constexpr int TRADE_MAX_BONUS_WGHT = 120;    // NOT USED
     static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;    // NOT USED
