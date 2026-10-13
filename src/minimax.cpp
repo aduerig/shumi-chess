@@ -1359,13 +1359,14 @@ void MinimaxAI::playgroundOld(int iPhase) {
 }
 
 // Debug only  playground. Sandbox for testing evaluation functions
+// Dont delete me
 void MinimaxAI::playground(int iPhase) {
   
-  
+    //engine.game_board.test_NNUE1();
     //engine.test_SEE_for_capture_new();
 
-    engine.game_board.compute_bits_in();
-    sout << "excess_exceptions_cp=" << engine.game_board.excess_exceptions_cp() << endl;
+    // engine.game_board.compute_bits_in();
+    // sout << "excess_exceptions_cp=" << engine.game_board.excess_exceptions_cp() << endl;
 
     
     // const char* pszPhase = str_from_GamePhase(iPhase);
@@ -4254,6 +4255,9 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
     switch (evp) {
 
         case RANDOM:
+            //float NNUE_score = calculate_nnue_positional();
+            break;
+        
         case SLUG:          // There is no "positional considerations", for the slug.
             break;
 

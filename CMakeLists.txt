@@ -28,6 +28,7 @@ set(CMAKE_PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
 # --- Define project sources and headers ---
 set(Headers
     src/gameboard.hpp
+    src/NNUE.hpp
     src/engine.hpp
     src/globals.hpp
     src/move_tables.hpp
@@ -40,6 +41,7 @@ set(Headers
 
 set(Sources
     src/gameboard.cpp
+    src/NNUE.cpp
     src/globals.cpp
     src/engine.cpp
     src/move_tables.cpp

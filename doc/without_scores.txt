@@ -1,14 +1,14 @@
 
 settings depth=7 max_ply=20 positions=6 flags=0x6 player=3 time_ms=2
-summary ep=50347 nd=97739413 nd_avg=814495 moves=120
+summary ep=47618 nd=84541055 nd_avg=704508 moves=120
 
 [Event "Shumi minimax regression pos 0"]
 [SetUp "1"]
 [FEN "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8"]
 [Result "*"]
 
-8. Qb3 c6 9. Be3 Qb6 10. Qc2 O-O 11. Nbd2 f5 12. O-O Be6 13. c4 Nxd2 14. Nxd2
-Qc7 15. f4 Nd7 16. cxd5 cxd5 17. Qxc7 Bxc7 *
+8. Qb3 f5 9. Qxd5 c6 10. Qb3 Qe7 11. O-O Be6 12. c4 Na6 13. Nbd2 Nxd2 14. Bxd2
+O-O 15. Ng5 Bf7 16. Bxf5 h6 17. Rae1 Bxh2 *
 
 [Event "Shumi minimax regression pos 1"]
 [SetUp "1"]

@@ -112,3 +112,14 @@ INSTANTIATE_TEST_SUITE_P(tGameboardToFenNotationParams,
                                             )
                                         )
                         );
+
+TEST(InsufficientMaterialSimple, FideDeadPositions) {
+    EXPECT_TRUE(ShumiChess::GameBoard("8/2k5/8/8/5K2/8/8/8 b - - 0 1").insufficient_material_simple());
+    EXPECT_TRUE(ShumiChess::GameBoard("8/2k5/8/8/5K2/8/8/7N b - - 0 1").insufficient_material_simple());
+    EXPECT_TRUE(ShumiChess::GameBoard("8/2k5/8/8/5K2/8/8/7B b - - 0 1").insufficient_material_simple());
+    EXPECT_TRUE(ShumiChess::GameBoard("8/2k5/8/8/5K2/8/b7/7B b - - 0 1").insufficient_material_simple());
+}
+
+TEST(InsufficientMaterialSimple, BishopKnightSideIsNotDeadByFideRule) {
+    EXPECT_FALSE(ShumiChess::GameBoard("n7/2k5/8/5N2/b4K2/8/8/8 b - - 0 72").insufficient_material_simple());
+}

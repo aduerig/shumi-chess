@@ -22,7 +22,7 @@ inline constexpr bool PVS_ENABLED = false;
 inline constexpr int PVS_MIN_DEPTH = 1;
 
 // History heuristic controls (only used for move ordering)
-inline constexpr bool HISTORY_ENABLED = false;
+inline constexpr bool HISTORY_ENABLED = true;
 inline constexpr int HISTORY_MAX_SCORE = 16384;
 inline constexpr int HISTORY_BONUS_MULTIPLIER = 32;
 inline constexpr int HISTORY_MAX_BONUS = 2048;

@@ -2,6 +2,12 @@ do not delete me
 
 
 
+soft abort q=1
+ n_Multis=1  xx 0  rr  
+root no-move state=2 draw_reason=4 halfmove=0 fen=8/8/8/6n1/3K4/8/6k1/7N w - - 0 67
+Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 1105
+
+
 
 the two measurements are independent. They do not recognize that an attack becomes more 
 dangerous when the shelter is broken.  

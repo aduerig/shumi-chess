@@ -225,6 +225,9 @@ Score of Shumi vs stockfish_ELO 2400: 27 - 20 - 3 [0.570]
 Score of Shumi vs stockfish_ELO 2500: 22 - 23 - 5 [0.490]
 Score of Shumi vs stockfish_ELO 2400: 32 - 17 - 1 [0.650]
 Score of Shumi vs texel64-avx2-pop ELO 2200: 29 - 15 - 6 [0.640]
+Score of Shumi vs arasanx-64 ELO 2300: 8 - 40 - 2 [0.180]
+Score of Shumi vs Stocfish_ELO 2700: 9 - 38 - 3 [0.210]
+
 
 ==========================================================================================================
 engines to engine matches
@@ -235,4 +238,8 @@ engines to engine matches
     
     Score of arasanx-64 ELO 2300 vs stockfish_ELO 2300: 23 - 1 - 1 [0.940]
     Score of arasanx-64 ELO 2200 vs stockfish_ELO 2300: 11 - 13 - 1 [0.460]
+
+-d4 -t1000 shumi .vs. slug  224 93 72
+
+
 
