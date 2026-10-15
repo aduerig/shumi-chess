@@ -140,7 +140,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-// #define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -1361,7 +1361,10 @@ void MinimaxAI::playgroundOld(int iPhase) {
 // Debug only  playground. Sandbox for testing evaluation functions
 // Dont delete me
 void MinimaxAI::playground(int iPhase) {
-  
+    
+    sout << " dhdg " << nnue.n_calculates << endl;
+
+
     //engine.game_board.test_NNUE1();
     //engine.test_SEE_for_capture_new();
 
@@ -3626,7 +3629,7 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     const int nUnquietMoves =
         static_cast<int>(std::distance(pMovesInOut->begin(), it_split));
 
-    std::vector<int> moveKeys(nUnquietMoves);
+    move_order_keys.resize(nUnquietMoves);
 
     for (int i = 0; i < nUnquietMoves; i++) {
         const ShumiChess::Move& mv = (*pMovesInOut)[i];
@@ -3648,7 +3651,7 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
         // Prefer a move to the destination square of the preceding move.
         if (mv.toSQ == last_toSQ) key += 800;
 
-        moveKeys[i] = key;
+        move_order_keys[i] = key;
     }
 
     // Sort the unquiet moves from highest key to lowest key.
@@ -3658,18 +3661,18 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
     //
     for (int i = 1; i < nUnquietMoves; i++) {
         const ShumiChess::Move moveToInsert = (*pMovesInOut)[i];
-        const int keyToInsert = moveKeys[i];
+        const int keyToInsert = move_order_keys[i];
 
         int j = i - 1;
 
-        while (j >= 0 && moveKeys[j] < keyToInsert) {
+        while (j >= 0 && move_order_keys[j] < keyToInsert) {
             (*pMovesInOut)[j + 1] = (*pMovesInOut)[j];
-            moveKeys[j + 1] = moveKeys[j];
+            move_order_keys[j + 1] = move_order_keys[j];
             j--;
         }
 
         (*pMovesInOut)[j + 1] = moveToInsert;
-        moveKeys[j + 1] = keyToInsert;
+        move_order_keys[j + 1] = keyToInsert;
     }
 
     auto quiet_begin = it_split;
@@ -3719,14 +3722,14 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
             history_ordered_nodes++;
 
             const ShumiChess::Move firstQuietBeforeHistory = *quiet_begin;
-            std::vector<int> historyKeys(nHistoryQuietMoves);
+            move_order_keys.resize(nHistoryQuietMoves);
 
             for (int i = 0; i < nHistoryQuietMoves; i++) {
                 const ShumiChess::Move& mv = *(quiet_begin + i);
                 const int history_score =
                     history_moves[(int)mv.color][(int)mv.fromSQ][(int)mv.toSQ];
 
-                historyKeys[i] = history_score;
+                move_order_keys[i] = history_score;
                 history_moves_scored++;
 
                 if (history_score > 0) {
@@ -3736,18 +3739,18 @@ bool MinimaxAI::sort_moves_for_search(std::vector<ShumiChess::Move>* pMovesInOut
 
             for (int i = 1; i < nHistoryQuietMoves; i++) {
                 const ShumiChess::Move moveToInsert = *(quiet_begin + i);
-                const int keyToInsert = historyKeys[i];
+                const int keyToInsert = move_order_keys[i];
 
                 int j = i - 1;
 
-                while (j >= 0 && historyKeys[j] < keyToInsert) {
+                while (j >= 0 && move_order_keys[j] < keyToInsert) {
                     *(quiet_begin + j + 1) = *(quiet_begin + j);
-                    historyKeys[j + 1] = historyKeys[j];
+                    move_order_keys[j + 1] = move_order_keys[j];
                     j--;
                 }
 
                 *(quiet_begin + j + 1) = moveToInsert;
-                historyKeys[j + 1] = keyToInsert;
+                move_order_keys[j + 1] = keyToInsert;
             }
 
             if (!(*quiet_begin == firstQuietBeforeHistory)) {
@@ -4254,8 +4257,16 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
 
     switch (evp) {
 
-        case RANDOM:
-            //float NNUE_score = calculate_nnue_positional();
+        case NNUE:
+            // NNUE scores the whole position, positive for White. Include it
+            // only in White's pass; evaluate_board_t converts to for_color.
+            if constexpr (c == Color::WHITE) {
+                const float NNUE_score = nnue.calculate_nnue_positional(engine.game_board);
+                
+                // tricky, important, below NNUI uses "float" for scores, but shumi uses centipawns (integer)
+                //cp_score_position_temp = static_cast<int>(std::lround(NNUE_score));
+                cp_score_position_temp = (int)(std::lround(NNUE_score));
+            }
             break;
         
         case SLUG:          // There is no "positional considerations", for the slug.

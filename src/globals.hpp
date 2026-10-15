@@ -175,7 +175,7 @@ const char* str_from_GamePhase(int phse);
    
 
 enum EvalPersons {      // These are all "ai" no human here.
-    RANDOM = 0,
+    NNUE = 0,
     SLUG,
     CRAZY_IVAN,
     UNCLE_SHUMI

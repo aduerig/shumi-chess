@@ -113,4 +113,44 @@ void add_nnue_gradient(
     NNUEGradient& total,
     const NNUEGradient& contribution);
 
+// Owns one network's scoring parameters. Keep one instance with the evaluator
+// and reuse it for successive positions. Board inputs are prepared per call;
+// the network does not retain a board or a reference to one.
+class NNUE_data {
+public:
+    // Every weight and bias starts at zero, so the positional score is zero.
+    // This is useful for the initial assertion check. Training needs nonzero
+    // starting parameters, supplied through the other constructor or setter.
+    NNUE_data();
+    explicit NNUE_data(const NNUEParameters& initial_parameters);
+
+    int n_calculates = 0; // Public heartbeat: completed positional-score calculations.
+
+    // Parameters are owned by value; supplying them copies their contents.
+    const NNUEParameters& get_parameters() const;
+    void set_parameters(const NNUEParameters& parameters);
+    void zero_parameters();
+
+    // Whole-position centipawn score, positive good for White.
+    // Both overloads leave the stored parameters unchanged.
+    float calculate_nnue_positional(const GameBoard& board);
+    float calculate_nnue_positional(const NNUEInputs& inputs);
+
+    // Training calculations use the same stored parameters as evaluation.
+    // Examples, Jacobian rows, and gradients belong to the training caller.
+    float calculate_nnue_aberration(const NNUETrainingExample& example) const;
+    void calculate_nnue_jacobian_row(
+        const NNUEInputs& inputs,
+        NNUEJacobianRow& row) const;
+    float calculate_nnue_gradient(
+        const NNUETrainingExample& example,
+        NNUEGradient& gradient) const;
+
+    // This changes the stored parameters; calculate the gradient first.
+    void apply_nnue_gradient(const NNUEGradient& gradient, float learning_rate);
+
+private:
+    NNUEParameters parameters_;
+};
+
 } // end namespace ShumiChess

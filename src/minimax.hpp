@@ -12,6 +12,7 @@
 
 #include "features.hpp"
 #include "gameboard.hpp"
+#include "NNUE.hpp"
 
 
 using MoveAndScore     = std::pair<ShumiChess::Move, Score>;
@@ -39,14 +40,6 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-struct NNUEInputs {
-    uint8_t piece_on_square[12][64];
-    uint8_t black_to_move;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
 class MinimaxAI {
 public:
 
@@ -68,6 +61,9 @@ public:
 
     // The chess engine
     ShumiChess::Engine& engine;
+
+    // Constructed once with this AI; parameters persist between evaluations.
+    ShumiChess::NNUE_data nnue;
 
     struct SearchTimeControl {
         ull time_left_msec = 0;            // Milliseconds remaining until time control, before this search starts
@@ -217,6 +213,9 @@ public:
     ShumiChess::Move killer1[MAX_PLY]; 
     ShumiChess::Move killer2[MAX_PLY];
     int history_moves[2][64][64] = {};
+
+    // Reused by move ordering; sorting completes before search recurses.
+    std::vector<int> move_order_keys;
 
 
     // Template variants (compile-time color)

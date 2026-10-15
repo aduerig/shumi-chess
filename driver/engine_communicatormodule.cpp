@@ -606,7 +606,7 @@ PyInit_engine_communicator(void) {
     if (PyModule_AddIntConstant(m, "BLACKWIN",   (int)ShumiChess::BLACKWIN)   < 0) return NULL;
 
     // Export EvalPersons enum values to Python as module-level constants
-    if (PyModule_AddIntConstant(m, "RANDOM",      (int)ShumiChess::RANDOM)      < 0) return NULL;
+    if (PyModule_AddIntConstant(m, "NNUE",        (int)ShumiChess::NNUE)        < 0) return NULL;
     if (PyModule_AddIntConstant(m, "SLUG",        (int)ShumiChess::SLUG)        < 0) return NULL;
     if (PyModule_AddIntConstant(m, "CRAZY_IVAN",  (int)ShumiChess::CRAZY_IVAN)  < 0) return NULL;
     if (PyModule_AddIntConstant(m, "UNCLE_SHUMI", (int)ShumiChess::UNCLE_SHUMI) < 0) return NULL;

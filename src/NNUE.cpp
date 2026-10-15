@@ -2,21 +2,53 @@
 
 #include "gameboard.hpp"
 
+#include <cstddef>
+
 namespace ShumiChess {
 
 namespace {
 
-float calculate_unit(
+constexpr std::size_t NNUE_INPUT_COUNT = 12 * 64;
+
+struct NNUEActiveInput {
+    std::uint16_t feature_index;
+    std::uint8_t value;
+};
+
+std::size_t collect_active_inputs(
     const NNUEInputs& inputs,
-    const NNUEUnitParameters& parameters)
+    NNUEActiveInput (&active_inputs)[NNUE_INPUT_COUNT])
 {
-    float value = parameters.bias;
+    std::size_t active_count = 0;
 
     for (int piece = 0; piece < 12; ++piece) {
         for (int square = 0; square < 64; ++square) {
-            value += parameters.piece_weight[piece][square]
-                   * inputs.piece_on_square[piece][square];
+            const std::uint8_t value = inputs.piece_on_square[piece][square];
+            if (value != 0) {
+                active_inputs[active_count++] = {
+                    static_cast<std::uint16_t>(piece * 64 + square),
+                    value
+                };
+            }
         }
+    }
+
+    return active_count;
+}
+
+float calculate_unit(
+    const NNUEInputs& inputs,
+    const NNUEUnitParameters& parameters,
+    const NNUEActiveInput* active_inputs,
+    std::size_t active_count)
+{
+    float value = parameters.bias;
+
+    for (std::size_t i = 0; i < active_count; ++i) {
+        const NNUEActiveInput& input = active_inputs[i];
+        const int piece = input.feature_index >> 6;
+        const int square = input.feature_index & 63;
+        value += parameters.piece_weight[piece][square] * input.value;
     }
 
     value += parameters.turn_weight * inputs.black_to_move;
@@ -30,6 +62,69 @@ float activate_unit(float value)
 }
 
 } // namespace
+
+NNUE_data::NNUE_data()
+    : parameters_{}
+{
+}
+
+NNUE_data::NNUE_data(const NNUEParameters& initial_parameters)
+    : parameters_(initial_parameters)
+{
+}
+
+const NNUEParameters& NNUE_data::get_parameters() const
+{
+    return parameters_;
+}
+
+void NNUE_data::set_parameters(const NNUEParameters& parameters)
+{
+    parameters_ = parameters;
+}
+
+void NNUE_data::zero_parameters()
+{
+    parameters_ = {};
+}
+
+float NNUE_data::calculate_nnue_positional(const GameBoard& board)
+{
+    NNUEInputs inputs{};
+    fill_nnue_inputs(board, inputs);
+
+    return calculate_nnue_positional(inputs);
+}
+
+float NNUE_data::calculate_nnue_positional(const NNUEInputs& inputs)
+{
+    ++n_calculates;
+    return ShumiChess::calculate_nnue_positional(inputs, parameters_);
+}
+
+float NNUE_data::calculate_nnue_aberration(const NNUETrainingExample& example) const
+{
+    return ShumiChess::calculate_nnue_aberration(example, parameters_);
+}
+
+void NNUE_data::calculate_nnue_jacobian_row(
+    const NNUEInputs& inputs,
+    NNUEJacobianRow& row) const
+{
+    ShumiChess::calculate_nnue_jacobian_row(inputs, parameters_, row);
+}
+
+float NNUE_data::calculate_nnue_gradient(
+    const NNUETrainingExample& example,
+    NNUEGradient& gradient) const
+{
+    return ShumiChess::calculate_nnue_gradient(example, parameters_, gradient);
+}
+
+void NNUE_data::apply_nnue_gradient(const NNUEGradient& gradient, float learning_rate)
+{
+    ShumiChess::apply_nnue_gradient(parameters_, gradient, learning_rate);
+}
 
 void fill_nnue_inputs(const GameBoard& board, NNUEInputs& inputs)
 {
@@ -74,10 +169,13 @@ float calculate_nnue_positional(
     const NNUEParameters& parameters)
 {
     float score = parameters.output_bias;
+    NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
+    const std::size_t active_count = collect_active_inputs(inputs, active_inputs);
 
     for (int j = 0; j < NNUE_UNIT_COUNT; ++j) {
 
-        const float value = calculate_unit(inputs, parameters.units[j]);
+        const float value = calculate_unit(
+            inputs, parameters.units[j], active_inputs, active_count);
 
         const float activated_value = activate_unit(value);
 
@@ -96,6 +194,9 @@ float calculate_nnue_aberration(
     const NNUETrainingExample& example,
     const NNUEParameters& parameters)
 {
+
+
+
     const float positional_score = calculate_nnue_positional(example.inputs, parameters);
 
     const float predicted_total = example.material_score_cp + positional_score;
@@ -113,13 +214,16 @@ void calculate_nnue_jacobian_row(
     NNUEJacobianRow& row)
 {
     row = {};
+    NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
+    const std::size_t active_count = collect_active_inputs(inputs, active_inputs);
 
     // Output score contains output_bias directly.
     row.output_bias = 1.0f;
 
     for (int j = 0; j < NNUE_UNIT_COUNT; ++j) {
 
-        const float value = calculate_unit(inputs, parameters.units[j]);
+        const float value = calculate_unit(
+            inputs, parameters.units[j], active_inputs, active_count);
 
         const float activated_value = activate_unit(value);
 
@@ -246,12 +350,9 @@ void add_nnue_gradient(
 
 void test_NNUE1() {
     const GameBoard board{};
-    NNUEInputs inputs{};
-    fill_nnue_inputs(board, inputs);
+    NNUE_data nnue; // Constructor zeros every parameter for this check.
 
-    NNUEParameters parameters{}; // Everything zero for this check.
-
-    float positional_score = calculate_nnue_positional(inputs, parameters);
+    const float positional_score = nnue.calculate_nnue_positional(board);
     sout << "test_NNUE" << std::endl;
     assert(positional_score == 0.0f);
 }

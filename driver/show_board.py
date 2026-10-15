@@ -78,7 +78,7 @@ script_file_dir = pathlib.Path(os.path.split(os.path.realpath(__file__))[0])
 
 
 player_id_by_name = {
-    'ran_ai': engine_communicator.RANDOM,
+    'nnue_ai': engine_communicator.NNUE,
     'slug_ai': engine_communicator.SLUG,
     'ivan_ai': engine_communicator.CRAZY_IVAN,
     'shumi_ai': engine_communicator.UNCLE_SHUMI,
@@ -409,8 +409,8 @@ def get_next_player(player_name: str) -> str:
     elif player_name == 'Ivan_ai':
         return 'slug_ai'
     elif player_name == 'slug_ai':
-        return 'ran_ai'
-    elif player_name == 'ran_ai':
+        return 'NNUE_ai'
+    elif player_name == 'NNUE_ai':
         return 'human'
 
 def clicked_white_button(button_obj):

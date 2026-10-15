@@ -2,6 +2,7 @@ add_executable(
     unit_tests
     tengine.cpp
     tgameboard.cpp
+    tnnue.cpp
     tutils.cpp
     tvalid_moves.cpp
 )
