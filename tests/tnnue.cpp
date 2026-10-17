@@ -18,25 +18,25 @@ TEST(NNUEData, DefaultConstructionProducesExactZero)
     NNUE_data nnue;
     GameBoard board;
 
-    EXPECT_EQ(nnue.calculate_nnue_positional(board), 0.0f);
+    EXPECT_EQ(nnue.Calculate_nnue_positional(board), 0.0f);
     board.turn = Color::BLACK;
-    EXPECT_EQ(nnue.calculate_nnue_positional(board), 0.0f);
+    EXPECT_EQ(nnue.Calculate_nnue_positional(board), 0.0f);
 
     const GameBoard endgame("7k/8/8/4N3/8/8/8/K7 w - - 0 1");
-    EXPECT_EQ(nnue.calculate_nnue_positional(endgame), 0.0f);
+    EXPECT_EQ(nnue.Calculate_nnue_positional(endgame), 0.0f);
 }
 
 TEST(NNUEData, OwnsSuppliedParametersAndRefreshesBoardInputs)
 {
     NNUEParameters parameters{};
-    parameters.units[0].piece_weight[1][square_e5] = 3.0f;
-    parameters.units[0].turn_weight = 2.0f;
-    parameters.units[0].bias = -1.0f;
+    parameters.Neurons[0].piece_weight[1][square_e5] = 3.0f;
+    parameters.Neurons[0].turn_weight = 2.0f;
+    parameters.Neurons[0].bias = -1.0f;
     parameters.output_weight[0] = 4.0f;
     parameters.output_bias = 1.0f;
 
     NNUE_data nnue(parameters);
-    parameters.units[0].piece_weight[1][square_e5] = 100.0f;
+    parameters.Neurons[0].piece_weight[1][square_e5] = 100.0f;
 
     // Score = 1 + 4 * max(0, 3 * white_knight_on_e5 + 2 * black_to_move - 1).
     const struct {
@@ -53,7 +53,7 @@ TEST(NNUEData, OwnsSuppliedParametersAndRefreshesBoardInputs)
 
     for (const auto& test_case : cases) {
         const GameBoard board(test_case.fen);
-        EXPECT_EQ(nnue.calculate_nnue_positional(board), test_case.expected)
+        EXPECT_EQ(nnue.Calculate_nnue_positional(board), test_case.expected)
             << test_case.fen;
     }
 }
@@ -62,27 +62,25 @@ TEST(NNUEData, ReplacesAndZerosOwnedParameters)
 {
     NNUE_data nnue;
     NNUEParameters parameters{};
-    const int unit = NNUE_UNIT_COUNT - 1;
-    parameters.units[unit].piece_weight[11][63] = 2.0f;
-    parameters.units[unit].turn_weight = 3.0f;
-    parameters.units[unit].bias = 1.0f;
+    const int unit = NNUE_NEURON_COUNT - 1;
+    parameters.Neurons[unit].piece_weight[11][63] = 2.0f;
+    parameters.Neurons[unit].turn_weight = 3.0f;
+    parameters.Neurons[unit].bias = 1.0f;
     parameters.output_weight[unit] = 4.0f;
     parameters.output_bias = 5.0f;
 
-    NNUEInputs inputs{};
-    inputs.piece_on_square[11][63] = 1;
-    inputs.black_to_move = 1;
+    const GameBoard board("k7/8/8/8/8/8/8/7K b - - 0 1");
 
     nnue.set_parameters(parameters);
     parameters.output_bias = 100.0f;
-    EXPECT_EQ(nnue.calculate_nnue_positional(inputs), 29.0f);
+    EXPECT_EQ(nnue.Calculate_nnue_positional(board), 29.0f);
 
     nnue.zero_parameters();
-    EXPECT_EQ(nnue.calculate_nnue_positional(inputs), 0.0f);
+    EXPECT_EQ(nnue.Calculate_nnue_positional(board), 0.0f);
     const auto& zeroed = nnue.get_parameters();
-    EXPECT_EQ(zeroed.units[unit].piece_weight[11][63], 0.0f);
-    EXPECT_EQ(zeroed.units[unit].turn_weight, 0.0f);
-    EXPECT_EQ(zeroed.units[unit].bias, 0.0f);
+    EXPECT_EQ(zeroed.Neurons[unit].piece_weight[11][63], 0.0f);
+    EXPECT_EQ(zeroed.Neurons[unit].turn_weight, 0.0f);
+    EXPECT_EQ(zeroed.Neurons[unit].bias, 0.0f);
     EXPECT_EQ(zeroed.output_weight[unit], 0.0f);
     EXPECT_EQ(zeroed.output_bias, 0.0f);
 }
@@ -90,36 +88,35 @@ TEST(NNUEData, ReplacesAndZerosOwnedParameters)
 TEST(NNUEData, TrainingUsesAndUpdatesOwnedParameters)
 {
     NNUEParameters parameters{};
-    parameters.units[0].piece_weight[1][square_e5] = 3.0f;
+    parameters.Neurons[0].piece_weight[1][square_e5] = 3.0f;
     parameters.output_weight[0] = 2.0f;
     NNUE_data nnue(parameters);
 
+    const GameBoard board("7k/8/8/4N3/8/8/8/K7 w - - 0 1");
     NNUETrainingExample example{};
-    example.inputs.piece_on_square[1][square_e5] = 1;
+    nnue.fill_nnue_inputs(board, example.inputs);
     example.material_score_cp = 100.0f;
     example.target_search_score_cp = 110.0f;
 
-    EXPECT_EQ(nnue.calculate_nnue_aberration(example), -4.0f);
-
     NNUEJacobianRow row{};
     nnue.calculate_nnue_jacobian_row(example.inputs, row);
-    EXPECT_EQ(row.units[0].piece_weight[1][square_e5], 2.0f);
+    EXPECT_EQ(row.Neurons[0].piece_weight[1][square_e5], 2.0f);
     EXPECT_EQ(row.output_weight[0], 3.0f);
     EXPECT_EQ(row.output_bias, 1.0f);
 
     NNUEGradient gradient{};
     const float before = nnue.calculate_nnue_gradient(example, gradient);
     EXPECT_EQ(before, -4.0f);
-    EXPECT_EQ(gradient.units[0].piece_weight[1][square_e5], -8.0f);
+    EXPECT_EQ(gradient.Neurons[0].piece_weight[1][square_e5], -8.0f);
     EXPECT_EQ(gradient.output_weight[0], -12.0f);
     EXPECT_EQ(gradient.output_bias, -4.0f);
-    EXPECT_EQ(nnue.calculate_nnue_positional(example.inputs), 6.0f);
+    EXPECT_EQ(nnue.Calculate_nnue_positional(board), 6.0f);
 
     nnue.apply_nnue_gradient(gradient, 0.01f);
-    const float after = nnue.calculate_nnue_aberration(example);
+    const float after = nnue.calculate_nnue_gradient(example, gradient);
     EXPECT_LT(std::fabs(after), std::fabs(before));
-    EXPECT_FLOAT_EQ(nnue.get_parameters().units[0].piece_weight[1][square_e5], 3.08f);
-    EXPECT_EQ(parameters.units[0].piece_weight[1][square_e5], 3.0f);
+    EXPECT_FLOAT_EQ(nnue.get_parameters().Neurons[0].piece_weight[1][square_e5], 3.08f);
+    EXPECT_EQ(parameters.Neurons[0].piece_weight[1][square_e5], 3.0f);
 }
 
 TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
@@ -134,9 +131,9 @@ TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
               minimax.evaluate_board_t<Color::BLACK>(SLUG));
 
     NNUEParameters parameters{};
-    parameters.units[0].piece_weight[1][square_e5] = 3.0f;
-    parameters.units[0].turn_weight = 2.0f;
-    parameters.units[0].bias = -1.0f;
+    parameters.Neurons[0].piece_weight[1][square_e5] = 3.0f;
+    parameters.Neurons[0].turn_weight = 2.0f;
+    parameters.Neurons[0].bias = -1.0f;
 
     const struct {
         const char* fen;

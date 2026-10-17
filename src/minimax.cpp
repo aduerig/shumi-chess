@@ -1362,8 +1362,8 @@ void MinimaxAI::playgroundOld(int iPhase) {
 // Dont delete me
 void MinimaxAI::playground(int iPhase) {
     
-    sout << " dhdg " << nnue.n_calculates << endl;
-
+    sout << " dhdg=" << nnue.n_calculates << endl;
+    sout << " NNUEsize=" << sizeof(NNUEParameters) << endl;    // at 64 neurons it .2 meg
 
     //engine.game_board.test_NNUE1();
     //engine.test_SEE_for_capture_new();
@@ -4261,7 +4261,7 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
             // NNUE scores the whole position, positive for White. Include it
             // only in White's pass; evaluate_board_t converts to for_color.
             if constexpr (c == Color::WHITE) {
-                const float NNUE_score = nnue.calculate_nnue_positional(engine.game_board);
+                const float NNUE_score = nnue.Calculate_nnue_positional(engine.game_board);
                 
                 // tricky, important, below NNUI uses "float" for scores, but shumi uses centipawns (integer)
                 //cp_score_position_temp = static_cast<int>(std::lround(NNUE_score));
