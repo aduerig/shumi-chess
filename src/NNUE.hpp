@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "globals.hpp"
+
 namespace ShumiChess {
 
 class GameBoard;
@@ -152,18 +154,16 @@ private:
         return (value > 0.0f) ? value : 0.0f;
     }
 
-    // positional_score = output_bias
-    //                  + sum over j = 0..31 of:
-    //                    output_weight[j] * max(0, unit_value[j])
-    //float calculate_nnue_positional_(const NNUEInputs& inputs);
 
-    static float calculate_nnue_positional_(
+    static float calculate_nnue_positional_training(
         const NNUEInputs& inputs,
         const NNUEParameters& parameters);
 
     static float calculate_nnue_positional_(
-        const NNUEInputs& inputs,
-        const NNUEInferenceParameters& parameters);
+        std::uint8_t black_to_move,
+        const NNUEInferenceParameters& parameters,
+        const NNUEActiveInput* active_inputs,
+        std::size_t active_count);
 
     // Let training reuse the private scorer with caller-supplied parameters.
     // friend float Calculate_nnue_aberration(
@@ -213,6 +213,12 @@ private:
     // Keep the large inference copy off the stack. Copies can safely share it;
     // changing parameters replaces the cache instead of modifying it in place.
     std::shared_ptr<const NNUEInferenceParameters> inference_parameters_;
+
+    static std::size_t collect_active_inputs_from_bitboards(
+        const ull (&piece_bitboards)[12],
+        NNUEActiveInput* active_inputs);
+
+
 };
 
 } // end namespace ShumiChess

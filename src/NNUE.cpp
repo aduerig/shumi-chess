@@ -30,6 +30,34 @@ std::size_t NNUE_data::collect_active_inputs(
     return active_count;
 }
 
+
+std::size_t NNUE_data::collect_active_inputs_from_bitboards(
+    const ull (&piece_bitboards)[12],       // input
+    NNUEActiveInput* active_inputs)         // output
+{
+    std::size_t count = 0;
+
+    for (int piece = 0; piece < 12; ++piece) {
+        ull bb = piece_bitboards[piece];
+
+        while (bb) {
+            const Square square = utility::bit::lsb_and_pop_to_square(bb);
+
+            int feature_index = (piece * 64) + square;
+
+            active_inputs[count].feature_index = (std::uint16_t)feature_index;
+            active_inputs[count].value = 1;
+
+            count++;
+        }
+    }
+
+    return count;
+}
+
+
+
+
 float NNUE_data::calculate_neuron(
     const NNUEInputs& inputs,
     const NNUENeuronParameters& parameters,
@@ -106,15 +134,37 @@ void NNUE_data::rebuild_inference_parameters_()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
+// float NNUE_data::Calculate_nnue_positional(const GameBoard& board)
+// {
+//     NNUEInputs inputs{};
+//     fill_nnue_inputs_fast(board, inputs);
+
+//     NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
+//     const std::size_t active_count = collect_active_inputs(inputs, active_inputs);
+
+//     ++n_calculates;
+//     return calculate_nnue_positional_(inputs.black_to_move, *inference_parameters_, active_inputs, active_count);
+// }
 float NNUE_data::Calculate_nnue_positional(const GameBoard& board)
 {
-    NNUEInputs inputs{};
-    fill_nnue_inputs_fast(board, inputs);
+    const ull piece_bitboards[12] = {
+        board.white_pawns, board.white_knights, board.white_bishops,
+        board.white_rooks, board.white_queens, board.white_king,
+        board.black_pawns, board.black_knights, board.black_bishops,
+        board.black_rooks, board.black_queens, board.black_king
+    };
+
+    NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
+
+    const std::size_t active_count =
+        collect_active_inputs_from_bitboards(piece_bitboards, active_inputs);
+
+    const std::uint8_t black_to_move = (board.turn == Color::BLACK) ? 1 : 0;
 
     ++n_calculates;
-    return calculate_nnue_positional_(inputs, *inference_parameters_);
-}
 
+    return calculate_nnue_positional_(black_to_move, *inference_parameters_, active_inputs, active_count);
+}
 
 float NNUE_data::Calculate_nnue_aberration(const NNUETrainingExample& example)
 {
@@ -221,13 +271,11 @@ void NNUE_data::fill_nnue_inputs_fast(const GameBoard& board, NNUEInputs& inputs
 // }
 
 float NNUE_data::calculate_nnue_positional_(
-    const NNUEInputs& inputs,
-    const NNUEInferenceParameters& parameters)
+    std::uint8_t black_to_move,
+    const NNUEInferenceParameters& parameters,
+    const NNUEActiveInput* active_inputs,
+    std::size_t active_count)
 {
-    NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
-    const std::size_t active_count = collect_active_inputs(inputs, active_inputs);
-
-
     alignas(64) float values[NNUE_NEURON_COUNT];
 
     for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
@@ -249,7 +297,7 @@ float NNUE_data::calculate_nnue_positional_(
     }
 
     for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
-        values[j] += parameters.turn_weight[j] * inputs.black_to_move;
+        values[j] += parameters.turn_weight[j] * black_to_move;
     }
 
     float score = parameters.output_bias;
@@ -261,7 +309,7 @@ float NNUE_data::calculate_nnue_positional_(
 }
 
 // Training uses the original parameter layout and scalar neuron calculation.
-float NNUE_data::calculate_nnue_positional_(
+float NNUE_data::calculate_nnue_positional_training(
     const NNUEInputs& inputs,
     const NNUEParameters& parameters)
 {
@@ -296,7 +344,7 @@ float NNUE_data::calculate_nnue_aberration_(
 
 
 
-    const float positional_score = NNUE_data::calculate_nnue_positional_(example.inputs, parameters);
+    const float positional_score = NNUE_data::calculate_nnue_positional_training(example.inputs, parameters);
 
     const float predicted_total = example.material_score_cp + positional_score;
 
@@ -361,7 +409,7 @@ float NNUE_data::_calculate_nnue_gradient(
     const NNUEParameters& parameters,
     NNUEGradient& gradient)
 {
-    const float positional_score = calculate_nnue_positional_(example.inputs, parameters);
+    const float positional_score = calculate_nnue_positional_training(example.inputs, parameters);
     const float predicted_total = example.material_score_cp + positional_score;
     const float aberration = predicted_total - example.target_search_score_cp;
 
@@ -443,9 +491,6 @@ void NNUE_data::apply_nnue_gradient_(
 // }
 
 // NNUEParameters myParameters{}; // Everything zero for this check.
-
-// float  calculate_nnue_positional(inputs, myParameters);
-
 
 
 void test_NNUE1() {
