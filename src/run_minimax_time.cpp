@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
     // Milliseconds. The purpose of this low value, is to make us go only (and exactly) a fixed number of deepenings 
     ull time_to_use = 2;      
 
-    int player_id = NNUE;  //UNCLE_SHUMI;       //  UNCLE_SHUMI;
+    int player_id = UNCLE_SHUMI;       //  UNCLE_SHUMI;
     bool display_results_to_terminal = false;
 
     // if (argc < 2) {

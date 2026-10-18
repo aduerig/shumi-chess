@@ -5,6 +5,12 @@
 
 #include <cstddef>
 
+
+#ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
+    #undef NDEBUG
+#endif   
+#include <assert.h>
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ShumiChess {
@@ -134,17 +140,7 @@ void NNUE_data::rebuild_inference_parameters_()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// float NNUE_data::Calculate_nnue_positional(const GameBoard& board)
-// {
-//     NNUEInputs inputs{};
-//     fill_nnue_inputs_fast(board, inputs);
 
-//     NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
-//     const std::size_t active_count = collect_active_inputs(inputs, active_inputs);
-
-//     ++n_calculates;
-//     return calculate_nnue_positional_(inputs.black_to_move, *inference_parameters_, active_inputs, active_count);
-// }
 float NNUE_data::Calculate_nnue_positional(const GameBoard& board)
 {
     const ull piece_bitboards[12] = {
@@ -156,8 +152,8 @@ float NNUE_data::Calculate_nnue_positional(const GameBoard& board)
 
     NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
 
-    const std::size_t active_count =
-        collect_active_inputs_from_bitboards(piece_bitboards, active_inputs);
+    const std::size_t active_count = collect_active_inputs_from_bitboards(piece_bitboards, 
+                active_inputs);     // output
 
     const std::uint8_t black_to_move = (board.turn == Color::BLACK) ? 1 : 0;
 
@@ -265,10 +261,6 @@ void NNUE_data::fill_nnue_inputs_fast(const GameBoard& board, NNUEInputs& inputs
 // positional_score = output_bias
 //                  + sum over j = 0..31 of:
 //                    output_weight[j] * max(0, unit_value[j])
-// float NNUE_data::calculate_nnue_positional_(const NNUEInputs& inputs)
-// {
-//     return calculate_nnue_positional_(inputs, parameters_);
-// }
 
 float NNUE_data::calculate_nnue_positional_(
     std::uint8_t black_to_move,
@@ -285,14 +277,17 @@ float NNUE_data::calculate_nnue_positional_(
     // Each inner loop reads consecutive weights and updates independent neurons.
     // Preserve the original feature order within each neuron's sum.
     for (std::size_t i = 0; i < active_count; ++i) {
+
         const NNUEActiveInput& input = active_inputs[i];
         const int piece = input.feature_index >> 6;
         const int square = input.feature_index & 63;
         const float* weights = parameters.piece_weight[piece][square];
-        const float input_value = static_cast<float>(input.value);
 
+        const float input_value = (float)(input.value);
+
+        assert (input_value == 1.0f);
         for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
-            values[j] += weights[j] * input_value;
+            values[j] += (weights[j] * input_value);
         }
     }
 

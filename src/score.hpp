@@ -71,9 +71,21 @@
     static const char* fmtMain = "%d";
 
     inline constexpr Score VERY_SMALL_SCORE = 0;   // centi-pawns
-    inline constexpr Score HUGE_SCORE = 1000000;       // Was 10000.0 pawns, now 1,000,000 centpawns
+    //
+    // HUGE_SCORE = 30,000 centipawns (300 pawns).
+    //      Chosen to fit within a signed 16-bit Score (-32,768 to +32,767).
+    //      Even an impossible army of 15 queens (every pawn promotes) and a king -  has only 13,500 cp
+    //      in queen material. This leaves substantial room for positional scores
+    //      while keeping mate scores far above ordinary evaluations.
+    //
+    // "all Score arithmetic must be checked for 16-bit overflow"
+    //
+    inline constexpr Score HUGE_SCORE = 30'000;       // Was 10000.0 pawns, now 1,000,000 centpawns
+    
+    //  MATE_CODING_BUFFER: I suggest 1,000 centipawns, allowing room for mate distances up to approximately 1,000 plies.
+    inline constexpr Score MATE_CODING_BUFFER = 1'000; 
 
-    inline bool IS_MATE_SCORE(Score x) { return std::abs(x) > (HUGE_SCORE - 20000); } // 20000 centpawns = 200 pawns
+    inline bool IS_MATE_SCORE(Score x) { return std::abs(x) > (HUGE_SCORE - MATE_CODING_BUFFER); } // 20000 centpawns = 200 pawns
 
     inline constexpr Score ABORT_SCORE = HUGE_SCORE + 1; 
     inline constexpr Score ONLY_MOVE_SCORE = HUGE_SCORE + 2; 
