@@ -168,8 +168,8 @@ public:
     };
 
     struct TTEntry2 {
-        int              score_cp;   // search score in centipawns
-        uint8_t          depthh;      // depth this node was searched to
+        Score            score_cp;   // search score in centipawns
+        uint8_t          depthh;     // depth this node was searched to
         ShumiChess::Move best_move;  // move that produced score_cp
         TTFlag           flagg;      // EXACT / LOWER_BOUND / UPPER_BOUND
         unsigned char    age;        // optional: for aging/replacement

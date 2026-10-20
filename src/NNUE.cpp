@@ -497,6 +497,43 @@ void test_NNUE1() {
     assert(positional_score == 0.0f);
 }
 
+void test_NNUE_training_one_position()
+{
+    const GameBoard board{};
+
+    NNUETrainingExample example{};
+    NNUE_data nnue;
+
+    // "inputs" <- the board
+    nnue.fill_nnue_inputs_fast(board, example.inputs);
+
+    // Artificial training target: NNUE should learn +75 cp.
+    example.material_score_cp = 0.0f;
+    example.target_search_score_cp = 75.0f;
+
+    // Initialize one neuron so its ReLU is active and can learn.
+    NNUEParameters parameters{};
+
+    parameters.Neurons[0].bias = 1.0f;
+    parameters.output_weight[0] = 1.0f;
+
+    nnue.set_parameters(parameters);
+
+    // Calculate one row of the training chart.
+    const int iteration = 0;
+
+    const float aberration = nnue.Calculate_nnue_aberration(example);
+
+    const float nnue_positional =
+        example.target_search_score_cp
+        - example.material_score_cp
+        + aberration;
+
+    sout << "Iteration: " << iteration
+         << "  NNUE positional: " << nnue_positional
+         << "  Aberration: " << aberration
+         << std::endl;
+}
 
 // // Verify the NNUE calculation using deliberately chosen parameters,
 // // with known expected results; no training is performed.

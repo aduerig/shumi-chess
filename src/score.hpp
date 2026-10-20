@@ -1,6 +1,12 @@
 
 #pragma once
 
+#ifdef SHUMI_FORCE_ASSERTS
+    #undef NDEBUG
+#endif
+
+#include <cassert>
+#include <cstdint>
 #include <cmath>
 
 
@@ -8,6 +14,7 @@
 
 #ifndef SCORE_AS_INT
 
+    // This code is no lonber valid, after making Score a 16 bit integer
     typedef double Score;
 
     #define ZERO_SCORE 0.0
@@ -51,7 +58,8 @@
 
 #else
 
-    typedef int Score;
+    //typedef int Score;
+    typedef std::int16_t Score;
 
     #define ZERO_SCORE 0
     #define ONE_PAWN 100
@@ -60,7 +68,12 @@
 
     // Note: clean me up, remove me after testing
     inline int convert_to_CP(Score dd) {return (int)dd;}
-    inline Score convert_from_CP(int ii) {return (static_cast<Score>(ii));}
+    inline Score convert_from_CP(int ii)
+    {
+        // Verify return from evaluation, in anticipation of Score becoming 16 bit.
+        assert(ii >= -32767 && ii <= 32767);
+        return static_cast<Score>(ii);
+    }
 
 
     // Used only for displays to humans. convert_from_CP() used to do this, but now Shumi is CP internally everywhere.
@@ -83,9 +96,10 @@
     inline constexpr Score HUGE_SCORE = 30'000;       // Was 10000.0 pawns, now 1,000,000 centpawns
     
     //  MATE_CODING_BUFFER: I suggest 1,000 centipawns, allowing room for mate distances up to approximately 1,000 plies.
-    inline constexpr Score MATE_CODING_BUFFER = 1'000; 
+    inline constexpr Score MATE_CODING_BUFFER = 1'000;   // // 20000 centpawns = 200 pawns
 
-    inline bool IS_MATE_SCORE(Score x) { return std::abs(x) > (HUGE_SCORE - MATE_CODING_BUFFER); } // 20000 centpawns = 200 pawns
+    // Leave room for "mate marker"
+    inline bool IS_MATE_SCORE(Score x) { return std::abs(x) > (HUGE_SCORE - MATE_CODING_BUFFER); } 
 
     inline constexpr Score ABORT_SCORE = HUGE_SCORE + 1; 
     inline constexpr Score ONLY_MOVE_SCORE = HUGE_SCORE + 2; 
@@ -96,19 +110,39 @@
 // The incoming score has had a "mate marker" added to it. Here we remove that marker, so now
 // its a real "Score" that can be comraed to other Scores.
 //
+// inline Score mate_score_to_TT(Score score, int level)
+// {
+//     assert(level >= 0);
+//     assert ( (score >= -HUGE_SCORE) && (score <= HUGE_SCORE) );
+
+//     if (IS_MATE_SCORE(score)) {
+//         if (score > 0) {
+//             // Remove the "distance from the current root".
+//             return score + level;
+//         } else {
+//             // Remove the distance from the current root.
+//             return score - level;
+//         }
+//     }
+
+//     return score;
+// }
+
 inline Score mate_score_to_TT(Score score, int level)
 {
+    assert(level >= 0);
+    assert(score >= -HUGE_SCORE && score <= HUGE_SCORE);
+
+    int adjusted = score;
+
     if (IS_MATE_SCORE(score)) {
-        if (score > 0) {
-            // Remove the "distance from the current root".
-            return score + level;
-        } else {
-            // Remove the distance from the current root.
-            return score - level;
-        }
+        adjusted = (score > 0)
+            ? adjusted + level
+            : adjusted - level;
     }
 
-    return score;
+    assert ( (adjusted >= -HUGE_SCORE) && (adjusted <= HUGE_SCORE) );
+    return (Score)(adjusted);
 }
 
 inline Score mate_score_from_TT(Score score, int level)

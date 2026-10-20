@@ -1,6 +1,111 @@
 do not delete me
 
 
+====================================================================================
+
+
+For changing `TTEntry2::score_cp` from `int` to **signed `std::int16_t`**, I see **no current correctness blocker**. 
+Here is the revised numbered list.
+
+1. **The store becomes a narrowing conversion, but its current input is guaranteed to fit.**
+
+   The [write path](C:/programming/shumi-chess/src/minimax.cpp:2349) is:
+
+   ```cpp
+   const Score score_for_TT = mate_score_to_TT(d_best_score, level);
+   const int cp_score_temp = convert_to_CP(score_for_TT);
+   // ...
+   slot.score_cp = cp_score_temp;
+   ```
+
+   `Score` is already `std::int16_t`, and `convert_to_CP()` simply widens it to `int`. Consequently, the 
+   proposed change gives:
+
+   ```text
+   int16_t → int → int16_t
+   ```
+
+   Every value produced by that sequence is preserved. I found only one assignment to the TT score field.
+
+   The potential concern is a future change that writes a larger `int` directly. 
+   A range assertion **before the assignment** would protect that boundary. 
+   An assertion when reading the table cannot reliably detect a value already changed by narrowing.
+
+   MSVC may also issue a narrowing-conversion warning. An explicit cast can document the conversion, but does not check its range.
+
+2. **Mate normalization already narrows its result before the table sees it.**
+
+   In [mate_score_to_TT()](C:/programming/shumi-chess/src/score.hpp:112):
+
+   ```cpp
+   return score + level;
+   ```
+
+   The addition happens in `int`, followed by conversion to the function’s `Score` return type. Therefore, an incorrect adjustment could lose information before either `cp_score_temp` or `slot.score_cp` receives it.
+
+   **This concern already exists with the current `int` table field.** Shrinking that field does not introduce it.
+
+   Correct normalization fits within ±30,000. For example, a winning mate at root-relative ply 20 has score 29,980. Storing it from a node at ply 6 produces 29,986: mate in 14 plies from that node.
+
+   If you want additional protection, calculate and assert the adjusted value while it is still an `int`, before returning it as `Score`.
+
+3. **TT validation must permit mates while excluding invalid search values.**
+
+   Your current score conventions fit in signed 16-bit storage:
+
+   - Ordinary evaluations are checked against ±28,999.
+   - Mate scores extend toward ±30,000.
+   - `ABORT_SCORE` and `ONLY_MOVE_SCORE` are 30,001 and 30,002.
+
+   The TT must accept legitimate mate scores. Applying the evaluator’s ±28,999 assertion to TT storage would reject them.
+
+   Conversely, the control values fit the storage type but should never be stored as search results. I checked the current paths: only-move results and aborted searches return before TT storage.
+
+   A TT-specific check against `[-HUGE_SCORE, HUGE_SCORE]` would express that intended range.
+
+   Also, −32,768 should remain excluded from usable scores because its negation cannot fit in `Score`. Your existing `convert_from_CP()` assertion already excludes it.
+
+   These are existing engine rules. I found no new violation caused by the proposed field change.
+
+4. **The read paths and bound comparisons remain compatible.**
+
+   Both normal probe paths do this:
+
+   ```cpp
+   Score stored_score = convert_from_CP(entry.score_cp);
+   stored_score = mate_score_from_TT(stored_score, level);
+   ```
+
+   The new signed 16-bit field widens safely to the helper’s `int` parameter, preserving negative values.
+
+   Exact-score returns and lower/upper-bound comparisons therefore receive the same values as before. Flags are stored separately; there is no flag information hidden in the score’s upper bits.
+
+   I found no dependency on the field being an `int&` or `int*`, no raw TT serialization, and no atomic operation requiring its current width. `<cstdint>` is already available through your headers.
+
+5. **The smaller field should not reduce the current map’s allocated node size.**
+
+   For the layout we inspected:
+
+   | Object | Before | Expected afterward |
+   |---|---:|---:|
+   | `TTEntry2` | 16 bytes | 14 bytes |
+   | Map’s key/value pair | 24 bytes | 24 bytes |
+   | MSVC map node | 40 bytes | 40 bytes |
+
+   Padding in the enclosing key/value pair absorbs the two-byte saving. This limits the memory benefit of the change; it does not create a correctness problem.
+
+   With node size unchanged, there is also no automatic improvement in cache density. Any execution-speed difference would need measurement.
+
+No changes made. This is analysis of the current source; a modified version has not been compiled or run.
+
+
+=====================================================================================
+
+
+
+
+
+
 
 soft abort q=1
  n_Multis=1  xx 0  rr  

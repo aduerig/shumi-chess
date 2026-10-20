@@ -2728,8 +2728,8 @@ Score GameBoard::excess_exceptions_cp() const
     const int exception_count = 3;
     const ExcessException excess_exceptions[] = {
         {
-            // Rule 1: friendly has the excess queen, enemy has excess rook, minor, and pawn.
-            // This rewards the queen side by .35 pawn; the color loop makes it work for White or Black.
+            // Rule 1: friendly has the excess queen, enemy has excess rook, minor.
+            //   the color loop makes it work for White or Black.
             //
             // PAWN, ROOK, MINOR, QUEEN.
             // PAWN is counted here but ignored by excess_pieces_match().
@@ -2739,7 +2739,7 @@ Score GameBoard::excess_exceptions_cp() const
         },
         {
           // Rule 2: friendly has the excess queen, enemy has 2 excess rooks.
-            // This rewards the queen side by .35 pawn; the color loop makes it work for White or Black.
+            // The color loop makes it work for White or Black.
             //
             // PAWN, ROOK, MINOR, QUEEN.
             // PAWN is counted here but ignored by excess_pieces_match().

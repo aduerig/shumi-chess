@@ -125,7 +125,9 @@ private:
     // Inference stores all neurons for one piece-square feature together.
     // The public parameter/Jacobian layout remains unchanged for training.
     struct alignas(64) NNUEInferenceParameters {
+
         float piece_weight[12][64][NNUE_NEURON_COUNT];
+        
         float bias[NNUE_NEURON_COUNT];
         float turn_weight[NNUE_NEURON_COUNT];
         float output_weight[NNUE_NEURON_COUNT];
@@ -142,6 +144,11 @@ private:
     static std::size_t collect_active_inputs(
         const NNUEInputs& inputs,
         NNUEActiveInput (&active_inputs)[NNUE_INPUT_COUNT]);
+
+    static std::size_t collect_active_inputs_from_bitboards(
+            const ull (&piece_bitboards)[12],
+            NNUEActiveInput* active_inputs);
+
 
     static float calculate_neuron(
         const NNUEInputs& inputs,
@@ -214,10 +221,7 @@ private:
     // changing parameters replaces the cache instead of modifying it in place.
     std::shared_ptr<const NNUEInferenceParameters> inference_parameters_;
 
-    static std::size_t collect_active_inputs_from_bitboards(
-        const ull (&piece_bitboards)[12],
-        NNUEActiveInput* active_inputs);
-
+    
 
 };
 

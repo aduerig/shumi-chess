@@ -1362,9 +1362,12 @@ void MinimaxAI::playgroundOld(int iPhase) {
 // Dont delete me
 void MinimaxAI::playground(int iPhase) {
     
-    sout << " dhdg=" << nnue.n_calculates << endl;
-    sout << " NNUEsize=" << sizeof(NNUEParameters) << endl;    // at 64 neurons it .2 meg
+    // sout << " dhdg=" << nnue.n_calculates << endl;
+    // sout << " NNUEsize=" << sizeof(NNUEParameters) << endl;    // at 64 neurons it .2 meg
 
+    cout << " ssssssssisis =" << sizeof(TTEntry2) << endl;
+
+    //engine.game_board.test_NNUE_training_one_position();
     //engine.game_board.test_NNUE1();
     //engine.test_SEE_for_capture_new();
 
@@ -2155,7 +2158,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
         
         assert(level >= 0);
 
-        Score d_level = static_cast<Score>(level);
+        Score d_level = (Score)(level);
 
         switch (state) {
             case GameState::WHITEWIN:
@@ -2344,7 +2347,6 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
               
       
                 const Score score_for_TT = mate_score_to_TT(d_best_score, level);
-                const int cp_score_temp = convert_to_CP(score_for_TT);
 
 
                 // --- DEBUG
@@ -2365,7 +2367,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                         }
                         else if (!foundIsMate) {
                             // Both are ordinary evaluation scores.
-                            scoreMismatch = abs(foundScore_cp - cp_score_temp) > BURP2_THRESHOLD_CP;
+                            scoreMismatch = abs(foundScore_cp - score_for_TT) > BURP2_THRESHOLD_CP;
                         }
                         else {
                             // Both are mate scores.
@@ -2397,7 +2399,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
                                 buf, sizeof(buf),
                                 "\n%llu burp2 %ld = %ld    %.2f = %.2f     q=%ld    rep  %ld %ld \n",
                                 nGames,
-                                foundScore_cp, cp_score_temp,
+                                foundScore_cp, score_for_TT,
                                 foundRawScore, d_best_score,
                                 qPlys, foundRepCount, iRepCountNow
                             );
@@ -2440,7 +2442,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                             // sout << "  depth-> " << depth << " mv->" << engine.computer_ply_so_far 
                             // << " dbg->" << bBothScoresMates << " idelta-> " << idelta 
-                            // << " , " << abs(foundScore_cp - cp_score_temp)
+                            // << " , " << abs(foundScore_cp - score_for_TT)
                             // << endl;
                             
                             // Show board
@@ -2501,7 +2503,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
                     TTEntry2 &slot = TTable2[key];
 
-                    slot.score_cp  = cp_score_temp;
+                    slot.score_cp  = score_for_TT;
                     slot.best_move = the_best_move;
                     slot.depthh    = (uint8_t)depth;
                     slot.flagg     = new_flag;
@@ -3452,8 +3454,6 @@ bool MinimaxAI::loop_over_all_moves(int depth,
             // if (nChars == EOF) assert(0);
         #endif
 
-        Score d_difference_in_score = std::abs(d_score_value - bestScoreOut);
-
         b_use_this_move = (d_score_value > bestScoreOut);
 
         if (b_use_this_move) {
@@ -4240,6 +4240,10 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
     //
     // Add the material and positional togather to get a final return in centipawns.
     cp_score_adjusted = cp_score_material_all + cp_score_position;
+
+    // Verify return from evaluation, in anticipation of Score becoming 16 bit.
+    constexpr int max_eval = HUGE_SCORE - MATE_CODING_BUFFER - 1;
+    assert((cp_score_adjusted >= -max_eval) && (cp_score_adjusted <= max_eval));
 
     return cp_score_adjusted;
 }
