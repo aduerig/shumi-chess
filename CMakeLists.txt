@@ -110,11 +110,21 @@ target_include_directories(${project_name}NoAsserts PUBLIC
 add_executable(measure_speed_random_games driver/measure_speed_random_games.cpp)
 target_link_libraries(measure_speed_random_games PUBLIC ${project_name})
 
-add_executable(run_minimax_time src/run_minimax_time.cpp)
+add_executable(run_minimax_time driver/run_minimax_time.cpp)
 target_compile_definitions(run_minimax_time PRIVATE NDEBUG=1)
 target_link_libraries(run_minimax_time PUBLIC ${project_name}NoAsserts)
 if(MSVC)
     target_link_options(run_minimax_time PRIVATE
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/INCREMENTAL:NO /DEBUG:FULL>
+        $<$<CONFIG:RelWithDebInfo>:/LTCG>
+    )
+endif()
+
+add_executable(run_nnue_training driver/run_nnue_training.cpp)
+target_compile_definitions(run_nnue_training PRIVATE NDEBUG=1)
+target_link_libraries(run_nnue_training PUBLIC ${project_name}NoAsserts)
+if(MSVC)
+    target_link_options(run_nnue_training PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/INCREMENTAL:NO /DEBUG:FULL>
         $<$<CONFIG:RelWithDebInfo>:/LTCG>
     )

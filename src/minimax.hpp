@@ -62,8 +62,14 @@ public:
     // The chess engine
     ShumiChess::Engine& engine;
 
+
+
     // Constructed once with this AI; parameters persist between evaluations.
     ShumiChess::NNUE_data nnue;
+
+
+
+
 
     struct SearchTimeControl {
         ull time_left_msec = 0;            // Milliseconds remaining until time control, before this search starts
@@ -223,8 +229,11 @@ public:
     template<ShumiChess::Color c> int cp_score_positional_get_open_cp_t(int nPhase, const ShumiChess::PawnFileInfo*& pawnFileInfoP);
     template<ShumiChess::Color c> int cp_score_positional_get_middle_cp_t(int nPhase);
     template<ShumiChess::Color c> int cp_score_positional_get_end_t(int nPly, int cp_score_material_all, bool noMajorPiecesFriend, bool noMajorPiecesEnemy);
-    template<ShumiChess::Color for_color> int evaluate_board_t(ShumiChess::EvalPersons evp);
-    template<ShumiChess::Color c> int get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all, const ShumiChess::PawnFileInfo*& pawnFileInfoP);
+   
+    template<ShumiChess::Color for_color> int evaluate_board_t(ShumiChess::EvalPersons evp,
+                                        int* material_out = nullptr, int* positional_out = nullptr);
+
+    template<ShumiChess::Color c> int get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons evp, int cp_scor7e_material_all, const ShumiChess::PawnFileInfo*& pawnFileInfoP);
     
     template<ShumiChess::Color c> int trade_imbalance_cp_t(int material_balance, int me_pawn_material) const;
     

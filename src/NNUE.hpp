@@ -6,6 +6,9 @@
 
 #include "globals.hpp"
 
+
+class MinimaxAI;  // Before namespace ShumiChess
+
 namespace ShumiChess {
 
 class GameBoard;
@@ -48,12 +51,15 @@ struct NNUEParameters {
 // One fixed training case.
 // All scores are in centipawns, positive good for White.
 // These are training data, not adjustable network parameters.
+// struct NNUETrainingExample {
+//     NNUEInputs inputs;
+//     float material_score_cp;
+//     float target_search_score_cp;
+// };
 struct NNUETrainingExample {
     NNUEInputs inputs;
-    float material_score_cp;
-    float target_search_score_cp;
+    float target_positional_score_cp;
 };
-
 
 // One Jacobian row: derivatives of ONE example's aberration
 // with respect to every network parameter.
@@ -101,7 +107,7 @@ public:
     // Both overloads leave the stored parameters unchanged.
     float Calculate_nnue_positional(const GameBoard& board);
 
-  
+    void initialize_parameters();
 
     // Training calculations use the same stored parameters as evaluation.
     // Examples, Jacobian rows, and gradients belong to the training caller.
@@ -127,7 +133,7 @@ private:
     struct alignas(64) NNUEInferenceParameters {
 
         float piece_weight[12][64][NNUE_NEURON_COUNT];
-        
+
         float bias[NNUE_NEURON_COUNT];
         float turn_weight[NNUE_NEURON_COUNT];
         float output_weight[NNUE_NEURON_COUNT];
@@ -224,5 +230,8 @@ private:
     
 
 };
+
+void test_NNUE1();
+void test_NNUE_training_one_position(MinimaxAI*);
 
 } // end namespace ShumiChess

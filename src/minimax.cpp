@@ -1365,10 +1365,10 @@ void MinimaxAI::playground(int iPhase) {
     // sout << " dhdg=" << nnue.n_calculates << endl;
     // sout << " NNUEsize=" << sizeof(NNUEParameters) << endl;    // at 64 neurons it .2 meg
 
-    cout << " ssssssssisis =" << sizeof(TTEntry2) << endl;
+    //cout << " ssssssssisis =" << sizeof(TTEntry2) << endl;
 
-    //engine.game_board.test_NNUE_training_one_position();
-    //engine.game_board.test_NNUE1();
+    test_NNUE_training_one_position(this);
+    // nnue.test_NNUE1();
     //engine.test_SEE_for_capture_new();
 
     // engine.game_board.compute_bits_in();
@@ -4150,8 +4150,15 @@ int MinimaxAI::cp_score_positional_get_end_t(int nPhase, int cp_material_all, bo
 }
 
 //  Final eval is (material+positional).
+
+// template<ShumiChess::Color for_color>
+// int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
+
 template<ShumiChess::Color for_color>
-int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
+int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
+    int* material_out,          // output (optional)
+    int* positional_out) {      // output (optional)
+
     using namespace ShumiChess;
 
     evals_visited++;
@@ -4245,6 +4252,10 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp) {
     constexpr int max_eval = HUGE_SCORE - MATE_CODING_BUFFER - 1;
     assert((cp_score_adjusted >= -max_eval) && (cp_score_adjusted <= max_eval));
 
+    // Assign outputs to this function.
+    if (material_out)   *material_out   = cp_score_material_all;
+    if (positional_out) *positional_out = cp_score_position;
+
     return cp_score_adjusted;
 }
 
@@ -4311,8 +4322,11 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
 }
 
 // Explicit template instantiations
-template int MinimaxAI::evaluate_board_t<ShumiChess::Color::WHITE>(ShumiChess::EvalPersons);
-template int MinimaxAI::evaluate_board_t<ShumiChess::Color::BLACK>(ShumiChess::EvalPersons);
+// template int MinimaxAI::evaluate_board_t<ShumiChess::Color::WHITE>(ShumiChess::EvalPersons);
+// template int MinimaxAI::evaluate_board_t<ShumiChess::Color::BLACK>(ShumiChess::EvalPersons);
+template int MinimaxAI::evaluate_board_t<ShumiChess::Color::WHITE>(ShumiChess::EvalPersons, int*, int*);
+template int MinimaxAI::evaluate_board_t<ShumiChess::Color::BLACK>(ShumiChess::EvalPersons, int*, int*);
+
 
 template int MinimaxAI::get_positional_for_one_color<ShumiChess::Color::WHITE>(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all, const ShumiChess::PawnFileInfo*& pawnFileInfoP);
 template int MinimaxAI::get_positional_for_one_color<ShumiChess::Color::BLACK>(int nPhase, ShumiChess::EvalPersons evp, int cp_score_material_all, const ShumiChess::PawnFileInfo*& pawnFileInfoP);

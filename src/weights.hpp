@@ -225,7 +225,7 @@ private:
     static constexpr int ROOK_2_MINORS_WGHT = 30;           // favoring the two pieces
 
 
-    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 0;
+    static constexpr int UNPUSHABLE_KNIGHT_WGHT = 0;    // NOT USED (no weight)
 
     static constexpr int TRADE_MAX_BONUS_WGHT = 120;    // NOT USED
     static constexpr int TRADE_ADVANTAGE_CAP_WGHT = 200;    // NOT USED

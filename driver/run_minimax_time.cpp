@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
     // Since there is no time control there is no hard abort.
     flags &= ~_FEATURE_SOFT_ABORT;      // remove soft abort
 
-    sout << "uzing level= " << depth_to_use
+    sout << "uzzzzzzzzzzzzzzzzzzzzing level= " << depth_to_use
          << "  msec = " << time_to_use
          << "  max ply = " << max_ply_to_play 
          << "  play id = " << player_id

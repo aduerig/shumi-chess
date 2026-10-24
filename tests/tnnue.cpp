@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <cfloat>
 #include <cmath>
 
 #include "NNUE.hpp"
@@ -95,8 +96,8 @@ TEST(NNUEData, TrainingUsesAndUpdatesOwnedParameters)
     const GameBoard board("7k/8/8/4N3/8/8/8/K7 w - - 0 1");
     NNUETrainingExample example{};
     nnue.fill_nnue_inputs(board, example.inputs);
-    example.material_score_cp = 100.0f;
-    example.target_search_score_cp = 110.0f;
+    // Positional target = search score minus material score.
+    example.target_positional_score_cp = 110.0f - 100.0f;
 
     NNUEJacobianRow row{};
     nnue.calculate_nnue_jacobian_row(example.inputs, row);
@@ -174,6 +175,60 @@ TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
                   minimax.evaluate_board_t<Color::WHITE>(SLUG) + 2 * sign);
         EXPECT_EQ(minimax.evaluate_board_t<Color::BLACK>(NNUE),
                   minimax.evaluate_board_t<Color::BLACK>(SLUG) - 2 * sign);
+    }
+}
+
+TEST(NNUEData, TrainingOnePositionConverges)
+{
+    constexpr int TRAINING_ITERATIONS = 20;
+    constexpr float learning_rate = 0.001f;
+
+    const GameBoard board{};
+    NNUETrainingExample example{};
+    NNUE_data nnue;
+
+    nnue.fill_nnue_inputs_fast(board, example.inputs);
+
+    // The original material score was zero, so the positional target is 75 cp.
+    example.target_positional_score_cp = 75.0f;
+
+    // Start with one active neuron, as in test_NNUE_training_one_position().
+    NNUEParameters parameters{};
+    parameters.Neurons[0].bias = 1.0f;
+    parameters.output_weight[0] = 1.0f;
+    nnue.set_parameters(parameters);
+
+    NNUEGradient gradient{};
+    ASSERT_FLOAT_EQ(nnue.Calculate_nnue_aberration(example), -74.0f);
+
+    for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
+        SCOPED_TRACE(iteration);
+
+        const float aberration = nnue.Calculate_nnue_aberration(example);
+
+        // const float nnue_positional =
+        //     example.target_positional_score_cp + aberration;
+        // std::ostringstream aberration_text;
+        // aberration_text << std::fixed << std::setprecision(10) << aberration;
+        // sout << "Iteration: " << iteration
+        //      << "  NNUE positional: " << nnue_positional
+        //      << "  Aberration: " << aberration_text.str()
+        //      << std::endl;
+
+        nnue.calculate_nnue_gradient(example, gradient);
+        nnue.apply_nnue_gradient(gradient, learning_rate);
+
+        const float updated_aberration = nnue.Calculate_nnue_aberration(example);
+        if (std::fabs(aberration) > FLT_EPSILON) {
+            EXPECT_LT(std::fabs(updated_aberration), std::fabs(aberration));
+        } else {
+            // Once the error reaches zero, further updates must keep it there.
+            EXPECT_NEAR(updated_aberration, 0.0f, FLT_EPSILON);
+        }
+
+        if (iteration == TRAINING_ITERATIONS - 1) {
+            EXPECT_NEAR(updated_aberration, 0.0f, FLT_EPSILON);
+        }
     }
 }
 

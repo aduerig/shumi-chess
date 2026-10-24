@@ -1,9 +1,15 @@
+
+#include <cstddef>
+#include <iomanip>
+#include <sstream>
+
 #include "NNUE.hpp"
 
 #include "gameboard.hpp"
 #include "utility.hpp"
+#include "minimax.hpp"
 
-#include <cstddef>
+
 
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
@@ -332,21 +338,34 @@ float NNUE_data::calculate_nnue_positional_training(
 //
 // Analogous to calculated optical performance minus desired performance.
 // Does not change any parameters.
+// float NNUE_data::calculate_nnue_aberration_(
+//     const NNUETrainingExample& example,
+//     const NNUEParameters& parameters)
+// {
+
+
+
+//     const float positional_score = NNUE_data::calculate_nnue_positional_training(example.inputs, parameters);
+
+//     const float predicted_total = example.material_score_cp + positional_score;
+
+//     return predicted_total - example.target_search_score_cp;
+// }
 float NNUE_data::calculate_nnue_aberration_(
     const NNUETrainingExample& example,
     const NNUEParameters& parameters)
 {
+    const float positional_score =
+        NNUE_data::calculate_nnue_positional_training(
+            example.inputs, parameters);
 
-
-
-    const float positional_score = NNUE_data::calculate_nnue_positional_training(example.inputs, parameters);
-
-    const float predicted_total = example.material_score_cp + positional_score;
-
-    return predicted_total - example.target_search_score_cp;
+    return (positional_score - example.target_positional_score_cp);
 }
 
-// Calculate one Jacobian row analytically.
+
+
+
+// Calculate one Jacobian row analytically. (the orginal Jacobian is all one col, but the Jt (J transpose) is all one row)
 // Material and target scores are fixed, so their derivatives are zero.
 // Therefore, aberration derivatives equal network-output derivatives.
 // Does not change the network parameters.
@@ -404,9 +423,12 @@ float NNUE_data::_calculate_nnue_gradient(
     const NNUEParameters& parameters,
     NNUEGradient& gradient)
 {
+
+
     const float positional_score = calculate_nnue_positional_training(example.inputs, parameters);
-    const float predicted_total = example.material_score_cp + positional_score;
-    const float aberration = predicted_total - example.target_search_score_cp;
+
+    const float aberration = positional_score - example.target_positional_score_cp;
+
 
     NNUEJacobianRow row{};
     calculate_nnue_jacobian_row_(example.inputs, parameters, row);
@@ -488,6 +510,31 @@ void NNUE_data::apply_nnue_gradient_(
 // NNUEParameters myParameters{}; // Everything zero for this check.
 
 
+
+void NNUE_data::initialize_parameters()
+{
+    // Local storage for one full set of starting weights and biases; {} zeros them all.
+    // The nnue object already owns separate working storage.
+    NNUEParameters parameters{};
+
+    // Neuron 0: z[0] = bias + sum(piece_weight[p][s] * piece_on_square[p][s])
+    //                     + turn_weight * black_to_move. Its activation is max(0, z[0]).
+    // All its input weights start at zero, so bias = 1 gives activation = max(0, 1) = 1.
+    parameters.Neurons[0].bias = 1.0f;
+
+    // Final score = output_bias + sum over neurons j of (output_weight[j] * activation[j]).
+    // This weight scales neuron 0's activation; initially the score is 0 + 1 * 1 = 1 cp.
+    // All other neurons contribute zero because their parameters are still zero.
+    parameters.output_weight[0] = -1.0f;
+
+    // Copy these starting values into nnue's own parameters and rebuild its fast-evaluation copy.
+    // Later training updates nnue's copy; this local parameters object stays unchanged.
+    set_parameters(parameters);
+}
+
+
+
+
 void test_NNUE1() {
     const GameBoard board{};
     NNUE_data nnue; // Constructor zeros every parameter for this check.
@@ -497,219 +544,101 @@ void test_NNUE1() {
     assert(positional_score == 0.0f);
 }
 
-void test_NNUE_training_one_position()
+//  This is the same basic iterative least-squares framework you know from optical design, except 
+//  that you're using gradient descent rather than solving normal equations.
+void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 {
-    const GameBoard board{};
+    // Controls each weight/bias adjustment: new_value = old_value - learning_rate * its_gradient.
+    // Smaller rates give smaller steps; a rate that is too large can overshoot and increase the error.
+    constexpr float learning_rate = 0.001f;
 
+    // Setup the starting chess position
+    const GameBoard& board = pPlayer->engine.game_board;
+    //const GameBoard board{};
+
+    // Store the fixed board inputs, and positional score for this example.
     NNUETrainingExample example{};
+
+    // Owns the working weights/biases and a separate heap copy arranged for fast evaluation.
     NNUE_data nnue;
 
-    // "inputs" <- the board
+    // Convert the board into the piece-square and side-to-move inputs used during training.
     nnue.fill_nnue_inputs_fast(board, example.inputs);
 
-    // Artificial training target: NNUE should learn +75 cp.
-    example.material_score_cp = 0.0f;
-    example.target_search_score_cp = 75.0f;
+    ShumiChess::EvalPersons eval_person = ShumiChess::UNCLE_SHUMI;
 
-    // Initialize one neuron so its ReLU is active and can learn.
-    NNUEParameters parameters{};
+    int material_score_cp;          /* Shumi's material evaluation */
+    int positional_score_cp;        /* Shumi's positional evaluation */
 
-    parameters.Neurons[0].bias = 1.0f;
-    parameters.output_weight[0] = 1.0f;
+    // Notice that total_score_cp is not used. The NNUE only does the positional part of the evaluator.
 
-    nnue.set_parameters(parameters);
+    string out = utility::representation::gameboard_to_string(board);
+    sout << out << endl;
 
-    // Calculate one row of the training chart.
-    const int iteration = 0;
+    int total_score_cp = pPlayer->evaluate_board_t<ShumiChess::Color::WHITE>(eval_person
+                , &material_score_cp, &positional_score_cp);    // outputs
 
-    const float aberration = nnue.Calculate_nnue_aberration(example);
+    example.target_positional_score_cp = (float)positional_score_cp;
+    sout << "trg=" << total_score_cp << " wee=" << material_score_cp << " zee=" << positional_score_cp << endl;
 
-    const float nnue_positional =
-        example.target_search_score_cp
-        - example.material_score_cp
-        + aberration;
+    nnue.initialize_parameters();
 
-    sout << "Iteration: " << iteration
-         << "  NNUE positional: " << nnue_positional
-         << "  Aberration: " << aberration
-         << std::endl;
-}
+    // Storage for the derivatives of the loss with respect to each NNUE parameter.
+    // These derivatives are recalculated during every training iteration.
+    NNUEGradient gradient{};
 
-// // Verify the NNUE calculation using deliberately chosen parameters,
-// // with known expected results; no training is performed.
-// // Tests one neurons bias and side-to-move weight, followed by ReLU activation,
-// // then the output weight and output bias.
-// // Expected score: 9 for White to move, 21 for Black to move.
-// // Then makes the unit value negative: ReLU must reduce it to zero,
-// // leaving only the output bias, for an expected score of 1.
-// // Does not test piece-square weights or the board-to-input conversion.
-// void test_NNUE1()
-// {
-//     NNUEInputs inputs{};
-//     fill_nnue_inputs(inputs);
+    constexpr int TRAINING_ITERATIONS = 60;
+    for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
 
-//     NNUEParameters parameters{};
+        for (int position = 0; position < 1; ++position) {
 
-//     // Unit 0:
-//     // White to move: value = 2.
-//     // Black to move: value = 2 + 3 = 5.
-//     parameters.Neurons[0].bias = 2.0f;
-//     parameters.Neurons[0].turn_weight = 3.0f;
+            // Calculate the aberration: NNUE positional score minus
+            // Shumi's target positional score. No parameters change.
+            const float aberration = nnue.Calculate_nnue_aberration(example);
 
-//     // Final score = 1 + 4 * activated unit 0.
-//     // Other units contribute zero.
-//     parameters.output_weight[0] = 4.0f;
-//     parameters.output_bias = 1.0f;
+            // Calculate NNUE's current positional score for display.
+            const float nnue_positional =
+                example.target_positional_score_cp + aberration;
 
-//     float positional_score = calculate_nnue_positional(inputs, parameters);
+            // Print the NNUE positional score and aberration using the current
+            // parameters, before applying this iteration's gradient correction.
+            std::ostringstream aberration_text;
+            aberration_text << std::fixed << std::setprecision(10) << aberration;
+            sout << "Iter: " << iteration
+                    << "  NNUE posit: " << nnue_positional
+                    << "  Aberration: " << aberration_text.str()
+                    << std::endl;
 
-//     const float expected = inputs.black_to_move ? 21.0f : 9.0f;
+            //  
+            // The Jacobian J contains derivatives da/dp, where:
+            //   a = aberration (predicted score minus target score)
+            //   p = adjustable NNUE parameter (weight or bias)
+            //
+            // Compute the gradient of the least-squares loss at the current
+            // NNUE parameter values.
+            //
+            // For loss L = (1/2) * sum(a*a):
+            //   dL/dp = sum(a * da/dp)
+            //
+            // In matrix notation:
+            //   gradient(L) = J_transpose * e
+            //   The code calculates this product without constructing the full "J" matrix.
+            //   (where e is the vector of aberrations)
+            //
+            nnue.calculate_nnue_gradient(example, gradient);
 
-//     assert(positional_score == expected);
+            // Subtract learning_rate * gradient from nnue's parameters and refresh its evaluation copy.
+            nnue.apply_nnue_gradient(gradient, learning_rate);
 
-//     // Make neuron 0 negative for either side to move.
-//     // Activation must replace its value with zero.
-//     parameters.Neurons[0].bias = -10.0f;
+        }   // END loop over positions
 
-//     positional_score = calculate_nnue_positional(inputs, parameters);
+    }   // END loop over training iterations
 
-//     assert(positional_score == 1.0f);
-
-//     sout << "test_NNUE2 passed" << std::endl;
-// }
-
-// // Verify that a piece-square input selects the matching weight.
-// // Also verify that an absent piece contributes nothing.
-// // No training or board-to-input conversion is tested.
-// void test_NNUE1()
-// {
-//     NNUEInputs inputs{};
-//     NNUEParameters parameters{};
-
-//     // Index 1 is White knight in our input ordering.
-//     inputs.piece_on_square[1][square_e5] = 1;
-
-//     parameters.Neurons[0].piece_weight[1][square_e5] = 3.0f;
-
-//     // This piece is absent, so its weight must contribute nothing.
-//     parameters.Neurons[0].piece_weight[1][square_d5] = 100.0f;
-
-//     parameters.output_weight[0] = 2.0f;
-
-//     // Unit value = 3; activation = 3; output = 2 * 3 = 6.
-//     float score = calculate_nnue_positional(inputs, parameters);
-//     assert(score == 6.0f);
-
-//     // Remove the knight: all inputs are now zero.
-//     inputs.piece_on_square[1][square_e5] = 0;
-
-//     score = calculate_nnue_positional(inputs, parameters);
-//     assert(score == 0.0f);
-
-//     sout << "test_NNUE1 passed" << std::endl;
-// }
-
-// void test_NNUE1()
-// {
-//     NNUETrainingExample example{};
-//     example.material_score_cp = 100.0f;
-//     example.target_search_score_cp = 180.0f;
-
-//     NNUEParameters parameters{};
-
-//     const float aberration = Calculate_nnue_aberration(example, parameters);
-
-//     assert(aberration == -80.0f);
-// }
+}   // END test
 
 
-// // Verify an analytical Jacobian entry using numerical perturbation.
-// // Change one piece-square weight slightly in both directions.
-// // Compare the resulting aberration slope with the calculated sensitivity.
-// // No training or permanent parameter adjustment is performed.
-// void test_NNUE1()
-// {
-//     NNUETrainingExample example{};
-//     example.inputs.piece_on_square[1][square_e5] = 1;
-//     example.material_score_cp = 100.0f;
-//     example.target_search_score_cp = 110.0f;
 
-//     NNUEParameters parameters{};
-//     parameters.Neurons[0].piece_weight[1][square_e5] = 3.0f;
-//     parameters.output_weight[0] = 2.0f;
-
-//     NNUEJacobianRow row{};
-//     calculate_nnue_jacobian_row(example.inputs, parameters, row);
-
-//     float& parameter = parameters.Neurons[0].piece_weight[1][square_e5];
-
-//     const float original = parameter;
-
-//     // The delta in pataremete space, used to get the jacobean
-//     const float epsilon = 0.01f;
-
-//     parameter = original + epsilon;
-//     const float aberration_plus =
-//         Calculate_nnue_aberration(example, parameters);
-
-//     parameter = original - epsilon;
-//     const float aberration_minus =
-//         Calculate_nnue_aberration(example, parameters);
-
-//     parameter = original;
-
-//     const float numerical_derivative =
-//         (aberration_plus - aberration_minus)
-//         / (2.0f * epsilon);
-
-//     const float analytical_derivative =
-//         row.Neurons[0].piece_weight[1][square_e5];
-
-//     assert(std::fabs(numerical_derivative - analytical_derivative) < 0.002f);
-
-//     sout << "Analytical derivative: "
-//          << analytical_derivative
-//          << ", numerical derivative: "
-//          << numerical_derivative << std::endl;
-// }
-
-
-// // Repeatedly optimize one artificial example.
-// // Print progress to observe whether the aberration approaches zero.
-// // This demonstrates optimization, not learning across different positions.
-// void test_NNUE1()
-// {
-//     NNUETrainingExample example{};
-//     example.inputs.piece_on_square[1][square_e5] = 1;
-//     example.material_score_cp = 100.0f;
-//     example.target_search_score_cp = 110.0f;
-
-//     NNUEParameters parameters{};
-//     parameters.Neurons[0].piece_weight[1][square_e5] = 3.0f;
-//     parameters.output_weight[0] = 2.0f;
-
-//     const float learning_rate = 0.01f;
-
-//     for (int iteration = 0; iteration <= 100; ++iteration) {
-//         NNUEGradient gradient{};
-
-//         const float aberration = calculate_nnue_gradient(example, parameters, gradient);
-
-//         const float merit = 0.5f * aberration * aberration;
-
-//         if (iteration % 10 == 0) {
-//             sout << "Iteration: " << iteration
-//                  << " aberration: " << aberration
-//                  << " merit: " << merit << std::endl;
-//         }
-
-//         if (iteration < 100) {
-//             apply_nnue_gradient(parameters, gradient, learning_rate);
-//         }
-//     }
-// }
-
-
+ 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
