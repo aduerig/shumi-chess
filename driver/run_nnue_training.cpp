@@ -1,7 +1,12 @@
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
+#include <limits>
 #include <string>
+#include <vector>
 
 #include "engine.hpp"
+#include "fen_database.hpp"
 #include "minimax.hpp"
 #include "NNUE.hpp"
 #include "status_output.hpp"
@@ -23,34 +28,46 @@ using namespace ShumiChess;
 
 int main(int argc, char** argv) {
 
-    // Setup the starting positions.
-    constexpr int MAX_FENS = 10;
-    string FENs[MAX_FENS];
+    // Compose filename of where the datafile is
+    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+    const filesystem::path database_path = repo_root / "FEN" / "run_nnue_training.txt";
 
-    #define OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    // Read in postitions from FEN database
+    vector<FEN_Score> positions;
+    if (!read_fen_database(database_path.string(), positions)) {
+        return EXIT_FAILURE;
+    }
+    if (positions.empty()) {
+        sout << database_path.string() << ": no usable FEN positions" << endl;
+        return EXIT_FAILURE;
+    }
+    // The existing training routine accepts an int position count.
+    if (positions.size() > static_cast<size_t>(numeric_limits<int>::max())) {
+        sout << database_path.string()
+             << ": position count exceeds the training routine's int range"
+             << endl;
+        return EXIT_FAILURE;
+    }
 
+    // Insures all positions as input, have no attached score
+    const int NPositions = static_cast<int>(positions.size());
+    for (int i = 0; i < NPositions; ++i) {
+        if (positions[i].score != HUGE_SCORE) {
+            sout << database_path.string() << ": record " << (i + 1)
+                 << " has a numerical score; expected '*' for NNUE training"
+                 << endl;
+            return EXIT_FAILURE;
+        }
+    }
 
-    //FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Petrov
-    FENs[0] = OPENING_FEN;
-
-    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giuco Piano
-    FENs[2] = "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20";                 // random middlegame
-    FENs[3] = "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30";             // random middlegame
-    //FENs[4] = "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42";                             // random endgame
-    FENs[4] = "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14";     // middlegame from QP opening
-
-    int NPositions = 5;
-
-
-
-    NNUETrainingExample examples[MAX_FENS]{};
+    vector<NNUETrainingExample> examples(NPositions);
     NNUE_data nnue;
 
     for (int iPositions = (NPositions-1); iPositions >=0 ; --iPositions) {
 
         sout << "Position index: " << iPositions << endl;
 
-        Engine engine(FENs[iPositions]);
+        Engine engine(positions[iPositions].fen);
         MinimaxAI minimax_ai(engine);
 
         // Get the chessboard inputs for this position.
@@ -71,7 +88,7 @@ int main(int argc, char** argv) {
     // Each call initializes and trains a fresh NNUE for this position.
    // test_NNUE_training_one_position(&minimax_ai);
 
-    test_NNUE_training_mult_positions(nnue, examples, NPositions);
+    test_NNUE_training_mult_positions(nnue, examples.data(), NPositions);
 
 
 

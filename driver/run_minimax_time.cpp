@@ -30,6 +30,7 @@
 
 
 #include "engine.hpp"
+#include "fen_database.hpp"
 #include "globals.hpp"
 #include "utility.hpp"
 #include "minimax.hpp"
@@ -89,6 +90,8 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+//      // Sample a given number of ply from each database starting position.
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv) {
 
@@ -102,29 +105,27 @@ int main(int argc, char** argv) {
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Make board
-    //string FENString = "r2qnrk1/1p2ppbp/p5p1/2p1N3/b1B5/1PN5/1B1P1PPP/R1R1Q1K1 w - - 0 14";
+    // Compose filename of where the datafile is
+    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+    const filesystem::path database_path = repo_root / "FEN" / "run_minimax_time.txt";
+ 
+    // Read in postitions from FEN database
+    vector<FEN_Score> positions;
+    if (!read_fen_database(database_path.string(), positions)) {
+        return EXIT_FAILURE;
+    }
+    if (positions.empty()) {
+        sout << database_path.string() << ": no usable FEN positions" << endl;
+        return EXIT_FAILURE;
+    }
 
-    
+    const size_t NPositions = positions.size();
+    vector<string> PGNs(NPositions);
+    vector<ull> positionNodes(NPositions);
+    vector<int> positionPlyPlayed(NPositions);
+    vector<GameState> positionFinalStates(NPositions);
+    vector<vector<double>> positionMoveScores(NPositions);
 
-    // Setup the starting positions. We will sample a given number of ply from each starting position
-    constexpr int MAX_FENS = 10;
-    string FENs[MAX_FENS];
-    string PGNs[MAX_FENS];
-    ull positionNodes[MAX_FENS] = {};
-    int positionPlyPlayed[MAX_FENS] = {};
-    GameState positionFinalStates[MAX_FENS] = {};
-    vector<double> positionMoveScores[MAX_FENS];
-
-    FENs[0] = "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8";        // Petrov
-    FENs[1] = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5";  // Giuco Piano
-    FENs[2] = "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20";                 // random middlegame
-    FENs[3] = "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30";             // random middlegame
-    FENs[4] = "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42";                             // random endgame
-    FENs[5] = "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14";     // middlegame from QP opening
-
-
-    int NPositions = 6;
     int max_ply_to_play = 20;    // measured from the start of each starting position
 
 
@@ -155,7 +156,8 @@ int main(int argc, char** argv) {
 
     int flags = _DEFAULT_FEATURES_MASK;
 
-    // Since there is no time control there is no hard abort.
+    // Since there is no time control there is no hard abort. 
+    // here we remove the soft bort lso, since we are depth fixed here.
     flags &= ~_FEATURE_SOFT_ABORT;      // remove soft abort
 
     sout << "uzzzzzzzzzzzzzzzzzzzzing level= " << depth_to_use
@@ -176,10 +178,10 @@ int main(int argc, char** argv) {
 
     long long total_elapsed_time=0; 
 
-    for (int iPositions=0; iPositions<NPositions; iPositions++) {
+    for (size_t iPositions=0; iPositions<NPositions; iPositions++) {
 
         // Make engine
-        Engine engine(FENs[iPositions]);
+        Engine engine(positions[iPositions].fen);
         //Engine engine;
 
         //std::this_thread::sleep_for(std::chrono::seconds(3));   // debug only
@@ -233,8 +235,10 @@ int main(int argc, char** argv) {
         //sout << "Gammme state: " << game_state_to_string(state) << endl;
         positionNodes[iPositions] = totalNodesSum - nodes_before_position;
         positionFinalStates[iPositions] = state;
+
         PGNs[iPositions] = engine.gamePGN.spitout();
         sout << "PGN: " << PGNs[iPositions] << endl;
+        
         steady_clock::time_point end_time = steady_clock::now();
         total_elapsed_time = elapsed_time_msec(start_time, end_time);
         sout << iPositions << "  Elapsed time: " << total_elapsed_time << " msec" << endl;
@@ -305,13 +309,14 @@ int main(int argc, char** argv) {
         without_scores_file << endl;
     }
 
-    for (int i=0;i<NPositions;i++) {
+    for (size_t i=0;i<NPositions;i++) {
         results << "[Event \"Shumi minimax regression pos " << i << "\"]" << endl;
         results << "[SetUp \"1\"]" << endl;
-        results << "[FEN \"" << FENs[i] << "\"]" << endl;
+        results << "[FEN \"" << positions[i].fen << "\"]" << endl;
         results << "[Result \"*\"]" << endl;
         results << endl;
-        string numbered_pgn = pgn_with_fen_move_numbers(PGNs[i], FENs[i]);
+        string numbered_pgn =
+            pgn_with_fen_move_numbers(PGNs[i], positions[i].fen);
         string scored_pgn = add_score_comments_to_pgn(numbered_pgn, positionMoveScores[i]);
         results << wrap_pgn_line(scored_pgn) << endl;
         results << endl;
@@ -319,7 +324,8 @@ int main(int argc, char** argv) {
         if (without_scores_file.is_open()) {
             without_scores_file << "[Event \"Shumi minimax regression pos " << i << "\"]" << endl;
             without_scores_file << "[SetUp \"1\"]" << endl;
-            without_scores_file << "[FEN \"" << FENs[i] << "\"]" << endl;
+            without_scores_file << "[FEN \"" << positions[i].fen
+                                << "\"]" << endl;
             without_scores_file << "[Result \"*\"]" << endl;
             without_scores_file << endl;
             without_scores_file << wrap_pgn_line(numbered_pgn) << endl;

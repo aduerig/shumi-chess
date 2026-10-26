@@ -30,6 +30,7 @@ set(Headers
     src/gameboard.hpp
     src/NNUE.hpp
     src/engine.hpp
+    src/fen_database.hpp
     src/globals.hpp
     src/move_tables.hpp
     src/utility.hpp
@@ -44,6 +45,7 @@ set(Sources
     src/NNUE.cpp
     src/globals.cpp
     src/engine.cpp
+    src/fen_database.cpp
     src/move_tables.cpp
     src/utility.cpp
     src/minimax.cpp
