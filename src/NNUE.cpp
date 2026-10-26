@@ -509,7 +509,32 @@ void NNUE_data::apply_nnue_gradient_(
 
 // NNUEParameters myParameters{}; // Everything zero for this check.
 
+//
+// Computes J * Jtranspose, for J a Jacobean matrix.
+float NNUE_data::calculate_JJt(const NNUEInputs& inputs) const
+{
+    NNUEJacobianRow row{};
+    calculate_nnue_jacobian_row(inputs, row);
 
+    float JJt = row.output_bias * row.output_bias;
+
+    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+
+        JJt += row.output_weight[j] * row.output_weight[j];
+        JJt += row.Neurons[j].bias * row.Neurons[j].bias;
+        JJt += row.Neurons[j].turn_weight *
+               row.Neurons[j].turn_weight;
+
+        for (int piece = 0; piece < 12; ++piece) {
+            for (int square = 0; square < 64; ++square) {
+                float derivative = row.Neurons[j].piece_weight[piece][square];
+                JJt += derivative * derivative;
+            }
+        }
+    }
+
+    return JJt;
+}
 
 void NNUE_data::initialize_parameters()
 {
@@ -520,13 +545,14 @@ void NNUE_data::initialize_parameters()
     // Neuron 0: z[0] = bias + sum(piece_weight[p][s] * piece_on_square[p][s])
     //                     + turn_weight * black_to_move. Its activation is max(0, z[0]).
     // All its input weights start at zero, so bias = 1 gives activation = max(0, 1) = 1.
-    parameters.Neurons[0].bias = 1.0f;
+    parameters.Neurons[0].bias = 20.0f;
 
     // Final score = output_bias + sum over neurons j of (output_weight[j] * activation[j]).
     // This weight scales neuron 0's activation; initially the score is 0 + 1 * 1 = 1 cp.
     // All other neurons contribute zero because their parameters are still zero.
-    parameters.output_weight[0] = -1.0f;
+    parameters.output_weight[0] = 1.0f;
 
+    
     // Copy these starting values into nnue's own parameters and rebuild its fast-evaluation copy.
     // Later training updates nnue's copy; this local parameters object stays unchanged.
     set_parameters(parameters);
@@ -544,10 +570,15 @@ void test_NNUE1() {
     assert(positional_score == 0.0f);
 }
 
+
+//
 //  This is the same basic iterative least-squares framework you know from optical design, except 
 //  that you're using gradient descent rather than solving normal equations.
 void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 {
+    constexpr float EPS = 0.01f;
+    constexpr int TEST_RECORD_COUNT = 5;
+
     // Controls each weight/bias adjustment: new_value = old_value - learning_rate * its_gradient.
     // Smaller rates give smaller steps; a rate that is too large can overshoot and increase the error.
     constexpr float learning_rate = 0.001f;
@@ -572,14 +603,18 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 
     // Notice that total_score_cp is not used. The NNUE only does the positional part of the evaluator.
 
-    string out = utility::representation::gameboard_to_string(board);
-    sout << out << endl;
+    // Show board
+    // string out = utility::representation::gameboard_to_string(board);
+    // sout << out << endl;
 
     int total_score_cp = pPlayer->evaluate_board_t<ShumiChess::Color::WHITE>(eval_person
                 , &material_score_cp, &positional_score_cp);    // outputs
 
     example.target_positional_score_cp = (float)positional_score_cp;
-    sout << "trg=" << total_score_cp << " wee=" << material_score_cp << " zee=" << positional_score_cp << endl;
+   
+    //example.target_positional_score_cp = 6.0f;      // debug only 
+
+    // sout << "trg=" << total_score_cp << " wee=" << material_score_cp << " zee=" << positional_score_cp << endl;
 
     nnue.initialize_parameters();
 
@@ -587,7 +622,10 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
     // These derivatives are recalculated during every training iteration.
     NNUEGradient gradient{};
 
-    constexpr int TRAINING_ITERATIONS = 60;
+    int convergence_count = 0;
+    int jjt_lock_count = 0;
+
+    constexpr int TRAINING_ITERATIONS = 50;
     for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
 
         for (int position = 0; position < 1; ++position) {
@@ -602,12 +640,26 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 
             // Print the NNUE positional score and aberration using the current
             // parameters, before applying this iteration's gradient correction.
-            std::ostringstream aberration_text;
-            aberration_text << std::fixed << std::setprecision(10) << aberration;
-            sout << "Iter: " << iteration
-                    << "  NNUE posit: " << nnue_positional
-                    << "  Aberration: " << aberration_text.str()
-                    << std::endl;
+            float fff = nnue.calculate_JJt(example.inputs);
+            // std::ostringstream aberration_text;
+            // aberration_text << std::fixed << std::setprecision(10) << aberration;
+            // sout << "Iter: " << iteration
+            //         << " NNUE posit: " << nnue_positional
+            //         << " Aberration: " << aberration_text.str()
+            //         << " JJt: " << fff
+            //         << std::endl;
+
+            if (std::fabs(aberration) < EPS) {
+                ++convergence_count;
+            } else {
+                convergence_count = 0;
+            }
+
+            if (std::fabs(fff - 1.0f) < EPS) {
+                ++jjt_lock_count;
+            } else {
+                jjt_lock_count = 0;
+            }
 
             //  
             // The Jacobian J contains derivatives da/dp, where:
@@ -634,9 +686,75 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 
     }   // END loop over training iterations
 
+    // sout << "NNUE Training Summary: Convergence="
+    //      << (convergence_count >= TEST_RECORD_COUNT ? "PASS" : "FAIL")
+    //      << "  Activation="
+    //      << (jjt_lock_count >= TEST_RECORD_COUNT ? "FAIL" : "PASS")
+    //      << std::endl;
+
+    Engine& engine = pPlayer->engine;
+    ++engine.NNUE_attempts;
+    if (convergence_count >= TEST_RECORD_COUNT) {
+        ++engine.NNUE_convergence_passes;
+    }
+    if (jjt_lock_count < TEST_RECORD_COUNT) {
+        ++engine.NNUE_activation_passes;
+    }
+
 }   // END test
 
 
+
+void test_NNUE_training_mult_positions(
+    NNUE_data& nnue,
+    const NNUETrainingExample* examples,
+    int NPositions)
+{
+    constexpr float learning_rate = 0.001f;
+
+    // Initialize the NNUE parameters once, before training.
+    nnue.initialize_parameters();
+
+    // Storage for the derivatives of the loss.
+    NNUEGradient gradient{};
+
+    constexpr int TRAINING_ITERATIONS = 60;
+
+    for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
+
+        for (int position = 0; position < NPositions; ++position) {
+
+            const NNUETrainingExample& example = examples[position];
+
+            // Calculate the aberration for this position.
+            const float aberration = nnue.Calculate_nnue_aberration(example);
+
+            // Calculate NNUE's current positional score for display.
+            const float nnue_positional =
+                example.target_positional_score_cp + aberration;
+
+            std::ostringstream aberration_text;
+            aberration_text << std::showpos << std::fixed << std::setprecision(10) << aberration;
+
+            float JJt = nnue.calculate_JJt(example.inputs);
+
+            sout << "Iter: " << iteration
+                 << "  Pos:  " << position
+                 << "  Abrr: " << aberration_text.str()
+                 << "  JJt   " << JJt
+                 << "  NNUE posit: " << nnue_positional
+                 << std::endl;
+
+            // Calculate the gradient for this position.
+            nnue.calculate_nnue_gradient(example, gradient);
+
+            // Update the same NNUE parameters.
+            nnue.apply_nnue_gradient(gradient, learning_rate);
+
+        }   // END loop over positions
+
+    }   // END loop over training iterations
+}
 
  
 

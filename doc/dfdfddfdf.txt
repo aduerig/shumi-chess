@@ -2,131 +2,67 @@ do not delete me
 
 ===================================================================================
 
+Here is results. Ignore the "New Game". Figures are computed as seen in NNUE_finish_training_game() in engine.cpp.
+Each prinout happens at the end of a game SHumi playing itself, calling test_NNUE_training_one_position() at the 
+ebnd of each move. The figures are sucess percentages, right? What do you recommend next,
 
-fuzz=0 fz=75Iteration: 0  NNUE positional: 1  Aberration: -74.0000000000
-Iteration: 1  NNUE positional: 3.77071  Aberration: -71.2292938232
-Iteration: 2  NNUE positional: 8.01608  Aberration: -66.9839248657
-Iteration: 3  NNUE positional: 15.4797  Aberration: -59.5202713013
-Iteration: 4  NNUE positional: 27.8231  Aberration: -47.1768913269
-Iteration: 5  NNUE positional: 44.8474  Aberration: -30.1526336670
-Iteration: 6  NNUE positional: 61.6462  Aberration: -13.3537788391
-Iteration: 7  NNUE positional: 71.4267  Aberration: -3.5732650757
-Iteration: 8  NNUE positional: 74.3782  Aberration: -0.6217880249
-Iteration: 9  NNUE positional: 74.9086  Aberration: -0.0914459229
-Iteration: 10  NNUE positional: 74.987  Aberration: -0.0129852295
-Iteration: 11  NNUE positional: 74.9981  Aberration: -0.0018539429
-Iteration: 12  NNUE positional: 74.9998  Aberration: -0.0002441406
-Iteration: 13  NNUE positional: 75  Aberration: -0.0000457764
-Iteration: 14  NNUE positional: 75  Aberration: -0.0000228882
-Iteration: 15  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 16  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 17  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 18  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 19  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 20  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 21  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 22  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 23  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 24  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 25  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 26  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 27  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 28  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 29  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 30  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 31  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 32  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 33  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 34  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 35  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 36  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 37  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 38  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 39  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 40  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 41  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 42  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 43  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 44  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 45  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 46  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 47  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 48  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 49  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 50  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 51  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 52  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 53  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 54  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 55  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 56  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 57  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 58  NNUE positional: 75  Aberration: 0.0000000000
-Iteration: 59  NNUE positional: 75  Aberration: 0.0000000000
+  parameters.Neurons[0].bias = 10.0f;
+  parameters.output_weight[0] = 1.0f;
+  constexpr float learning_rate = 0.001f;
+
+      NNUE Training Summary: Convergence=82.1%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=85.3%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=74.2%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=70.8%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=67.1%  Activation=100.0%
+      New Game
 
 
-then:
+  parameters.Neurons[0].bias = 1.0f;
+  parameters.output_weight[0] = 1.0f;
+  constexpr float learning_rate = 0.001f;
 
-fuzz=0 fz=-6Iteration: 0  NNUE positional: 1  Aberration: 7.0000000000
-Iteration: 1  NNUE positional: 0.756616  Aberration: 6.7566161156
-Iteration: 2  NNUE positional: 0.527158  Aberration: 6.5271577835
-Iteration: 3  NNUE positional: 0.309259  Aberration: 6.3092594147
-Iteration: 4  NNUE positional: 0.100985  Aberration: 6.1009845734
-Iteration: 5  NNUE positional: -0.0326939  Aberration: 5.9673061371
-Iteration: 6  NNUE positional: -0.0386615  Aberration: 5.9613385201
-Iteration: 7  NNUE positional: -0.0446229  Aberration: 5.9553771019
-Iteration: 8  NNUE positional: -0.0505781  Aberration: 5.9494218826
-Iteration: 9  NNUE positional: -0.0565276  Aberration: 5.9434723854
-Iteration: 10  NNUE positional: -0.0624709  Aberration: 5.9375290871
-Iteration: 11  NNUE positional: -0.0684085  Aberration: 5.9315915108
-Iteration: 12  NNUE positional: -0.0743399  Aberration: 5.9256601334
-Iteration: 13  NNUE positional: -0.0802655  Aberration: 5.9197344780
-Iteration: 14  NNUE positional: -0.0861855  Aberration: 5.9138145447
-Iteration: 15  NNUE positional: -0.0920992  Aberration: 5.9079008102
-Iteration: 16  NNUE positional: -0.0980072  Aberration: 5.9019927979
-Iteration: 17  NNUE positional: -0.103909  Aberration: 5.8960909843
-Iteration: 18  NNUE positional: -0.109805  Aberration: 5.8901948929
-Iteration: 19  NNUE positional: -0.115695  Aberration: 5.8843045235
-Iteration: 20  NNUE positional: -0.12158  Aberration: 5.8784203529
-Iteration: 21  NNUE positional: -0.127458  Aberration: 5.8725419044
-Iteration: 22  NNUE positional: -0.133331  Aberration: 5.8666691780
-Iteration: 23  NNUE positional: -0.139197  Aberration: 5.8608026505
-Iteration: 24  NNUE positional: -0.145058  Aberration: 5.8549418449
-Iteration: 25  NNUE positional: -0.150913  Aberration: 5.8490867615
-Iteration: 26  NNUE positional: -0.156762  Aberration: 5.8432378769
-Iteration: 27  NNUE positional: -0.162605  Aberration: 5.8373947144
-Iteration: 28  NNUE positional: -0.168443  Aberration: 5.8315572739
-Iteration: 29  NNUE positional: -0.174274  Aberration: 5.8257255554
-Iteration: 30  NNUE positional: -0.1801  Aberration: 5.8199000359
-Iteration: 31  NNUE positional: -0.18592  Aberration: 5.8140797615
-Iteration: 32  NNUE positional: -0.191734  Aberration: 5.8082656860
-Iteration: 33  NNUE positional: -0.197542  Aberration: 5.8024578094
-Iteration: 34  NNUE positional: -0.203345  Aberration: 5.7966551781
-Iteration: 35  NNUE positional: -0.209142  Aberration: 5.7908582687
-Iteration: 36  NNUE positional: -0.214932  Aberration: 5.7850675583
-Iteration: 37  NNUE positional: -0.220717  Aberration: 5.7792825699
-Iteration: 38  NNUE positional: -0.226497  Aberration: 5.7735033035
-Iteration: 39  NNUE positional: -0.23227  Aberration: 5.7677297592
-Iteration: 40  NNUE positional: -0.238038  Aberration: 5.7619619370
-Iteration: 41  NNUE positional: -0.2438  Aberration: 5.7562003136
-Iteration: 42  NNUE positional: -0.249556  Aberration: 5.7504439354
-Iteration: 43  NNUE positional: -0.255307  Aberration: 5.7446932793
-Iteration: 44  NNUE positional: -0.261051  Aberration: 5.7389488220
-Iteration: 45  NNUE positional: -0.26679  Aberration: 5.7332096100
-Iteration: 46  NNUE positional: -0.272523  Aberration: 5.7274765968
-Iteration: 47  NNUE positional: -0.278251  Aberration: 5.7217493057
-Iteration: 48  NNUE positional: -0.283973  Aberration: 5.7160272598
-Iteration: 49  NNUE positional: -0.289689  Aberration: 5.7103114128
-Iteration: 50  NNUE positional: -0.295399  Aberration: 5.7046012878
-Iteration: 51  NNUE positional: -0.301104  Aberration: 5.6988964081
-Iteration: 52  NNUE positional: -0.306802  Aberration: 5.6931977272
-Iteration: 53  NNUE positional: -0.312496  Aberration: 5.6875042915
-Iteration: 54  NNUE positional: -0.318183  Aberration: 5.6818170547
-Iteration: 55  NNUE positional: -0.323865  Aberration: 5.6761350632
-Iteration: 56  NNUE positional: -0.329541  Aberration: 5.6704587936
-Iteration: 57  NNUE positional: -0.335212  Aberration: 5.6647882462
-Iteration: 58  NNUE positional: -0.340877  Aberration: 5.6591234207
-Iteration: 59  NNUE positional: -0.346536  Aberration: 5.6534643173
+      NNUE Training Summary: Convergence=54.2%  Activation=65.5%
+      New Game
+      NNUE Training Summary: Convergence=39.5%  Activation=44.2%
+      New Game
+      NNUE Training Summary: Convergence=34.8%  Activation=43.2%
+      New Game
+      NNUE Training Summary: Convergence=56.0%  Activation=73.0%
+      New Game
+      NNUE Training Summary: Convergence=39.6%  Activation=56.2%
+
+
+  parameters.Neurons[0].bias = 20.0f;
+  parameters.output_weight[0] = 1.0f;
+  constexpr float learning_rate = 0.001f;
+
+      NNUE Training Summary: Convergence=97.5%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=98.3%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=99.4%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=91.0%  Activation=100.0%
+      New Game
+      NNUE Training Summary: Convergence=89.4%  Activation=100.0%
+
+
+=====================================================================================
+
+Look here, there is some sort of confusion we have here. I have now mastered one neron 
+with one training posistion, thnks to your help. I realize the next step is to run one neron
+over some fixed multiple training positions, like you say. But since my fastest best way
+of generating multiple positions of "relevence", is from Shumi games, I decided to just look at this first,
+over whole games So fine, but then I see
+this: "ReLU lock" sitation. Now I understand finally your explanations that RELU lock is not an error
+. Fine, But then what am I doing? Does this playing with starting values useful for ebentually determining
+"relevent" values? Why should I favor starting values of arounf 1 or 20? 
+
 
 ====================================================================================
 

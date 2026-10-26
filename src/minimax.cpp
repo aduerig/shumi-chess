@@ -140,7 +140,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-#define DISPLAY_DEEPING     // Displays a lot of other stuff too
+// #define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -918,6 +918,9 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         // this, but there it is: engine.reset_engine() starts a new game, and sets computer_ply_so_far = 0.
         //
 
+        // Report the previous game's NNUE results and clear its counters.
+        engine.NNUE_finish_training_game();
+
         // BUT
 
         #ifdef _DEBUGGING_TO_FILE
@@ -946,7 +949,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
             
         // Clear the TT (extra stuff to time it)
         sout << "\033[1;34mNew Game\033[0m" << endl;
-        sout << "TTable2 entries before clear=" << TTable2.size() << endl;
+        // sout << "TTable2 entries before clear=" << TTable2.size() << endl;
         const auto clear_start_time = std::chrono::steady_clock::now();
 
         TTable2.clear();    // Clear even if we don't use it.
@@ -1924,7 +1927,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
             if (should_abort_search_by_soft_time()) {
 
                 // time limits say we should abort. These are measured from the game end.
-                sout << endl << "soft abort s=" << soft_abort_enabled << endl;
+                //sout << endl << "soft abort s=" << soft_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
         }
@@ -2781,7 +2784,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
             if (should_abort_search_by_soft_time()) {
 
                 // time limits say we should abort. These are measured from the game end.
-                sout << endl << "soft abort q=" << soft_abort_enabled << endl;
+                //sout << endl << "soft abort q=" << soft_abort_enabled << endl;
                 return { ABORT_SCORE, the_best_move };
             }
         }

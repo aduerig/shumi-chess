@@ -125,6 +125,9 @@ public:
     // Called only in testing. This changes the stored parameters; calculate the gradient first.
     void apply_nnue_gradient(const NNUEGradient& gradient, float learning_rate);
 
+    float calculate_JJt(const NNUEInputs& inputs) const;
+
+
 private:
     static constexpr std::size_t NNUE_INPUT_COUNT = 12 * 64;
 
@@ -233,5 +236,9 @@ private:
 
 void test_NNUE1();
 void test_NNUE_training_one_position(MinimaxAI*);
+void test_NNUE_training_mult_positions(
+    NNUE_data& nnue,
+    const NNUETrainingExample* examples,
+    int NPositions);
 
 } // end namespace ShumiChess

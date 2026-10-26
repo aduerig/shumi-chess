@@ -3,6 +3,8 @@
 
 #include <functional>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
 
 #include "engine.hpp"
 #include "score.hpp"
@@ -255,6 +257,24 @@ void Engine::reset_all_but_FEN()
 
     // Checks a bunch of things in the bitboards for validity. Only throws asserts if something wrong.
     game_board.validate_row_col_masks_h1_0();
+}
+
+void Engine::NNUE_finish_training_game()
+{
+    if (NNUE_attempts == 0) return;
+
+    std::ostringstream summary_text;
+    summary_text << std::fixed << std::setprecision(1)
+                 << "NNUE Training Summary: Convergence="
+                 << 100.0 - (100.0 * (NNUE_attempts - NNUE_convergence_passes) / NNUE_attempts)
+                 << "%  Activation="
+                 << 100.0 - (100.0 * (NNUE_attempts - NNUE_activation_passes) / NNUE_attempts)
+                 << '%';
+    sout << summary_text.str() << std::endl;
+
+    NNUE_attempts = 0;
+    NNUE_convergence_passes = 0;
+    NNUE_activation_passes = 0;
 }
 
 void Engine::resetStats()       // all of these are in units of ply

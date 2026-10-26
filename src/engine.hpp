@@ -145,6 +145,13 @@ class Engine {
         ull game_white_time_msec = 0;     // total white thinking time for game
         ull game_black_time_msec = 0;     // total black thinking time for game
 
+        // NNUE training test totals, reported and reset in MinimaxAI's new-game block.
+        ull NNUE_attempts = 0;
+        ull NNUE_convergence_passes = 0;
+        ull NNUE_activation_passes = 0;
+
+        void NNUE_finish_training_game();
+
         struct stats {      // All in units of ply
             int so_far=0;
             int so_far_pawn=0;
