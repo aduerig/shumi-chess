@@ -738,12 +738,14 @@ void test_NNUE_training_mult_positions(
 
             float JJt = nnue.calculate_JJt(example.inputs);
 
-            sout << "Iter: " << iteration
-                 << "  Pos:  " << position
-                 << "  Abrr: " << aberration_text.str()
-                 << "  JJt   " << JJt
-                 << "  NNUE posit: " << nnue_positional
-                 << std::endl;
+            if ( (iteration == 0) || (iteration == TRAINING_ITERATIONS-1) ) {
+                sout << "Iter: " << iteration
+                    << "  Pos:  " << position
+                    << "  Abrr: " << aberration_text.str()
+                    << "  JJt   " << JJt
+                    << "  NNUE posit: " << nnue_positional
+                    << std::endl;
+            }
 
             // Calculate the gradient for this position.
             nnue.calculate_nnue_gradient(example, gradient);

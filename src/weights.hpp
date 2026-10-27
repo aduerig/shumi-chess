@@ -3,6 +3,10 @@
 #include "Score.hpp"
 #include "globals.hpp"
 
+// NNUE diagnostics and search-position collection.
+inline constexpr bool NNUE_Print_final_results = false;
+inline constexpr bool NNUE_Dump_search_results = true;
+
 /// feature adjustments //////////////////////////////////////////////////////////////////////////////////////////////
 
 

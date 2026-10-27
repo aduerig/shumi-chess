@@ -14,6 +14,8 @@
 #include <chrono>
 #include <iostream>
 #include <atomic>
+#include <filesystem>
+#include <fstream>
 
 #include <stdio.h>
 
@@ -35,6 +37,7 @@
 #include "salt.h"
 #include "features.hpp"
 #include "status_output.hpp"
+#include "weights.hpp"
 
 
 
@@ -44,6 +47,27 @@ using namespace ShumiChess;
 using namespace utility;
 using namespace utility::representation;
 using namespace utility::bit;
+
+namespace {
+
+std::ofstream& nnue_search_results_file()
+{
+    // Shared across games and AI instances; closed at program shutdown.
+    static std::ofstream file = [] {
+        const std::filesystem::path filename =
+            std::filesystem::path(__FILE__).parent_path().parent_path()
+            / "FEN" / "temp.txt";
+        std::ofstream opened(filename, std::ios::app);
+        if (!opened.is_open()) {
+            sout << filename.string()
+                 << ": could not open search-results dump" << std::endl;
+        }
+        return opened;
+    }();
+    return file;
+}
+
+} // namespace
 
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
@@ -140,7 +164,7 @@ bool global_debug_flag = false;
 
 //////////// Displays ////////////////////////////////////////////////////////////
 
-// #define DISPLAY_DEEPING     // Displays a lot of other stuff too
+#define DISPLAY_DEEPING     // Displays a lot of other stuff too
 
 //#define DISPLAY_PULSE_CALLBACK_THREAD    // Uncomment to enable the callback to show "nPly", real time.
 #ifdef DISPLAY_PULSE_CALLBACK_THREAD
@@ -589,24 +613,41 @@ int MinimaxAI::phase_of_game(int material_cp_avg) {
 // Same as phase_of_game(), but gets the material(s) by itself. For display only. (too slow)
 int MinimaxAI::phase_of_game_full() {
     int cp_score_material_avg_local = 0;
-    {
-        int cp_pawns_only_temp = 0;
-        int cp_score_mat_temp;
+    
+    int cp_pawns_only_temp;
+    int cp_score_mat_temp;
 
-        cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::WHITE>(cp_pawns_only_temp);
-        assert(cp_score_mat_temp >= 0);
-        cp_score_material_avg_local += cp_score_mat_temp;
+    cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::WHITE>(cp_pawns_only_temp);
+    assert(cp_score_mat_temp >= 0);
+    cp_score_material_avg_local += cp_score_mat_temp;
 
-        cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::BLACK>(cp_pawns_only_temp);
-        assert(cp_score_mat_temp >= 0);
-        cp_score_material_avg_local += cp_score_mat_temp;
-    }
+    cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::BLACK>(cp_pawns_only_temp);
+    assert(cp_score_mat_temp >= 0);
+    cp_score_material_avg_local += cp_score_mat_temp;
 
     cp_score_material_avg_local = cp_score_material_avg_local / 2;
 
     int nPhase = phase_of_game(cp_score_material_avg_local); 
     return nPhase;
 }
+
+int MinimaxAI::get_material() {
+    int cp_score_material= 0;
+    
+    int cp_pawns_only_temp;
+    int cp_score_mat_temp;
+
+    cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::WHITE>(cp_pawns_only_temp);
+    assert(cp_score_mat_temp >= 0);
+    cp_score_material += cp_score_mat_temp;
+
+    cp_score_mat_temp = engine.game_board.get_material_for_color_t<Color::BLACK>(cp_pawns_only_temp);
+    assert(cp_score_mat_temp >= 0);
+    cp_score_material -= cp_score_mat_temp;
+
+    return cp_score_material;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -919,7 +960,13 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         //
 
         // Report the previous game's NNUE results and clear its counters.
-        engine.NNUE_finish_training_game();
+        if (NNUE_Print_final_results) {
+            engine.NNUE_finish_training_game();
+        }
+
+        if (NNUE_Dump_search_results) {
+            nnue_search_results_file();
+        }
 
         // BUT
 
@@ -1162,8 +1209,8 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         return {d_best_move_score, best_move};
     }
 
-    // Convert the moves "relative score" to "absolute score". Relative means positve is good for mover. 
-    // Absolute means positive is good for white. Most scores are relative. Absolute used only for display.
+    // Convert the move's score from the side to move to White's perspective.
+    // Use this absolute score for display and the FEN database.
     Score d_best_move_score_abs = d_best_move_score;
     if (engine.game_board.turn == Color::BLACK) d_best_move_score_abs = -d_best_move_score_abs;
     if (std::abs(d_best_move_score_abs) < VERY_SMALL_SCORE) d_best_move_score_abs = ZERO_SCORE;   // avoid negative zero
@@ -1351,7 +1398,26 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         engine.move_into_string(best_move);
         fprintf(fpDebug, "move %s \n",  engine.move_string.c_str());
     #endif
-
+    
+    // Sucessful return
+    if (NNUE_Dump_search_results) {
+        const bool foundIsMate = IS_MATE_SCORE(d_best_move_score_abs);
+        if (!foundIsMate) {
+            std::ofstream& file = nnue_search_results_file();
+            if (file) {
+                // Search has restored the root board; the caller makes the move.
+                // Store centipawns with positive values favoring White.
+                file << engine.game_board.to_fen() << " | "
+                    << std::to_string(d_best_move_score_abs) << '\n';
+                file.flush();
+                if (!file) {
+                    sout << "Could not write FEN/temp.txt search-results dump"
+                        << endl;
+                    file.close();
+                }
+            }
+        }
+    }
     return {d_best_move_score, best_move};
 }
 
@@ -1373,9 +1439,6 @@ void MinimaxAI::playground(int iPhase) {
     test_NNUE_training_one_position(this);
     // nnue.test_NNUE1();
     //engine.test_SEE_for_capture_new();
-
-    // engine.game_board.compute_bits_in();
-    // sout << "excess_exceptions_cp=" << engine.game_board.excess_exceptions_cp() << endl;
 
     
     // const char* pszPhase = str_from_GamePhase(iPhase);
@@ -1425,15 +1488,7 @@ void MinimaxAI::playground(int iPhase) {
 
     //engine.debug_print_repetition_table();
 
-    // engine.game_board.compute_bits_in();
-    // int white_pawns_only = 0;
-    // int black_pawns_only = 0;
-
-    // int white_material = engine.game_board.get_material_for_color_t<Color::WHITE>(white_pawns_only);
-    // int black_material = engine.game_board.get_material_for_color_t<Color::BLACK>(black_pawns_only);
-    // assert(white_material >= 0);
-    // assert(black_material >= 0);
-
+    
     // itemp1 = trade_imbalance_cp_t<Color::WHITE>((white_material - black_material), white_pawns_only);
     // itemp2 = trade_imbalance_cp_t<Color::BLACK>((black_material - white_material), black_pawns_only);
 
@@ -2150,7 +2205,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
     }
 
     const GameState state = engine.is_game_over(n_legal_moves_found);
-    //GameState state = engine.is_game_over(legal_moves.size());
+
 
     // =====================================================================
     // Terminal positions (game over)
@@ -2808,9 +2863,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamaxQ(
     }
     
 
-
     const GameState state = engine.is_game_over(n_legal_moves_found);
-    //GameState state = engine.is_game_over(legal_moves.size());
 
     // =====================================================================
     // Terminal positions (game over), as in checkmate or stalemate
@@ -4189,8 +4242,8 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
         int cp_pawns_only_temp;
 
         int cp_score_mat_temp = (color1 == Color::WHITE)
-            ? engine.game_board.get_material_for_color2_fast<Color::WHITE>(cp_pawns_only_temp)
-            : engine.game_board.get_material_for_color2_fast<Color::BLACK>(cp_pawns_only_temp);
+            ? engine.game_board.get_material_for_color_fast_t<Color::WHITE>(cp_pawns_only_temp)
+            : engine.game_board.get_material_for_color_fast_t<Color::BLACK>(cp_pawns_only_temp);
         //assert(cp_score_mat_temp == cp_score_mat_temp2);
         assert(cp_score_mat_temp >= 0);
 
@@ -4256,6 +4309,18 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
     assert((cp_score_adjusted >= -max_eval) && (cp_score_adjusted <= max_eval));
 
     // Assign outputs to this function.
+
+    int cp_score_material_all_CHECK = get_material();
+    if constexpr (for_color == Color::BLACK) {
+        cp_score_material_all_CHECK = -cp_score_material_all_CHECK;
+    }
+    if (cp_score_material_all_CHECK != cp_score_material_all) {
+        sout << " chk1=" << cp_score_material_all_CHECK << " chk2=" << cp_score_material_all;
+        assert(0); 
+    }
+    //assert (cp_score_material_all_CHECK == cp_score_material_all);
+
+    
     if (material_out)   *material_out   = cp_score_material_all;
     if (positional_out) *positional_out = cp_score_position;
 

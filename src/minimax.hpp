@@ -336,6 +336,7 @@ public:
 
     int phase_of_game(int material_cp);
     int phase_of_game_full();
+    int get_material();
 
     bool no_queens_on_board();
 

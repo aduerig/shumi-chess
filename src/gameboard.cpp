@@ -680,11 +680,17 @@ bool GameBoard::insufficient_material_simple() {
     if (majors) return false;
 
     // 3) Count total minor pieces (knights + bishops), both colors
-    int n_knightsW = Bits_In[ShumiChess::WHITE][ShumiChess::KNIGHT];
-    int n_knightsB = Bits_In[ShumiChess::BLACK][ShumiChess::KNIGHT]; 
+    // int n_knightsW = Bits_In[ShumiChess::WHITE][ShumiChess::KNIGHT];
+    // int n_knightsB = Bits_In[ShumiChess::BLACK][ShumiChess::KNIGHT]; 
 
-    int n_bishopsW = Bits_In[ShumiChess::WHITE][ShumiChess::BISHOP];
-    int n_bishopsB = Bits_In[ShumiChess::BLACK][ShumiChess::BISHOP]; 
+    // int n_bishopsW = Bits_In[ShumiChess::WHITE][ShumiChess::BISHOP];
+    // int n_bishopsB = Bits_In[ShumiChess::BLACK][ShumiChess::BISHOP]; 
+
+    int n_knightsW = bits_in(white_knights);
+    int n_knightsB = bits_in(black_knights); 
+
+    int n_bishopsW = bits_in(white_bishops);
+    int n_bishopsB = bits_in(black_bishops); 
 
     int n_piecesW = n_knightsW + n_bishopsW;
     int n_piecesB = n_knightsB + n_bishopsB;
@@ -2654,8 +2660,8 @@ template<Color c> int GameBoard::get_material_for_color_t(int& cp_pawns_only) {
     return cp_score_mat_temp;
 }
 
-// Faster but I need the "Bits_in" arrays to be already computed.
-template<Color c> int GameBoard::get_material_for_color2_fast(int& cp_pawns_only) {
+// Faster but I need the "Bits_In" arrays to be already computed.
+template<Color c> int GameBoard::get_material_for_color_fast_t(int& cp_pawns_only) {
     int cp_score_mat_temp = 0;
 
     cp_pawns_only = Bits_In[c][Piece::PAWN] * centipawn_score_of(Piece::PAWN);
@@ -4316,8 +4322,8 @@ template int GameBoard::center_closeness_bonus<Color::BLACK>();
 
 template int GameBoard::get_material_for_color_t<Color::WHITE>(int& cp_pawns_only);
 template int GameBoard::get_material_for_color_t<Color::BLACK>(int& cp_pawns_only);
-template int GameBoard::get_material_for_color2_fast<Color::WHITE>(int& cp_pawns_only);
-template int GameBoard::get_material_for_color2_fast<Color::BLACK>(int& cp_pawns_only);
+template int GameBoard::get_material_for_color_fast_t<Color::WHITE>(int& cp_pawns_only);
+template int GameBoard::get_material_for_color_fast_t<Color::BLACK>(int& cp_pawns_only);
 
 // pawns_attacking_square_t
 template int GameBoard::pawns_attacking_square_t<Color::WHITE>(int);

@@ -162,7 +162,7 @@ void Engine::reset_engine() {         // New game.
 
     #define SIMPLE_ROOKS "rk6/8/8/8/8/8/8/6KR w KQkq - 0 1"     // should always draw
 
-    #define TEMP_FEN "n7/2k5/8/5N2/b4K2/8/8/8 b - - 0 72"
+    #define TEMP_FEN "8/8/8/8/8/8/3N2k1/3K1b2 w - - 0 71"
 
     #define EXCEPT_TEST_FEN1 "rnb1kbnr/pppppppp/8/8/8/8/1PPPPPPP/2BQKBNR w KQkq - 0 1"  // good for side with Q (white)
     #define EXCEPT_TEST_FEN2 "2nqkbnr/1pppppp1/8/8/8/8/PPPPPPPP/RNB1KBNR w KQkq - 0 1"  // good for side with q (black)

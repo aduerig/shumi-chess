@@ -437,7 +437,7 @@ class GameBoard {
 
         template<Color c> int get_castled_bonus_cp_t(int phase, const PInfo& PInfoIn, const PInfo& PInfoEnemy) const;
         template<Color c> int get_material_for_color_t(int& cp_pawns_only);
-        template<Color c> int get_material_for_color2_fast(int& cp_pawns_only);    // faster, but needs compute_bits_in() called first)
+        template<Color c> int get_material_for_color_fast_t(int& cp_pawns_only);    // faster, but needs compute_bits_in() called first)
         template<Color c> bool bHasCastled_fake_t(int k_rank, int k_file) const;
         void build_excess_pieces(ExcessPieces excess[2]) const;
         bool excess_pieces_match(const ExcessPieces& board_excess, const ExcessPieces& rule_excess) const;

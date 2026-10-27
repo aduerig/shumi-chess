@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
     }
     if (positions.empty()) {
         sout << database_path.string() << ": no usable FEN positions" << endl;
+        _getch();
         return EXIT_FAILURE;
     }
 
@@ -157,7 +158,7 @@ int main(int argc, char** argv) {
     int flags = _DEFAULT_FEATURES_MASK;
 
     // Since there is no time control there is no hard abort. 
-    // here we remove the soft bort lso, since we are depth fixed here.
+    // here we remove the soft abort also, since we are depth-fixed here.
     flags &= ~_FEATURE_SOFT_ABORT;      // remove soft abort
 
     sout << "uzzzzzzzzzzzzzzzzzzzzing level= " << depth_to_use
@@ -238,7 +239,7 @@ int main(int argc, char** argv) {
 
         PGNs[iPositions] = engine.gamePGN.spitout();
         sout << "PGN: " << PGNs[iPositions] << endl;
-        
+
         steady_clock::time_point end_time = steady_clock::now();
         total_elapsed_time = elapsed_time_msec(start_time, end_time);
         sout << iPositions << "  Elapsed time: " << total_elapsed_time << " msec" << endl;
