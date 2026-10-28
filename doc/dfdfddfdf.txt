@@ -1,7 +1,15 @@
 do not delete me
+===================================================================================
 
-root no-move state=2 draw_reason=4 halfmove=0 fen=8/8/8/8/8/8/3N2k1/3K1b2 w - - 0 71
-Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 1155
+
+1. Free memory before Shumi runs. Close unnecessary background apps individually and recheck. 
+Discord, Chrome, VS Code, and ChatGPT all have substantial memory allocations.
+2. Consider upgrading to 32 GB RAM if this is your normal workload. You currently have two 8 GB modules; Lenovo 
+   documents support for two DDR5-5600 modules totaling 32 GB. This is the hardware upgrade I’d investigate first. Lenovo specifications
+3. Test stronger compiler optimization for Shumi. Your executables already use optimized Release builds with 
+   assertions disabled. Whole-program optimization is a further opportunity; AVX2 could be a separate experiment. Each needs before/after timing and correctness checks. Whole-program optimization, AVX2 compilation
+4. Give Shumi “Above Normal” process priority. This favors Shumi when other apps compete for CPU time. 
+It won’t fix insufficient RAM or make an otherwise idle CPU faster.
 
 
 ===================================================================================

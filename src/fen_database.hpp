@@ -14,11 +14,15 @@ struct FEN_Score {
     Score score;
 };
 
+// Returns false on file or record errors and leaves positions unchanged.
+// If error is supplied, it is cleared on entry and receives the diagnostic on
+// failure (filename, line number when available, and reason). Otherwise,
+// the diagnostic is written to stderr.
 // FEN text retains its internal whitespace. Record/separator padding is ignored.
-// On failure, report a diagnostic and leave positions unchanged.
-bool read_fen_database(
+[[nodiscard]] bool read_fen_database(
     const std::string& filename,
-    std::vector<FEN_Score>& positions);
+    std::vector<FEN_Score>& positions,
+    std::string* error = nullptr);
 
 bool write_fen_database(
     const std::string& filename,

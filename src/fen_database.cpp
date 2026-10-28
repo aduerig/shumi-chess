@@ -42,13 +42,19 @@ bool has_six_fen_fields(std::string_view fen)
 }
 
 bool database_error(const std::string& filename, size_t line,
-                    const char* message)
+                    const char* message, std::string* error = nullptr)
 {
-    std::cerr << filename;
+    std::string diagnostic = filename;
     if (line != 0) {
-        std::cerr << ':' << line;
+        diagnostic += ':' + std::to_string(line);
     }
-    std::cerr << ": " << message << '\n';
+    diagnostic += ": ";
+    diagnostic += message;
+    if (error) {
+        *error = diagnostic;
+    } else {
+        std::cerr << diagnostic << '\n';
+    }
     return false;
 }
 
@@ -66,11 +72,15 @@ void write_record(std::ostream& file, const FEN_Score& position)
 } // namespace
 
 bool read_fen_database(const std::string& filename,
-                       std::vector<FEN_Score>& positions)
+                       std::vector<FEN_Score>& positions,
+                       std::string* error)
 {
+    if (error) {
+        error->clear();
+    }
     std::ifstream file(filename);
     if (!file.is_open()) {
-        return database_error(filename, 0, "could not open FEN database");
+        return database_error(filename, 0, "could not open FEN database", error);
     }
 
     std::vector<FEN_Score> loaded;
@@ -87,7 +97,7 @@ bool read_fen_database(const std::string& filename,
         const std::string_view fen = trim(record.substr(0, separator));
         if (!has_six_fen_fields(fen)) {
             return database_error(filename, line_number,
-                "expected exactly six FEN fields");
+                "expected exactly six FEN fields", error);
         }
 
         Score score = HUGE_SCORE;
@@ -99,12 +109,12 @@ bool read_fen_database(const std::string& filename,
                     if (value.empty() || value.front() < '0' ||
                         value.front() > '9') {
                         return database_error(filename, line_number,
-                            "expected an integer score or '*'");
+                            "expected an integer score or '*'", error);
                     }
                 }
                 if (value.empty()) {
                     return database_error(filename, line_number,
-                        "expected an integer score or '*'");
+                        "expected an integer score or '*'", error);
                 }
 
                 int parsed = 0;
@@ -115,11 +125,11 @@ bool read_fen_database(const std::string& filename,
                     parsed < std::numeric_limits<Score>::min() ||
                     parsed > std::numeric_limits<Score>::max()) {
                     return database_error(filename, line_number,
-                        "expected an integer score in the Score range");
+                        "expected an integer score in the Score range", error);
                 }
                 if (parsed == HUGE_SCORE) {
                     return database_error(filename, line_number,
-                        "HUGE_SCORE is reserved; use '*' for a missing score");
+                        "HUGE_SCORE is reserved; use '*' for a missing score", error);
                 }
                 score = static_cast<Score>(parsed);
             }
@@ -130,7 +140,7 @@ bool read_fen_database(const std::string& filename,
 
     if (file.bad() || !file.eof()) {
         return database_error(filename, line_number + 1,
-            "could not read FEN database");
+            "could not read FEN database", error);
     }
     positions.swap(loaded);
     return true;

@@ -1,10 +1,16 @@
 
 #include <cstddef>
+#include <cstdlib>
+#include <exception>
 #include <iomanip>
+#include <iostream>
+#include <limits>
 #include <sstream>
 
 #include "NNUE.hpp"
 
+#include "engine.hpp"
+#include "fen_database.hpp"
 #include "gameboard.hpp"
 #include "utility.hpp"
 #include "minimax.hpp"
@@ -705,11 +711,76 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 
 
 
-void test_NNUE_training_mult_positions(
-    NNUE_data& nnue,
-    const NNUETrainingExample* examples,
-    int NPositions)
+int multi_FEN_readin(
+    const std::filesystem::path& filename,
+    std::vector<NNUETrainingExample>& examples,
+    NNUETrainingMethod iMethod,
+    std::string* error)
 {
+    if (error) {
+        error->clear();
+    }
+    const std::string filename_text = filename.string();
+    const auto fail = [&](const std::string& reason) {
+        const std::string diagnostic = filename_text + ": " + reason;
+        if (error) {
+            *error = diagnostic;
+        } else {
+            std::cerr << diagnostic << '\n';
+        }
+        return EXIT_FAILURE;
+    };
+
+    if (iMethod != NNUETrainingMethod::STATIC_EVAL &&
+        iMethod != NNUETrainingMethod::FULL_SEARCH) {
+        return fail("unknown NNUE training method");
+    }
+
+    std::vector<FEN_Score> positions;
+    if (!read_fen_database(filename_text, positions, error)) {
+        return EXIT_FAILURE;
+    }
+    if (positions.empty()) {
+        return fail("no usable FEN positions");
+    }
+    // The training routine accepts an int position count.
+    if (positions.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+        return fail("position count exceeds the training routine's int range");
+    }
+
+    std::vector<NNUETrainingExample> loaded(positions.size());
+    for (std::size_t i = 0; i < positions.size(); ++i) {
+        try {
+            const FEN_Score& position = positions[i];
+            Engine engine(position.fen);
+            MinimaxAI minimax_ai(engine);
+            minimax_ai.nnue.fill_nnue_inputs_fast(engine.game_board, loaded[i].inputs);
+
+            if (iMethod == NNUETrainingMethod::STATIC_EVAL ||
+                position.score == HUGE_SCORE || IS_MATE_SCORE(position.score)) {
+                int material_score_cp;
+                int positional_score_cp;
+                minimax_ai.evaluate_board_t<Color::WHITE>(
+                    UNCLE_SHUMI, &material_score_cp, &positional_score_cp);
+                loaded[i].target_positional_score_cp = static_cast<float>(positional_score_cp);
+            } else {
+                loaded[i].target_positional_score_cp =
+                    static_cast<float>(position.score) - minimax_ai.get_material();
+            }
+        } catch (const std::exception& exception) {
+            return fail("record " + std::to_string(i + 1) + ": " + exception.what());
+        }
+    }
+
+    examples.swap(loaded);
+    return EXIT_SUCCESS;
+}
+
+void test_NNUE_training_mult_positions(
+    NNUE_data& nnue,                        // input
+    const NNUETrainingExample* examples,    // input
+    int NPositions                          // input
+) {
     constexpr float learning_rate = 0.001f;
 
     // Initialize the NNUE parameters once, before training.
@@ -729,21 +800,18 @@ void test_NNUE_training_mult_positions(
             // Calculate the aberration for this position.
             const float aberration = nnue.Calculate_nnue_aberration(example);
 
-            // Calculate NNUE's current positional score for display.
-            const float nnue_positional =
-                example.target_positional_score_cp + aberration;
-
             std::ostringstream aberration_text;
-            aberration_text << std::showpos << std::fixed << std::setprecision(10) << aberration;
+            aberration_text << std::showpos << std::fixed << std::setprecision(5) << aberration;
 
             float JJt = nnue.calculate_JJt(example.inputs);
 
             if ( (iteration == 0) || (iteration == TRAINING_ITERATIONS-1) ) {
-                sout << "Iter: " << iteration
-                    << "  Pos:  " << position
-                    << "  Abrr: " << aberration_text.str()
-                    << "  JJt   " << JJt
-                    << "  NNUE posit: " << nnue_positional
+                sout << std::setw(4) << iteration
+                    << "  Pos: " << position
+                    << "  Abrr:" << aberration_text.str()
+                    << "  JJt  " << JJt
+                    << "  Targ " << example.target_positional_score_cp
+                    << "  Pred " << (example.target_positional_score_cp + aberration)
                     << std::endl;
             }
 

@@ -2,7 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "globals.hpp"
 
@@ -60,6 +63,25 @@ struct NNUETrainingExample {
     NNUEInputs inputs;
     float target_positional_score_cp;
 };
+
+enum class NNUETrainingMethod {
+    STATIC_EVAL = 0,
+    FULL_SEARCH = 1  // Use the file's score minus material; does not run a search.
+};
+
+// Load board inputs and positional targets, preserving file order.
+// Relative filenames are relative to the current working directory.
+// STATIC_EVAL uses Shumi's positional evaluation for every record.
+// FULL_SEARCH uses the supplied score minus material, falling back to static
+// evaluation for missing ('*') or mate scores.
+// Returns 0 on success, nonzero on failure. Examples are replaced only on success.
+// If supplied, error is cleared on entry and receives a diagnostic on failure;
+// otherwise the diagnostic is written to stderr.
+[[nodiscard]] int multi_FEN_readin(
+    const std::filesystem::path& filename,
+    std::vector<NNUETrainingExample>& examples,
+    NNUETrainingMethod iMethod = NNUETrainingMethod::STATIC_EVAL,
+    std::string* error = nullptr);
 
 // One Jacobian row: derivatives of ONE example's aberration
 // with respect to every network parameter.

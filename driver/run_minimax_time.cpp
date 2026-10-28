@@ -55,7 +55,7 @@ static string add_score_comments_to_pgn(const string& numbered_pgn, const vector
 static string wrap_pgn_line(const string& pgn);
 static long long elapsed_time_msec(steady_clock::time_point start_time, steady_clock::time_point end_time);
 static void make_engine_move(Engine& engine, Move move);
-static ofstream open_minimax_results_file(filesystem::path& opened_path, const string& filename);
+static ofstream open_minimax_results_file(const filesystem::path& results_dir, const string& filename);
 
 class TeeStreamBuf : public streambuf
 {
@@ -105,13 +105,21 @@ int main(int argc, char** argv) {
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Compose filename of where the datafile is
+    // Hardcoded input and results locations.
+
+    // Input data file
     const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
-    const filesystem::path database_path = repo_root / "FEN" / "run_minimax_time.txt";
+    const filesystem::path database_path = repo_root / "tests" / "FENs" / "run_minimax_time.txt";
+
+    // Output data file
+    const filesystem::path results_dir = repo_root / "tests" / "data";
  
-    // Read in postitions from FEN database
+    // Read in positions from FEN database
     vector<FEN_Score> positions;
-    if (!read_fen_database(database_path.string(), positions)) {
+    string database_error;
+    if (!read_fen_database(database_path.string(), positions, &database_error)) {
+        sout << database_error << endl;
+        _getch();
         return EXIT_FAILURE;
     }
     if (positions.empty()) {
@@ -249,22 +257,16 @@ int main(int argc, char** argv) {
     //
     // Show results
     //
-    filesystem::path with_scores_path;
-    ofstream with_scores_file = open_minimax_results_file(with_scores_path, "with_scores.txt");
+    ofstream with_scores_file = open_minimax_results_file(results_dir, "with_scores.txt");
     if (!with_scores_file.is_open()) {
-        sout << "Could not open doc\\with_scores.txt for writing; results will only be printed to sout." << endl;
-    } else if (with_scores_path.filename() != "with_scores.txt") {
-        sout << "doc\\with_scores.txt was not writable; writing results to "
-             << with_scores_path.string() << endl;
+        sout << "Could not open " << (results_dir / "with_scores.txt").string()
+             << " for writing; results will only be printed to sout." << endl;
     }
 
-    filesystem::path without_scores_path;
-    ofstream without_scores_file = open_minimax_results_file(without_scores_path, "without_scores.txt");
+    ofstream without_scores_file = open_minimax_results_file(results_dir, "without_scores.txt");
     if (!without_scores_file.is_open()) {
-        sout << "Could not open doc\\without_scores.txt for writing." << endl;
-    } else if (without_scores_path.filename() != "without_scores.txt") {
-        sout << "doc\\without_scores.txt was not writable; writing results to "
-             << without_scores_path.string() << endl;
+        sout << "Could not open " << (results_dir / "without_scores.txt").string()
+             << " for writing." << endl;
     }
 
     TeeStreamBuf results_buf(with_scores_file.is_open() ? with_scores_file.rdbuf() : sout.rdbuf(),
@@ -345,17 +347,15 @@ int main(int argc, char** argv) {
 
 /////////////////////////////////////////////////////////////////////////////
 
-static ofstream open_minimax_results_file(filesystem::path& opened_path, const string& filename)
+static ofstream open_minimax_results_file(const filesystem::path& results_dir, const string& filename)
 {
-    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
-    const filesystem::path doc_dir = repo_root / "doc";
     error_code ignored_error;
-    filesystem::create_directories(doc_dir, ignored_error);
+    filesystem::create_directories(results_dir, ignored_error);
 
-    opened_path = doc_dir / filename;
+    const filesystem::path requested_path = results_dir / filename;
     
     ofstream file;
-    file.open(opened_path, ios::out | ios::trunc);
+    file.open(requested_path, ios::out | ios::trunc);
     if (file.is_open()) {
         return file;
     }
@@ -365,15 +365,16 @@ static ofstream open_minimax_results_file(filesystem::path& opened_path, const s
         const filesystem::path fallback_filename = filesystem::path(filename).stem().string()
             + " (" + to_string(i) + ")"
             + filesystem::path(filename).extension().string();
-        opened_path = doc_dir / fallback_filename;
-        file.open(opened_path, ios::out | ios::trunc);
+        const filesystem::path fallback_path = results_dir / fallback_filename;
+        file.open(fallback_path, ios::out | ios::trunc);
         if (file.is_open()) {
+            sout << requested_path.string() << " was not writable; writing results to "
+                 << fallback_path.string() << endl;
             return file;
         }
         file.clear();
     }
 
-    opened_path.clear();
     return file;
 }
 
