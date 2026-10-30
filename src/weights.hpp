@@ -5,7 +5,7 @@
 
 // NNUE diagnostics and search-position collection.
 inline constexpr bool NNUE_Print_final_results = false;
-inline constexpr bool NNUE_Dump_search_results = true;
+inline constexpr bool NNUE_Dump_search_results = false;     // Dumps positions and scores to temp.txt
 
 /// feature adjustments //////////////////////////////////////////////////////////////////////////////////////////////
 

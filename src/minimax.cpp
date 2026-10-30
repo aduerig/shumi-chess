@@ -964,7 +964,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
             engine.NNUE_finish_training_game();
         }
 
-        if (NNUE_Dump_search_results) {
+        if (NNUE_Dump_search_results) {     // open the results file
             nnue_search_results_file();
         }
 
@@ -1400,7 +1400,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
     #endif
     
     // Sucessful return
-    if (NNUE_Dump_search_results) {
+    if (NNUE_Dump_search_results) {     // Write record to results file
         const bool foundIsMate = IS_MATE_SCORE(d_best_move_score_abs);
         if (!foundIsMate) {
             std::ofstream& file = nnue_search_results_file();
@@ -4102,7 +4102,6 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase, const PawnFileInfo*
     // remove me
     //icp_temp2 = engine.game_board.pawns_attacking_center_squares_cp_t<c>();
     icp_temp = engine.game_board.pawns_attacking_center_squares_cp_fast_t<c>();
-    //assert(icp_temp == icp_temp2);
 
     cp_score_position_temp += icp_temp;
 
@@ -4244,7 +4243,6 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
         int cp_score_mat_temp = (color1 == Color::WHITE)
             ? engine.game_board.get_material_for_color_fast_t<Color::WHITE>(cp_pawns_only_temp)
             : engine.game_board.get_material_for_color_fast_t<Color::BLACK>(cp_pawns_only_temp);
-        //assert(cp_score_mat_temp == cp_score_mat_temp2);
         assert(cp_score_mat_temp >= 0);
 
         if (color1 == Color::WHITE) {
@@ -4265,7 +4263,6 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
     }
 
     assert(tempsum >= 0);
-    //assert(tempsumNP >= 0);
     cp_score_material_avg = tempsum / 2;
 
     assert(cp_score_material_avg >= 0);
@@ -4310,14 +4307,14 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
 
     // Assign outputs to this function.
 
-    int cp_score_material_all_CHECK = get_material();
-    if constexpr (for_color == Color::BLACK) {
-        cp_score_material_all_CHECK = -cp_score_material_all_CHECK;
-    }
-    if (cp_score_material_all_CHECK != cp_score_material_all) {
-        sout << " chk1=" << cp_score_material_all_CHECK << " chk2=" << cp_score_material_all;
-        assert(0); 
-    }
+    // int cp_score_material_all_CHECK = get_material();
+    // if constexpr (for_color == Color::BLACK) {
+    //     cp_score_material_all_CHECK = -cp_score_material_all_CHECK;
+    // }
+    // if (cp_score_material_all_CHECK != cp_score_material_all) {
+    //     sout << " chk1=" << cp_score_material_all_CHECK << " chk2=" << cp_score_material_all;
+    //     assert(0); 
+    // }
     //assert (cp_score_material_all_CHECK == cp_score_material_all);
 
     

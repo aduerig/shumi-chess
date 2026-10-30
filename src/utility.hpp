@@ -75,6 +75,11 @@ inline std::string colorize(AColor color, const std::string& text) {
     return "\033[1;" + std::to_string(static_cast<int>(color)) + "m" + text + "\033[0m";
 }
 
+
+float random_float(float a, float b);
+
+
+
 namespace bit {
 
 

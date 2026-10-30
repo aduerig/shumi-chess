@@ -12,6 +12,23 @@ using namespace ShumiChess;
 
 namespace utility {
 
+#include <random>
+#include <cassert>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Returns a uniformly distributed random float in [a, b).
+// a is included; b is excluded.
+float random_float(float a, float b)
+{
+    assert(a <= b);
+
+    static std::mt19937 generator(12345);
+    std::uniform_real_distribution<float> distribution(a, b);
+
+    return distribution(generator);
+}
+
 namespace representation {
 
 // ? whats our policy on error handling
@@ -277,3 +294,4 @@ string join(const vector<string>& the_vect, const char* delim) {
 
 } // end namespace string
 } // end namespace utility
+

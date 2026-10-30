@@ -69,6 +69,15 @@ enum class NNUETrainingMethod {
     FULL_SEARCH = 1  // Use the file's score minus material; does not run a search.
 };
 
+
+struct NNUEInitializationBounds {
+    float piece_weight;
+    float turn_weight;
+    float neuron_bias;
+    float output_weight;
+};
+
+
 // Load board inputs and positional targets, preserving file order.
 // Relative filenames are relative to the current working directory.
 // STATIC_EVAL uses Shumi's positional evaluation for every record.
@@ -135,6 +144,13 @@ public:
     // Examples, Jacobian rows, and gradients belong to the training caller.
     float Calculate_nnue_aberration(const NNUETrainingExample& example);
 
+    // Root mean square of all aberrations, in centipawns, using current parameters.
+    // Returns zero for an empty vector; leaves parameters and examples unchanged.
+    double Calculate_nnue_RMSe(const std::vector<NNUETrainingExample>& examples);
+
+    // Array overload; returns zero when count is zero.
+    double Calculate_nnue_RMSe(const NNUETrainingExample* examples, std::size_t count);
+
     void calculate_nnue_jacobian_row(
         const NNUEInputs& inputs,
         NNUEJacobianRow& row) const;
@@ -149,6 +165,9 @@ public:
 
     float calculate_JJt(const NNUEInputs& inputs) const;
 
+    int count_locked_positions(const NNUETrainingExample* examples, int NPositions) const;
+    
+    void initialize_parameters_bounded(int neuron_count, const NNUEInitializationBounds& bounds);
 
 private:
     static constexpr std::size_t NNUE_INPUT_COUNT = 12 * 64;

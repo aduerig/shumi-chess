@@ -26,8 +26,9 @@ int main(int argc, char** argv) {
  
     // Compose filename of where the datafile is
     const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
-    // const filesystem::path database_path = repo_root / "FEN" / "fullGamr001.txt";
-    const filesystem::path database_path = repo_root / "tests" / "FENs" / "six_trainings_positions.txt";
+    //const filesystem::path database_path = repo_root / "tests" / "FENs" / "fullGamr001.txt";
+    const filesystem::path database_path = repo_root / "tests" / "FENs" / "fullGamr001_scrambled.txt";
+    //const filesystem::path database_path = repo_root / "tests" / "FENs" / "six_trainings_positions.txt";
 
     // Read in datafile into the training examples
     vector<NNUETrainingExample> examples;

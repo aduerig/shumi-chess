@@ -120,6 +120,8 @@ TEST(NNUEData, TrainingUsesAndUpdatesOwnedParameters)
     EXPECT_EQ(parameters.Neurons[0].piece_weight[1][square_e5], 3.0f);
 }
 
+// With all NNUE parameters zero, evaluation using NNUE must equal the normal SLUG evaluation.
+// NNUE scores are positive when good for White.
 TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
 {
     Engine engine;
@@ -229,6 +231,106 @@ TEST(NNUEData, TrainingOnePositionConverges)
         if (iteration == TRAINING_ITERATIONS - 1) {
             EXPECT_NEAR(updated_aberration, 0.0f, FLT_EPSILON);
         }
+    }
+}
+
+// Still one neuron though
+TEST(NNUEData, TrainingFivePositionsConverges)
+{
+    constexpr int TRAINING_ITERATIONS = 20;
+    constexpr float learning_rate = 0.001f;
+    constexpr float convergence_tolerance = 0.01f;
+
+    // Get database of training examples
+    std::vector<NNUETrainingExample> examples;
+
+    const std::filesystem::path database_path =
+        std::filesystem::path(__FILE__).parent_path() / "FENs" / "six_trainings_positions.txt";
+
+    std::string database_error;
+    const int read_error = multi_FEN_readin(
+        database_path, examples, NNUETrainingMethod::STATIC_EVAL, &database_error);
+    ASSERT_EQ(read_error, 0) << database_error;
+    ASSERT_FALSE(examples.empty());
+
+    // Initialize once, then train the same network on every loaded position.
+    NNUE_data nnue;
+
+     // Local storage for one full set of starting weights and biases; {} zeros them all.
+    // The nnue object already owns separate working storage.
+    NNUEParameters parameters{};
+
+    // One neuron ONLY!
+    // Neuron 0: z[0] = bias + sum(piece_weight[p][s] * piece_on_square[p][s])
+    //                     + turn_weight * black_to_move. Its activation is max(0, z[0]).
+    // All its input weights start at zero, so bias = 1 gives activation = max(0, 1) = 1.
+    parameters.Neurons[0].bias = 20.0f;
+
+    // Final score = output_bias + sum over neurons j of (output_weight[j] * activation[j]).
+    // This weight scales neuron 0's activation; initially the score is 0 + 1 * 1 = 1 cp.
+    // All other neurons contribute zero because their parameters are still zero.
+    parameters.output_weight[0] = 1.0f;
+
+    // Copy these starting values into nnue's own parameters and rebuild its fast-evaluation copy.
+    // Later training updates nnue's copy; this local parameters object stays unchanged.
+    nnue.set_parameters(parameters);
+
+
+
+    const double initial_rmse = nnue.Calculate_nnue_RMSe(examples);
+    //sout << "Initial RMSe: " << initial_rmse << " cp" << std::endl;
+
+    std::vector<float> initial_aberrations;
+    for (const auto& example : examples) {
+        initial_aberrations.push_back(nnue.Calculate_nnue_aberration(example));
+    }
+    NNUEGradient gradient{};
+
+    // Train the same network on every loaded position.
+    for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
+        SCOPED_TRACE(iteration);
+
+        for (std::size_t position = 0; position < examples.size(); ++position) {
+            SCOPED_TRACE(position);
+            const NNUETrainingExample& example = examples[position];
+
+            // Printout
+            // if (iteration == 0 || iteration == TRAINING_ITERATIONS - 1) {
+            //     const float aberration = nnue.Calculate_nnue_aberration(example);
+            //     std::ostringstream aberration_text;
+            //     aberration_text << std::showpos << std::fixed << std::setprecision(5)
+            //                     << aberration;
+
+            //     sout << std::setw(4) << iteration
+            //          << "  Pos: " << position
+            //          << "  Abrr:" << aberration_text.str()
+            //          << "  JJt  " << nnue.calculate_JJt(example.inputs)
+            //          << std::endl;
+            // }
+
+            // Apply grdient
+            nnue.calculate_nnue_gradient(example, gradient);
+            nnue.apply_nnue_gradient(gradient, learning_rate);
+            
+            ASSERT_TRUE(std::isfinite(nnue.Calculate_nnue_aberration(example)));
+      
+        }
+
+    }
+
+    const double final_rmse = nnue.Calculate_nnue_RMSe(examples);
+    //sout << "Final RMSe: " << final_rmse << " cp" << std::endl;
+    EXPECT_LE(final_rmse, convergence_tolerance);
+
+    // Later positions can change earlier predictions, so recheck all final errors.
+    for (std::size_t position = 0; position < examples.size(); ++position) {
+        SCOPED_TRACE(position);
+        const float final_aberration = nnue.Calculate_nnue_aberration(examples[position]);
+        if (std::fabs(initial_aberrations[position]) > convergence_tolerance) {
+            EXPECT_LT(std::fabs(final_aberration), std::fabs(initial_aberrations[position]));
+        }
+
+        EXPECT_NEAR(final_aberration, 0.0f, convergence_tolerance);
     }
 }
 
