@@ -215,8 +215,13 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     //TTable.clear();
     //TTable.reserve(1'000'000);    // NOTE: What size here? (we dont even normally use this table)
-    
-
+    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+    const filesystem::path parameters_path = repo_root / "tests" / "FENs" / "ShumiNNUE.txt";
+    //string sss = "ShumiNNUE.txt";
+    if (!nnue.load_parameters(parameters_path)) {
+        sout << "Failed to load NNUE parameters: " << endl;
+        _getch();
+    }
 
 
 
@@ -4344,7 +4349,6 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
                 const float NNUE_score = nnue.Calculate_nnue_positional(engine.game_board);
                 
                 // tricky, important, below NNUI uses "float" for scores, but shumi uses centipawns (integer)
-                //cp_score_position_temp = static_cast<int>(std::lround(NNUE_score));
                 cp_score_position_temp = (int)(std::lround(NNUE_score));
             }
             break;

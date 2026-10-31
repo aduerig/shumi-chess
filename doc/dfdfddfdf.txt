@@ -1,17 +1,15 @@
 do not delete me
 ===================================================================================
+Final RMSe=22.0606 nlocks=74
+Final RMSe=22.1829 nlocks=95
+Final RMSe=17.9268 nlocks=73
+Final RMSe=13.4902 nlocks=22
+Final RMSe=9.83176 nlocks=21
+Final RMSe=9.141 nlocks=18
+Final RMSe=8.44572 nlocks=12
+..
+Final RMSe=5.48004 nlocks=6       // 12
 
-
-   0  Pos: 0  Abrr:-21.00000  JJt  435  Targ 41  Pred 20
-   0  Pos: 1  Abrr:+23.13668  JJt  487.955  Targ 6  Pred 29.1367
-   0  Pos: 2  Abrr:-51.14863  JJt  416.408  Targ 70  Pred 18.8514
-   0  Pos: 3  Abrr:-153.05795  JJt  505.7  Targ 193  Pred 39.942
-   0  Pos: 4  Abrr:+31.50937  JJt  1265.4  Targ 87  Pred 118.509
-  59  Pos: 0  Abrr:+0.00003  JJt  1103.49  Targ 41  Pred 41
-  59  Pos: 1  Abrr:-0.00001  JJt  1019.67  Targ 6  Pred 5.99999
-  59  Pos: 2  Abrr:-0.00002  JJt  775.894  Targ 70  Pred 70
-  59  Pos: 3  Abrr:-0.00008  JJt  1947.06  Targ 193  Pred 193
-  59  Pos: 4  Abrr:+0.00008  JJt  1108.96  Targ 87  Pred 87.0001
 
 =======================================================================================
 

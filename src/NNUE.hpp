@@ -131,6 +131,9 @@ public:
     void set_parameters(const NNUEParameters& parameters);
     void zero_parameters();
 
+    bool save_parameters(const std::filesystem::path& filename) const;
+    bool load_parameters(const std::filesystem::path& filename);
+
     void fill_nnue_inputs(const GameBoard& board, NNUEInputs& inputs) const;
     void fill_nnue_inputs_fast(const GameBoard& board, NNUEInputs& inputs) const;
 

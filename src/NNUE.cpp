@@ -3,9 +3,11 @@
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <locale>
 #include <sstream>
 
 #include "NNUE.hpp"
@@ -127,6 +129,100 @@ void NNUE_data::zero_parameters()
 {
     parameters_ = {};
     rebuild_inference_parameters_();
+}
+
+// Text format: one value per line, with all indices in increasing order.
+// For each neuron: piece_weight[piece][square], then turn_weight, then bias.
+// After all neurons: output_weight[neuron], then output_bias.
+// Lines beginning with '#' are informational comments, ignored when loading.
+bool NNUE_data::save_parameters(const std::filesystem::path& filename) const
+{
+    std::ofstream file(filename);
+    if (!file) {
+        return false;
+    }
+    file.imbue(std::locale::classic());
+    file << std::setprecision(std::numeric_limits<float>::max_digits10);
+    file << "# Shumi NNUE parameters\n"
+         << "# Format version: 1\n"
+         << "# Neuron count: " << NNUE_NEURON_COUNT << '\n';
+
+    for (const auto& neuron : parameters_.Neurons) {
+        for (const auto& piece_weights : neuron.piece_weight) {
+            for (float weight : piece_weights) {
+                file << weight << '\n';
+            }
+        }
+        file << neuron.turn_weight << '\n' << neuron.bias << '\n';
+    }
+    for (float weight : parameters_.output_weight) {
+        file << weight << '\n';
+    }
+    file << parameters_.output_bias << '\n';
+
+    // Closing flushes buffered output and exposes delayed write failures.
+    file.close();
+    return static_cast<bool>(file);
+}
+
+bool NNUE_data::load_parameters(const std::filesystem::path& filename)
+{
+    std::ifstream file(filename);
+    if (!file) {
+        return false;
+    }
+
+    std::string line;
+    const auto read_value = [&](float& value) {
+        while (std::getline(file, line)) {
+            if (!line.empty() && line.front() == '#') {
+                continue;
+            }
+            std::istringstream record(line);
+            record.imbue(std::locale::classic());
+            if (!(record >> value) || !std::isfinite(value)) {
+                return false;
+            }
+            record >> std::ws;
+            return record.eof();
+        }
+        return false;
+    };
+
+    NNUEParameters loaded{};
+    for (auto& neuron : loaded.Neurons) {
+        for (auto& piece_weights : neuron.piece_weight) {
+            for (float& weight : piece_weights) {
+                if (!read_value(weight)) {
+                    return false;
+                }
+            }
+        }
+        if (!read_value(neuron.turn_weight) || !read_value(neuron.bias)) {
+            return false;
+        }
+    }
+    for (float& weight : loaded.output_weight) {
+        if (!read_value(weight)) {
+            return false;
+        }
+    }
+    if (!read_value(loaded.output_bias)) {
+        return false;
+    }
+
+    // Only comment lines may follow the expected parameter records.
+    while (std::getline(file, line)) {
+        if (line.empty() || line.front() != '#') {
+            return false;
+        }
+    }
+    if (!file.eof() || file.bad()) {
+        return false;
+    }
+
+    set_parameters(loaded);
+    return true;
 }
 
 void NNUE_data::rebuild_inference_parameters_()
@@ -327,8 +423,13 @@ float NNUE_data::calculate_nnue_positional_(
         }
     }
 
-    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
-        values[j] += parameters.turn_weight[j] * black_to_move;
+    // for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+    //     values[j] += parameters.turn_weight[j] * black_to_move;
+    // }
+    if (black_to_move) {        // optimised
+        for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+            values[j] += parameters.turn_weight[j];
+        }
     }
 
     float score = parameters.output_bias;
@@ -839,6 +940,19 @@ int multi_FEN_readin(
     return EXIT_SUCCESS;
 }
 
+
+
+
+NNUEInitializationBounds bounds0{
+    0.3f,    // piece_weight:  -0.30 to +0.30
+    0.3f,    // turn_weight:   -0.30 to +0.30
+    0.0f,    // neuron_bias:    0.00
+    0.25f    // output_weight: -0.25 to +0.25
+};
+
+
+
+
 void test_NNUE_training_mult_positions(
     NNUE_data& nnue,                        // input
     const NNUETrainingExample* examples,    // input
@@ -847,7 +961,10 @@ void test_NNUE_training_mult_positions(
     constexpr float learning_rate = 0.001f;
 
     // Initialize the NNUE parameters once, before training.
-    nnue.initialize_parameters();
+    //nnue.initialize_parameters();
+
+    nnue.initialize_parameters_bounded(12, bounds0);
+    
 
     const std::size_t position_count = NPositions > 0 ? static_cast<std::size_t>(NPositions) : 0;
     const double initial_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);

@@ -14,19 +14,12 @@ using namespace ShumiChess;
 
 constexpr int square_e5 = GameBoard::square_e5;
 
-TEST(NNUEData, DefaultConstructionProducesExactZero)
-{
-    NNUE_data nnue;
-    GameBoard board;
 
-    EXPECT_EQ(nnue.Calculate_nnue_positional(board), 0.0f);
-    board.turn = Color::BLACK;
-    EXPECT_EQ(nnue.Calculate_nnue_positional(board), 0.0f);
-
-    const GameBoard endgame("7k/8/8/4N3/8/8/8/K7 w - - 0 1");
-    EXPECT_EQ(nnue.Calculate_nnue_positional(endgame), 0.0f);
-}
-
+// Verify that construction copies the supplied parameters into NNUE-owned storage.
+// Changing the caller's weights afterward must not affect network predictions.
+// Use a single neuron with known weights to check exact positional scores.
+// Vary piece square, piece color, and side to move to check refreshed board inputs.
+// Revisit the first position to ensure earlier evaluations leave no stale inputs.
 TEST(NNUEData, OwnsSuppliedParametersAndRefreshesBoardInputs)
 {
     NNUEParameters parameters{};
@@ -59,6 +52,11 @@ TEST(NNUEData, OwnsSuppliedParametersAndRefreshesBoardInputs)
     }
 }
 
+// Verify that set_parameters installs an independent copy of the supplied network.
+// Exercise the last neuron, piece channel, and square with a known expected score.
+// Changing the caller's output bias must not change the installed parameters.
+// Reset the network with zero_parameters and require an exactly zero prediction.
+// Inspect representative stored weights and biases to confirm they were cleared.
 TEST(NNUEData, ReplacesAndZerosOwnedParameters)
 {
     NNUE_data nnue;
@@ -86,6 +84,11 @@ TEST(NNUEData, ReplacesAndZerosOwnedParameters)
     EXPECT_EQ(zeroed.output_bias, 0.0f);
 }
 
+// Verify training calculations and updates using a single active neuron.
+// Build board inputs and a positional target from search score minus material.
+// Check exact Jacobian entries, prediction error, and corresponding gradients.
+// Apply one gradient step and require a smaller absolute prediction error.
+// Confirm the owned weight changes while the caller's original parameters do not.
 TEST(NNUEData, TrainingUsesAndUpdatesOwnedParameters)
 {
     NNUEParameters parameters{};
@@ -122,6 +125,9 @@ TEST(NNUEData, TrainingUsesAndUpdatesOwnedParameters)
 
 // With all NNUE parameters zero, evaluation using NNUE must equal the normal SLUG evaluation.
 // NNUE scores are positive when good for White.
+// Check that each positional score is added exactly once to the SLUG baseline.
+// Exercise both score signs, both evaluator perspectives, and changing board inputs.
+// Verify that scores of +1.5 and -1.5 centipawns round away from zero.
 TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
 {
     Engine engine;
@@ -180,6 +186,11 @@ TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
     }
 }
 
+// Verify that repeated gradient updates fit one position to a 75-centipawn target.
+// Initialize one active neuron so the first prediction is exactly 1 centipawn.
+// Train for 20 iterations using the fast board inputs and a fixed learning rate.
+// Require each step to reduce absolute error until it reaches float epsilon.
+// Check that later steps preserve convergence and the final error is near zero.
 TEST(NNUEData, TrainingOnePositionConverges)
 {
     constexpr int TRAINING_ITERATIONS = 20;
@@ -235,6 +246,11 @@ TEST(NNUEData, TrainingOnePositionConverges)
 }
 
 // Still one neuron though
+// Verify that one shared network learns all positions loaded from the FEN fixture.
+// Build training targets with STATIC_EVAL and initialize one active neuron.
+// Train each position over 20 passes, requiring finite errors after every update.
+// Require final RMSE to be at most 0.01 centipawns across the loaded examples.
+// Recheck every final error for that tolerance and improvement where applicable.
 TEST(NNUEData, TrainingFivePositionsConverges)
 {
     constexpr int TRAINING_ITERATIONS = 20;

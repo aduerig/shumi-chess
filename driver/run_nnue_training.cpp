@@ -46,6 +46,14 @@ int main(int argc, char** argv) {
     const int NPositions = static_cast<int>(examples.size());
     test_NNUE_training_mult_positions(nnue, examples.data(), NPositions);
 
+    // Write it out to a file
+    const filesystem::path parameters_path = repo_root / "tests" / "FENs" / "ShumiNNUE.txt";
+    if (nnue.save_parameters(parameters_path)) {
+        sout << "Saved NNUE parameters to " << parameters_path << endl;
+    } else {
+        sout << "Failed to save NNUE parameters to " << parameters_path << endl;
+    }
+
     sout << "Press any key to exit..." << endl;
     _getch();
 
