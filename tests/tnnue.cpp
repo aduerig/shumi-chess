@@ -7,6 +7,7 @@
 #include "engine.hpp"
 #include "gameboard.hpp"
 #include "minimax.hpp"
+#include "status_output.hpp"
 
 namespace {
 
@@ -347,6 +348,70 @@ TEST(NNUEData, TrainingFivePositionsConverges)
         }
 
         EXPECT_NEAR(final_aberration, 0.0f, convergence_tolerance);
+    }
+}
+
+// Sweep the driver's training data with 3 through 16 initialized neurons.
+// Keep the same bounds, learning rate, position order, and 100 training passes.
+// Check each run against its initial RMSE, then compare the 3- and 16-neuron results.
+// Allow ties, including when the number of locked positions reaches zero.
+TEST(NNUEData, TrainingNeuronSweepImprovesRmseAndLocks)
+{
+    constexpr int min_neurons = 3;
+    constexpr int max_neurons = 16;
+    constexpr int TRAINING_ITERATIONS = 100;
+    constexpr float learning_rate = 0.001f;
+    const NNUEInitializationBounds bounds{0.3f, 0.3f, 0.0f, 0.25f};
+    ASSERT_LE(max_neurons, NNUE_NEURON_COUNT);
+
+    const std::filesystem::path database_path =
+        std::filesystem::path(__FILE__).parent_path() / "FENs" / "fullGamr001_scrambled.txt";
+    std::vector<NNUETrainingExample> examples;
+    std::string database_error;
+    const int read_error = multi_FEN_readin(
+        database_path, examples, NNUETrainingMethod::STATIC_EVAL, &database_error);
+    ASSERT_EQ(read_error, 0) << database_error;
+    ASSERT_FALSE(examples.empty());
+
+    const int position_count = static_cast<int>(examples.size());
+    double starting_final_rmse = 0.0;
+    int starting_nlocks = 0;
+
+    for (int nNeurons = min_neurons; nNeurons <= max_neurons; ++nNeurons) {
+        SCOPED_TRACE(::testing::Message() << "nNeurons=" << nNeurons);
+
+        // Start a fresh network; the existing training helper hard-codes 12.
+        NNUE_data nnue;
+        nnue.initialize_parameters_bounded(nNeurons, bounds);
+
+        const double initial_rmse = nnue.Calculate_nnue_RMSe(examples);
+        sout << "nNeurons=" << nNeurons << std::endl;
+        sout << "Initial RMSe: " << initial_rmse << " cp" << std::endl;
+        EXPECT_TRUE(std::isfinite(initial_rmse));
+
+        NNUEGradient gradient{};
+        for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
+            for (const auto& example : examples) {
+                nnue.calculate_nnue_gradient(example, gradient);
+                nnue.apply_nnue_gradient(gradient, learning_rate);
+            }
+        }
+
+        const double final_rmse = nnue.Calculate_nnue_RMSe(examples);
+        const int nlocks = nnue.count_locked_positions(examples.data(), position_count);
+        sout << "Final RMSe=" << final_rmse << " nlocks=" << nlocks << std::endl;
+
+        EXPECT_TRUE(std::isfinite(final_rmse));
+        EXPECT_LE(final_rmse, initial_rmse);
+        if (nNeurons == min_neurons) {
+            starting_final_rmse = final_rmse;
+            starting_nlocks = nlocks;
+        } else if (nNeurons == max_neurons) {
+            EXPECT_LE(final_rmse, starting_final_rmse)
+                << "Final RMSe increased from " << min_neurons << " to " << max_neurons << " neurons";
+            EXPECT_LE(nlocks, starting_nlocks)
+                << "nlocks increased from " << min_neurons << " to " << max_neurons << " neurons";
+        }
     }
 }
 

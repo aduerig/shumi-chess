@@ -56,11 +56,12 @@ std::ofstream& nnue_search_results_file()
     static std::ofstream file = [] {
         const std::filesystem::path filename =
             std::filesystem::path(__FILE__).parent_path().parent_path()
-            / "FEN" / "temp.txt";
+            /"tests" / "FENs" / "temp.txt";
         std::ofstream opened(filename, std::ios::app);
         if (!opened.is_open()) {
             sout << filename.string()
                  << ": could not open search-results dump" << std::endl;
+            int ch = _getch();
         }
         return opened;
     }();
@@ -89,6 +90,7 @@ std::ofstream& nnue_search_results_file()
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
+//#define DEBUGGING_PLAYERS
 //#define _DEBUGGING_TEMP
 //#define _DEBUGGING_BEST_STUFF
 //#define DEBUG_ASPIRATION
@@ -209,21 +211,6 @@ bool global_debug_flag = false;
 
 MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
 
-  
-
-    // Initialize storage buffers (they live here to avoid extra allocation during the game)
-
-    //TTable.clear();
-    //TTable.reserve(1'000'000);    // NOTE: What size here? (we dont even normally use this table)
-    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
-    const filesystem::path parameters_path = repo_root / "tests" / "FENs" / "ShumiNNUE.txt";
-    //string sss = "ShumiNNUE.txt";
-    if (!nnue.load_parameters(parameters_path)) {
-        sout << "Failed to load NNUE parameters: " << endl;
-        _getch();
-    }
-
-
 
     // sout << "\033[1;34mNew Match\033[0m" << endl;
     // sout << "TTable2 entries before clear=" << TTable2.size() << endl;
@@ -267,9 +254,19 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     #endif
 
+    // Load NNUE model (only the NNUE player will use it)
+    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+    const filesystem::path parameters_path = repo_root / "tests" / "FENs" / "Model_000.txt";
+    //string sss = "ShumiNNUE.txt";
+    if (!nnue.load_parameters(parameters_path)) {
+        sout << "Failed to load NNUE parameters: " << parameters_path << endl;
+        _getch();
+    }
 
-
+    // These are used by MultiPV
     excluded_root_moves.clear();
+
+
     std::fill(std::begin(prev_root_best_), std::end(prev_root_best_),
               std::pair<Move, Score>{});
 
@@ -932,6 +929,20 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
     eval_person = (ShumiChess::EvalPersons)player_id;   
     //eval_person = ShumiChess::CRAZY_IVAN;           // debug only (force IVAN)
 
+    #if defined(DEBUGGING_PLAYERS) && defined(_DEBUGGING_TO_FILE)
+        const char* debug_player_name = "UNKNOWN";
+        switch (eval_person) {
+            case NNUE:        debug_player_name = "NNUE"; break;
+            case SLUG:        debug_player_name = "SLUG"; break;
+            case CRAZY_IVAN:  debug_player_name = "CRAZY_IVAN"; break;
+            case UNCLE_SHUMI: debug_player_name = "UNCLE_SHUMI"; break;
+        }
+        fprintf(fpDebug, "\nSEARCH START: %s  eval=%s\n",
+                engine.game_board.turn == Color::WHITE ? "White" : "Black",
+                debug_player_name);
+        fflush(fpDebug);
+    #endif
+
     //sout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     //sout << "\n Player = " << eval_person << endl;
     Features_mask = feat;
@@ -956,6 +967,8 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
 
 
     
+    static int nnue_dump_random_moves = 0;
+
     if (engine.computer_ply_so_far == 0) {
 
         nGames++;
@@ -970,6 +983,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         }
 
         if (NNUE_Dump_search_results) {     // open the results file
+            nnue_dump_random_moves = engine.i_randomize_next_move;
             nnue_search_results_file();
         }
 
@@ -1114,6 +1128,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         engine.i_randomize_next_move--;             // Decrement number of randome moves to make
     }
 
+    // These are used by MultiPV
     excluded_root_moves.clear();
     bool multipv_aborted = false;
 
@@ -1211,6 +1226,12 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         hard_abort_end();
         soft_abort_end();
         sout << "No legal root move; returning bestmove 0000" << endl;
+        #if defined(DEBUGGING_PLAYERS) && defined(_DEBUGGING_TO_FILE)
+            fprintf(fpDebug, "SEARCH END:   %s  eval=%s  move=0000\n",
+                    engine.game_board.turn == Color::WHITE ? "White" : "Black",
+                    debug_player_name);
+            fflush(fpDebug);
+        #endif
         return {d_best_move_score, best_move};
     }
 
@@ -1401,11 +1422,20 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
 
     #ifdef _DEBUGGING_TO_FILE
         engine.move_into_string(best_move);
-        fprintf(fpDebug, "move %s \n",  engine.move_string.c_str());
+        #ifdef DEBUGGING_PLAYERS
+            fprintf(fpDebug, "SEARCH END:   %s  eval=%s  move=%s\n",
+                    engine.game_board.turn == Color::WHITE ? "White" : "Black",
+                    debug_player_name, engine.move_string.c_str());
+            fflush(fpDebug);
+        #endif
     #endif
     
     // Sucessful return
-    if (NNUE_Dump_search_results) {     // Write record to results file
+    // Sample positions 1, 9, 18, 27, ... after the game's randomized searches.
+    // Use the initial count: the last randomized search decrements it to zero.
+    const int nnue_dump_position = engine.computer_ply_so_far - nnue_dump_random_moves;
+    if (NNUE_Dump_search_results && nnue_dump_position > 0 &&
+        (nnue_dump_position == 1 || nnue_dump_position % 9 == 0)) {
         const bool foundIsMate = IS_MATE_SCORE(d_best_move_score_abs);
         if (!foundIsMate) {
             std::ofstream& file = nnue_search_results_file();
@@ -1417,7 +1447,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
                 file.flush();
                 if (!file) {
                     sout << "Could not write FEN/temp.txt search-results dump"
-                        << endl;
+                        << endl; 
                     file.close();
                 }
             }
@@ -1441,7 +1471,7 @@ void MinimaxAI::playground(int iPhase) {
 
     //cout << " ssssssssisis =" << sizeof(TTEntry2) << endl;
 
-    test_NNUE_training_one_position(this);
+    //test_NNUE_training_one_position(this);
     // nnue.test_NNUE1();
     //engine.test_SEE_for_capture_new();
 

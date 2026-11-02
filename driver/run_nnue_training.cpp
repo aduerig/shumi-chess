@@ -41,15 +41,19 @@ int main(int argc, char** argv) {
         return read_error;
     }
 
-    // Train a nnue based on the training examples
-    NNUE_data nnue;
-    const int NPositions = static_cast<int>(examples.size());
-    test_NNUE_training_mult_positions(nnue, examples.data(), NPositions);
+    constexpr int TRAINING_ITERATIONS = 100;
+    constexpr int N_NEURONS = 16;
+    constexpr float learning_rate = 0.001f;
 
-    // Write it out to a file
-    const filesystem::path parameters_path = repo_root / "tests" / "FENs" / "ShumiNNUE.txt";
+    // Train a nnue model based on the training examples
+    NNUE_data nnue;
+    const int nTrainingPositions = static_cast<int>(examples.size());
+    test_NNUE_training_mult_positions(nnue, examples.data(), nTrainingPositions, N_NEURONS, TRAINING_ITERATIONS, learning_rate);
+
+    // Write out the model to a file
+    const filesystem::path parameters_path = repo_root / "tests" / "FENs" / "Model_001.txt";
     if (nnue.save_parameters(parameters_path)) {
-        sout << "Saved NNUE parameters to " << parameters_path << endl;
+        //sout << "Saved NNUE parameters to " << parameters_path << endl;
     } else {
         sout << "Failed to save NNUE parameters to " << parameters_path << endl;
     }

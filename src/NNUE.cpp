@@ -426,7 +426,7 @@ float NNUE_data::calculate_nnue_positional_(
     // for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
     //     values[j] += parameters.turn_weight[j] * black_to_move;
     // }
-    if (black_to_move) {        // optimised
+    if (black_to_move) {        // optimized
         for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
             values[j] += parameters.turn_weight[j];
         }
@@ -519,8 +519,7 @@ void NNUE_data::calculate_nnue_jacobian_row_(
 
         for (int piece = 0; piece < 12; ++piece) {
             for (int square = 0; square < 64; ++square) {
-                row.Neurons[j].piece_weight[piece][square] =
-                    sensitivity * inputs.piece_on_square[piece][square];
+                row.Neurons[j].piece_weight[piece][square] = sensitivity * inputs.piece_on_square[piece][square];
             }
         }
     }
@@ -656,11 +655,11 @@ float NNUE_data::calculate_JJt(const NNUEInputs& inputs) const
 // Does not modify the NNUE parameters.
 int NNUE_data::count_locked_positions(
     const NNUETrainingExample* examples,
-    int NPositions) const
+    int nTrainingPositions) const
 {
     int locked_count = 0;
 
-    for (int position = 0; position < NPositions; ++position) {
+    for (int position = 0; position < nTrainingPositions; ++position) {
         const float JJt = calculate_JJt(examples[position].inputs);
 
         if (JJt == 1.0f) ++locked_count;
@@ -955,29 +954,30 @@ NNUEInitializationBounds bounds0{
 
 void test_NNUE_training_mult_positions(
     NNUE_data& nnue,                        // input
-    const NNUETrainingExample* examples,    // input
-    int NPositions                          // input
+    const NNUETrainingExample* examples,    // input (array of training examples_)
+    int nTrainingPositions,                 // input
+    int nNeurons,                           // input   
+    int nTrainingIterations,                // input    
+    float learning_rate                     // input
 ) {
-    constexpr float learning_rate = 0.001f;
+
 
     // Initialize the NNUE parameters once, before training.
     //nnue.initialize_parameters();
 
-    nnue.initialize_parameters_bounded(12, bounds0);
+    nnue.initialize_parameters_bounded(nNeurons, bounds0);
     
-
-    const std::size_t position_count = NPositions > 0 ? static_cast<std::size_t>(NPositions) : 0;
+    // Compute RMSe initial
+    const std::size_t position_count = nTrainingPositions > 0 ? static_cast<std::size_t>(nTrainingPositions) : 0;
     const double initial_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
     sout << "Initial RMSe: " << initial_rmse << " cp" << std::endl;
 
-    // Storage for the derivatives of the loss.
+    // Storage for the "derivatives of the loss".
     NNUEGradient gradient{};
 
-    constexpr int TRAINING_ITERATIONS = 100;
+    for (int iteration = 0; iteration < nTrainingIterations; ++iteration) {
 
-    for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
-
-        for (int position = 0; position < NPositions; ++position) {
+        for (int position = 0; position < nTrainingPositions; ++position) {
 
             const NNUETrainingExample& example = examples[position];
 
@@ -989,15 +989,15 @@ void test_NNUE_training_mult_positions(
 
             float JJt = nnue.calculate_JJt(example.inputs);
 
-            if ( (iteration == 0) || (iteration == TRAINING_ITERATIONS-1) ) {
-                sout << std::setw(4) << iteration
-                    << "  Pos: " << position
-                    << "  Abrr:" << aberration_text.str()
-                    << "  JJt  " << JJt
-                    //<< "  Targ " << example.target_positional_score_cp
-                    //<< "  Pred " << (example.target_positional_score_cp + aberration)
-                    << std::endl;
-            }
+            // if ( (iteration == 0) || (iteration == TRAINING_ITERATIONS-1) ) {
+            //     sout << std::setw(4) << iteration
+            //         << "  Pos: " << position
+            //         << "  Abrr:" << aberration_text.str()
+            //         << "  JJt  " << JJt
+            //         //<< "  Targ " << example.target_positional_score_cp
+            //         //<< "  Pred " << (example.target_positional_score_cp + aberration)
+            //         << std::endl;
+            // }
 
             // Calculate the gradient for this position.
             nnue.calculate_nnue_gradient(example, gradient);
@@ -1005,10 +1005,11 @@ void test_NNUE_training_mult_positions(
             // Update the same NNUE parameters.
             nnue.apply_nnue_gradient(gradient, learning_rate);
 
-        }   // END loop over positions
+        }   // END loop over training positions
 
     }   // END loop over training iterations
 
+     // Compute RMSe final
     const double final_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
     int nlocks = nnue.count_locked_positions(examples, (int)position_count);
     sout << "Final RMSe=" << final_rmse << " nlocks=" << nlocks << std::endl;

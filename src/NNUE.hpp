@@ -129,7 +129,9 @@ public:
     // Parameters are owned by value; supplying them copies their contents.
     const NNUEParameters& get_parameters() const;
     void set_parameters(const NNUEParameters& parameters);
+
     void zero_parameters();
+    void initialize_parameters();
 
     bool save_parameters(const std::filesystem::path& filename) const;
     bool load_parameters(const std::filesystem::path& filename);
@@ -140,8 +142,6 @@ public:
     // Whole-position centipawn score, positive good for White.
     // Both overloads leave the stored parameters unchanged.
     float Calculate_nnue_positional(const GameBoard& board);
-
-    void initialize_parameters();
 
     // Training calculations use the same stored parameters as evaluation.
     // Examples, Jacobian rows, and gradients belong to the training caller.
@@ -283,6 +283,10 @@ void test_NNUE_training_one_position(MinimaxAI*);
 void test_NNUE_training_mult_positions(
     NNUE_data& nnue,
     const NNUETrainingExample* examples,
-    int NPositions);
+    int nPositions,
+    int nNuerons,
+    int nTrainingIterations, 
+    float learning_rate
+);
 
 } // end namespace ShumiChess
