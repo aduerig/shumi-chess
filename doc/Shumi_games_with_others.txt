@@ -1,4 +1,11 @@
 
+self shumi
+
+Uncle shumi .vs. Slug - about 5 tp 1
+NNUE (model_001) .vs. slug  - 22 - 9 - 3   
+
+
+-----------------------------------------------------------------------------------------------------------
 
 WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s -d8 -t2000
     Result: BLACK wins: 
@@ -166,7 +173,6 @@ Beatiful crush by Shumi
 
 
 
-
 -----------------------------------------------------------------------------------------------------------
 
 
@@ -177,7 +183,6 @@ NOtes to make in weights:
    King to center stronger (when we show endgame) To reaslcenter, not just "rings". Attraction to holes? Passed pawn?
 
    should bishop center ot near center be strengthened? 
-   maybe make the finachettoed bishop, with pawns intact protects king?
 
    queens on open files too. Understand whats is going on with open files.
 

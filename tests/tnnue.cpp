@@ -1,7 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <cfloat>
+#include <chrono>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <system_error>
 
 #include "NNUE.hpp"
 #include "engine.hpp"
@@ -377,16 +382,16 @@ TEST(NNUEData, TrainingNeuronSweepImprovesRmseAndLocks)
     double starting_final_rmse = 0.0;
     int starting_nlocks = 0;
 
-    for (int nNeurons = min_neurons; nNeurons <= max_neurons; ++nNeurons) {
-        SCOPED_TRACE(::testing::Message() << "nNeurons=" << nNeurons);
+    for (int nActiveNeurons = min_neurons; nActiveNeurons <= max_neurons; ++nActiveNeurons) {
+        SCOPED_TRACE(::testing::Message() << "nActiveNeurons=" << nActiveNeurons);
 
         // Start a fresh network; the existing training helper hard-codes 12.
         NNUE_data nnue;
-        nnue.initialize_parameters_bounded(nNeurons, bounds);
+        nnue.initialize_parameters_bounded(nActiveNeurons, bounds);
 
         const double initial_rmse = nnue.Calculate_nnue_RMSe(examples);
-        sout << "nNeurons=" << nNeurons << std::endl;
-        sout << "Initial RMSe: " << initial_rmse << " cp" << std::endl;
+        //sout << "nActiveNeurons=" << nActiveNeurons << std::endl;
+        //sout << "Initial RMSe: " << initial_rmse << " cp" << std::endl;
         EXPECT_TRUE(std::isfinite(initial_rmse));
 
         NNUEGradient gradient{};
@@ -399,20 +404,75 @@ TEST(NNUEData, TrainingNeuronSweepImprovesRmseAndLocks)
 
         const double final_rmse = nnue.Calculate_nnue_RMSe(examples);
         const int nlocks = nnue.count_locked_positions(examples.data(), position_count);
-        sout << "Final RMSe=" << final_rmse << " nlocks=" << nlocks << std::endl;
+        //sout << "Final RMSe=" << final_rmse << " nlocks=" << nlocks << std::endl;
 
         EXPECT_TRUE(std::isfinite(final_rmse));
         EXPECT_LE(final_rmse, initial_rmse);
-        if (nNeurons == min_neurons) {
+        if (nActiveNeurons == min_neurons) {
             starting_final_rmse = final_rmse;
             starting_nlocks = nlocks;
-        } else if (nNeurons == max_neurons) {
+        } else if (nActiveNeurons == max_neurons) {
             EXPECT_LE(final_rmse, starting_final_rmse)
                 << "Final RMSe increased from " << min_neurons << " to " << max_neurons << " neurons";
             EXPECT_LE(nlocks, starting_nlocks)
                 << "nlocks increased from " << min_neurons << " to " << max_neurons << " neurons";
         }
     }
+}
+
+// Loading and saving the model must preserve every byte, including line endings.
+// Cleanup runs even after a fatal assertion, and cleanup errors fail the test.
+TEST(NNUEData, LoadSaveParametersPreservesFileBytes)
+{
+    const std::filesystem::path model_path =
+        std::filesystem::path(__FILE__).parent_path() / "data" / "Model_001.txt";
+    NNUE_data nnue;
+    ASSERT_TRUE(nnue.load_parameters(model_path)) << model_path;
+
+    // Claim a separate directory so concurrent runs cannot overwrite each other.
+    const auto temporary_directory = std::filesystem::temp_directory_path() /
+        ("shumi_nnue_round_trip_" + std::to_string(
+            std::chrono::steady_clock::now().time_since_epoch().count()));
+    ASSERT_TRUE(std::filesystem::create_directory(temporary_directory))
+        << temporary_directory;
+
+    struct Cleanup {
+        std::filesystem::path file;
+
+        ~Cleanup()
+        {
+            std::error_code error;
+            const bool file_removed = std::filesystem::remove(file, error);
+            EXPECT_TRUE(file_removed) << "Could not remove " << file << ": " << error.message();
+            EXPECT_FALSE(error) << error.message();
+
+            const bool directory_removed = std::filesystem::remove(file.parent_path(), error);
+            EXPECT_TRUE(directory_removed)
+                << "Could not remove " << file.parent_path() << ": " << error.message();
+            EXPECT_FALSE(error) << error.message();
+        }
+    } cleanup{temporary_directory / "Model_001.txt"};
+
+    ASSERT_TRUE(nnue.save_parameters(cleanup.file)) << cleanup.file;
+
+    // Streams close before cleanup, including when an assertion returns early.
+    std::ifstream original(model_path, std::ios::binary);
+    std::ifstream saved(cleanup.file, std::ios::binary);
+    ASSERT_TRUE(original.is_open()) << model_path;
+    ASSERT_TRUE(saved.is_open()) << cleanup.file;
+
+    for (std::size_t offset = 0; ; ++offset) {
+        const auto original_byte = original.get();
+        const auto saved_byte = saved.get();
+        ASSERT_EQ(saved_byte, original_byte) << "Files differ at byte offset " << offset;
+        if (original_byte == std::char_traits<char>::eof()) {
+            break;
+        }
+    }
+    EXPECT_TRUE(original.eof());
+    EXPECT_FALSE(original.bad()) << "Read failed for " << model_path;
+    EXPECT_TRUE(saved.eof());
+    EXPECT_FALSE(saved.bad()) << "Read failed for " << cleanup.file;
 }
 
 } // namespace

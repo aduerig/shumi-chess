@@ -1,4 +1,5 @@
 
+#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -29,6 +30,12 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ShumiChess {
+
+namespace {
+constexpr char training_banner[] = "########### from TRAINING DATASET ############";
+constexpr char model_banner[] = "########### TRAINED MODEL ####################";
+static_assert(sizeof(training_banner) == sizeof(model_banner));
+}
 
 std::size_t NNUE_data::collect_active_inputs(
     const NNUEInputs& inputs,
@@ -131,34 +138,170 @@ void NNUE_data::zero_parameters()
     rebuild_inference_parameters_();
 }
 
-// Text format: one value per line, with all indices in increasing order.
+// Text format: eight piece-square values per line, all indices in increasing order.
 // For each neuron: piece_weight[piece][square], then turn_weight, then bias.
 // After all neurons: output_weight[neuron], then output_bias.
-// Lines beginning with '#' are informational comments, ignored when loading.
-bool NNUE_data::save_parameters(const std::filesystem::path& filename) const
+// A training banner precedes copied comments, with '#' separating model metadata.
+bool NNUE_data::save_parameters(const std::filesystem::path& filename,
+                                const std::filesystem::path& training_filename,
+                                int activated_neurons,
+                                int training_iterations,
+                                float learning_rate,
+                                std::optional<NNUETrainingResult> training_result) const
 {
-    std::ofstream file(filename);
+    if (activated_neurons < -1 || activated_neurons > NNUE_NEURON_COUNT ||
+        training_iterations < -1 || !std::isfinite(learning_rate) ||
+        (learning_rate != -1.0f && learning_rate < 0.0f)) {
+        return false;
+    }
+    const int saved_activated_neurons =
+        activated_neurons == -1 ? activated_neurons_ : activated_neurons;
+    const int saved_training_iterations =
+        training_iterations == -1 ? training_iterations_ : training_iterations;
+    const float saved_learning_rate =
+        learning_rate == -1.0f ? learning_rate_ : learning_rate;
+    const auto saved_training_result = training_result ? training_result : training_result_;
+    if (saved_training_result &&
+        (!std::isfinite(saved_training_result->initial_rmse) ||
+         !std::isfinite(saved_training_result->final_rmse) ||
+         saved_training_result->initial_rmse < 0.0 || saved_training_result->final_rmse < 0.0)) {
+        return false;
+    }
+    std::vector<std::string> training_header = training_header_;
+    if (!training_filename.empty()) {
+        std::ifstream training_file(training_filename);
+        if (!training_file) {
+            return false;
+        }
+        training_header.clear();
+        std::string line;
+        while (std::getline(training_file, line)) {
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+            const auto first = line.find_first_not_of(" \t\r\n\v\f");
+            if (first == std::string::npos) {
+                continue;
+            }
+            if (line[first] != '#') {
+                break;
+            }
+            if (line.find('\r') != std::string::npos ||
+                line.find('\0') != std::string::npos) {
+                return false;
+            }
+            training_header.push_back(line.substr(first));
+        }
+        if (training_file.bad()) {
+            return false;
+        }
+    }
+
+    // Each piece's 64 squares occupy eight rows of eight values,
+    // in increasing array-index order. Section labels are mandatory.
+    // Prepare and validate the text before opening/truncating the destination.
+    std::ostringstream text;
+    text.imbue(std::locale::classic());
+    text << std::setprecision(std::numeric_limits<float>::max_digits10);
+    // Shortest exact representation keeps metadata readable and round-trip safe.
+    const auto write_metadata_number = [&](auto value) {
+        char number_text[64];
+        const auto result = std::to_chars(number_text, number_text + sizeof(number_text), value);
+        if (result.ec != std::errc{}) {
+            return false;
+        }
+        text.write(number_text, result.ptr - number_text);
+        return static_cast<bool>(text);
+    };
+    const auto write_values = [&](const float* values, int count) {
+        for (int i = 0; i < count; ++i) {
+            if (!std::isfinite(values[i])) {
+                return false;
+            }
+            if (i != 0) {
+                text << ' ';
+            }
+            text << values[i];
+        }
+        text << "\r\n";
+        return static_cast<bool>(text);
+    };
+
+    text << "##\r\n"
+         << training_banner << "\r\n";
+    for (const auto& line : training_header) {
+        text << '#' << line << "\r\n";
+    }
+    text << "#\r\n"
+         << model_banner << "\r\n"
+         << "# Shumi NNUE parameters\r\n"
+         << "# Format version: 1\r\n"
+         << "# Neuron count: " << NNUE_NEURON_COUNT << "\r\n";
+    if (saved_activated_neurons >= 0) {
+        text << "# Activated neurons: " << saved_activated_neurons << "\r\n";
+    }
+    if (saved_training_iterations >= 0) {
+        text << "# Training iterations: " << saved_training_iterations << "\r\n";
+    }
+    if (saved_learning_rate >= 0.0f) {
+        text << "# Learning rate: ";
+        if (!write_metadata_number(saved_learning_rate)) {
+            return false;
+        }
+        text << "\r\n";
+    }
+    text << "#\r\n";
+    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+        const auto& neuron = parameters_.Neurons[j];
+        text << "# Neuron: " << j << "\r\n";
+        for (int piece = 0; piece < 12; ++piece) {
+            text << "# piece_weight: " << piece << "\r\n";
+            for (int square = 0; square < 64; square += 8) {
+                if (!write_values(&neuron.piece_weight[piece][square], 8)) {
+                    return false;
+                }
+            }
+        }
+        text << "# turn_weight\r\n";
+        if (!write_values(&neuron.turn_weight, 1)) {
+            return false;
+        }
+        text << "# bias\r\n";
+        if (!write_values(&neuron.bias, 1)) {
+            return false;
+        }
+    }
+    text << "# output_weight\r\n";
+    for (int j = 0; j < NNUE_NEURON_COUNT; j += 8) {
+        const int count = NNUE_NEURON_COUNT - j < 8 ? NNUE_NEURON_COUNT - j : 8;
+        if (!write_values(&parameters_.output_weight[j], count)) {
+            return false;
+        }
+    }
+    text << "# output_bias\r\n";
+    if (!write_values(&parameters_.output_bias, 1)) {
+        return false;
+    }
+    text << "# RMSe (cp): initial = ";
+    if (saved_training_result) {
+        if (!write_metadata_number(saved_training_result->initial_rmse)) {
+            return false;
+        }
+        text << ", final = ";
+        if (!write_metadata_number(saved_training_result->final_rmse)) {
+            return false;
+        }
+    } else {
+        text << "unavailable, final = unavailable";
+    }
+    text << "\r\n";
+
+    // Binary mode preserves explicit CRLF on every platform, including Windows.
+    std::ofstream file(filename, std::ios::binary);
     if (!file) {
         return false;
     }
-    file.imbue(std::locale::classic());
-    file << std::setprecision(std::numeric_limits<float>::max_digits10);
-    file << "# Shumi NNUE parameters\n"
-         << "# Format version: 1\n"
-         << "# Neuron count: " << NNUE_NEURON_COUNT << '\n';
-
-    for (const auto& neuron : parameters_.Neurons) {
-        for (const auto& piece_weights : neuron.piece_weight) {
-            for (float weight : piece_weights) {
-                file << weight << '\n';
-            }
-        }
-        file << neuron.turn_weight << '\n' << neuron.bias << '\n';
-    }
-    for (float weight : parameters_.output_weight) {
-        file << weight << '\n';
-    }
-    file << parameters_.output_bias << '\n';
+    file << text.str();
 
     // Closing flushes buffered output and exposes delayed write failures.
     file.close();
@@ -167,61 +310,237 @@ bool NNUE_data::save_parameters(const std::filesystem::path& filename) const
 
 bool NNUE_data::load_parameters(const std::filesystem::path& filename)
 {
-    std::ifstream file(filename);
-    if (!file) {
-        return false;
-    }
-
-    std::string line;
-    const auto read_value = [&](float& value) {
-        while (std::getline(file, line)) {
-            if (!line.empty() && line.front() == '#') {
-                continue;
-            }
-            std::istringstream record(line);
-            record.imbue(std::locale::classic());
-            if (!(record >> value) || !std::isfinite(value)) {
-                return false;
-            }
-            record >> std::ws;
-            return record.eof();
-        }
+    std::size_t line_number = 0;
+    const auto fail = [&](const std::string& message) {
+        std::cerr << "NNUE parameter load failed: " << filename
+                  << ", line " << line_number << ": " << message << '\n';
         return false;
     };
 
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        return fail("could not open file");
+    }
+
+    std::string line;
+    const auto read_line = [&]() {
+        ++line_number;
+        if (!std::getline(file, line)) {
+            return fail(file.bad() ? "read error" : "unexpected end of file");
+        }
+        if (file.eof() || line.empty() || line.back() != '\r') {
+            return fail("expected a CRLF line ending");
+        }
+        line.pop_back();
+        if (line.find('\r') != std::string::npos ||
+            line.find('\0') != std::string::npos) {
+            return fail("unexpected carriage return or NUL in line");
+        }
+        return true;
+    };
+    const auto read_label = [&](const std::string& expected) {
+        if (!read_line()) {
+            return false;
+        }
+        return line == expected || fail("expected '" + expected + "'");
+    };
+    const auto read_values = [&](float* values, int count) {
+        if (!read_line()) {
+            return false;
+        }
+        std::istringstream record(line);
+        record.imbue(std::locale::classic());
+        std::string token;
+        for (int i = 0; i < count; ++i) {
+            if (!(record >> token)) {
+                return fail("expected exactly " + std::to_string(count) + " values");
+            }
+            // Parse complete whitespace-separated tokens; reject e.g. "1-2".
+            std::istringstream number(token);
+            number.imbue(std::locale::classic());
+            if (token.find_first_not_of("0123456789+-.eE") != std::string::npos ||
+                !(number >> values[i]) || !number.eof() || !std::isfinite(values[i])) {
+                return fail("invalid or out-of-range value at column " + std::to_string(i + 1));
+            }
+        }
+        if (record >> token) {
+            return fail("expected exactly " + std::to_string(count) + " values");
+        }
+        return true;
+    };
+
+    if (!read_line()) {
+        return false;
+    }
+    // Accept earlier headers as well as the training-banner layout.
+    const bool has_training_banner = line == "##";
+    const bool has_header_border = has_training_banner || line == "#";
+    bool has_model_banner = false;
+    std::vector<std::string> training_header;
+    if (has_header_border) {
+        if (has_training_banner) {
+            if (!read_line()) {
+                return false;
+            }
+            has_model_banner = line == training_banner ||
+                               line == "########### TRAINING DATASET ############";
+            if (!has_model_banner && line != "########### TRAINING DATA ############") {
+                return fail("expected '########### from TRAINING DATASET ############'");
+            }
+        }
+        if (!read_line()) {
+            return false;
+        }
+        while (line.rfind("##", 0) == 0) {
+            training_header.push_back(line.substr(1));
+            if (!read_line()) {
+                return false;
+            }
+        }
+        if (has_training_banner) {
+            if (line != "#") {
+                return fail("expected '#' after training header");
+            }
+            if (has_model_banner) {
+                if (!read_line()) {
+                    return false;
+                }
+                if (line != model_banner && line != "########### TRAINED MODEL ############") {
+                    return fail("expected trained model banner");
+                }
+            }
+            if (!read_line()) {
+                return false;
+            }
+        }
+    }
+    if (line != "# Shumi NNUE parameters") {
+        return fail("expected '# Shumi NNUE parameters'");
+    }
+    if (!read_line()) {
+        return false;
+    }
+    if (line != "# Format version: 1" && line != "# Format version: 2") {
+        return fail("expected '# Format version: 1'");
+    }
+    if (!read_label("# Neuron count: " + std::to_string(NNUE_NEURON_COUNT))) {
+        return false;
+    }
+    int activated_neurons = -1;
+    int training_iterations = -1;
+    float learning_rate = -1.0f;
+    std::optional<NNUETrainingResult> training_result;
+    const std::string rmse_label = "# RMSe (cp): initial = ";
+    bool has_rmse = false;
+    const auto parse_rmse = [&]() {
+        if (has_rmse || line.rfind(rmse_label, 0) != 0) {
+            return fail("expected a single RMSe comment");
+        }
+        has_rmse = true;
+        if (line == rmse_label + "unavailable, final = unavailable") {
+            return true;
+        }
+        std::istringstream record(line.substr(rmse_label.size()));
+        record.imbue(std::locale::classic());
+        NNUETrainingResult result{};
+        char comma;
+        std::string final_label, equals;
+        if (!(record >> result.initial_rmse >> comma >> final_label >> equals >> result.final_rmse) ||
+            !record.eof() || comma != ',' || final_label != "final" || equals != "=" ||
+            !std::isfinite(result.initial_rmse) || !std::isfinite(result.final_rmse) ||
+            result.initial_rmse < 0.0 || result.final_rmse < 0.0) {
+            return fail("invalid initial or final RMSe");
+        }
+        training_result = result;
+        return true;
+    };
+    if (has_header_border) {
+        if (!read_line()) {
+            return false;
+        }
+        const auto read_metadata = [&](const std::string& label, auto& value, auto maximum) {
+            if (line.rfind(label, 0) != 0) {
+                return true;
+            }
+            std::istringstream record(line.substr(label.size()));
+            record.imbue(std::locale::classic());
+            if (!(record >> value) || !record.eof() || !std::isfinite(value) ||
+                value < 0 || value > maximum) {
+                return fail("invalid value for '" + label + "'");
+            }
+            return read_line();
+        };
+        if (!read_metadata("# Activated neurons: ", activated_neurons, NNUE_NEURON_COUNT) ||
+            !read_metadata("# Training iterations: ", training_iterations, std::numeric_limits<int>::max()) ||
+            !read_metadata("# Learning rate: ", learning_rate, std::numeric_limits<float>::max())) {
+            return false;
+        }
+        if (line.rfind(rmse_label, 0) == 0) {
+            if (!parse_rmse() || !read_line()) {
+                return false;
+            }
+        }
+        if (line != "#") {
+            return fail("expected '#' after model metadata");
+        }
+    }
+
+    // Do not change either the parameters or inference cache until all checks pass.
     NNUEParameters loaded{};
-    for (auto& neuron : loaded.Neurons) {
-        for (auto& piece_weights : neuron.piece_weight) {
-            for (float& weight : piece_weights) {
-                if (!read_value(weight)) {
+    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+        auto& neuron = loaded.Neurons[j];
+        if (!read_label("# Neuron: " + std::to_string(j))) {
+            return false;
+        }
+        for (int piece = 0; piece < 12; ++piece) {
+            if (!read_label("# piece_weight: " + std::to_string(piece))) {
+                return false;
+            }
+            for (int square = 0; square < 64; square += 8) {
+                if (!read_values(&neuron.piece_weight[piece][square], 8)) {
                     return false;
                 }
             }
         }
-        if (!read_value(neuron.turn_weight) || !read_value(neuron.bias)) {
+        if (!read_label("# turn_weight") || !read_values(&neuron.turn_weight, 1) ||
+            !read_label("# bias") || !read_values(&neuron.bias, 1)) {
             return false;
         }
     }
-    for (float& weight : loaded.output_weight) {
-        if (!read_value(weight)) {
+    if (!read_label("# output_weight")) {
+        return false;
+    }
+    for (int j = 0; j < NNUE_NEURON_COUNT; j += 8) {
+        const int count = NNUE_NEURON_COUNT - j < 8 ? NNUE_NEURON_COUNT - j : 8;
+        if (!read_values(&loaded.output_weight[j], count)) {
             return false;
         }
     }
-    if (!read_value(loaded.output_bias)) {
+    if (!read_label("# output_bias") || !read_values(&loaded.output_bias, 1)) {
         return false;
     }
 
-    // Only comment lines may follow the expected parameter records.
-    while (std::getline(file, line)) {
-        if (line.empty() || line.front() != '#') {
+    // Older files may omit the RMSe footer or contain it in the header instead.
+    if (file.peek() != std::char_traits<char>::eof()) {
+        if (!read_line() || !parse_rmse()) {
             return false;
         }
     }
+    // Nothing may follow the optional RMSe footer.
+    ++line_number;
+    if (file.peek() != std::char_traits<char>::eof()) {
+        return fail("unexpected data after model");
+    }
     if (!file.eof() || file.bad()) {
-        return false;
+        return fail("read error at end of file");
     }
 
     set_parameters(loaded);
+    training_header_.swap(training_header);
+    activated_neurons_ = activated_neurons;
+    training_iterations_ = training_iterations;
+    learning_rate_ = learning_rate;
+    training_result_ = training_result;
     return true;
 }
 
@@ -707,19 +1026,37 @@ void NNUE_data::initialize_parameters_bounded(int neuron_count, const NNUEInitia
     // The nnue object already owns separate working storage.
     NNUEParameters parameters{};
 
+    // for (int j = 0; j < neuron_count; ++j) {
+
+    //     parameters.Neurons[j].bias = utility::random_float(-bounds.neuron_bias, bounds.neuron_bias);
+    //     parameters.Neurons[j].turn_weight = utility::random_float(-bounds.turn_weight, bounds.turn_weight);
+    //     parameters.output_weight[j] = utility::random_float(-bounds.output_weight, bounds.output_weight);
+
+    //     for (int piece = 0; piece < 12; ++piece) {
+    //         for (int square = 0; square < 64; ++square) {
+    //             parameters.Neurons[j].piece_weight[piece][square] =
+    //                 utility::random_float(-bounds.piece_weight, bounds.piece_weight);
+    //         }
+    //     }
+    // }
+
     for (int j = 0; j < neuron_count; ++j) {
 
-        parameters.Neurons[j].bias = utility::random_float(-bounds.neuron_bias, bounds.neuron_bias);
-        parameters.Neurons[j].turn_weight = utility::random_float(-bounds.turn_weight, bounds.turn_weight);
-        parameters.output_weight[j] = utility::random_float(-bounds.output_weight, bounds.output_weight);
+        parameters.Neurons[j].bias = bounds.neuron_bias_offset + utility::random_float(-bounds.neuron_bias, bounds.neuron_bias);
+        parameters.Neurons[j].turn_weight = bounds.turn_weight_offset + utility::random_float(-bounds.turn_weight, bounds.turn_weight);
+        parameters.output_weight[j] = bounds.output_weight_offset + utility::random_float(-bounds.output_weight, bounds.output_weight);
 
         for (int piece = 0; piece < 12; ++piece) {
             for (int square = 0; square < 64; ++square) {
                 parameters.Neurons[j].piece_weight[piece][square] =
-                    utility::random_float(-bounds.piece_weight, bounds.piece_weight);
+                    bounds.piece_weight_offset + utility::random_float(-bounds.piece_weight, bounds.piece_weight);
             }
         }
     }
+
+
+
+
 
     parameters.output_bias = 0.0f;
 
@@ -942,39 +1279,61 @@ int multi_FEN_readin(
 
 
 
+// NNUEInitializationBounds bounds0{
+//     0.3f,    // piece_weight:  -0.30 to +0.30
+//     0.3f,    // turn_weight:   -0.30 to +0.30
+//     0.0f,    // neuron_bias:    0.00
+//     0.25f    // output_weight: -0.25 to +0.25
+// };
 NNUEInitializationBounds bounds0{
     0.3f,    // piece_weight:  -0.30 to +0.30
     0.3f,    // turn_weight:   -0.30 to +0.30
-    0.0f,    // neuron_bias:    0.00
-    0.25f    // output_weight: -0.25 to +0.25
+    0.1f,    // neuron_bias:    0.00
+    0.25f,   // output_weight: -0.25 to +0.25
+
+    0.0f,    // piece_weight_offset
+    0.0f,    // turn_weight_offset
+    0.5f,    // neuron_bias_offset
+    0.0f     // output_weight_offset
 };
 
-
-
-
-void test_NNUE_training_mult_positions(
-    NNUE_data& nnue,                        // input
-    const NNUETrainingExample* examples,    // input (array of training examples_)
-    int nTrainingPositions,                 // input
-    int nNeurons,                           // input   
+//
+// Train a FEN-score data set into a NNUE model. The model is stored in the NNUE, but not
+// writtemn anywhere. It can also show stats related to the training..
+//
+NNUETrainingResult NNUE_train_mult_positions(
+    NNUE_data& nnue,                        // input / output
+    const NNUETrainingExample* examples,    // input (array of training positions)
+    int nTrainingPositions,                 // input (number of training positions)
+    int nActiveNeurons,                     // input (not whats allocated, but must be less)
     int nTrainingIterations,                // input    
-    float learning_rate                     // input
+    float learning_rate,                    // input
+    bool write_to_sout,                     // if true outputs stats to sout
+    NNUETrainingStats* training_stats       // optional output statistics
 ) {
 
-
+    if (write_to_sout) {
+        sout << endl;
+     }
     // Initialize the NNUE parameters once, before training.
     //nnue.initialize_parameters();
 
-    nnue.initialize_parameters_bounded(nNeurons, bounds0);
+    nnue.initialize_parameters_bounded(nActiveNeurons, bounds0);
     
     // Compute RMSe initial
     const std::size_t position_count = nTrainingPositions > 0 ? static_cast<std::size_t>(nTrainingPositions) : 0;
     const double initial_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
-    sout << "Initial RMSe: " << initial_rmse << " cp" << std::endl;
+    if (write_to_sout) {
+        sout << "Activate: " << nActiveNeurons << endl;
+        sout << "Initial RMSe: " << initial_rmse << " cp" << endl;
+    }
 
     // Storage for the "derivatives of the loss".
     NNUEGradient gradient{};
 
+    //
+    // Loop over all positions, for the number of rewuested iterations.
+    //
     for (int iteration = 0; iteration < nTrainingIterations; ++iteration) {
 
         for (int position = 0; position < nTrainingPositions; ++position) {
@@ -984,8 +1343,8 @@ void test_NNUE_training_mult_positions(
             // Calculate the aberration for this position.
             const float aberration = nnue.Calculate_nnue_aberration(example);
             
-            std::ostringstream aberration_text;
-            aberration_text << std::showpos << std::fixed << std::setprecision(5) << aberration;
+            // std::ostringstream aberration_text;
+            // aberration_text << std::showpos << std::fixed << std::setprecision(5) << aberration;
 
             float JJt = nnue.calculate_JJt(example.inputs);
 
@@ -1011,8 +1370,19 @@ void test_NNUE_training_mult_positions(
 
      // Compute RMSe final
     const double final_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
-    int nlocks = nnue.count_locked_positions(examples, (int)position_count);
-    sout << "Final RMSe=" << final_rmse << " nlocks=" << nlocks << std::endl;
+    int final_lock_percent = 0;
+    if ((write_to_sout || training_stats != nullptr) && nTrainingPositions > 0) {
+        const int nlocks = nnue.count_locked_positions(examples, nTrainingPositions);
+        final_lock_percent = static_cast<int>(100LL * nlocks / nTrainingPositions);
+    }
+    if (training_stats != nullptr) {
+        *training_stats = {initial_rmse, final_rmse, final_lock_percent};
+    }
+    if (write_to_sout) {
+        sout << "Final RMSe=" << final_rmse << " nlocks%=" << final_lock_percent << endl;
+    }
+
+    return {initial_rmse, final_rmse};
 }
 
  

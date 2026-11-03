@@ -1,5 +1,5 @@
 # Shumi NNUE parameters
-# Format version: 1
+# Format version: 0
 # Neuron count: 32
 -0.221575648
 -0.189648747

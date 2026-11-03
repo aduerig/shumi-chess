@@ -254,13 +254,15 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     #endif
 
-    // Load NNUE model (only the NNUE player will use it)
-    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
-    const filesystem::path parameters_path = repo_root / "tests" / "FENs" / "Model_000.txt";
-    //string sss = "ShumiNNUE.txt";
-    if (!nnue.load_parameters(parameters_path)) {
-        sout << "Failed to load NNUE parameters: " << parameters_path << endl;
-        _getch();
+    if (NNUE_read_model) {
+        // Load NNUE model (only the NNUE player will use it)
+        const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+        const filesystem::path parameters_path = repo_root / "NNUE" / "models" / "Model_001.txt";
+        //string sss = "ShumiNNUE.txt";
+        if (!nnue.load_parameters(parameters_path)) {
+            sout << "Failed to load NNUE parameters: " << parameters_path << endl;
+            _getch();
+        }
     }
 
     // These are used by MultiPV
@@ -982,7 +984,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
             engine.NNUE_finish_training_game();
         }
 
-        if (NNUE_Dump_search_results) {     // open the results file
+        if (NNUE_create_training_examples) {     // open the results file
             nnue_dump_random_moves = engine.i_randomize_next_move;
             nnue_search_results_file();
         }
@@ -1434,7 +1436,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
     // Sample positions 1, 9, 18, 27, ... after the game's randomized searches.
     // Use the initial count: the last randomized search decrements it to zero.
     const int nnue_dump_position = engine.computer_ply_so_far - nnue_dump_random_moves;
-    if (NNUE_Dump_search_results && nnue_dump_position > 0 &&
+    if (NNUE_create_training_examples && nnue_dump_position > 0 &&
         (nnue_dump_position == 1 || nnue_dump_position % 9 == 0)) {
         const bool foundIsMate = IS_MATE_SCORE(d_best_move_score_abs);
         if (!foundIsMate) {

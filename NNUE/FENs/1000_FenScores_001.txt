@@ -1,6 +1,8 @@
 #
-# 11/1/2026
-# Uncle Shumi .vs. Uncle Shumi, -d9 -t4000 -r3
+# FEN-scores. Collected: 11/1/2026
+# One thousand potiions 
+# Uncle Shumi .vs. Uncle Shumi games, -d9 -t4000 -r3
+# Sampled every 9 ply, but not on random moves.
 #
 rnbqkbnr/ppppp1pp/8/5p2/8/2PP4/PP2PPPP/RNBQKBNR b KQkq - 0 2 | -10
 r1bqkb1r/ppp1p2p/2n2np1/3p1p2/3P4/2P2NP1/PP2PPBP/RNBQK2R b KQkq - 1 6 | 29

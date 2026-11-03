@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -70,11 +71,36 @@ enum class NNUETrainingMethod {
 };
 
 
+// struct NNUEInitializationBounds {
+//     float piece_weight;
+//     float turn_weight;
+//     float neuron_bias;
+//     float output_weight;
+// };
 struct NNUEInitializationBounds {
     float piece_weight;
     float turn_weight;
     float neuron_bias;
     float output_weight;
+
+    float piece_weight_offset;
+    float turn_weight_offset;
+    float neuron_bias_offset;
+    float output_weight_offset;
+};
+
+
+
+
+struct NNUETrainingResult {
+    double initial_rmse;
+    double final_rmse;
+};
+
+struct NNUETrainingStats {
+    double initial_rmse;
+    double final_rmse;
+    int final_lock_percent; // Whole percent, matching the displayed nlocks%.
 };
 
 
@@ -133,7 +159,16 @@ public:
     void zero_parameters();
     void initialize_parameters();
 
-    bool save_parameters(const std::filesystem::path& filename) const;
+    // Copy the training file's leading comments when supplied; otherwise retain
+    // the training header from the last successfully loaded model.
+    // Pass the training settings; -1 retains each loaded value, if known.
+    // Omitted training results retain loaded RMSe values, if known.
+    bool save_parameters(const std::filesystem::path& filename,
+                         const std::filesystem::path& training_filename = {},
+                         int activated_neurons = -1,
+                         int training_iterations = -1,
+                         float learning_rate = -1.0f,
+                         std::optional<NNUETrainingResult> training_result = std::nullopt) const;
     bool load_parameters(const std::filesystem::path& filename);
 
     void fill_nnue_inputs(const GameBoard& board, NNUEInputs& inputs) const;
@@ -269,6 +304,11 @@ private:
         float learning_rate);
 
     NNUEParameters parameters_;
+    std::vector<std::string> training_header_;
+    int activated_neurons_ = -1;
+    int training_iterations_ = -1;
+    float learning_rate_ = -1.0f;
+    std::optional<NNUETrainingResult> training_result_;
 
     // Keep the large inference copy off the stack. Copies can safely share it;
     // changing parameters replaces the cache instead of modifying it in place.
@@ -280,13 +320,15 @@ private:
 
 void test_NNUE1();
 void test_NNUE_training_one_position(MinimaxAI*);
-void test_NNUE_training_mult_positions(
+NNUETrainingResult NNUE_train_mult_positions(
     NNUE_data& nnue,
     const NNUETrainingExample* examples,
     int nPositions,
     int nNuerons,
     int nTrainingIterations, 
-    float learning_rate
+    float learning_rate,
+    bool write_to_sout,     // writes stats to sout
+    NNUETrainingStats* training_stats = nullptr // filled on completion when non-null
 );
 
 } // end namespace ShumiChess
