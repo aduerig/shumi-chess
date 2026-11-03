@@ -43,8 +43,12 @@ public:
 class MinimaxAI {
 public:
 
-    MinimaxAI(ShumiChess::Engine&);
+    // NULL leaves NNUE parameters zeroed; a filename explicitly loads a model.
+    MinimaxAI(ShumiChess::Engine&, const char* nnue_model_file = NULL);
     ~MinimaxAI();
+
+    // Relative filenames are resolved against the repository root.
+    void load_nnue_model_for_play(const char* nnue_model_file);
 
     struct thread_callback_structure {
         int depth = 0;

@@ -12,6 +12,7 @@
 
 #include "globals.hpp"
 #include "status_output.hpp"
+#include "weights.hpp"
 
 #include <engine.hpp>
 #include <minimax.hpp>
@@ -592,7 +593,7 @@ PyInit_engine_communicator(void) {
     // be ready before Engine's constructor touches them.
     if (!python_engine) {
         python_engine = new ShumiChess::Engine();
-        minimax_ai = new MinimaxAI(*python_engine);
+        minimax_ai = new MinimaxAI(*python_engine, NNUE_model_file);
     }
 
     PyObject* m = PyModule_Create(&engine_communicatormodule);

@@ -6,6 +6,7 @@
 
 #include "NNUE.hpp"
 #include "status_output.hpp"
+#include "weights.hpp"
 #ifdef _WIN32
     #include <conio.h>
 #else
@@ -23,7 +24,7 @@ using namespace ShumiChess;
 // run from : C:\programming\shumi-chess\build\bin\RelWithDebInfo
 
 // Alternate entry point: swap the names main and main2 to run this version.
-int main(int argc, char** argv) {
+int main2(int argc, char** argv) {
     const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
     const filesystem::path database_path = repo_root / "NNUE" / "FENs" / "1000_FenScores_001.txt";
 
@@ -65,7 +66,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-int main2(int argc, char** argv) {
+int main(int argc, char** argv) {
  
     // Compose filename of where the training datafile is (FENScores)
     const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
@@ -104,7 +105,7 @@ int main2(int argc, char** argv) {
          << " nlocks%=" << training_stats.final_lock_percent << endl;
 
     // Write out the NNUE model to a file
-    const filesystem::path parameters_path = repo_root / "NNUE" / "models" / "Model_001.txt";
+    const filesystem::path parameters_path = repo_root / NNUE_model_file;
     if (nnue.save_parameters(parameters_path, database_path, N_ACTIVE_NEURONS,
                              TRAINING_ITERATIONS, learning_rate, training_result)) {
         //sout << "Saved NNUE parameters to " << parameters_path << endl;

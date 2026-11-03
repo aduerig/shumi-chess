@@ -192,6 +192,29 @@ TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
     }
 }
 
+// Only an explicitly supplied model file should populate a MinimaxAI's network.
+// Resolve the fixture independently to check repository-relative model loading.
+TEST(NNUEData, MinimaxLoadsExplicitModelFile)
+{
+    Engine engine;
+    {
+        MinimaxAI minimax(engine, NULL);
+        EXPECT_EQ(minimax.nnue.Calculate_nnue_positional(engine.game_board), 0.0f);
+    }
+
+    const char* model_file = "tests/data/Model_001.txt";
+    const auto repo_root = std::filesystem::path(__FILE__).parent_path().parent_path();
+    NNUE_data expected;
+    ASSERT_TRUE(expected.load_parameters(repo_root / model_file));
+    const float expected_score = expected.Calculate_nnue_positional(engine.game_board);
+    ASSERT_NE(expected_score, 0.0f);
+
+    MinimaxAI minimax(engine, model_file);
+    EXPECT_EQ(minimax.nnue.Calculate_nnue_positional(engine.game_board), expected_score);
+    EXPECT_EQ(minimax.evaluate_board_t<Color::WHITE>(NNUE),
+              minimax.evaluate_board_t<Color::WHITE>(SLUG) + std::lround(expected_score));
+}
+
 // Verify that repeated gradient updates fit one position to a 75-centipawn target.
 // Initialize one active neuron so the first prediction is exactly 1 centipawn.
 // Train for 20 iterations using the fast board inputs and a fixed learning rate.

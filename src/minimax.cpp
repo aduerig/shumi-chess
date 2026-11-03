@@ -209,7 +209,7 @@ bool global_debug_flag = false;
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-MinimaxAI::MinimaxAI(Engine& e) : engine(e) { 
+MinimaxAI::MinimaxAI(Engine& e, const char* nnue_model_file) : engine(e) {
 
 
     // sout << "\033[1;34mNew Match\033[0m" << endl;
@@ -254,15 +254,8 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
     #endif
 
-    if (NNUE_read_model) {
-        // Load NNUE model (only the NNUE player will use it)
-        const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
-        const filesystem::path parameters_path = repo_root / "NNUE" / "models" / "Model_001.txt";
-        //string sss = "ShumiNNUE.txt";
-        if (!nnue.load_parameters(parameters_path)) {
-            sout << "Failed to load NNUE parameters: " << parameters_path << endl;
-            _getch();
-        }
+    if (nnue_model_file != NULL) {
+        load_nnue_model_for_play(nnue_model_file);
     }
 
     // These are used by MultiPV
@@ -274,6 +267,16 @@ MinimaxAI::MinimaxAI(Engine& e) : engine(e) {
 
 }
 
+
+
+void MinimaxAI::load_nnue_model_for_play(const char* nnue_model_file) {
+    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+    const filesystem::path parameters_path = repo_root / nnue_model_file;
+    if (!nnue.load_parameters(parameters_path)) {
+        sout << "Failed to load NNUE parameters: " << parameters_path << endl;
+        _getch();
+    }
+}
 
 
 MinimaxAI::~MinimaxAI() { 

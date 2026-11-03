@@ -3,10 +3,12 @@
 #include "Score.hpp"
 #include "globals.hpp"
 
+// NNUE model for play and training output, relative to the repository root.
+inline constexpr const char* NNUE_model_file = "NNUE/models/Model_001.txt";     
+
 // NNUE diagnostics and search-position collection.
 inline constexpr bool NNUE_Print_final_results = false;
 inline constexpr bool NNUE_create_training_examples = false;     // Dumps positions 1, 9, 18, 27, ... and scores to temp.txt
-inline constexpr bool NNUE_read_model = true;         // set to false if no NNUE model available
 
 /// feature adjustments //////////////////////////////////////////////////////////////////////////////////////////////
 
