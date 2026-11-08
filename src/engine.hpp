@@ -59,6 +59,21 @@ class PGN {
         void clear();
         int addMe(Move& m, Engine& e);  // Adds a move to the PGN
         string spitout();
+        // Replay one game's mainline through ply_number (0 means its starting position).
+        // Uses a temporary Engine; does not change this PGN's stored text.
+        // Returns a six-field FEN, or an empty string on error. Diagnostics go to
+        // error when supplied, otherwise stderr. Moves after the target are not read.
+        std::string pgn_to_fen(const std::string& pgn, int ply_number,
+                           std::string* error = nullptr) const;
+        // Incremental replay of a collection. Start position at 0, call
+        // start_pgn_game(), then play_next_pgn_move() until GameEnded.
+        // Repeat at the same position for the next game. No stored PGN text changes.
+        // engine.ply_so_far counts moves from this game's starting position.
+        bool start_pgn_game(const std::string& pgn, size_t& position, Engine& engine,
+                            std::string* error = nullptr) const;
+        enum class MoveReadResult { MovePlayed, GameEnded, Error };
+        MoveReadResult play_next_pgn_move(const std::string& pgn, size_t& position,
+                                         Engine& engine, std::string* error = nullptr) const;
     private:
         std::string text;
         int moves_added = 0;

@@ -66,8 +66,9 @@ struct NNUETrainingExample {
 };
 
 enum class NNUETrainingMethod {
-    STATIC_EVAL = 0,
-    FULL_SEARCH = 1  // Use the file's score minus material; does not run a search.
+    NONE = 0,        // Use the integer positional target from the file.
+    STATIC_EVAL = 1, // Require '*'; calculate the chosen player's positional evaluation.
+    FULL_SEARCH = 2  // Require '*'; search and subtract material (root by default).
 };
 
 
@@ -95,6 +96,7 @@ struct NNUEInitializationBounds {
 struct NNUETrainingResult {
     double initial_rmse;
     double final_rmse;
+    std::optional<double> final_lock_percent = std::nullopt; // Absent in older model files.
 };
 
 struct NNUETrainingStats {
@@ -106,17 +108,34 @@ struct NNUETrainingStats {
 
 // Load board inputs and positional targets, preserving file order.
 // Relative filenames are relative to the current working directory.
-// STATIC_EVAL uses Shumi's positional evaluation for every record.
-// FULL_SEARCH uses the supplied score minus material, falling back to static
-// evaluation for missing ('*') or mate scores.
-// Returns 0 on success, nonzero on failure. Examples are replaced only on success.
+// Everything from the first '#' to the end of each line is ignored as a comment.
+// Every nonblank, noncomment line must contain six FEN fields, '|', and a score.
+// NONE requires a signed decimal int and uses it directly as the positional target.
+// STATIC_EVAL and FULL_SEARCH require '*'; numeric scores are errors in these modes.
+// STATIC_EVAL and FULL_SEARCH use the supplied player for evaluation.
+// FULL_SEARCH searches with depth_minimum and time_requested (ms),
+// skips mate scores, converts to White's perspective, and subtracts root material
+// by default. If material_after_best_move is true, subtract material after the
+// chosen move instead; terminal positions with no move still use root material.
+// Board inputs and retained FENs always describe the original position.
+// depth_minimum and time_requested are used only for FULL_SEARCH;
+// NONE and STATIC_EVAL ignore both arguments and material_after_best_move.
+// NONE also ignores player.
+// Returns 0 on success, nonzero on failure (including no positions after filtering).
+// Examples are replaced only on success. If retained_fens is supplied, it is also
+// replaced on success with the original FENs, one per retained example in order.
 // If supplied, error is cleared on entry and receives a diagnostic on failure;
 // otherwise the diagnostic is written to stderr.
 [[nodiscard]] int multi_FEN_readin(
     const std::filesystem::path& filename,
     std::vector<NNUETrainingExample>& examples,
-    NNUETrainingMethod iMethod = NNUETrainingMethod::STATIC_EVAL,
-    std::string* error = nullptr);
+    NNUETrainingMethod iMethod,
+    int depth_minimum,
+    int time_requested,
+    EvalPersons player,
+    std::string* error = nullptr,
+    std::vector<std::string>* retained_fens = nullptr,
+    bool material_after_best_move = false);
 
 // One Jacobian row: derivatives of ONE example's aberration
 // with respect to every network parameter.
@@ -162,7 +181,7 @@ public:
     // Copy the training file's leading comments when supplied; otherwise retain
     // the training header from the last successfully loaded model.
     // Pass the training settings; -1 retains each loaded value, if known.
-    // Omitted training results retain loaded RMSe values, if known.
+    // Omitted training results retain loaded RMSe and lock percentage values, if known.
     bool save_parameters(const std::filesystem::path& filename,
                          const std::filesystem::path& training_filename = {},
                          int activated_neurons = -1,
@@ -327,7 +346,7 @@ NNUETrainingResult NNUE_train_mult_positions(
     int nNuerons,
     int nTrainingIterations, 
     float learning_rate,
-    bool write_to_sout,     // writes stats to sout
+    bool write_to_sout,     // writes progress and stats to sout
     NNUETrainingStats* training_stats = nullptr // filled on completion when non-null
 );
 

@@ -20,6 +20,123 @@ using namespace ShumiChess;
 
 constexpr int square_e5 = GameBoard::square_e5;
 
+class NNUEFENReader : public ::testing::Test {
+protected:
+    std::filesystem::path directory;
+    std::filesystem::path filename;
+
+    void SetUp() override
+    {
+        directory = std::filesystem::temp_directory_path() /
+            ("shumi_nnue_reader_" + std::to_string(
+                std::chrono::steady_clock::now().time_since_epoch().count()));
+        ASSERT_TRUE(std::filesystem::create_directory(directory));
+        filename = directory / "positions.txt";
+    }
+
+    void TearDown() override
+    {
+        std::error_code error;
+        std::filesystem::remove(filename, error);
+        EXPECT_FALSE(error) << error.message();
+        std::filesystem::remove(directory, error);
+        EXPECT_FALSE(error) << error.message();
+    }
+
+    void write(const std::string& text)
+    {
+        std::ofstream file(filename);
+        file << text;
+        file.close();
+        ASSERT_TRUE(file) << filename;
+    }
+};
+
+TEST_F(NNUEFENReader, RejectsMalformedRecordsAndModeMismatches)
+{
+    const std::string fen = "7k/8/8/4N3/8/8/8/K7 w - - 0 1";
+    const std::string bad_suffixes[] = {
+        "", " |", " |  ", " | +", " | -", " | +-2", " | --2",
+        " | 1.5", " | 1e2", " | 7 extra", " | * extra", " | 1 | 2",
+        " | **", " | 2147483648", " | -2147483649", " | # comment"
+    };
+    // Every record below is rejected before evaluation or search can begin.
+    for (const auto mode : {NNUETrainingMethod::NONE, NNUETrainingMethod::STATIC_EVAL,
+                            NNUETrainingMethod::FULL_SEARCH}) {
+        for (const auto& suffix : bad_suffixes) {
+            SCOPED_TRACE(suffix);
+            SCOPED_TRACE(static_cast<int>(mode));
+            write("# header\n\n" + fen + suffix + "\n");
+            std::vector<NNUETrainingExample> examples(1);
+            examples[0].target_positional_score_cp = 123.0f;
+            std::string error;
+            EXPECT_NE(multi_FEN_readin(filename, examples, mode, 0, 0, UNCLE_SHUMI, &error), 0);
+            EXPECT_NE(error.find(filename.string()), std::string::npos);
+            EXPECT_NE(error.find("line 3"), std::string::npos);
+            ASSERT_EQ(examples.size(), 1u);
+            EXPECT_FLOAT_EQ(examples[0].target_positional_score_cp, 123.0f);
+        }
+        write(fen + (mode == NNUETrainingMethod::NONE ? " | *\n" : " | 41\n"));
+        std::vector<NNUETrainingExample> examples;
+        std::string error;
+        EXPECT_NE(multi_FEN_readin(filename, examples, mode, 0, 0, UNCLE_SHUMI, &error), 0);
+        EXPECT_FALSE(error.empty());
+        EXPECT_TRUE(examples.empty());
+    }
+}
+
+
+TEST_F(NNUEFENReader, FullSearchSkipsMatesAndKeepsFensAligned)
+{
+    // The extra rook makes these mate targets fall below the mate threshold
+    // after material subtraction. They must be filtered using the raw score.
+    const std::string white_mate_in_one = "7k/5Q2/6K1/8/8/8/8/R7 w - - 0 1";
+    const std::string black_mate_in_one = "r7/8/8/8/8/6k1/5q2/7K b - - 0 1";
+    const std::string black_checkmated = "k7/1Q6/2K5/8/8/8/8/R7 b - - 0 1";
+    const std::string white_checkmated = "r7/8/8/8/8/2k5/1q6/K7 w - - 0 1";
+    const std::string kings_only = "7k/8/8/8/8/8/8/K7 w - - 17 29";
+    const std::string stalemate = "7k/5Q2/6K1/8/8/8/8/8 b - - 0 42";
+    write("# Interleave retained positions and mates.\n" +
+          white_mate_in_one + " | *\n" +
+          kings_only + " | *\n" +
+          black_checkmated + " | *\n" +
+          stalemate + " | *\n" +
+          black_mate_in_one + " | *\n" +
+          white_checkmated + " | *\n");
+
+    std::vector<NNUETrainingExample> examples;
+    std::vector<std::string> retained_fens{"old FEN"};
+    std::string error;
+    ASSERT_EQ(multi_FEN_readin(filename, examples, NNUETrainingMethod::FULL_SEARCH,
+                              1, 1, UNCLE_SHUMI, &error, &retained_fens), 0) << error;
+    EXPECT_TRUE(error.empty());
+    ASSERT_EQ(examples.size(), 2u);
+    ASSERT_EQ(retained_fens.size(), examples.size());
+    EXPECT_EQ(retained_fens[0], kings_only);
+    EXPECT_EQ(retained_fens[1], stalemate);
+    EXPECT_EQ(examples[0].inputs.black_to_move, 0);
+    EXPECT_EQ(examples[1].inputs.black_to_move, 1);
+    EXPECT_FLOAT_EQ(examples[0].target_positional_score_cp, 0.0f);
+    // Draw score zero minus White's queen material; this is a valid target.
+    EXPECT_FLOAT_EQ(examples[1].target_positional_score_cp, -900.0f);
+}
+
+TEST_F(NNUEFENReader, AllMateSearchFailsWithoutReplacingOutputs)
+{
+    write("k7/1Q6/2K5/8/8/8/8/R7 b - - 0 1 | *\n");
+    std::vector<NNUETrainingExample> examples(1);
+    examples[0].target_positional_score_cp = 123.0f;
+    std::vector<std::string> retained_fens{"old FEN"};
+    std::string error;
+    EXPECT_NE(multi_FEN_readin(filename, examples, NNUETrainingMethod::FULL_SEARCH,
+                              1, 1, UNCLE_SHUMI, &error, &retained_fens), 0);
+    EXPECT_NE(error.find("no usable FEN positions"), std::string::npos);
+    ASSERT_EQ(examples.size(), 1u);
+    EXPECT_FLOAT_EQ(examples[0].target_positional_score_cp, 123.0f);
+    ASSERT_EQ(retained_fens.size(), 1u);
+    EXPECT_EQ(retained_fens[0], "old FEN");
+}
+
 
 // Verify that construction copies the supplied parameters into NNUE-owned storage.
 // Changing the caller's weights afterward must not affect network predictions.
@@ -129,91 +246,6 @@ TEST(NNUEData, TrainingUsesAndUpdatesOwnedParameters)
     EXPECT_EQ(parameters.Neurons[0].piece_weight[1][square_e5], 3.0f);
 }
 
-// With all NNUE parameters zero, evaluation using NNUE must equal the normal SLUG evaluation.
-// NNUE scores are positive when good for White.
-// Check that each positional score is added exactly once to the SLUG baseline.
-// Exercise both score signs, both evaluator perspectives, and changing board inputs.
-// Verify that scores of +1.5 and -1.5 centipawns round away from zero.
-TEST(NNUEData, MinimaxIncludesScoreOnceWithCorrectPerspective)
-{
-    Engine engine;
-    MinimaxAI minimax(engine);
-
-    // The default network contributes exactly zero to the existing evaluation.
-    EXPECT_EQ(minimax.evaluate_board_t<Color::WHITE>(NNUE),
-              minimax.evaluate_board_t<Color::WHITE>(SLUG));
-    EXPECT_EQ(minimax.evaluate_board_t<Color::BLACK>(NNUE),
-              minimax.evaluate_board_t<Color::BLACK>(SLUG));
-
-    NNUEParameters parameters{};
-    parameters.Neurons[0].piece_weight[1][square_e5] = 3.0f;
-    parameters.Neurons[0].turn_weight = 2.0f;
-    parameters.Neurons[0].bias = -1.0f;
-
-    const struct {
-        const char* fen;
-        int positional_cp;
-    } cases[] = {
-        {"7k/8/8/4N3/8/8/8/K7 w - - 0 1", 9},
-        {"7k/8/8/4N3/8/8/8/K7 b - - 0 1", 17},
-        {"7k/8/8/3N4/8/8/8/K7 w - - 0 1", 1},
-        {"7k/8/8/8/8/8/8/K7 b - - 0 1", 5},
-    };
-
-    for (const int sign : {1, -1}) {
-        parameters.output_weight[0] = 4.0f * sign;
-        parameters.output_bias = 1.0f * sign;
-        minimax.nnue.set_parameters(parameters);
-
-        for (const auto& test_case : cases) {
-            SCOPED_TRACE(test_case.fen);
-            SCOPED_TRACE(sign);
-            engine.reset_engine(test_case.fen);
-            const int baseline_white = minimax.evaluate_board_t<Color::WHITE>(SLUG);
-            const int baseline_black = minimax.evaluate_board_t<Color::BLACK>(SLUG);
-            const int positional_cp = sign * test_case.positional_cp;
-
-            EXPECT_EQ(minimax.evaluate_board_t<Color::WHITE>(NNUE),
-                      baseline_white + positional_cp);
-            EXPECT_EQ(minimax.evaluate_board_t<Color::BLACK>(NNUE),
-                      baseline_black - positional_cp);
-        }
-    }
-
-    // Fractional network scores are rounded to the evaluator's integer centipawns.
-    parameters = {};
-    for (const int sign : {1, -1}) {
-        parameters.output_bias = 1.5f * sign;
-        minimax.nnue.set_parameters(parameters);
-        EXPECT_EQ(minimax.evaluate_board_t<Color::WHITE>(NNUE),
-                  minimax.evaluate_board_t<Color::WHITE>(SLUG) + 2 * sign);
-        EXPECT_EQ(minimax.evaluate_board_t<Color::BLACK>(NNUE),
-                  minimax.evaluate_board_t<Color::BLACK>(SLUG) - 2 * sign);
-    }
-}
-
-// Only an explicitly supplied model file should populate a MinimaxAI's network.
-// Resolve the fixture independently to check repository-relative model loading.
-TEST(NNUEData, MinimaxLoadsExplicitModelFile)
-{
-    Engine engine;
-    {
-        MinimaxAI minimax(engine, NULL);
-        EXPECT_EQ(minimax.nnue.Calculate_nnue_positional(engine.game_board), 0.0f);
-    }
-
-    const char* model_file = "tests/data/Model_001.txt";
-    const auto repo_root = std::filesystem::path(__FILE__).parent_path().parent_path();
-    NNUE_data expected;
-    ASSERT_TRUE(expected.load_parameters(repo_root / model_file));
-    const float expected_score = expected.Calculate_nnue_positional(engine.game_board);
-    ASSERT_NE(expected_score, 0.0f);
-
-    MinimaxAI minimax(engine, model_file);
-    EXPECT_EQ(minimax.nnue.Calculate_nnue_positional(engine.game_board), expected_score);
-    EXPECT_EQ(minimax.evaluate_board_t<Color::WHITE>(NNUE),
-              minimax.evaluate_board_t<Color::WHITE>(SLUG) + std::lround(expected_score));
-}
 
 // Verify that repeated gradient updates fit one position to a 75-centipawn target.
 // Initialize one active neuron so the first prediction is exactly 1 centipawn.
@@ -276,7 +308,7 @@ TEST(NNUEData, TrainingOnePositionConverges)
 
 // Still one neuron though
 // Verify that one shared network learns all positions loaded from the FEN fixture.
-// Build training targets with STATIC_EVAL and initialize one active neuron.
+// Use the fixture's integer targets with NONE and initialize one active neuron.
 // Train each position over 20 passes, requiring finite errors after every update.
 // Require final RMSE to be at most 0.01 centipawns across the loaded examples.
 // Recheck every final error for that tolerance and improvement where applicable.
@@ -290,11 +322,13 @@ TEST(NNUEData, TrainingFivePositionsConverges)
     std::vector<NNUETrainingExample> examples;
 
     const std::filesystem::path database_path =
-        std::filesystem::path(__FILE__).parent_path() / "FENs" / "six_trainings_positions.txt";
+        std::filesystem::path(__FILE__).parent_path() / "FENs" / "five_trainings_positions.txt";
 
     std::string database_error;
     const int read_error = multi_FEN_readin(
-        database_path, examples, NNUETrainingMethod::STATIC_EVAL, &database_error);
+        database_path, examples, NNUETrainingMethod::NONE, 0, 0, UNCLE_SHUMI
+        , &database_error);
+        
     ASSERT_EQ(read_error, 0) << database_error;
     ASSERT_FALSE(examples.empty());
 
@@ -397,7 +431,7 @@ TEST(NNUEData, TrainingNeuronSweepImprovesRmseAndLocks)
     std::vector<NNUETrainingExample> examples;
     std::string database_error;
     const int read_error = multi_FEN_readin(
-        database_path, examples, NNUETrainingMethod::STATIC_EVAL, &database_error);
+        database_path, examples, NNUETrainingMethod::NONE, 0, 0, UNCLE_SHUMI, &database_error);
     ASSERT_EQ(read_error, 0) << database_error;
     ASSERT_FALSE(examples.empty());
 

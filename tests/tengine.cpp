@@ -1,16 +1,61 @@
 ﻿#include <gtest/gtest.h>
 
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <stack>
 
 #include "engine.hpp"
 #include "gameboard.hpp"
 #include "globals.hpp"
 #include "minimax.hpp"
+#include "status_output.hpp"
 #include "test_helper_fcns.hpp"
 
 TEST(Setup, WhiteGoesFirst) {
     ShumiChess::Engine test_engine;
     ASSERT_EQ(test_engine.game_board.turn, ShumiChess::Color::WHITE);
+}
+
+TEST(PGNToFEN, RejectsIllegalMove) {
+    ShumiChess::PGN pgn;
+    std::string error;
+
+    EXPECT_TRUE(pgn.pgn_to_fen("1. e4 e4 *", 2, &error).empty());
+    EXPECT_EQ(error, "Ply 2: SAN move \"e4\" has no matching legal move.");
+}
+
+TEST(PGNToFEN, RejectsUnrecognizableMove) {
+    ShumiChess::PGN pgn;
+    std::string error;
+
+    EXPECT_TRUE(pgn.pgn_to_fen("1. e4 banana *", 2, &error).empty());
+    EXPECT_EQ(error, "Ply 2: SAN move \"banana\" is malformed SAN.");
+}
+
+TEST(PGNToFEN, ReplaysMorphyGameThrough60Plies) {
+    const auto path = std::filesystem::path(__FILE__).parent_path()
+        / "FENs" / "Morphy_random_pgn.txt";
+    std::ifstream file(path);
+    ASSERT_TRUE(file.is_open()) << path.string();
+    std::ostringstream pgn_text;
+    pgn_text << file.rdbuf();
+    ASSERT_FALSE(file.bad()) << "Could not read " << path.string();
+
+    ShumiChess::PGN pgn;
+    std::string error;
+    const std::string fen = pgn.pgn_to_fen(pgn_text.str(), 60, &error);
+    ASSERT_FALSE(fen.empty()) << error;
+    EXPECT_TRUE(error.empty()) << error;
+    sout << "Morphy game FEN after 60 plies: " << fen << std::endl;
+
+    // After 30...Qc1+, White is in check but has a legal reply.
+    EXPECT_EQ(fen, "Rbk5/1p6/1BP4p/4p3/4B3/1QPP1P2/7P/2q4K w - - 3 31");
+    ShumiChess::Engine position(fen);
+    EXPECT_TRUE(position.is_king_in_check_t<ShumiChess::WHITE>());
+    EXPECT_FALSE(position.is_king_in_check_t<ShumiChess::BLACK>());
+    std::vector<ShumiChess::Move> legal_moves;
+    EXPECT_GT(position.get_legal_moves_fast(position.game_board.turn, false, false, legal_moves), 0);
 }
 
 TEST(RandomMoves, RequestAppliesOnlyAtGameStartAndResetClearsIt) {

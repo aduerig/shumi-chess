@@ -142,8 +142,8 @@ def reset_board(fen="", winner="????"):
         #print('Resetting to basic position cause FEN string is empty')
         engine_communicator.reset_engine()
 
-    # Resetting the board always sets the turn to white
-    player_index = 0
+    # Select the configured player for the engine's side to move.
+    player_index = 0 if engine_communicator.get_fen().split()[1] == "w" else 1
     undraw_pieces()
     render_all_pieces_and_assign(board)
 

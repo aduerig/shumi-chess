@@ -1,5 +1,6 @@
 
 #include <charconv>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -10,11 +11,11 @@
 #include <limits>
 #include <locale>
 #include <sstream>
+#include <string_view>
 
 #include "NNUE.hpp"
 
 #include "engine.hpp"
-#include "fen_database.hpp"
 #include "gameboard.hpp"
 #include "utility.hpp"
 #include "minimax.hpp"
@@ -164,7 +165,11 @@ bool NNUE_data::save_parameters(const std::filesystem::path& filename,
     if (saved_training_result &&
         (!std::isfinite(saved_training_result->initial_rmse) ||
          !std::isfinite(saved_training_result->final_rmse) ||
-         saved_training_result->initial_rmse < 0.0 || saved_training_result->final_rmse < 0.0)) {
+         saved_training_result->initial_rmse < 0.0 || saved_training_result->final_rmse < 0.0 ||
+         (saved_training_result->final_lock_percent &&
+          (!std::isfinite(*saved_training_result->final_lock_percent) ||
+           *saved_training_result->final_lock_percent < 0.0 ||
+           *saved_training_result->final_lock_percent > 100.0)))) {
         return false;
     }
     std::vector<std::string> training_header = training_header_;
@@ -282,17 +287,17 @@ bool NNUE_data::save_parameters(const std::filesystem::path& filename,
     if (!write_values(&parameters_.output_bias, 1)) {
         return false;
     }
-    text << "# RMSe (cp): initial = ";
+    text << "#\r\n# RMSe (cp): initial = " << std::fixed << std::setprecision(2);
     if (saved_training_result) {
-        if (!write_metadata_number(saved_training_result->initial_rmse)) {
-            return false;
-        }
-        text << ", final = ";
-        if (!write_metadata_number(saved_training_result->final_rmse)) {
-            return false;
+        text << saved_training_result->initial_rmse
+             << ", final = " << saved_training_result->final_rmse << ", lck% = ";
+        if (saved_training_result->final_lock_percent) {
+            text << *saved_training_result->final_lock_percent;
+        } else {
+            text << "unavailable";
         }
     } else {
-        text << "unavailable, final = unavailable";
+        text << "unavailable, final = unavailable, lck% = unavailable";
     }
     text << "\r\n";
 
@@ -437,7 +442,8 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
             return fail("expected a single RMSe comment");
         }
         has_rmse = true;
-        if (line == rmse_label + "unavailable, final = unavailable") {
+        if (line == rmse_label + "unavailable, final = unavailable" ||
+            line == rmse_label + "unavailable, final = unavailable, lck% = unavailable") {
             return true;
         }
         std::istringstream record(line.substr(rmse_label.size()));
@@ -446,10 +452,37 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
         char comma;
         std::string final_label, equals;
         if (!(record >> result.initial_rmse >> comma >> final_label >> equals >> result.final_rmse) ||
-            !record.eof() || comma != ',' || final_label != "final" || equals != "=" ||
+            comma != ',' || final_label != "final" || equals != "=" ||
             !std::isfinite(result.initial_rmse) || !std::isfinite(result.final_rmse) ||
             result.initial_rmse < 0.0 || result.final_rmse < 0.0) {
             return fail("invalid initial or final RMSe");
+        }
+        // Older models contain only the two RMSe values.
+        record >> std::ws;
+        if (!record.eof()) {
+            std::string lock_label;
+            if (!(record >> comma >> lock_label >> equals) ||
+                comma != ',' || lock_label != "lck%" || equals != "=") {
+                return fail("invalid lock percentage comment");
+            }
+            record >> std::ws;
+            if (record.peek() == 'u') {
+                std::string unavailable;
+                if (!(record >> unavailable) || unavailable != "unavailable") {
+                    return fail("invalid lock percentage");
+                }
+            } else {
+                double lock_percent;
+                if (!(record >> lock_percent) || !std::isfinite(lock_percent) ||
+                    lock_percent < 0.0 || lock_percent > 100.0) {
+                    return fail("invalid lock percentage");
+                }
+                result.final_lock_percent = lock_percent;
+            }
+            record >> std::ws;
+            if (!record.eof()) {
+                return fail("unexpected data after lock percentage");
+            }
         }
         training_result = result;
         return true;
@@ -522,7 +555,13 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
 
     // Older files may omit the RMSe footer or contain it in the header instead.
     if (file.peek() != std::char_traits<char>::eof()) {
-        if (!read_line() || !parse_rmse()) {
+        if (!read_line()) {
+            return false;
+        }
+        if (line == "#" && !read_line()) {
+            return false;
+        }
+        if (!parse_rmse()) {
             return false;
         }
     }
@@ -1209,17 +1248,20 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 
 }   // END test
 
-
-
 int multi_FEN_readin(
     const std::filesystem::path& filename,
     std::vector<NNUETrainingExample>& examples,
     NNUETrainingMethod iMethod,
-    std::string* error)
+    int depth_minimum,
+    int time_requested,
+    EvalPersons player,
+    std::string* error,                             // output
+    std::vector<std::string>* retained_fens,        // optional output
+    bool material_after_best_move
+)
 {
-    if (error) {
-        error->clear();
-    }
+    if (error) error->clear();
+
     const std::string filename_text = filename.string();
     const auto fail = [&](const std::string& reason) {
         const std::string diagnostic = filename_text + ": " + reason;
@@ -1231,60 +1273,198 @@ int multi_FEN_readin(
         return EXIT_FAILURE;
     };
 
-    if (iMethod != NNUETrainingMethod::STATIC_EVAL &&
+    if (iMethod != NNUETrainingMethod::NONE &&
+        iMethod != NNUETrainingMethod::STATIC_EVAL &&
         iMethod != NNUETrainingMethod::FULL_SEARCH) {
         return fail("unknown NNUE training method");
     }
 
-    std::vector<FEN_Score> positions;
-    if (!read_fen_database(filename_text, positions, error)) {
-        return EXIT_FAILURE;
-    }
-    if (positions.empty()) {
-        return fail("no usable FEN positions");
-    }
-    // The training routine accepts an int position count.
-    if (positions.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
-        return fail("position count exceeds the training routine's int range");
-    }
+    std::ifstream file(filename);
+    if (!file.is_open()) return fail("could not open FEN database");
+    
+    const auto trim = [](std::string_view text) -> std::string_view {
+        constexpr std::string_view whitespace = " \t\r\n\v\f";
+        const auto first = text.find_first_not_of(whitespace);
+        if (first == std::string_view::npos) {
+            return {};
+        }
+        return text.substr(first, text.find_last_not_of(whitespace) - first + 1);
+    };
 
-    std::vector<NNUETrainingExample> loaded(positions.size());
-    for (std::size_t i = 0; i < positions.size(); ++i) {
+    std::vector<NNUETrainingExample> loaded;
+    std::vector<std::string> loaded_fens;
+    NNUE_data input_encoder;
+    std::string line;
+    std::size_t line_number = 0;
+
+    while (std::getline(file, line)) {
+
+        ++line_number;
+        //sout << line_number << "\nmulti_FEN_readin=" << line;
+
+        // Everything from the first '#' to the end of the line is a comment.
+        const std::string_view record = trim(std::string_view(line).substr(0, line.find('#')));
+        if (record.empty()) {
+            continue;
+        }
+        const auto fail_line = [&](const std::string& reason) {
+            return fail("line " + std::to_string(line_number) + ": " + reason);
+        };
+        const auto separator = record.find('|');
+        if (separator == std::string_view::npos) {
+            return fail_line("expected '|' between FEN and score");
+        }
+        const std::string fen(trim(record.substr(0, separator)));
+        std::istringstream fields(fen);
+        std::string field;
+        int field_count = 0;
+        while (fields >> field) {
+            ++field_count;
+        }
+        if (field_count != 6) {
+            return fail_line("expected exactly six FEN fields");
+        }
+
+        std::string_view value = trim(record.substr(separator + 1));
+        int supplied_score = 0;
+        if (iMethod == NNUETrainingMethod::NONE) {
+            // from_chars accepts '-', but a leading '+' must be handled explicitly.
+            if (!value.empty() && value.front() == '+') {
+                value.remove_prefix(1);
+                if (value.empty() || value.front() < '0' || value.front() > '9') {
+                    return fail_line("NONE requires an integer score after '|'");
+                }
+            }
+            if (value.empty()) {
+                return fail_line("NONE requires an integer score after '|'");
+            }
+            const auto parsed = std::from_chars(
+                value.data(), value.data() + value.size(), supplied_score);
+            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size()) {
+                return fail_line("NONE requires an integer score in the int range after '|'");
+            }
+        } else if (value != "*") {
+            return fail_line("STATIC_EVAL and FULL_SEARCH require '*' after '|'");
+        }
+
+        // The training routine accepts an int position count.
+        if (loaded.size() == static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+            return fail_line("position count exceeds the training routine's int range");
+        }
         try {
-            const FEN_Score& position = positions[i];
-            Engine engine(position.fen);
-            MinimaxAI minimax_ai(engine);
-            minimax_ai.nnue.fill_nnue_inputs_fast(engine.game_board, loaded[i].inputs);
+            NNUETrainingExample example{};
+            if (iMethod == NNUETrainingMethod::NONE) {
+                const GameBoard board(fen);
+                input_encoder.fill_nnue_inputs_fast(board, example.inputs);
+                example.target_positional_score_cp = static_cast<float>(supplied_score);
+                loaded.push_back(example);
+                if (retained_fens) loaded_fens.push_back(fen);
+                continue;
+            }
 
-            if (iMethod == NNUETrainingMethod::STATIC_EVAL ||
-                position.score == HUGE_SCORE || IS_MATE_SCORE(position.score)) {
+            Engine engine(fen);
+            MinimaxAI minimax_ai(engine);
+            input_encoder.fill_nnue_inputs_fast(engine.game_board, example.inputs);
+            
+            if (iMethod == NNUETrainingMethod::STATIC_EVAL) {
+
                 int material_score_cp;
                 int positional_score_cp;
                 minimax_ai.evaluate_board_t<Color::WHITE>(
-                    UNCLE_SHUMI, &material_score_cp, &positional_score_cp);
-                loaded[i].target_positional_score_cp = static_cast<float>(positional_score_cp);
-            } else {
-                loaded[i].target_positional_score_cp =
-                    static_cast<float>(position.score) - minimax_ai.get_material();
+                    player, &material_score_cp, &positional_score_cp);
+                example.target_positional_score_cp = static_cast<float>(positional_score_cp);
+
+            } else if (iMethod == NNUETrainingMethod::FULL_SEARCH) {
+                
+                if (depth_minimum < 1 || time_requested < 1) {
+                    return fail_line("FULL_SEARCH requires positive minimum depth and time");
+                }
+                minimax_ai.score_forced_root_move = true;
+
+                // Previous direct call retained for reference. It bypassed the
+                // standard search setup and treated the minimum as the first depth.
+                // for (auto& move : minimax_ai.killer1) move = {};
+                // for (auto& move : minimax_ai.killer2) move = {};
+                // for (auto& entry : minimax_ai.prev_root_best_) entry = {};
+                // ull elapsed_ms = 0;
+                // const auto result = minimax_ai.do_a_principal_variation(
+                //     depth_minimum,
+                //     std::chrono::high_resolution_clock::now(),
+                //     time_requested,
+                //     MinimaxAI::SearchTimeControl{},
+                //     elapsed_ms);        // output
+
+                // The move-search interface expects a position still in progress.
+                // Retain terminal draws with score zero, and filter checkmates.
+                const GameState state = engine.is_game_over();
+                if (state == GameState::WHITEWIN || state == GameState::BLACKWIN) {
+                    sout << "Skipping mate score at " << filename_text << ':'
+                         << line_number << '\n';
+                    continue;
+                }
+                std::tuple<Score, Move> result{ZERO_SCORE, Move{}};
+                if (state == GameState::INPROGRESS) {
+                    result = minimax_ai.get_move_iterative_deepening(
+                        time_requested,
+                        depth_minimum,
+                        player,
+                        0,                      // no randomized moves
+                        _DEFAULT_FEATURES_MASK,
+                        MinimaxAI::SearchTimeControl{}); // no clock-based time control
+                }
+
+                int score = std::get<0>(result);
+                if (score == ABORT_SCORE || score == ONLY_MOVE_SCORE) {
+                    return fail_line("search did not produce a score");
+                }
+                // Filter the raw result: subtracting material can hide a mate marker.
+                if (IS_MATE_SCORE(std::get<0>(result))) {
+                    sout << "Skipping mate score at " << filename_text << ':'
+                         << line_number << '\n';
+                    continue;
+                }
+                if (engine.game_board.turn == Color::BLACK) {
+                    score = -score;
+                }
+                // Keep the search score; only the material subtraction changes.
+                // Convert its perspective above, before pushing flips the turn.
+                const auto& best_move = std::get<1>(result);
+                if (material_after_best_move && best_move.piece_type != Piece::NONE) {
+                    if (engine.game_board.turn == Color::WHITE) {
+                        engine.pushMove_t<Color::WHITE>(best_move);
+                    } else {
+                        engine.pushMove_t<Color::BLACK>(best_move);
+                    }
+                }
+                const int material_score_cp = minimax_ai.get_material();
+                example.target_positional_score_cp = (float)score - material_score_cp;
             }
+            else {
+                assert(0);
+            }
+
+            loaded.push_back(example);
+            if (retained_fens) loaded_fens.push_back(fen);
         } catch (const std::exception& exception) {
-            return fail("record " + std::to_string(i + 1) + ": " + exception.what());
+            return fail_line(exception.what());
         }
+    }
+    
+    
+    if (file.bad() || !file.eof()) {
+        return fail("could not read FEN database");
+    }
+    if (loaded.empty()) {
+        return fail("no usable FEN positions");
     }
 
     examples.swap(loaded);
+    if (retained_fens) retained_fens->swap(loaded_fens);
     return EXIT_SUCCESS;
 }
 
 
 
-
-// NNUEInitializationBounds bounds0{
-//     0.3f,    // piece_weight:  -0.30 to +0.30
-//     0.3f,    // turn_weight:   -0.30 to +0.30
-//     0.0f,    // neuron_bias:    0.00
-//     0.25f    // output_weight: -0.25 to +0.25
-// };
 NNUEInitializationBounds bounds0{
     0.3f,    // piece_weight:  -0.30 to +0.30
     0.3f,    // turn_weight:   -0.30 to +0.30
@@ -1308,13 +1488,10 @@ NNUETrainingResult NNUE_train_mult_positions(
     int nActiveNeurons,                     // input (not whats allocated, but must be less)
     int nTrainingIterations,                // input    
     float learning_rate,                    // input
-    bool write_to_sout,                     // if true outputs stats to sout
+    bool write_to_sout,                     // if true outputs progress and stats to sout
     NNUETrainingStats* training_stats       // optional output statistics
 ) {
 
-    if (write_to_sout) {
-        sout << endl;
-     }
     // Initialize the NNUE parameters once, before training.
     //nnue.initialize_parameters();
 
@@ -1325,7 +1502,8 @@ NNUETrainingResult NNUE_train_mult_positions(
     const double initial_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
     if (write_to_sout) {
         sout << "Activate: " << nActiveNeurons << endl;
-        sout << "Initial RMSe: " << initial_rmse << " cp" << endl;
+        sout << "Initial RMSe=" << initial_rmse << " cp" << endl;
+        sout << "..." << endl;
     }
 
     // Storage for the "derivatives of the loss".
@@ -1335,6 +1513,10 @@ NNUETrainingResult NNUE_train_mult_positions(
     // Loop over all positions, for the number of rewuested iterations.
     //
     for (int iteration = 0; iteration < nTrainingIterations; ++iteration) {
+        if (write_to_sout) {
+            sout << "\rIteration " << (iteration + 1) << '/' << nTrainingIterations
+                 << std::flush;
+        }
 
         for (int position = 0; position < nTrainingPositions; ++position) {
 
@@ -1368,21 +1550,26 @@ NNUETrainingResult NNUE_train_mult_positions(
 
     }   // END loop over training iterations
 
-     // Compute RMSe final
-    const double final_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
-    int final_lock_percent = 0;
-    if ((write_to_sout || training_stats != nullptr) && nTrainingPositions > 0) {
-        const int nlocks = nnue.count_locked_positions(examples, nTrainingPositions);
-        final_lock_percent = static_cast<int>(100LL * nlocks / nTrainingPositions);
-    }
-    if (training_stats != nullptr) {
-        *training_stats = {initial_rmse, final_rmse, final_lock_percent};
-    }
-    if (write_to_sout) {
-        sout << "Final RMSe=" << final_rmse << " nlocks%=" << final_lock_percent << endl;
+    if (write_to_sout && nTrainingIterations > 0) {
+        sout << std::endl;
     }
 
-    return {initial_rmse, final_rmse};
+     // Compute RMSe final
+    const double final_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
+    const int nlocks = nTrainingPositions > 0
+                      ? nnue.count_locked_positions(examples, nTrainingPositions) : 0;
+    const double final_lock_percent = nTrainingPositions > 0
+                                      ? 100.0 * nlocks / nTrainingPositions : 0.0;
+    const int displayed_lock_percent = nTrainingPositions > 0
+                                      ? static_cast<int>(100LL * nlocks / nTrainingPositions) : 0;
+    if (training_stats != nullptr) {
+        *training_stats = {initial_rmse, final_rmse, displayed_lock_percent};
+    }
+    if (write_to_sout) {
+        sout << "Final RMSe=" << final_rmse << " nlocks%=" << displayed_lock_percent << endl;
+    }
+
+    return {initial_rmse, final_rmse, final_lock_percent};
 }
 
  

@@ -1,9 +1,12 @@
 
-self shumi
+self shumi (white is always the first one) (-d7 -t500 -r2)
 
-Uncle shumi .vs. Slug - about 5 tp 1
+NNUE (model 001) .vs. Uncle shumi  - 19 - 47 - 9
+Slug .vs. Uncle shumi  - 79 - 225 - 45
+Uncle shumi .vs. Slug  - 113 - 24 - 25
 NNUE (model_001) .vs. slug  - 22 - 9 - 3   
 NNUE (model_001) .vs. slug  -  8 - 4 - 7
+slug .vs. NNUE (model_001)  - 22 - 38 - 11
 
 -----------------------------------------------------------------------------------------------------------
 
@@ -39,7 +42,7 @@ WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s 
 
 WHITE: Fidelity Excellence level5               BLACK: Uncle Shumi version=113s -d8 -t2000
     Result: black wins
-    Summary: Black as usual places a suspect opening. But he gradually pushed the too conservative White into
+    Summary: Black as usual plays a suspect opening. But he gradually pushed the too conservative White into
         a corner. Black gets a fantastic knight. As usual Shumi excells at knight play and pawn promotion
         black gets a passed protected pawn and holds it til the perfect time. Destroys him.
     PGN: 1. d4 Nf6 2. c4 e6 3. Nc3 d5 4. Nf3 Bb4 5. cxd5 exd5 6. Bf4 O-O 7. e3 Bg4 8. h3 Bxf3 9. Qxf3 Ne4 10. a3 Ba5 11. Rc1 c5 12. dxc5 Bxc3 13. bxc3 Qa5 14. Bd3 Nxc5 15. Bf5 Rd8 16. Bg5 f6 17. Bf4 g6 18. O-O Nc6 19. Qg3 Ne5 20. Bb1 Ncd3  *21. Bxd3 Nxd3 22. Rb1 b6 23. Bc7 Rd7 24. Ra1 Qxc3 25. Bd6 Rad8 26. Bb8 a6 27. a4 d4 28. exd4 Qxd4 29. a5 b5 30. Rab1 Qc4 31. Rfd1 f5  *32. h4 f4 33. Qg4 Qa2 34. Ra1 Qxf2 35. Kh2 Qe3 36. Ra2 Nf2 37. Rxf2 Rxd1 38. Qxf4 Qxf4 39. Bxf4 Rf8 40. Rd2 Rxd2 41. Bxd2 Re8 42. Kg3 Re2 43. Bb4 Re4 44. Bd2 b4 45. Bc1 Re1 46. Bg5 Kf7 47. h5 gxh5 48. Kf2 b3 49. Kxe1 b2 50. Kf2 b1=Q 51. Bd2 Qc2 52. Ke2 h4 53. Ke3 Qa2 54. Ke2 Qd5 55. Kd1 Qxg2  *56. Ke1 h3  -/+

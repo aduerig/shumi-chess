@@ -98,6 +98,9 @@ public:
 
     std::atomic<bool> stop_calculation{false};
 
+    // Training needs an actual score even when the root has only one legal move.
+    bool score_forced_root_move = false;
+
     ull nodes_visited = 0;
     ull nodes_visited_depth_zero = 0;
     ull evals_visited = 0;

@@ -1,10 +1,15 @@
 #include "fen_database.hpp"
 
 #include <charconv>
+#include <ctime>
+#include <exception>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <string_view>
+
+#include "engine.hpp"
 
 namespace ShumiChess {
 namespace {
@@ -203,6 +208,130 @@ bool append_fen_database(const std::string& filename,
         return database_error(filename, 0, "could not append FEN database");
     }
     return true;
+}
+
+bool collect_fens_from_pgn_file(
+    const std::filesystem::path& input_filename,
+    const std::filesystem::path& output_filename,
+    int every_n_plies,
+    FENCollectionStats& stats,
+    std::string* error)
+{
+    if (error) error->clear();
+    const auto fail = [error](const std::string& message) {
+        if (error) *error = message;
+        else std::cerr << message << '\n';
+        return false;
+    };
+
+    try {
+        if (every_n_plies <= 0) {
+            return fail("EVERY_N_PLIES must be greater than zero.");
+        }
+
+        const std::filesystem::path repo_root =
+            std::filesystem::path(__FILE__).parent_path().parent_path();
+        const std::filesystem::path input_path = repo_root / input_filename;
+        const std::filesystem::path output_path = repo_root / output_filename;
+        std::ifstream input(input_path, std::ios::binary);
+        if (!input.is_open()) {
+            return fail("Could not open PGN input: " + input_path.string());
+        }
+        const bool output_exists = std::filesystem::exists(output_path);
+        if (output_exists && std::filesystem::equivalent(input_path, output_path)) {
+            return fail("PGN input and FEN output must be different files.");
+        }
+
+        // Read the text once. The replay cursor below only advances through it.
+        std::string pgn_text, line;
+        while (std::getline(input, line)) {
+            pgn_text += line;
+            pgn_text += '\n';
+        }
+        if (input.bad() || !input.eof()) {
+            return fail("Could not read PGN input: " + input_path.string());
+        }
+        if (pgn_text.compare(0, 3, "\xEF\xBB\xBF") == 0) pgn_text.erase(0, 3);
+
+        // Keep an existing final record separate even if its newline is missing.
+        bool needs_newline = false;
+        if (output_exists) {
+            std::ifstream tail(output_path, std::ios::binary | std::ios::ate);
+            if (!tail.is_open() || tail.tellg() == std::streampos(-1)) {
+                return fail("Could not inspect FEN output: " + output_path.string());
+            }
+            if (tail.tellg() > std::streampos(0)) {
+                tail.seekg(-1, std::ios::end);
+                char last = 0;
+                if (!tail.get(last)) {
+                    return fail("Could not read end of FEN output: " + output_path.string());
+                }
+                needs_newline = last != '\n';
+            }
+        }
+
+        std::ofstream output(output_path, std::ios::app | std::ios::binary);
+        if (!output.is_open()) {
+            return fail("Could not open FEN output for appending: " + output_path.string());
+        }
+
+        PGN pgn;
+        Engine engine;
+        std::size_t position = 0;
+        FENCollectionStats collected;
+        // Buffer one file so malformed input cannot append a partial set.
+        std::string fen_records, replay_error;
+        while (position < pgn_text.size()) {
+            const std::string context = "Game " + std::to_string(collected.games + 1)
+                                        + " in " + input_path.string() + ": ";
+            if (!pgn.start_pgn_game(pgn_text, position, engine, &replay_error)) {
+                return fail(context + replay_error);
+            }
+            // Starting a game also skips trailing whitespace and comments.
+            if (position == pgn_text.size()) break;
+            ++collected.games;
+            for (;;) {
+                const auto result = pgn.play_next_pgn_move(pgn_text, position, engine, &replay_error);
+                if (result == PGN::MoveReadResult::Error) {
+                    return fail(context + replay_error);
+                }
+                if (result == PGN::MoveReadResult::GameEnded) break;
+                if (engine.ply_so_far % every_n_plies != 0) continue;
+
+                fen_records += engine.game_board.to_fen() + " | *\r\n";
+                ++collected.positions;
+            }
+        }
+        if (collected.positions != 0) {
+            const std::time_t collected_at = std::time(nullptr);
+            std::tm collection_date{};
+#ifdef _WIN32
+            const bool date_ready = localtime_s(&collection_date, &collected_at) == 0;
+#else
+            const bool date_ready = localtime_r(&collected_at, &collection_date) != nullptr;
+#endif
+            if (!date_ready) {
+                return fail("Could not determine the FEN collection date.");
+            }
+            if (needs_newline) {
+                output << "\r\n";
+            }
+            output << "#\r\n# FENs SOURCE: " << input_filename.generic_string()
+                   << " (" << std::put_time(&collection_date, "%Y-%m-%d %H:%M") << ")"
+                   << "\r\n#    POSITIONS=" << collected.positions << " SAMPLE RATE (ply)=" << every_n_plies
+                   << "\r\n#    OUTPUT: " << output_filename.generic_string()
+                   << "\r\n#\r\n"
+                   << fen_records;
+        }
+        output.close();
+        if (!output) {
+            return fail("Could not write or close FEN output: " + output_path.string());
+        }
+        stats = collected;
+        return true;
+    } catch (const std::exception& exception) {
+        return fail(exception.what());
+    }
 }
 
 } // namespace ShumiChess

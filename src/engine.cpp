@@ -2,8 +2,10 @@
 #define _CRT_SECURE_NO_WARNINGS     // To prevent dunb warnings about deprecated "strcpy" like functions.
 
 #include <functional>
+#include <cctype>
 #include <cmath>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 
 #include "engine.hpp"
@@ -162,7 +164,7 @@ void Engine::reset_engine() {         // New game.
 
     #define SIMPLE_ROOKS "rk6/8/8/8/8/8/8/6KR w KQkq - 0 1"     // should always draw
 
-    #define TEMP_FEN "8/8/8/8/8/8/3N2k1/3K1b2 w - - 0 71"
+    #define TEMP_FEN "rnbqkbnr/pppp2pp/8/4pP2/2B5/8/PPPP1PPP/RNBQK1NR b KQkq - 0 3"
 
     #define EXCEPT_TEST_FEN1 "rnb1kbnr/pppppppp/8/8/8/8/1PPPPPPP/2BQKBNR w KQkq - 0 1"  // good for side with Q (white)
     #define EXCEPT_TEST_FEN2 "2nqkbnr/1pppppp1/8/8/8/8/PPPPPPPP/RNB1KBNR w KQkq - 0 1"  // good for side with q (black)
@@ -191,7 +193,7 @@ void Engine::reset_engine(const string& fen) {      // New game (with fen)
 
     game_board = GameBoard(fen);
 
-    sout << "\x1b[94mNew Game (from FEN) \x1b[0m" << endl;
+    //sout << "\x1b[94mNew Game (from FEN) \x1b[0m" << endl;
 
     reset_all_but_FEN();
 }
@@ -3244,6 +3246,434 @@ template void Engine::popMove_t<Color::BLACK>();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+
+// Return the next mainline token (or a complete tag pair). An empty token means
+// end of input, or the start of movetext when headers_only is true. Comments,
+// nested variations, move numbers, and numeric annotation glyphs are skipped
+// here; chess moves are interpreted separately below.
+bool next_pgn_token(const string& pgn, size_t& pos, string& token, string& error,
+                    bool headers_only = false)
+{
+    token.clear();
+    int variation_depth = 0;
+    while (pos < pgn.size()) {
+        const char ch = pgn[pos];
+        if (std::isspace(static_cast<unsigned char>(ch))) {
+            ++pos;
+        } else if (headers_only && ch != '[' && ch != '{' && ch != ';') {
+            // Reading the starting tags must not consume movetext, even at ply 0.
+            return true;
+        } else if (ch == '{') {
+            const size_t end = pgn.find('}', pos + 1);
+            if (end == string::npos) {
+                error = "Unterminated PGN comment.";
+                return false;
+            }
+            pos = end + 1;
+        } else if (ch == ';') {
+            pos = pgn.find_first_of("\r\n", pos + 1);
+            if (pos == string::npos) pos = pgn.size();
+        } else if (ch == '(') {
+            ++variation_depth;
+            ++pos;
+        } else if (ch == ')') {
+            if (variation_depth == 0) {
+                error = "Unexpected ')' in PGN.";
+                return false;
+            }
+            --variation_depth;
+            ++pos;
+        } else if (variation_depth > 0) {
+            ++pos;
+        } else if (ch == '}' || ch == ']') {
+            error = "Unexpected closing delimiter in PGN.";
+            return false;
+        } else if (ch == '$') {
+            const size_t start = ++pos;
+            while (pos < pgn.size() && pgn[pos] >= '0' && pgn[pos] <= '9') ++pos;
+            if (pos == start) {
+                error = "Expected digits after PGN annotation marker '$'.";
+                return false;
+            }
+        } else if (ch == '[') {
+            const size_t start = pos++;
+            bool quoted = false;
+            bool escaped = false;
+            while (pos < pgn.size()) {
+                const char tag_ch = pgn[pos++];
+                if (escaped) {
+                    escaped = false;
+                } else if (quoted && tag_ch == '\\') {
+                    escaped = true;
+                } else if (tag_ch == '"') {
+                    quoted = !quoted;
+                } else if (!quoted && tag_ch == ']') {
+                    token = pgn.substr(start, pos - start);
+                    return true;
+                }
+            }
+            error = "Unterminated PGN tag pair.";
+            return false;
+        } else {
+            // Both "1. e4" and "1.e4", including "1...e5", are accepted.
+            size_t end = pos;
+            while (end < pgn.size() && pgn[end] >= '0' && pgn[end] <= '9') ++end;
+            if (end < pgn.size() && pgn[end] == '.') {
+                pos = end;
+                while (pos < pgn.size() && pgn[pos] == '.') ++pos;
+                continue;
+            }
+            const size_t start = pos;
+            while (pos < pgn.size() &&
+                   !std::isspace(static_cast<unsigned char>(pgn[pos])) &&
+                   string("{}();[]$").find(pgn[pos]) == string::npos) {
+                ++pos;
+            }
+            token = pgn.substr(start, pos - start);
+            // Some PGNs separate symbolic annotations from the move.
+            if (token.find_first_not_of("!?") == string::npos) continue;
+            return true;
+        }
+    }
+    if (variation_depth != 0) {
+        error = "Unterminated PGN variation.";
+        return false;
+    }
+    token.clear();
+    return true;
+}
+
+// The existing GameBoard constructor expects valid FEN fields and uses asserts.
+// Check input structure and clock ranges first, then normalize field separators
+// for its space-delimited reader. Board construction and FEN output stay there.
+bool prepare_pgn_fen(string& fen, string& error)
+{
+    string fields[6];
+    string extra;
+    istringstream input(fen);
+    for (string& field : fields) {
+        if (!(input >> field)) {
+            error = "Starting FEN must contain exactly six fields.";
+            return false;
+        }
+    }
+    if (input >> extra) {
+        error = "Starting FEN must contain exactly six fields.";
+        return false;
+    }
+
+    int rank = 8, files = 0, white_kings = 0, black_kings = 0;
+    for (char ch : fields[0]) {
+        if (ch == '/') {
+            if (files != 8 || rank <= 1) {
+                error = "Invalid rank layout in starting FEN.";
+                return false;
+            }
+            --rank;
+            files = 0;
+        } else if (ch >= '1' && ch <= '8') {
+            files += ch - '0';
+        } else if (string("prnbqkPRNBQK").find(ch) != string::npos) {
+            ++files;
+            if (ch == 'K') ++white_kings;
+            if (ch == 'k') ++black_kings;
+            if ((ch == 'p' || ch == 'P') && (rank == 1 || rank == 8)) {
+                error = "A starting FEN pawn cannot be on rank 1 or 8.";
+                return false;
+            }
+        } else {
+            error = "Invalid piece in starting FEN.";
+            return false;
+        }
+        if (files > 8) {
+            error = "Too many squares in a starting FEN rank.";
+            return false;
+        }
+    }
+    if (rank != 1 || files != 8 || white_kings != 1 || black_kings != 1) {
+        error = "Starting FEN needs eight ranks and exactly one king of each color.";
+        return false;
+    }
+    if (fields[1] != "w" && fields[1] != "b") {
+        error = "Starting FEN side to move must be 'w' or 'b'.";
+        return false;
+    }
+    if (fields[2] != "-") {
+        string seen;
+        for (char ch : fields[2]) {
+            if (string("KQkq").find(ch) == string::npos || seen.find(ch) != string::npos) {
+                error = "Invalid castling rights in starting FEN.";
+                return false;
+            }
+            seen += ch;
+        }
+    }
+    if (fields[3] != "-" &&
+        (fields[3].size() != 2 || fields[3][0] < 'a' || fields[3][0] > 'h' ||
+         fields[3][1] != (fields[1] == "w" ? '6' : '3'))) {
+        error = "Invalid en passant square in starting FEN.";
+        return false;
+    }
+    for (int i = 4; i < 6; ++i) {
+        unsigned value = 0;
+        for (char ch : fields[i]) {
+            if (ch < '0' || ch > '9' ||
+                (value = value * 10 + (ch - '0')) > std::numeric_limits<uint8_t>::max()) {
+                error = "Starting FEN clocks must fit Shumi's current range (0..255).";
+                return false;
+            }
+        }
+        if (i == 5 && value == 0) {
+            error = "Starting FEN fullmove number must be at least 1.";
+            return false;
+        }
+        fields[i] = to_string(value);
+    }
+    fen = fields[0];
+    for (int i = 1; i < 6; ++i) fen += " " + fields[i];
+    return true;
+}
+
+Piece pgn_piece(char ch)
+{
+    switch (ch) {
+        case 'N': return Piece::KNIGHT;
+        case 'B': return Piece::BISHOP;
+        case 'R': return Piece::ROOK;
+        case 'Q': return Piece::QUEEN;
+        case 'K': return Piece::KING;
+        default:  return Piece::NONE;
+    }
+}
+
+// Read the identifying SAN fields, then select an existing legal Move. Check
+// and mate suffixes are accepted but are not independently verified here.
+bool pgn_san_to_move(Engine& engine, string san, Move& move, string& error)
+{
+    while (!san.empty() && (san.back() == '!' || san.back() == '?')) san.pop_back();
+    if (!san.empty() && san.back() == '#') {
+        san.pop_back();
+    } else if (!san.empty() && san.back() == '+') {
+        san.pop_back();
+        if (!san.empty() && san.back() == '+') san.pop_back();
+    }
+
+    const bool king_castle = (san == "O-O" || san == "0-0");
+    const bool queen_castle = (san == "O-O-O" || san == "0-0-0");
+    const bool castle = king_castle || queen_castle;
+    Piece piece = Piece::PAWN, promotion = Piece::NONE;
+    char from_file = 0, from_rank = 0, to_file = 0, to_rank = 0;
+    bool capture = false;
+    error = "is malformed SAN.";
+
+    if (!castle) {
+        if (san.size() >= 2 && san[san.size() - 2] == '=') {
+            promotion = pgn_piece(san.back());
+            if (promotion == Piece::NONE || promotion == Piece::KING) return false;
+            san.resize(san.size() - 2);
+        }
+        if (san.size() < 2) return false;
+        to_file = san[san.size() - 2];
+        to_rank = san.back();
+        if (to_file < 'a' || to_file > 'h' || to_rank < '1' || to_rank > '8') return false;
+        san.resize(san.size() - 2);
+
+        if (!san.empty() && pgn_piece(san.front()) != Piece::NONE) {
+            piece = pgn_piece(san.front());
+            san.erase(0, 1);
+        }
+        if (!san.empty() && san.back() == 'x') {
+            capture = true;
+            san.pop_back();
+        }
+        size_t pos = 0;
+        if (pos < san.size() && san[pos] >= 'a' && san[pos] <= 'h') from_file = san[pos++];
+        if (pos < san.size() && san[pos] >= '1' && san[pos] <= '8') from_rank = san[pos++];
+        if (pos != san.size()) return false;
+        if (piece == Piece::PAWN) {
+            if (from_rank || (capture ? !from_file : from_file != 0)) return false;
+        } else if (promotion != Piece::NONE) {
+            return false;
+        }
+    }
+
+    vector<Move> legal_moves;
+    engine.get_legal_moves_fast(engine.game_board.turn, false, false, legal_moves);
+    int matches = 0;
+    for (const Move& candidate : legal_moves) {
+        if (castle) {
+            if (!(candidate.flags & FLAGS_IS_CASTLE_MOVE) ||
+                engine.file_to_move(candidate) != (king_castle ? 'g' : 'c')) continue;
+        } else {
+            if ((candidate.flags & FLAGS_IS_CASTLE_MOVE) ||
+                candidate.piece_type != piece || candidate.promotion != promotion ||
+                (candidate.capture != Piece::NONE) != capture ||
+                engine.file_to_move(candidate) != to_file || engine.rank_to_move(candidate) != to_rank ||
+                (from_file && engine.file_from_move(candidate) != from_file) ||
+                (from_rank && engine.rank_from_move(candidate) != from_rank)) continue;
+        }
+        move = candidate; // Keep all generated flags, capture, and en passant information.
+        ++matches;
+    }
+    if (matches != 1) {
+        error = matches == 0 ? "has no matching legal move." : "matches more than one legal move.";
+        return false;
+    }
+    error.clear();
+    return true;
+}
+
+// Shared by single-position conversion and incremental collection replay.
+bool read_pgn_starting_fen(const string& pgn, size_t& pos, string& starting_fen, string& error)
+{
+    const auto fail = [&error](const string& message) {
+        error = message;
+        return false;
+    };
+    string token, detail, setup;
+    bool has_setup = false, has_fen = false;
+    if (!next_pgn_token(pgn, pos, token, detail, true)) return fail(detail);
+    while (!token.empty() && token.front() == '[') {
+        istringstream tag(token.substr(1, token.size() - 2));
+        string name, value;
+        if (!(tag >> name) || name.find_first_not_of(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_") != string::npos) {
+            return fail("Invalid PGN tag name.");
+        }
+        tag >> std::ws;
+        if (tag.peek() != '"' || !(tag >> std::quoted(value))) return fail("Invalid PGN tag value.");
+        tag >> std::ws;
+        if (!tag.eof()) return fail("Unexpected text after PGN tag value.");
+        if (name == "SetUp") {
+            if (has_setup) return fail("Duplicate PGN SetUp tag.");
+            has_setup = true;
+            setup = value;
+        } else if (name == "FEN") {
+            if (has_fen) return fail("Duplicate PGN FEN tag.");
+            has_fen = true;
+            starting_fen = value;
+        }
+        if (!next_pgn_token(pgn, pos, token, detail, true)) return fail(detail);
+    }
+    if ((has_setup && setup != "0" && setup != "1") || has_fen != (setup == "1")) {
+        return fail("A PGN starting position requires both SetUp \"1\" and a FEN tag.");
+    }
+    if (!has_fen) {
+        starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    }
+    return prepare_pgn_fen(starting_fen, error);
+}
+
+bool validate_pgn_starting_board(Engine& engine, string& error)
+{
+    const bool inactive_king_in_check = engine.game_board.turn == Color::WHITE
+        ? engine.is_king_in_check_t<Color::BLACK>() : engine.is_king_in_check_t<Color::WHITE>();
+    if (inactive_king_in_check) {
+        error = "Starting FEN has the side not to move in check.";
+        return false;
+    }
+    const ull ep = engine.game_board.en_passant_landing_bb;
+    if (ep) {
+        const ull enemy_pawn = engine.game_board.turn == Color::WHITE
+            ? engine.game_board.black_pawns & (ep >> 8) : engine.game_board.white_pawns & (ep << 8);
+        if (!enemy_pawn || engine.game_board.get_piece_type_on_bitboard(ep) != Piece::NONE) {
+            error = "Starting FEN en passant square is inconsistent with the board.";
+            return false;
+        }
+    }
+    return true;
+}
+
+void report_pgn_error(const string& message, string* error)
+{
+    if (error) *error = message;
+    else std::cerr << message << '\n';
+}
+
+} // namespace
+
+bool PGN::start_pgn_game(const string& pgn, size_t& position, Engine& engine, string* error) const
+{
+    if (error) error->clear();
+    string starting_fen, detail;
+    if (!read_pgn_starting_fen(pgn, position, starting_fen, detail)) {
+        report_pgn_error(detail, error);
+        return false;
+    }
+    engine.reset_engine(starting_fen);
+    if (!validate_pgn_starting_board(engine, detail)) {
+        report_pgn_error(detail, error);
+        return false;
+    }
+    return true;
+}
+
+PGN::MoveReadResult PGN::play_next_pgn_move(const string& pgn, size_t& position,
+                                          Engine& engine, string* error) const
+{
+    if (error) error->clear();
+    const auto fail = [error](const string& message) {
+        report_pgn_error(message, error);
+        return MoveReadResult::Error;
+    };
+    string token, detail;
+    if (!next_pgn_token(pgn, position, token, detail)) {
+        return fail("Before ply " + to_string(engine.ply_so_far + 1) + ": " + detail);
+    }
+    if (!token.empty() && token.front() == '[') {
+        // A new tag section also ends a game whose result marker was omitted.
+        position -= token.size(); // Leave the tag for start_pgn_game(), not skipped comments.
+        return MoveReadResult::GameEnded;
+    }
+    if (token.empty() || token == "*" || token == "1-0" ||
+        token == "0-1" || token == "1/2-1/2") {
+        return MoveReadResult::GameEnded;
+    }
+    const string context = "Ply " + to_string(engine.ply_so_far + 1) + ": SAN move \"" + token + "\" ";
+    Move move;
+    if (!pgn_san_to_move(engine, token, move, detail)) return fail(context + detail);
+
+    // The current GameBoard clocks are uint8_t. Refuse a wrapped FEN.
+    if ((move.color == Color::BLACK && engine.game_board.fullmove == std::numeric_limits<uint8_t>::max()) ||
+        (move.piece_type != Piece::PAWN && move.capture == Piece::NONE &&
+         engine.game_board.halfmove == std::numeric_limits<uint8_t>::max())) {
+        return fail(context + "would exceed Shumi's current FEN move-clock range.");
+    }
+    if (move.color == Color::WHITE) engine.pushMove_t<Color::WHITE>(move);
+    else                            engine.pushMove_t<Color::BLACK>(move);
+    engine.push_to_three_time_rep_stack(move);
+    ++engine.ply_so_far;
+    return MoveReadResult::MovePlayed;
+}
+
+string PGN::pgn_to_fen(const string& pgn, int ply_number, string* error) const
+{
+    if (error) error->clear();
+    const auto fail = [error](const string& message) -> string {
+        report_pgn_error(message, error);
+        return {};
+    };
+    if (ply_number < 0) return fail("Requested ply must be non-negative.");
+
+    size_t pos = 0;
+    string starting_fen, detail;
+    if (!read_pgn_starting_fen(pgn, pos, starting_fen, detail)) return fail(detail);
+    Engine engine(starting_fen);
+    if (!validate_pgn_starting_board(engine, detail)) return fail(detail);
+
+    for (int played = 0; played < ply_number; ++played) {
+        // Reading on demand leaves all later moves unchecked once the target is reached.
+        const MoveReadResult result = play_next_pgn_move(pgn, pos, engine, &detail);
+        if (result == MoveReadResult::Error) return fail(detail);
+        if (result == MoveReadResult::GameEnded) {
+            return fail("Requested ply " + to_string(ply_number) +
+                        ", but the PGN game ended after " + to_string(played) + " plies.");
+        }
+    }
+    return engine.game_board.to_fen();
+}
 
 #define PGN_MAX 10000       // Maximum number of moves in game.
 PGN::PGN() 

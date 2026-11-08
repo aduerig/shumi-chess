@@ -1,14 +1,13 @@
 do not delete me
 ===================================================================================
-16 fast CPU cores, possibly more if the price is reasonable.
 
-64 GB RAM, with room to expand.
-
-Excellent cooling for sustained, all-core operation.
-
-A fast SSD.
-
-A modest GPU or integrated gra
+#
+rnbqkbnr/pppp2pp/8/4pP2/2B5/8/PPPP1PPP/RNBQK1NR b KQkq - 0 3 | -47              # matches exactly
+rnbqk2r/ppp3pp/5n2/2bNpP2/2B5/8/PPPP1PPP/R1BQK1NR w KQkq - 1 6 | 5              # matches exactly
+rn2k2r/ppp3pp/5q2/2b1pb2/2B5/3P1N2/PPP2PPP/R1BQK2R b KQkq - 1 8 | 14        #  does not match   (1.2), material is white up 1 p
+r3k2r/pp1n2pp/2p2q2/2b1p3/4B1b1/3P1N2/PPP2PPP/R1BQK2R w KQkq - 2 11 | 1         # matches exactly
+2kr3r/pp1n2p1/2p2q1p/2b1p3/1P2B1b1/2PP1N2/P4PPP/R1BQ1RK1 b - b3 0 13 | 27   #  does not match   (1.4), material is white up 1 p
+2kr3r/1p1n2p1/pbp2q1p/4p3/PP2B3/1QPP1b2/5PPP/R1B2RK1 w - - 0 16 | 52        #  does not match   (1.62), material is white up 1 p
 
 =======================================================================================
 

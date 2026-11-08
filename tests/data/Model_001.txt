@@ -3638,4 +3638,5 @@
 0 0 0 0 0 0 0 0
 # output_bias
 29.0624962
-# RMSe (cp): initial = unavailable, final = unavailable
+#
+# RMSe (cp): initial = unavailable, final = unavailable, lck% = unavailable

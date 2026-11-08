@@ -122,18 +122,28 @@ if(MSVC)
     )
 endif()
 
-add_executable(run_nnue_training driver/run_nnue_training.cpp)
-target_compile_definitions(run_nnue_training PRIVATE NDEBUG=1)
-target_link_libraries(run_nnue_training PUBLIC ${project_name}NoAsserts)
+add_executable(FENScores_to_model driver/FENScores_to_model.cpp)
+target_compile_definitions(FENScores_to_model PRIVATE NDEBUG=1)
+target_link_libraries(FENScores_to_model PUBLIC ${project_name}NoAsserts)
 if(MSVC)
-    target_link_options(run_nnue_training PRIVATE
+    target_link_options(FENScores_to_model PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/INCREMENTAL:NO /DEBUG:FULL>
         $<$<CONFIG:RelWithDebInfo>:/LTCG>
     )
 endif()
 
+add_executable(evaluate_fens driver/evaluate_fens.cpp)
+target_compile_definitions(evaluate_fens PRIVATE NDEBUG=1)
+target_link_libraries(evaluate_fens PUBLIC ${project_name}NoAsserts)
+
 add_executable(shumi_driver driver/driver.cpp)
 target_link_libraries(shumi_driver PUBLIC ${project_name})
+
+add_executable(collect_fens_from_pgn_file driver/collect_fens_from_pgn_file.cpp)
+target_link_libraries(collect_fens_from_pgn_file PUBLIC ${project_name})
+
+add_executable(collect_fens_from_dir driver/collect_fens_from_dir.cpp)
+target_link_libraries(collect_fens_from_dir PUBLIC ${project_name})
 
 add_executable(shumi_uci driver/shumi_uci.cpp)
 target_link_libraries(shumi_uci PUBLIC ${project_name})

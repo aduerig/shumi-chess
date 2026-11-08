@@ -3,8 +3,8 @@
 #include "Score.hpp"
 #include "globals.hpp"
 
-// NNUE model for play and training output, relative to the repository root.
-inline constexpr const char* NNUE_model_file = "NNUE/models/Model_001.txt";     
+// Read-only NNUE model input for engine play, relative to the repository root.
+inline constexpr const char* NNUE_model_file = "NNUE/models/Model_003.txt";     
 
 // NNUE diagnostics and search-position collection.
 inline constexpr bool NNUE_Print_final_results = false;

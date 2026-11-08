@@ -1370,7 +1370,8 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
 
         if (ASPIRATION_ENABLED) {
  
-            assert (aspiration_attempts > 0);
+            // A mate found at depth 1 can finish before any aspiration search.
+            // assert (aspiration_attempts > 0);
             const double aspiration_success_pct = aspiration_attempts
                 ? (100.0 * (double)aspiration_successes / (double)aspiration_attempts)
                 : 0.0;
@@ -2231,7 +2232,7 @@ tuple<Score, Move> MinimaxAI::recursive_negamax(
 
     if (first_node_in_deepening) {
 
-        if (legal_moves.size() == 1) {
+        if (legal_moves.size() == 1 && !score_forced_root_move) {
             //sout << "\x1b[94m!!!!! force !!!!!!!!!!!!!\x1b[0m" << endl;
 
             // // Show board (debug only)
