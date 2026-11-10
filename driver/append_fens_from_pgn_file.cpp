@@ -12,12 +12,19 @@
     static inline int _getch() { return std::cin.get(); }
 #endif
 
+///////////////////////////////////////////////////////////////////////////////
+//
 // Relative filenames are resolved from the repository root; absolute paths work too.
-// The existing Morphy PGN is stored with a .txt extension. Set this to your .pgn file.
+// The existing Morphy PGN is stored with has a .txt extension. Set this to your .pgn file.
 //constexpr char INPUT_FILENAME[] = "tests/FENs/Morphy_random_pgn.txt";
 constexpr char INPUT_FILENAME[] = "C:/chess/chessGames/pgn/Fine.pgn";
+// Append a source header and new FENs, preserving any existing output contents.
 constexpr char OUTPUT_FILENAME[] = "NNUE/FENs/collected_from_pgn.txt";
-constexpr int EVERY_N_PLIES = 5;
+
+constexpr int EVERY_N_PLIES = 1;
+constexpr bool SHUFFLE_FENS = true;
+//
+////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 using namespace ShumiChess;
@@ -50,11 +57,12 @@ int main()
 
         FENCollectionStats stats;
         string error;
-        if (!collect_fens_from_pgn_file(INPUT_FILENAME, OUTPUT_FILENAME, EVERY_N_PLIES, stats, &error)) {
+        if (!append_fens_from_pgn_file(
+                INPUT_FILENAME, OUTPUT_FILENAME, EVERY_N_PLIES, SHUFFLE_FENS, stats, &error)) {
             return stop_after_error(error);
         }
         sout << "Appended " << stats.positions << " FENs to " << output_path.string() << endl;
-        sout << "Press any key to exit..." << endl;
+        sout << "SUCCESS - press any key" << endl << endl;
         _getch();
         return EXIT_SUCCESS;
     } catch (const exception& error) {

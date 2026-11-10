@@ -1,5 +1,6 @@
 #include "fen_database.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <ctime>
 #include <exception>
@@ -7,6 +8,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <random>
 #include <string_view>
 
 #include "engine.hpp"
@@ -210,10 +212,11 @@ bool append_fen_database(const std::string& filename,
     return true;
 }
 
-bool collect_fens_from_pgn_file(
+bool append_fens_from_pgn_file(
     const std::filesystem::path& input_filename,
     const std::filesystem::path& output_filename,
     int every_n_plies,
+    bool shuffle_fens,
     FENCollectionStats& stats,
     std::string* error)
 {
@@ -280,7 +283,8 @@ bool collect_fens_from_pgn_file(
         std::size_t position = 0;
         FENCollectionStats collected;
         // Buffer one file so malformed input cannot append a partial set.
-        std::string fen_records, replay_error;
+        std::vector<std::string> fen_records;
+        std::string replay_error;
         while (position < pgn_text.size()) {
             const std::string context = "Game " + std::to_string(collected.games + 1)
                                         + " in " + input_path.string() + ": ";
@@ -298,11 +302,15 @@ bool collect_fens_from_pgn_file(
                 if (result == PGN::MoveReadResult::GameEnded) break;
                 if (engine.ply_so_far % every_n_plies != 0) continue;
 
-                fen_records += engine.game_board.to_fen() + " | *\r\n";
+                fen_records.push_back(engine.game_board.to_fen() + " | *\r\n");
                 ++collected.positions;
             }
         }
         if (collected.positions != 0) {
+            if (shuffle_fens && fen_records.size() > 1) {
+                std::mt19937 rng(std::random_device{}());
+                std::shuffle(fen_records.begin(), fen_records.end(), rng);
+            }
             const std::time_t collected_at = std::time(nullptr);
             std::tm collection_date{};
 #ifdef _WIN32
@@ -319,9 +327,12 @@ bool collect_fens_from_pgn_file(
             output << "#\r\n# FENs SOURCE: " << input_filename.generic_string()
                    << " (" << std::put_time(&collection_date, "%Y-%m-%d %H:%M") << ")"
                    << "\r\n#    POSITIONS=" << collected.positions << " SAMPLE RATE (ply)=" << every_n_plies
+                   << " SHUFFLE_FENS=" << (shuffle_fens ? "true" : "false")
                    << "\r\n#    OUTPUT: " << output_filename.generic_string()
-                   << "\r\n#\r\n"
-                   << fen_records;
+                   << "\r\n#\r\n";
+            for (const auto& record : fen_records) {
+                output << record;
+            }
         }
         output.close();
         if (!output) {

@@ -19,18 +19,27 @@
 using namespace std;
 using namespace ShumiChess;
 
+//////////////////////////////////////////////////////////////////////////////////////////
+
+const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
+const filesystem::path input_path = repo_root / "NNUE" / "FENs" / "collected_from_pgn.txt";
+const filesystem::path output_path = repo_root / "NNUE" / "FENs" / "evaluated_FENs.txt";
+
+constexpr int DEPTH_MINIMUM = 3;
+constexpr int TIME_REQUESTED = 3000;
+constexpr EvalPersons PLAYER = UNCLE_SHUMI;
+const auto iMethod = NNUETrainingMethod::STATIC_EVAL;
+
+/////////////////////////////////////////////////////////////////////////////////////
+
 // make with: cmake --build C:\programming\shumi-chess\build --config RelWithDebInfo --target evaluate_fens
 
 int main(int argc, char** argv) {
-    const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
-    const filesystem::path input_path = repo_root / "NNUE" / "FENs" / "collected_from_pgn.txt";
-    const filesystem::path output_path = repo_root / "NNUE" / "FENs" / "evaluated_FENs.txt";
-
     // Read in datafile into the training examples.
     vector<NNUETrainingExample> examples;
     vector<string> retained_fens;
 
-    const auto iMethod = NNUETrainingMethod::STATIC_EVAL;
+
     const char* method_name = "UNKNOWN";
     switch (iMethod) {
         case NNUETrainingMethod::NONE:        method_name = "NONE"; break;
@@ -38,9 +47,7 @@ int main(int argc, char** argv) {
         case NNUETrainingMethod::STATIC_EVAL: method_name = "STATIC_EVAL"; break;
     }
 
-    constexpr int DEPTH_MINIMUM = 3;
-    constexpr int TIME_REQUESTED = 3000;
-    constexpr EvalPersons PLAYER = UNCLE_SHUMI;
+
     const char* player_name = "UNKNOWN";
     switch (PLAYER) {
         case NNUE:        player_name = "NNUE"; break;
@@ -57,8 +64,8 @@ int main(int argc, char** argv) {
     sout << "..." << endl;
     const int read_error = multi_FEN_readin(input_path, examples, iMethod
                                             , DEPTH_MINIMUM, TIME_REQUESTED, PLAYER
-                                            , &database_error, &retained_fens
-                                            , /*material_after_best_move=*/true);
+                                            , /*material_after_best_move=*/true, /*monitor=*/true
+                                            , &database_error, &retained_fens);
     if (read_error != 0) {
         sout << database_error << endl;
         _getch();
@@ -125,7 +132,7 @@ int main(int argc, char** argv) {
     }
 
     sout << "Wrote " << examples.size() << " evaluated FENs to " << output_path << endl;
-    sout << "Press any key to exit..." << endl;
+    sout << "SUCCESS - press any key" << endl << endl;
     _getch();
     return EXIT_SUCCESS;
 }

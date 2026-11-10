@@ -1249,21 +1249,27 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 }   // END test
 
 int multi_FEN_readin(
-    const std::filesystem::path& filename,
-    std::vector<NNUETrainingExample>& examples,
+    const std::filesystem::path& filename,          // input
+    std::vector<NNUETrainingExample>& examples,     // output
     NNUETrainingMethod iMethod,
     int depth_minimum,
     int time_requested,
     EvalPersons player,
+    bool material_after_best_move,
+    bool monitor,
     std::string* error,                             // output
-    std::vector<std::string>* retained_fens,        // optional output
-    bool material_after_best_move
+    std::vector<std::string>* retained_fens         // optional output
 )
 {
     if (error) error->clear();
 
+    std::size_t line_number = 0;
+    const auto finish_monitor = [&] {
+        if (monitor) sout << '\r' << line_number << std::endl;
+    };
     const std::string filename_text = filename.string();
     const auto fail = [&](const std::string& reason) {
+        finish_monitor();
         const std::string diagnostic = filename_text + ": " + reason;
         if (error) {
             *error = diagnostic;
@@ -1295,12 +1301,13 @@ int multi_FEN_readin(
     std::vector<std::string> loaded_fens;
     NNUE_data input_encoder;
     std::string line;
-    std::size_t line_number = 0;
 
     while (std::getline(file, line)) {
 
         ++line_number;
-        //sout << line_number << "\nmulti_FEN_readin=" << line;
+        if (monitor && line_number % 1000 == 0) {
+            sout << '\r' << line_number << std::flush;
+        }
 
         // Everything from the first '#' to the end of the line is a comment.
         const std::string_view record = trim(std::string_view(line).substr(0, line.find('#')));
@@ -1460,6 +1467,7 @@ int multi_FEN_readin(
 
     examples.swap(loaded);
     if (retained_fens) retained_fens->swap(loaded_fens);
+    finish_monitor();
     return EXIT_SUCCESS;
 }
 
@@ -1489,7 +1497,8 @@ NNUETrainingResult NNUE_train_mult_positions(
     int nTrainingIterations,                // input    
     float learning_rate,                    // input
     bool write_to_sout,                     // if true outputs progress and stats to sout
-    NNUETrainingStats* training_stats       // optional output statistics
+    NNUETrainingStats* training_stats,      // optional output statistics
+    bool iterative_display                 // true: in-place progress; false: metrics every 10 iterations
 ) {
 
     // Initialize the NNUE parameters once, before training.
@@ -1513,7 +1522,7 @@ NNUETrainingResult NNUE_train_mult_positions(
     // Loop over all positions, for the number of rewuested iterations.
     //
     for (int iteration = 0; iteration < nTrainingIterations; ++iteration) {
-        if (write_to_sout) {
+        if (write_to_sout && iterative_display) {
             sout << "\rIteration " << (iteration + 1) << '/' << nTrainingIterations
                  << std::flush;
         }
@@ -1548,9 +1557,21 @@ NNUETrainingResult NNUE_train_mult_positions(
 
         }   // END loop over training positions
 
+        if (write_to_sout && !iterative_display && (iteration + 1) % 10 == 0) {
+            const double rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
+            const int nlocks = nTrainingPositions > 0
+                              ? nnue.count_locked_positions(examples, nTrainingPositions) : 0;
+            const double lock_percent = nTrainingPositions > 0
+                                        ? 100.0 * nlocks / nTrainingPositions : 0.0;
+            std::ostringstream lock_percent_text;
+            lock_percent_text << std::fixed << std::setprecision(2) << lock_percent;
+            sout << "Iteration " << (iteration + 1)
+                 << " RMSe=" << rmse << " cp lk%=" << lock_percent_text.str() << endl;
+        }
+
     }   // END loop over training iterations
 
-    if (write_to_sout && nTrainingIterations > 0) {
+    if (write_to_sout && iterative_display && nTrainingIterations > 0) {
         sout << std::endl;
     }
 
@@ -1560,13 +1581,15 @@ NNUETrainingResult NNUE_train_mult_positions(
                       ? nnue.count_locked_positions(examples, nTrainingPositions) : 0;
     const double final_lock_percent = nTrainingPositions > 0
                                       ? 100.0 * nlocks / nTrainingPositions : 0.0;
-    const int displayed_lock_percent = nTrainingPositions > 0
+    const int whole_lock_percent = nTrainingPositions > 0
                                       ? static_cast<int>(100LL * nlocks / nTrainingPositions) : 0;
     if (training_stats != nullptr) {
-        *training_stats = {initial_rmse, final_rmse, displayed_lock_percent};
+        *training_stats = {initial_rmse, final_rmse, whole_lock_percent};
     }
     if (write_to_sout) {
-        sout << "Final RMSe=" << final_rmse << " nlocks%=" << displayed_lock_percent << endl;
+        std::ostringstream lock_percent_text;
+        lock_percent_text << std::fixed << std::setprecision(2) << final_lock_percent;
+        sout << "Final RMSe=" << final_rmse << " nlocks%=" << lock_percent_text.str() << endl;
     }
 
     return {initial_rmse, final_rmse, final_lock_percent};

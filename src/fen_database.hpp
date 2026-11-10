@@ -41,14 +41,17 @@ struct FENCollectionStats {
 
 // Replay one PGN file, sampling every_n_plies from each game's starting position.
 // Append a source comment block and unscored FENs using CRLF line endings.
+// If shuffle_fens is true, randomly shuffle the new FEN records before appending.
+// Existing output contents and the new source comment block stay in place.
 // Relative paths are resolved from the repository root; absolute paths work too.
 // A malformed PGN appends no records. Stats are assigned only on success.
 // Errors are returned through error, or written to stderr when it is null.
 // This function does not print progress, pause, or terminate the application.
-[[nodiscard]] bool collect_fens_from_pgn_file(
+[[nodiscard]] bool append_fens_from_pgn_file(
     const std::filesystem::path& input_filename,
     const std::filesystem::path& output_filename,
     int every_n_plies,
+    bool shuffle_fens,
     FENCollectionStats& stats,
     std::string* error = nullptr);
 

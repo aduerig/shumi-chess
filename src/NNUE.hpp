@@ -102,7 +102,7 @@ struct NNUETrainingResult {
 struct NNUETrainingStats {
     double initial_rmse;
     double final_rmse;
-    int final_lock_percent; // Whole percent, matching the displayed nlocks%.
+    int final_lock_percent; // Whole percent, truncated for statistics consumers.
 };
 
 
@@ -121,6 +121,8 @@ struct NNUETrainingStats {
 // depth_minimum and time_requested are used only for FULL_SEARCH;
 // NONE and STATIC_EVAL ignore both arguments and material_after_best_move.
 // NONE also ignores player.
+// If monitor is true, overwrite the line count on sout every 1000 lines read,
+// including blank/comment lines, and finish with the final count and a newline.
 // Returns 0 on success, nonzero on failure (including no positions after filtering).
 // Examples are replaced only on success. If retained_fens is supplied, it is also
 // replaced on success with the original FENs, one per retained example in order.
@@ -133,9 +135,10 @@ struct NNUETrainingStats {
     int depth_minimum,
     int time_requested,
     EvalPersons player,
+    bool material_after_best_move = false,
+    bool monitor = false,
     std::string* error = nullptr,
-    std::vector<std::string>* retained_fens = nullptr,
-    bool material_after_best_move = false);
+    std::vector<std::string>* retained_fens = nullptr);
 
 // One Jacobian row: derivatives of ONE example's aberration
 // with respect to every network parameter.
@@ -347,7 +350,8 @@ NNUETrainingResult NNUE_train_mult_positions(
     int nTrainingIterations, 
     float learning_rate,
     bool write_to_sout,     // writes progress and stats to sout
-    NNUETrainingStats* training_stats = nullptr // filled on completion when non-null
+    NNUETrainingStats* training_stats = nullptr, // filled on completion when non-null
+    bool iterative_display = true // false prints iteration, RMSe, and lk% every 10 iterations
 );
 
 } // end namespace ShumiChess

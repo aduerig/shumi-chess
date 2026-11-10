@@ -1,5 +1,28 @@
 do not delete me
 ===================================================================================
+This is all good ideas, but this will be slelved for a new project, mush more ambitious, and requiring much more work for you. I have asked you repeated questions, over months, about a Shumi chess app that consists of a C++ core, and a Python "front end". The front end shows the board, gets moves from users, etc. platys the game, 
+
+# Fine:
+selected every 5 ply: 
+# RMSe (cp): initial = 99.29, final = 15.03, lck% = 1.60
+##     -d3 -t3000 player=UNCLE_SHUMI method=STATIC_EVAL
+##     POSITIONS=4638
+
+selected every 3 ply: 
+# RMSe (cp): initial = 98.85, final = 21.17, lck% = 1.88
+##     -d3 -t3000 player=UNCLE_SHUMI method=STATIC_EVAL
+##     POSITIONS=7831
+
+selected every 1 ply: 
+# RMSe (cp): initial = 98.17, final = 35.86, lck% = 5.83
+##     -d3 -t3000 player=UNCLE_SHUMI method=STATIC_EVAL
+##     POSITIONS=23792
+
+# RMSe (cp): initial = 98.17, final = 32.42, lck% = 7.38
+
+
+
+
 
 #
 rnbqkbnr/pppp2pp/8/4pP2/2B5/8/PPPP1PPP/RNBQK1NR b KQkq - 0 3 | -47              # matches exactly

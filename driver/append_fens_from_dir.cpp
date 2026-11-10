@@ -16,9 +16,11 @@
 
 // Relative paths are resolved from the repository root; absolute paths work too.
 // Process every regular file directly inside this directory, regardless of extension.
+// Append each file's source header and FENs, preserving existing output contents.
 constexpr char INPUT_DIRECTORY[] = "C:/chess/chessGames/pgn";
 constexpr char OUTPUT_FILENAME[] = "NNUE/FENs/collected_from_pgn.txt";
 constexpr int EVERY_N_PLIES = 5;
+constexpr bool SHUFFLE_FENS = true; // Shuffle each file's new FENs before appending.
 
 using namespace std;
 using namespace ShumiChess;
@@ -72,7 +74,8 @@ int main()
             sout << "Reading PGN file " << input_file.generic_string() << endl;
             FENCollectionStats stats;
             string error;
-            if (!collect_fens_from_pgn_file(input_file, OUTPUT_FILENAME, EVERY_N_PLIES, stats, &error)) {
+            if (!append_fens_from_pgn_file(
+                    input_file, OUTPUT_FILENAME, EVERY_N_PLIES, SHUFFLE_FENS, stats, &error)) {
                 sout << "Failed: " << input_file.generic_string() << ": " << error << endl;
                 failed_files.push_back(input_file);
                 continue;

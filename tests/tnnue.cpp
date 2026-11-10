@@ -70,7 +70,8 @@ TEST_F(NNUEFENReader, RejectsMalformedRecordsAndModeMismatches)
             std::vector<NNUETrainingExample> examples(1);
             examples[0].target_positional_score_cp = 123.0f;
             std::string error;
-            EXPECT_NE(multi_FEN_readin(filename, examples, mode, 0, 0, UNCLE_SHUMI, &error), 0);
+            EXPECT_NE(multi_FEN_readin(filename, examples, mode, 0, 0, UNCLE_SHUMI,
+                                     false, false, &error), 0);
             EXPECT_NE(error.find(filename.string()), std::string::npos);
             EXPECT_NE(error.find("line 3"), std::string::npos);
             ASSERT_EQ(examples.size(), 1u);
@@ -79,7 +80,8 @@ TEST_F(NNUEFENReader, RejectsMalformedRecordsAndModeMismatches)
         write(fen + (mode == NNUETrainingMethod::NONE ? " | *\n" : " | 41\n"));
         std::vector<NNUETrainingExample> examples;
         std::string error;
-        EXPECT_NE(multi_FEN_readin(filename, examples, mode, 0, 0, UNCLE_SHUMI, &error), 0);
+        EXPECT_NE(multi_FEN_readin(filename, examples, mode, 0, 0, UNCLE_SHUMI,
+                                 false, false, &error), 0);
         EXPECT_FALSE(error.empty());
         EXPECT_TRUE(examples.empty());
     }
@@ -108,7 +110,7 @@ TEST_F(NNUEFENReader, FullSearchSkipsMatesAndKeepsFensAligned)
     std::vector<std::string> retained_fens{"old FEN"};
     std::string error;
     ASSERT_EQ(multi_FEN_readin(filename, examples, NNUETrainingMethod::FULL_SEARCH,
-                              1, 1, UNCLE_SHUMI, &error, &retained_fens), 0) << error;
+                              1, 1, UNCLE_SHUMI, false, false, &error, &retained_fens), 0) << error;
     EXPECT_TRUE(error.empty());
     ASSERT_EQ(examples.size(), 2u);
     ASSERT_EQ(retained_fens.size(), examples.size());
@@ -129,7 +131,7 @@ TEST_F(NNUEFENReader, AllMateSearchFailsWithoutReplacingOutputs)
     std::vector<std::string> retained_fens{"old FEN"};
     std::string error;
     EXPECT_NE(multi_FEN_readin(filename, examples, NNUETrainingMethod::FULL_SEARCH,
-                              1, 1, UNCLE_SHUMI, &error, &retained_fens), 0);
+                              1, 1, UNCLE_SHUMI, false, false, &error, &retained_fens), 0);
     EXPECT_NE(error.find("no usable FEN positions"), std::string::npos);
     ASSERT_EQ(examples.size(), 1u);
     EXPECT_FLOAT_EQ(examples[0].target_positional_score_cp, 123.0f);
@@ -327,7 +329,7 @@ TEST(NNUEData, TrainingFivePositionsConverges)
     std::string database_error;
     const int read_error = multi_FEN_readin(
         database_path, examples, NNUETrainingMethod::NONE, 0, 0, UNCLE_SHUMI
-        , &database_error);
+        , false, false, &database_error);
         
     ASSERT_EQ(read_error, 0) << database_error;
     ASSERT_FALSE(examples.empty());
@@ -431,7 +433,8 @@ TEST(NNUEData, TrainingNeuronSweepImprovesRmseAndLocks)
     std::vector<NNUETrainingExample> examples;
     std::string database_error;
     const int read_error = multi_FEN_readin(
-        database_path, examples, NNUETrainingMethod::NONE, 0, 0, UNCLE_SHUMI, &database_error);
+        database_path, examples, NNUETrainingMethod::NONE, 0, 0, UNCLE_SHUMI,
+        false, false, &database_error);
     ASSERT_EQ(read_error, 0) << database_error;
     ASSERT_FALSE(examples.empty());
 

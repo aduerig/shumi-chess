@@ -136,14 +136,14 @@ add_executable(evaluate_fens driver/evaluate_fens.cpp)
 target_compile_definitions(evaluate_fens PRIVATE NDEBUG=1)
 target_link_libraries(evaluate_fens PUBLIC ${project_name}NoAsserts)
 
-add_executable(shumi_driver driver/driver.cpp)
+add_executable(shumi_driver driver/zdriver.cpp)
 target_link_libraries(shumi_driver PUBLIC ${project_name})
 
-add_executable(collect_fens_from_pgn_file driver/collect_fens_from_pgn_file.cpp)
-target_link_libraries(collect_fens_from_pgn_file PUBLIC ${project_name})
+add_executable(append_fens_from_pgn_file driver/append_fens_from_pgn_file.cpp)
+target_link_libraries(append_fens_from_pgn_file PUBLIC ${project_name})
 
-add_executable(collect_fens_from_dir driver/collect_fens_from_dir.cpp)
-target_link_libraries(collect_fens_from_dir PUBLIC ${project_name})
+add_executable(append_fens_from_dir driver/append_fens_from_dir.cpp)
+target_link_libraries(append_fens_from_dir PUBLIC ${project_name})
 
 add_executable(shumi_uci driver/shumi_uci.cpp)
 target_link_libraries(shumi_uci PUBLIC ${project_name})
