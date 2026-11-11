@@ -1,12 +1,9 @@
 
-self shumi (white is always the first one) (-d7 -t500 -r2)
+self shumi (-d7 -t5000 -r2)
 
-NNUE (model 001) .vs. Uncle shumi  - 19 - 47 - 9
-Slug .vs. Uncle shumi  - 79 - 225 - 45
-Uncle shumi .vs. Slug  - 113 - 24 - 25
-NNUE (model_001) .vs. slug  - 22 - 9 - 3   
-NNUE (model_001) .vs. slug  -  8 - 4 - 7
-slug .vs. NNUE (model_001)  - 22 - 38 - 11
+-d7 -t5000 alternating sides 
+Shumi .vs. Model_big1  26  23    
+slug  .vs. Model_big1  
 
 -----------------------------------------------------------------------------------------------------------
 

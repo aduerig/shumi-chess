@@ -1,6 +1,25 @@
 do not delete me
 ===================================================================================
-This is all good ideas, but this will be slelved for a new project, mush more ambitious, and requiring much more work for you. I have asked you repeated questions, over months, about a Shumi chess app that consists of a C++ core, and a Python "front end". The front end shows the board, gets moves from users, etc. platys the game, 
+
+I want to replace the existing python script (the front end). The interface into the existing code should be the Engine.
+THe new front end should be better than the existing code, and with a eye to the future , making it a webb app. No C++ code,
+other than that related directly to the python should be change. Use CRLF line endings. All new code whould live in the 
+new directoty Shumi-chess/webapp.  Current front end behavior (shape of the pieces, visual aspects of board, piece move markers
+and othe visual aspects can (and should) be changed in the new app. The app is currently executed by the 
+command : "clear; py -3.13 scripts/run_gui.py -d9 -t5000 -r2". Button functionality must ne maintained, however appearence
+and operation of buttons may change. There should be room for new buttons. The ultimate goal is to make it a web app, 
+but for now just a new app is good. Please do an analysis and ask me design questions that need to be settlte before coding can 
+start. 
+
+
+
+
+
+
+
+
+
+
 
 # Fine:
 selected every 5 ply: 

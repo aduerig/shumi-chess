@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+  <title>Shumi Chess</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">S<span>♞</span></span><div><h1>Shumi<span>Chess</span></h1><p>A place to play. A place to think.</p></div></div>
+    <div class="header-right"><span id="connection" class="connection">Connecting</span><button id="quit" class="quiet">Exit <kbd>Esc</kbd></button></div>
+  </header>
+  <main>
+    <section class="play-area" aria-label="Chess game">
+      <div class="board-heading"><div><span class="eyebrow">THE BOARD</span><h2 id="game-title">Your next move.</h2></div><button id="flip" class="outline small" title="Flip board (F)">⇅ &nbsp; Flip board</button></div>
+      <div id="top-player" class="board-player"></div>
+      <div class="board-wrap"><div id="board" class="board" role="group" aria-label="Chessboard"></div></div>
+      <div id="bottom-player" class="board-player"></div>
+      <div class="game-message"><span id="status-dot" class="status-dot"></span><span id="status" role="status" aria-live="polite">Starting the engine…</span><span id="phase" class="phase"></span></div>
+      <div class="board-actions"><button id="start" class="primary">Start game <span>→</span></button><button id="pause" class="outline">Pause <kbd>1</kbd></button><button id="move-now" class="outline">Move now</button><button id="resign" class="outline danger" disabled>Resign</button></div>
+    </section>
+    <aside class="sidebar">
+      <section class="panel players-panel">
+        <div class="panel-title"><h2>The players</h2><span class="eyebrow">YOUR MATCHUP</span></div>
+        <div id="player-settings"></div>
+        <div class="match-options"><label class="toggle-label"><input id="auto-reset" type="checkbox"><span>Continuous play</span></label><label class="random-label">Opening variety <input id="random" type="number" min="0" max="100" value="2" aria-label="Random opening computer moves"></label></div>
+        <label class="color-mode" for="color-mode"><span>Between games</span><select id="color-mode"><option value="keep">Keep colors</option><option value="swap">Swap colors</option></select></label>
+        <p id="color-mode-hint" class="hint">Each player keeps the same color.</p>
+        <p class="hint">Player and search edits apply to the next search and preserve match scores. Opening variety applies to the next game.</p>
+      </section>
+      <section class="panel stats-panel" aria-label="Match scores">
+        <div class="panel-title"><h2>Match scores</h2><button id="reset-scores" class="text-button">Reset scores</button></div>
+        <div class="match-summary"><span id="completed-games">0 games completed</span><span id="match-mode">Fixed colors</span></div>
+        <table class="stats-table" aria-label="Player wins, draws, losses, and points"><thead><tr><th scope="col">Player</th><th scope="col" title="Wins">W</th><th scope="col" title="Draws">D</th><th scope="col" title="Losses">L</th><th scope="col">Pts</th></tr></thead><tbody id="match-results"></tbody></table>
+        <p id="score-note" class="hint">Win = 1 point · Draw = ½ · Reset scores clears totals</p>
+      </section>
+      <section class="panel history-panel">
+        <div class="panel-title"><h2>Move history</h2><button id="copy-pgn" class="text-button">Copy PGN ↗</button></div>
+        <div class="move-head"><span>#</span><span>WHITE</span><span>BLACK</span></div>
+        <div id="moves" class="moves" tabindex="0"><p class="empty">Every game starts with a possibility.<br><span>Make a move or choose your players.</span></p></div>
+        <div id="game-number" class="game-count">Game 1</div>
+      </section>
+      <section class="panel position-panel">
+        <div class="panel-title"><h2>Position</h2><button id="copy-fen" class="text-button">Copy FEN ↗</button></div>
+        <label class="sr-only" for="fen">FEN position to load</label><textarea id="fen" rows="2" spellcheck="false" placeholder="Paste a FEN to explore a position…"></textarea>
+        <div class="position-actions"><button id="load-fen" class="outline small">Load position</button><button id="new-game" class="outline small">New game</button></div>
+      </section>
+    </aside>
+    <section class="analysis-panel">
+      <details id="analysis">
+        <summary><span>Analysis desk <small>ENGINE INSIGHT</small></span><span id="evaluation" class="eval-pill">—</span></summary>
+        <div class="analysis-body"><div class="metrics"><div><span>DEPTH</span><strong id="depth">—</strong></div><div><span>POSITIONS</span><strong id="nodes">—</strong></div><div><span>SEARCH TIME</span><strong id="elapsed">—</strong></div><div><span>POSITIONS / SEC</span><strong id="nps">—</strong></div><button id="evaluate" class="outline small">Evaluate <kbd>2</kbd></button></div><p class="hint">Scores are from White’s perspective. Evaluate uses Shumi’s static evaluation.</p><pre id="log" tabindex="0" aria-label="Engine diagnostic output"></pre></div>
+      </details>
+    </section>
+  </main>
+  <div id="error" class="error-banner" role="alert" hidden><span></span><button id="dismiss-error" aria-label="Dismiss error">×</button></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="promotion"><form method="dialog"><span class="eyebrow">A NEW POSSIBILITY</span><h2>Choose your promotion</h2><p>Your pawn has reached the final rank.</p><div id="promotion-options"></div><button value="cancel" class="text-button">Cancel</button></form></dialog>
+  <dialog id="resignation" aria-labelledby="resignation-title" aria-describedby="resignation-message"><form method="dialog"><h2 id="resignation-title">Resign this game?</h2><p id="resignation-message"></p><div class="dialog-actions"><button id="cancel-resign" value="cancel" class="outline" autofocus>Keep playing</button><button id="confirm-resign" value="resign" class="outline danger">Resign</button></div></form></dialog>
+  <script type="module" src="../dist/ui/app.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 #include "globals.hpp"
 
 // Read-only NNUE model input for engine play, relative to the repository root.
-inline constexpr const char* NNUE_model_file = "NNUE/models/Model_temp.txt";     
+inline constexpr const char* NNUE_model_file = "NNUE/models/Model_big1.txt";     
 
 // NNUE diagnostics and search-position collection.
 inline constexpr bool NNUE_Print_final_results = false;
