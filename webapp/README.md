@@ -2,7 +2,8 @@
 
 The replacement frontend runs locally on Windows using Electron, TypeScript,
 HTML, and CSS. It has no Python runtime or build dependency. All application code,
-native bridge code, build output, and local data are contained in `webapp/`.
+native bridge code, build output, and session data are contained in `webapp/`.
+Recorded training positions are saved to `NNUE/FENs/From_webapp.txt` in the repository root.
 The existing engine sources, C++ drivers, and Python frontend remain unchanged.
 
 ## Launch
@@ -44,12 +45,26 @@ not a packaged installer.
 
 ## Playing and watching
 
-Choose Human, Shumi, Ivan, Slug, or NNUE independently for White and Black. NNUE
-is available when the existing model loads. Human versus bot and bot versus bot
+Choose Human, Shumi, Ivan, Slug, NNUE1, or NNUE2 independently for White and Black.
+Each NNUE player is available when its own model loads. You can play NNUE1
+against NNUE2, use either against any other player, or use the same NNUE on both
+sides. Human versus bot and bot versus bot
 use the same controls. Choose **Start game** to begin; a human move also starts
 the game. Click a piece, then a marked destination. Promotions offer all four
 pieces, including underpromotion. Arrow keys move keyboard focus on the board;
 Enter selects a square.
+
+Set the two model paths in `src/weights.hpp`, relative to the repository root:
+
+| Player | Setting | Initial model |
+| --- | --- | --- |
+| NNUE1 | `NNUE1_model_file` | `NNUE/models/randomA.mod` |
+| NNUE2 | `NNUE2_model_file` | `NNUE/models/31_569K_200_A.mod` |
+
+Restart the app after changing a path; the launcher rebuilds the native bridge
+and loads both models. Model weights stay separate throughout the game and
+follow the selected player when colors swap. If a model cannot load, only that
+NNUE option is disabled; diagnostics identify the model file.
 
 | Previous control | Replacement |
 | --- | --- |
@@ -76,6 +91,19 @@ final position until Resume or New game. The button is disabled for bot-versus-b
 New game, FEN loading, and closing stop an active search before changing or
 releasing engine state. Old search results cannot leak into the next game.
 
+**Record FENs → Start recording** appends the current board, then each played
+human or computer move and every new or loaded position, including continuous
+play. **Stop recording** stops appending; **Clear file** empties the file without
+changing the recording setting. Recording starts off each time the app launches.
+Each record is `FEN | *` with a CRLF ending. Writes and clears are serialized;
+each update copies the existing file to a temporary file in the same directory,
+appends the complete record, flushes it to disk, and atomically replaces the
+destination (Clear publishes an empty file). This costs a file copy per record,
+but readers never see a partly appended record. A write failure stops recording
+and displays the error. An exclusive `.lock` file protects updates from other
+app instances; after a crash, remove a leftover `From_webapp.txt.lock` only when
+no app is writing, then restart recording.
+
 Depth, requested time in milliseconds, and feature masks are editable per side.
 Changes affect the next search. A zero feature mask selects the existing default
 mask (`0xE`). Opening variety randomizes the first N computer moves using the
@@ -85,6 +113,12 @@ deadline. Player changes also take effect after the current search finishes.
 
 The move list uses SAN; exports include checks, checkmate, promotion, the result,
 and setup tags for a custom position. Scores are shown from White's perspective.
+Each player's row beside the board shows their last engine move score immediately
+to the left of their thinking time. It updates only when that side's engine move
+is played and stays visible throughout either side's next search, including while
+paused. New games and loaded positions clear both scores; a dash means that side
+has not played an engine move yet. Human moves and manual evaluation do not update
+these saved search scores. The Analysis desk still shows live search information.
 Evaluate calls Shumi's static evaluation. The analysis drawer and launch terminal
 show engine diagnostics. The small player timers measure engine thinking time,
 not tournament clocks. Match scores count completed games during this session.
@@ -165,7 +199,9 @@ HTML/CSS/TypeScript board and controls
 Each desktop window launches one bridge process. It owns one persistent Engine
 (which owns its GameBoard) and one MinimaxAI referencing that Engine. The selected
 White or Black evaluator and settings are supplied for each search; two MinimaxAI
-objects are not needed. Engine supplies legal moves, game state, and results.
+objects are not needed. MinimaxAI holds separate parameters for NNUE1 and NNUE2;
+cached search scores are cleared when the evaluator changes.
+Engine supplies legal moves, game state, and results.
 MinimaxAI supplies searching and evaluation. No chess legality is reimplemented
 in the frontend.
 

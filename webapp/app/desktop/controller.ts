@@ -1,8 +1,9 @@
 import { EventEmitter } from 'node:events';
 import { EngineClient } from './engine-client.js';
+import { appendFen, clearFenFile, FEN_FILE } from './fen-file.js';
 import { clearMatchScores, newMatch, recordMatchResult, updateMatchSettings } from './match.js';
 import type { Options } from './options.js';
-import { PLAYER_IDS, START_FEN, type Action, type AppState, type Color, type Position, type SearchResult, type Settings } from '../shared/types.js';
+import { PLAYER_IDS, PLAYER_NAMES, START_FEN, type Action, type AppState, type Color, type Position, type SearchResult, type Settings } from '../shared/types.js';
 
 export class GameController extends EventEmitter {
   private queue: Promise<unknown> = Promise.resolve();
@@ -14,12 +15,14 @@ export class GameController extends EventEmitter {
   private shuttingDown = false;
   state: AppState;
 
-  constructor(readonly engine: EngineClient, readonly options: Options) {
+  constructor(readonly engine: EngineClient, readonly options: Options, readonly fenFile = FEN_FILE) {
     super();
     this.state = {
       position: null, settings: structuredClone(options.settings), flipped: false, paused: false,
       started: false, searching: false, busy: true, pendingMove: false, search: null,
       evaluation: null, error: null, connected: false, game: 1, match: newMatch(options.settings),
+      moveScores: { w: null, b: null },
+      fenRecording: false,
     };
     engine.on('progress', info => {
       if (!this.state.searching || this.state.busy) return;
@@ -59,11 +62,21 @@ export class GameController extends EventEmitter {
 
   dispatch(action: Action): Promise<void> {
     return this.serialize(async () => {
+      if (this.shuttingDown) return;
       try {
         if (!action || typeof action.type !== 'string') throw new Error('Invalid application action.');
         this.state.error = null;
         if (action.type === 'flip') this.state.flipped = !this.state.flipped;
         else if (action.type === 'clearError') this.state.error = null;
+        else if (action.type === 'recordFens') {
+          if (typeof action.enabled !== 'boolean') throw new Error('Invalid FEN recording setting.');
+          if (action.enabled && !this.state.fenRecording) {
+            if (!this.state.connected || !this.state.position) throw new Error('The engine is not connected.');
+            this.state.fenRecording = true;
+            await this.recordFen();
+          } else if (!action.enabled) this.state.fenRecording = false;
+        }
+        else if (action.type === 'clearFens') await clearFenFile(this.fenFile);
         else {
           if (!this.state.connected || !this.state.position) throw new Error('The engine is not connected.');
           switch (action.type) {
@@ -93,6 +106,7 @@ export class GameController extends EventEmitter {
               this.state.position = await this.engine.request<Position>('move', { move: action.move });
               this.state.evaluation = null;
               this.recordResult();
+              await this.recordFen();
               break;
             case 'settings': {
               const settings = this.validateSettings(action.settings);
@@ -120,8 +134,9 @@ export class GameController extends EventEmitter {
   private validateSettings(settings: Settings): Settings {
     if (!settings || typeof settings.autoReset !== 'boolean' || typeof settings.swapColors !== 'boolean') throw new Error('Invalid settings.');
     for (const side of [settings.white, settings.black]) {
-      if (!side || !['human', 'shumi', 'ivan', 'slug', 'nnue'].includes(side.player)) throw new Error('Unknown player.');
-      if (side.player === 'nnue' && !this.state.position?.nnueAvailable) throw new Error('The NNUE model is unavailable.');
+      if (!side || !Object.hasOwn(PLAYER_NAMES, side.player)) throw new Error('Unknown player.');
+      if ((side.player === 'nnue1' || side.player === 'nnue2') && !this.state.position?.nnueAvailable[side.player])
+        throw new Error(`The ${PLAYER_NAMES[side.player]} model is unavailable.`);
       for (const [value, low, high, name] of [[side.depth, 1, 30, 'Depth'], [side.time, 0, 3600000, 'Time'], [side.features, 0, 2147483647, 'Features']] as const) {
         if (!Number.isInteger(value) || value < low || value > high) throw new Error(`${name} must be an integer between ${low} and ${high}.`);
       }
@@ -171,11 +186,13 @@ export class GameController extends EventEmitter {
         [match.white, match.black] = [match.black, match.white];
       }
       this.state.position = position;
+      this.state.moveScores = { w: null, b: null };
       if (increment) this.state.game++;
       this.state.started = true; this.state.paused = false;
       this.state.search = null; this.state.evaluation = null; this.scored = false;
       this.state.match.countCurrentGame = position.result === '*';
       this.recordResult();
+      await this.recordFen();
     } finally { this.state.busy = false; }
   }
 
@@ -186,13 +203,27 @@ export class GameController extends EventEmitter {
     recordMatchResult(this.state.match, result);
   }
 
+  private async recordFen() {
+    if (!this.state.fenRecording || !this.state.position) return;
+    try { await appendFen(this.fenFile, this.state.position.fen); }
+    catch (error) {
+      this.state.fenRecording = false;
+      this.state.error = `FEN recording stopped: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
   private async commitPending() {
     if (!this.pending) return;
     const result = this.pending;
+    const color = this.state.position!.turn;
     this.pending = null; this.state.pendingMove = false;
     this.state.position = await this.engine.request<Position>('move', { move: result.move });
     this.state.evaluation = result.scoreCp;
+    // Only a move committed to the board updates its side's saved score.
+    // Search progress and paused/abandoned results must not replace it.
+    this.state.moveScores[color] = result.scoreCp;
     this.recordResult();
+    await this.recordFen();
   }
 
   private schedule() {
@@ -240,5 +271,7 @@ export class GameController extends EventEmitter {
   async close() {
     this.shuttingDown = true; this.epoch++; this.clearTimer();
     await this.engine.close();
+    await this.queue;
+    this.state.fenRecording = false;
   }
 }

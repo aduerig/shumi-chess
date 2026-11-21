@@ -61,7 +61,7 @@ void app.whenReady().then(async () => {
     await until('document.querySelectorAll(".square").length === 64');
     await until('[...document.querySelectorAll(".square .piece")].every(image => image.complete && image.naturalWidth > 0)');
     assert.equal(await run('new Set([...document.querySelectorAll(".square .piece")].map(image => image.src)).size'), 12);
-    assert.equal(await run('document.getElementById("color-mode").value'), 'keep');
+    assert.equal(await run('document.getElementById("color-mode").value'), 'swap');
 
     for (const [width, height] of [[1000, 650], [1000, 760], [1280, 930], [1600, 1000]]) {
       window.setContentSize(width, height);
@@ -83,6 +83,12 @@ void app.whenReady().then(async () => {
           boardVisible: board.bottom <= innerHeight,
           controlsVisible: document.querySelector('.board-actions').getBoundingClientRect().bottom <= innerHeight,
           resignVisible: inside(document.getElementById('resign').getBoundingClientRect(), document.querySelector('.play-area').getBoundingClientRect()),
+          scoresBesideTimes: [...document.querySelectorAll('.board-player')].every(row => {
+            const score = row.querySelector('.move-score').getBoundingClientRect();
+            const time = row.querySelector('.time').getBoundingClientRect();
+            return inside(score, row.getBoundingClientRect()) && inside(time, row.getBoundingClientRect())
+              && score.right <= time.left && Math.abs((score.top + score.bottom) - (time.top + time.bottom)) < 2;
+          }),
         };
       })()`);
       assert.equal(layout.squareCount, 64);
@@ -92,6 +98,7 @@ void app.whenReady().then(async () => {
       assert.equal(layout.boardVisible, true, `Board must fit the window at ${width}x${height}`);
       assert.equal(layout.controlsVisible, true, `Play controls must fit the window at ${width}x${height}`);
       assert.equal(layout.resignVisible, true, `Resign must fit beside the play controls at ${width}x${height}`);
+      assert.equal(layout.scoresBesideTimes, true, `Both scores must fit to the left of their times at ${width}x${height}`);
       console.log(`PASS board layout ${width}x${height}: 64 square cells, 32 unclipped pieces`);
       await capture(`desktop-${width}x${height}`);
     }
@@ -233,6 +240,54 @@ void app.whenReady().then(async () => {
     await until('document.getElementById("resign").disabled');
     assert.equal(controller.state.position.result, '*');
     console.log('PASS resignation unavailable for bot-versus-bot games');
+
+    await run(`(() => {
+      for (const side of ['white', 'black']) {
+        document.getElementById(side + '-depth').value = '2';
+        document.getElementById(side + '-time').value = '100';
+      }
+      document.getElementById('white-depth').dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    await until('window.shumi.state().then(state => state.settings.white.depth === 2 && state.settings.black.depth === 2)');
+    const readScores = () => run(`['white', 'black'].map(side => document.getElementById(side + '-move-score').textContent)`);
+    assert.deepEqual(await readScores(), ['—', '—']);
+    await click('pause');
+    await until('window.shumi.state().then(state => state.position.moves.length === 1)');
+    await click('pause');
+    await until('window.shumi.state().then(state => state.paused)');
+    const whiteScore = controller.state.moveScores.w;
+    const whiteText = `${whiteScore > 0 ? '+' : ''}${(whiteScore / 100).toFixed(2)}`;
+    assert.equal(typeof whiteScore, 'number');
+    assert.deepEqual(await readScores(), [whiteText, '—']);
+    await click('pause');
+    await until('window.shumi.state().then(state => state.position.moves.length === 2)');
+    await click('pause');
+    await until('window.shumi.state().then(state => state.paused)');
+    const blackScore = controller.state.moveScores.b;
+    const blackText = `${blackScore > 0 ? '+' : ''}${(blackScore / 100).toFixed(2)}`;
+    assert.equal(typeof blackScore, 'number');
+    assert.deepEqual(await readScores(), [whiteText, blackText], 'Black moving preserves White’s previous score');
+    await click('flip');
+    await until('document.querySelector("#top-player .move-score").id === "black-move-score"');
+    assert.deepEqual(await readScores(), [whiteText, blackText], 'Scores follow their colors when the board flips');
+    for (const [width, height] of [[1280, 930], [1000, 650]]) {
+      window.setContentSize(width, height);
+      await until(`Math.abs(innerWidth - ${width}) <= 2 && Math.abs(innerHeight - ${height}) <= 2`);
+      await run('scrollTo(0, 0)');
+      assert.equal(await run(`(() => [...document.querySelectorAll('.board-player')].every(row => {
+        const bounds = row.getBoundingClientRect();
+        const score = row.querySelector('.move-score').getBoundingClientRect();
+        const time = row.querySelector('.time').getBoundingClientRect();
+        return score.left >= bounds.left && score.right <= time.left && time.right <= bounds.right + 0.5;
+      }))()`), true, `Played scores and timers fit at ${width}x${height}`);
+      await capture(`move-scores-${width}x${height}`);
+    }
+    await click('new-game');
+    await click('pause');
+    await until('document.getElementById("white-move-score").textContent === "—" && document.getElementById("black-move-score").textContent === "—"');
+    assert.equal(controller.state.error, null);
+    assert.deepEqual(errors, []);
+    console.log('PASS independent completed-move scores, persistence, board flip, new game, and compact layout');
   } catch (error) {
     failed = true;
     console.error(error);

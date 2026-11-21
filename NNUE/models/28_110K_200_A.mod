@@ -54,6 +54,7 @@
 # Activated neurons: 28
 # Training iterations: 200
 # Learning rate: 1e-04
+# RMSe (cp): initial = 107.39, final = 46.89, lck% = 0.17
 #
 # Neuron: 0
 # piece_weight: 0
@@ -3677,6 +3678,4 @@
 -3.19256139 3.17396688 5.1603179 3.3504045 2.35944462 3.44462276 -4.08338261 -3.73556995
 -3.58462262 -4.73197174 2.98502493 -4.2545929 0 0 0 0
 # output_bias
--6.64529419
-#
-# RMSe (cp): initial = 107.39, final = 46.89, lck% = 0.17
+-6.645294191

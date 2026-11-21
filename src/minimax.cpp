@@ -86,11 +86,11 @@ std::ofstream& nnue_search_results_file()
 
 //#define _DEBUGGING_PUSH_POP
 
-//#define _DEBUGGING_TO_FILE         // I must be defined to use either of the below
+//#define _DEBUGGING_TO_FILE         // I must be defined to use any of the below
 //#define _DEBUGGING_MOVE_CHAIN
 //#define _DEBUGGING_MOVE_SORT
 //#define _DEBUGGING_GAME
-//#define DEBUGGING_PLAYERS
+//#define DEBUGGING_EVALS
 //#define _DEBUGGING_TEMP
 //#define _DEBUGGING_BEST_STUFF
 //#define DEBUG_ASPIRATION
@@ -209,7 +209,7 @@ bool global_debug_flag = false;
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-MinimaxAI::MinimaxAI(Engine& e, const char* nnue_model_file) : engine(e) {
+MinimaxAI::MinimaxAI(Engine& e, const char* nnue_model_file, const char* nnue2_model_file) : engine(e) {
 
 
     // sout << "\033[1;34mNew Match\033[0m" << endl;
@@ -257,6 +257,9 @@ MinimaxAI::MinimaxAI(Engine& e, const char* nnue_model_file) : engine(e) {
     if (nnue_model_file != NULL) {
         load_nnue_model_for_play(nnue_model_file);
     }
+    if (nnue2_model_file != NULL) {
+        load_nnue_model_for_play(nnue2_model_file, NNUE2);
+    }
 
     // These are used by MultiPV
     excluded_root_moves.clear();
@@ -269,13 +272,16 @@ MinimaxAI::MinimaxAI(Engine& e, const char* nnue_model_file) : engine(e) {
 
 
 
-void MinimaxAI::load_nnue_model_for_play(const char* nnue_model_file) {
+void MinimaxAI::load_nnue_model_for_play(const char* nnue_model_file, EvalPersons player) {
+    assert(player == NNUE1 || player == NNUE2);
     const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
     const filesystem::path parameters_path = repo_root / nnue_model_file;
-    if (!nnue.load_parameters(parameters_path)) {
+    auto& model = player == NNUE2 ? nnue2 : nnue;
+    if (!model.load_parameters(parameters_path)) {
         sout << "Failed to load NNUE parameters: " << parameters_path << endl;
         _getch();
     }
+    TTable2.clear(); // Cached scores may have used the previous model.
 }
 
 
@@ -931,22 +937,14 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
     TIME_TYPE last_depth_time = start_of_calculation;
  
  
-    eval_person = (ShumiChess::EvalPersons)player_id;   
+    if (eval_person != static_cast<EvalPersons>(player_id)) {
+        // Scores from one evaluator/model cannot be reused by another player.
+        TTable2.clear();
+        pawn_file_info.clear();
+    }
+    eval_person = static_cast<EvalPersons>(player_id);
     //eval_person = ShumiChess::CRAZY_IVAN;           // debug only (force IVAN)
 
-    #if defined(DEBUGGING_PLAYERS) && defined(_DEBUGGING_TO_FILE)
-        const char* debug_player_name = "UNKNOWN";
-        switch (eval_person) {
-            case NNUE:        debug_player_name = "NNUE"; break;
-            case SLUG:        debug_player_name = "SLUG"; break;
-            case CRAZY_IVAN:  debug_player_name = "CRAZY_IVAN"; break;
-            case UNCLE_SHUMI: debug_player_name = "UNCLE_SHUMI"; break;
-        }
-        fprintf(fpDebug, "\nSEARCH START: %s  eval=%s\n",
-                engine.game_board.turn == Color::WHITE ? "White" : "Black",
-                debug_player_name);
-        fflush(fpDebug);
-    #endif
 
     //sout << "\n FEAT = 0x" << hex << feat << dec << "\n";
     //sout << "\n Player = " << eval_person << endl;
@@ -1231,12 +1229,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
         hard_abort_end();
         soft_abort_end();
         sout << "No legal root move; returning bestmove 0000" << endl;
-        #if defined(DEBUGGING_PLAYERS) && defined(_DEBUGGING_TO_FILE)
-            fprintf(fpDebug, "SEARCH END:   %s  eval=%s  move=0000\n",
-                    engine.game_board.turn == Color::WHITE ? "White" : "Black",
-                    debug_player_name);
-            fflush(fpDebug);
-        #endif
+      
         return {d_best_move_score, best_move};
     }
 
@@ -1426,15 +1419,7 @@ tuple<Score, Move> MinimaxAI::get_move_iterative_deepening(ull duration_requeste
     //     assert(0);
     // }
 
-    #ifdef _DEBUGGING_TO_FILE
-        engine.move_into_string(best_move);
-        #ifdef DEBUGGING_PLAYERS
-            fprintf(fpDebug, "SEARCH END:   %s  eval=%s  move=%s\n",
-                    engine.game_board.turn == Color::WHITE ? "White" : "Black",
-                    debug_player_name, engine.move_string.c_str());
-            fflush(fpDebug);
-        #endif
-    #endif
+ 
     
     // Sucessful return
     // Sample positions 1, 9, 18, 27, ... after the game's randomized searches.
@@ -4114,15 +4099,17 @@ int MinimaxAI::cp_score_positional_get_open_cp_t(int nPhase, const PawnFileInfo*
     icp_temp = engine.game_board.rooks_file_status_cp_t<c>(pawnF, pawnE);
     cp_score_position_temp += icp_temp;
 
+    // these things are starting posityion dependent
+    if constexpr (!Ignore_starting_dependent_eval) {
+        if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
+            icp_temp = engine.game_board.development_minor_cp_t<c>();
+            cp_score_position_temp += icp_temp;
+        }
 
-    if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
-        icp_temp = engine.game_board.development_minor_cp_t<c>();
-        cp_score_position_temp += icp_temp;
-    }
-
-    if (nPhase == GamePhase::OPENING) {
-        icp_temp = engine.game_board.blocked_home_bishops_cp_t<c>();
-        cp_score_position_temp += icp_temp;
+        if (nPhase == GamePhase::OPENING) {
+            icp_temp = engine.game_board.blocked_home_bishops_cp_t<c>();
+            cp_score_position_temp += icp_temp;
+        }
     }
 
     if ((nPhase == GamePhase::OPENING) || (nPhase == GamePhase::MIDDLE_EARLY)) {
@@ -4259,6 +4246,11 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
 
     evals_visited++;
 
+    #ifdef DEBUGGING_EVALS
+        fprintf(fpDebug, "%s", engine.game_board.to_fen().c_str());
+    #endif
+
+
     int cp_score_adjusted = 0;
 
     int mat_cp_white = 0;
@@ -4362,6 +4354,11 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
     if (material_out)   *material_out   = cp_score_material_all;
     if (positional_out) *positional_out = cp_score_position;
 
+    #ifdef DEBUGGING_EVALS
+        fprintf(fpDebug, " | *  # eval=%d\n",
+                for_color == Color::WHITE ? cp_score_position : -cp_score_position);
+    #endif
+
     return cp_score_adjusted;
 }
 
@@ -4378,11 +4375,13 @@ int MinimaxAI::get_positional_for_one_color(int nPhase, ShumiChess::EvalPersons 
 
     switch (evp) {
 
-        case NNUE:
+        case NNUE1:
+        case NNUE2:
             // NNUE scores the whole position, positive for White. Include it
             // only in White's pass; evaluate_board_t converts to for_color.
             if constexpr (c == Color::WHITE) {
-                const float NNUE_score = nnue.Calculate_nnue_positional(engine.game_board);
+                auto& model = evp == NNUE2 ? nnue2 : nnue;
+                const float NNUE_score = model.Calculate_nnue_positional(engine.game_board);
                 
                 // tricky, important, below NNUI uses "float" for scores, but shumi uses centipawns (integer)
                 cp_score_position_temp = (int)(std::lround(NNUE_score));

@@ -34,6 +34,16 @@ bool append_fen_database(
     const std::string& filename,
     const FEN_Score& position);
 
+// Shuffle all nonempty, noncomment lines together, keeping each FEN and its score
+// intact. Comments and blank lines retain their positions. Output uses CRLF.
+// Relative paths are resolved from the repository root; absolute paths work too.
+// Replace the same file only after the complete shuffled output is written.
+// Call with no other writer modifying the file. Errors are returned through
+// error, or written to stderr when it is null. Returns false on failure.
+[[nodiscard]] bool shuffle_FEN_file(
+    const std::filesystem::path& filename,
+    std::string* error = nullptr);
+
 struct FENCollectionStats {
     std::size_t games = 0;
     std::size_t positions = 0;

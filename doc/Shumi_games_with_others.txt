@@ -1,9 +1,34 @@
 
 self shumi (-d7 -t5000 -r2)
 
--d7 -t5000 alternating sides 
-Shumi .vs. Model_big1  26  23    
-slug  .vs. Model_big1  
+-d7 -t5000 alternating sides, draws included   11/13/2026
+=========================================================
+Shumi           .vs. 28_110K_200_A 26    23    
+28_110K_200_A   .vs. slug  17.5   4.5
+28_110K_200_A   .vs. slug  24.5   1.5
+Shumi           .vs. slug       25     0  
+28_110K_200_A   .vs. slug  16.5   1.5 
+Shumi           .vs. 28_110K_200_A 69    58
+28_110K_200_A   .vs. slug  22     1
+Shumi           .vs. slug        9     0
+28_110K_200_A   .vs. ivan  37    30
+Shumi           .vs. ivan       81    34
+Ivan            .vs.  slug       54     4
+
+31_1734K_200_A  .vs. 31_569K_200_A   48  64
+28_110K_200_A   .vs. 31_569K_200_A   28  26
+63_569K_200_A   .vs. 28_110K_200_A  110  83
+63_569K_200_A   .vs. 31_569K_200_A   60.5  62.5
+shumi .vs. 63_569K_200_A  100.5  68.5
+shumi .vs. 28_110K_200_A  51 26
+shumi (A) .vs. 63_344K_400_A (B)   96 46   (diversity=4)
+shumi (B) .vs. 63_344K_400_A (A)   30.5 21.5 (diversity=2)
+63_344K_400_A (A) .vs. 28_110K_200_A (B)  93.5  88.5     (diversity=2)
+
+63_569K_200_A   # RMSe (cp): initial = 105.84, final = 36.90, lck% = 0.00  
+28_110K_200_A   # RMSe (cp): initial = 107.39, final = 46.89, lck% = 0.17   # RMSe (cp): initial = 107.13, final = 46.95, lck% = 0.03 
+31_569K_200_A   # RMSe (cp): initial = 105.58, final = 45.96, lck% = 0.01   # RMSe (cp): initial = 105.58, final = 46.93, lck% = 0.03
+31_1734K_200_A  # RMSe (cp): initial = 101.41, final = 49.84, lck% = 0.01   # RMSe (cp): initial = 101.41, final = 50.70, lck% = 0.01
 
 -----------------------------------------------------------------------------------------------------------
 
@@ -82,7 +107,7 @@ WHITE: Chess.com  "Noam"  2200         BLACK:  Uncle Shumi version= -d8 -t5000
 1. e4 c5 2. Nc3 Nc6 3. Nf3 e6 4. d4 cxd4 5. Nxd4 Bb4 6. a3 Bxc3 7. bxc3 Qh4 8. Qf3 d5 9. exd5 Nxd4 10. cxd4 Qxd4 11. Rb1 Qxd5 12. Qg4 Qe5 13. Be2 f5 14. Qc4 Qa5 15. Bd2 Qd5 16. Qc7 Ne7 17. Bb4 Qd8 18. Qxd8 Kxd8 19. Bc3 Rg8 20. Be5 Nc6 21. Rd1 Ke7 22. Bc7 Bd7 23. Bf4 Rgc8 24. Bg5 Ke8 25. h4 Na5 26. Rd2 Bc6 27. f3 Ba4 28. Rd4 Bxc2 29. Rd6 Bb3 30. Bb5 Nc6 31. Kf2 Bd5 32. Rc1 h6 33. Be3 a6 34. Bxc6 bxc6 35. Bd4 Rc7 36. Be5 Rb7 37. h5 Raa7 38. Bd4 Ra8 39. Be5 Kf8 40. Rc5 Ke7 41. a4 Raa7 42. Rc3 Rb2 43. Kf1 Rab7 44. Rc1 Ra2 45. Rd1 a5 46. Rc1 Rxa4 47. Rc2 Rh4 48. Kf2 Rb5 49. Rd2 f4 50. Rd3 a4 51. g3 Rh2 52. Kg1 Re2 53. Kf1 Rxe5 54. gxf4 Rb1 55. Kf2 Rb2 56. Kg3 Ree2 57. f5 Rg2 58. Kh4 Kxd6 59. fxe6 Kxe6 60. Ra3 Kf5 61. f4 Rh2 62. Rh3 Kxf4 63. Rxh2 Rxh2  -/+
 
 WHITE: Chess.com  "Noam"  2200         BLACK:  Uncle Shumi version= -d8 -t3500
-Steinitz Gambit (from the Vienna game)  Draw, thopugh Shumi as black should have won. Great tactics.
+Steinitz Gambit (from the dVienna game)  Draw, thopugh Shumi as black should have won. Great tactics.
 1. e4 e5 2. Nc3 Nc6 3. f4 exf4 4. d4 Qh4 5. Ke2 b6 6. Nb5 Ba6 7. a4 Qg4 8. Kd2 Qxd1 9. Kxd1 Bxb5 10. axb5 Nxd4 11. Bxf4 Ne6 12. Bg3 Nf6 13. Bd3 Ng4 14. Nf3 Ne3 15. Kc1 Nxg2 16. Bc4 c6 17. Ne5 Bc5 18. bxc6 dxc6 19. Nxc6 a5 20. Bb5 O-O 21. Rd1 Ne3 22. Rd7 Kh8 23. Ra4 f5 24. exf5 Nxf5 25. Re4 Be3 26. Rxe3 Nxe3 27. Re7 Rfe8 28. Rb7 Nd8 29. Rxb6 Nxc6 30. Rxc6 Rec8 31. Bf4 Rxc6 32. Bxc6 Rc8 33. Ba4 Rc4 34. Bxe3 Rxa4 35. b3 Rb4 36. Kb2 a4 37. Ka3 axb3 38. cxb3 Rh4 39. Bg1 Re4 40. b4 Re2 41. b5 Rg2 42. Bc5 Rxh2 43. b6 Rh3 44. Ka4 Rd3 45. b7 Rd8 46. Bd6 Kg8 47. Bc7 Rf8 48. Kb5 Kf7 49. Bd6 Rd8 50. b8=Q Rxb8 51. Bxb8 Kf6 52. Kc5 h6 53. Kd5 g6 54. Bd6 h5 55. Bc7 g5 56. Ke4 h4 57. Bd8 Ke6 58. Bxg5 h3 59. Kf3 h2 60. Kg2 h1=B  ==
 
 WHITE: Chess.com  "Francis"  2300         BLACK:  Uncle Shumi version= -d8 -t3500

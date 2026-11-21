@@ -3,12 +3,18 @@
 #include "Score.hpp"
 #include "globals.hpp"
 
-// Read-only NNUE model input for engine play, relative to the repository root.
-inline constexpr const char* NNUE_model_file = "NNUE/models/Model_big1.txt";     
+// Independent NNUE models for engine play, relative to the repository root.
+inline constexpr const char* NNUE1_model_file = "NNUE/models/63_344K_400_A.mod";
+inline constexpr const char* NNUE2_model_file = "NNUE/models/28_110K_200_A.mod";    
+inline constexpr const char* NNUE_model_file = NNUE1_model_file; // Legacy callers.
 
 // NNUE diagnostics and search-position collection.
 inline constexpr bool NNUE_Print_final_results = false;
 inline constexpr bool NNUE_create_training_examples = false;     // Dumps positions 1, 9, 18, 27, ... and scores to temp.txt
+
+// Ignore the small amount of starting position dependent eval we do in shumi. This is done
+// so as to compare perfectly to debug results. (outout from )
+inline constexpr bool Ignore_starting_dependent_eval = true;
 
 /// feature adjustments //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -133,6 +139,8 @@ enum WghtIndxs
 };
 
 constexpr double VOLUME_CONTROL = 0.60;
+
+
 
 // All valudes in integer centipawns. Positive values are bonus, negative values are penelties
 class Weights

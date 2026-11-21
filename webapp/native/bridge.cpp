@@ -152,8 +152,15 @@ class Host {
     int search_id = 0;
     int search_sign = 1;
     int last_player = -1, last_features = -1;
-    bool model_loaded = false;
+    bool nnue1_loaded = false, nnue2_loaded = false;
     int last_depth = 0;
+
+    void require_model(int player) const {
+        if (player == NNUE1 && !nnue1_loaded)
+            throw std::runtime_error("The configured NNUE1 model could not be loaded: " + std::string(NNUE1_model_file));
+        if (player == NNUE2 && !nnue2_loaded)
+            throw std::runtime_error("The configured NNUE2 model could not be loaded: " + std::string(NNUE2_model_file));
+    }
 
     bool in_check() {
         return engine->game_board.turn == WHITE ? engine->is_king_in_check_t<WHITE>() : engine->is_king_in_check_t<BLACK>();
@@ -179,8 +186,9 @@ class Host {
 
 public:
     Host() {
-        const auto model_path = std::filesystem::path(SHUMI_REPO_ROOT) / NNUE_model_file;
-        model_loaded = ai->nnue.load_parameters(model_path);
+        const auto repo_root = std::filesystem::path(SHUMI_REPO_ROOT);
+        nnue1_loaded = ai->nnue.load_parameters(repo_root / NNUE1_model_file);
+        nnue2_loaded = ai->nnue2.load_parameters(repo_root / NNUE2_model_file);
         ai->thread_callback = progress;
         ai->thread_callback_user_data = this;
         // Poll the atomic stop flag outside the engine thread. Reasserting the
@@ -233,7 +241,8 @@ public:
                 {"moves", moves}, {"pgn", pgn.str()}, {"moveNumber", move_number},
                 {"phase", str_from_GamePhase(ai->phase_of_game_full())},
                 {"whiteTimeMs", engine->game_white_time_msec}, {"blackTimeMs", engine->game_black_time_msec},
-                {"nnueAvailable", model_loaded}, {"defaultFeatures", _DEFAULT_FEATURES_MASK}};
+                {"nnueAvailable", {{"nnue1", nnue1_loaded}, {"nnue2", nnue2_loaded}}},
+                {"defaultFeatures", _DEFAULT_FEATURES_MASK}};
     }
 
     json execute(const json& request) {
@@ -286,8 +295,8 @@ public:
             return snapshot();
         }
         if (command == "evaluate") {
-            const int player = bounded_int(request, "player", 0, 3, UNCLE_SHUMI);
-            if (player == NNUE && !model_loaded) throw std::runtime_error("The configured NNUE model could not be loaded.");
+            const int player = bounded_int(request, "player", NNUE1, NNUE2, UNCLE_SHUMI);
+            require_model(player);
             const auto person = static_cast<EvalPersons>(player);
             const int score = ai->evaluate_board_t<WHITE>(person);
             return {{"scoreCp", score}};
@@ -295,9 +304,9 @@ public:
         if (command == "search") {
             const int depth = bounded_int(request, "depth", 1, 30, 9);
             const int milliseconds = bounded_int(request, "time", 0, 3600000, 5000);
-            const int player = bounded_int(request, "player", 0, 3, UNCLE_SHUMI);
+            const int player = bounded_int(request, "player", NNUE1, NNUE2, UNCLE_SHUMI);
             const int features = bounded_int(request, "features", 0, 2147483647, _DEFAULT_FEATURES_MASK);
-            if (player == NNUE && !model_loaded) throw std::runtime_error("The configured NNUE model could not be loaded.");
+            require_model(player);
             if (snapshot()["result"] != "*") throw std::runtime_error("This game has ended.");
             if (player != last_player || features != last_features) {
                 ai->TTable2.clear(); ai->pawn_file_info.clear();

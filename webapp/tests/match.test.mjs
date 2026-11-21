@@ -10,7 +10,7 @@ import { PLAYER_IDS, START_FEN } from '../dist/shared/types.js';
 function initialPosition() {
   return { fen: START_FEN, turn: 'w', legalMoves: ['e2e4'], inCheck: false,
     result: '*', drawReason: '', moves: [], pgn: '*', moveNumber: 1,
-    phase: 'OPENING', whiteTimeMs: 0, blackTimeMs: 0, nnueAvailable: true, defaultFeatures: 14 };
+    phase: 'OPENING', whiteTimeMs: 0, blackTimeMs: 0, nnueAvailable: { nnue1: true, nnue2: true }, defaultFeatures: 14 };
 }
 class ScriptedEngine extends EventEmitter {
   position = initialPosition();
@@ -56,8 +56,8 @@ async function session(t, { swap = false, auto = true, same = false, outcomes = 
   return { controller, engine, original: structuredClone(options.settings) };
 }
 
-test('keeping colors is the default', () => {
-  assert.equal(parseOptions([]).settings.swapColors, false);
+test('swapping colors is the default', () => {
+  assert.equal(parseOptions([]).settings.swapColors, true);
 });
 
 for (const swap of [false, true]) test(`${swap ? 'alternating' : 'fixed'} colors preserve player profiles and totals across wins and a draw`, { timeout: 20000 }, async t => {

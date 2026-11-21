@@ -43,7 +43,7 @@ struct NNUENeuronParameters {
     float bias;                // One adjustable number
 };
 
-#define NNUE_NEURON_COUNT 32
+#define NNUE_NEURON_COUNT 64
 
 struct NNUEParameters {
     NNUENeuronParameters Neurons[NNUE_NEURON_COUNT];
@@ -68,7 +68,8 @@ struct NNUETrainingExample {
 enum class NNUETrainingMethod {
     NONE = 0,        // Use the integer positional target from the file.
     STATIC_EVAL = 1, // Require '*'; calculate the chosen player's positional evaluation.
-    FULL_SEARCH = 2  // Require '*'; search and subtract material (root by default).
+    FULL_SEARCH = 2, // Require '*'; search and subtract material (root by default).
+    RANDOM_EVAL = 3 // Require '*'; assign a uniform random integer in [-200, 200] cp.
 };
 
 
@@ -111,23 +112,27 @@ struct NNUETrainingStats {
 // Everything from the first '#' to the end of each line is ignored as a comment.
 // Every nonblank, noncomment line must contain six FEN fields, '|', and a score.
 // NONE requires a signed decimal int and uses it directly as the positional target.
-// STATIC_EVAL and FULL_SEARCH require '*'; numeric scores are errors in these modes.
+// STATIC_EVAL, FULL_SEARCH, and RANDOM_EVAL require '*'; numeric scores are errors.
 // STATIC_EVAL and FULL_SEARCH use the supplied player for evaluation.
+// STATIC_EVAL reuses one engine/evaluator for the file, resetting each position.
 // FULL_SEARCH searches with depth_minimum and time_requested (ms),
 // skips mate scores, converts to White's perspective, and subtracts root material
 // by default. If material_after_best_move is true, subtract material after the
 // chosen move instead; terminal positions with no move still use root material.
 // Board inputs and retained FENs always describe the original position.
+// RANDOM_EVAL assigns uniform random integer positional targets in [-200, 200] cp
+// without evaluating or searching the position, or subtracting material.
 // depth_minimum and time_requested are used only for FULL_SEARCH;
-// NONE and STATIC_EVAL ignore both arguments and material_after_best_move.
-// NONE also ignores player.
+// NONE, STATIC_EVAL, and RANDOM_EVAL ignore both arguments and material_after_best_move.
+// NONE and RANDOM_EVAL also ignore player.
 // If monitor is true, overwrite the line count on sout every 1000 lines read,
 // including blank/comment lines, and finish with the final count and a newline.
 // Returns 0 on success, nonzero on failure (including no positions after filtering).
 // Examples are replaced only on success. If retained_fens is supplied, it is also
 // replaced on success with the original FENs, one per retained example in order.
 // If supplied, error is cleared on entry and receives a diagnostic on failure;
-// otherwise the diagnostic is written to stderr.
+// otherwise the diagnostic is written to stderr. Record errors include the
+// filename, physical line number (including comments/blanks), and offending record.
 [[nodiscard]] int multi_FEN_readin(
     const std::filesystem::path& filename,
     std::vector<NNUETrainingExample>& examples,
@@ -185,6 +190,7 @@ public:
     // the training header from the last successfully loaded model.
     // Pass the training settings; -1 retains each loaded value, if known.
     // Omitted training results retain loaded RMSe and lock percentage values, if known.
+    // Write RMSe in the header after the learning rate; loading also accepts old footers.
     bool save_parameters(const std::filesystem::path& filename,
                          const std::filesystem::path& training_filename = {},
                          int activated_neurons = -1,
@@ -215,13 +221,22 @@ public:
         const NNUEInputs& inputs,
         NNUEJacobianRow& row) const;
         
-    // called ony in testing
+    // Dense reference implementation, also used to verify sparse training.
     float calculate_nnue_gradient(
         const NNUETrainingExample& example,
         NNUEGradient& gradient) const;
 
-    // Called only in testing. This changes the stored parameters; calculate the gradient first.
+    // Update the stored parameters; calculate the gradient first.
+    // Rebuild the inference copy after training, before evaluating a GameBoard.
     void apply_nnue_gradient(const NNUEGradient& gradient, float learning_rate);
+
+    // One sparse SGD update; returns the error before the update.
+    // Assertion-enabled builds also run the dense reference from the same
+    // starting parameters and require exact equality of every updated value.
+    // Rebuild the inference copy after training, before evaluating a GameBoard.
+    float train_one_position(const NNUETrainingExample& example, float learning_rate);
+
+    void rebuild_inference_parameters_();
 
     float calculate_JJt(const NNUEInputs& inputs) const;
 
@@ -243,8 +258,6 @@ private:
         float output_weight[NNUE_NEURON_COUNT];
         float output_bias;
     };
-
-    void rebuild_inference_parameters_();
 
     struct NNUEActiveInput {
         std::uint16_t feature_index;

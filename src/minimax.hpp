@@ -43,12 +43,14 @@ public:
 class MinimaxAI {
 public:
 
-    // NULL leaves NNUE parameters zeroed; a filename explicitly loads a model.
-    MinimaxAI(ShumiChess::Engine&, const char* nnue_model_file = NULL);
+    // NULL leaves that slot's parameters zeroed; filenames explicitly load models.
+    MinimaxAI(ShumiChess::Engine&, const char* nnue_model_file = NULL,
+              const char* nnue2_model_file = NULL);
     ~MinimaxAI();
 
     // Relative filenames are resolved against the repository root.
-    void load_nnue_model_for_play(const char* nnue_model_file);
+    void load_nnue_model_for_play(const char* nnue_model_file,
+                                  ShumiChess::EvalPersons player = ShumiChess::NNUE1);
 
     struct thread_callback_structure {
         int depth = 0;
@@ -68,8 +70,10 @@ public:
 
 
 
-    // Constructed once with this AI; parameters persist between evaluations.
-    ShumiChess::NNUE_data nnue;
+    // Independent parameters persist between evaluations. Keep the original
+    // member name for callers that load or train the first model directly.
+    ShumiChess::NNUE_data nnue;  // NNUE1
+    ShumiChess::NNUE_data nnue2; // NNUE2
 
 
 

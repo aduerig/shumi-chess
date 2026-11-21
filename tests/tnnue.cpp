@@ -5,8 +5,10 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <system_error>
+#include <utility>
 
 #include "NNUE.hpp"
 #include "engine.hpp"
@@ -274,7 +276,6 @@ TEST(NNUEData, TrainingOnePositionConverges)
     parameters.output_weight[0] = 1.0f;
     nnue.set_parameters(parameters);
 
-    NNUEGradient gradient{};
     ASSERT_FLOAT_EQ(nnue.Calculate_nnue_aberration(example), -74.0f);
 
     for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
@@ -291,8 +292,7 @@ TEST(NNUEData, TrainingOnePositionConverges)
         //      << "  Aberration: " << aberration_text.str()
         //      << std::endl;
 
-        nnue.calculate_nnue_gradient(example, gradient);
-        nnue.apply_nnue_gradient(gradient, learning_rate);
+        nnue.train_one_position(example, learning_rate);
 
         const float updated_aberration = nnue.Calculate_nnue_aberration(example);
         if (std::fabs(aberration) > FLT_EPSILON) {
@@ -365,8 +365,6 @@ TEST(NNUEData, TrainingFivePositionsConverges)
     for (const auto& example : examples) {
         initial_aberrations.push_back(nnue.Calculate_nnue_aberration(example));
     }
-    NNUEGradient gradient{};
-
     // Train the same network on every loaded position.
     for (int iteration = 0; iteration < TRAINING_ITERATIONS; ++iteration) {
         SCOPED_TRACE(iteration);
@@ -389,9 +387,7 @@ TEST(NNUEData, TrainingFivePositionsConverges)
             //          << std::endl;
             // }
 
-            // Apply grdient
-            nnue.calculate_nnue_gradient(example, gradient);
-            nnue.apply_nnue_gradient(gradient, learning_rate);
+            nnue.train_one_position(example, learning_rate);
             
             ASSERT_TRUE(std::isfinite(nnue.Calculate_nnue_aberration(example)));
       
@@ -480,59 +476,131 @@ TEST(NNUEData, TrainingNeuronSweepImprovesRmseAndLocks)
     }
 }
 
-// Loading and saving the model must preserve every byte, including line endings.
-// Cleanup runs even after a fatal assertion, and cleanup errors fail the test.
-TEST(NNUEData, LoadSaveParametersPreservesFileBytes)
-{
+class NNUEModelFormat : public ::testing::Test {
+protected:
     const std::filesystem::path model_path =
         std::filesystem::path(__FILE__).parent_path() / "data" / "Model_001.txt";
-    NNUE_data nnue;
-    ASSERT_TRUE(nnue.load_parameters(model_path)) << model_path;
+    std::filesystem::path directory, input_path, saved_path;
+    std::string original, without_footer, parameter_text, rmse_line;
+    std::size_t metadata_end = 0;
 
-    // Claim a separate directory so concurrent runs cannot overwrite each other.
-    const auto temporary_directory = std::filesystem::temp_directory_path() /
-        ("shumi_nnue_round_trip_" + std::to_string(
-            std::chrono::steady_clock::now().time_since_epoch().count()));
-    ASSERT_TRUE(std::filesystem::create_directory(temporary_directory))
-        << temporary_directory;
+    std::string read(const std::filesystem::path& path)
+    {
+        std::ifstream file(path, std::ios::binary);
+        EXPECT_TRUE(file.is_open()) << path;
+        std::string text{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+        EXPECT_FALSE(file.bad()) << path;
+        return text;
+    }
 
-    struct Cleanup {
-        std::filesystem::path file;
+    void write(const std::string& text)
+    {
+        std::ofstream file(input_path, std::ios::binary);
+        file << text;
+        file.close();
+        ASSERT_TRUE(file) << input_path;
+    }
 
-        ~Cleanup()
-        {
+    void SetUp() override
+    {
+        directory = std::filesystem::temp_directory_path() /
+            ("shumi_nnue_model_format_" + std::to_string(
+                std::chrono::steady_clock::now().time_since_epoch().count()));
+        ASSERT_TRUE(std::filesystem::create_directory(directory)) << directory;
+        input_path = directory / "input.txt";
+        saved_path = directory / "saved.txt";
+        original = read(model_path);
+        const auto footer = original.rfind("#\r\n# RMSe (cp): initial = ");
+        ASSERT_NE(footer, std::string::npos);
+        without_footer = original.substr(0, footer);
+        rmse_line = original.substr(footer + 3);
+        const auto learning_rate = original.find("# Learning rate: ");
+        ASSERT_NE(learning_rate, std::string::npos);
+        metadata_end = original.find("\r\n", learning_rate) + 2;
+        const auto first_neuron = without_footer.find("# Neuron: 0\r\n");
+        ASSERT_NE(first_neuron, std::string::npos);
+        parameter_text = without_footer.substr(first_neuron);
+    }
+
+    void TearDown() override
+    {
+        for (const auto& path : {input_path, saved_path, directory}) {
+            if (path.empty()) continue;
             std::error_code error;
-            const bool file_removed = std::filesystem::remove(file, error);
-            EXPECT_TRUE(file_removed) << "Could not remove " << file << ": " << error.message();
-            EXPECT_FALSE(error) << error.message();
-
-            const bool directory_removed = std::filesystem::remove(file.parent_path(), error);
-            EXPECT_TRUE(directory_removed)
-                << "Could not remove " << file.parent_path() << ": " << error.message();
-            EXPECT_FALSE(error) << error.message();
-        }
-    } cleanup{temporary_directory / "Model_001.txt"};
-
-    ASSERT_TRUE(nnue.save_parameters(cleanup.file)) << cleanup.file;
-
-    // Streams close before cleanup, including when an assertion returns early.
-    std::ifstream original(model_path, std::ios::binary);
-    std::ifstream saved(cleanup.file, std::ios::binary);
-    ASSERT_TRUE(original.is_open()) << model_path;
-    ASSERT_TRUE(saved.is_open()) << cleanup.file;
-
-    for (std::size_t offset = 0; ; ++offset) {
-        const auto original_byte = original.get();
-        const auto saved_byte = saved.get();
-        ASSERT_EQ(saved_byte, original_byte) << "Files differ at byte offset " << offset;
-        if (original_byte == std::char_traits<char>::eof()) {
-            break;
+            std::filesystem::remove(path, error);
+            EXPECT_FALSE(error) << "Could not remove " << path << ": " << error.message();
         }
     }
-    EXPECT_TRUE(original.eof());
-    EXPECT_FALSE(original.bad()) << "Read failed for " << model_path;
-    EXPECT_TRUE(saved.eof());
-    EXPECT_FALSE(saved.bad()) << "Read failed for " << cleanup.file;
+};
+
+TEST_F(NNUEModelFormat, MovesFooterIntoHeaderWithoutChangingOtherBytes)
+{
+    NNUE_data nnue;
+    ASSERT_TRUE(nnue.load_parameters(model_path));
+    ASSERT_TRUE(nnue.save_parameters(saved_path));
+    std::string expected = without_footer;
+    expected.insert(metadata_end, rmse_line);
+    EXPECT_EQ(read(saved_path), expected);
+
+    // Once in the new layout, load/save preserves every byte, including CRLF.
+    NNUE_data reloaded;
+    ASSERT_TRUE(reloaded.load_parameters(saved_path));
+    ASSERT_TRUE(reloaded.save_parameters(input_path));
+    EXPECT_EQ(read(input_path), expected);
+}
+
+TEST_F(NNUEModelFormat, WritesSuppliedTrainingResultsDirectlyAfterLearningRate)
+{
+    NNUE_data nnue;
+    ASSERT_TRUE(nnue.load_parameters(model_path));
+    const NNUETrainingResult result{98.17, 19.39, 0.0};
+    ASSERT_TRUE(nnue.save_parameters(saved_path, {}, 28, 200, 0.0001f, result));
+    const std::string saved = read(saved_path);
+    const std::string expected = "# Learning rate: 1e-04\r\n"
+        "# RMSe (cp): initial = 98.17, final = 19.39, lck% = 0.00\r\n#\r\n# Neuron: 0\r\n";
+    EXPECT_NE(saved.find(expected), std::string::npos);
+    const auto first_neuron = saved.find("# Neuron: 0\r\n");
+    ASSERT_NE(first_neuron, std::string::npos);
+    EXPECT_EQ(saved.substr(first_neuron), parameter_text)
+        << "Moving the two-decimal RMSe display must not round model weights";
+    NNUE_data reloaded;
+    ASSERT_TRUE(reloaded.load_parameters(saved_path));
+    ASSERT_TRUE(reloaded.save_parameters(input_path));
+    EXPECT_EQ(read(input_path), saved);
+}
+
+TEST_F(NNUEModelFormat, LoadsLegacyFootersHeadersAndModelsWithoutTrainingResults)
+{
+    const std::string unavailable = "# RMSe (cp): initial = unavailable, final = unavailable, lck% = unavailable\r\n";
+    const std::string old_rmse = "# RMSe (cp): initial = 123.45, final = 6.78\r\n";
+    const std::string old_resaved = "# RMSe (cp): initial = 123.45, final = 6.78, lck% = unavailable\r\n";
+    const std::string full_rmse = "# RMSe (cp): initial = 123.45, final = 6.78, lck% = 12.34\r\n";
+    std::string old_header = without_footer, full_header = without_footer;
+    old_header.insert(metadata_end, old_rmse);
+    full_header.insert(metadata_end, full_rmse);
+    const std::string minimal = "# Shumi NNUE parameters\r\n# Format version: 1\r\n# Neuron count: "
+        + std::to_string(NNUE_NEURON_COUNT) + "\r\n" + parameter_text;
+    const std::pair<std::string, std::string> cases[] = {
+        {original, unavailable},
+        {without_footer, unavailable},
+        {without_footer + "#\r\n" + old_rmse, old_resaved},
+        {without_footer + "#\r\n" + full_rmse, full_rmse},
+        {old_header, old_resaved},
+        {full_header, full_rmse},
+        {minimal, unavailable},
+    };
+    for (std::size_t i = 0; i < std::size(cases); ++i) {
+        SCOPED_TRACE(i);
+        write(cases[i].first);
+        NNUE_data nnue;
+        ASSERT_TRUE(nnue.load_parameters(input_path));
+        ASSERT_TRUE(nnue.save_parameters(saved_path));
+        const std::string saved = read(saved_path);
+        EXPECT_NE(saved.find(cases[i].second + "#\r\n# Neuron: 0\r\n"), std::string::npos);
+        const auto first_neuron = saved.find("# Neuron: 0\r\n");
+        ASSERT_NE(first_neuron, std::string::npos);
+        EXPECT_EQ(saved.substr(first_neuron), parameter_text);
+    }
 }
 
 } // namespace

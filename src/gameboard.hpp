@@ -137,19 +137,20 @@ class GameBoard {
         uint8_t Bits_In[2][NUM_PIECES];
         inline void compute_bits_in()
         {
-            Bits_In[Color::WHITE][Piece::PAWN]   = bits_in(white_pawns);
-            Bits_In[Color::WHITE][Piece::KNIGHT] = bits_in(white_knights);
-            Bits_In[Color::WHITE][Piece::BISHOP] = bits_in(white_bishops);
-            Bits_In[Color::WHITE][Piece::ROOK]   = bits_in(white_rooks);
-            Bits_In[Color::WHITE][Piece::QUEEN]  = bits_in(white_queens);
-            Bits_In[Color::WHITE][Piece::KING]   = bits_in(white_king);
+            // Dont worry, the casts are safe. bits_in returns 0-64
+            Bits_In[Color::WHITE][Piece::PAWN]   = (uint8_t)bits_in(white_pawns);
+            Bits_In[Color::WHITE][Piece::KNIGHT] = (uint8_t)bits_in(white_knights);
+            Bits_In[Color::WHITE][Piece::BISHOP] = (uint8_t)bits_in(white_bishops); 
+            Bits_In[Color::WHITE][Piece::ROOK]   = (uint8_t)bits_in(white_rooks);
+            Bits_In[Color::WHITE][Piece::QUEEN]  = (uint8_t)bits_in(white_queens);
+            Bits_In[Color::WHITE][Piece::KING]   = (uint8_t)bits_in(white_king);
 
-            Bits_In[Color::BLACK][Piece::PAWN]   = bits_in(black_pawns);
-            Bits_In[Color::BLACK][Piece::KNIGHT] = bits_in(black_knights);
-            Bits_In[Color::BLACK][Piece::BISHOP] = bits_in(black_bishops);
-            Bits_In[Color::BLACK][Piece::ROOK]   = bits_in(black_rooks);
-            Bits_In[Color::BLACK][Piece::QUEEN]  = bits_in(black_queens);
-            Bits_In[Color::BLACK][Piece::KING]   = bits_in(black_king);
+            Bits_In[Color::BLACK][Piece::PAWN]   = (uint8_t)bits_in(black_pawns);
+            Bits_In[Color::BLACK][Piece::KNIGHT] = (uint8_t)bits_in(black_knights);
+            Bits_In[Color::BLACK][Piece::BISHOP] = (uint8_t)bits_in(black_bishops);
+            Bits_In[Color::BLACK][Piece::ROOK]   = (uint8_t)bits_in(black_rooks);
+            Bits_In[Color::BLACK][Piece::QUEEN]  = (uint8_t)bits_in(black_queens);
+            Bits_In[Color::BLACK][Piece::KING]   = (uint8_t)bits_in(black_king);
         }
 
         void set_development_start_masks();

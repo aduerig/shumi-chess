@@ -1,5 +1,7 @@
+#include <chrono>
 #include <cstdlib>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -19,15 +21,15 @@
 
 // Training input and output, relative to the repository root.
 constexpr const char* database_path = "NNUE/FENs/evaluated_FENs.txt";
-constexpr const char* NNUE_model_output_file = "NNUE/models/Model_temp.txt";
+constexpr const char* NNUE_model_output_file = "NNUE/models/temp.mod";
 
-constexpr int TRAINING_ITERATIONS = 200;
+constexpr int TRAINING_ITERATIONS = 400;
 constexpr float learning_rate = 0.0001f;
 
 // true: update the current iteration in place; false: print metrics every 10 iterations.
 constexpr bool ITERIVE_DISPLAY = false;
 
-constexpr int N_ACTIVE_NEURONS = 28;
+constexpr int N_ACTIVE_NEURONS = 63;
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -37,6 +39,7 @@ using namespace ShumiChess;
 ////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv) {
+    const auto started_at = chrono::steady_clock::now();
  
     // Compose filename of where the training datafile is (FENScores)
     const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
@@ -67,10 +70,13 @@ int main(int argc, char** argv) {
     sout << "Training NNUE model: positions=" << nTrainingPositions
          << " iterations=" << TRAINING_ITERATIONS
          << " learning_rate=" << learning_rate << endl;
+    const auto training_started_at = chrono::steady_clock::now();
     const auto training_result = NNUE_train_mult_positions(nnue, examples.data(), nTrainingPositions
                                 , N_ACTIVE_NEURONS, TRAINING_ITERATIONS, learning_rate
                                 , true, nullptr, ITERIVE_DISPLAY
                                 );
+    const double training_seconds = chrono::duration<double>(
+        chrono::steady_clock::now() - training_started_at).count();
 
     // Write out the NNUE model to a file
     const filesystem::path parameters_path = repo_root / NNUE_model_output_file;
@@ -82,6 +88,12 @@ int main(int argc, char** argv) {
         sout << "Press any key to exit..." << endl;
     } else {
         sout << "Saved NNUE model to: " << parameters_path.string() << endl;
+        const auto elapsed_ms = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - started_at).count();
+        sout << "Elapsed time: " << elapsed_ms / 3'600'000 << "h "
+             << (elapsed_ms / 60'000) % 60 << "m "
+             << fixed << setprecision(3) << (elapsed_ms % 60'000) / 1000.0 << "s" << endl;
+        sout << "Training iterations per second: " << fixed << setprecision(2)
+             << (training_seconds > 0.0 ? TRAINING_ITERATIONS / training_seconds : 0.0) << endl;
         sout << "SUCCESS - press any key" << endl << endl;
     }
 

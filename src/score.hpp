@@ -150,10 +150,10 @@ inline Score mate_score_from_TT(Score score, int level)
     if (IS_MATE_SCORE(score)) {
         if (score > 0) {
             // Apply the distance from the new root.
-            return score - level;
+            return score - (Score)level;
         } else {
             // Apply the distance from the new root.
-            return score + level;
+            return score + (Score)level;
         }
     }
 

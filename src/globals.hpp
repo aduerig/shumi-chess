@@ -175,10 +175,12 @@ const char* str_from_GamePhase(int phse);
    
 
 enum EvalPersons {      // These are all "ai" no human here.
-    NNUE = 0,
-    SLUG,
-    CRAZY_IVAN,
-    UNCLE_SHUMI
+    NNUE1 = 0,
+    SLUG = 1,
+    CRAZY_IVAN = 2,
+    UNCLE_SHUMI = 3,
+    NNUE2 = 4,
+    NNUE = NNUE1       // Keep existing callers using the first model.
 };
 
 //bool is_move_in_list(const Move& mov, const std::vector<Move>& mvs);

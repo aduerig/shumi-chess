@@ -35,7 +35,7 @@ export function parseOptions(args: string[]): Options {
     settings: {
       white: { player: 'human', depth: integer('wd', depth, 1, 30), time: integer('wt', time, 0, 3_600_000), features: integer('wf', features, 0, 2_147_483_647) || 14 },
       black: { player: human ? 'human' : 'shumi', depth: integer('bd', depth, 1, 30), time: integer('bt', time, 0, 3_600_000), features: integer('bf', features, 0, 2_147_483_647) || 14 },
-      random: integer('rand', 2, 0, 100), autoReset: false, swapColors: false,
+      random: integer('rand', 2, 0, 100), autoReset: false, swapColors: true,
     },
   };
 }

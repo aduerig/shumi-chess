@@ -1,5 +1,7 @@
 ﻿
 #include <math.h>
+#include <sstream>
+#include <stdexcept>
 #include <vector>
 
 #include <random>
@@ -87,27 +89,60 @@ namespace ShumiChess {
 // Makes a "bitboard" Gameboard based on a FEN.
 //
 GameBoard::GameBoard(const std::string& fen_notation) {
-    const std::vector<std::string> fen_components = utility::our_string::split(fen_notation);
-    
-
-
-    // Make sure FEN components are valid
-    assert(fen_components.size() == 6);
-    assert(fen_components[1].size() == 1);
-    assert(fen_components[2].size() <= 4);
-    assert(fen_components[3].size() <= 2);
+    std::istringstream fields(fen_notation);
+    std::vector<std::string> fen_components;
+    for (std::string field; fields >> field;) {
+        fen_components.push_back(field);
+    }
+    const auto invalid_fen = [](const std::string& reason) {
+        throw std::invalid_argument("invalid FEN: " + reason);
+    };
+    // Input errors must be catchable by callers such as the FEN database reader.
+    if (fen_components.size() != 6) {
+        invalid_fen("expected exactly six fields");
+    }
+    if (fen_components[1] != "w" && fen_components[1] != "b") {
+        invalid_fen("side to move must be 'w' or 'b'");
+    }
+    if (fen_components[2].size() > 4) {
+        invalid_fen("castling rights must be '-' or a combination of KQkq");
+    }
+    const auto& en_passant = fen_components[3];
+    if (en_passant != "-" &&
+        (en_passant.size() != 2 || en_passant[0] < 'a' || en_passant[0] > 'h' ||
+         (en_passant[1] != '3' && en_passant[1] != '6'))) {
+        invalid_fen("en passant target must be '-' or a square on rank 3 or 6");
+    }
 
     int square_counter = 64;
-    for (const char token : fen_components[0]) {
-
-        if (token != '/') {    // In FEN notation these are just seperaters.
-            --square_counter;
+    int rank = 8;
+    int rank_squares = 0;
+    const auto check_rank_width = [&] {
+        if (rank_squares != 8) {
+            invalid_fen("rank " + std::to_string(rank) + " has " +
+                        std::to_string(rank_squares) + " squares (expected 8)");
         }
+    };
+    for (const char token : fen_components[0]) {
+        if (token == '/') {
+            check_rank_width();
+            if (rank == 1) invalid_fen("piece placement must contain exactly eight ranks");
+            --rank;
+            rank_squares = 0;
+            continue;
+        }
+        const bool empty_squares = token >= '1' && token <= '8';
+        if (!empty_squares && std::string("prnbqkPRNBQK").find(token) == std::string::npos) {
+            invalid_fen(std::string("unexpected piece placement token '") + token + "'");
+        }
+        const int squares = empty_squares ? token - '0' : 1;
+        rank_squares += squares;
+        // Check before shifting: an overfull rank can otherwise cause a negative shift.
+        if (rank_squares > 8) check_rank_width();
+        square_counter -= squares;
+        if (empty_squares) continue;
 
-        if (token >= 49 && token <= 56) {
-            // These tokens represent the digits "1" to "8"
-            square_counter -= token-49; //Purposely subtract 1 too few as we always sub 1 to start.
-        } else if (token == 'p') {
+        if (token == 'p') {
             this->black_pawns |= 1ULL << square_counter;
         } else if (token == 'P') {
             this->white_pawns |= 1ULL << square_counter;
@@ -134,11 +169,18 @@ GameBoard::GameBoard(const std::string& fen_notation) {
         }
     }
     
-    assert(square_counter == 0);
+    check_rank_width();
+    if (rank != 1) invalid_fen("piece placement must contain exactly eight ranks");
 
     this->turn = fen_components[1] == "w" ? ShumiChess::WHITE : ShumiChess::BLACK;
 
+    std::string seen_castling_rights;
     for (const char token : fen_components[2]) {
+        if (seen_castling_rights.find(token) != std::string::npos ||
+            (token == '-' && fen_components[2] != "-")) {
+            invalid_fen("castling rights must be '-' or a combination of unique KQkq tokens");
+        }
+        seen_castling_rights += token;
         switch (token)
         {
         case 'k':
@@ -157,8 +199,7 @@ GameBoard::GameBoard(const std::string& fen_notation) {
             this->castle_rights |= FLAGS_CASTLE_NONE; 
             break;
         default:
-            sout << fen_notation << "Unexpected castling rights token: " << token << std::endl;
-            assert(0);
+            invalid_fen(std::string("unexpected castling rights token '") + token + "'");
             break;
         }
     }

@@ -1,130 +1,19 @@
 do not delete me
 ===================================================================================
 
-I want to replace the existing python script (the front end). The interface into the existing code should be the Engine.
-THe new front end should be better than the existing code, and with a eye to the future , making it a webb app. No C++ code,
-other than that related directly to the python should be change. Use CRLF line endings. All new code whould live in the 
-new directoty Shumi-chess/webapp.  Current front end behavior (shape of the pieces, visual aspects of board, piece move markers
-and othe visual aspects can (and should) be changed in the new app. The app is currently executed by the 
-command : "clear; py -3.13 scripts/run_gui.py -d9 -t5000 -r2". Button functionality must ne maintained, however appearence
-and operation of buttons may change. There should be room for new buttons. The ultimate goal is to make it a web app, 
-but for now just a new app is good. Please do an analysis and ask me design questions that need to be settlte before coding can 
-start. 
-
-
-
-
-
-
-
-
-
-
-
-# Fine:
-selected every 5 ply: 
-# RMSe (cp): initial = 99.29, final = 15.03, lck% = 1.60
-##     -d3 -t3000 player=UNCLE_SHUMI method=STATIC_EVAL
-##     POSITIONS=4638
-
-selected every 3 ply: 
-# RMSe (cp): initial = 98.85, final = 21.17, lck% = 1.88
-##     -d3 -t3000 player=UNCLE_SHUMI method=STATIC_EVAL
-##     POSITIONS=7831
-
-selected every 1 ply: 
-# RMSe (cp): initial = 98.17, final = 35.86, lck% = 5.83
-##     -d3 -t3000 player=UNCLE_SHUMI method=STATIC_EVAL
-##     POSITIONS=23792
-
-# RMSe (cp): initial = 98.17, final = 32.42, lck% = 7.38
-
-
-
-
-
-#
-rnbqkbnr/pppp2pp/8/4pP2/2B5/8/PPPP1PPP/RNBQK1NR b KQkq - 0 3 | -47              # matches exactly
-rnbqk2r/ppp3pp/5n2/2bNpP2/2B5/8/PPPP1PPP/R1BQK1NR w KQkq - 1 6 | 5              # matches exactly
-rn2k2r/ppp3pp/5q2/2b1pb2/2B5/3P1N2/PPP2PPP/R1BQK2R b KQkq - 1 8 | 14        #  does not match   (1.2), material is white up 1 p
-r3k2r/pp1n2pp/2p2q2/2b1p3/4B1b1/3P1N2/PPP2PPP/R1BQK2R w KQkq - 2 11 | 1         # matches exactly
-2kr3r/pp1n2p1/2p2q1p/2b1p3/1P2B1b1/2PP1N2/P4PPP/R1BQ1RK1 b - b3 0 13 | 27   #  does not match   (1.4), material is white up 1 p
-2kr3r/1p1n2p1/pbp2q1p/4p3/PP2B3/1QPP1b2/5PPP/R1B2RK1 w - - 0 16 | 52        #  does not match   (1.62), material is white up 1 p
-
-=======================================================================================
-
-1. Free memory before Shumi runs. Close unnecessary background apps individually and recheck. 
-Discord, Chrome, VS Code, and ChatGPT all have substantial memory allocations.
-2. Consider upgrading to 32 GB RAM if this is your normal workload. You currently have two 8 GB modules; Lenovo 
-   documents support for two DDR5-5600 modules totaling 32 GB. This is the hardware upgrade I’d investigate first. Lenovo specifications
-3. Test stronger compiler optimization for Shumi. Your executables already use optimized Release builds with 
-   assertions disabled. Whole-program optimization is a further opportunity; AVX2 could be a separate experiment. Each needs before/after timing and correctness checks. Whole-program optimization, AVX2 compilation
-4. Give Shumi “Above Normal” process priority. This favors Shumi when other apps compete for CPU time. 
-It won’t fix insufficient RAM or make an otherwise idle CPU faster.
+Priority	Approach	Purpose
+1	Common validation dataset	Determine why lower training RMSE isn't producing stronger chess
+2	Train on search-tree positions	Teach NNUE using positions it actually evaluates during play
+3	Quiet-position filtering	Concentrate training on tactically settled positions, using Shumi's existing quiescence logic
+4	Improve training-data composition	Find the best mixture of grandmaster, self-play, and weaker-engine positions
+5	Improve training algorithm	Experiment with momentum, Adam, or learning-rate scheduling
+6	Change network architecture	Try two hidden layers or additional chess inputs
 
 
 ===================================================================================
 
-Here is results. Ignore the "New Game". Figures are computed as seen in NNUE_finish_training_game() in engine.cpp.
-Each prinout happens at the end of a game SHumi playing itself, calling test_NNUE_training_one_position() at the 
-ebnd of each move. The figures are sucess percentages, right? What do you recommend next,
-
-  parameters.Neurons[0].bias = 10.0f;
-  parameters.output_weight[0] = 1.0f;
-  constexpr float learning_rate = 0.001f;
-
-      NNUE Training Summary: Convergence=82.1%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=85.3%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=74.2%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=70.8%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=67.1%  Activation=100.0%
-      New Game
-
-
-  parameters.Neurons[0].bias = 1.0f;
-  parameters.output_weight[0] = 1.0f;
-  constexpr float learning_rate = 0.001f;
-
-      NNUE Training Summary: Convergence=54.2%  Activation=65.5%
-      New Game
-      NNUE Training Summary: Convergence=39.5%  Activation=44.2%
-      New Game
-      NNUE Training Summary: Convergence=34.8%  Activation=43.2%
-      New Game
-      NNUE Training Summary: Convergence=56.0%  Activation=73.0%
-      New Game
-      NNUE Training Summary: Convergence=39.6%  Activation=56.2%
-
-
-  parameters.Neurons[0].bias = 20.0f;
-  parameters.output_weight[0] = 1.0f;
-  constexpr float learning_rate = 0.001f;
-
-      NNUE Training Summary: Convergence=97.5%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=98.3%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=99.4%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=91.0%  Activation=100.0%
-      New Game
-      NNUE Training Summary: Convergence=89.4%  Activation=100.0%
-
 
 =====================================================================================
-
-Look here, there is some sort of confusion we have here. I have now mastered one neron 
-with one training posistion, thnks to your help. I realize the next step is to run one neron
-over some fixed multiple training positions, like you say. But since my fastest best way
-of generating multiple positions of "relevence", is from Shumi games, I decided to just look at this first,
-over whole games So fine, but then I see
-this: "ReLU lock" sitation. Now I understand finally your explanations that RELU lock is not an error
-. Fine, But then what am I doing? Does this playing with starting values useful for ebentually determining
-"relevent" values? Why should I favor starting values of arounf 1 or 20? 
 
 
 ====================================================================================

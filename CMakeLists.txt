@@ -74,7 +74,7 @@ if(MSVC)
     )
     target_compile_options(${project_name}NoAsserts PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/W3 /O2 /Ob2>
-        $<$<CONFIG:RelWithDebInfo>:/Zi>
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/Zi>
     )
 endif()
 
@@ -123,9 +123,14 @@ if(MSVC)
 endif()
 
 add_executable(FENScores_to_model driver/FENScores_to_model.cpp)
-target_compile_definitions(FENScores_to_model PRIVATE NDEBUG=1)
-target_link_libraries(FENScores_to_model PUBLIC ${project_name}NoAsserts)
+# SHUMI_ASSERTS controls the training checks independently of optimization.
+# With SHUMI_ASSERTS=ON, Release also verifies every sparse update.
+target_link_libraries(FENScores_to_model PUBLIC ${project_name})
 if(MSVC)
+    # Include driver and library source symbols in the optimized profiling build.
+    target_compile_options(FENScores_to_model PRIVATE
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/Zi>
+    )
     target_link_options(FENScores_to_model PRIVATE
         $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:/INCREMENTAL:NO /DEBUG:FULL>
         $<$<CONFIG:RelWithDebInfo>:/LTCG>
@@ -135,6 +140,9 @@ endif()
 add_executable(evaluate_fens driver/evaluate_fens.cpp)
 target_compile_definitions(evaluate_fens PRIVATE NDEBUG=1)
 target_link_libraries(evaluate_fens PUBLIC ${project_name}NoAsserts)
+
+add_executable(shuffle_fens driver/shuffle_fens.cpp)
+target_link_libraries(shuffle_fens PUBLIC ${project_name})
 
 add_executable(shumi_driver driver/zdriver.cpp)
 target_link_libraries(shumi_driver PUBLIC ${project_name})

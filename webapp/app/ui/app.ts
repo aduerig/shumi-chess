@@ -197,11 +197,15 @@ function renderPlayers() {
       const field = $<HTMLInputElement>(`${side}-${key}`);
       if (swapped || document.activeElement !== field) field.value = key === 'features' ? `0x${Number(settings[key]).toString(16).toUpperCase()}` : String(settings[key]);
     }
-    $<HTMLSelectElement>(`${side}-player`).querySelector<HTMLOptionElement>('option[value="nnue"]')!.disabled = !state.position?.nnueAvailable;
+    for (const player of ['nnue1', 'nnue2'] as const) {
+      const option = $<HTMLSelectElement>(`${side}-player`).querySelector<HTMLOptionElement>(`option[value="${player}"]`)!;
+      option.disabled = !state.position?.nnueAvailable[player];
+      option.title = option.disabled ? `${PLAYER_NAMES[player]} model is unavailable` : '';
+    }
   }
   input('auto-reset').checked = state.settings.autoReset;
   $<HTMLSelectElement>('color-mode').value = state.settings.swapColors ? 'swap' : 'keep';
-  text('color-mode-hint', state.settings.swapColors ? 'Players swap colors after each completed game, taking all their settings with them.' : 'Each player keeps the same color.');
+  text('color-mode-hint', state.settings.swapColors ? 'Players swap colors and settings after each game.' : 'Each player keeps the same color.');
   if (document.activeElement !== input('random')) input('random').value = String(state.settings.random);
   for (const [id, color] of [['top-player', state.flipped ? 'w' : 'b'], ['bottom-player', state.flipped ? 'b' : 'w']] as const) {
     const side = color === 'w' ? 'white' : 'black';
@@ -214,7 +218,13 @@ function renderPlayers() {
     if (state.position?.turn === color && state.position.result === '*') { const dot = document.createElement('span'); dot.className = 'turn-indicator'; container.append(dot); }
     const time = document.createElement('span'); time.className = 'time';
     time.title = 'Total engine thinking time this game'; time.textContent = formatTime((side === 'white' ? state.position?.whiteTimeMs : state.position?.blackTimeMs) ?? 0);
-    container.append(time);
+    const score = document.createElement('span'); score.className = 'move-score'; score.id = `${side}-move-score`;
+    score.textContent = scoreText(state.moveScores[color]);
+    const scoreDescription = `${color === 'w' ? 'White' : 'Black'}'s last engine move score. Positive favors White; negative favors Black.`;
+    score.title = `${scoreDescription} Updated after this side plays an engine move.`;
+    score.setAttribute('aria-label', `${scoreDescription} ${score.textContent === '—' ? 'No engine move yet.' : score.textContent}`);
+    const metrics = document.createElement('span'); metrics.className = 'player-metrics';
+    metrics.append(score, time); container.append(metrics);
   }
 }
 function renderHistory() {
@@ -294,6 +304,10 @@ function render() {
   button('evaluate').disabled = !state.connected || state.searching || state.pendingMove || state.busy;
   for (const id of ['new-game', 'load-fen']) button(id).disabled = !state.connected || state.busy;
   for (const id of ['copy-fen', 'copy-pgn']) button(id).disabled = !position;
+  button('record-fens').textContent = state.fenRecording ? 'Stop recording' : 'Start recording';
+  button('record-fens').setAttribute('aria-pressed', String(state.fenRecording));
+  button('record-fens').disabled = !state.fenRecording && (!state.connected || !position || state.busy);
+  text('fen-recording-status', state.fenRecording ? 'Recording' : 'Stopped');
   text('evaluation', scoreText(state.search?.scoreCp ?? state.evaluation));
   text('depth', state.search ? String(state.search.depth) : '—');
   text('nodes', state.search ? state.search.nodes.toLocaleString() : '—');
@@ -310,6 +324,8 @@ button('move-now').onclick = () => { void dispatch({ type: 'moveNow' }); };
 button('resign').onclick = () => { void confirmResignation(); };
 button('new-game').onclick = () => { void dispatch({ type: 'reset' }); };
 button('reset-scores').onclick = () => { void dispatch({ type: 'resetScores' }); };
+button('record-fens').onclick = () => { void dispatch({ type: 'recordFens', enabled: !state.fenRecording }); };
+button('clear-fens').onclick = () => { void dispatch({ type: 'clearFens' }); };
 button('load-fen').onclick = () => { void dispatch({ type: 'reset', fen: $<HTMLTextAreaElement>('fen').value.trim() }); };
 button('evaluate').onclick = () => { $('analysis').setAttribute('open', ''); void dispatch({ type: 'evaluate' }); };
 button('dismiss-error').onclick = () => { void dispatch({ type: 'clearError' }); };

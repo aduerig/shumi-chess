@@ -102,7 +102,7 @@ test('search preserves the board and can be stopped before resetting', { timeout
   assert.equal(next.moves.length, 0);
   const result = await engine.request('search', { depth: 2, time: 100, player: 2, features: 14 });
   assert(next.legalMoves.includes(result.move));
-  for (const player of next.nnueAvailable ? [1, 0] : [1]) {
+  for (const player of next.nnueAvailable.nnue1 ? [1, 0] : [1]) {
     const answer = await engine.request('search', { depth: 1, time: 30, player, features: 14 });
     assert(next.legalMoves.includes(answer.move));
   }

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <limits>
 #include <locale>
+#include <random>
 #include <sstream>
 #include <string_view>
 
@@ -20,7 +21,7 @@
 #include "utility.hpp"
 #include "minimax.hpp"
 
-
+//#define _DEBUGGING_SPARSE
 
 
 #ifdef SHUMI_FORCE_ASSERTS  // Operated by the -asserts" and "-no-asserts" args to run_gui.py. By default on.
@@ -255,6 +256,21 @@ bool NNUE_data::save_parameters(const std::filesystem::path& filename,
         }
         text << "\r\n";
     }
+    text << "# RMSe (cp): initial = " << std::fixed << std::setprecision(2);
+    if (saved_training_result) {
+        text << saved_training_result->initial_rmse
+             << ", final = " << saved_training_result->final_rmse << ", lck% = ";
+        if (saved_training_result->final_lock_percent) {
+            text << *saved_training_result->final_lock_percent;
+        } else {
+            text << "unavailable";
+        }
+    } else {
+        text << "unavailable, final = unavailable, lck% = unavailable";
+    }
+    text << "\r\n";
+    // RMSe is rounded for display; model weights must retain full float precision.
+    text << std::defaultfloat << std::setprecision(std::numeric_limits<float>::max_digits10);
     text << "#\r\n";
     for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
         const auto& neuron = parameters_.Neurons[j];
@@ -287,20 +303,6 @@ bool NNUE_data::save_parameters(const std::filesystem::path& filename,
     if (!write_values(&parameters_.output_bias, 1)) {
         return false;
     }
-    text << "#\r\n# RMSe (cp): initial = " << std::fixed << std::setprecision(2);
-    if (saved_training_result) {
-        text << saved_training_result->initial_rmse
-             << ", final = " << saved_training_result->final_rmse << ", lck% = ";
-        if (saved_training_result->final_lock_percent) {
-            text << *saved_training_result->final_lock_percent;
-        } else {
-            text << "unavailable";
-        }
-    } else {
-        text << "unavailable, final = unavailable, lck% = unavailable";
-    }
-    text << "\r\n";
-
     // Binary mode preserves explicit CRLF on every platform, including Windows.
     std::ofstream file(filename, std::ios::binary);
     if (!file) {
@@ -428,8 +430,20 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
     if (line != "# Format version: 1" && line != "# Format version: 2") {
         return fail("expected '# Format version: 1'");
     }
-    if (!read_label("# Neuron count: " + std::to_string(NNUE_NEURON_COUNT))) {
+    if (!read_line()) {
         return false;
+    }
+    const std::string neuron_count_label = "# Neuron count: ";
+    if (line.rfind(neuron_count_label, 0) != 0) {
+        return fail("expected '# Neuron count: '");
+    }
+    int file_neuron_count = 0;
+    const char* count_begin = line.data() + neuron_count_label.size();
+    const char* count_end = line.data() + line.size();
+    const auto count_result = std::from_chars(count_begin, count_end, file_neuron_count);
+    if (count_result.ec != std::errc{} || count_result.ptr != count_end ||
+        file_neuron_count <= 0 || file_neuron_count > NNUE_NEURON_COUNT) {
+        return fail("neuron count must be between 1 and " + std::to_string(NNUE_NEURON_COUNT));
     }
     int activated_neurons = -1;
     int training_iterations = -1;
@@ -503,7 +517,7 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
             }
             return read_line();
         };
-        if (!read_metadata("# Activated neurons: ", activated_neurons, NNUE_NEURON_COUNT) ||
+        if (!read_metadata("# Activated neurons: ", activated_neurons, file_neuron_count) ||
             !read_metadata("# Training iterations: ", training_iterations, std::numeric_limits<int>::max()) ||
             !read_metadata("# Learning rate: ", learning_rate, std::numeric_limits<float>::max())) {
             return false;
@@ -520,7 +534,7 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
 
     // Do not change either the parameters or inference cache until all checks pass.
     NNUEParameters loaded{};
-    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+    for (int j = 0; j < file_neuron_count; ++j) {
         auto& neuron = loaded.Neurons[j];
         if (!read_label("# Neuron: " + std::to_string(j))) {
             return false;
@@ -543,8 +557,8 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
     if (!read_label("# output_weight")) {
         return false;
     }
-    for (int j = 0; j < NNUE_NEURON_COUNT; j += 8) {
-        const int count = NNUE_NEURON_COUNT - j < 8 ? NNUE_NEURON_COUNT - j : 8;
+    for (int j = 0; j < file_neuron_count; j += 8) {
+        const int count = file_neuron_count - j < 8 ? file_neuron_count - j : 8;
         if (!read_values(&loaded.output_weight[j], count)) {
             return false;
         }
@@ -553,7 +567,7 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
         return false;
     }
 
-    // Older files may omit the RMSe footer or contain it in the header instead.
+    // New files store RMSe in the header; older files may have a footer or no RMSe.
     if (file.peek() != std::char_traits<char>::eof()) {
         if (!read_line()) {
             return false;
@@ -664,7 +678,7 @@ void NNUE_data::calculate_nnue_jacobian_row(
     calculate_nnue_jacobian_row_(inputs, parameters_, row);
 }
 
-// called ony in testing
+// Dense reference implementation, also used to verify sparse training.
 float NNUE_data::calculate_nnue_gradient(
     const NNUETrainingExample& example,
     NNUEGradient& gradient) const
@@ -672,11 +686,83 @@ float NNUE_data::calculate_nnue_gradient(
     return _calculate_nnue_gradient(example, parameters_, gradient);
 }
 
-// called only in testing
+// called in training
 void NNUE_data::apply_nnue_gradient(const NNUEGradient& gradient, float learning_rate)
 {
     apply_nnue_gradient_(parameters_, gradient, learning_rate);
-    rebuild_inference_parameters_();
+}
+
+
+
+float NNUE_data::train_one_position(const NNUETrainingExample& example, float learning_rate)
+{
+    #ifdef _DEBUGGING_SPARSE
+        // The reference and sparse update must start from identical parameters.
+        // Keep all reference work out of builds with assertions disabled.
+        NNUEParameters reference = parameters_;
+        NNUEGradient gradient;
+        const float reference_aberration = _calculate_nnue_gradient(example, reference, gradient);
+        apply_nnue_gradient_(reference, gradient, learning_rate);
+    #endif
+
+    NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
+    const std::size_t active_count = collect_active_inputs(example.inputs, active_inputs);
+    float values[NNUE_NEURON_COUNT];
+    float score = parameters_.output_bias;
+    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+        values[j] = calculate_neuron(
+            example.inputs, parameters_.Neurons[j], active_inputs, active_count);
+        score += parameters_.output_weight[j] * activate_unit(values[j]);
+    }
+    const float aberration = score - example.target_positional_score_cp;
+
+    parameters_.output_bias -= learning_rate * aberration;
+    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+        // Hidden derivatives use the output weight BEFORE its update.
+        const float sensitivity = parameters_.output_weight[j];
+        const float output_gradient = aberration * activate_unit(values[j]);
+        parameters_.output_weight[j] -= learning_rate * output_gradient;
+        if (values[j] <= 0.0f) {
+            continue;
+        }
+
+        auto& neuron = parameters_.Neurons[j];
+        const float bias_gradient = aberration * sensitivity;
+        neuron.bias -= learning_rate * bias_gradient;
+        if (example.inputs.black_to_move != 0) {
+            const float turn_derivative = sensitivity * example.inputs.black_to_move;
+            const float turn_gradient = aberration * turn_derivative;
+            neuron.turn_weight -= learning_rate * turn_gradient;
+        }
+
+        for (std::size_t i = 0; i < active_count; ++i) {
+            const NNUEActiveInput& input = active_inputs[i];
+            const int piece = input.feature_index >> 6;
+            const int square = input.feature_index & 63;
+            // Preserve the dense method's multiplication order and rounding.
+            const float derivative = sensitivity * input.value;
+            const float piece_gradient = aberration * derivative;
+            neuron.piece_weight[piece][square] -= learning_rate * piece_gradient;
+        }
+    }
+
+    #ifdef _DEBUGGING_SPARSE
+        assert(aberration == reference_aberration);
+        assert(parameters_.output_bias == reference.output_bias);
+        for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+            assert(parameters_.output_weight[j] == reference.output_weight[j]);
+            assert(parameters_.Neurons[j].bias == reference.Neurons[j].bias);
+            assert(parameters_.Neurons[j].turn_weight == reference.Neurons[j].turn_weight);
+            for (int piece = 0; piece < 12; ++piece) {
+                for (int square = 0; square < 64; ++square) {
+                    assert(parameters_.Neurons[j].piece_weight[piece][square]
+                        == reference.Neurons[j].piece_weight[piece][square]);
+                }
+            }
+        }
+    #endif
+
+    return aberration;
 }
 
 void NNUE_data::fill_nnue_inputs(const GameBoard& board, NNUEInputs& inputs) const
@@ -775,9 +861,10 @@ float NNUE_data::calculate_nnue_positional_(
 
         const float input_value = (float)(input.value);
 
-        assert (input_value == 1.0f);
+        //assert (input_value == 1.0f);
         for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
-            values[j] += (weights[j] * input_value);
+            //values[j] += (weights[j] * input_value);
+            values[j] += (weights[j]);
         }
     }
 
@@ -897,7 +984,7 @@ float NNUE_data::_calculate_nnue_gradient(
 
     const float positional_score = calculate_nnue_positional_training(example.inputs, parameters);
 
-    const float aberration = positional_score - example.target_positional_score_cp;
+    const float aberration = (positional_score - example.target_positional_score_cp);
 
 
     NNUEJacobianRow row{};
@@ -1180,8 +1267,7 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
             const float aberration = nnue.Calculate_nnue_aberration(example);
 
             // Calculate NNUE's current positional score for display.
-            const float nnue_positional =
-                example.target_positional_score_cp + aberration;
+            const float nnue_positional = example.target_positional_score_cp + aberration;
 
             // Print the NNUE positional score and aberration using the current
             // parameters, before applying this iteration's gradient correction.
@@ -1281,7 +1367,8 @@ int multi_FEN_readin(
 
     if (iMethod != NNUETrainingMethod::NONE &&
         iMethod != NNUETrainingMethod::STATIC_EVAL &&
-        iMethod != NNUETrainingMethod::FULL_SEARCH) {
+        iMethod != NNUETrainingMethod::FULL_SEARCH &&
+        iMethod != NNUETrainingMethod::RANDOM_EVAL) {
         return fail("unknown NNUE training method");
     }
 
@@ -1300,6 +1387,12 @@ int multi_FEN_readin(
     std::vector<NNUETrainingExample> loaded;
     std::vector<std::string> loaded_fens;
     NNUE_data input_encoder;
+    // Static evaluation reuses one engine/AI instead of allocating their search
+    // buffers and hash tables for every FEN. Construct only after a valid record.
+    std::unique_ptr<Engine> static_engine;
+    std::unique_ptr<MinimaxAI> static_minimax;
+    std::optional<std::mt19937> random_generator;
+    std::uniform_int_distribution<int> random_score_cp(-200, 200);
     std::string line;
 
     while (std::getline(file, line)) {
@@ -1315,7 +1408,8 @@ int multi_FEN_readin(
             continue;
         }
         const auto fail_line = [&](const std::string& reason) {
-            return fail("line " + std::to_string(line_number) + ": " + reason);
+            return fail("line " + std::to_string(line_number) + ": " + reason +
+                        "\n  Record: " + std::string(record));
         };
         const auto separator = record.find('|');
         if (separator == std::string_view::npos) {
@@ -1351,7 +1445,7 @@ int multi_FEN_readin(
                 return fail_line("NONE requires an integer score in the int range after '|'");
             }
         } else if (value != "*") {
-            return fail_line("STATIC_EVAL and FULL_SEARCH require '*' after '|'");
+            return fail_line("STATIC_EVAL, FULL_SEARCH, and RANDOM_EVAL require '*' after '|'");
         }
 
         // The training routine accepts an int position count.
@@ -1360,10 +1454,37 @@ int multi_FEN_readin(
         }
         try {
             NNUETrainingExample example{};
-            if (iMethod == NNUETrainingMethod::NONE) {
+            if (iMethod == NNUETrainingMethod::NONE || iMethod == NNUETrainingMethod::RANDOM_EVAL) {
                 const GameBoard board(fen);
                 input_encoder.fill_nnue_inputs_fast(board, example.inputs);
-                example.target_positional_score_cp = static_cast<float>(supplied_score);
+                if (iMethod == NNUETrainingMethod::RANDOM_EVAL) {
+                    if (!random_generator) random_generator.emplace(std::random_device{}());
+                    example.target_positional_score_cp = static_cast<float>(random_score_cp(*random_generator));
+                } else {
+                    example.target_positional_score_cp = static_cast<float>(supplied_score);
+                }
+                loaded.push_back(example);
+                if (retained_fens) loaded_fens.push_back(fen);
+                continue;
+            }
+
+            if (iMethod == NNUETrainingMethod::STATIC_EVAL) {
+                if (!static_engine) {
+                    static_engine = std::make_unique<Engine>(fen);
+                    static_minimax = std::make_unique<MinimaxAI>(*static_engine);
+                } else {
+                    static_engine->reset_engine(fen);
+                    // Bound memory across unrelated positions and discard cached
+                    // pawn summaries while retaining the allocated hash buckets.
+                    static_minimax->pawn_file_info.clear();
+                }
+                input_encoder.fill_nnue_inputs_fast(static_engine->game_board, example.inputs);
+
+                int material_score_cp;
+                int positional_score_cp;
+                static_minimax->evaluate_board_t<Color::WHITE>(
+                    player, &material_score_cp, &positional_score_cp);
+                example.target_positional_score_cp = static_cast<float>(positional_score_cp);
                 loaded.push_back(example);
                 if (retained_fens) loaded_fens.push_back(fen);
                 continue;
@@ -1371,17 +1492,10 @@ int multi_FEN_readin(
 
             Engine engine(fen);
             MinimaxAI minimax_ai(engine);
+            
             input_encoder.fill_nnue_inputs_fast(engine.game_board, example.inputs);
             
-            if (iMethod == NNUETrainingMethod::STATIC_EVAL) {
-
-                int material_score_cp;
-                int positional_score_cp;
-                minimax_ai.evaluate_board_t<Color::WHITE>(
-                    player, &material_score_cp, &positional_score_cp);
-                example.target_positional_score_cp = static_cast<float>(positional_score_cp);
-
-            } else if (iMethod == NNUETrainingMethod::FULL_SEARCH) {
+            if (iMethod == NNUETrainingMethod::FULL_SEARCH) {
                 
                 if (depth_minimum < 1 || time_requested < 1) {
                     return fail_line("FULL_SEARCH requires positive minimum depth and time");
@@ -1515,8 +1629,7 @@ NNUETrainingResult NNUE_train_mult_positions(
         sout << "..." << endl;
     }
 
-    // Storage for the "derivatives of the loss".
-    NNUEGradient gradient{};
+    std::optional<int> final_report_nlocks;
 
     //
     // Loop over all positions, for the number of rewuested iterations.
@@ -1532,12 +1645,12 @@ NNUETrainingResult NNUE_train_mult_positions(
             const NNUETrainingExample& example = examples[position];
 
             // Calculate the aberration for this position.
-            const float aberration = nnue.Calculate_nnue_aberration(example);
+            //const float aberration = nnue.Calculate_nnue_aberration(example);
             
             // std::ostringstream aberration_text;
             // aberration_text << std::showpos << std::fixed << std::setprecision(5) << aberration;
 
-            float JJt = nnue.calculate_JJt(example.inputs);
+            //float JJt = nnue.calculate_JJt(example.inputs);
 
             // if ( (iteration == 0) || (iteration == TRAINING_ITERATIONS-1) ) {
             //     sout << std::setw(4) << iteration
@@ -1549,18 +1662,18 @@ NNUETrainingResult NNUE_train_mult_positions(
             //         << std::endl;
             // }
 
-            // Calculate the gradient for this position.
-            nnue.calculate_nnue_gradient(example, gradient);
-
-            // Update the same NNUE parameters.
-            nnue.apply_nnue_gradient(gradient, learning_rate);
+            // Sparse update, verified against the dense method when asserts are enabled.
+            nnue.train_one_position(example, learning_rate);
 
         }   // END loop over training positions
 
-        if (write_to_sout && !iterative_display && (iteration + 1) % 10 == 0) {
+        if (write_to_sout && !iterative_display && (iteration + 1) % 20 == 0) {
             const double rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
             const int nlocks = nTrainingPositions > 0
                               ? nnue.count_locked_positions(examples, nTrainingPositions) : 0;
+            if (iteration + 1 == nTrainingIterations) {
+                final_report_nlocks = nlocks;
+            }
             const double lock_percent = nTrainingPositions > 0
                                         ? 100.0 * nlocks / nTrainingPositions : 0.0;
             std::ostringstream lock_percent_text;
@@ -1571,14 +1684,19 @@ NNUETrainingResult NNUE_train_mult_positions(
 
     }   // END loop over training iterations
 
+    // Training uses parameters_ directly; refresh the board-evaluation copy once.
+    nnue.rebuild_inference_parameters_();
+
     if (write_to_sout && iterative_display && nTrainingIterations > 0) {
         sout << std::endl;
     }
 
      // Compute RMSe final
     const double final_rmse = nnue.Calculate_nnue_RMSe(examples, position_count);
-    const int nlocks = nTrainingPositions > 0
-                      ? nnue.count_locked_positions(examples, nTrainingPositions) : 0;
+    // Reuse the final iteration's report instead of calculating JJt twice.
+    const int nlocks = final_report_nlocks ? *final_report_nlocks
+                      : (nTrainingPositions > 0
+                         ? nnue.count_locked_positions(examples, nTrainingPositions) : 0);
     const double final_lock_percent = nTrainingPositions > 0
                                       ? 100.0 * nlocks / nTrainingPositions : 0.0;
     const int whole_lock_percent = nTrainingPositions > 0

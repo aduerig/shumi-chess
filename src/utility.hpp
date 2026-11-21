@@ -116,7 +116,7 @@ inline Square lsb_and_pop_to_square(ull& bitboard) {
     ull lsb_fast = 1ULL << square;
     // "pop" or remove the bit from the returned bitboard
     bitboard = bitboard & (~lsb_fast);
-    return square;
+    return (Square)square;
 }
 
 inline ull square_to_bitboard(Square square) {

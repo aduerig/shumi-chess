@@ -10,6 +10,15 @@
 #include <limits>
 #include <random>
 #include <string_view>
+#include <system_error>
+#include <utility>
+
+#ifdef _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
+#endif
 
 #include "engine.hpp"
 
@@ -74,6 +83,13 @@ void write_record(std::ostream& file, const FEN_Score& position)
         file << std::to_string(position.score);
     }
     file << '\n';
+}
+
+void shuffle_fen_records(std::vector<std::string>& records)
+{
+    if (records.size() < 2) return;
+    std::mt19937 rng(std::random_device{}());
+    std::shuffle(records.begin(), records.end(), rng);
 }
 
 } // namespace
@@ -212,6 +228,91 @@ bool append_fen_database(const std::string& filename,
     return true;
 }
 
+bool shuffle_FEN_file(const std::filesystem::path& filename, std::string* error)
+{
+    if (error) error->clear();
+    const auto fail = [&](const std::string& message) {
+        return database_error(filename.string(), 0, message.c_str(), error);
+    };
+
+    try {
+        const std::filesystem::path repo_root =
+            std::filesystem::path(__FILE__).parent_path().parent_path();
+        const std::filesystem::path input_path = repo_root / filename;
+        std::ifstream input(input_path, std::ios::binary);
+        if (!input.is_open()) return fail("could not open FEN file for shuffling");
+
+        std::vector<std::string> fen_records;
+        std::vector<std::pair<std::size_t, std::string>> preserved_lines;
+        std::string line, bom;
+        std::size_t line_number = 0;
+        while (std::getline(input, line)) {
+            ++line_number;
+            if (line_number == 1 && line.compare(0, 3, "\xEF\xBB\xBF") == 0) {
+                bom = line.substr(0, 3);
+                line.erase(0, 3);
+            }
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            const std::string_view record = trim(line);
+            if (record.empty() || record.front() == '#') {
+                preserved_lines.emplace_back(line_number, std::move(line));
+            } else {
+                fen_records.push_back(std::move(line));
+            }
+        }
+        if (input.bad() || !input.eof()) return fail("could not read FEN file");
+        input.close();
+
+        shuffle_fen_records(fen_records);
+
+        // Stage on the same filesystem. Reserve a directory exclusively so an
+        // existing temporary file (or another shuffle) can never be overwritten.
+        std::filesystem::path temp_directory = input_path;
+        temp_directory += ".shuffle.tmp";
+        if (!std::filesystem::create_directory(temp_directory)) {
+            return fail("shuffle staging directory already exists: " + temp_directory.string());
+        }
+        const std::filesystem::path temp_path = temp_directory / "shuffled.txt";
+        struct Cleanup {
+            std::filesystem::path file, directory;
+            ~Cleanup() {
+                std::error_code ignored;
+                std::filesystem::remove(file, ignored);
+                std::filesystem::remove(directory, ignored);
+            }
+        } cleanup{temp_path, temp_directory};
+
+        std::ofstream output(temp_path, std::ios::binary);
+        if (!output.is_open()) return fail("could not open shuffled output");
+        output << bom;
+        std::size_t next_record = 0, next_preserved = 0;
+        for (std::size_t number = 1; number <= line_number; ++number) {
+            if (next_preserved < preserved_lines.size() &&
+                preserved_lines[next_preserved].first == number) {
+                output << preserved_lines[next_preserved++].second;
+            } else {
+                output << fen_records[next_record++];
+            }
+            output << "\r\n";
+        }
+        output.close();
+        if (!output) return fail("could not write or close shuffled output");
+
+#ifdef _WIN32
+        if (!MoveFileExW(temp_path.c_str(), input_path.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+            throw std::system_error(static_cast<int>(GetLastError()), std::system_category(),
+                                    "could not replace FEN file with shuffled output");
+        }
+#else
+        std::filesystem::rename(temp_path, input_path);
+#endif
+        return true;
+    } catch (const std::exception& exception) {
+        return fail(exception.what());
+    }
+}
+
+// If shuffling uses the Fisher–Yates algorithm
 bool append_fens_from_pgn_file(
     const std::filesystem::path& input_filename,
     const std::filesystem::path& output_filename,
@@ -307,10 +408,7 @@ bool append_fens_from_pgn_file(
             }
         }
         if (collected.positions != 0) {
-            if (shuffle_fens && fen_records.size() > 1) {
-                std::mt19937 rng(std::random_device{}());
-                std::shuffle(fen_records.begin(), fen_records.end(), rng);
-            }
+            if (shuffle_fens) shuffle_fen_records(fen_records);
             const std::time_t collected_at = std::time(nullptr);
             std::tm collection_date{};
 #ifdef _WIN32
@@ -328,7 +426,7 @@ bool append_fens_from_pgn_file(
                    << " (" << std::put_time(&collection_date, "%Y-%m-%d %H:%M") << ")"
                    << "\r\n#    POSITIONS=" << collected.positions << " SAMPLE RATE (ply)=" << every_n_plies
                    << " SHUFFLE_FENS=" << (shuffle_fens ? "true" : "false")
-                   << "\r\n#    OUTPUT: " << output_filename.generic_string()
+                   << "\r\n#    APPENDED TO: " << output_filename.generic_string()
                    << "\r\n#\r\n";
             for (const auto& record : fen_records) {
                 output << record;
