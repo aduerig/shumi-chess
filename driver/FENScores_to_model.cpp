@@ -20,7 +20,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 // Training input and output, relative to the repository root.
-constexpr const char* database_path = "NNUE/FENs/evaluated_FENs.txt";
+constexpr const char* database_path = "NNUE/FENs/mixed_330K_shuffled.txt";   // "C:\programming\shumi-chess\NNUE\FENs\mixed_330K_shuffled.txt"
 constexpr const char* NNUE_model_output_file = "NNUE/models/temp.mod";
 
 constexpr int TRAINING_ITERATIONS = 400;
@@ -29,7 +29,7 @@ constexpr float learning_rate = 0.0001f;
 // true: update the current iteration in place; false: print metrics every 10 iterations.
 constexpr bool ITERIVE_DISPLAY = false;
 
-constexpr int N_ACTIVE_NEURONS = 63;
+constexpr int N_ACTIVE_NEURONS = 127;
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 

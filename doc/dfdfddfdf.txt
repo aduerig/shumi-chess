@@ -11,140 +11,88 @@ Priority	Approach	Purpose
 
 
 ===================================================================================
+timing tests for various evaluators (all search mechanics included)
 
-
+64N eval    27438, 28076, 27503     
+Shumi       38710, 39222, 39144     (with NNUE_NEURON_COUNT at 64)
+Slug        18054, 18454, 18347     (with NNUE_NEURON_COUNT at 64)
+Slug        18302, 18204, 18520     (with NNUE_NEURON_COUNT at 128)
+128N eval   35206, 35272, 34934     (with NNUE_NEURON_COUNT at 128)
 =====================================================================================
 
-
+Now training and using 128 nerons 
 ====================================================================================
+activating 63 nerons
 
-
-For changing `TTEntry2::score_cp` from `int` to **signed `std::int16_t`**, I see **no current correctness blocker**. 
-Here is the revised numbered list.
-
-1. **The store becomes a narrowing conversion, but its current input is guaranteed to fit.**
-
-   The [write path](C:/programming/shumi-chess/src/minimax.cpp:2349) is:
-
-   ```cpp
-   const Score score_for_TT = mate_score_to_TT(d_best_score, level);
-   const int cp_score_temp = convert_to_CP(score_for_TT);
-   // ...
-   slot.score_cp = cp_score_temp;
-   ```
-
-   `Score` is already `std::int16_t`, and `convert_to_CP()` simply widens it to `int`. Consequently, the 
-   proposed change gives:
-
-   ```text
-   int16_t → int → int16_t
-   ```
-
-   Every value produced by that sequence is preserved. I found only one assignment to the TT score field.
-
-   The potential concern is a future change that writes a larger `int` directly. 
-   A range assertion **before the assignment** would protect that boundary. 
-   An assertion when reading the table cannot reliably detect a value already changed by narrowing.
-
-   MSVC may also issue a narrowing-conversion warning. An explicit cast can document the conversion, but does not check its range.
-
-2. **Mate normalization already narrows its result before the table sees it.**
-
-   In [mate_score_to_TT()](C:/programming/shumi-chess/src/score.hpp:112):
-
-   ```cpp
-   return score + level;
-   ```
-
-   The addition happens in `int`, followed by conversion to the function’s `Score` return type. Therefore, an incorrect adjustment could lose information before either `cp_score_temp` or `slot.score_cp` receives it.
-
-   **This concern already exists with the current `int` table field.** Shrinking that field does not introduce it.
-
-   Correct normalization fits within ±30,000. For example, a winning mate at root-relative ply 20 has score 29,980. Storing it from a node at ply 6 produces 29,986: mate in 14 plies from that node.
-
-   If you want additional protection, calculate and assert the adjusted value while it is still an `int`, before returning it as `Score`.
-
-3. **TT validation must permit mates while excluding invalid search values.**
-
-   Your current score conventions fit in signed 16-bit storage:
-
-   - Ordinary evaluations are checked against ±28,999.
-   - Mate scores extend toward ±30,000.
-   - `ABORT_SCORE` and `ONLY_MOVE_SCORE` are 30,001 and 30,002.
-
-   The TT must accept legitimate mate scores. Applying the evaluator’s ±28,999 assertion to TT storage would reject them.
-
-   Conversely, the control values fit the storage type but should never be stored as search results. I checked the current paths: only-move results and aborted searches return before TT storage.
-
-   A TT-specific check against `[-HUGE_SCORE, HUGE_SCORE]` would express that intended range.
-
-   Also, −32,768 should remain excluded from usable scores because its negation cannot fit in `Score`. Your existing `convert_from_CP()` assertion already excludes it.
-
-   These are existing engine rules. I found no new violation caused by the proposed field change.
-
-4. **The read paths and bound comparisons remain compatible.**
-
-   Both normal probe paths do this:
-
-   ```cpp
-   Score stored_score = convert_from_CP(entry.score_cp);
-   stored_score = mate_score_from_TT(stored_score, level);
-   ```
-
-   The new signed 16-bit field widens safely to the helper’s `int` parameter, preserving negative values.
-
-   Exact-score returns and lower/upper-bound comparisons therefore receive the same values as before. Flags are stored separately; there is no flag information hidden in the score’s upper bits.
-
-   I found no dependency on the field being an `int&` or `int*`, no raw TT serialization, and no atomic operation requiring its current width. `<cstdint>` is already available through your headers.
-
-5. **The smaller field should not reduce the current map’s allocated node size.**
-
-   For the layout we inspected:
-
-   | Object | Before | Expected afterward |
-   |---|---:|---:|
-   | `TTEntry2` | 16 bytes | 14 bytes |
-   | Map’s key/value pair | 24 bytes | 24 bytes |
-   | MSVC map node | 40 bytes | 40 bytes |
-
-   Padding in the enclosing key/value pair absorbs the two-byte saving. This limits the memory benefit of the change; it does not create a correctness problem.
-
-   With node size unchanged, there is also no automatic improvement in cache density. Any execution-speed difference would need measurement.
-
-No changes made. This is analysis of the current source; a modified version has not been compiled or run.
+eading FEN scores file: C:\programming\shumi-chess\NNUE/FENs/mixed_330K_shuffled.txt
+Training NNUE model: positions=344115 iterations=400 learning_rate=0.0001
+Activate: 63
+Initial RMSe=146.719 cp
+...
+Iteration 20 RMSe=38.9387 cp lk%=0.00
+Iteration 40 RMSe=36.5811 cp lk%=0.00
+Iteration 60 RMSe=36.0699 cp lk%=0.00
+Iteration 80 RMSe=35.6211 cp lk%=0.00
+Iteration 100 RMSe=35.262 cp lk%=0.00
+Iteration 120 RMSe=34.9889 cp lk%=0.00
+Iteration 140 RMSe=34.9324 cp lk%=0.00
+Iteration 160 RMSe=34.7578 cp lk%=0.00
+Iteration 180 RMSe=34.6848 cp lk%=0.00
+Iteration 200 RMSe=34.6069 cp lk%=0.00
+Iteration 220 RMSe=34.4478 cp lk%=0.00
+Iteration 240 RMSe=34.4327 cp lk%=0.00
+Iteration 260 RMSe=34.2944 cp lk%=0.00
+Iteration 280 RMSe=34.1854 cp lk%=0.00
+Iteration 300 RMSe=34.1595 cp lk%=0.00
+Iteration 320 RMSe=34.0827 cp lk%=0.00
+Iteration 340 RMSe=34.0702 cp lk%=0.00
+Iteration 360 RMSe=34.0684 cp lk%=0.00
+Iteration 380 RMSe=34.0037 cp lk%=0.00
+Iteration 400 RMSe=33.9459 cp lk%=0.00
+Final RMSe=33.9459 nlocks%=0.00
+Saved NNUE model to: C:\programming\shumi-chess\NNUE/models/temp.mod
+Elapsed time: 0h 15m 17.762s
+Training iterations per second: 0.44
+SUCCESS - press any key
 
 
 =====================================================================================
+activating 128 nerons
+
+Reading FEN scores file: C:\programming\shumi-chess\NNUE/FENs/mixed_330K_shuffled.txt
+Training NNUE model: positions=344115 iterations=400 learning_rate=0.0001
+Activate: 127
+Initial RMSe=146.646 cp
+...
+Iteration 20 RMSe=30.5618 cp lk%=0.00
+Iteration 40 RMSe=28.3967 cp lk%=0.00
+Iteration 60 RMSe=27.4674 cp lk%=0.00
+Iteration 80 RMSe=26.7758 cp lk%=0.00
+Iteration 100 RMSe=26.2833 cp lk%=0.00
+Iteration 120 RMSe=25.9322 cp lk%=0.00
+Iteration 140 RMSe=25.5917 cp lk%=0.00
+Iteration 160 RMSe=25.4092 cp lk%=0.00
+Iteration 180 RMSe=25.2669 cp lk%=0.00
+Iteration 200 RMSe=25.04 cp lk%=0.00
+Iteration 220 RMSe=24.8433 cp lk%=0.00
+Iteration 240 RMSe=24.6835 cp lk%=0.00
+Iteration 260 RMSe=24.5739 cp lk%=0.00
+Iteration 280 RMSe=24.4929 cp lk%=0.00
+Iteration 300 RMSe=24.4252 cp lk%=0.00
+Iteration 320 RMSe=24.3948 cp lk%=0.00
+Iteration 340 RMSe=24.3246 cp lk%=0.00
+Iteration 360 RMSe=24.2413 cp lk%=0.00
+Iteration 380 RMSe=24.2111 cp lk%=0.00
+Iteration 400 RMSe=24.1591 cp lk%=0.00
+Final RMSe=24.1591 nlocks%=0.00
+Saved NNUE model to: C:\programming\shumi-chess\NNUE/models/temp.mod
+Elapsed time: 0h 14m 42.178s
+Training iterations per second: 0.45
+SUCCESS - press any key
 
 
 
-
-
-
-
-soft abort q=1
- n_Multis=1  xx 0  rr  
-root no-move state=2 draw_reason=4 halfmove=0 fen=8/8/8/6n1/3K4/8/6k1/7N w - - 0 67
-Assertion failed: 0, file C:\programming\shumi-chess\src\minimax.cpp, line 1105
-
-
-
-the two measurements are independent. They do not recognize that an attack becomes more 
-dangerous when the shelter is broken.  
-count_guard_pawn_files_t() .vs. attackers_on_enemy_king_near_cp_t. 
-
-
-Shelter evaluation is conditional on having castled.
-
-
-he open-file penalty misses semi-open files. If your king’s g-pawn disappears but the enemy still has
- a g-pawn, the file receives 0.0, rather 
-than a negative score. Yet an enemy rook can attack down that file from in front of its own pawn.
-
-
-Attack pressure is strictly linear. AND Every attacking piece has the same value per contact.
-
-
+=====================================================================================
 
 
 

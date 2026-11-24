@@ -4315,12 +4315,13 @@ int MinimaxAI::evaluate_board_t(ShumiChess::EvalPersons evp,
 
     const PawnFileInfo* pawnFileInfoP = NULL;   // Initialize the lazy pointer
 
-
-    // This guy is weird in that in returns in "abs coordinates" (positive good for white, negative for black)
-    cp_score_position_temp = engine.game_board.excess_exceptions_cp();
-    if constexpr (for_color != Color::WHITE) cp_score_position_temp *= -1;  //  Convert to for_color's perspective before adding it.
-    cp_score_position += cp_score_position_temp;
-
+    // NNUE learns the full positional score, including the excess adjustment.
+    // Add it explicitly only for non neural network model evaluators, which supply the training targets.
+    if (evp != NNUE1 && evp != NNUE2) {
+        cp_score_position_temp = engine.game_board.excess_exceptions_cp();
+        if constexpr (for_color != Color::WHITE) cp_score_position_temp *= -1;
+        cp_score_position += cp_score_position_temp;
+    }
 
     cp_score_position_temp =  get_positional_for_one_color<Color::WHITE>(nPhase, evp, cp_score_material_all, pawnFileInfoP);
     if (Color::WHITE != for_color) cp_score_position_temp *= -1;

@@ -25,15 +25,16 @@ using namespace ShumiChess;
 
 const filesystem::path repo_root = filesystem::path(__FILE__).parent_path().parent_path();
 
-const filesystem::path input_path = repo_root / "NNUE" / "FENs" / "collected_from_pgn.txt";   //  NNUE\FENs\collected_from_pgn.txt
+const filesystem::path input_path = repo_root / "NNUE" / "FENs" / "mixed_330K.txt";   //  "C:\programming\shumi-chess\NNUE\FENs\mixed_330K.txt"
 const filesystem::path output_path = repo_root / "NNUE" / "FENs" / "evaluated_FENs.txt";
 // const filesystem::path input_path = repo_root / "doc" / "evals.txt";
 // const filesystem::path output_path = repo_root / "doc" / "evalsPLUS.txt";
 
 constexpr int DEPTH_MINIMUM = 3;
-constexpr int TIME_REQUESTED = 3000;
+constexpr int TIME_REQUESTED = 300;
 constexpr EvalPersons PLAYER = UNCLE_SHUMI;
-const auto iMethod = NNUETrainingMethod::STATIC_EVAL;
+//const auto iMethod = NNUETrainingMethod::STATIC_EVAL;
+const auto iMethod = NNUETrainingMethod::FULL_SEARCH;
 
 /////////////////////////////////////////////////////////////////////////////////////
 

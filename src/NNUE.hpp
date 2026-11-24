@@ -176,10 +176,13 @@ public:
     // starting parameters, supplied through the other constructor or setter.
     NNUE_data();
     explicit NNUE_data(const NNUEParameters& initial_parameters);
+    NNUE_data(const NNUE_data& other);
+    NNUE_data& operator=(const NNUE_data& other);
 
     int n_calculates = 0; // Public heartbeat: completed positional-score calculations.
 
-    // Parameters are owned by value; supplying them copies their contents.
+    // Parameters are independently owned; supplying them or copying a network
+    // copies their contents, even though the large storage lives on the heap.
     const NNUEParameters& get_parameters() const;
     void set_parameters(const NNUEParameters& parameters);
 
@@ -338,7 +341,8 @@ private:
         const NNUEGradient& gradient,
         float learning_rate);
 
-    NNUEParameters parameters_;
+    // Two networks live inside MinimaxAI; keep their large blocks off the stack.
+    std::unique_ptr<NNUEParameters> parameters_;
     std::vector<std::string> training_header_;
     int activated_neurons_ = -1;
     int training_iterations_ = -1;

@@ -137,6 +137,9 @@ if(MSVC)
     )
 endif()
 
+add_executable(validate_models driver/validate_models.cpp)
+target_link_libraries(validate_models PUBLIC ${project_name})
+
 add_executable(evaluate_fens driver/evaluate_fens.cpp)
 target_compile_definitions(evaluate_fens PRIVATE NDEBUG=1)
 target_link_libraries(evaluate_fens PUBLIC ${project_name}NoAsserts)

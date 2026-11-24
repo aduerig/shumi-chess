@@ -4,8 +4,8 @@
 #include "globals.hpp"
 
 // Independent NNUE models for engine play, relative to the repository root.
-inline constexpr const char* NNUE1_model_file = "NNUE/models/63_344K_400_A.mod";
-inline constexpr const char* NNUE2_model_file = "NNUE/models/28_110K_200_A.mod";    
+inline constexpr const char* NNUE1_model_file = "NNUE/models/28_110K_200_A.mod"; 
+inline constexpr const char* NNUE2_model_file = "NNUE/models/63_344K_400_A.mod";
 inline constexpr const char* NNUE_model_file = NNUE1_model_file; // Legacy callers.
 
 // NNUE diagnostics and search-position collection.

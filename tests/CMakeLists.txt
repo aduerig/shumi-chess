@@ -3,6 +3,7 @@ add_executable(
     tengine.cpp
     tgameboard.cpp
     tnnue.cpp
+    tnnue_capacity.cpp
     tutils.cpp
     tvalid_moves.cpp
 )

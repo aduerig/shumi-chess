@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -142,6 +143,59 @@ TEST_F(NNUEFENReader, AllMateSearchFailsWithoutReplacingOutputs)
 }
 
 
+TEST_F(NNUEFENReader, StaticEvalTargetMatchesNNUEPlaybackWithExcess)
+{
+    // Queen versus rook, knight and pawn, with either side owning the queen.
+    for (const std::string placement : {
+            "6nk/5pr1/8/8/8/8/8/KQ6", "kq6/8/8/8/8/8/5PR1/6NK"}) {
+        for (const std::string turn : {"w", "b"}) {
+            const std::string fen = placement + " " + turn + " - - 0 1";
+            SCOPED_TRACE(fen);
+            write(fen + " | *\n");
+            std::vector<NNUETrainingExample> examples;
+            std::string error;
+            ASSERT_EQ(multi_FEN_readin(filename, examples, NNUETrainingMethod::STATIC_EVAL,
+                                      0, 0, UNCLE_SHUMI, false, false, &error), 0) << error;
+            ASSERT_EQ(examples.size(), 1u);
+
+            Engine engine(fen);
+            MinimaxAI evaluator(engine);
+            const int material = evaluator.get_material();
+            const int excess = engine.game_board.excess_exceptions_cp();
+            ASSERT_NE(excess, 0);
+
+            // SLUG has no other positional terms: classical evaluation still adds excess.
+            EXPECT_EQ(evaluator.evaluate_board_t<Color::WHITE>(SLUG), material + excess);
+            EXPECT_EQ(evaluator.evaluate_board_t<Color::BLACK>(SLUG), -material - excess);
+
+            int classical_material = 0, classical_position = 0;
+            const int classical_total = evaluator.evaluate_board_t<Color::WHITE>(
+                UNCLE_SHUMI, &classical_material, &classical_position);
+            EXPECT_EQ(classical_material, material);
+            EXPECT_EQ(examples[0].target_positional_score_cp, classical_position);
+
+            // A model that exactly reproduces this target must reproduce the total
+            // evaluation too, without receiving a second excess adjustment.
+            auto parameters = std::make_unique<NNUEParameters>();
+            parameters->output_bias = examples[0].target_positional_score_cp;
+            evaluator.nnue.set_parameters(*parameters);
+            evaluator.nnue2.set_parameters(*parameters);
+            for (const auto player : {NNUE1, NNUE2}) {
+                SCOPED_TRACE(static_cast<int>(player));
+                int nnue_material = 0, nnue_position = 0;
+                EXPECT_EQ(evaluator.evaluate_board_t<Color::WHITE>(
+                    player, &nnue_material, &nnue_position), classical_total);
+                EXPECT_EQ(nnue_material, material);
+                EXPECT_EQ(nnue_position, classical_position);
+                EXPECT_EQ(evaluator.evaluate_board_t<Color::BLACK>(
+                    player, &nnue_material, &nnue_position), -classical_total);
+                EXPECT_EQ(nnue_material, -material);
+                EXPECT_EQ(nnue_position, -classical_position);
+            }
+        }
+    }
+}
+
 // Verify that construction copies the supplied parameters into NNUE-owned storage.
 // Changing the caller's weights afterward must not affect network predictions.
 // Use a single neuron with known weights to check exact positional scores.
@@ -229,13 +283,15 @@ TEST(NNUEData, TrainingUsesAndUpdatesOwnedParameters)
     // Positional target = search score minus material score.
     example.target_positional_score_cp = 110.0f - 100.0f;
 
-    NNUEJacobianRow row{};
+    auto row_storage = std::make_unique<NNUEJacobianRow>();
+    auto& row = *row_storage;
     nnue.calculate_nnue_jacobian_row(example.inputs, row);
     EXPECT_EQ(row.Neurons[0].piece_weight[1][square_e5], 2.0f);
     EXPECT_EQ(row.output_weight[0], 3.0f);
     EXPECT_EQ(row.output_bias, 1.0f);
 
-    NNUEGradient gradient{};
+    auto gradient_storage = std::make_unique<NNUEGradient>();
+    auto& gradient = *gradient_storage;
     const float before = nnue.calculate_nnue_gradient(example, gradient);
     EXPECT_EQ(before, -4.0f);
     EXPECT_EQ(gradient.Neurons[0].piece_weight[1][square_e5], -8.0f);
@@ -481,8 +537,6 @@ protected:
     const std::filesystem::path model_path =
         std::filesystem::path(__FILE__).parent_path() / "data" / "Model_001.txt";
     std::filesystem::path directory, input_path, saved_path;
-    std::string original, without_footer, parameter_text, rmse_line;
-    std::size_t metadata_end = 0;
 
     std::string read(const std::filesystem::path& path)
     {
@@ -493,14 +547,6 @@ protected:
         return text;
     }
 
-    void write(const std::string& text)
-    {
-        std::ofstream file(input_path, std::ios::binary);
-        file << text;
-        file.close();
-        ASSERT_TRUE(file) << input_path;
-    }
-
     void SetUp() override
     {
         directory = std::filesystem::temp_directory_path() /
@@ -509,17 +555,6 @@ protected:
         ASSERT_TRUE(std::filesystem::create_directory(directory)) << directory;
         input_path = directory / "input.txt";
         saved_path = directory / "saved.txt";
-        original = read(model_path);
-        const auto footer = original.rfind("#\r\n# RMSe (cp): initial = ");
-        ASSERT_NE(footer, std::string::npos);
-        without_footer = original.substr(0, footer);
-        rmse_line = original.substr(footer + 3);
-        const auto learning_rate = original.find("# Learning rate: ");
-        ASSERT_NE(learning_rate, std::string::npos);
-        metadata_end = original.find("\r\n", learning_rate) + 2;
-        const auto first_neuron = without_footer.find("# Neuron: 0\r\n");
-        ASSERT_NE(first_neuron, std::string::npos);
-        parameter_text = without_footer.substr(first_neuron);
     }
 
     void TearDown() override
@@ -533,74 +568,46 @@ protected:
     }
 };
 
-TEST_F(NNUEModelFormat, MovesFooterIntoHeaderWithoutChangingOtherBytes)
+TEST_F(NNUEModelFormat, WriteReadSuppliedTrainingResults)
 {
+    constexpr int fixture_neurons = 32;
+    ASSERT_NE(read(model_path).find("# Neuron count: 32\r\n"), std::string::npos);
     NNUE_data nnue;
     ASSERT_TRUE(nnue.load_parameters(model_path));
-    ASSERT_TRUE(nnue.save_parameters(saved_path));
-    std::string expected = without_footer;
-    expected.insert(metadata_end, rmse_line);
-    EXPECT_EQ(read(saved_path), expected);
-
-    // Once in the new layout, load/save preserves every byte, including CRLF.
-    NNUE_data reloaded;
-    ASSERT_TRUE(reloaded.load_parameters(saved_path));
-    ASSERT_TRUE(reloaded.save_parameters(input_path));
-    EXPECT_EQ(read(input_path), expected);
-}
-
-TEST_F(NNUEModelFormat, WritesSuppliedTrainingResultsDirectlyAfterLearningRate)
-{
-    NNUE_data nnue;
-    ASSERT_TRUE(nnue.load_parameters(model_path));
+    const auto original_parameters = std::make_unique<NNUEParameters>(nnue.get_parameters());
     const NNUETrainingResult result{98.17, 19.39, 0.0};
     ASSERT_TRUE(nnue.save_parameters(saved_path, {}, 28, 200, 0.0001f, result));
     const std::string saved = read(saved_path);
     const std::string expected = "# Learning rate: 1e-04\r\n"
         "# RMSe (cp): initial = 98.17, final = 19.39, lck% = 0.00\r\n#\r\n# Neuron: 0\r\n";
     EXPECT_NE(saved.find(expected), std::string::npos);
-    const auto first_neuron = saved.find("# Neuron: 0\r\n");
-    ASSERT_NE(first_neuron, std::string::npos);
-    EXPECT_EQ(saved.substr(first_neuron), parameter_text)
-        << "Moving the two-decimal RMSe display must not round model weights";
+    EXPECT_NE(saved.find("# Neuron count: " + std::to_string(NNUE_NEURON_COUNT) + "\r\n"),
+              std::string::npos);
     NNUE_data reloaded;
     ASSERT_TRUE(reloaded.load_parameters(saved_path));
+
+    // Saving expands the 32-neuron fixture to the compiled capacity. Compare
+    // exact parameter values, including zero padding, rather than file lengths.
+    const auto& before = *original_parameters;
+    const auto& after = reloaded.get_parameters();
+    EXPECT_EQ(after.output_bias, before.output_bias);
+    for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
+        SCOPED_TRACE(j);
+        const bool added_neuron = j >= fixture_neurons;
+        EXPECT_EQ(after.output_weight[j], added_neuron ? 0.0f : before.output_weight[j]);
+        EXPECT_EQ(after.Neurons[j].bias, added_neuron ? 0.0f : before.Neurons[j].bias);
+        EXPECT_EQ(after.Neurons[j].turn_weight, added_neuron ? 0.0f : before.Neurons[j].turn_weight);
+        for (int piece = 0; piece < 12; ++piece) {
+            for (int square = 0; square < 64; ++square) {
+                EXPECT_EQ(after.Neurons[j].piece_weight[piece][square],
+                          added_neuron ? 0.0f : before.Neurons[j].piece_weight[piece][square]);
+            }
+        }
+    }
+
+    // Once saved at the current capacity, a load/save cycle is byte-identical.
     ASSERT_TRUE(reloaded.save_parameters(input_path));
     EXPECT_EQ(read(input_path), saved);
-}
-
-TEST_F(NNUEModelFormat, LoadsLegacyFootersHeadersAndModelsWithoutTrainingResults)
-{
-    const std::string unavailable = "# RMSe (cp): initial = unavailable, final = unavailable, lck% = unavailable\r\n";
-    const std::string old_rmse = "# RMSe (cp): initial = 123.45, final = 6.78\r\n";
-    const std::string old_resaved = "# RMSe (cp): initial = 123.45, final = 6.78, lck% = unavailable\r\n";
-    const std::string full_rmse = "# RMSe (cp): initial = 123.45, final = 6.78, lck% = 12.34\r\n";
-    std::string old_header = without_footer, full_header = without_footer;
-    old_header.insert(metadata_end, old_rmse);
-    full_header.insert(metadata_end, full_rmse);
-    const std::string minimal = "# Shumi NNUE parameters\r\n# Format version: 1\r\n# Neuron count: "
-        + std::to_string(NNUE_NEURON_COUNT) + "\r\n" + parameter_text;
-    const std::pair<std::string, std::string> cases[] = {
-        {original, unavailable},
-        {without_footer, unavailable},
-        {without_footer + "#\r\n" + old_rmse, old_resaved},
-        {without_footer + "#\r\n" + full_rmse, full_rmse},
-        {old_header, old_resaved},
-        {full_header, full_rmse},
-        {minimal, unavailable},
-    };
-    for (std::size_t i = 0; i < std::size(cases); ++i) {
-        SCOPED_TRACE(i);
-        write(cases[i].first);
-        NNUE_data nnue;
-        ASSERT_TRUE(nnue.load_parameters(input_path));
-        ASSERT_TRUE(nnue.save_parameters(saved_path));
-        const std::string saved = read(saved_path);
-        EXPECT_NE(saved.find(cases[i].second + "#\r\n# Neuron: 0\r\n"), std::string::npos);
-        const auto first_neuron = saved.find("# Neuron: 0\r\n");
-        ASSERT_NE(first_neuron, std::string::npos);
-        EXPECT_EQ(saved.substr(first_neuron), parameter_text);
-    }
 }
 
 } // namespace

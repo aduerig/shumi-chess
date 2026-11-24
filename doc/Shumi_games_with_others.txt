@@ -24,6 +24,11 @@ shumi .vs. 28_110K_200_A  51 26
 shumi (A) .vs. 63_344K_400_A (B)   96 46   (diversity=4)
 shumi (B) .vs. 63_344K_400_A (A)   30.5 21.5 (diversity=2)
 63_344K_400_A (A) .vs. 28_110K_200_A (B)  93.5  88.5     (diversity=2)
+127_344K_400_A .vs. 28_110K_200_A 90  70
+127_344K_400_A .vs. 63_344K_400_A 129  108
+Shumi  .vs.  127_344K_400_A     38  15
+
+
 
 63_569K_200_A   # RMSe (cp): initial = 105.84, final = 36.90, lck% = 0.00  
 28_110K_200_A   # RMSe (cp): initial = 107.39, final = 46.89, lck% = 0.17   # RMSe (cp): initial = 107.13, final = 46.95, lck% = 0.03 

@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <charconv>
 #include <chrono>
 #include <cmath>
@@ -36,6 +37,14 @@ namespace ShumiChess {
 namespace {
 constexpr char training_banner[] = "########### from TRAINING DATASET ############";
 constexpr char model_banner[] = "########### TRAINED MODEL ####################";
+
+// Avoid a full NNUEParameters temporary on the stack when resetting a block.
+void zero_nnue_parameters(NNUEParameters& parameters)
+{
+    std::fill_n(parameters.Neurons, NNUE_NEURON_COUNT, NNUENeuronParameters{});
+    std::fill_n(parameters.output_weight, NNUE_NEURON_COUNT, 0.0f);
+    parameters.output_bias = 0.0f;
+}
 static_assert(sizeof(training_banner) == sizeof(model_banner));
 }
 
@@ -112,31 +121,53 @@ float NNUE_data::calculate_neuron(
 /////////////////////////////////////////////////////////////////////////////////////
 
 NNUE_data::NNUE_data()
-    : parameters_{},
+    : parameters_(std::make_unique<NNUEParameters>()),
       inference_parameters_(std::make_shared<NNUEInferenceParameters>())
 {
 }
 
 NNUE_data::NNUE_data(const NNUEParameters& initial_parameters)
-    : parameters_(initial_parameters)
+    : parameters_(std::make_unique<NNUEParameters>(initial_parameters))
 {
     rebuild_inference_parameters_();
 }
 
+NNUE_data::NNUE_data(const NNUE_data& other)
+    : parameters_(std::make_unique<NNUEParameters>())
+{
+    *this = other;
+}
+
+NNUE_data& NNUE_data::operator=(const NNUE_data& other)
+{
+    if (this != &other) {
+        *parameters_ = *other.parameters_;
+        n_calculates = other.n_calculates;
+        training_header_ = other.training_header_;
+        activated_neurons_ = other.activated_neurons_;
+        training_iterations_ = other.training_iterations_;
+        learning_rate_ = other.learning_rate_;
+        training_result_ = other.training_result_;
+        // The inference copy remains immutable and can still be shared.
+        inference_parameters_ = other.inference_parameters_;
+    }
+    return *this;
+}
+
 const NNUEParameters& NNUE_data::get_parameters() const
 {
-    return parameters_;
+    return *parameters_;
 }
 
 void NNUE_data::set_parameters(const NNUEParameters& parameters)
 {
-    parameters_ = parameters;
+    *parameters_ = parameters;
     rebuild_inference_parameters_();
 }
 
 void NNUE_data::zero_parameters()
 {
-    parameters_ = {};
+    zero_nnue_parameters(*parameters_);
     rebuild_inference_parameters_();
 }
 
@@ -273,7 +304,7 @@ bool NNUE_data::save_parameters(const std::filesystem::path& filename,
     text << std::defaultfloat << std::setprecision(std::numeric_limits<float>::max_digits10);
     text << "#\r\n";
     for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
-        const auto& neuron = parameters_.Neurons[j];
+        const auto& neuron = parameters_->Neurons[j];
         text << "# Neuron: " << j << "\r\n";
         for (int piece = 0; piece < 12; ++piece) {
             text << "# piece_weight: " << piece << "\r\n";
@@ -295,12 +326,12 @@ bool NNUE_data::save_parameters(const std::filesystem::path& filename,
     text << "# output_weight\r\n";
     for (int j = 0; j < NNUE_NEURON_COUNT; j += 8) {
         const int count = NNUE_NEURON_COUNT - j < 8 ? NNUE_NEURON_COUNT - j : 8;
-        if (!write_values(&parameters_.output_weight[j], count)) {
+        if (!write_values(&parameters_->output_weight[j], count)) {
             return false;
         }
     }
     text << "# output_bias\r\n";
-    if (!write_values(&parameters_.output_bias, 1)) {
+    if (!write_values(&parameters_->output_bias, 1)) {
         return false;
     }
     // Binary mode preserves explicit CRLF on every platform, including Windows.
@@ -533,7 +564,9 @@ bool NNUE_data::load_parameters(const std::filesystem::path& filename)
     }
 
     // Do not change either the parameters or inference cache until all checks pass.
-    NNUEParameters loaded{};
+    // A full parameter block is too large for nested Windows stack frames.
+    auto loaded_storage = std::make_unique<NNUEParameters>();
+    auto& loaded = *loaded_storage;
     for (int j = 0; j < file_neuron_count; ++j) {
         auto& neuron = loaded.Neurons[j];
         if (!read_label("# Neuron: " + std::to_string(j))) {
@@ -605,17 +638,17 @@ void NNUE_data::rebuild_inference_parameters_()
         for (int square = 0; square < 64; ++square) {
             for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
                 inference->piece_weight[piece][square][j] =
-                    parameters_.Neurons[j].piece_weight[piece][square];
+                    parameters_->Neurons[j].piece_weight[piece][square];
             }
         }
     }
 
     for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
-        inference->bias[j] = parameters_.Neurons[j].bias;
-        inference->turn_weight[j] = parameters_.Neurons[j].turn_weight;
-        inference->output_weight[j] = parameters_.output_weight[j];
+        inference->bias[j] = parameters_->Neurons[j].bias;
+        inference->turn_weight[j] = parameters_->Neurons[j].turn_weight;
+        inference->output_weight[j] = parameters_->output_weight[j];
     }
-    inference->output_bias = parameters_.output_bias;
+    inference->output_bias = parameters_->output_bias;
 
     inference_parameters_ = inference;
 }
@@ -645,7 +678,7 @@ float NNUE_data::Calculate_nnue_positional(const GameBoard& board)
 
 float NNUE_data::Calculate_nnue_aberration(const NNUETrainingExample& example)
 {
-    return calculate_nnue_aberration_(example, parameters_);
+    return calculate_nnue_aberration_(example, *parameters_);
 }
 
 // Watch out i use a sqrt()
@@ -675,7 +708,7 @@ void NNUE_data::calculate_nnue_jacobian_row(
     const NNUEInputs& inputs,
     NNUEJacobianRow& row) const
 {
-    calculate_nnue_jacobian_row_(inputs, parameters_, row);
+    calculate_nnue_jacobian_row_(inputs, *parameters_, row);
 }
 
 // Dense reference implementation, also used to verify sparse training.
@@ -683,13 +716,13 @@ float NNUE_data::calculate_nnue_gradient(
     const NNUETrainingExample& example,
     NNUEGradient& gradient) const
 {
-    return _calculate_nnue_gradient(example, parameters_, gradient);
+    return _calculate_nnue_gradient(example, *parameters_, gradient);
 }
 
 // called in training
 void NNUE_data::apply_nnue_gradient(const NNUEGradient& gradient, float learning_rate)
 {
-    apply_nnue_gradient_(parameters_, gradient, learning_rate);
+    apply_nnue_gradient_(*parameters_, gradient, learning_rate);
 }
 
 
@@ -699,8 +732,10 @@ float NNUE_data::train_one_position(const NNUETrainingExample& example, float le
     #ifdef _DEBUGGING_SPARSE
         // The reference and sparse update must start from identical parameters.
         // Keep all reference work out of builds with assertions disabled.
-        NNUEParameters reference = parameters_;
-        NNUEGradient gradient;
+        auto reference_storage = std::make_unique<NNUEParameters>(*parameters_);
+        auto& reference = *reference_storage;
+        auto gradient_storage = std::make_unique<NNUEGradient>();
+        auto& gradient = *gradient_storage;
         const float reference_aberration = _calculate_nnue_gradient(example, reference, gradient);
         apply_nnue_gradient_(reference, gradient, learning_rate);
     #endif
@@ -708,25 +743,25 @@ float NNUE_data::train_one_position(const NNUETrainingExample& example, float le
     NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
     const std::size_t active_count = collect_active_inputs(example.inputs, active_inputs);
     float values[NNUE_NEURON_COUNT];
-    float score = parameters_.output_bias;
+    float score = parameters_->output_bias;
     for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
         values[j] = calculate_neuron(
-            example.inputs, parameters_.Neurons[j], active_inputs, active_count);
-        score += parameters_.output_weight[j] * activate_unit(values[j]);
+            example.inputs, parameters_->Neurons[j], active_inputs, active_count);
+        score += parameters_->output_weight[j] * activate_unit(values[j]);
     }
     const float aberration = score - example.target_positional_score_cp;
 
-    parameters_.output_bias -= learning_rate * aberration;
+    parameters_->output_bias -= learning_rate * aberration;
     for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
         // Hidden derivatives use the output weight BEFORE its update.
-        const float sensitivity = parameters_.output_weight[j];
+        const float sensitivity = parameters_->output_weight[j];
         const float output_gradient = aberration * activate_unit(values[j]);
-        parameters_.output_weight[j] -= learning_rate * output_gradient;
+        parameters_->output_weight[j] -= learning_rate * output_gradient;
         if (values[j] <= 0.0f) {
             continue;
         }
 
-        auto& neuron = parameters_.Neurons[j];
+        auto& neuron = parameters_->Neurons[j];
         const float bias_gradient = aberration * sensitivity;
         neuron.bias -= learning_rate * bias_gradient;
         if (example.inputs.black_to_move != 0) {
@@ -748,14 +783,14 @@ float NNUE_data::train_one_position(const NNUETrainingExample& example, float le
 
     #ifdef _DEBUGGING_SPARSE
         assert(aberration == reference_aberration);
-        assert(parameters_.output_bias == reference.output_bias);
+        assert(parameters_->output_bias == reference.output_bias);
         for (int j = 0; j < NNUE_NEURON_COUNT; ++j) {
-            assert(parameters_.output_weight[j] == reference.output_weight[j]);
-            assert(parameters_.Neurons[j].bias == reference.Neurons[j].bias);
-            assert(parameters_.Neurons[j].turn_weight == reference.Neurons[j].turn_weight);
+            assert(parameters_->output_weight[j] == reference.output_weight[j]);
+            assert(parameters_->Neurons[j].bias == reference.Neurons[j].bias);
+            assert(parameters_->Neurons[j].turn_weight == reference.Neurons[j].turn_weight);
             for (int piece = 0; piece < 12; ++piece) {
                 for (int square = 0; square < 64; ++square) {
-                    assert(parameters_.Neurons[j].piece_weight[piece][square]
+                    assert(parameters_->Neurons[j].piece_weight[piece][square]
                         == reference.Neurons[j].piece_weight[piece][square]);
                 }
             }
@@ -932,7 +967,7 @@ void NNUE_data::calculate_nnue_jacobian_row_(
     const NNUEParameters& parameters,
     NNUEJacobianRow& row)
 {
-    row = {};
+    zero_nnue_parameters(row);
 
     NNUEActiveInput active_inputs[NNUE_INPUT_COUNT];
     const std::size_t active_count = collect_active_inputs(inputs, active_inputs);
@@ -987,10 +1022,11 @@ float NNUE_data::_calculate_nnue_gradient(
     const float aberration = (positional_score - example.target_positional_score_cp);
 
 
-    NNUEJacobianRow row{};
+    auto row_storage = std::make_unique<NNUEJacobianRow>();
+    auto& row = *row_storage;
     calculate_nnue_jacobian_row_(example.inputs, parameters, row);
 
-    gradient = {};
+    zero_nnue_parameters(gradient);
 
     gradient.output_bias = aberration * row.output_bias;
 
@@ -1070,7 +1106,8 @@ void NNUE_data::apply_nnue_gradient_(
 // Computes J * Jtranspose, for J a Jacobean matrix.
 float NNUE_data::calculate_JJt(const NNUEInputs& inputs) const
 {
-    NNUEJacobianRow row{};
+    auto row_storage = std::make_unique<NNUEJacobianRow>();
+    auto& row = *row_storage;
     calculate_nnue_jacobian_row(inputs, row);
 
     float JJt = row.output_bias * row.output_bias;
@@ -1118,9 +1155,10 @@ int NNUE_data::count_locked_positions(
 
 void NNUE_data::initialize_parameters()
 {
-    // Local storage for one full set of starting weights and biases; {} zeros them all.
+    // Heap storage for one full set of zero-initialized starting weights and biases.
     // The nnue object already owns separate working storage.
-    NNUEParameters parameters{};
+    auto parameters_storage = std::make_unique<NNUEParameters>();
+    auto& parameters = *parameters_storage;
 
     // Neuron 0: z[0] = bias + sum(piece_weight[p][s] * piece_on_square[p][s])
     //                     + turn_weight * black_to_move. Its activation is max(0, z[0]).
@@ -1148,9 +1186,10 @@ void NNUE_data::initialize_parameters_bounded(int neuron_count, const NNUEInitia
 {
     assert(neuron_count >= 0 && neuron_count <= NNUE_NEURON_COUNT);
 
-    // Local storage for one full set of starting weights and biases; {} zeros them all.
+    // Heap storage for one full set of zero-initialized starting weights and biases.
     // The nnue object already owns separate working storage.
-    NNUEParameters parameters{};
+    auto parameters_storage = std::make_unique<NNUEParameters>();
+    auto& parameters = *parameters_storage;
 
     // for (int j = 0; j < neuron_count; ++j) {
 
@@ -1252,7 +1291,8 @@ void test_NNUE_training_one_position(MinimaxAI* pPlayer)
 
     // Storage for the derivatives of the loss with respect to each NNUE parameter.
     // These derivatives are recalculated during every training iteration.
-    NNUEGradient gradient{};
+    auto gradient_storage = std::make_unique<NNUEGradient>();
+    auto& gradient = *gradient_storage;
 
     int convergence_count = 0;
     int jjt_lock_count = 0;
@@ -1501,19 +1541,6 @@ int multi_FEN_readin(
                     return fail_line("FULL_SEARCH requires positive minimum depth and time");
                 }
                 minimax_ai.score_forced_root_move = true;
-
-                // Previous direct call retained for reference. It bypassed the
-                // standard search setup and treated the minimum as the first depth.
-                // for (auto& move : minimax_ai.killer1) move = {};
-                // for (auto& move : minimax_ai.killer2) move = {};
-                // for (auto& entry : minimax_ai.prev_root_best_) entry = {};
-                // ull elapsed_ms = 0;
-                // const auto result = minimax_ai.do_a_principal_variation(
-                //     depth_minimum,
-                //     std::chrono::high_resolution_clock::now(),
-                //     time_requested,
-                //     MinimaxAI::SearchTimeControl{},
-                //     elapsed_ms);        // output
 
                 // The move-search interface expects a position still in progress.
                 // Retain terminal draws with score zero, and filter checkmates.

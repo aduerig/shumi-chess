@@ -1,52 +1,52 @@
 
 settings depth=7 max_ply=20 positions=6 flags=0x6 player=0 time_ms=2
-summary ep=52661 nd=69006234 nd_avg=575051 moves=120
+summary ep=34934 nd=55952888 nd_avg=478229 moves=117
 
 [Event "Shumi minimax regression pos 0"]
 [SetUp "1"]
 [FEN "rnbqk2r/ppp2ppp/3b4/3p4/3Pn3/2PB1N2/PP3PPP/RNBQK2R w KQkq - 1 8"]
 [Result "*"]
 
-8. Bxe4 Qe7 9. Ng5 dxe4 10. Qe2 f5 11. c4 Nc6 12. d5 Ne5 13. O-O Nd3 14. Qc2
-Nxc1 15. Qxc1 Be5 16. Re1 Bxb2 17. Qxb2 Qxg5 *
+8. O-O O-O 9. Ne1 Nf6 10. Bb5 Qe7 11. Nc2 Ne4 12. Nd2 Nxd2 13. Bxd2 Na6 14.
+Ne3 Be6 15. Ng4 Nb8 16. Ne3 Na6 17. Ng4 Nb8 *
 
 [Event "Shumi minimax regression pos 1"]
 [SetUp "1"]
 [FEN "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq d3 0 5"]
 [Result "*"]
 
-5... exd4 6. e5 Ng4 7. cxd4 Bb4 8. Nc3 Bxc3 9. bxc3 d5 10. exd6 cxd6 11. Bd5
-O-O 12. Bxc6 bxc6 13. Qa4 Qe7 14. Kf1 Re8 15. Qc4 *
+5... exd4 6. e5 d5 7. Bf1 Nh5 8. cxd4 Bb4 9. Nbd2 O-O 10. Be2 Nf4 11. Bf1 Nh5
+12. Be2 Nf4 13. Bf1 Nh5 *
 
 [Event "Shumi minimax regression pos 2"]
 [SetUp "1"]
 [FEN "2k4r/1p3Rpp/p1p5/2p1p3/4P2P/3rP3/NPP5/2K2R2 w - - 0 20"]
 [Result "*"]
 
-20. cxd3 g6 21. Re7 Rd8 22. Kc2 b5 23. Rxe5 c4 24. d4 Rd7 25. Nb4 Kb7 26. Ra1
-a5 27. Rxa5 Rf7 28. Ra6 Rc7 29. Kb1 h6 *
+20. cxd3 g6 21. Kd2 a5 22. Re7 Rd8 23. Rxe5 c4 24. d4 h6 25. Rxa5 Rd6 26. Nc3
+g5 27. hxg5 hxg5 28. Rxg5 b6 29. Nb1 Kb8 *
 
 [Event "Shumi minimax regression pos 3"]
 [SetUp "1"]
 [FEN "2b2rrk/1p5p/pnp1Rp1p/8/3P4/PNP2B1P/1P3PP1/2K1R3 w - - 1 30"]
 [Result "*"]
 
-30. R6e4 Rg5 31. Rh4 Rg6 32. Nd2 c5 33. dxc5 Nd7 34. b4 Ne5 35. Kd1 Nxf3 36.
-gxf3 Bd7 37. c4 a5 38. Re7 Ba4 39. Ke2 axb4 *
+30. R6e2 Nd5 31. Re4 Nb6 32. Nd2 Rf7 33. Nf1 Nd5 34. Nh2 f5 35. Rh4 Kg7 36.
+Nf1 Nf6 37. Ng3 Nd5 38. Ne2 Nf6 39. Nf4 Bd7 *
 
 [Event "Shumi minimax regression pos 4"]
 [SetUp "1"]
 [FEN "8/p4qpk/p1p4p/4n3/1P2P2P/1R2Q1Pb/3r1P2/4R1K1 b - - 6 42"]
 [Result "*"]
 
-42... Rxf2 43. Qxf2 Qxb3 44. Qe3 Qxb4 45. Rd1 Qc4 46. Re1 Qc2 47. Qe2 Qc3 48.
-Qe3 Nf3 49. Kf2 Qxe1 50. Qxe1 Nxe1 51. Kxe1 c5 52. Kf2 *
+42... Rxf2 43. Qxf2 Qxb3 44. Ra1 Qxb4 45. g4 Qxe4 46. Qf5 Qxf5 47. gxf5 Bxf5
+48. Rxa6 Nf3 49. Kh1 Nxh4 50. Rxa7 Nf3 51. Kg2 Ne1 52. Kh1 *
 
 [Event "Shumi minimax regression pos 5"]
 [SetUp "1"]
 [FEN "r1b2rk1/pp3ppp/1qp1pn2/8/2QP4/2N1PN2/PP3PPP/1R3RK1 b - - 2 14"]
 [Result "*"]
 
-14... Nd5 15. e4 Nxc3 16. Qxc3 f5 17. e5 Qa6 18. a3 Qa4 19. Ra1 b6 20. Rac1
-Bb7 21. Ng5 Rfe8 22. f3 g6 23. b4 h6 24. Nh3 *
+14... Nh5 15. Nh4 Nf6 16. Nf3 Nh5 17. Nh4 Bd7 18. Ne4 Nf6 19. Nxf6 gxf6 20.
+Nf3 f5 21. Nh4 h6 22. h3 h5 23. g3 Be8 24. f3 *
 
